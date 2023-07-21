@@ -6,6 +6,7 @@ import time
 import psutil
 import logging
 import argparse
+import multiprocessing as mp
 from multiprocessing.pool import ThreadPool
 import src.config as cfg
 # from src.mp_queue import TaskQueue
@@ -22,6 +23,8 @@ from libtiff import TIFF
 __all__ = ['GenerateScalesZarr']
 
 logger = logging.getLogger(__name__)
+
+mp.set_start_method('forkserver')
 
 Z_STRIDE = 1
 
@@ -77,6 +80,8 @@ def GenerateScalesZarr(dm, gui=True):
 
         def update_tqdm(*a):
             pbar.update()
+
+        mp.set_start_method('forkserver')
 
         # with ctx.Pool(processes=cpus) as pool:
         with ThreadPool(processes=cpus) as pool:

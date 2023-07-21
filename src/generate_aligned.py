@@ -30,6 +30,8 @@ __all__ = ['GenerateAligned']
 
 logger = logging.getLogger(__name__)
 
+mp.set_start_method('forkserver')
+
 
 def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zarr=False, stageit=False, use_gui=True):
     logger.info('>>>> GenerateAligned >>>>')
@@ -122,6 +124,7 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
         def update_tqdm(*a):
             pbar.update()
 
+        mp.set_start_method('forkserver')
         ctx = mp.get_context('forkserver')
         # with ctx.Pool(processes=cpus) as pool:
         with ThreadPool(processes=cpus) as pool:
@@ -236,7 +239,7 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
                 pool.close()
                 [p.get() for p in results]
                 pool.join()
-            logger.critical("----------END----------")
+            logger.info("----------END----------")
             cfg.mw.setPbarUnavailable(False)
             cfg.mw.set_status('')
             dt = time.time() - t0

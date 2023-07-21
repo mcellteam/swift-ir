@@ -25,6 +25,8 @@ logger = logging.getLogger(__name__)
 tnLogger = logging.getLogger('tnLogger')
 tnLogger.propagate = False
 
+mp.set_start_method('forkserver')
+
 
 
 class Thumbnailer:
