@@ -238,7 +238,7 @@ class Thumbnailer:
         logger.info('Beginning thumbnailer ThreadPool...')
         t0 = time.time()
         with ThreadPool(processes=cpus) as pool:
-            pool.map(run, tqdm.tqdm(tasks, total=len(tasks), desc="Generating Thumbnails"))
+            pool.map(run, tqdm.tqdm(tasks, total=len(tasks), desc="Generating Thumbnails", position=0, leave=True))
             pool.close()
             pool.join()
         # ctx = mp.get_context('forkserver')
