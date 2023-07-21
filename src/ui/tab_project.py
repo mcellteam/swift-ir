@@ -3769,7 +3769,7 @@ class ProjectTab(QWidget):
     def updateDtWidget(self):
         # logger.info('')
         caller = inspect.stack()[1].function
-        logger.critical(f'caller: {caller}')
+        logger.info(f'[{caller}]')
         try:
             # a = """<span style='color: #ffe135;'>"""
             # b = """</span>"""

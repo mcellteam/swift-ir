@@ -98,7 +98,6 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
             tasks.append([iscale2_c, scale_arg, of_arg, if_arg])
             layer['filename'] = ofn #0220+
 
-    logger.info('Beginning downsampling ThreadPool...')
     t0 = time.time()
 
     # with ThreadPool(processes=cpus) as pool:
@@ -106,27 +105,32 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     #     pool.close()
     #     pool.join()
     ctx = mp.get_context('forkserver')
-    # with ctx.Pool(processes=cpus) as pool:
-    #     pool.map(run, tasks)
-    #     pool.close()
-    #     pool.join()
-    pool = ctx.Pool(processes=cpus)
-    pool.map(run, tqdm.tqdm(tasks, total=len(tasks), desc="Downsampling", position=0, leave=True))
-    pool.close()
-    pool.join()
+    with ctx.Pool(processes=cpus) as pool:
+        results = pool.map(run, tasks)
+        pool.close()
+        pool.join()
+    # ctx = mp.get_context('forkserver')
+    # pool = ctx.Pool(processes=cpus)
+    # pool.map(run, tqdm.tqdm(tasks, total=len(tasks), desc="Downsampling", position=0, leave=True))
+    # pool.close()
+    # pool.join()
 
     # show_mp_queue_results(task_queue=task_queue, dt=dt)
     dm.t_scaling = time.time() - t0
-    logger.info('Done generating scales.')
 
     dm.link_reference_sections(s_list=dm.scales()) #This is necessary
     dm.scale = dm.scales()[-1]
 
-    count_files(dm)
-    logger.info("\n\nFinished generating downsampled source images. Waiting 5 seconds...\n\n")
-    time.sleep(5)
-    logger.info("Finished Sleeping...")
-    count_files(dm)
+    # n_imgs = len(dm)
+    # while any(count_files(dm.dest(), dm.scales())) != n_imgs:
+    #     logger.info('Waiting...')
+    #     time.sleep(1)
+
+    # count_files(dm.dest(), dm.scales())
+    # logger.info("\n\nFinished generating downsampled source images. Sleeping for 5 seconds...\n\n")
+    # time.sleep(5)
+    # logger.info("Finished Sleeping...")
+    # count_files(dm.dest(), dm.scales())
 
 
     src_img_size = dm.image_size(s='scale_1')
@@ -199,8 +203,13 @@ def run(task):
         print("error: %s run(*%r)" % (e, task))
 
 
-def count_files(dm):
-    for s in dm.scales():
-        path = os.path.join(dm.dest(), s, 'img_src')
+def count_files(dest, scales):
+    result = []
+    for s in scales:
+        path = os.path.join(dest, s, 'img_src')
         files = [f for f in listdir(path) if isfile(join(path, f))]
+        result.append(len(files))
         print(f"# {s} Files: {len(files)}")
+    return result
+
+# if any(count_files(dm))

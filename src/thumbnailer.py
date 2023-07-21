@@ -30,7 +30,6 @@ mp.set_start_method('forkserver', force=True)
 class Thumbnailer:
 
     def __init__(self):
-        logger.info('')
         self.iscale2_c = os.path.join(get_appdir(), 'lib', get_bindir(), 'iscale2')
 
     def reduce_main(self, dest, use_gui=True):
@@ -153,9 +152,6 @@ class Thumbnailer:
                dest='',
                use_gui=True,
                ):
-        caller = inspect.stack()[1].function
-        # logger.info(f'caller: {caller}')
-
 
         logpath = os.path.join(dest, 'logs', 'thumbnails.log')
         file = open(logpath, 'w+')
@@ -167,8 +163,6 @@ class Thumbnailer:
 
         # if cpus == None:
         #     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
-
-        logger.info('Thumbnail Source Directory: %s' % src)
 
         if os.listdir(src) == []:
             logger.error(f"The directory '{src}' is empty, nothing to thumbnail...")
@@ -205,7 +199,6 @@ class Thumbnailer:
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S")
         tnLogger.info(f'\n==== {timestamp} ====\n'
                       f'Generating Thumbnails...\n'
-                      f'caller    : {caller}\n'
                       f'src       : {src}\n'
                       f'od        : {od}\n'
                       f'rmdir     : {rmdir}\n'
@@ -217,10 +210,7 @@ class Thumbnailer:
                       f'# files   : {len(filenames)}'
                       )
         tnLogger.info('filenames : \n' + '\n'.join(filenames))
-        # logger.info(f'Generating thumbnails for:\n{str(filenames)}')
-
-
-        logger.info('Removing up to %d files...' %len(filenames))
+        # logger.info('Removing up to %d files...' %len(filenames))
         tasks = []
         for i, fn in enumerate(filenames):
             ofn = os.path.join(od, os.path.basename(fn))
@@ -230,12 +220,10 @@ class Thumbnailer:
             except:
                 print_exception()
 
-        logger.info('Making thumbnailer tasks...')
         for i, fn in enumerate(filenames):
             ofn = os.path.join(od, os.path.basename(fn))
             tasks.append([self.iscale2_c, '+%d' % scale_factor, 'of=%s' % ofn, '%s' % fn])
 
-        logger.info('Beginning thumbnailer ThreadPool...')
         t0 = time.time()
         with ThreadPool(processes=cpus) as pool:
             pool.map(run, tqdm.tqdm(tasks, total=len(tasks), desc="Generating Thumbnails", position=0, leave=True))
@@ -250,7 +238,6 @@ class Thumbnailer:
         # pool.map(run, tqdm.tqdm(tasks, total=len(tasks)))
         # pool.close()
         # pool.join()
-        logger.info('<<<< Thumbnail Generation Complete <<<<')
         dt = time.time() - t0
         return dt
 
