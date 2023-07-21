@@ -55,7 +55,7 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
 
     GenerateScales(dm=dm, gui=gui)
 
-    time.sleep(1)
+    time.sleep(2)
 
 
     dm.link_reference_sections(s_list=cfg.data.scales()) #This is necessary
@@ -77,7 +77,7 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     #     if gui: cfg.mw.warn('Something Unexpected Happened While Generating Thumbnails')
     GenerateScalesZarr(dm, gui=gui)
 
-    time.sleep(1)
+    time.sleep(2)
 
     # if make_thumbnails:
     #     logger.info('Generating Source Thumbnails...')
