@@ -59,9 +59,34 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
 
     GenerateScales(dm=dm, gui=gui)
 
-    logger.info("\n\nFinished generating downsampled source images. Waiting 1 seconds...\n\n")
+    logger.info("\n\nFinished generating downsampled source images. Waiting 5 seconds...\n\n")
 
-    time.sleep(1)
+    mypath = os.path.join(cfg.data.dest(), 'scale_2', 'img_src')
+    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+    print(str(onlyfiles))
+
+    mypath = os.path.join(cfg.data.dest(), 'scale_6', 'img_src')
+    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+    print(str(onlyfiles))
+
+    mypath = os.path.join(cfg.data.dest(), 'scale_24', 'img_src')
+    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+    print(str(onlyfiles))
+
+    time.sleep(5)
+
+    logger.info("Finished Sleeping...")
+    mypath = os.path.join(cfg.data.dest(), 'scale_2', 'img_src')
+    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+    print(str(onlyfiles))
+
+    mypath = os.path.join(cfg.data.dest(), 'scale_6', 'img_src')
+    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+    print(str(onlyfiles))
+
+    mypath = os.path.join(cfg.data.dest(), 'scale_24', 'img_src')
+    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+    print(str(onlyfiles))
 
 
     dm.link_reference_sections(s_list=cfg.data.scales()) #This is necessary
@@ -217,17 +242,9 @@ def GenerateScales(dm, gui=True):
         # pool.map(run, tqdm.tqdm(tasks, total=len(tasks)))
         # pool.close()
         # pool.join()
-        dt = time.time() - t0
-
-
-
-
-        # mypath = os.path.join(cfg.data.dest(), 'scale_2','img_src')
-        # onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
-        # print(str(onlyfiles))
 
         # show_mp_queue_results(task_queue=task_queue, dt=dt)
-        dm.t_scaling = dt
+        dm.t_scaling = time.time() - t0
         logger.info('Done generating scales.')
 
 
