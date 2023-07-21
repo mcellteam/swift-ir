@@ -727,6 +727,7 @@ class OpenProject(QWidget):
                     autoscale(dm=dm, make_thumbnails=True, set_pbar=False)
                     time.sleep(2)
                     # cfg.mw.setdw_matches(True)
+                    logger.info('\n\nAligning All...\n\n')
                     cfg.mw.alignAll(set_pbar=False, force=True, ignore_bb=True)
 
                 else:

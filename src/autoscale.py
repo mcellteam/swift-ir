@@ -57,7 +57,9 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
 
     GenerateScales(dm=dm, gui=gui)
 
-    time.sleep(1)
+    time.sleep(5)
+
+    logger.info("\n\nFinished generating downsampled source images.\n\n")
 
 
     dm.link_reference_sections(s_list=cfg.data.scales()) #This is necessary
@@ -77,9 +79,14 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     #     print_exception()
     #     logger.warning('Something Unexpected Happened While Converting The Scale Hierarchy To Zarr')
     #     if gui: cfg.mw.warn('Something Unexpected Happened While Generating Thumbnails')
+
+    logger.info("\n\nGnerating Zarr Scales...\n\n")
+
     GenerateScalesZarr(dm, gui=gui)
 
-    time.sleep(1)
+    time.sleep(2)
+
+    logger.info("\n\nFinished generating Zarrs of downsampled images.\n\n")
 
     # if make_thumbnails:
     #     logger.info('Generating Source Thumbnails...')
