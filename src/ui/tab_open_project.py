@@ -732,7 +732,7 @@ class OpenProject(QWidget):
                 else:
                     autoscale(dm=dm, make_thumbnails=True, set_pbar=True)
 
-                time.sleep(2)
+                time.sleep(1)
                 make_thumbnails = True
                 if make_thumbnails:
                     logger.info('Generating Source Thumbnails...')
