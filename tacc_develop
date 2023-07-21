@@ -30,7 +30,7 @@ git fetch
 git checkout remotes/origin/fb30_joel
 git pull
 git log -1
-python3 $WORK/swift-ir/alignEM.py
+#python3 $WORK/swift-ir/alignEM.py
 
 if [ "$DEBUG" = "1" ] ; then
   echo "Loading valgrind module for debugging..."
