@@ -65,7 +65,8 @@ class DataModel:
     """ Encapsulate datamodel dictionary and wrap with methods for convenience """
     def __init__(self, data=None, name=None, quietly=False, mendenhall=False):
         # self._current_version = 0.50
-        logger.info('>>>> __init__ >>>>')
+        if not quietly:
+            logger.info('>>>> __init__ >>>>')
         if data:
             self._data = data  # Load project data from file
         else:
@@ -80,7 +81,8 @@ class DataModel:
         self._data['version'] = cfg.VERSION
 
         # self.zpos = self._data['data']['z_position']
-        logger.info('<<<< __init__ <<<<')
+        if not quietly:
+            logger.info('<<<< __init__ <<<<')
 
 
     def __call__(self):
