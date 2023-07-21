@@ -3868,45 +3868,47 @@ class ProjectTab(QWidget):
 
     def updateDetailsPanel(self):
 
-        caller = inspect.stack()[1].function
-        logger.critical(f'caller: {caller}')
-        self.secName.setText(cfg.data.filename_basename())
-        ref = cfg.data.reference_basename()
-        if ref == '':
-            ref = 'None'
-        self.secReference.setText(ref)
+        if self._tabs.currentIndex() == 1:
+            if self.secDetails_w.isVisible():
+                caller = inspect.stack()[1].function
+                logger.critical(f'caller: {caller}')
+                self.secName.setText(cfg.data.filename_basename())
+                ref = cfg.data.reference_basename()
+                if ref == '':
+                    ref = 'None'
+                self.secReference.setText(ref)
 
-        self.secAlignmentMethod.setText(cfg.data.method_pretty())
-        # self.secSNR.setText(cfg.data.snr_report()[5:])
-        # self.secSNR.setText('<span style="font-color: red;"><b>%.2f</b></span>' % cfg.data.snr())
+                self.secAlignmentMethod.setText(cfg.data.method_pretty())
+                # self.secSNR.setText(cfg.data.snr_report()[5:])
+                # self.secSNR.setText('<span style="font-color: red;"><b>%.2f</b></span>' % cfg.data.snr())
 
-        # self.secDetails[2][1].setText(str(cfg.data.skips_list()))
-        skips = cfg.data.skips_list()
-        if skips == []:
-            self.secExcluded.setText('None')
-        else:
-            self.secExcluded.setText('\n'.join([f'z-index: {a}, name: {b}' for a, b in skips]))
-        self.secHasBB.setText(str(cfg.data.has_bb()))
-        self.secUseBB.setText(str(cfg.data.use_bb()))
-        self.secSrcImageSize.setText('%dx%d pixels' % cfg.data.image_size())
-        if cfg.data.is_aligned():
-            try:
-                self.secAlignedImageSize.setText('%dx%d pixels' % cfg.data.image_size_aligned())
-            except:
-                print_exception()
-            if cfg.data.zpos <= cfg.data.first_unskipped():
-                self.secSNR.setText('--')
-            else:
-                try:
-                    self.secSNR.setText(
-                        '<span style="color: #a30000;"><b>%.2f</b></span><span>&nbsp;&nbsp;(%s)</span>' % (
-                            cfg.data.snr(), ",  ".join(["%.2f" % x for x in cfg.data.snr_components()])))
-                except:
-                    print_exception()
-        else:
-            self.secAlignedImageSize.setText('--')
-            self.secSNR.setText('--')
-        self.secDefaults.setText(cfg.data.defaults_pretty)
+                # self.secDetails[2][1].setText(str(cfg.data.skips_list()))
+                skips = cfg.data.skips_list()
+                if skips == []:
+                    self.secExcluded.setText('None')
+                else:
+                    self.secExcluded.setText('\n'.join([f'z-index: {a}, name: {b}' for a, b in skips]))
+                self.secHasBB.setText(str(cfg.data.has_bb()))
+                self.secUseBB.setText(str(cfg.data.use_bb()))
+                self.secSrcImageSize.setText('%dx%d pixels' % cfg.data.image_size())
+                if cfg.data.is_aligned():
+                    try:
+                        self.secAlignedImageSize.setText('%dx%d pixels' % cfg.data.image_size_aligned())
+                    except:
+                        print_exception()
+                    if cfg.data.zpos <= cfg.data.first_unskipped():
+                        self.secSNR.setText('--')
+                    else:
+                        try:
+                            self.secSNR.setText(
+                                '<span style="color: #a30000;"><b>%.2f</b></span><span>&nbsp;&nbsp;(%s)</span>' % (
+                                    cfg.data.snr(), ",  ".join(["%.2f" % x for x in cfg.data.snr_components()])))
+                        except:
+                            print_exception()
+                else:
+                    self.secAlignedImageSize.setText('--')
+                    self.secSNR.setText('--')
+                self.secDefaults.setText(cfg.data.defaults_pretty)
 
     def jump_to_manual(self, requested) -> None:
         logger.info(f'requested: {requested}')

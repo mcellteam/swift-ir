@@ -661,6 +661,10 @@ class MainWindow(QMainWindow):
             if z == None:
                 z = cfg.data.zpos
 
+
+
+
+
             logger.info('')
             # caller = inspect.stack()[1].function
             # logger.critical(f'setTargKargPixmaps [{caller}] >>>>')
@@ -672,6 +676,9 @@ class MainWindow(QMainWindow):
 
             for i in range(4):
                 cfg.pt.match_thumbnails[i].set_no_image()
+
+            if cfg.data.skipped(l=z):
+                return
 
             # for i in range(4):
             #     if not cfg.pt.match_thumbnails[i]._noImage:

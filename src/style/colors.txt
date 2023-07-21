@@ -34,6 +34,9 @@
 #FFD43B - Sunglow (Python darker yellow)
 #8f99fb - periwinkle blue from Dreamgirls
 #AAFF00 - bright green
+#fd411e - Orange-Red
+#874c62 - dark muave
+#010fcc - true blue
 
 https://xkcd.com/color/rgb/
 
