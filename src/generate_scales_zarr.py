@@ -9,13 +9,11 @@ import argparse
 import multiprocessing as mp
 from multiprocessing.pool import ThreadPool
 import src.config as cfg
-# from src.mp_queue import TaskQueue
 from src.helpers import get_scale_val, get_img_filenames, print_exception, renew_directory, \
     reorder_tasks
 from src.funcs_zarr import preallocate_zarr
 import tqdm
 import numcodecs
-import numpy as np
 import zarr
 numcodecs.blosc.use_threads = False
 from libtiff import TIFF
@@ -58,12 +56,6 @@ def GenerateScalesZarr(dm, gui=True):
                              gui=gui)
         n_tasks = len(dm) * dm.n_scales()
 
-        cfg.mw.set_status('Copy-converting scales to Zarr. No progress bar available. Awaiting multiprocessing pool...')
-        cfg.mw.setPbarUnavailable(True)
-
-        if gui: cfg.main_window.statusBar.showMessage('The next step may take a few minutes...')
-
-        # dest = cfg.data['data']['destination_path']
         logger.info(f'\n\n################ Converting Downscales to Zarr ################\n')
 
         tasks = []
@@ -73,15 +65,13 @@ def GenerateScalesZarr(dm, gui=True):
                 fn = os.path.join(dest, scale, 'img_src', img)
                 tasks.append([ID, fn, out])
 
-        cfg.mw.set_status('Generating Zarr. No progress bar available. Awaiting multiprocessing pool...')
-        cfg.mw.setPbarUnavailable(True)
         logger.info("RUNNING MULTIPROCESSING POOL (CONVERT ZARR)...")
         pbar = tqdm.tqdm(total=len(tasks))
+        pbar.set_description("Converting Downsampled Images to Zarr")
         t0 = time.time()
 
         def update_tqdm(*a):
             pbar.update()
-
 
         # with ctx.Pool(processes=cpus) as pool:
         with ThreadPool(processes=cpus) as pool:
@@ -89,11 +79,9 @@ def GenerateScalesZarr(dm, gui=True):
             pool.close()
             [p.get() for p in results]
             pool.join()
-        logger.critical("----------END----------")
-        cfg.mw.set_status('')
+        logger.info("----------END----------")
         dm.t_scaling_convert_zarr = time.time() - t0
         logger.info('<<<< Generate Zarr Scales End <<<<')
-        cfg.mw.setPbarUnavailable(False)
 
 def convert_zarr(task):
     ID = task[0]
