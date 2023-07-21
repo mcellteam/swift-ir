@@ -57,18 +57,26 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
 
     GenerateScales(dm=dm, gui=gui)
 
-    logger.info("\n\nFinished generating downsampled source images. Waiting 5 seconds...\n\n")
+    logger.info("\n\nFinished generating downsampled source images. Waiting 2 seconds...\n\n")
 
-    time.sleep(5)
-
-
+    time.sleep(2)
 
 
     dm.link_reference_sections(s_list=cfg.data.scales()) #This is necessary
     dm.scale = dm.scales()[-1]
 
-    for s in dm.scales():
-        dm.set_image_size(s=s)
+
+    src_img_size = cfg.data.image_size(s='scale_1')
+    for s in cfg.data.scales():
+        if s == 'scale_1':
+            continue
+        sv = cfg.data.scale_val(s)
+        siz = int(src_img_size / sv)
+        logger.info(f"setting {s} image size to {siz}...")
+        cfg.data['data']['scales'][s]['image_src_size'] = siz
+
+    # for s in dm.scales():
+    #     dm.set_image_size(s=s)
 
     logger.info('Copy-converting TIFFs to NGFF-Compliant Zarr...')
     # if gui:
