@@ -57,9 +57,11 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
 
     GenerateScales(dm=dm, gui=gui)
 
+    logger.info("\n\nFinished generating downsampled source images. Waiting 5 seconds...\n\n")
+
     time.sleep(5)
 
-    logger.info("\n\nFinished generating downsampled source images.\n\n")
+
 
 
     dm.link_reference_sections(s_list=cfg.data.scales()) #This is necessary
@@ -84,9 +86,11 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
 
     GenerateScalesZarr(dm, gui=gui)
 
+    logger.info("\n\nFinished generating Zarrs of downsampled images. Waiting 2 seconds...\n\n")
+
     time.sleep(2)
 
-    logger.info("\n\nFinished generating Zarrs of downsampled images.\n\n")
+
 
     # if make_thumbnails:
     #     logger.info('Generating Source Thumbnails...')
