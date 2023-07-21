@@ -6,6 +6,7 @@ import time
 import psutil
 import logging
 import argparse
+from random import shuffle
 import multiprocessing as mp
 from multiprocessing.pool import ThreadPool
 import src.config as cfg
@@ -66,13 +67,14 @@ def GenerateScalesZarr(dm, gui=True):
                 tasks.append([ID, fn, out])
 
         logger.info("RUNNING MULTIPROCESSING POOL (CONVERT ZARR)...")
-        pbar = tqdm.tqdm(total=len(tasks))
+        pbar = tqdm.tqdm(total=len(tasks), position=0, leave=True)
         pbar.set_description("Converting Downsampled Images to Zarr")
         t0 = time.time()
 
         def update_tqdm(*a):
             pbar.update()
 
+        shuffle(tasks)
         # with ctx.Pool(processes=cpus) as pool:
         with ThreadPool(processes=cpus) as pool:
             results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_tqdm) for task in tasks]

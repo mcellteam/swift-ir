@@ -22,7 +22,7 @@ from qtpy.QtGui import QGuiApplication, QFont, QPixmap, QPainter, QKeySequence, 
 
 from src.ui.file_browser import FileBrowser
 from src.ui.file_browser_tacc import FileBrowserTacc
-from src.funcs_image import ImageSize
+# from src.funcs_image import ImageSize
 from src.thumbnailer import Thumbnailer
 from src.autoscale import autoscale
 from src.helpers import get_project_list, list_paths_absolute, get_bytes, absFilePaths, getOpt, setOpt, \
@@ -725,7 +725,7 @@ class OpenProject(QWidget):
                     cfg.ignore_pbar = False
                     cfg.mw.showZeroedPbar(set_n_processes=7)
                     autoscale(dm=dm, make_thumbnails=True, set_pbar=False)
-                    logger.info("\n\nFinished autoscaling. Waiting 1 seconds...\n\n")
+                    logger.info("\n\nFinished autoscaling. Sleeping 1 seconds...\n\n")
                     time.sleep(1)
                     # cfg.mw.setdw_matches(True)
                     logger.info('\n\nAligning All...\n\n')

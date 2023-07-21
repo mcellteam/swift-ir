@@ -111,7 +111,7 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     #     pool.close()
     #     pool.join()
     pool = ctx.Pool(processes=cpus)
-    pool.map(run, tqdm.tqdm(tasks, total=len(tasks), desc="Downsampling"))
+    pool.map(run, tqdm.tqdm(tasks, total=len(tasks), desc="Downsampling", position=0, leave=True))
     pool.close()
     pool.join()
 

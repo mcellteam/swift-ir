@@ -8,6 +8,7 @@ import psutil
 import logging
 import zarr
 import numpy as np
+from random import shuffle
 import multiprocessing as mp
 from multiprocessing.pool import ThreadPool
 import zarr
@@ -110,7 +111,7 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
 
         cfg.mw.set_status('Generating aligned images. No progress bar available. Awaiting multiprocessing pool...')
         logger.info("RUNNING MULTIPROCESSING POOL (GENERATE ALIGNED IMAGES)...")
-        pbar = tqdm.tqdm(total=len(tasks))
+        pbar = tqdm.tqdm(total=len(tasks), position=0, leave=True)
         pbar.set_description("Generating Alignment")
 
         def update_tqdm(*a):
@@ -209,9 +210,9 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
                 zarr_group = os.path.join(dm.dest(), 'img_aligned.zarr', 's%d' % scale_val)
                 task = [i, al_name, zarr_group]
                 tasks.append(task)
-
+            shuffle(tasks)
             logger.info("RUNNING MULTIPROCESSING POOL (CONVERT ZARR)...")
-            pbar = tqdm.tqdm(total=len(tasks))
+            pbar = tqdm.tqdm(total=len(tasks), position=0, leave=True)
             pbar.set_description("Converting Alignment to Zarr")
             t0 = time.time()
             def update_tqdm(*a):
