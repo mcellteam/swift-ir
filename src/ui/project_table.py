@@ -9,7 +9,7 @@ import logging
 import textwrap
 
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QAbstractItemView, \
-    QTableWidget, QTableWidgetItem, QSlider, QLabel, QPushButton, QSizePolicy
+    QTableWidget, QTableWidgetItem, QSlider, QLabel, QPushButton, QSizePolicy, QFrame, QHeaderView
 from qtpy.QtCore import Qt, QRect, QAbstractTableModel, Signal
 from qtpy.QtGui import QPainter, QPixmap, QImage
 from src.ui.thumbnail import ThumbnailFast, CorrSignalThumbnail
@@ -31,11 +31,11 @@ class ProjectTable(QWidget):
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
         # self.INITIAL_ROW_HEIGHT = 128
-        self.INITIAL_ROW_HEIGHT = 64
+        self.INITIAL_ROW_HEIGHT = 80
         self.image_col_width = self.INITIAL_ROW_HEIGHT
         self.data = None
         self.table = QTableWidget()
-        self.table.verticalHeader().hide()
+        self.table.verticalHeader().setVisible(False)
         self.table.setWordWrap(True)
         self.table.setSortingEnabled(False)
         self.table.setShowGrid(True)
@@ -43,10 +43,11 @@ class ProjectTable(QWidget):
         self.row_height_slider.setMinimum(28)
         self.row_height_slider.setMaximum(256)
         self.initUI()
-        self.table.horizontalHeader().setHighlightSections(False)
+        # self.table.horizontalHeader().setHighlightSections(False)
         self.table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         # self.table.itemClicked.connect(self.userSelectionChanged)
         self.table.itemSelectionChanged.connect(self.selection_changed)
+        # self.table.itemPressed.connect(self.selection_changed)
         # self.table.itemPressed.connect(lambda: print('itemPressed was emitted!'))
         # self.table.cellActivated.connect(lambda: print('cellActivated was emitted!'))
         # self.table.currentItemChanged.connect(lambda: print('currentItemChanged was emitted!'))
@@ -55,11 +56,15 @@ class ProjectTable(QWidget):
         # self.table.cellChanged.connect(lambda: print('cellChanged was emitted!'))
         # self.table.cellClicked.connect(lambda: print('cellClicked was emitted!'))
         # self.table.itemChanged.connect(lambda: print('itemChanged was emitted!'))
-        self.table.setSelectionMode(QAbstractItemView.ContiguousSelection)
+        # self.table.setSelectionMode(QAbstractItemView.ContiguousSelection)
         # self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch) # Fails on TACC for some reason
         # self.tableFinishedLoading.connect(self.onTableFinishedLoading)
         # self.onTableFinishedLoading.connect(lambda: logger.critical("\n\n\nTable finished loading!\n\n"))
         # self.onTableFinishedLoading.connect(lambda:cfg.mw.set_status("Table finished loading."))
+        header = self.table.horizontalHeader()
+        header.setFrameStyle(QFrame.Box | QFrame.Plain)
+        header.setStyleSheet("QHeaderView::section { border-bottom: 1px solid gray; }");
+        self.table.setHorizontalHeader(header)
 
         self.m = {'grid-default': 'Default Grid',
              'grid-custom': 'Custom Grid',
@@ -69,8 +74,8 @@ class ProjectTable(QWidget):
         # self.table.setStyleSheet("QTableWidget {font-size: 10px;}")
         self.table.setStyleSheet("""
         QWidget {
-            background-color: #222222;
-            color: #ede9e8;
+            background-color: #f3f6fb;
+            color: #161c20;
         }
         
         QHeaderView::section {
@@ -78,15 +83,17 @@ class ProjectTable(QWidget):
         }
         
         QTableWidget {
-            gridline-color: #ede9e8;
+            gridline-color: #161c20;
             font-size: 12pt;
         }
         
         QTableWidget QTableCornerButton::section {
-            background-color: #161c20;
-            border: 1px solid #ede9e8;
+            background-color: #f3f6fb;
+            border: 1px solid #161c20;
         }
+        QTableWidget::item:selected{ background-color: #dadada;}
         
+        QTableWidget::item {padding: 2px; color: #161c20;}
         """)
 
 
@@ -110,25 +117,24 @@ class ProjectTable(QWidget):
 
     def selection_changed(self):
         caller = inspect.stack()[1].function
-        # logger.critical(f'caller: {caller}')
+        logger.critical(f'caller: {caller}')
         if caller not in ('initTableData', 'updateTableData'):
             if cfg.project_tab._tabs.currentIndex() == 2:
                 row = self.table.currentIndex().row()
                 # cfg.main_window.tell('Section #%d' % row)
                 # cfg.data.zpos = row
                 cfg.mw.setZpos(row)
-        selection = self.get_selection()
-        if selection:
-            r_min = min(selection)
-            r_max = max(selection)
-            # cfg.main_window.sectionRangeSlider.setStart(r_min)
-            # cfg.main_window.sectionRangeSlider.setEnd(r_max)
+        # selection = self.get_selection()
+        # if selection:
+        #     r_min = min(selection)
+        #     r_max = max(selection)
+        #     # cfg.main_window.sectionRangeSlider.setStart(r_min)
+        #     # cfg.main_window.sectionRangeSlider.setEnd(r_max)
 
 
     def set_column_headers(self):
-        labels = ['Z-index', 'Section\nReference', 'SNR/\nMethod', 'Reference', 'Transforming', 'Aligned\nResult',
-                  'Match\nSignal 1', 'Match\nSignal 2', 'Match\nSignal 3', 'Match\nSignal 4', 'Last\nAligned',
-                  'Include?']
+        labels = ['Z-index', 'Section\nReference', 'SNR/\nMethod', 'Last\nAligned', 'Reference', 'Transforming', 'Aligned\nResult',
+                  'Match\nSignal 1', 'Match\nSignal 2', 'Match\nSignal 3', 'Match\nSignal 4', 'Notes']
         self.table.setHorizontalHeaderLabels(labels)
         self.table.setColumnCount(len(labels))
 
@@ -215,7 +221,7 @@ class ProjectTable(QWidget):
         except:
             print_exception()
         finally:
-            self.scaleLabel.setText(f"Scale {cfg.data.scale} | {siz[0]}x{siz[1]}px")
+            self.updateTableTitle()
             cfg.mw.hidePbar()
             if cur_selection != -1:
                 self.table.selectRow(cur_selection)
@@ -226,27 +232,34 @@ class ProjectTable(QWidget):
 
 
     def setColumnWidths(self):
-        self.table.setColumnWidth(0, 60)  # 0 index
+        self.table.setColumnWidth(0, 80)  # 0 index
         self.table.setColumnWidth(1, 170)   # 1 Filename
         self.table.setColumnWidth(2, 80)   # 2 SNR
-        self.table.setColumnWidth(3, 100)  # 3 Current
-        self.table.setColumnWidth(4, 100)  # 4 Reference
-        self.table.setColumnWidth(5, 100)  # 5 Aligned
-        self.table.setColumnWidth(6, 100)  # 6 Q0
-        self.table.setColumnWidth(7, 100)  # 7 Q1
-        self.table.setColumnWidth(8, 100)  # 8 Q2
-        self.table.setColumnWidth(9, 100) # 9 Q3
-        self.table.setColumnWidth(10, 80) # 10 Last Aligned datetime
-        self.table.setColumnWidth(11, 50)  # 12 Skip
+        self.table.setColumnWidth(3, 80)  # 10 Last Aligned datetime
+        self.table.setColumnWidth(4, 100)  # 3 Current
+        self.table.setColumnWidth(5, 100)  # 4 Reference
+        self.table.setColumnWidth(6, 100)  # 5 Aligned
+        self.table.setColumnWidth(7, 100)  # 6 Q0
+        self.table.setColumnWidth(8, 100)  # 7 Q1
+        self.table.setColumnWidth(9, 100)  # 8 Q2
+        self.table.setColumnWidth(10, 100) # 9 Q3
+        self.table.setColumnWidth(11, 100) # 9 Q3
+
 
 
 
     def updateTableDimensions(self, h):
         # caller = inspect.stack()[1].function
+
+        # header = self.table.horizontalHeader()
+        # header.setSectionResizeMode(1, QHeaderView.Stretch)
+
         self.image_col_width = h
         parentVerticalHeader = self.table.verticalHeader()
         for section in range(parentVerticalHeader.count()):
             parentVerticalHeader.resizeSection(section, h)
+        self.table.setColumnWidth(1, h)
+        self.table.setColumnWidth(2, h)
         self.table.setColumnWidth(3, h)
         self.table.setColumnWidth(4, h)
         self.table.setColumnWidth(5, h)
@@ -254,8 +267,10 @@ class ProjectTable(QWidget):
         self.table.setColumnWidth(7, h)
         self.table.setColumnWidth(8, h)
         self.table.setColumnWidth(9, h)
-        size = max(min(int(11 * (max(h, 1) / 80)), 14), 8)
+        self.table.setColumnWidth(10, h)
+        # size = max(min(int(11 * (max(h, 1) / 80)), 14), 8)
         # self.table.setStyleSheet(f'font-size: {size}px;')
+
 
     def jump_to_edit(self, requested) -> None:
         cfg.mw.setZpos(requested)
@@ -266,6 +281,9 @@ class ProjectTable(QWidget):
         cfg.mw.setZpos(requested)
         cfg.pt._tabs.setCurrentIndex(0)
 
+
+    def request_refresh(self, requested) -> None:
+        self.set_row_data(row=requested)
 
 
     def get_row_data(self, s=None, l=None):
@@ -286,14 +304,12 @@ class ProjectTable(QWidget):
         sig1 = os.path.join(dest, s, 'signals', '%s_%s_1%s' % (fn, method, extension))
         sig2 = os.path.join(dest, s, 'signals', '%s_%s_2%s' % (fn, method, extension))
         sig3 = os.path.join(dest, s, 'signals', '%s_%s_3%s' % (fn, method, extension))
+        notes = cfg.data.notes(s=s,l=l)
         try:
             last_aligned = cfg.data['data']['scales'][s]['stack'][l]['alignment']['method_results']['datetime']
         except:
             last_aligned = 'N/A'
-        scale = cfg.data.scale_pretty(s=s)
-        skip = cfg.data.skipped(s=s, l=l)
-        snr_report = cfg.data.snr_report(s=s, l=l)
-        return [index, basename, snr_avg, tn_ref, tn_tra, tn_aligned, sig0, sig1, sig2, sig3, last_aligned, skip]
+        return [index, basename, snr_avg, last_aligned, tn_ref, tn_tra, tn_aligned, sig0, sig1, sig2, sig3, notes]
 
 
     def set_row_data(self, row):
@@ -312,75 +328,89 @@ class ProjectTable(QWidget):
 
                 b0 = QPushButton('View')
                 b0.clicked.connect(lambda state, x=row: self.jump_to_view(x))
-                # b0.setStyleSheet("font-size: 12px; background-color: #ede9e8; color: #161c20;")
+                b0.setStyleSheet("font-size: 12px; background-color: #ede9e8; color: #161c20; padding:2px; width: 26px; height: 14px; ")
                 b1 = QPushButton('Edit')
                 b1.clicked.connect(lambda state, x=row: self.jump_to_edit(x))
-                # b1.setStyleSheet("font-size: 12px; background-color: #ede9e8; color: #161c20;")
-                btns = HWidget(b0, b1)
-                btns.setStyleSheet("font-size: 12px; background-color: #ede9e8; color: #161c20;")
+                b1.setStyleSheet("font-size: 12px; background-color: #ede9e8; color: #161c20;  padding:2px; width: 26px; height: 14px; ")
+                b2 = QPushButton('Refresh Row')
+                b2.clicked.connect(lambda state, x=row: self.request_refresh(x))
+                b2.setStyleSheet("font-size: 12px; background-color: #ede9e8; color: #161c20;  padding:2px; ")
+                btns = VWidget(HWidget(b0, b1),b2)
+                # btns.setStyleSheet("font-size: 12px; background-color: #161c20;")
 
                 lab = QLabel(str(row_data[0]))
                 lab.setAlignment(Qt.AlignCenter)
                 # lab.setStyleSheet("font-size: 12px; background-color: #ede9e8; color: #161c20;")
-                lab.setStyleSheet("font-size: 12px; color: #ede9e8;")
+                lab.setStyleSheet("font-size: 12px; color: #161c20; font-weight: 600;")
 
                 w = QWidget()
                 vbl = VBL(lab, btns)
-                vbl.setContentsMargins(4,4,4,4)
                 vbl.setSpacing(4)
                 vbl.setAlignment(Qt.AlignVCenter)
                 w.setLayout(vbl)
+                w.setStyleSheet("background:transparent;")
                 # w.setStyleSheet("QWidget {border-radius: 6px; border: 1px solid #ede9e8;}")
 
                 self.table.setCellWidget(row, col, w)
             elif col == 1:
                 lab1 = QLabel(cfg.data.filename_basename(l=row))
-                lab1.setStyleSheet("font-weight: 600; font-size: 12px;")
+                lab1.setStyleSheet("font-weight: 600; font-size: 12px; background: transparent;")
 
-                lab2 = QLabel("Reference:")
-                lab2.setStyleSheet("font-size: 9px; ")
-
-
-                lab3_str = cfg.data.reference_basename(l=row)
-                ref_offset = cfg.data.get_ref_index_offset(l=row)
-                if ref_offset > 1:
-                    lab3_str += f' <span style="color: #d0342c;"><b>[{-ref_offset}]</b></span>'
-
-                lab3 = QLabel(lab3_str)
-                lab3.setStyleSheet("font-size: 10px; font-weight: 600;")
-
-
-                vw = VWidget(lab1,lab2,lab3)
-                vw.layout.setAlignment(Qt.AlignVCenter)
+                if cfg.data.skipped(l=row):
+                    lab2 = QLabel('* Exclude')
+                    lab2.setStyleSheet("font-size: 12px; color: #d0342c; padding:2px; background: transparent;")
+                    vw = VWidget(lab1,lab2)
+                    vw.layout.setAlignment(Qt.AlignVCenter)
+                else:
+                    lab2 = QLabel("Reference:")
+                    lab2.setStyleSheet("font-size: 9px; background: transparent;")
+                    lab3_str = cfg.data.reference_basename(l=row)
+                    ref_offset = cfg.data.get_ref_index_offset(l=row)
+                    if ref_offset > 1:
+                        lab3_str += f' <span style="color: #d0342c;"><b>[{-ref_offset}]</b></span>'
+                    lab3 = QLabel(lab3_str)
+                    lab3.setStyleSheet("font-size: 10px; font-weight: 600; background: transparent;")
+                    vw = VWidget(lab1,lab2,lab3)
+                    vw.setStyleSheet("background: transparent;")
+                    vw.layout.setAlignment(Qt.AlignVCenter)
 
                 self.table.setCellWidget(row, col, vw)
             elif col == 2:
                 lab1 = QLabel('%.3g' % float(row_data[2]))
                 lab1.setStyleSheet("font-weight: 600; font-size: 14px;")
 
-                lab2 = QLabel(self.m[method])
-                lab2.setStyleSheet("font-size: 12px;")
+                m = self.m[method]
+                lab2 = QLabel(m)
+                if m == 'Default Grid':
+                    lab2.setStyleSheet("font-size: 12px; color: #00BF00;")
+                elif method == 'Custom Grid':
+                    lab2.setStyleSheet("font-size: 12px; color: #8f99fb;")
+                else:
+                    lab2.setStyleSheet("font-size: 12px; color: #010fcc;")
 
                 vw = VWidget(lab1,lab2)
                 vw.layout.setAlignment(Qt.AlignCenter)
+                vw.setStyleSheet("background:transparent;")
 
                 self.table.setCellWidget(row, col, vw)
             elif col == 3:
-                tn = ThumbnailFast(self, path=row_data[3], name='reference-table', s=scale, l=row)
-                if cfg.data.skipped(l=row):
-                    tn.set_no_image()
-                self.table.setCellWidget(row, col, tn)
+                self.table.setItem(row, col, QTableWidgetItem(str(row_data[col])))
             elif col == 4:
-                tn = ThumbnailFast(self, path=row_data[4], name='transforming-table', s=scale, l=row)
+                tn = ThumbnailFast(self, path=row_data[col], name='reference-table', s=scale, l=row)
                 if cfg.data.skipped(l=row):
                     tn.set_no_image()
                 self.table.setCellWidget(row, col, tn)
             elif col == 5:
-                tn = ThumbnailFast(self, path=row_data[5])
+                tn = ThumbnailFast(self, path=row_data[col], name='transforming-table', s=scale, l=row)
                 if cfg.data.skipped(l=row):
                     tn.set_no_image()
                 self.table.setCellWidget(row, col, tn)
             elif col == 6:
+                tn = ThumbnailFast(self, path=row_data[col])
+                if cfg.data.skipped(l=row):
+                    tn.set_no_image()
+                self.table.setCellWidget(row, col, tn)
+            elif col == 7:
                 try:
                     if method == 'grid-custom':
                         assert regions[0] == 1
@@ -395,7 +425,7 @@ class ProjectTable(QWidget):
                     tn = CorrSignalThumbnail(self, name='ms0')
                     # tn.set_no_image()
                     self.table.setCellWidget(row, col, tn)
-            elif col == 7:
+            elif col == 8:
 
                 try:
                     if method == 'grid-custom':
@@ -410,7 +440,7 @@ class ProjectTable(QWidget):
                     tn = CorrSignalThumbnail(self, name='ms1')
                     # tn.set_no_image()
                     self.table.setCellWidget(row, col, tn)
-            elif col == 8:
+            elif col == 9:
                 try:
                     if method == 'grid-custom':
                         assert regions[2] == 1
@@ -424,7 +454,7 @@ class ProjectTable(QWidget):
                     tn = CorrSignalThumbnail(self, name='ms2')
                     # tn.set_no_image()
                     self.table.setCellWidget(row, col, tn)
-            elif col == 9:
+            elif col == 10:
                 try:
                     if method == 'grid-custom':
                         assert regions[3] == 1
@@ -438,11 +468,8 @@ class ProjectTable(QWidget):
                     tn = CorrSignalThumbnail(self, name='ms3')
                     # tn.set_no_image()
                     self.table.setCellWidget(row, col, tn)
-
             elif col == 11:
-                b = not bool(row_data[col])
-                self.table.setItem(row, col, QTableWidgetItem(str(b)))
-
+                self.table.setItem(row, col, QTableWidgetItem(str(row_data[col])))
             else:
                 self.table.setItem(row, col, QTableWidgetItem(str(row_data[col])))
 
@@ -453,7 +480,7 @@ class ProjectTable(QWidget):
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.table.setSelectionMode(QAbstractItemView.SingleSelection)
+        # self.table.setSelectionMode(QAbstractItemView.SingleSelection)
         self.table.verticalHeader().setTextElideMode(Qt.ElideMiddle)
         self.table.horizontalHeader().setDefaultAlignment(Qt.AlignLeft)
         self.row_height_slider.setValue(self.INITIAL_ROW_HEIGHT)
@@ -480,7 +507,6 @@ class ProjectTable(QWidget):
         self.controls.setMaximumHeight(24)
         self.controls.setLayout(hbl)
 
-        # self.btn_splash_load_table = QPushButton('Load Table')
         self.btn_splash_load_table = QPushButton(' Load Table')
         self.btn_splash_load_table.setIcon(qta.icon("fa.download", color='#f3f6fb'))
         self.btn_splash_load_table.clicked.connect(self.initTableData)

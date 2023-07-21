@@ -516,6 +516,8 @@ class DataModel:
         self._data['rendering']['normalize'] = range
 
     def notes(self, s=None, l=None):
+        if s == None: s = self.scale
+        if l == None: l = self.zpos
         return self._data['data']['scales'][s]['stack'][l]['notes']
 
 

@@ -1090,7 +1090,7 @@ class UserProjects(QWidget):
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.table.setSelectionMode(QAbstractItemView.SingleSelection) #0507-  !!!!!!!!!!!!
+        # self.table.setSelectionMode(QAbstractItemView.SingleSelection) #0507-  !!!!!!!!!!!!
         self.table.verticalHeader().setVisible(False)
         # self.table.horizontalHeader().setDefaultAlignment(Qt.Alignment(Qt.TextWordWrap))
         self.table.horizontalHeader().setDefaultAlignment(Qt.AlignLeft)
@@ -1447,68 +1447,3 @@ class ExpandingHWidget(QWidget):
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-
-# class Label(QLabel):
-#     def __init__(self, img):
-#         super(Label, self).__init__()
-#         self.setFrameStyle(QFrame.StyledPanel)
-#         self.pixmap = QPixmap(img)
-#
-#     def paintEvent(self, event):
-#         size = self.size()
-#         painter = QPainter(self)
-#         point = QPoint(0,0)
-#         scaledPix = self.pixmap.scaled(size, Qt.KeepAspectRatio, transformMode = Qt.SmoothTransformation)
-#         # start painting the snr from left upper corner
-#         point.setX((size.width() - scaledPix.width())/2)
-#         point.setY((size.height() - scaledPix.height())/2)
-#         print(point.x(), ' ', point.y())
-#         painter.drawPixmap(point, scaledPix)
-
-
-style = """
-/* white pussh buttons */
-
-/*-----QPushButton-----*/
-QPushButton{
-	border-style: solid;
-    border-color: #161c20;
-	border-width: 1px;
-	border-radius: 5px;
-	color: rgb(0,0,0);
-	padding: 2px;
-	background-color: #f3f6fb;
-}
-QPushButton::default{
-	border-style: solid;
-    border-color: #161c20;
-	border-width: 1px;
-	border-radius: 5px;
-	color: rgb(0,0,0);
-	padding: 2px;
-	background-color: #f3f6fb;
-}
-QPushButton:hover{
-	border-style: solid;
-	border-color: #161c20;
-	border-width: 2px;
-	border-radius: 5px;
-	color: rgb(0,0,0);
-	padding: 2px;
-	background-color: #f3f6fb;
-}
-QPushButton:pressed{
-}
-QPushButton:disabled{
-    background-color: #dadada;
-
-	border-style: solid;
-	border-color: #161c20;
-	border-width: 1px;
-	border-radius: 5px;
-	color: #ede9e8;
-	padding: 2px;
-	background-color: rgb(142,142,142);
-}
-
-"""
