@@ -59,7 +59,72 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
 
     GenerateScales(dm=dm, gui=gui)
 
+    cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(dm) * len(dm.downscales()))
+    pbar_text = 'Generating Scale Image Hierarchy (%d Cores)...' % cpus
+    if cfg.CancelProcesses:
+        cfg.main_window.warn('Canceling Tasks: Generate Scale Image Hierarchy')
+        cfg.main_window.warn('Canceling Tasks: Copy-convert Scale Images to Zarr')
+        return
 
+    logger.info(f'\n\n################ Generating Scales ################\n')
+
+    my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
+    create_project_structure_directories(dm.dest(), dm.scales(), gui=gui)
+    iscale2_c = os.path.join(my_path, 'lib', get_bindir(), 'iscale2')
+
+    # Create Scale 1 Symlinks
+    logger.info('Creating Scale 1 symlinks')
+    if gui:
+        cfg.main_window.tell('Sym-linking full scale images...')
+    src_path = dm.source_path()
+    for img in dm.basefilenames():
+        fn = os.path.join(src_path, img)
+        ofn = os.path.join(dm.dest(), 'scale_1', 'img_src', os.path.split(fn)[1])
+        # normalize path for different OSs
+        if os.path.abspath(os.path.normpath(fn)) != os.path.abspath(os.path.normpath(ofn)):
+            try:    os.unlink(ofn)
+            except: pass
+            try:    os.symlink(fn, ofn)
+            except:
+                logger.warning("Unable to link from %s to %s. Copying instead." % (fn, ofn))
+                try:    shutil.copy(fn, ofn)
+                except: logger.warning("Unable to link or copy from " + fn + " to " + ofn)
+
+    tasks = []
+    for s in dm.downscales():  # value string '1 2 4'
+        scale_val = get_scale_val(s)
+        for i, layer in enumerate(dm['data']['scales'][s]['stack']):
+            base       = dm.base_image_name(s=s, l=i)
+            if_arg     = os.path.join(src_path, base)
+            ofn        = os.path.join(dm.dest(), s, 'img_src', os.path.split(if_arg)[1]) # <-- wrong path on second project
+            of_arg     = 'of=%s' % ofn
+            scale_arg  = '+%d' % scale_val
+            tasks.append([iscale2_c, scale_arg, of_arg, if_arg])
+            layer['filename'] = ofn #0220+
+
+    logger.info('Beginning downsampling ThreadPool...')
+    t0 = time.time()
+
+    # with ThreadPool(processes=cpus) as pool:
+    #     pool.map(run, tqdm.tqdm(tasks, total=len(tasks)))
+    #     pool.close()
+    #     pool.join()
+    ctx = mp.get_context('forkserver')
+    # with ctx.Pool(processes=cpus) as pool:
+    #     pool.map(run, tasks)
+    #     pool.close()
+    #     pool.join()
+    pool = ctx.Pool(processes=cpus)
+    pool.map(run, tqdm.tqdm(tasks, total=len(tasks)))
+    pool.close()
+    pool.join()
+
+    # show_mp_queue_results(task_queue=task_queue, dt=dt)
+    dm.t_scaling = time.time() - t0
+    logger.info('Done generating scales.')
+
+    dm.link_reference_sections(s_list=dm.scales()) #This is necessary
+    dm.scale = dm.scales()[-1]
 
     mypath = os.path.join(dm.dest(), 'scale_2', 'img_src')
     s2 = [f for f in listdir(mypath) if isfile(join(mypath, f))]
@@ -90,10 +155,6 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     print(str(s2))
     print(str(s6))
     print(str(s24))
-
-
-    dm.link_reference_sections(s_list=dm.scales()) #This is necessary
-    dm.scale = dm.scales()[-1]
 
 
     src_img_size = dm.image_size(s='scale_1')
@@ -164,14 +225,7 @@ def GenerateScales(dm, gui=True):
         cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
     else:
 
-        n_tasks = len(dm) * (dm.n_scales() - 1)  #0901 #Refactor
-        dest = dm['data']['destination_path']
         logger.info(f'\n\n################ Generating Scales ################\n')
-        task_name_list = []
-        for s in dm.downscales():  # value string '1 2 4'
-            scale_val = get_scale_val(s)
-            for layer in dm['data']['scales'][s]['stack']:
-                task_name_list.append('%s (scaling factor: %d)' %(os.path.basename(layer['filename']), scale_val))
 
         my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
         create_project_structure_directories(dm.dest(), dm.scales(), gui=gui)
