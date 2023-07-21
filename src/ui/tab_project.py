@@ -2737,7 +2737,7 @@ class ProjectTab(QWidget):
     @Slot()
     def dataUpdateMA(self):
         if DEV:
-            logger.critical(f"[{caller_name()}]")
+            logger.critical(f"[DEV] called by {caller_name()}")
 
         #0526 set skipped overlay
 
@@ -3785,31 +3785,56 @@ class ProjectTab(QWidget):
             #     f"Corr Spot Thumbs{br}:{a}" + (f"%.2fs{b}" % cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_spot']).rjust(9)
             # )
 
-            t0 = (f"%.1fs" % cfg.data['data']['benchmarks']['t_scaling']).rjust(12)
-            t1 = (f"%.1fs" % cfg.data['data']['benchmarks']['t_scaling_convert_zarr']).rjust(12)
-            t2 = (f"%.1fs" % cfg.data['data']['benchmarks']['t_thumbs']).rjust(12)
+            try:
+                t0 = (f"%.1fs" % cfg.data['data']['benchmarks']['t_scaling']).rjust(12)
+                t0m = (f"%.3fm" % (cfg.data['data']['benchmarks']['t_scaling'] / 60))
+            except:
+                t0 = t0m = "???"
 
-            t0m = (f"%.3fm" % (cfg.data['data']['benchmarks']['t_scaling'] / 60))
-            t1m = (f"%.3fm" % (cfg.data['data']['benchmarks']['t_scaling_convert_zarr'] / 60))
-            t2m = (f"%.3fm" % (cfg.data['data']['benchmarks']['t_thumbs'] / 60))
+            try:
+                t1 = (f"%.1fs" % cfg.data['data']['benchmarks']['t_scaling_convert_zarr']).rjust(12)
+                t1m = (f"%.3fm" % (cfg.data['data']['benchmarks']['t_scaling_convert_zarr'] / 60))
+            except:
+                t1 = t1m = "???"
+
+            try:
+                t2 = (f"%.1fs" % cfg.data['data']['benchmarks']['t_thumbs']).rjust(12)
+                t2m = (f"%.3fm" % (cfg.data['data']['benchmarks']['t_thumbs'] / 60))
+            except:
+                t2 = t2m = "???"
 
             t3, t4, t5, t6, t7 = {}, {}, {}, {}, {}
-            for s in cfg.data.scales():
-                t3[s] = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_align']).rjust(12)
-                t4[s] = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_convert_zarr']).rjust(12)
-                t5[s] = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_generate']).rjust(12)
-                t6[s] = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_aligned']).rjust(12)
-                t7[s] = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_spot']).rjust(12)
-
-
-
             t3m, t4m, t5m, t6m, t7m = {}, {}, {}, {}, {}
             for s in cfg.data.scales():
-                t3m[s] = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_align'] / 60))
-                t4m[s] = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_convert_zarr'] / 60))
-                t5m[s] = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_generate'] / 60))
-                t6m[s] = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_aligned'] / 60))
-                t7m[s] = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_spot'] / 60))
+                try:
+                    t3[s] = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_align']).rjust(12)
+                    t3m[s] = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_align'] / 60))
+                except:
+                    t3[s] = t3m[s] = "???"
+
+                try:
+                    t4[s] = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_convert_zarr']).rjust(12)
+                    t4m[s] = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_convert_zarr'] / 60))
+                except:
+                    t4[s] = t4m[s] = "???"
+
+                try:
+                    t5[s] = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_generate']).rjust(12)
+                    t5m[s] = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_generate'] / 60))
+                except:
+                    t5[s] = t5m[s] = "???"
+
+                try:
+                    t6[s] = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_aligned']).rjust(12)
+                    t6m[s] = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_aligned'] / 60))
+                except:
+                    t6[s] = t6m[s] = "???"
+
+                try:
+                    t7[s] = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_spot']).rjust(12)
+                    t7m[s] = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_spot'] / 60))
+                except:
+                    t7[s] = t7m[s] = "???"
 
             fl_l = QFormLayout()
             fl_l.setContentsMargins(0, 0, 0, 0)

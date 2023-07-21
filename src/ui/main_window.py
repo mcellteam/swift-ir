@@ -923,6 +923,7 @@ class MainWindow(QMainWindow):
     def regenerate(self, scale, start=0, end=None, reallocate_zarr=True) -> None:
         '''Note: For now this will always reallocate Zarr, i.e. expects arguments for full stack'''
         logger.info('regenerate >>>>')
+        self.setNoPbarMessage(True)
 
         STAGEIT = False
 
@@ -931,10 +932,10 @@ class MainWindow(QMainWindow):
         if not self._isProjectTab():
             return
         if self._working == True:
-            self.warn('Another Process is Already Running');
+            self.warn('Another Process is Already Running')
             return
         if not cfg.data.is_aligned(s=scale):
-            self.warn('Scale Must Be Aligned First');
+            self.warn('Scale Must Be Aligned First')
             return
         cfg.nProcessSteps = 3
         cfg.nProcessDone = 0
@@ -967,6 +968,7 @@ class MainWindow(QMainWindow):
         except:
             print_exception()
         finally:
+            self.setNoPbarMessage(False)
             # self.updateAllCpanelDetails()
             cfg.pt.updateDetailsPanel()
             self.hidePbar()
@@ -1075,6 +1077,7 @@ class MainWindow(QMainWindow):
         self._autosave()
         self._changeScaleCombo.setEnabled(False)
         check_project_status()
+        self.setNoPbarMessage(True)
 
 
 
@@ -1084,6 +1087,7 @@ class MainWindow(QMainWindow):
         t0 = time.time()
         try:
             if self._isProjectTab():
+                self.setNoPbarMessage(False)
                 self.enableAllTabs() #0603+ #Critical
                 self.updateEnabledButtons()
                 self.updateCorrSignalsDrawer()
@@ -2388,7 +2392,6 @@ class MainWindow(QMainWindow):
         self.setControlPanelData()  # Added 2023-04-23
         self.enableAllTabs()  # fast
         self.setCpanelVisibility(True)
-        logger.critical('initializing ng ...')
         # cfg.project_tab.initNeuroglancer(init_all=True)
         cfg.project_tab.updateDetailsPanel()
         cfg.project_tab.updateDtWidget()
@@ -5860,9 +5863,8 @@ class MainWindow(QMainWindow):
     def setPbarMax(self, x):
         self.pbar.setMaximum(x)
 
-    def setPbarUnavailable(self, b):
+    def setNoPbarMessage(self, b):
         self.setUpdatesEnabled(False)
-        logger.info('')
         if b:
             self.sw_pbar.setCurrentIndex(1)
             self.sw_pbar.show()

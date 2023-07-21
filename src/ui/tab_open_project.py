@@ -765,11 +765,11 @@ class OpenProject(QWidget):
                     print_exception()
                 finally:
                     cfg.mw.setUpdatesEnabled(True)
-
+        cfg.mw.setNoPbarMessage(False)
 
         QApplication.processEvents()
 
-        logger.critical(f'Appending {filename} to .swift_cache...')
+        logger.info(f'Appending {filename} to .swift_cache...')
         userprojectspath = os.path.join(os.path.expanduser('~'), '.swift_cache')
         with open(userprojectspath, 'a') as f:
             f.write(filename + '\n')
