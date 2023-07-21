@@ -440,7 +440,7 @@ class OpenProject(QWidget):
         self.new_project_header.hide()
 
     def validate_path(self):
-        logger.info(f'caller:{inspect.stack()[1].function}')
+        # logger.info(f'caller:{inspect.stack()[1].function}')
         path = self.selectionReadout.text()
         # logger.info(f'Validating path : {path}')
         if validate_project_selection(path):
@@ -866,7 +866,7 @@ class OpenProject(QWidget):
 
 
     def setSelectionPathText(self, path):
-        logger.info('')
+        # logger.info('')
         self.selectionReadout.setText(path)
         # logger.info('Evaluating whether path is AlignEM-SWiFT Project...')
 
@@ -1279,7 +1279,6 @@ class UserProjects(QWidget):
                 # print_exception()
                 logger.error('Unable to locate or load data model: %s' % p)
 
-            logger.info(f'  DataModel Loaded')
             # timer.report()
             try:    created.append(dm.created)
             except: created.append('Unknown')
@@ -1388,7 +1387,7 @@ def validate_tiff_folder(path) -> bool:
 
 
 def validate_project_selection(path) -> bool:
-    logger.info(f'caller:{inspect.stack()[1].function}')
+    # logger.info(f'caller:{inspect.stack()[1].function}')
     # logger.info('Validating selection %s...' % cfg.selected_file)
     # called by setSelectionPathText
     path, extension = os.path.splitext(path)
@@ -1399,7 +1398,7 @@ def validate_project_selection(path) -> bool:
         return True
 
 def validate_zarr_selection(path) -> bool:
-    logger.info(f'caller:{inspect.stack()[1].function}')
+    # logger.info(f'caller:{inspect.stack()[1].function}')
     # logger.info('Validating selection %s...' % cfg.selected_file)
     # called by setSelectionPathText
     if os.path.isdir(path):

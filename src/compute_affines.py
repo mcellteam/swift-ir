@@ -218,7 +218,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             pool.close()
             all_results = [p.get() for p in results]
             pool.join()
-        dm.t_align = t0 - time.time()
+        dm.t_align = time.time() - t0
 
         if cfg.CancelProcesses:
             logger.warning('Canceling Processes!')

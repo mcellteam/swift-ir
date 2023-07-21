@@ -61,8 +61,6 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
         cfg.main_window.warn('Canceling Tasks: Generate Scale Image Hierarchy')
         cfg.main_window.warn('Canceling Tasks: Copy-convert Scale Images to Zarr')
         return
-
-    logger.info(f'\n\n################ Generating Scales ################\n')
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(dm) * len(dm.downscales()))
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
     create_project_structure_directories(dm.dest(), dm.scales(), gui=gui)
@@ -104,6 +102,7 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     #     pool.map(run, tqdm.tqdm(tasks, total=len(tasks)))
     #     pool.close()
     #     pool.join()
+    logger.info(f'\n\n################ Generating Scales ################\n')
     ctx = mp.get_context('forkserver')
     with ctx.Pool(processes=cpus) as pool:
         results = pool.map(run, tasks)
