@@ -121,10 +121,10 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     dm.link_reference_sections(s_list=dm.scales()) #This is necessary
     dm.scale = dm.scales()[-1]
 
-    # n_imgs = len(dm)
-    # while any(count_files(dm.dest(), dm.scales())) != n_imgs:
-    #     logger.info('Waiting...')
-    #     time.sleep(1)
+    n_imgs = len(dm)
+    while any(count_files(dm.dest(), dm.scales())) != n_imgs:
+        logger.info('Sleeping for 1 second...')
+        time.sleep(1)
 
     # count_files(dm.dest(), dm.scales())
     # logger.info("\n\nFinished generating downsampled source images. Sleeping for 5 seconds...\n\n")
