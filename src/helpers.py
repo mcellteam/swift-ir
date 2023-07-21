@@ -890,7 +890,7 @@ def initLogFiles(dm):
 
 def create_project_structure_directories(destination, scales, gui=True) -> None:
     caller = inspect.stack()[1].function
-    print(f'  create_project_structure_directories caller: {caller}')
+    logger.info(f'Creating Project Structure Directories...')
 
     for scale in scales:
         if gui:

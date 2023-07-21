@@ -7,9 +7,11 @@ import psutil
 import time
 import logging
 import src.config as cfg
+import multiprocessing as mp
+import subprocess as sp
 from src.helpers import print_exception, get_scale_val, create_project_structure_directories, \
     get_bindir
-from src.mp_queue import TaskQueue
+# from src.mp_queue import TaskQueue
 
 __all__ = ['GenerateScales']
 
@@ -26,14 +28,11 @@ def GenerateScales(dm, gui=True):
         n_tasks = len(dm) * (dm.n_scales() - 1)  #0901 #Refactor
         dest = dm['data']['destination_path']
         logger.info(f'\n\n################ Generating Scales ################\n')
-        task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, parent=cfg.main_window, pbar_text=pbar_text, use_gui=gui)
-        task_queue.taskPrefix = 'Downsampling '
         task_name_list = []
         for s in dm.downscales():  # value string '1 2 4'
             scale_val = get_scale_val(s)
             for layer in dm['data']['scales'][s]['stack']:
                 task_name_list.append('%s (scaling factor: %d)' %(os.path.basename(layer['filename']), scale_val))
-        task_queue.taskNameList = task_name_list # <- assumes generate scales for all layers
 
         my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
         create_project_structure_directories(dm.dest(), dm.scales(), gui=gui)
@@ -57,46 +56,40 @@ def GenerateScales(dm, gui=True):
                     try:    shutil.copy(fn, ofn)
                     except: logger.warning("Unable to link or copy from " + fn + " to " + ofn)
 
-        task_queue.start(cpus)
-        assert dm.downscales() != 'scale_None'
+        tasks = []
         for s in dm.downscales():  # value string '1 2 4'
             scale_val = get_scale_val(s)
-            logger.info("Queuing Downsample Tasks For Scale %d..." % scale_val)
-            # for i, layer in enumerate(datamodel.get_iter(s)):
-            src_path = cfg.data.source_path()
             for i, layer in enumerate(dm['data']['scales'][s]['stack']):
-                print(cfg.data.base_image_name(s=s, l=i))
                 base       = dm.base_image_name(s=s, l=i)
                 if_arg     = os.path.join(src_path, base)
                 ofn        = os.path.join(dm.dest(), s, 'img_src', os.path.split(if_arg)[1]) # <-- wrong path on second project
                 of_arg     = 'of=%s' % ofn
                 scale_arg  = '+%d' % scale_val
-                task_queue.add_task([iscale2_c, scale_arg, of_arg, if_arg])
-                if cfg.PRINT_EXAMPLE_ARGS:
-                    if i in [0, 1, 2]:
-                        print('GenerateScales/iscale2 TQ Params (Example ID %d):\n%s' %
-                                    (i, '\n'.join(map(str,[iscale2_c, scale_arg, of_arg, if_arg]))))
-                # if cfg.CODE_MODE == 'python':
-                #     task_queue.add_task(cmd=sys.executable,
-                #                         args=['src/job_single_scale.py', str(s), str(fn), str(ofn)], wd='.')
-                # layer['images']['base']['filename'] = ofn
+                tasks.append([iscale2_c, scale_arg, of_arg, if_arg])
                 layer['filename'] = ofn #0220+
-        dt = task_queue.collect_results()
-        results = task_queue.get_status_of_tasks()
+
+        logger.info('Beginning downsampling ThreadPool...')
+        t0 = time.time()
+        ctx = mp.get_context('forkserver')
+        # with ctx.Pool(processes=cpus) as pool:
+        #     pool.map(run, tasks)
+        #     pool.close()
+        #     pool.join()
+        pool = ctx.Pool(processes=cpus)
+        pool.map(run, tasks)
+        pool.close()
+        pool.join()
+        dt = time.time() - t0
+
         # show_mp_queue_results(task_queue=task_queue, dt=dt)
         dm.t_scaling = dt
-        logger.info(f'results : {results}')
-        logger.info(f'dt      : {dt}')
-        # cfg.results = results
-        # cfg.dt = dt
-        logger.info('<<<< GenerateScales <<<<')
+        logger.info('Done generating scales.')
 
 
-
-    '''
-    ____task_queue Parameters (Example)____
-    (1) : iscale2_c : /Users/joelyancey/glanceem_swift/alignEM/src/src/lib/bin_darwin/iscale2
-    (2) : scale_arg : +2
-    (3) : of_arg : of=/Users/joelyancey/glanceEM_SWiFT/test_projects/test993/scale_2/img_src/R34CA1-BS12.104.tif
-    (4) : if_arg : /Users/joelyancey/glanceEM_SWiFT/test_images/r34_tifs/R34CA1-BS12.104.tif
-    '''
+def run(task):
+    """Call run(), catch exceptions."""
+    try:
+        sp.Popen(task, bufsize=-1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
+        # sp.Popen(task, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
+    except Exception as e:
+        print("error: %s run(*%r)" % (e, task))

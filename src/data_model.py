@@ -1885,11 +1885,12 @@ class DataModel:
 
     def image_size(self, s=None) -> tuple:
         if s == None: s = self.scale
+        caller = inspect.stack()[1].function
         # logger.info('Called by %s, s=%s' % (inspect.stack()[1].function, s))
         try:
             return tuple(self._data['data']['scales'][s]['image_src_size'])
         except:
-            logger.info(f"No key 'image_src_size' found (scale:{s}). Adding it now...")
+            logger.info(f"[{caller}] No key 'image_src_size' found (scale:{s}). Adding it now...")
             try:
                 self.set_image_size(s=s)
                 answer = tuple(self._data['data']['scales'][s]['image_src_size'])
@@ -1901,6 +1902,8 @@ class DataModel:
 
     def set_image_size(self, s=None) -> None:
         if s == None: s = self.scale
+        caller = inspect.stack()[1].function
+        logger.info(f"[{caller}] scale={s}")
         # self._data['data']['scales'][s]['image_src_size'] = ImageSize(self.path_base(s=s))
         self._data['data']['scales'][s]['image_src_size'] = list(ImageSize(self.path_base(s=s)))
         val = self._data['data']['scales'][s]['image_src_size']
@@ -1967,6 +1970,7 @@ class DataModel:
         if s == None: s = self.scale
         if l == None: l = self.zpos
         # Todo -- Refactor!
+        logger.info(f"s = {s}, l = {l}, name = {self._data['data']['scales'][s]['stack'][l]['filename']}")
         try:
             name = self._data['data']['scales'][s]['stack'][l]['filename']
             return name

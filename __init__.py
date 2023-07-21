@@ -8,8 +8,8 @@ __all__ = []
 
 print(f'{__name__}')
 
-from . import alignem
-from .alignem import main
+from . import alignEM
+from .alignEM import main
 # __all__.extend(main.__all__)
 
 from . import src
