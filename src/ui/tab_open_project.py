@@ -747,7 +747,8 @@ class OpenProject(QWidget):
                     #     logger.warning('Something Unexpected Happened While Generating Source Thumbnails')
                     #     if gui: cfg.mw.warn('Something Unexpected Happened While Generating Source Thumbnails')
                     thumbnailer = Thumbnailer()
-                    thumbnailer.reduce_main(dest=dm.dest())
+                    dt = thumbnailer.reduce_main(dest=dm.dest())
+                    cfg.data.t_thumbs = dt
             except:
                 print_exception()
             finally:
