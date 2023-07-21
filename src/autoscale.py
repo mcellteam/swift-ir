@@ -205,7 +205,7 @@ def GenerateScales(dm, gui=True):
         t0 = time.time()
 
         with ThreadPool(processes=cpus) as pool:
-            tqdm.tqdm(tasks, total=len(tasks))
+            pool.map(run, tqdm.tqdm(tasks, total=len(tasks)))
             pool.close()
             pool.join()
         # ctx = mp.get_context('forkserver')
