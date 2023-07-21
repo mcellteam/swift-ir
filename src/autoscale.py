@@ -121,8 +121,10 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     dm.link_reference_sections(s_list=dm.scales()) #This is necessary
     dm.scale = dm.scales()[-1]
 
+
     n_imgs = len(dm)
-    while any(count_files(dm.dest(), dm.scales())) != n_imgs:
+    logger.info(f'# images: {n_imgs}')
+    while any([x != n_imgs for x in count_files(dm.dest(), dm.scales())]):
         logger.info('Sleeping for 1 second...')
         time.sleep(1)
 
