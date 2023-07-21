@@ -42,14 +42,9 @@ logger = logging.getLogger(__name__)
 
 def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False, reallocate_zarr=False, stageit=False, swim_only=False, bounding_box=False, dm=None):
     '''Compute the python_swiftir transformation matrices for the current s stack of images according to Recipe1.'''
-    caller = inspect.stack()[1].function
-    scale_val = get_scale_val(scale)
+    # caller = inspect.stack()[1].function
+
     # logger.info(f'use_gui = {use_gui}')
-
-    timer = Timer()
-    timer.start()
-
-    logger.info(f'>>>> ComputeAffines [{caller}] >>>>')
 
     if cfg.CancelProcesses:
         cfg.mw.warn('Canceling Compute Affine Tasks')
@@ -117,7 +112,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         logger.info('# Tasks (excluding skips)  : %d' % n_tasks)
         logger.info('# Skipped Layers           : %d' % n_skips)
 
-
+        scale_val = get_scale_val(scale)
         for sec in substack:
             zpos = dm().index(sec)
 

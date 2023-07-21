@@ -106,23 +106,17 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
             _ , fn = os.path.split(base_name)
             al_name = os.path.join(dest, scale, 'img_aligned', fn)
             cafm = layer['alignment']['method_results']['cumulative_afm']
-            # ID = layer['alignment']['meta']['index']
-            # args = [sys.executable, job_script, '-gray', '-rect',
-            #         str(rect[0]), str(rect[1]), str(rect[2]), str(rect[3]), '-afm', str(cafm[0][0]), str(cafm[0][1]),
-            #         str(cafm[0][2]), str(cafm[1][0]), str(cafm[1][1]), str(cafm[1][2]), base_name, al_name]
             tasks.append([base_name, al_name, rect, cafm, 128])
-
-        t0 = time.time()
 
         cfg.mw.set_status('Generating aligned images. No progress bar available. Awaiting multiprocessing pool...')
         logger.info("RUNNING MULTIPROCESSING POOL (GENERATE ALIGNED IMAGES)...")
         pbar = tqdm.tqdm(total=len(tasks))
         pbar.set_description("Generating Alignment")
-        t0 = time.time()
 
         def update_tqdm(*a):
             pbar.update()
 
+        t0 = time.time()
         ctx = mp.get_context('forkserver')
         # with ctx.Pool(processes=cpus) as pool:
         with ThreadPool(processes=cpus) as pool:
@@ -135,10 +129,6 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
 
         dm.set_image_aligned_size()
 
-    '''----TEMP----'''
-    # for i, layer in enumerate(cfg.data.get_iter(scale)):
-    #     layer['alignment_history'][cfg.data.get_current_method(l=i)]['cumulative_afm'] = \
-    #         cfg.data['data']['scales'][scale]['stack'][i]['alignment']['method_results']['cumulative_afm']
     dm.register_cafm_hashes(s=scale, start=start, end=end)
 
     if cfg.ignore_pbar:
