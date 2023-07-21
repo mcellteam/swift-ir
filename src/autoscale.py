@@ -33,7 +33,8 @@ __all__ = ['autoscale']
 
 logger = logging.getLogger(__name__)
 
-mp.set_start_method('forkserver')
+mp.set_start_method('forkserver', force=True)
+
 
 def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     logger.critical('>>>> autoscale >>>>')
@@ -203,7 +204,6 @@ def GenerateScales(dm, gui=True):
         logger.info('Beginning downsampling ThreadPool...')
         t0 = time.time()
 
-        mp.set_start_method('forkserver')
         with ThreadPool(processes=cpus) as pool:
             tqdm.tqdm(tasks, total=len(tasks))
             pool.close()
