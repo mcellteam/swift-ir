@@ -21,7 +21,6 @@ from generate_scales_zarr import GenerateScalesZarr
 from data_model import DataModel
 
 import src.config as cfg
-# from generate_scales import GenerateScales
 # from qtpy.QtCore import QThreadPool
 
 
@@ -57,17 +56,14 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     #     logger.warning('Something Unexpected Happened While Generating TIFF Scale Hierarchy')
     #     if gui: cfg.mw.warn('Something Unexpected Happened While Generating TIFF Scale Hierarchy')
 
-    GenerateScales(dm=dm, gui=gui)
 
-    cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(dm) * len(dm.downscales()))
-    pbar_text = 'Generating Scale Image Hierarchy (%d Cores)...' % cpus
     if cfg.CancelProcesses:
         cfg.main_window.warn('Canceling Tasks: Generate Scale Image Hierarchy')
         cfg.main_window.warn('Canceling Tasks: Copy-convert Scale Images to Zarr')
         return
 
     logger.info(f'\n\n################ Generating Scales ################\n')
-
+    cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(dm) * len(dm.downscales()))
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
     create_project_structure_directories(dm.dest(), dm.scales(), gui=gui)
     iscale2_c = os.path.join(my_path, 'lib', get_bindir(), 'iscale2')
@@ -115,7 +111,7 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     #     pool.close()
     #     pool.join()
     pool = ctx.Pool(processes=cpus)
-    pool.map(run, tqdm.tqdm(tasks, total=len(tasks)))
+    pool.map(run, tqdm.tqdm(tasks, total=len(tasks), desc="Downsampling"))
     pool.close()
     pool.join()
 
@@ -126,35 +122,11 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     dm.link_reference_sections(s_list=dm.scales()) #This is necessary
     dm.scale = dm.scales()[-1]
 
-    mypath = os.path.join(dm.dest(), 'scale_2', 'img_src')
-    s2 = [f for f in listdir(mypath) if isfile(join(mypath, f))]
-    mypath = os.path.join(dm.dest(), 'scale_6', 'img_src')
-    s6 = [f for f in listdir(mypath) if isfile(join(mypath, f))]
-    mypath = os.path.join(dm.dest(), 'scale_24', 'img_src')
-    s24 = [f for f in listdir(mypath) if isfile(join(mypath, f))]
-    print(f"# Scale 2 Files: {len(s2)}")
-    print(f"# Scale 6 Files: {len(s6)}")
-    print(f"# Scale 24 Files: {len(s24)}")
-    print(str(s2))
-    print(str(s6))
-    print(str(s24))
-
-    logger.info("\n\nFinished generating downsampled source images. Waiting 10 seconds...\n\n")
-    time.sleep(10)
-
+    count_files(dm)
+    logger.info("\n\nFinished generating downsampled source images. Waiting 5 seconds...\n\n")
+    time.sleep(5)
     logger.info("Finished Sleeping...")
-    mypath = os.path.join(dm.dest(), 'scale_2', 'img_src')
-    s2 = [f for f in listdir(mypath) if isfile(join(mypath, f))]
-    mypath = os.path.join(dm.dest(), 'scale_6', 'img_src')
-    s6 = [f for f in listdir(mypath) if isfile(join(mypath, f))]
-    mypath = os.path.join(dm.dest(), 'scale_24', 'img_src')
-    s24 = [f for f in listdir(mypath) if isfile(join(mypath, f))]
-    print(f"# Scale 2 Files: {len(s2)}")
-    print(f"# Scale 6 Files: {len(s6)}")
-    print(f"# Scale 24 Files: {len(s24)}")
-    print(str(s2))
-    print(str(s6))
-    print(str(s24))
+    count_files(dm)
 
 
     src_img_size = dm.image_size(s='scale_1')
@@ -218,72 +190,6 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     logger.info('<<<< autoscale <<<<')
 
 
-def GenerateScales(dm, gui=True):
-    cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(dm) * len(dm.downscales()))
-    pbar_text = 'Generating Scale Image Hierarchy (%d Cores)...' % cpus
-    if cfg.CancelProcesses:
-        cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
-    else:
-
-        logger.info(f'\n\n################ Generating Scales ################\n')
-
-        my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
-        create_project_structure_directories(dm.dest(), dm.scales(), gui=gui)
-        iscale2_c = os.path.join(my_path, 'lib', get_bindir(), 'iscale2')
-
-        # Create Scale 1 Symlinks
-        logger.info('Creating Scale 1 symlinks')
-        if gui:
-            cfg.main_window.tell('Sym-linking full scale images...')
-        src_path = dm.source_path()
-        for img in dm.basefilenames():
-            fn = os.path.join(src_path, img)
-            ofn = os.path.join(dm.dest(), 'scale_1', 'img_src', os.path.split(fn)[1])
-            # normalize path for different OSs
-            if os.path.abspath(os.path.normpath(fn)) != os.path.abspath(os.path.normpath(ofn)):
-                try:    os.unlink(ofn)
-                except: pass
-                try:    os.symlink(fn, ofn)
-                except:
-                    logger.warning("Unable to link from %s to %s. Copying instead." % (fn, ofn))
-                    try:    shutil.copy(fn, ofn)
-                    except: logger.warning("Unable to link or copy from " + fn + " to " + ofn)
-
-        tasks = []
-        for s in dm.downscales():  # value string '1 2 4'
-            scale_val = get_scale_val(s)
-            for i, layer in enumerate(dm['data']['scales'][s]['stack']):
-                base       = dm.base_image_name(s=s, l=i)
-                if_arg     = os.path.join(src_path, base)
-                ofn        = os.path.join(dm.dest(), s, 'img_src', os.path.split(if_arg)[1]) # <-- wrong path on second project
-                of_arg     = 'of=%s' % ofn
-                scale_arg  = '+%d' % scale_val
-                tasks.append([iscale2_c, scale_arg, of_arg, if_arg])
-                layer['filename'] = ofn #0220+
-
-        logger.info('Beginning downsampling ThreadPool...')
-        t0 = time.time()
-
-        with ThreadPool(processes=cpus) as pool:
-            pool.map(run, tqdm.tqdm(tasks, total=len(tasks)))
-            pool.close()
-            pool.join()
-        # ctx = mp.get_context('forkserver')
-        # with ctx.Pool(processes=cpus) as pool:
-        #     pool.map(run, tasks)
-        #     pool.close()
-        #     pool.join()
-        # pool = ctx.Pool(processes=cpus)
-        # pool.map(run, tqdm.tqdm(tasks, total=len(tasks)))
-        # pool.close()
-        # pool.join()
-
-        # show_mp_queue_results(task_queue=task_queue, dt=dt)
-        dm.t_scaling = time.time() - t0
-        logger.info('Done generating scales.')
-        return
-
-
 def run(task):
     """Call run(), catch exceptions."""
     try:
@@ -291,3 +197,10 @@ def run(task):
         # sp.Popen(task, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
     except Exception as e:
         print("error: %s run(*%r)" % (e, task))
+
+
+def count_files(dm):
+    for s in dm.scales():
+        path = os.path.join(dm.dest(), s, 'img_src')
+        files = [f for f in listdir(path) if isfile(join(path, f))]
+        print(f"# {s} Files: {len(files)}")

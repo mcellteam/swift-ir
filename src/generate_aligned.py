@@ -118,6 +118,7 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
         cfg.mw.setPbarUnavailable(True)
         logger.info("RUNNING MULTIPROCESSING POOL (GENERATE ALIGNED IMAGES)...")
         pbar = tqdm.tqdm(total=len(tasks))
+        pbar.set_description("Generating Aligned Images")
         t0 = time.time()
 
         def update_tqdm(*a):
@@ -228,6 +229,7 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
             cfg.mw.setPbarUnavailable(True)
             logger.info("RUNNING MULTIPROCESSING POOL (CONVERT ZARR)...")
             pbar = tqdm.tqdm(total=len(tasks))
+            pbar.set_description("Converting Alignment to Zarr")
             t0 = time.time()
             def update_tqdm(*a):
                 pbar.update()
