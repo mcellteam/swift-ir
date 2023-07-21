@@ -202,7 +202,6 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
 
         # cfg.mw.showZeroedPbar(pbar_max=len(substack))
-        cfg.mw.setPbarUnavailable(True)
 
         dt = t0 - time.time()
         tasks = []
@@ -225,8 +224,6 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             all_results = [p.get() for p in results]
 
             pool.join()
-
-        cfg.mw.setPbarUnavailable(False)
 
         # output = [p.get() for p in results]
 
