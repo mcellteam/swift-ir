@@ -59,48 +59,51 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
 
     GenerateScales(dm=dm, gui=gui)
 
-    logger.info("\n\nFinished generating downsampled source images. Waiting 5 seconds...\n\n")
 
-    mypath = os.path.join(cfg.data.dest(), 'scale_2', 'img_src')
-    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
-    print(str(onlyfiles))
 
-    mypath = os.path.join(cfg.data.dest(), 'scale_6', 'img_src')
-    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
-    print(str(onlyfiles))
+    mypath = os.path.join(dm.dest(), 'scale_2', 'img_src')
+    s2 = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+    mypath = os.path.join(dm.dest(), 'scale_6', 'img_src')
+    s6 = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+    mypath = os.path.join(dm.dest(), 'scale_24', 'img_src')
+    s24 = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+    print(f"# Scale 2 Files: {len(s2)}")
+    print(f"# Scale 6 Files: {len(s6)}")
+    print(f"# Scale 24 Files: {len(s24)}")
+    print(str(s2))
+    print(str(s6))
+    print(str(s24))
 
-    mypath = os.path.join(cfg.data.dest(), 'scale_24', 'img_src')
-    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
-    print(str(onlyfiles))
-
-    time.sleep(5)
+    logger.info("\n\nFinished generating downsampled source images. Waiting 10 seconds...\n\n")
+    time.sleep(10)
 
     logger.info("Finished Sleeping...")
-    mypath = os.path.join(cfg.data.dest(), 'scale_2', 'img_src')
-    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
-    print(str(onlyfiles))
+    mypath = os.path.join(dm.dest(), 'scale_2', 'img_src')
+    s2 = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+    mypath = os.path.join(dm.dest(), 'scale_6', 'img_src')
+    s6 = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+    mypath = os.path.join(dm.dest(), 'scale_24', 'img_src')
+    s24 = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+    print(f"# Scale 2 Files: {len(s2)}")
+    print(f"# Scale 6 Files: {len(s6)}")
+    print(f"# Scale 24 Files: {len(s24)}")
+    print(str(s2))
+    print(str(s6))
+    print(str(s24))
 
-    mypath = os.path.join(cfg.data.dest(), 'scale_6', 'img_src')
-    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
-    print(str(onlyfiles))
 
-    mypath = os.path.join(cfg.data.dest(), 'scale_24', 'img_src')
-    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
-    print(str(onlyfiles))
-
-
-    dm.link_reference_sections(s_list=cfg.data.scales()) #This is necessary
+    dm.link_reference_sections(s_list=dm.scales()) #This is necessary
     dm.scale = dm.scales()[-1]
 
 
-    src_img_size = cfg.data.image_size(s='scale_1')
-    for s in cfg.data.scales():
+    src_img_size = dm.image_size(s='scale_1')
+    for s in dm.scales():
         if s == 'scale_1':
             continue
-        sv = cfg.data.scale_val(s)
+        sv = dm.scale_val(s)
         siz = (int(src_img_size[0] / sv), int(src_img_size[1] / sv))
         logger.info(f"setting {s} image size to {siz}...")
-        cfg.data['data']['scales'][s]['image_src_size'] = siz
+        dm['data']['scales'][s]['image_src_size'] = siz
 
     # for s in dm.scales():
     #     dm.set_image_size(s=s)
@@ -152,28 +155,6 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
 
     cfg.mw.tell('**** Autoscaling Complete ****')
     logger.info('<<<< autoscale <<<<')
-
-
-
-def print_exception(extra=None):
-    tstamp = datetime.now().strftime("%Y%m%d_%H:%M:%S")
-    exi = sys.exc_info()
-    txt = f"  [{tstamp}]\nError Type : {exi[0]}\nError Value : {exi[1]}\n{traceback.format_exc()}"
-    if extra:
-        txt += f'\nExtra: {str(extra)}'
-    logger.warning(txt)
-
-    if cfg.data:
-        log_path = os.path.join(cfg.data.dest(), 'logs', 'exceptions.log')
-        if not os.path.exists(log_path):
-            logger.warning('exceptions.log did not exist!')
-            open(log_path, 'a').close()
-        lf = os.path.join(log_path)
-        with open(lf, 'a+') as f:
-            f.write('\n' + txt)
-
-
-
 
 
 def GenerateScales(dm, gui=True):
@@ -246,6 +227,7 @@ def GenerateScales(dm, gui=True):
         # show_mp_queue_results(task_queue=task_queue, dt=dt)
         dm.t_scaling = time.time() - t0
         logger.info('Done generating scales.')
+        return
 
 
 def run(task):
