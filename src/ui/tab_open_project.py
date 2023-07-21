@@ -725,16 +725,14 @@ class OpenProject(QWidget):
                     cfg.ignore_pbar = False
                     cfg.mw.showZeroedPbar(set_n_processes=7)
                     autoscale(dm=dm, make_thumbnails=True, set_pbar=False)
-                    time.sleep(2)
-                    logger.info("\n\nFinished autoscaling. Waiting 2 seconds...\n\n")
+                    logger.info("\n\nFinished autoscaling. Waiting 1 seconds...\n\n")
+                    time.sleep(1)
                     # cfg.mw.setdw_matches(True)
                     logger.info('\n\nAligning All...\n\n')
                     cfg.mw.alignAll(set_pbar=False, force=True, ignore_bb=True)
 
                 else:
                     autoscale(dm=dm, make_thumbnails=True, set_pbar=True)
-
-                time.sleep(2)
                 make_thumbnails = True
                 if make_thumbnails:
                     logger.info('Generating Source Thumbnails...')
