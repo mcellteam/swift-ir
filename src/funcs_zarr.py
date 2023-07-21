@@ -209,7 +209,7 @@ def preallocate_zarr(dm, name, group, dimx, dimy, dimz, dtype, overwrite, gui=Tr
     path_out = os.path.join(path_zarr, group)
     path_base = os.path.basename(src)
     path_relative = os.path.join(path_base, name)
-    logger.critical(f'Preallocating Zarr Array (caller: {inspect.stack()[1].function})...'
+    logger.info(f'Preallocating Zarr Array (caller: {inspect.stack()[1].function})...'
                     f' dimx: {dimx}, dimy: {dimy}, dimz: {dimz}')
 
     if gui:

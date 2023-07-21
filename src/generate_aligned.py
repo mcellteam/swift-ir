@@ -49,13 +49,7 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
 
         Z_STRIDE = 0
 
-        if cfg.USE_PYTHON:
-            job_script = 'job_python_apply_affine.py'
-        else:
-            '''Default'''
-            job_script = 'job_apply_affine.py'
         path = os.path.split(os.path.realpath(__file__))[0]
-        job_script = os.path.join(path, job_script)
 
         SetStackCafm(dm.get_iter(scale), scale=scale, poly_order=cfg.data.default_poly_order)
 
@@ -110,7 +104,6 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
             tasks.append([base_name, al_name, rect, cafm, 128])
 
         cfg.mw.set_status('Generating aligned images. No progress bar available. Awaiting multiprocessing pool...')
-        logger.info("RUNNING MULTIPROCESSING POOL (GENERATE ALIGNED IMAGES)...")
         pbar = tqdm.tqdm(total=len(tasks), position=0, leave=True)
         pbar.set_description("Generating Alignment")
 
@@ -118,7 +111,7 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
             pbar.update()
 
         t0 = time.time()
-        ctx = mp.get_context('forkserver')
+        # ctx = mp.get_context('forkserver')
         # with ctx.Pool(processes=cpus) as pool:
         with ThreadPool(processes=cpus) as pool:
             results = [pool.apply_async(func=run_mir, args=(task,), callback=update_tqdm) for task in tasks]
@@ -163,68 +156,29 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
         #         logger.info('creating group: %s' %str(i))
         #         root.create_group(str(i))
 
+        logger.info(f'\n\n################ Copy-convert Alignment To Zarr ################\n')
 
-        if cfg.CancelProcesses:
-            cfg.main_window.tell('Canceling Copy-convert Alignment to Zarr Tasks...')
-        else:
-
-            logger.info(f'\n\n################ Copy-convert Alignment To Zarr ################\n')
-
-            # cfg.main_window.set_status('Copy-converting TIFFs...')
-            chunkshape = dm.chunkshape
-            dest = dm['data']['destination_path']
-
-
-            # if cfg.USE_EXTRA_THREADING and use_gui:
-            #     task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, parent=cfg.main_window, pbar_text=pbar_text)
-            # else:
-            #     task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, use_gui=use_gui)
-            # task_queue.taskPrefix = 'Converting TIFF to Zarr for '
-            # task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in dm()[start:end]]
-            # task_queue.start(cpus)
-            # job_script = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_convert_zarr.py')
-            # for ID, layer in enumerate(iter(stack[start:snd])):
-            # for i in range(start,end):
-            #     _ , fn = os.path.split(dm()[i]['filename'])
-            #     al_name = os.path.join(dm.dest(), scale, 'img_aligned', fn)
-            #     zarr_group = os.path.join(dm.dest(), 'img_aligned.zarr', 's%d' % scale_val)
-            #     dest = dm.dest()
-            #     args = [sys.executable, job_script, str(i), al_name, zarr_group, str(chunkshape), str(int(stageit)), dest]
-            #     task_queue.add_task(args)
-            #     logger.info('stageit = %s' % str(int(stageit)))
-            #     if cfg.PRINT_EXAMPLE_ARGS:
-            #         if i in [0,1,2]:
-            #             print('Example Arguments (ID: %d):\n%s' % (i, '\n  '.join(map(str,args))))
-            # logger.info('Adding Tasks To Multiprocessing Queue...')
-            # try:
-            #     dt = task_queue.collect_results()
-            #     dm.t_convert_zarr = dt
-            # except:
-            #     print_exception()
-            #     logger.warning('Task Queue encountered a problem')
-
-            tasks = []
-            for i in range(start,end):
-                _ , fn = os.path.split(dm()[i]['filename'])
-                al_name = os.path.join(dm.dest(), scale, 'img_aligned', fn)
-                zarr_group = os.path.join(dm.dest(), 'img_aligned.zarr', 's%d' % scale_val)
-                task = [i, al_name, zarr_group]
-                tasks.append(task)
-            shuffle(tasks)
-            logger.info("RUNNING MULTIPROCESSING POOL (CONVERT ZARR)...")
-            pbar = tqdm.tqdm(total=len(tasks), position=0, leave=True)
-            pbar.set_description("Converting Alignment to Zarr")
-            t0 = time.time()
-            def update_tqdm(*a):
-                pbar.update()
-            # with ctx.Pool(processes=cpus) as pool:
-            with ThreadPool(processes=cpus) as pool:
-                results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_tqdm) for task in tasks]
-                pool.close()
-                [p.get() for p in results]
-                pool.join()
-            dt = time.time() - t0
-            dm.t_convert_zarr = dt
+        tasks = []
+        for i in range(start,end):
+            _ , fn = os.path.split(dm()[i]['filename'])
+            al_name = os.path.join(dm.dest(), scale, 'img_aligned', fn)
+            zarr_group = os.path.join(dm.dest(), 'img_aligned.zarr', 's%d' % scale_val)
+            task = [i, al_name, zarr_group]
+            tasks.append(task)
+        shuffle(tasks)
+        pbar = tqdm.tqdm(total=len(tasks), position=0, leave=True)
+        pbar.set_description("Converting Alignment to Zarr")
+        t0 = time.time()
+        def update_tqdm(*a):
+            pbar.update()
+        # with ctx.Pool(processes=cpus) as pool:
+        with ThreadPool(processes=cpus) as pool:
+            results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_tqdm) for task in tasks]
+            pool.close()
+            [p.get() for p in results]
+            pool.join()
+        dt = time.time() - t0
+        dm.t_convert_zarr = dt
 
 
 # def update_pbar():
