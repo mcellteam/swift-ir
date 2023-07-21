@@ -71,7 +71,7 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
         if s == 'scale_1':
             continue
         sv = cfg.data.scale_val(s)
-        siz = int(src_img_size / sv)
+        siz = (int(src_img_size[0] / sv), int(src_img_size[1] / sv))
         logger.info(f"setting {s} image size to {siz}...")
         cfg.data['data']['scales'][s]['image_src_size'] = siz
 
