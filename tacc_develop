@@ -19,16 +19,17 @@ echo "Loading impi/19.0.9 module..."
 ml impi/19.0.9
 echo "Loading fftw3/3.3.10 module..."
 ml fftw3/3.3.10
-echo "Activating Preconfigured Conda Environment..."
+echo "Activating Conda Environment Configured for Lonestar6..."
 conda activate /work/08507/joely/ls6/miniconda3/envs/alignTACC1024
-
+echo "Increasing LIBTIFF_STRILE_ARRAY_MAX_RESIZE_COUNT by 1000x to prevent libtiff from blocking excessive memory usage..."
 export LIBTIFF_STRILE_ARRAY_MAX_RESIZE_COUNT=1000000000
-
-echo "Checking out development_ng branch..."
+echo "Checking out git branch..."
 cd $WORK/swift-ir
 git fetch
 git checkout remotes/origin/fb30_joel
+echo "Pulling changes..."
 git pull
+echo "Most recent commit:"
 git log -1
 #python3 $WORK/swift-ir/alignEM.py
 
