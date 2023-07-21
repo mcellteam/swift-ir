@@ -10,6 +10,7 @@ import traceback
 from datetime import datetime
 from os import listdir
 from os.path import isfile, join
+import tqdm
 
 # from thumbnailer import Thumbnailer
 from generate_scales_zarr import GenerateScalesZarr
@@ -185,7 +186,7 @@ def GenerateScales(dm, gui=True):
         #     pool.close()
         #     pool.join()
         pool = ctx.Pool(processes=cpus)
-        pool.map(run, tasks)
+        pool.map(run, tqdm.tqdm(tasks, total=len(tasks)))
         pool.close()
         pool.join()
         dt = time.time() - t0
@@ -193,10 +194,9 @@ def GenerateScales(dm, gui=True):
 
 
 
-        mypath = os.path.join(cfg.data.dest(), 'scale_2','img_src')
-
-        onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
-        print(str(onlyfiles))
+        # mypath = os.path.join(cfg.data.dest(), 'scale_2','img_src')
+        # onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+        # print(str(onlyfiles))
 
         # show_mp_queue_results(task_queue=task_queue, dt=dt)
         dm.t_scaling = dt
