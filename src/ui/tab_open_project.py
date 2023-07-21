@@ -1071,7 +1071,7 @@ class UserProjects(QWidget):
 
         # self.initial_row_height = 64
         # self.ROW_HEIGHT = 64
-        self.ROW_HEIGHT = 80
+        self.ROW_HEIGHT = 90
 
         self.counter1 = 0
         self.counter2 = 0
@@ -1219,8 +1219,8 @@ class UserProjects(QWidget):
         self.table.setColumnWidth(1, self.ROW_HEIGHT) # <first thumbnail>
         self.table.setColumnWidth(2, self.ROW_HEIGHT) # <last thumbnail>
         self.table.setColumnWidth(3, self.ROW_HEIGHT) # <last thumbnail>
-        self.table.setColumnWidth(4, 88)
-        self.table.setColumnWidth(5, 88)
+        self.table.setColumnWidth(4, 90)
+        self.table.setColumnWidth(5, 90)
         self.table.setColumnWidth(6, 40)
         self.table.setColumnWidth(7, 70)
         self.table.setColumnWidth(8, 70)
