@@ -5911,32 +5911,33 @@ class MainWindow(QMainWindow):
 
     # def showZeroedPbar(self, set_n_processes=None, cancel_processes=None):
     def showZeroedPbar(self, set_n_processes=None, pbar_max=None):
-        '''
-        Note:
-        pbar_max is set by mp queue for all multiprocessing functions
-        '''
-        caller = inspect.stack()[1].function
-        # logger.critical(f'caller = {caller}, set_n_processes = {set_n_processes}')
-        cfg.CancelProcesses = False #0602+
-        if set_n_processes and (set_n_processes > 1):
-            # logger.critical('Resetting # tasks...')
-            cfg.nProcessSteps = set_n_processes
-            cfg.nProcessDone = 0
-            self.pbarLabel.show()
-        else:
-            self.pbarLabel.hide()
-        # if cancel_processes:
-        #     cfg.CancelProcesses = True
-        #     self.pbar_cancel_button.hide()
+        # '''
+        # Note:
+        # pbar_max is set by mp queue for all multiprocessing functions
+        # '''
+        # caller = inspect.stack()[1].function
+        # # logger.critical(f'caller = {caller}, set_n_processes = {set_n_processes}')
+        # cfg.CancelProcesses = False #0602+
+        # if set_n_processes and (set_n_processes > 1):
+        #     # logger.critical('Resetting # tasks...')
+        #     cfg.nProcessSteps = set_n_processes
+        #     cfg.nProcessDone = 0
+        #     self.pbarLabel.show()
         # else:
-        #     self.pbar_cancel_button.show()
-        # logger.critical(f'cfg.nProcessSteps = {cfg.nProcessSteps}, cfg.nProcessDone = {cfg.nProcessDone}')
-        if pbar_max:
-            self.pbar.setMaximum(pbar_max)
-        self.pbar.setValue(0)
-        self.setPbarText('Preparing Tasks...')
-        self.sw_pbar.show()
-        QApplication.processEvents()
+        #     self.pbarLabel.hide()
+        # # if cancel_processes:
+        # #     cfg.CancelProcesses = True
+        # #     self.pbar_cancel_button.hide()
+        # # else:
+        # #     self.pbar_cancel_button.show()
+        # # logger.critical(f'cfg.nProcessSteps = {cfg.nProcessSteps}, cfg.nProcessDone = {cfg.nProcessDone}')
+        # if pbar_max:
+        #     self.pbar.setMaximum(pbar_max)
+        # self.pbar.setValue(0)
+        # self.setPbarText('Preparing Tasks...')
+        # self.sw_pbar.show()
+        # QApplication.processEvents()
+        pass
 
     def hidePbar(self):
         # logger.info('')

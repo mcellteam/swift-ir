@@ -13,7 +13,7 @@ from math import floor, ceil
 from glob import glob
 import multiprocessing as mp
 import subprocess as sp
-
+import tqdm
 import src.config as cfg
 from src.funcs_image import ImageSize
 from src.helpers import print_exception, get_appdir, get_bindir, natural_sort, absFilePaths
@@ -242,7 +242,7 @@ class Thumbnailer:
         #     pool.close()
         #     pool.join()
         pool = ctx.Pool(processes=cpus)
-        pool.map(run, tasks)
+        pool.map(run, tqdm.tqdm(tasks, total=len(tasks)))
         pool.close()
         pool.join()
         logger.info('<<<< Thumbnail Generation Complete <<<<')
