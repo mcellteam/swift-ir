@@ -1316,10 +1316,9 @@ class MainWindow(QMainWindow):
         # caller = inspect.stack()[1].function
         # if caller in ('alignGenerateOne','alignOne'):
         #     ALIGN_ONE = True
-        logger.info(f'Aligning start:{start}, end: {end}, {cfg.data.scale_pretty(scale)}...')
-        self.tell(f'Alignment start:{start}, end: {end}, {cfg.data.scale_pretty(scale)}...')
+        logger.info(f'Aligning start:{start} -> end: {end}, {cfg.data.scale_pretty(scale)}...')
+        self.tell(f'Alignment start:{start} -> end: {end}, {cfg.data.scale_pretty(scale)}...')
 
-        logger.critical("SHUTTING DOWN NEUROGLANCER...")
         self.shutdownNeuroglancer()
 
         # cafms_before = cfg.data.cafm_list()
