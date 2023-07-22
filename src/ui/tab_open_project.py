@@ -1211,17 +1211,19 @@ class UserProjects(QWidget):
         font0 = QFont()
         # font0.setBold(True)
         font0.setPointSize(9)
+
+        font1 = QFont()
+        font0.setBold(True)
+        font0.setPointSize(8)
         self.table.setRowCount(0)
         for i, row in enumerate(self.get_data()):
             # logger.info(f'>>>> row #{i} >>>>')
             self.table.insertRow(i)
             for j, item in enumerate(row):
                 if j == 0:
-                    lab_text = '\n'.join(textwrap.wrap(item, width=30))
-                    twi = QTableWidgetItem(lab_text)
-                    twi.setFont(font0)
+                    twi = QTableWidgetItem(str(item))
+                    twi.setFont(font1)
                     self.table.setItem(i, j, twi)
-
                 elif j in (1,2,3):
                     if item == 'No Thumbnail':
                         thumbnail = ThumbnailFast(self)
