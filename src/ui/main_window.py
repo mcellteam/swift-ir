@@ -2503,8 +2503,8 @@ class MainWindow(QMainWindow):
                     # self.statusBar.showMessage('Project Saved!', 3000)
 
                     # self.saveUserPreferences()
-
-                    self.statusBar.showMessage('Project Saved!')
+                    if not silently:
+                        self.statusBar.showMessage('Project Saved!')
 
 
 
