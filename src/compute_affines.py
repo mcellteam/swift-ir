@@ -216,7 +216,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         t0 = time.time()
         # with ctx.Pool(processes=cpus) as pool:
         with ThreadPool(processes=cpus) as pool:
-            results = [pool.apply_async(func=run_subprocess, args=(task,), callback=update_tqdm) for task in tasks]
+            results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_tqdm) for task in tasks]
             pool.close()
             all_results = [p.get() for p in results]
             pool.join()
