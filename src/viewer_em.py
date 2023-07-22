@@ -176,8 +176,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
                 else:
                     cfg.data.zpos = request_layer
                     self._layer = request_layer
-                    if DEV:
-                        logger.info(f'[{caller}] (!) emitting get_loc: {request_layer} [cur_method={self.type}]')
+                    # if DEV:
+                    #     logger.info(f'[{caller}] (!) emitting get_loc: {request_layer} [cur_method={self.type}]')
                     # self.signals.zposChanged.emit(request_layer)
                     self.signals.zposChanged.emit()
 

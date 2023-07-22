@@ -111,7 +111,7 @@ class SnrPlot(QWidget):
         self.plot.showGrid(x=False, y=True, alpha=(160,220)[dock])  # alpha: 0-255
         # self.plot.getPlotItem().enableAutoRange()
         self.plot.hoverable = True
-        self.plot.hoverSize = 13
+        self.plot.hoverSize = (13,12)[self.dock]
         # self.plot.setFocusPolicy(Qt.NoFocus)
         # font = QFont()
         # font.setPixelSize(14)
@@ -383,14 +383,14 @@ class SnrPlot(QWidget):
         x_axis = [x+offset for x in x_axis]
         brush = self._plot_brushes[cfg.data.scales()[::-1].index(s)]
         self.snr_points[s] = pg.ScatterPlotItem(
-            size=(11,9)[self.dock],
+            size=(11,7)[self.dock],
             # pen=pg.mkPen(None),
             symbol='o',
             pen=pg.mkPen('#ffe135', width=1),
             brush=brush,
             hoverable=True,
             hoverSymbol='s',
-            hoverSize=(14,11)[self.dock],
+            hoverSize=(14,10)[self.dock],
             hoverPen=pg.mkPen('#f3f6fb', width=1),
             # hoverBrush=None,
             # pxMode=False # points transform with zoom
