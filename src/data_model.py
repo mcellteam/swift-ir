@@ -2120,7 +2120,7 @@ class DataModel:
 
     def set_has_bb(self, b:bool, s=None):
         '''Returns the Has Bounding Rectangle On/Off State for the Current Scale.'''
-        logger.info(f'Setting HAS bb to {b}')
+        # logger.info(f'Setting HAS bb to {b}')
         if s == None: s = self.scale
         self._data['data']['scales'][s]['has_bounding_rect'] = b
 

@@ -211,29 +211,30 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
 
 
-        # ctx = mp.get_context('forkserver')
-        # pbar = tqdm.tqdm(total=len(tasks), position=0, leave=True)
-        # pbar.set_description("Computing Affines")
-        # def update_tqdm(*a):
-        #     pbar.update()
-        # t0 = time.time()
-        # # with ctx.Pool(processes=cpus) as pool:
-        # with ThreadPool(processes=cpus) as pool:
-        #     results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_tqdm) for task in tasks]
-        #     pool.close()
-        #     all_results = [p.get() for p in results]
-        #     pool.join()
-
-
-
-        t0 = time.time()
         ctx = mp.get_context('forkserver')
-        all_results = []
-        with ctx.Pool(processes=cpus) as pool:
+        pbar = tqdm.tqdm(total=len(tasks), position=0, leave=True)
+        pbar.set_description("Computing Affines")
+        def update_tqdm(*a):
+            pbar.update()
+        t0 = time.time()
+        # with ctx.Pool(processes=cpus) as pool:
+        with ThreadPool(processes=cpus) as pool:
+            results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_tqdm) for task in tasks]
+            pool.close()
+            all_results = [p.get() for p in results]
+            pool.join()
 
-            # all_results = pool.map(run_recipe, tasks)
-            for result in tqdm.tqdm(pool.map(run_recipe, tasks)):
-                all_results.append(result)
+
+
+        # t0 = time.time()
+        # ctx = mp.get_context('forkserver')
+        # all_results = []
+        # with ctx.Pool(processes=cpus) as pool:
+        #
+        #     # all_results = pool.map(run_recipe, tasks)
+        #     for result in tqdm.tqdm(pool.map(run_recipe, tasks)):
+        #         all_results.append(result)
+
 
         dm.t_align = time.time() - t0
 

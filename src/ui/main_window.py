@@ -1724,6 +1724,9 @@ class MainWindow(QMainWindow):
         # if getData('state,blink'):
         #     return
 
+        if self._working:
+            logger.warning("Busy working! Not going to update the interface rn.")
+
         if not self._isProjectTab():
             logger.warning('No Current Project Tab!')
             return
