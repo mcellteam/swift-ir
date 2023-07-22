@@ -978,7 +978,7 @@ class MAViewer(neuroglancer.Viewer):
 
     def set_zmag(self, val=10):
         self._blockStateChanged = True
-        logger.info(f'zpos={cfg.data.zpos} Setting Z-mag on {self.type} to {val} [{self.role}]')
+        # logger.info(f'zpos={cfg.data.zpos} Setting Z-mag on {self.type} to {val} [{self.role}]')
         # caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
         try:
@@ -989,7 +989,8 @@ class MAViewer(neuroglancer.Viewer):
             logger.warning('Unable to set Z-mag')
             print_exception()
         else:
-            logger.info('Successfully set Z-mag!')
+            # logger.info('Successfully set Z-mag!')
+            pass
         self._blockStateChanged = False
 
 
