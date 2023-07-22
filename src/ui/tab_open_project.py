@@ -606,10 +606,10 @@ class OpenProject(QWidget):
                 cfg.mw.warn("The file '%s' already exists." % filename)
                 path_proj = os.path.splitext(filename)[0]
                 cfg.mw.tell(f"Removing Extant Project Directory '{path_proj}'...")
-                logger.info(f"Removing Extant Project Directory '{path_proj}'...")
+                logger.info(f"Removing extant project directory '{path_proj}'...")
                 shutil.rmtree(path_proj, ignore_errors=True)
                 cfg.mw.tell(f"Removing Extant Project File '{path_proj}'...")
-                logger.info(f"Removing Extant Project File '{path_proj}'...")
+                logger.info(f"Removing extant project file '{path_proj}'...")
                 os.remove(filename)
 
             self.NEW_PROJECT_PATH = filename

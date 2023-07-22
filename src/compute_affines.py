@@ -146,7 +146,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
         cpus = min(psutil.cpu_count(logical=False), TACC_MAX_CPUS, n_tasks)
         pbar_text = 'Computing Scale %d Transforms w/ SWIM (%d Cores)...' % (scale_val, cpus)
-        logger.info(f'\n\n################ Computing Alignment ################\n')
+        print(f'\n\n################ Computing Alignment ################\n')
 
 
 

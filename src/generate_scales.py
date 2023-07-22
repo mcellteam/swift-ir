@@ -27,7 +27,7 @@ def GenerateScales(dm, gui=True):
 
         n_tasks = len(dm) * (dm.n_scales() - 1)  #0901 #Refactor
         dest = dm['data']['destination_path']
-        logger.info(f'\n\n################ Generating Scales ################\n')
+        print(f'\n\n################ Generating Scales ################\n')
         task_name_list = []
         for s in dm.downscales():  # value string '1 2 4'
             scale_val = get_scale_val(s)

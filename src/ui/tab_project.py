@@ -63,7 +63,7 @@ class ProjectTab(QWidget):
         self.webengine = WebEngine(ID='emViewer')
         self.webengine.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         # self.webengine.setFocusPolicy(Qt.FocusPolicy.WheelFocus)
-        self.webengine.loadFinished.connect(lambda: logger.info('Web engine load finished!'))
+        self.webengine.loadFinished.connect(lambda: print('Web engine load finished!'))
         setWebengineProperties(self.webengine)
         # self.webengine.setStyleSheet('background-color: #222222;')
         self.webengine.setMouseTracking(True)

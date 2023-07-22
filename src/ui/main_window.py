@@ -1074,7 +1074,7 @@ class MainWindow(QMainWindow):
         #     self.showZeroedPbar()
         if cfg.data.is_aligned(s=scale):
             cfg.data.set_previous_results()
-        self._autosave()
+        self._autosave(silently=True)
         self._changeScaleCombo.setEnabled(False)
         check_project_status()
         self.setNoPbarMessage(True)
@@ -1088,44 +1088,30 @@ class MainWindow(QMainWindow):
         try:
             if self._isProjectTab():
                 self.setNoPbarMessage(False)
-                self.enableAllTabs() #0603+ #Critical
                 self.updateEnabledButtons()
                 self.updateCorrSignalsDrawer()
                 self.setTargKargPixmaps()
-                # try:
-                #     self.updateMenus()
-                # except:
-                #     print_exception()
                 self.present_snr_results(start=start, end=end)
-
+                self.dataUpdateWidgets()
+                self._showSNRcheck()
                 cfg.project_tab.updateTimingsWidget()
                 cfg.project_tab.updateTreeWidget() #0603-
                 cfg.pt._bbToggle.setChecked(cfg.data.has_bb())
-                self.dataUpdateWidgets()
-                self._showSNRcheck()
-                # self.updateAllCpanelDetails()
                 cfg.pt.updateDetailsPanel()
-
-                self._autosave()
-                # self.flicker.start()
 
         except:
             print_exception()
         finally:
+            self._autosave()
             if cfg.event.is_set():
                 cfg.event.clear()
-            self._autosave()
             self._working = False
             self._changeScaleCombo.setEnabled(True)
             self.hidePbar()
+            self.enableAllTabs()
             if self._isProjectTab():
-                self.enableAllTabs()
-                try:
-                    if cfg.project_tab._tabs.currentIndex() == 4:
-                        cfg.project_tab.snr_plot.initSnrPlot()
-                except:
-                    print_exception()
-
+                if cfg.project_tab._tabs.currentIndex() == 4:
+                    cfg.project_tab.snr_plot.initSnrPlot()
                 if self.dw_snr.isVisible():
                     cfg.project_tab.dSnr_plot.initSnrPlot()
 
@@ -2371,7 +2357,7 @@ class MainWindow(QMainWindow):
     def onStartProject(self, mendenhall=False):
         '''Functions that only need to be run once per project
                 Do not automatically save, there is nothing to save yet'''
-        logger.info(f'\n\n################ Loading Project - %s ################\n' % os.path.basename(cfg.data.dest()))
+        print(f'\n\n################ Loading Project - %s ################\n' % os.path.basename(cfg.data.dest()))
         self.tell("Loading Project '%s'..." % cfg.data.dest())
         initLogFiles(cfg.data)
 

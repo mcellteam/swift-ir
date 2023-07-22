@@ -188,7 +188,7 @@ def tiffs2MultiTiff(directory:str, out:str):
 
 def remove_zarr(path) -> None:
     if os.path.isdir(path):
-        logger.info('Removing Extant Zarr Located at %s' % path)
+        logger.info('Removing extant Zarr at %s...' % path)
         # try:
         #     with time_limit(20):
         #         shutil.rmtree(path, ignore_errors=True)
@@ -198,7 +198,8 @@ def remove_zarr(path) -> None:
             shutil.rmtree(path, ignore_errors=True)
         except:
             print_exception()
-        logger.info('Done Removing Zarr')
+        finally:
+            logger.info('Done')
 
 
 def preallocate_zarr(dm, name, group, dimx, dimy, dimz, dtype, overwrite, gui=True):
@@ -209,7 +210,7 @@ def preallocate_zarr(dm, name, group, dimx, dimy, dimz, dtype, overwrite, gui=Tr
     path_out = os.path.join(path_zarr, group)
     path_base = os.path.basename(src)
     path_relative = os.path.join(path_base, name)
-    logger.info(f'Preallocating Zarr Array (caller: {inspect.stack()[1].function})...'
+    logger.info(f'Preallocating Zarr array...'
                     f' dimx: {dimx}, dimy: {dimy}, dimz: {dimz}')
 
     if gui:
@@ -219,7 +220,8 @@ def preallocate_zarr(dm, name, group, dimx, dimy, dimz, dtype, overwrite, gui=Tr
         return
     shape = (dimz, dimy, dimx)  # Todo check this, inverting x & y
 
-    output_text = f'\n  Zarr root : {path_relative}' \
+    output_text = f'Properties & dimensions of new Zarr' \
+                  f'\n  Zarr root : {path_relative}' \
                   f'\n      group :   └ {group}({name}) {dtype} {cname}/{clevel}' \
                   f'\n      shape : {str(shape)} ' \
                   f'\n      chunk : {chunkshape}'
