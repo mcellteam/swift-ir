@@ -190,7 +190,7 @@ class ProjectTab(QWidget):
             self.initNeuroglancer()
             self.updateLowest8widget()
             self.updateDetailsPanel()
-            self.updateDtWidget()
+            self.updateTimingsWidget()
 
         elif index == 2:
             self.project_table.table.selectRow(cfg.data.zpos)
@@ -2407,7 +2407,7 @@ class ProjectTab(QWidget):
         if self.te_logs.isVisible():
             self.refreshLogs()
         if self.sa_runtimes.isVisible():
-            self.updateDtWidget()
+            self.updateTimingsWidget()
         if self.sa_lowest8.isVisible():
             self.updateLowest8widget()
 
@@ -3500,15 +3500,16 @@ class ProjectTab(QWidget):
         logger.info('')
 
         self.snr_plot = SnrPlot()
-        lab_yaxis = VerticalLabel('Signal-to-Noise Ratio', font_color='#ede9e8', font_size=14)
+        lab_yaxis = VerticalLabel('Signal-to-Noise Ratio', font_color='#ede9e8', font_size=13)
         lab_Xaxis = QLabel('Serial Section #')
+        lab_Xaxis.setStyleSheet("font-size: 13px;")
+        lab_Xaxis.setAlignment(Qt.AlignHCenter)
         self.w_snr_plot = VWidget(HWidget(lab_yaxis, self.snr_plot), lab_Xaxis)
         self.w_snr_plot.setStyleSheet('background-color: #222222; font-weight: 600; font-size: 14px; color: #ede9e8;')
 
-        self.dSnr_plot = SnrPlot()
+        self.dSnr_plot = SnrPlot(dock=True)
         # lab_yaxis = VerticalLabel('Signal-to-Noise Ratio', font_color='#ede9e8', font_size=14)
-        lab_Xaxis = QLabel('Serial Section #')
-        lab_Xaxis.setAlignment(Qt.AlignCenter)
+
         # self.w_dSnr_plot = VWidget(HWidget(lab_yaxis, self.dSnr_plot), lab_Xaxis)
         # self.w_dSnr_plot = VWidget(self.dSnr_plot, lab_Xaxis)
         # self.w_dSnr_plot = self.dSnr_plot
@@ -3766,98 +3767,106 @@ class ProjectTab(QWidget):
     #     return QSize(1000,1000)
 
 
-    def updateDtWidget(self):
+    def updateTimingsWidget(self):
         # logger.info('')
         caller = inspect.stack()[1].function
         logger.info(f'[{caller}]')
         try:
-            # a = """<span style='color: #ffe135;'>"""
-            # b = """</span>"""
-            # nl = '<br>'
-            # br = '&nbsp;'
-            # cfg.project_tab.detailsRuntime.setText(
-            #     f"Gen. Scales{br}{br}{br}{br}{br}{br}:{a}" + (f"%.2fs{b}{nl}" % cfg.data['data']['benchmarks']['t_scaling']).rjust(9) +
-            #     f"Convert Zarr{br}{br}{br}{br}{br}:{a}" + (f"%.2fs{b}{nl}" % cfg.data['data']['benchmarks']['t_scaling_convert_zarr']).rjust(9) +
-            #     f"Source Thumbs{br}{br}{br}{br}:{a}" + (f"%.2fs{b}{nl}" % cfg.data['data']['benchmarks']['t_thumbs']).rjust(9) +
-            #     f"Compute Affines{br}{br}:{a}" + (f"%.2fs{b}{nl}" % cfg.data['data']['benchmarks']['scales'][s]['t_align']).rjust(9) +
-            #     f"Gen. Alignment{br}{br}{br}:{a}" + (f"%.2fs{b}{nl}" % cfg.data['data']['benchmarks']['scales'][s]['t_generate']).rjust(9) +
-            #     f"Aligned Thumbs{br}{br}{br}:{a}" + (f"%.2fs{b}{nl}" % cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_aligned']).rjust(9) +
-            #     f"Corr Spot Thumbs{br}:{a}" + (f"%.2fs{b}" % cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_spot']).rjust(9)
-            # )
-
-            try:
-                t0 = (f"%.1fs" % cfg.data['data']['benchmarks']['t_scaling']).rjust(12)
-                t0m = (f"%.3fm" % (cfg.data['data']['benchmarks']['t_scaling'] / 60))
-            except:
-                t0 = t0m = "???"
-
-            try:
-                t1 = (f"%.1fs" % cfg.data['data']['benchmarks']['t_scaling_convert_zarr']).rjust(12)
-                t1m = (f"%.3fm" % (cfg.data['data']['benchmarks']['t_scaling_convert_zarr'] / 60))
-            except:
-                t1 = t1m = "???"
-
-            try:
-                t2 = (f"%.1fs" % cfg.data['data']['benchmarks']['t_thumbs']).rjust(12)
-                t2m = (f"%.3fm" % (cfg.data['data']['benchmarks']['t_thumbs'] / 60))
-            except:
-                t2 = t2m = "???"
-
-            t3, t4, t5, t6, t7 = {}, {}, {}, {}, {}
-            t3m, t4m, t5m, t6m, t7m = {}, {}, {}, {}, {}
-            for s in cfg.data.scales():
-                try:
-                    t3[s] = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_align']).rjust(12)
-                    t3m[s] = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_align'] / 60))
-                except:
-                    t3[s] = t3m[s] = "???"
-
-                try:
-                    t4[s] = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_convert_zarr']).rjust(12)
-                    t4m[s] = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_convert_zarr'] / 60))
-                except:
-                    t4[s] = t4m[s] = "???"
-
-                try:
-                    t5[s] = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_generate']).rjust(12)
-                    t5m[s] = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_generate'] / 60))
-                except:
-                    t5[s] = t5m[s] = "???"
-
-                try:
-                    t6[s] = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_aligned']).rjust(12)
-                    t6m[s] = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_aligned'] / 60))
-                except:
-                    t6[s] = t6m[s] = "???"
-
-                try:
-                    t7[s] = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_spot']).rjust(12)
-                    t7m[s] = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_spot'] / 60))
-                except:
-                    t7[s] = t7m[s] = "???"
+            # try:
+            #     t0 = (f"%.1fs" % cfg.data['data']['benchmarks']['t_scaling']).rjust(12)
+            #     t0m = (f"%.3fm" % (cfg.data['data']['benchmarks']['t_scaling'] / 60))
+            # except:
+            #     t0 = t0m = "???"
+            #
+            # try:
+            #     t1 = (f"%.1fs" % cfg.data['data']['benchmarks']['t_scaling_convert_zarr']).rjust(12)
+            #     t1m = (f"%.3fm" % (cfg.data['data']['benchmarks']['t_scaling_convert_zarr'] / 60))
+            # except:
+            #     t1 = t1m = "???"
+            #
+            # try:
+            #     t2 = (f"%.1fs" % cfg.data['data']['benchmarks']['t_thumbs']).rjust(12)
+            #     t2m = (f"%.3fm" % (cfg.data['data']['benchmarks']['t_thumbs'] / 60))
+            # except:
+            #     t2 = t2m = "???"
+            #
+            # t3, t4, t5, t6, t7 = {}, {}, {}, {}, {}
+            # t3m, t4m, t5m, t6m, t7m = {}, {}, {}, {}, {}
+            # for s in cfg.data.scales():
+            #     try:
+            #         t3[s] = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_align']).rjust(12)
+            #         t3m[s] = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_align'] / 60))
+            #     except:
+            #         t3[s] = t3m[s] = "???"
+            #
+            #     try:
+            #         t4[s] = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_convert_zarr']).rjust(12)
+            #         t4m[s] = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_convert_zarr'] / 60))
+            #     except:
+            #         t4[s] = t4m[s] = "???"
+            #
+            #     try:
+            #         t5[s] = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_generate']).rjust(12)
+            #         t5m[s] = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_generate'] / 60))
+            #     except:
+            #         t5[s] = t5m[s] = "???"
+            #
+            #     try:
+            #         t6[s] = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_aligned']).rjust(12)
+            #         t6m[s] = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_aligned'] / 60))
+            #     except:
+            #         t6[s] = t6m[s] = "???"
+            #
+            #     try:
+            #         t7[s] = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_spot']).rjust(12)
+            #         t7m[s] = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_spot'] / 60))
+            #     except:
+            #         t7[s] = t7m[s] = "???"
+            #
+            #
+            # timings = []
+            # timings.append(('Generate Scale Hierarchy', t0 + ' / ' + t0m))
+            # timings.append(('Convert All Scales to Zarr', t1 + ' / ' + t1m))
+            # timings.append(('Generate Source Image Thumbnails', t2 + ' / ' + t2m))
+            #
+            #
+            #
+            # # fl_l.addRow('Generate Scale Hierarchy', QLabel(t0 + ' / ' + t0m))
+            # # fl_l.addRow('Convert All Scales to Zarr', QLabel(t1 + ' / ' + t1m))
+            # # fl_l.addRow('Generate Source Image Thumbnails', QLabel(t2 + ' / ' + t2m))
+            # # fl_l.addRow('Compute Affines', QLabel('\n'.join(['  %s: %s / %s' % (s, t3[s],t3m[s]) for s in cfg.data.scales()])))
+            # # fl_l.addRow('Compute Affines', QLabel(''))
+            # timings.append(('Compute Affines', ''))
+            # for s in cfg.data.scales():
+            #     # fl_l.addRow('  ' + cfg.data.scale_pretty(s), QLabel('%s / %s' % (t3[s], t3m[s])))
+            #     timings.append(('  ' + cfg.data.scale_pretty(s), '%s / %s' % (t3[s], t3m[s])))
+            # # fl_l.addRow('Generate Aligned TIFFs', QLabel(''))
+            # timings.append(('Generate Aligned TIFFs', ''))
+            # for s in cfg.data.scales():
+            #     # fl_l.addRow('  ' + cfg.data.scale_pretty(s), QLabel('%s / %s' % (t4[s], t4m[s])))
+            #     timings.append(('  ' + cfg.data.scale_pretty(s), '%s / %s' % (t4[s], t4m[s])))
+            # # fl_l.addRow('Convert Aligned TIFFs to Zarr', QLabel(''))
+            # timings.append(('Convert Aligned TIFFs to Zarr', ''))
+            # for s in cfg.data.scales():
+            #     # fl_l.addRow('  ' + cfg.data.scale_pretty(s), QLabel('%s / %s' % (t5[s], t5m[s])))
+            #     timings.append(('  ' + cfg.data.scale_pretty(s), '%s / %s' % (t5[s], t5m[s])))
+            # # fl_l.addRow('Generate Aligned TIFF Thumbnails', QLabel(''))
+            # timings.append(('Generate Aligned TIFF Thumbnails', ''))
+            # for s in cfg.data.scales():
+            #     # fl_l.addRow('  ' + cfg.data.scale_pretty(s), QLabel('%s / %s' % (t6[s], t6m[s])))
+            #     timings.append(('  ' + cfg.data.scale_pretty(s), '%s / %s' % (t6[s], t6m[s])))
+            # # fl_l.addRow('Generate Correlation Signal Thumbnails', QLabel(''))
+            # timings.append(('Generate Correlation Signal Thumbnails', ''))
+            # for s in cfg.data.scales():
+            #     # fl_l.addRow('  ' + cfg.data.scale_pretty(s), QLabel('%s / %s' % (t7[s], t7m[s])))
+            #     timings.append(('  ' + cfg.data.scale_pretty(s), '%s / %s' % (t7[s], t7m[s])))
 
             fl_l = QFormLayout()
             fl_l.setContentsMargins(0, 0, 0, 0)
             fl_l.setVerticalSpacing(1)
-            fl_l.addRow('Generate Scale Hierarchy', QLabel(t0 + ' / ' + t0m))
-            fl_l.addRow('Convert All Scales to Zarr', QLabel(t1 + ' / ' + t1m))
-            fl_l.addRow('Generate Source Image Thumbnails', QLabel(t2 + ' / ' + t2m))
-            # fl_l.addRow('Compute Affines', QLabel('\n'.join(['  %s: %s / %s' % (s, t3[s],t3m[s]) for s in cfg.data.scales()])))
-            fl_l.addRow('Compute Affines', QLabel(''))
-            for s in cfg.data.scales():
-                fl_l.addRow('  ' + cfg.data.scale_pretty(s), QLabel('%s / %s' % (t3[s], t3m[s])))
-            fl_l.addRow('Generate Aligned TIFFs', QLabel(''))
-            for s in cfg.data.scales():
-                fl_l.addRow('  ' + cfg.data.scale_pretty(s), QLabel('%s / %s' % (t4[s], t4m[s])))
-            fl_l.addRow('Convert Aligned TIFFs to Zarr', QLabel(''))
-            for s in cfg.data.scales():
-                fl_l.addRow('  ' + cfg.data.scale_pretty(s), QLabel('%s / %s' % (t5[s], t5m[s])))
-            fl_l.addRow('Generate Aligned TIFF Thumbnails', QLabel(''))
-            for s in cfg.data.scales():
-                fl_l.addRow('  ' + cfg.data.scale_pretty(s), QLabel('%s / %s' % (t6[s], t6m[s])))
-            fl_l.addRow('Generate Correlation Signal Thumbnails', QLabel(''))
-            for s in cfg.data.scales():
-                fl_l.addRow('  ' + cfg.data.scale_pretty(s), QLabel('%s / %s' % (t7[s], t7m[s])))
+            for t in cfg.data.timings:
+                fl_l.addRow(t[0], QLabel(t[1]))
+
 
             # fl_l.addRow('Compute Affines', QLabel('\n'.join(['  %s: %s / %s' % (s, t3[s], t3m[s]) for s in cfg.data.scales()])))
             # fl_l.addRow('Generate Aligned TIFFs', QLabel('\n'.join(['  %s: %s / %s' % (s, t4[s],t4m[s]) for s in cfg.data.scales()])))

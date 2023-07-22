@@ -430,7 +430,8 @@ class EMViewer(AbstractEMViewer):
         self.initViewer()
 
     def initViewer(self, nglayout=None):
-        logger.critical('')
+        caller = inspect.stack()[1].function
+        logger.info(f'[{caller}]')
         # caller = inspect.stack()[1].function
         # logger.info(f'Initializing Neuroglancer Viewer...\n')
         self._blockStateChanged = False
@@ -490,9 +491,8 @@ class EMViewer(AbstractEMViewer):
 
     def initViewerAligned(self, z=None):
         if z == None: z = cfg.data.zpos
-        # caller = inspect.stack()[1].function
-
-        logger.critical('')
+        caller = inspect.stack()[1].function
+        logger.info(f'[{caller}]')
         if cfg.data.skipped(l=z):
             return
 

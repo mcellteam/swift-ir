@@ -972,7 +972,7 @@ class MainWindow(QMainWindow):
             # self.updateAllCpanelDetails()
             cfg.pt.updateDetailsPanel()
             self.hidePbar()
-            cfg.project_tab.updateDtWidget()
+            cfg.project_tab.updateTimingsWidget()
             cfg.project_tab.updateTreeWidget()
             cfg.nProcessDone = 0
             cfg.nProcessSteps = 0
@@ -1098,7 +1098,7 @@ class MainWindow(QMainWindow):
                 #     print_exception()
                 self.present_snr_results(start=start, end=end)
 
-                cfg.project_tab.updateDtWidget()
+                cfg.project_tab.updateTimingsWidget()
                 cfg.project_tab.updateTreeWidget() #0603-
                 cfg.pt._bbToggle.setChecked(cfg.data.has_bb())
                 self.dataUpdateWidgets()
@@ -2394,11 +2394,13 @@ class MainWindow(QMainWindow):
         self.setCpanelVisibility(True)
         # cfg.project_tab.initNeuroglancer(init_all=True)
         cfg.project_tab.updateDetailsPanel()
-        cfg.project_tab.updateDtWidget()
+        cfg.project_tab.updateTimingsWidget()
         cfg.project_tab.updateMethodSelectWidget()
         cfg.project_tab.dataUpdateMA() #Important must come after initNeuroglancer
         check_project_status()
-        cfg.project_tab.fn_hwidgetChanged()
+        if cfg.mw.dw_snr.isVisible():
+            self.dw_snr.setWidget(cfg.pt.dSnr_plot)
+            self.dSnr_plot.initSnrPlot()
         QApplication.processEvents()
 
         # QTimer.singleShot(1000, lambda: self.initNeuroglancer(init_all=True))
@@ -3754,20 +3756,12 @@ class MainWindow(QMainWindow):
                 margin: 0px;
                 padding: 0px;
             """)
-            null_widget = QLabel('Null Widget')
-            null_widget.setStyleSheet("""background-color: #222222; color: #ede9e8;""")
-            null_widget.setAlignment(Qt.AlignCenter)
-            self.dw_thumbs.setWidget(null_widget)
 
-            null_widget = QLabel('Null Widget')
-            null_widget.setStyleSheet("""background-color: #222222; color: #ede9e8;""")
-            null_widget.setAlignment(Qt.AlignCenter)
-            self.dw_matches.setWidget(null_widget)
+            self.dw_thumbs.setWidget(NullWidget())
 
-            null_widget = QLabel('Null Widget')
-            null_widget.setStyleSheet("""background-color: #222222; color: #ede9e8;""")
-            null_widget.setAlignment(Qt.AlignCenter)
-            self.dw_snr.setWidget(null_widget)
+            self.dw_matches.setWidget(NullWidget())
+
+            self.dw_snr.setWidget(NullWidget())
 
         elif self._getTabType() == 'OpenProject':
             configure_project_paths()
@@ -4535,13 +4529,6 @@ class MainWindow(QMainWindow):
             self.developerConsoleAction.triggered.connect(self.show_hide_developer_console)
             debugMenu.addAction(self.developerConsoleAction)
 
-        from src.ui.snr_plot import SnrPlot
-        tw = SnrPlot()
-
-        testMenu = debugMenu.addMenu('Test Menu Widgets')
-        action = QWidgetAction(self)
-        action.setDefaultWidget(tw)
-        testMenu.addAction(action)
 
 
         '''Help Menu'''
@@ -4858,7 +4845,7 @@ class MainWindow(QMainWindow):
         self._scaleUpButton.setFixedSize(QSize(18, 18))
         self._scaleUpButton.setIcon(qta.icon("fa.arrow-up", color=ICON_COLOR))
 
-        self._scaleSetWidget = HWidget(self._scaleDownButton, self._scaleUpButton)
+        self._scaleSetWidget = HWidget(self._scaleUpButton, self._scaleDownButton)
         self._scaleSetWidget.layout.setAlignment(Qt.AlignCenter)
 
         self._sectionSlider = QSlider(Qt.Orientation.Horizontal, self)
@@ -5089,11 +5076,10 @@ class MainWindow(QMainWindow):
 
         self.dw_hud = DockWidget('HUD', self)
         def fn_dw_monitor_visChanged():
-            logger.info('')
             if self.dw_hud.isVisible():
                 self.setUpdatesEnabled(False)
                 loc_hud = self.dockWidgetArea(self.dw_hud)
-                logger.info(f'dw_monitor location: {loc_hud}')
+                # logger.info(f'dw_monitor location: {loc_hud}')
                 if loc_hud in (1,2):
                     self.dw_hud.setFeatures(
                         QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetClosable)
@@ -5525,7 +5511,6 @@ class MainWindow(QMainWindow):
         self.dw_python.visibilityChanged.connect(self.callbackDwVisibilityChanged)
         def fn_dw_python_visChanged():
             caller = inspect.stack()[1].function
-            logger.critical(f'[{caller}]')
 
             # logger.critical(f'caller: {caller}')
             if self. dw_python.isVisible():
@@ -5539,12 +5524,12 @@ class MainWindow(QMainWindow):
                         QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetClosable | QDockWidget.DockWidgetVerticalTitleBar)
 
                 loc_hud = self.dockWidgetArea(self.dw_hud)
-                logger.critical(f"loc_py = {loc_py}, loc_hud = {loc_hud}")
+                # logger.critical(f"loc_py = {loc_py}, loc_hud = {loc_hud}")
                 if loc_py == loc_hud:
                     if loc_py in (4, 8):
                         self.splitDockWidget(self.dw_hud, self.dw_python, Qt.Horizontal)
                         w = int(self.width() / 2)
-                        logger.critical(f"w = {w}")
+                        # logger.critical(f"w = {w}")
                         self.resizeDocks((self.dw_hud, self.dw_python), (w, w), Qt.Horizontal)
                         # self.resizeDocks((self.dw_hud, self.dw_python), (self.dw_python.sizeHint().height(), self.dw_python.sizeHint().height()), Qt.Vertical)
                     elif loc_py in (1, 2):
@@ -5588,7 +5573,6 @@ class MainWindow(QMainWindow):
         def fn_dw_snr_visChanged():
             self.setUpdatesEnabled(False)
             caller = inspect.stack()[1].function
-            logger.critical(f'[{caller}]')
 
             # logger.critical(f'caller: {caller}')
             if self. dw_snr.isVisible():
@@ -6239,6 +6223,13 @@ class VerticalLabel(QLabel):
             self.setStyleSheet(style)
 
 
+class NullWidget(QLabel):
+    def __init__(self, *args):
+        QLabel.__init__(self, *args)
+        self.setText('Null Widget')
+        self.setMinimumSize(QSize(100,100))
+        self.setStyleSheet("""font-size: 11px; background-color: #222222; color: #ede9e8;""")
+        self.setAlignment(Qt.AlignCenter)
 
 class WebEngine(QWebEngineView):
 

@@ -939,21 +939,23 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def restoreManAlignPts(self):
-        logger.info(f'[{self.role}] Restoring manual point/region selections...')
+
         # self.pts = OrderedDict()
         self.pts = []
         pts_data = cfg.data.getmpFlat(l=cfg.data.zpos)[self.role]
-        for i, p in enumerate(pts_data):
-            props = [self.colors[i],
-                     getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'),
-                     getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'), ]
-            # self.pts[self.getNextUnusedColor()] = ng.PointAnnotation(id=str(p), point=p, props=props)
-            self.pts.append(ng.PointAnnotation(id=str(p), point=p, props=props))
+        if pts_data:
+            logger.info(f'[{self.role}] Restoring manual point/region selections...')
+            for i, p in enumerate(pts_data):
+                props = [self.colors[i],
+                         getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'),
+                         getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'), ]
+                # self.pts[self.getNextUnusedColor()] = ng.PointAnnotation(id=str(p), point=p, props=props)
+                self.pts.append(ng.PointAnnotation(id=str(p), point=p, props=props))
 
-        # logger.critical(f'pts:\n{self.pts}')
-        # json_str = self.state.layers.to_json()
-        # logger.critical('--------------')
-        # logger.critical(json_str[0]['annotations'])
+            # logger.critical(f'pts:\n{self.pts}')
+            # json_str = self.state.layers.to_json()
+            # logger.critical('--------------')
+            # logger.critical(json_str[0]['annotations'])
 
 
     def set_brightness(self, val=None):
