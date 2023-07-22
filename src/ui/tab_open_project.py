@@ -1208,6 +1208,7 @@ class UserProjects(QWidget):
         # caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
         self.table.clearContents()
+
         font0 = QFont()
         # font0.setBold(True)
         font0.setPointSize(9)
@@ -1217,9 +1218,8 @@ class UserProjects(QWidget):
             self.table.insertRow(i)
             for j, item in enumerate(row):
                 if j == 0:
-                    twi = QTableWidgetItem(str(item))
-                    twi.setFont(font0.setBold(True))
-                    self.table.setItem(i, j, twi)
+                    lab = QLabel("<b>" + item + "</b>")
+                    self.table.setCellWidget(i, j, lab)
                 elif j in (1,2,3):
                     if item == 'No Thumbnail':
                         thumbnail = ThumbnailFast(self)
