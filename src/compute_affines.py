@@ -225,7 +225,6 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             logger.warning('Canceling Processes!')
             return
 
-
         # Sort the tasks by layers rather than by process IDs
         # task_dict = {}
         # index_arg = 3
