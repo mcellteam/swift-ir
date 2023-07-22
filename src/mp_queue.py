@@ -310,24 +310,24 @@ class TaskQueue(QObject):
                             # QApplication.processEvents()
                             sys.exit(1)
 
-                    if (not cfg.ignore_pbar) and self.use_gui:
-                        try:
-                            self.parent.updatePbar(n_tasks - realtime)
-                            if self.taskPrefix and self.taskNameList:
-                                try:
-                                    name = self.taskNameList[img_index]
-                                    # self.parent.statusBar.showMessage(self.taskPrefix + name + '...', 500)
-                                    self.parent.statusBar.showMessage(self.taskPrefix + name + '...')
-                                except:
-                                    # print_exception()
-                                    logger.warning('Improperly sized taskNameList! [size=%d] '
-                                                   '[prefix=%s] '
-                                                   '[n_tasks=%d]' % (len(self.taskNameList), self.taskPrefix, n_tasks))
-                                QApplication.processEvents()
-                        except:
-                            # print_exception()
-                            logger.warning(f'An exception was raised while updating progress bar [{self.taskPrefix}]')
-                            print_exception()
+                    # if (not cfg.ignore_pbar) and self.use_gui:
+                    #     try:
+                    #         self.parent.updatePbar(n_tasks - realtime)
+                    #         if self.taskPrefix and self.taskNameList:
+                    #             try:
+                    #                 name = self.taskNameList[img_index]
+                    #                 # self.parent.statusBar.showMessage(self.taskPrefix + name + '...', 500)
+                    #                 self.parent.statusBar.showMessage(self.taskPrefix + name + '...')
+                    #             except:
+                    #                 # print_exception()
+                    #                 logger.warning('Improperly sized taskNameList! [size=%d] '
+                    #                                '[prefix=%s] '
+                    #                                '[n_tasks=%d]' % (len(self.taskNameList), self.taskPrefix, n_tasks))
+                    #             QApplication.processEvents()
+                    #     except:
+                    #         # print_exception()
+                    #         logger.warning(f'An exception was raised while updating progress bar [{self.taskPrefix}]')
+                    #         print_exception()
 
                     # .get method is BLOCKING by default for mp.Queue
                     task_id, outs, errs, rc, dt = self.result_queue.get()

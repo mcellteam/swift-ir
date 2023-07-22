@@ -149,57 +149,42 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         pbar_text = 'Computing Scale %d Transforms w/ SWIM (%d Cores)...' % (scale_val, cpus)
         print(f'\n\n################ Computing Alignment ################\n')
 
-
-
         # limit_workers = 80
         # if use_gui:
-        #
-        #     if scale_val < 6:
-        #         logger.critical(f'Limiting workers to maximum of {limit_workers}')
-        #         task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, parent=cfg.mw, pbar_text=pbar_text, limit_workers=limit_workers)
-        #     else:
-        #         task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, parent=cfg.mw, pbar_text=pbar_text)
-        # else:
-        #     if scale_val < 6:
-        #         logger.critical(f'Limiting workers to maximum of {limit_workers}')
-        #         task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, use_gui=use_gui, limit_workers=limit_workers)
-        #     else:
-        #         task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, use_gui=use_gui)
-        # task_queue.taskPrefix = 'Computing Alignment for '
-        # task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in cfg.data()[start:end]]
-        # if end == None:
-        #     end = len(dm)
+        task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, use_gui=use_gui)
+        task_queue.taskPrefix = 'Computing Alignment for '
+        task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in cfg.data()[start:end]]
+        if end == None:
+            end = len(dm)
 
 
-        # task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in dm['data']['scales'][scale]['stack'][start:end]]
-        # # START TASK QUEUE
-        # task_queue.start(cpus)
-        # # align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_recipe_alignment.py')
-        # align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'recipe_maker.py')
-        # # ADD ALIGNMENT TASKS TO QUEUE
-        # for sec in substack:
-        #     zpos = dm_().index(sec)
-        #
-        #     if not sec['skipped']:
-        #         task_args = [sys.executable,
-        #                      align_job,             # Python program to run (single_alignment_job)
-        #                      json.dumps(copy.deepcopy(dm['data']['scales'][scale]['stack'][zpos]))
-        #                      ]
-        #         task_queue.add_task(task_args)
-        #         if use_gui:
-        #             if cfg.PRINT_EXAMPLE_ARGS:
-        #                 if zpos in range(start, start + 3):
-        #                     print("Section #%d (example):\n%s" % (zpos, " ".join(task_args)))
-        #
-        # # task_queue.work_q.join()
-        # # cfg.mw.hud.post('Computing Alignment Using SWIM...')
-        # dt = task_queue.collect_results()
-        # all_results = task_queue.task_dict
+        task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in dm['data']['scales'][scale]['stack'][start:end]]
+        # START TASK QUEUE
+        task_queue.start(cpus)
+        # align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_recipe_alignment.py')
+        align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'recipe_maker.py')
+        # ADD ALIGNMENT TASKS TO QUEUE
+        for sec in substack:
+            zpos = dm_().index(sec)
+
+            if not sec['skipped']:
+                task_args = [sys.executable,
+                             align_job,             # Python program to run (single_alignment_job)
+                             json.dumps(copy.deepcopy(dm['data']['scales'][scale]['stack'][zpos]))
+                             ]
+                task_queue.add_task(task_args)
+                if use_gui:
+                    if cfg.PRINT_EXAMPLE_ARGS:
+                        if zpos in range(start, start + 3):
+                            print("Section #%d (example):\n%s" % (zpos, " ".join(task_args)))
+
+        # task_queue.work_q.join()
+        # cfg.mw.hud.post('Computing Alignment Using SWIM...')
+        dt = task_queue.collect_results()
+        all_results = task_queue.task_dict
 
 
-        # cfg.mw.showZeroedPbar(pbar_max=len(substack))
-
-
+        '''
         tasks = []
         for sec in substack:
             zpos = dm_().index(sec)
@@ -207,22 +192,18 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                 tasks.append(copy.deepcopy(dm['data']['scales'][scale]['stack'][zpos]))
 
 
-        cfg.mw.set_status('Computing affines. No progress bar available. Awaiting multiprocessing pool...')
-
-
-
-        ctx = mp.get_context('forkserver')
-        pbar = tqdm.tqdm(total=len(tasks), position=0, leave=True)
-        pbar.set_description("Computing Affines")
-        def update_tqdm(*a):
-            pbar.update()
-        t0 = time.time()
-        # with ctx.Pool(processes=cpus) as pool:
-        with ThreadPool(processes=cpus) as pool:
-            results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_tqdm) for task in tasks]
-            pool.close()
-            all_results = [p.get() for p in results]
-            pool.join()
+        # ctx = mp.get_context('forkserver')
+        # pbar = tqdm.tqdm(total=len(tasks), position=0, leave=True)
+        # pbar.set_description("Computing Affines")
+        # def update_tqdm(*a):
+        #     pbar.update()
+        # t0 = time.time()
+        # # with ctx.Pool(processes=cpus) as pool:
+        # with ThreadPool(processes=cpus) as pool:
+        #     results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_tqdm) for task in tasks]
+        #     pool.close()
+        #     all_results = [p.get() for p in results]
+        #     pool.join()
 
 
 
@@ -236,10 +217,10 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         #         all_results.append(result)
 
 
-        dm.t_align = time.time() - t0
+        # dm.t_align = time.time() - t0
 
 
-
+        '''
 
 
 
@@ -255,67 +236,67 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             return
 
         # Sort the tasks by layers rather than by process IDs
-        # task_dict = {}
-        # index_arg = 3
-        # for k in task_queue.task_dict.keys():
-        #     t = task_queue.task_dict[k]
-        #     logger.critical(f"\nt = {t}\n\n")
-        #     task_dict[int(t['args'][index_arg])] = t
-        # task_list = [task_dict[k] for k in sorted(task_dict.keys())]
-        # updated_model = copy.deepcopy(dm) # Integrate output of each task into a new combined datamodel previewmodel
+        task_dict = {}
+        index_arg = 3
+        for k in task_queue.task_dict.keys():
+            t = task_queue.task_dict[k]
+            logger.critical(f"\nt = {t}\n\n")
+            task_dict[int(t['args'][index_arg])] = t
+        task_list = [task_dict[k] for k in sorted(task_dict.keys())]
+        updated_model = copy.deepcopy(dm) # Integrate output of each task into a new combined datamodel previewmodel
 
         logger.info('Reading task results and updating data model...')
 
         al_stack_old = dm['data']['scales'][scale]['stack']
 
-        # for tnum in range(len(task_list)):
+        for tnum in range(len(task_list)):
         # for tnum in range(len(all_results)):
-        for r in all_results:
-            # logger.info(f'Reading task results for {tnum}...')
+        # for r in all_results:
+            logger.info(f'Reading task results for {tnum}...')
             # Get the updated datamodel previewmodel from stdout for the task
-            # parts = all_results[tnum]['stdout'].split('---JSON-DELIMITER---')
-            # dm_text = None
-            # for p in parts:
-            #     ps = p.strip()
-            #     if ps.startswith('{') and ps.endswith('}'):
-            #         dm_text = p
-            # if dm_text != None:
-            # results_dict = json.loads(dm_text)
-            # layer_index = results_dict['result']['alignment']['meta']['index']
-            # al_stack_old[layer_index] = results_dict['result']
+            parts = all_results[tnum]['stdout'].split('---JSON-DELIMITER---')
+            dm_text = None
+            for p in parts:
+                ps = p.strip()
+                if ps.startswith('{') and ps.endswith('}'):
+                    dm_text = p
+            if dm_text != None:
+                results_dict = json.loads(dm_text)
+                layer_index = results_dict['result']['alignment']['meta']['index']
+                al_stack_old[layer_index] = results_dict['result']
 
-            layer_index = r['alignment']['meta']['index']
-            al_stack_old[r['alignment']['meta']['index']] = r
+                # layer_index = r['alignment']['meta']['index']
+                # al_stack_old[r['alignment']['meta']['index']] = r
 
-            # if all_results[tnum]['statusBar'] == 'task_error':
-            #     ref_fn = al_stack_old[layer_index]['reference']
-            #     base_fn = al_stack_old[layer_index]['filename']
-            #     if use_gui:
-            #         cfg.mw.hud.post('Alignment Task Error at: ' +
-            #                                  str(all_results[tnum]['cmd']) + " " +
-            #                                  str(all_results[tnum]['args']))
-            #         cfg.mw.hud.post('Automatically Skipping Layer %d' % (layer_index), logging.WARNING)
-            #         cfg.mw.hud.post(f'  ref img: %s\nbase img: %s' % (ref_fn,base_fn))
-            #     else:
-            #         logger.warning(('Alignment Task Error at: ' +
-            #                                  str(all_results[tnum]['cmd']) + " " +
-            #                                  str(all_results[tnum]['args'])))
-            #         logger.warning('Automatically Skipping Layer %d' % (layer_index), logging.WARNING)
-            #         logger.warning(f'  ref img: %s\nbase img: %s' % (ref_fn, base_fn))
-            #     al_stack_old[layer_index]['skipped'] = True
-            # need_to_write_json = results_dict['need_to_write_json']  # It's not clear how this should be used (many to one)
+                if all_results[tnum]['statusBar'] == 'task_error':
+                    ref_fn = al_stack_old[layer_index]['reference']
+                    base_fn = al_stack_old[layer_index]['filename']
+                    if use_gui:
+                        cfg.mw.hud.post('Alignment Task Error at: ' +
+                                                 str(all_results[tnum]['cmd']) + " " +
+                                                 str(all_results[tnum]['args']))
+                        cfg.mw.hud.post('Automatically Skipping Layer %d' % (layer_index), logging.WARNING)
+                        cfg.mw.hud.post(f'  ref img: %s\nbase img: %s' % (ref_fn,base_fn))
+                    else:
+                        logger.warning(('Alignment Task Error at: ' +
+                                                 str(all_results[tnum]['cmd']) + " " +
+                                                 str(all_results[tnum]['args'])))
+                        logger.warning('Automatically Skipping Layer %d' % (layer_index), logging.WARNING)
+                        logger.warning(f'  ref img: %s\nbase img: %s' % (ref_fn, base_fn))
+                    al_stack_old[layer_index]['skipped'] = True
+                # need_to_write_json = results_dict['need_to_write_json']  # It's not clear how this should be used (many to one)
 
-        # for i, layer in enumerate(cfg.data.get_iter(scale)):
-        #     layer['alignment_history'][cfg.data.get_current_method(l=i)]['cumulative_afm'] = \
-        #         cfg.data['data']['scales'][scale]['stack'][i]['alignment']['method_results']['cumulative_afm']
+        for i, layer in enumerate(cfg.data.get_iter(scale)):
+            layer['alignment_history'][cfg.data.get_current_method(l=i)]['cumulative_afm'] = \
+                cfg.data['data']['scales'][scale]['stack'][i]['alignment']['method_results']['cumulative_afm']
 
-        # SetStackCafm(dm.get_iter(scale), scale=scale, poly_order=cfg.data.default_poly_order)
+        SetStackCafm(dm.get_iter(scale), scale=scale, poly_order=cfg.data.default_poly_order)
 
-        # for i, layer in enumerate(cfg.data.get_iter(scale)):
-        #     layer['alignment_history'][cfg.data.get_current_method(l=i)]['cumulative_afm'] = \
-        #         cfg.data['data']['scales'][scale]['stack'][i]['alignment']['method_results']['cumulative_afm']
-        #     layer['alignment_history'][cfg.data.get_current_method(l=i)]['cafm_hash'] = \
-        #         cfg.data.cafm_current_hash(l=i)
+        for i, layer in enumerate(cfg.data.get_iter(scale)):
+            layer['alignment_history'][cfg.data.get_current_method(l=i)]['cumulative_afm'] = \
+                cfg.data['data']['scales'][scale]['stack'][i]['alignment']['method_results']['cumulative_afm']
+            layer['alignment_history'][cfg.data.get_current_method(l=i)]['cafm_hash'] = \
+                cfg.data.cafm_current_hash(l=i)
 
         if cfg.mw._isProjectTab():
             cfg.mw.updateCorrSignalsDrawer()
