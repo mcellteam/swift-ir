@@ -2010,7 +2010,7 @@ class DataModel:
         self._data['data']['scales'][s]['image_aligned_size'] = ImageSize(self.path_aligned(s=s))
         val = self._data['data']['scales'][s]['image_src_size']
         # logger.info(f'Just Set {s} image size to {val}')
-        logger.info(f'Aligned Image Size is {self.scale_pretty(s=s)}: {self.image_size(s=s)}')
+        # logger.info(f'Aligned Image Size is {self.scale_pretty(s=s)}: {self.image_size(s=s)}')
 
     def full_scale_size(self):
         try:

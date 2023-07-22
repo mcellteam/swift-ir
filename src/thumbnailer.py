@@ -33,7 +33,7 @@ class Thumbnailer:
         self.iscale2_c = os.path.join(get_appdir(), 'lib', get_bindir(), 'iscale2')
 
     def reduce_main(self, dest, use_gui=True):
-        logger.info(f'\n\n################ Reducing: Source Images ################\n')
+        print(f'\n\n################ Reducing: Source Images ################\n')
 
         pbar_text = 'Generating %s Source Image Thumbnails...' % cfg.data.scale_pretty()
         if cfg.CancelProcesses:
@@ -48,7 +48,7 @@ class Thumbnailer:
 
 
     def reduce_aligned(self, start, end, dest, scale, use_gui=True):
-        logger.info(f'\n\n################ Reducing: Aligned Images ################\n')
+        print(f'\n\n################ Reducing: Aligned Images ################\n')
 
         pbar_text = 'Generating %s Aligned Image Thumbnails...' % cfg.data.scale_pretty()
         if cfg.CancelProcesses:
@@ -70,7 +70,7 @@ class Thumbnailer:
 
     def reduce_signals(self, start, end, dest, scale, use_gui=True):
 
-        logger.info(f'\n\n################ Reducing: Correlation Signals ################\n')
+        print(f'\n\n################ Reducing: Correlation Signals ################\n')
 
         pbar_text = 'Generating %s Signal Spot Thumbnails...' % cfg.data.scale_pretty()
         if cfg.CancelProcesses:

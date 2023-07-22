@@ -57,7 +57,7 @@ def GenerateScalesZarr(dm, gui=True):
                              gui=gui)
         n_tasks = len(dm) * dm.n_scales()
 
-        logger.info(f'\n\n################ Converting Downscales to Zarr ################\n')
+        print(f'\n\n################ Converting Downscales to Zarr ################\n')
 
         tasks = []
         for scale in dm.scales():

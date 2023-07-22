@@ -93,7 +93,7 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
         pbar_text = 'Generating Scale %d Alignment w/ MIR (%d Cores)...' % (scale_val, cpus)
         dest = dm['data']['destination_path']
 
-        logger.info(f'\n\n################ Generating Aligned Images ################\n')
+        print(f'\n\n################ Generating Aligned Images ################\n')
 
         tasks = []
         for layer in iter(dm()[start:end]):
@@ -156,7 +156,7 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
         #         logger.info('creating group: %s' %str(i))
         #         root.create_group(str(i))
 
-        logger.info(f'\n\n################ Copy-convert Alignment To Zarr ################\n')
+        print(f'\n\n################ Copy-convert Alignment To Zarr ################\n')
 
         tasks = []
         for i in range(start,end):

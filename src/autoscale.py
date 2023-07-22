@@ -102,7 +102,7 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     #     pool.map(run, tqdm.tqdm(tasks, total=len(tasks)))
     #     pool.close()
     #     pool.join()
-    logger.info(f'\n\n################ Generating Scales ################\n')
+    print(f'\n\n################ Generating Scales ################\n')
     ctx = mp.get_context('forkserver')
     with ctx.Pool(processes=cpus) as pool:
         results = pool.map(run, tasks)
