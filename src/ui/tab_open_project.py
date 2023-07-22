@@ -1259,6 +1259,8 @@ class UserProjects(QWidget):
         for section in range(self.table.verticalHeader().count()):
             self.table.verticalHeader().resizeSection(section, self.ROW_HEIGHT)
 
+        self.table.sortByColumn(4, Qt.DescendingOrder)
+
 
 
     def get_data(self):
