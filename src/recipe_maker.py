@@ -16,8 +16,6 @@ import hashlib
 import json
 import psutil
 
-import src.config as cfg
-
 __all__ = ['run_recipe']
 
 ENABLE_LOGGING = 0
