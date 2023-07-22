@@ -888,11 +888,11 @@ class MainWindow(QMainWindow):
     #     self.tbbHud.setToolTip((tip1, tip2)[self.dw_hud.isHidden()])
 
     def _showSNRcheck(self, s=None):
-        logger.info('')
-        caller = inspect.stack()[1].function
+        # logger.info('')
+        # caller = inspect.stack()[1].function
         if s == None: s = cfg.data.scale
         if cfg.data.is_aligned():
-            logger.info('Checking SNR data for %s...' % cfg.data.scale_pretty(s=s))
+            # logger.info('Checking SNR data for %s...' % cfg.data.scale_pretty(s=s))
             failed = cfg.data.check_snr_status()
             if len(failed) == len(cfg.data):
                 self.warn('No SNR Data Available for %s' % cfg.data.scale_pretty(s=s))

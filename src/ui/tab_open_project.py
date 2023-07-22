@@ -73,7 +73,7 @@ class OpenProject(QWidget):
         self.setStyleSheet("font-size: 10px; color: #161c20;")
 
     def onClipboardChanged(self):
-        print('Clipboard changed!')
+        # print('Clipboard changed!')
         buffer = QApplication.clipboard().text()
         tip = 'Your Clipboard:\n' + '\n'.join(textwrap.wrap(buffer[0:512], width=35)) #set limit on length of tooltip string
         # print('\n' + tip)

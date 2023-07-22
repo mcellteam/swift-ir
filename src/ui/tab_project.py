@@ -3770,7 +3770,8 @@ class ProjectTab(QWidget):
     def updateTimingsWidget(self):
         # logger.info('')
         caller = inspect.stack()[1].function
-        logger.info(f'[{caller}]')
+        # if DEV:
+        #     logger.info(f'[{caller}]')
         try:
             # try:
             #     t0 = (f"%.1fs" % cfg.data['data']['benchmarks']['t_scaling']).rjust(12)
