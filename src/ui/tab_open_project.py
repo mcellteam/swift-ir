@@ -1219,8 +1219,9 @@ class UserProjects(QWidget):
                 if j == 0:
                     lab_text = '\n'.join(textwrap.wrap(item, width=30))
                     twi = QTableWidgetItem(lab_text)
-                    self.table.setItem(i, j, twi)
                     twi.setFont(font0)
+                    self.table.setItem(i, j, twi)
+
                 elif j in (1,2,3):
                     if item == 'No Thumbnail':
                         thumbnail = ThumbnailFast(self)
