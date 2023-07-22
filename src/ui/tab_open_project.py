@@ -1218,7 +1218,7 @@ class UserProjects(QWidget):
             for j, item in enumerate(row):
                 if j == 0:
                     lab_text = '\n'.join(textwrap.wrap(item, width=30))
-                    twi = QTableWidgetItem("<b>" + lab_text + "</b>")
+                    twi = QTableWidgetItem(lab_text)
                     self.table.setItem(i, j, twi)
                     twi.setFont(font0)
                 elif j in (1,2,3):
