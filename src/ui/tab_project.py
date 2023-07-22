@@ -255,7 +255,7 @@ class ProjectTab(QWidget):
     def initNeuroglancer(self, init_all=False):
         caller = inspect.stack()[1].function
         if cfg.mw._is_initialized == 0:
-            logger.warning(f"\n\n[{caller}] CANNOT INITIALIZE NEUROGLANCER AT THIS TIME\n\n")
+            logger.warning(f"[{caller}] CANNOT INITIALIZE NEUROGLANCER AT THIS TIME")
             return
 
         # logger.info('')

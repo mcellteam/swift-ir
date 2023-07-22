@@ -135,7 +135,6 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
         cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
     else:
         if reallocate_zarr:
-            logger.info('Preallocating...')
             preallocate_zarr(dm=dm,
                              name='img_aligned.zarr',
                              group='s%d' % scale_val,
