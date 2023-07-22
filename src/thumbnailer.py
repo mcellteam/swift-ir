@@ -226,7 +226,7 @@ class Thumbnailer:
 
         t0 = time.time()
         with ThreadPool(processes=cpus) as pool:
-            pool.map(run, tqdm.tqdm(tasks, total=len(tasks), desc="Generating Thumbnails", position=0, leave=True))
+            pool.map(run_subprocess, tqdm.tqdm(tasks, total=len(tasks), desc="Generating Thumbnails", position=0, leave=True))
             pool.close()
             pool.join()
         # ctx = mp.get_context('forkserver')
@@ -242,7 +242,7 @@ class Thumbnailer:
         return dt
 
 
-def run(task):
+def run_subprocess(task):
     """Call run(), catch exceptions."""
     try:
         sp.Popen(task, bufsize=-1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
