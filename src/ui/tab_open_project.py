@@ -1209,7 +1209,7 @@ class UserProjects(QWidget):
         # logger.info(f'caller: {caller}')
         self.table.clearContents()
         font0 = QFont()
-        font0.setBold(True)
+        # font0.setBold(True)
         font0.setPointSize(9)
         self.table.setRowCount(0)
         for i, row in enumerate(self.get_data()):
@@ -1218,7 +1218,7 @@ class UserProjects(QWidget):
             for j, item in enumerate(row):
                 if j == 0:
                     twi = QTableWidgetItem(str(item))
-                    twi.setFont(font0)
+                    twi.setFont(font0.setBold(True))
                     self.table.setItem(i, j, twi)
                 elif j in (1,2,3):
                     if item == 'No Thumbnail':
@@ -1240,13 +1240,13 @@ class UserProjects(QWidget):
                     twi = QTableWidgetItem(str(item))
                     twi.setFont(font0)
                     self.table.setItem(i, j, twi)
-        self.table.setColumnWidth(0, 180)
+        self.table.setColumnWidth(0, 220)
         self.table.setColumnWidth(1, self.ROW_HEIGHT) # <first thumbnail>
         self.table.setColumnWidth(2, self.ROW_HEIGHT) # <last thumbnail>
         self.table.setColumnWidth(3, self.ROW_HEIGHT) # <last thumbnail>
-        self.table.setColumnWidth(4, 110)
-        self.table.setColumnWidth(5, 110)
-        self.table.setColumnWidth(6, 40)
+        self.table.setColumnWidth(4, 100)
+        self.table.setColumnWidth(5, 100)
+        self.table.setColumnWidth(6, 36)
         self.table.setColumnWidth(7, 70)
         self.table.setColumnWidth(8, 70)
         self.table.setColumnWidth(9, 70)
