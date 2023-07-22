@@ -134,7 +134,6 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     # logger.info("Finished Sleeping...")
     # count_files(dm.dest(), dm.scales())
 
-
     src_img_size = dm.image_size(s='scale_1')
     for s in dm.scales():
         if s == 'scale_1':
