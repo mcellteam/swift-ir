@@ -159,7 +159,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
         if not self.cs_scale:
             if self.state.cross_section_scale:
                 if self.state.cross_section_scale > .0001:
-                    logger.info('perfect cs_scale captured! - %.3f' % self.state.cross_section_scale)
+                    # if DEV:
+                    #     logger.info('perfect cs_scale captured! - %.3f' % self.state.cross_section_scale)
                     self.cs_scale = self.state.cross_section_scale
 
         try:

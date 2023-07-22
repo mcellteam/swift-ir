@@ -243,7 +243,7 @@ def main():
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--no-sandbox -disable-web-security --enable-logging'
     # ***************
 
-    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--enable-logging --log-level=3' # suppress JS warnings
+    os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--enable-logging --log-level=3' # suppress JS warnings
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=0'
     os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --no-sandbox --num-raster-threads=%s' % cfg.QTWEBENGINE_RASTER_THREADS
     # os.environ['OPENBLAS_NUM_THREADS'] = '1'
@@ -256,10 +256,9 @@ def main():
         logger.info('Setting Qt.AA_UseHighDpiPixmaps')
         QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
-    # 2230-
-    # logger.info('Setting Qt.AA_ShareOpenGLContexts')
-    # QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created. #2230-
-    # QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseDesktopOpenGL)
+    logger.info('Setting Qt.AA_ShareOpenGLContexts')
+    QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created. #2230-
+    QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseDesktopOpenGL)
 
     initialize_user_preferences()
     configure_project_paths()
