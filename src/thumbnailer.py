@@ -44,7 +44,7 @@ class Thumbnailer:
             od = os.path.join(cfg.data.dest(), 'thumbnails')
             dt = self.reduce(
                 src=src, od=od, rmdir=True, prefix='', start=0, end=None, pbar_text=pbar_text, dest=dest, use_gui=use_gui)
-            cfg.data.t_thumbs = dt
+            return dt
 
 
     def reduce_aligned(self, start, end, dest, scale, use_gui=True):

@@ -76,7 +76,7 @@ class OpenProject(QWidget):
         print('Clipboard changed!')
         buffer = QApplication.clipboard().text()
         tip = 'Your Clipboard:\n' + '\n'.join(textwrap.wrap(buffer[0:512], width=35)) #set limit on length of tooltip string
-        print('\n' + tip)
+        # print('\n' + tip)
         self._buttonBrowserPaste.setToolTip(tip)
 
 
@@ -751,7 +751,8 @@ class OpenProject(QWidget):
                     #     logger.warning('Something Unexpected Happened While Generating Source Thumbnails')
                     #     if gui: cfg.mw.warn('Something Unexpected Happened While Generating Source Thumbnails')
                     thumbnailer = Thumbnailer()
-                    thumbnailer.reduce_main(dest=dm.dest())
+                    dt = thumbnailer.reduce_main(dest=dm.dest())
+                    cfg.data.t_thumbs = dt
             except:
                 print_exception()
             finally:
