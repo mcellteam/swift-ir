@@ -1096,7 +1096,7 @@ class UserProjects(QWidget):
 
         # self.initial_row_height = 64
         # self.ROW_HEIGHT = 64
-        self.ROW_HEIGHT = 90
+        self.ROW_HEIGHT = 70
 
         self.counter1 = 0
         self.counter2 = 0
@@ -1151,7 +1151,7 @@ class UserProjects(QWidget):
         # self.updateRowHeight(getOpt('state,open_project_tab,row_height'))
 
         # self.setStyleSheet("color: #161c20;")
-        # self.setStyleSheet("font-size: 10px; color: #f3f6fb;")
+        self.setStyleSheet("font-size: 10px; color: #161c20;")
 
 
     def updateRowHeight(self, h):
@@ -1210,7 +1210,7 @@ class UserProjects(QWidget):
         self.table.clearContents()
         font0 = QFont()
         font0.setBold(True)
-        font0.setPointSize(10)
+        font0.setPointSize(9)
         self.table.setRowCount(0)
         for i, row in enumerate(self.get_data()):
             # logger.info(f'>>>> row #{i} >>>>')
@@ -1244,8 +1244,8 @@ class UserProjects(QWidget):
         self.table.setColumnWidth(1, self.ROW_HEIGHT) # <first thumbnail>
         self.table.setColumnWidth(2, self.ROW_HEIGHT) # <last thumbnail>
         self.table.setColumnWidth(3, self.ROW_HEIGHT) # <last thumbnail>
-        self.table.setColumnWidth(4, 90)
-        self.table.setColumnWidth(5, 90)
+        self.table.setColumnWidth(4, 110)
+        self.table.setColumnWidth(5, 110)
         self.table.setColumnWidth(6, 40)
         self.table.setColumnWidth(7, 70)
         self.table.setColumnWidth(8, 70)
