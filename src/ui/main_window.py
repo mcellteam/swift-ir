@@ -811,12 +811,12 @@ class MainWindow(QMainWindow):
             cfg.data['state']['tool_windows']['raw_thumbnails'] = state
 
 
-        if state:
-            QApplication.processEvents()
-            cfg.mw.dataUpdateWidgets()
-            h = self.dw_thumbs.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
-            self.dw_thumbs.setMaximumWidth(int(h / 2 + .5))
-            # cfg.pt.tn_widget.resize(QSize(int(h / 2 + .5), cfg.pt.tn_widget.height()))
+        # if state:
+        #     QApplication.processEvents()
+        #     cfg.mw.dataUpdateWidgets()
+        #     h = self.dw_thumbs.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
+        #     self.dw_thumbs.setMaximumWidth(int(h / 2 + .5))
+        #     # cfg.pt.tn_widget.resize(QSize(int(h / 2 + .5), cfg.pt.tn_widget.height()))
 
 
 
@@ -829,17 +829,17 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             cfg.data['state']['tool_windows']['signals'] = state
 
-        if state:
-            # cfg.pt.match_widget.adjustSize() #MUCH BETTER OFF
-            self.setUpdatesEnabled(True)
-            QApplication.processEvents()
-            self.updateCorrSignalsDrawer()
-            self.setTargKargPixmaps()
-
-            if cfg.data.is_aligned():
-                h = self.dw_matches.height() - cfg.pt.mwTitle.height()
-                self.dw_matches.setMaximumWidth(int(h /2 + .5))
-                # cfg.pt.match_widget.resize(int(h / 2 + .5), h)
+        # if state:
+        #     # cfg.pt.match_widget.adjustSize() #MUCH BETTER OFF
+        #     self.setUpdatesEnabled(True)
+        #     QApplication.processEvents()
+        #     self.updateCorrSignalsDrawer()
+        #     self.setTargKargPixmaps()
+        #
+        #     if cfg.data.is_aligned():
+        #         h = self.dw_matches.height() - cfg.pt.mwTitle.height()
+        #         self.dw_matches.setMaximumWidth(int(h /2 + .5))
+        #         # cfg.pt.match_widget.resize(int(h / 2 + .5), h)
 
 
 
@@ -3568,20 +3568,20 @@ class MainWindow(QMainWindow):
         #         # self.dw_thumbs.setMaximumWidth(int(h / 2 + .5))
         #         cfg.pt.tn_widget.resize(QSize(int(h / 2 + .5), cfg.pt.tn_widget.height()))
 
-        if self.dw_thumbs.isVisible():
-            QApplication.processEvents()
-            h = self.dw_thumbs.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
-            self.dw_thumbs.setMaximumWidth(int(h / 2 + .5))
-            # cfg.pt.tn_widget.resize(QSize(int(h / 2 + .5), cfg.pt.tn_widget.height()))
-
-        if self.dw_matches.isVisible():
-            self.setUpdatesEnabled(True)
-            QApplication.processEvents()
-
-            if cfg.data.is_aligned():
-                h = self.dw_matches.height() - cfg.pt.mwTitle.height()
-                self.dw_matches.setMaximumWidth(int(h /2 + .5))
-                # cfg.pt.match_widget.resize(int(h / 2 + .5), h)
+        # if self.dw_thumbs.isVisible():
+        #     QApplication.processEvents()
+        #     h = self.dw_thumbs.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
+        #     self.dw_thumbs.setMaximumWidth(int(h / 2 + .5))
+        #     # cfg.pt.tn_widget.resize(QSize(int(h / 2 + .5), cfg.pt.tn_widget.height()))
+        # #
+        # if self.dw_matches.isVisible():
+        #     self.setUpdatesEnabled(True)
+        #     QApplication.processEvents()
+        #
+        #     if cfg.data.is_aligned():
+        #         h = self.dw_matches.height() - cfg.pt.mwTitle.height()
+        #         self.dw_matches.setMaximumWidth(int(h /2 + .5))
+        #         # cfg.pt.match_widget.resize(int(h / 2 + .5), h)
 
 
 
@@ -5817,9 +5817,9 @@ class MainWindow(QMainWindow):
         self.widgetPbar.layout.setSpacing(4)
 
         self.w_pbarUnavailable = QLabel('GUI Progress Bar Unavailable. See Progress in Terminal.')
-        self.w_pbarUnavailable.setFixedHeight(14)
+        self.w_pbarUnavailable.setFixedHeight(18)
         self.w_pbarUnavailable.setAlignment(Qt.AlignCenter)
-        self.w_pbarUnavailable.setStyleSheet("""font-size: 11px; font-weight: 600; background-color: #161c20; color: #f3f6fb;""")
+        self.w_pbarUnavailable.setStyleSheet("""font-size: 12px; font-weight: 600; background-color: #161c20; color: #f3f6fb;""")
 
         self.sw_pbar.addWidget(self.widgetPbar)
         self.sw_pbar.addWidget(self.w_pbarUnavailable)

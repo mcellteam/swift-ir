@@ -1894,7 +1894,7 @@ class DataModel:
 
     def propagate_manual_swim_window_px(self, start, end) -> None:
         '''Sets the SWIM Window for the Current Layer when using Manual Alignment.'''
-        logger.info('Upscaling manual swim regions to finer scales...')
+        # logger.info('Propagating swim regions to finer scales...')
         for l in range(start, end):
             pixels = self._data['data']['scales'][self.scale]['stack'][l]['alignment']['manual_swim_window_px']
             for s in self.finer_scales():

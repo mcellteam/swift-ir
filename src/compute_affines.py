@@ -500,13 +500,14 @@ def save2file(dm, name):
     data_cp = copy.deepcopy(dm)
     # data_cp.make_paths_relative(start=cfg.data.dest())
     data_cp_json = data_cp.to_dict()
-    logger.info('---- SAVING DATA TO PROJECT FILE ----')
+
     jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
     proj_json = jde.encode(data_cp_json)
     name = dm.dest()
+    logger.info(f'---- SAVING  ----\n{name}')
     if not name.endswith('.swiftir'):
         name += ".swiftir"
-    logger.info('Save Name: %s' % name)
+    # logger.info('Save Name: %s' % name)
     with open(name, 'w') as f:
         f.write(proj_json)
 
