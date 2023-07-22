@@ -19,6 +19,7 @@ from pathlib import Path
 from multiprocessing import Pool
 from multiprocessing.pool import ThreadPool
 import multiprocessing as mp
+import subprocess as sp
 import numpy as np
 import tqdm
 
@@ -209,13 +210,13 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         ctx = mp.get_context('forkserver')
         pbar = tqdm.tqdm(total=len(tasks), position=0, leave=True)
         pbar.set_description("Computing Affines")
+
         def update_tqdm(*a):
             pbar.update()
-        # with ctx.Pool(processes=cpus) as pool:
         t0 = time.time()
         # with ctx.Pool(processes=cpus) as pool:
         with ThreadPool(processes=cpus) as pool:
-            results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_tqdm) for task in tasks]
+            results = [pool.apply_async(func=run_subprocess, args=(task,), callback=update_tqdm) for task in tasks]
             pool.close()
             all_results = [p.get() for p in results]
             pool.join()
@@ -347,6 +348,14 @@ def update_pbar(value):
     # logger.info(f"value: {value}")
     cfg.mw.pbar.setValue(cfg.mw.pbar.value()+1)
 
+
+def run_subprocess(task):
+    """Call run(), catch exceptions."""
+    try:
+        sp.Popen(task, bufsize=-1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
+        # sp.Popen(task, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
+    except Exception as e:
+        print("error: %s run(*%r)" % (e, task))
 
 
 def delete_correlation_signals(dm, scale, start, end):
