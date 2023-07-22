@@ -81,7 +81,8 @@ def run_recipe(data, dev_mode=False):
             recipe.execute_recipe()
 
     # print(f"Task completed: {meta['index']}")
-    return data
+    # return data
+    return
 
 
 class align_recipe:
