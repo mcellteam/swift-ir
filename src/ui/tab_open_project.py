@@ -579,7 +579,6 @@ class OpenProject(QWidget):
             sidebar.setItemDelegate(delegate)
             # urls = self.name_dialog.sidebarUrls()
             # logger.info(f'urls: {urls}')
-            cfg.mw.set_status('New Project (Step: 2/3) - Import TIFF Images')
             if self.name_dialog.exec() == QFileDialog.Accepted:
                 logger.info('Save File Path: %s' % self.name_dialog.selectedFiles()[0])
                 filename = self.name_dialog.selectedFiles()[0]
@@ -588,12 +587,14 @@ class OpenProject(QWidget):
             else:
                 self.showMainUI()
                 self.name_dialog.close()
+                cfg.mw.set_status('')
                 return 1
 
             if filename in ['', None]:
                 logger.info('New Project Canceled.')
                 cfg.mw.warn("New Project Canceled.")
                 self.showMainUI()
+                cfg.mw.set_status('')
                 return
             cfg.mw.set_status('')
 
@@ -641,6 +642,7 @@ class OpenProject(QWidget):
                 if result == 1:
                     cfg.mw.warn('No images were imported - canceling new project')
                     self.showMainUI()
+                    cfg.mw.set_status('')
                     return
 
 
@@ -683,6 +685,7 @@ class OpenProject(QWidget):
             else:
                 # self.showMainUI()
                 dialog.close()
+                cfg.mw.set_status('')
                 return 1
 
             # cfg.project_tab = ProjectTab(self, path=path, datamodel=dm)
@@ -718,6 +721,7 @@ class OpenProject(QWidget):
             twi = QTableWidgetItem(cfg.data.dest())
             twi.setFont(font0)
             self.user_projects.table.setItem(rc, 1, twi)
+            cfg.mw.set_status('')
             try:
                 if dm['data']['autoalign_flag']:
                     cfg.mw.tell(
@@ -747,8 +751,7 @@ class OpenProject(QWidget):
                     #     logger.warning('Something Unexpected Happened While Generating Source Thumbnails')
                     #     if gui: cfg.mw.warn('Something Unexpected Happened While Generating Source Thumbnails')
                     thumbnailer = Thumbnailer()
-                    dt = thumbnailer.reduce_main(dest=dm.dest())
-                    cfg.data.t_thumbs = dt
+                    thumbnailer.reduce_main(dest=dm.dest())
             except:
                 print_exception()
             finally:

@@ -24,34 +24,65 @@ logger = logging.getLogger(__name__)
 
 class SnrPlot(QWidget):
 
-    def __init__(self, **kwargs):
+    def __init__(self, dock=False, **kwargs):
         super().__init__(**kwargs)
 
         self.app = pg.mkQApp()
+        self.dock = dock
         self.view = pg.GraphicsLayoutWidget()
+        if self.dock:
+            self.view.ci.layout.setContentsMargins(0, 0, 0, 0)
+            self.view.ci.layout.setSpacing(0)  # might not be necessary for you
         # self.view.setBackground('#1b1e23')
         self.view.setBackground('#222222')
         # drafting_blue = '#004060'
         # self.view.setBackground(drafting_blue)
         pg.setConfigOption('foreground', '#f3f6fb')
-        pg.setConfigOptions(antialias=True)
+        if not self.dock:
+            pg.setConfigOptions(antialias=True)
+
         self.plot = self.view.addPlot()
+
+        ax0 = self.plot.getAxis('bottom')  # get handle to x-axis 0
+        ax0.setTickSpacing(5,1)
+
+        # ax0.setStyle(showValues=False)
+
+
+        if self.dock:
+            self.plot.getAxis('bottom').setHeight(16)
+            # self.plot.getAxis('bottom').setStyle(tickTextOffset=2)
         # self.label_value = pg.InfLineLabel('test', **{'color': '#FFF'})
-        self._curLayerLine = pg.InfiniteLine(
-            # pen='w',
-            pen=pg.mkPen('w', width=3),
-            movable=False,
-            angle=90,
-            label='Section #{value:.0f}',
-            # snr=self.label_value,
-            labelOpts={'position': .1, 'color': (200, 200, 100), 'fill': (200, 200, 200, 50), 'movable': True})
+
+
+        if self.dock:
+            self._curLayerLine = pg.InfiniteLine(
+                # pen='w',
+                pen=pg.mkPen('#f3f6fb', width=1),
+                movable=False,
+                angle=90,
+                labelOpts={'position': .2, 'color': '#f3f6fb', 'fill': '#141414', 'movable': True})
+        else:
+            self._curLayerLine = pg.InfiniteLine(
+                # pen='w',
+                pen=pg.mkPen('#f3f6fb', width=2),
+                movable=False,
+                angle=90,
+                label='Section #{value:.0f}',
+                # snr=self.label_value,
+                labelOpts={'position': .8, 'color': '#f3f6fb', 'fill': '#141414', 'movable': True})
         # self._snr_label = pg.InfLineLabel(self._curLayerLine, '', position=0.95, rotateAxis=(1, 0),
         #                                  anchor=(1, 1))
-        self._snr_label = pg.InfLineLabel(self._curLayerLine, '', position=0.92, anchor=(1, 1), color='#f3f6fb')
+
+        if self.dock:
+            self._snr_label = pg.InfLineLabel(self._curLayerLine, '', position=0.2, anchor=(0, 1), color='#f3f6fb')
+        else:
+            self._snr_label = pg.InfLineLabel(self._curLayerLine, '', position=0.1, anchor=(1, 1), color='#f3f6fb')
+
         f = QFont('Tahoma')
         f.setBold(True)
         # f.setPointSize(12)
-        f.setPointSize(10)
+        f.setPointSize((12,10)[self.dock])
         self._snr_label.setFont(f)
         self.plot.addItem(self._curLayerLine)
         self._mp_lines = []
@@ -59,6 +90,7 @@ class SnrPlot(QWidget):
         self._skip_lines = []
         self._skip_labels = []
         self._error_bars = {}
+        self.pt_selected = None
 
         # self.spw = pg.ScatterPlotWidget() #Todo switch to scatter plot widget for greater interactivity
         # pg.setConfigOptions(antialias=True)
@@ -74,11 +106,12 @@ class SnrPlot(QWidget):
 
         # self.plot.scene().sigMouseClicked.connect(self.mouse_clicked)
 
+
         # self.plot.setAspectLocked(True)
-        self.plot.showGrid(x=False, y=True, alpha=120)  # alpha: 0-255
+        self.plot.showGrid(x=False, y=True, alpha=(160,220)[dock])  # alpha: 0-255
         # self.plot.getPlotItem().enableAutoRange()
         self.plot.hoverable = True
-        self.plot.hoverSize = 15
+        self.plot.hoverSize = 13
         # self.plot.setFocusPolicy(Qt.NoFocus)
         # font = QFont()
         # font.setPixelSize(14)
@@ -98,20 +131,47 @@ class SnrPlot(QWidget):
         self.selected_scale = None
 
         self.checkboxes_widget = QWidget()
-        self.checkboxes_widget.setStyleSheet("background-color: #222222;")
-        self.checkboxes_widget.setMaximumHeight(24)
+        # self.checkboxes_widget.setStyleSheet("background-color: #222222;")
+        self.checkboxes_widget.setMaximumHeight((24,20)[self.dock])
         self.checkboxes_hlayout = QHBoxLayout()
         self.checkboxes_hlayout.setContentsMargins(0, 0, 0, 0)
         self.checkboxes_widget.setLayout(self.checkboxes_hlayout)
 
         self.layout = QGridLayout()
+        self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.addWidget(self.view, 0, 0, 2, 2)
         self.layout.addWidget(self.checkboxes_widget, 0, 1, 1, 1,
                               alignment=Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
         self.layout.setRowStretch(0,0)
         self.layout.setRowStretch(1,1)
-        self.layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.layout)
+
+
+
+        # a = pg.AxisItem('bottom', pen=None, linkView=None, parent=None, maxTickLength=-5, showValues=True)
+        # labelStyle = {'color': '#FFF', 'font-size': '14pt'}
+        # a.setLabel('label text', units='V', **labelStyle)
+        # # pg.PlotWidget(axisItems={'bottom': FmtAxisItem(orientation='bottom')})
+        # # date_axis = pg.graphicsItems.DateAxisItem.DateAxisItem(orientation='bottom')
+        # # self.plot.setAxisItems(axisItems={'bottom': date_axis})
+        # # axisItems = {'left': FmtAxisItem(orientation='left')}
+        # # self.plot.setAxisItems(axisItems={'bottom': axisItems})
+        # plt = self.plot
+        # axes = plt.gca()
+        # axes.set_ylim([0, 30000])
+        # plt.ylabel('Average distance (m)', fontsize=8)
+        # plt.xlabel('GPS sample interval (s)', fontsize=8)
+        # plt.tick_params(axis='x', which='major', labelsize=8)
+        # plt.tick_params(axis='y', which='major', labelsize=8)
+        # plt.xticks(rotation=90)
+        # plt.suptitle('')
+        # my_xticks = [0.25, 0.5, 1, 2, 5, 10, 20, 30, 60, 120, 300, 600, 1200, 1800, 2400,
+        #              3000, 3600, 7200, 10800, 14400, 18000, 21600, 25200, 28800]
+        # x = np.array(np.arange(0, len(my_xticks), 1))
+        #
+        # plt.xticks(np.arange(x.min(), x.max(), 5))
+        # plt.xticks(x, my_ticks)
+
 
         # self.plot.scene().sigMouseClicked.connect(self.mouse_clicked)
 
@@ -126,12 +186,16 @@ class SnrPlot(QWidget):
             # logger.info(f'pos = {pos}')
             self._curLayerLine.setPos(pos)
             # snr = pg.InfLineLabel(self._curLayerLine, "region 1", position=0.95, rotateAxis=(1, 0), anchor=(1, 1))
-            lab = 'SNR: %.2f\n%s' % (cfg.data.snr(), cfg.data.scale_pretty())
+            if self.dock:
+                lab = 'SNR: %.2g' % cfg.data.snr()
+            else:
+                lab = 'SNR: %.3g\n%s' % (cfg.data.snr(), cfg.data.scale_pretty())
             # logger.info(f'lab = {lab}')
             self._snr_label.setText(lab)
-            # styles = {'color': '#ede9e8', 'font-size': '14px', 'font-weight': 'bold'}
-            styles = {'color': '#ede9e8', 'font-size': '12px', 'font-weight': 'bold'}
-            self.plot.setLabel('top', cfg.data.base_image_name(), **styles)
+
+            if not self.dock:
+                styles = {'color': '#f3f6fb', 'font-size': '14px', 'font-weight': 'bold'}
+                self.plot.setLabel('top', cfg.data.base_image_name(), **styles)
         else:
             logger.warning(f'Cant update layer line caller={caller}')
 
@@ -203,37 +267,37 @@ class SnrPlot(QWidget):
                 logger.info('0 scales are aligned, Nothing to Plot - Returning')
                 return
 
-            self._snr_checkboxes = dict()
+            if not self.dock:
+                self._snr_checkboxes = dict()
+                for i in reversed(range(self.checkboxes_hlayout.count())):
+                    self.checkboxes_hlayout.itemAt(i).widget().setParent(None)
 
-            for i in reversed(range(self.checkboxes_hlayout.count())):
-                self.checkboxes_hlayout.itemAt(i).widget().setParent(None)
+                for i, s in enumerate(cfg.data.scales()):
+                    if cfg.data.is_aligned(s=s):
+                        color = self._plot_colors[cfg.data.scales()[::-1].index(s)]
+                        self._snr_checkboxes[s] = QCheckBox()
+                        self._snr_checkboxes[s].setText(cfg.data.scale_pretty(s=s))
+                        self.checkboxes_hlayout.addWidget(self._snr_checkboxes[s],
+                                                          alignment=Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
+                        self._snr_checkboxes[s].setChecked(True)
+                        self._snr_checkboxes[s].clicked.connect(self.plotData)
+                        self._snr_checkboxes[s].setStatusTip('On/Off SNR Plot %s' % cfg.data.scale_pretty(s=s))
 
-            for i, s in enumerate(cfg.data.scales()):
-                if cfg.data.is_aligned(s=s):
-                    self._snr_checkboxes[s] = QCheckBox()
-                    self._snr_checkboxes[s].setText(cfg.data.scale_pretty(s=s))
-                    self.checkboxes_hlayout.addWidget(self._snr_checkboxes[s],
-                                                      alignment=Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
-                    self._snr_checkboxes[s].setChecked(True)
-                    self._snr_checkboxes[s].clicked.connect(self.plotData)
-                    self._snr_checkboxes[s].setStatusTip('On/Off SNR Plot %s' % cfg.data.scale_pretty(s=s))
-                    color = self._plot_colors[cfg.data.scales()[::-1].index(s)]
-                    self._snr_checkboxes[s].setStyleSheet(
-                        f'background-color: #161c20;'
-                        f'border-color: {color}; '
-                        f'border-width: 3px; '
-                        f'border-style: outset;')
-                # if cfg.data.is_aligned(s=s):
-                #     self._snr_checkboxes[s].show()
-                # else:
-                #     self._snr_checkboxes[s].hide()
+                        self._snr_checkboxes[s].setStyleSheet(
+                            f'color: #f3f6fb;'
+                            f'background-color: #161c20;'
+                            f'border-color: {color};'
+                            f'border-width: 3px;'
+                            f'border-style: outset;'
+                            f'border-radius: 4px;')
+                    # if cfg.data.is_aligned(s=s):
+                    #     self._snr_checkboxes[s].show()
+                    # else:
+                    #     self._snr_checkboxes[s].hide()
 
-            # self.checkboxes_hlayout.addStretch()
+                # self.checkboxes_hlayout.addStretch()
 
             self.updateLayerLinePos()
-            # styles = {'color': '#f3f6fb', 'font-size': '14px', 'font-weight': 'bold'}
-            styles = {'color': '#ede9e8', 'font-size': '12px', 'font-weight': 'bold'}
-            self.plot.setLabel('top', cfg.data.base_image_name(), **styles)
         except:
             print_exception()
         try:
@@ -264,10 +328,13 @@ class SnrPlot(QWidget):
         if cfg.data:
             self.plot.clear()
             self.plot.addItem(self._curLayerLine)
-            for s in cfg.data.scales()[::-1]:
-                if cfg.data.is_aligned(s=s):
-                    if self._snr_checkboxes[s].isChecked():
-                        self.plotSingleScale(s=s)
+            if self.dock:
+                self.plotSingleScale(s=cfg.data.scale)
+            else:
+                for s in cfg.data.scales()[::-1]:
+                    if cfg.data.is_aligned(s=s):
+                        if self._snr_checkboxes[s].isChecked():
+                            self.plotSingleScale(s=s)
             max_snr = cfg.data.snr_max_all_scales() #FixThis #Temporary
             # max_snr = min(99, max(cfg.data.snr_list())) #FixThis #Temporary
             if not max_snr:
@@ -298,7 +365,8 @@ class SnrPlot(QWidget):
             # ax.setTicks([[(v, str(v)) for v in ticks ]])
 
             self.updateSpecialLayerLines()
-            # self.plot.autoRange() # !!! #0601-
+            if self.dock:
+                self.plot.autoRange() # !!! #0601-
 
     def _getScaleOffset(self, s):
         return cfg.data.scales()[::-1].index(s) * (.5/len(cfg.data.scales()))
@@ -312,21 +380,22 @@ class SnrPlot(QWidget):
         x_axis = [x+offset for x in x_axis]
         brush = self._plot_brushes[cfg.data.scales()[::-1].index(s)]
         self.snr_points[s] = pg.ScatterPlotItem(
-            size=11,
-            pen=pg.mkPen(None),
+            size=(11,9)[self.dock],
+            # pen=pg.mkPen(None),
+            symbol='o',
+            pen=pg.mkPen('#ffe135', width=1),
             brush=brush,
             hoverable=True,
-            # hoverSymbol='s',
-            hoverSize=15,
-            # hoverPen=pg.mkPen('r', width=2),
-            hoverBrush=pg.mkBrush('#ffffff'),
+            hoverSymbol='s',
+            hoverSize=(14,11)[self.dock],
+            hoverPen=pg.mkPen('#f3f6fb', width=1),
+            # hoverBrush=None,
             # pxMode=False # points transform with zoom
         )
         # self.snr_points[s].addPoints(x_axis[1:], y_axis[1:]) #Todo
         self.snr_points[s].addPoints(x_axis, y_axis)
         # logger.info('self.snr_points.toolTip() = %s' % self.snr_points.toolTip())
         # value = self.snr_points.setToolTip('Test')
-        self.last_snr_click = None
         self.plot.addItem(self.snr_points[s])
         # self.snr_points[s].sigClicked.connect(lambda: self.onSnrClick2(s))
         self.snr_points[s].sigClicked.connect(self.onSnrClick)
@@ -366,8 +435,8 @@ class SnrPlot(QWidget):
         err_bar = pg.ErrorBarItem(x=x, y=y,
                                   top=deltas,
                                   bottom=deltas,
-                                  beam=0.20,
-                                  pen={'color': '#ff0000', 'width': 2})
+                                  beam=0.10,
+                                  pen={'color': '#ff0000', 'width': 1})
         self._error_bars[s] = err_bar
         self.plot.addItem(err_bar)
 
@@ -407,27 +476,31 @@ class SnrPlot(QWidget):
     def onSnrClick(self, plot, points):
         logger.info(f'onSnrClick')
 
+        if self.pt_selected:
+            self.pt_selected.resetPen()
+            self.pt_selected.resetBrush()
+            self.pt_selected.setSymbol('o')
 
         index = int(points[0].pos()[0])
         logger.info(f'index = {index}')
         index = int(index)
         if index in range(len(cfg.data)):
             snr = float(points[0].pos()[1])
-            pt = points[0] # just allow one point clicked
+            self.pt_selected = points[0] # just allow one point clicked
             cfg.main_window.hud.post('Jumping to Section #%d (SNR: %.3f)' % (index, snr))
             clickedPen = pg.mkPen({'background-color': "#FF0000", 'width': 1})
-            if self.last_snr_click:
-                self.last_snr_click.resetPen()
-                self.last_snr_click.resetBrush()
-            pt.setBrush(pg.mkBrush('#ffffff'))
-            pt.setPen(clickedPen)
-            self.last_snr_click = pt
+
+            self.pt_selected.setBrush(pg.mkBrush('#f3f6fb'))
+            self.pt_selected.setPen(clickedPen)
+            self.pt_selected.setSymbol('s')
+
             cfg.mw.setZpos(index)
             cfg.main_window.dataUpdateWidgets()
             self.updateLayerLinePos()
 
         else:
             logger.warning('Invalid Index: %d' %index)
+
 
 
     def sizeHint(self):
@@ -457,6 +530,12 @@ class CustomViewBox(pg.ViewBox):
             pg.ViewBox.mouseDragEvent(self, ev, axis=axis)
 
 
+class FmtAxisItem(pg.AxisItem):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def tickStrings(self, values, scale, spacing):
+        return [f'{v:.4f}' for v in values]
 
 '''
 >>> import pyqtgraph.examples

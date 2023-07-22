@@ -1050,6 +1050,82 @@ class DataModel:
         except:
             return ''
 
+    @property
+    def timings(self):
+        try:
+            t0 = (f"%.1fs" % self['data']['benchmarks']['t_scaling']).rjust(12)
+            t0m = (f"%.3fm" % (self['data']['benchmarks']['t_scaling'] / 60))
+        except:
+            t0 = t0m = "???"
+
+        try:
+            t1 = (f"%.1fs" % self['data']['benchmarks']['t_scaling_convert_zarr']).rjust(12)
+            t1m = (f"%.3fm" % (self['data']['benchmarks']['t_scaling_convert_zarr'] / 60))
+        except:
+            t1 = t1m = "???"
+
+        try:
+            t2 = (f"%.1fs" % self['data']['benchmarks']['t_thumbs']).rjust(12)
+            t2m = (f"%.3fm" % (self['data']['benchmarks']['t_thumbs'] / 60))
+        except:
+            t2 = t2m = "???"
+
+        t3, t4, t5, t6, t7 = {}, {}, {}, {}, {}
+        t3m, t4m, t5m, t6m, t7m = {}, {}, {}, {}, {}
+        for s in self.scales():
+            try:
+                t3[s] = (f"%.1fs" % self['data']['benchmarks']['scales'][s]['t_align']).rjust(12)
+                t3m[s] = (f"%.3fm" % (self['data']['benchmarks']['scales'][s]['t_align'] / 60))
+            except:
+                t3[s] = t3m[s] = "???"
+
+            try:
+                t4[s] = (f"%.1fs" % self['data']['benchmarks']['scales'][s]['t_convert_zarr']).rjust(12)
+                t4m[s] = (f"%.3fm" % (self['data']['benchmarks']['scales'][s]['t_convert_zarr'] / 60))
+            except:
+                t4[s] = t4m[s] = "???"
+
+            try:
+                t5[s] = (f"%.1fs" % self['data']['benchmarks']['scales'][s]['t_generate']).rjust(12)
+                t5m[s] = (f"%.3fm" % (self['data']['benchmarks']['scales'][s]['t_generate'] / 60))
+            except:
+                t5[s] = t5m[s] = "???"
+
+            try:
+                t6[s] = (f"%.1fs" % self['data']['benchmarks']['scales'][s]['t_thumbs_aligned']).rjust(12)
+                t6m[s] = (f"%.3fm" % (self['data']['benchmarks']['scales'][s]['t_thumbs_aligned'] / 60))
+            except:
+                t6[s] = t6m[s] = "???"
+
+            try:
+                t7[s] = (f"%.1fs" % self['data']['benchmarks']['scales'][s]['t_thumbs_spot']).rjust(12)
+                t7m[s] = (f"%.3fm" % (self['data']['benchmarks']['scales'][s]['t_thumbs_spot'] / 60))
+            except:
+                t7[s] = t7m[s] = "???"
+
+        timings = []
+        timings.append(('Generate Scale Hierarchy', t0 + ' / ' + t0m))
+        timings.append(('Convert All Scales to Zarr', t1 + ' / ' + t1m))
+        timings.append(('Generate Source Image Thumbnails', t2 + ' / ' + t2m))
+
+        timings.append(('Compute Affines', ''))
+        for s in cfg.data.scales():
+            timings.append(('  ' + cfg.data.scale_pretty(s), '%s / %s' % (t3[s], t3m[s])))
+        timings.append(('Generate Aligned TIFFs', ''))
+        for s in cfg.data.scales():
+            timings.append(('  ' + cfg.data.scale_pretty(s), '%s / %s' % (t4[s], t4m[s])))
+        timings.append(('Convert Aligned TIFFs to Zarr', ''))
+        for s in cfg.data.scales():
+            timings.append(('  ' + cfg.data.scale_pretty(s), '%s / %s' % (t5[s], t5m[s])))
+        timings.append(('Generate Aligned TIFF Thumbnails', ''))
+        for s in cfg.data.scales():
+            timings.append(('  ' + cfg.data.scale_pretty(s), '%s / %s' % (t6[s], t6m[s])))
+        timings.append(('Generate Correlation Signal Thumbnails', ''))
+        for s in cfg.data.scales():
+            timings.append(('  ' + cfg.data.scale_pretty(s), '%s / %s' % (t7[s], t7m[s])))
+        return timings
+
+
     def previous_method_results(self, s=None, l=None):
         if s == None: s = self.scale
         if l == None: l = self.zpos
@@ -1058,6 +1134,7 @@ class DataModel:
                 'alignment']['previous_method_results']
         except:
             return {}
+
 
     def get_method_data(self, method, s=None, l=None):
         if s == None: s = self.scale
@@ -1817,7 +1894,7 @@ class DataModel:
 
     def propagate_manual_swim_window_px(self, start, end) -> None:
         '''Sets the SWIM Window for the Current Layer when using Manual Alignment.'''
-        logger.critical('Propagating manual swim regions...')
+        logger.info('Upscaling manual swim regions to finer scales...')
         for l in range(start, end):
             pixels = self._data['data']['scales'][self.scale]['stack'][l]['alignment']['manual_swim_window_px']
             for s in self.finer_scales():
