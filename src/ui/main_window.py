@@ -5057,7 +5057,7 @@ class MainWindow(QMainWindow):
                     border-width: 0px;
                 }""")
         self.dw_matches.setWidget(QLabel('Null Widget'))
-        self.addDockWidget(Qt.RightDockWidgetArea, self.dw_matches)
+        self.addDockWidget(Qt.LeftDockWidgetArea, self.dw_matches)
         self.dw_matches.hide()
 
 

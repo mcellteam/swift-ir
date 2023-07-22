@@ -311,7 +311,10 @@ class SnrPlot(QWidget):
         x_axis, y_axis = [], []
         # for layer, snr in enumerate(cfg.data.snr_list(s=s)):
         # for layer, snr in enumerate(cfg.data.snr_list(s=s)[1:]): #0601+ #Todo
+        first_unskipped = cfg.data.first_unskipped(s=s)
         for layer, snr in enumerate(cfg.data.snr_list(s=s)): #0601+
+            if layer == first_unskipped:
+                continue
             if cfg.data.skipped(s=s, l=layer):
                 x_axis.append(layer)
                 y_axis.append(0)
