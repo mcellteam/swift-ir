@@ -142,19 +142,19 @@ class TaskQueue(QObject):
         self.retries = retries
 
         # cfg.main_window.shutdownNeuroglancer()
-        logger.info(f'use_gui = {self.use_gui} ({self.taskPrefix})')
-        if (not cfg.ignore_pbar) and (self.use_gui):
-            # cfg.main_window.showZeroedPbar()  # 0208+
-            cfg.nProcessDone += 1
-            try:
-                self.parent.setPbarMax(self.n_tasks)
-                if self.pbar_text:
-                    self.parent.setPbarText(text=self.pbar_text)
-                    # self.parent.statusBar.showMessage(self.pbar_text)
-                self.parent.sw_pbar.show()
-                self.parent.update()
-            except:
-                logger.error('An exception was raised while setting up progress bar')
+        # logger.info(f'use_gui = {self.use_gui} ({self.taskPrefix})')
+        # if (not cfg.ignore_pbar) and (self.use_gui):
+        #     # cfg.main_window.showZeroedPbar()  # 0208+
+        #     cfg.nProcessDone += 1
+        #     try:
+        #         self.parent.setPbarMax(self.n_tasks)
+        #         if self.pbar_text:
+        #             self.parent.setPbarText(text=self.pbar_text)
+        #             # self.parent.statusBar.showMessage(self.pbar_text)
+        #         self.parent.sw_pbar.show()
+        #         self.parent.update()
+        #     except:
+        #         logger.error('An exception was raised while setting up progress bar')
 
         logger.info('Starting Task Queue: %s...' % self.pbar_text)
         if self.use_gui:

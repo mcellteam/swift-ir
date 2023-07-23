@@ -10,10 +10,15 @@ __all__ = ['data']
 
 VERSION = '0.5.49'
 
-LOG_LEVEL = 1
 
-# RECIPE_LOGGING = 0
-RECIPE_LOGGING = int(getpass.getuser() in ('joelyancey','joely'))
+LOG_LEVEL = 1
+DEV_MODE = 0
+DEBUG_MP = False
+# DEBUG_MP = (False,True)[DEV_MODE]
+DEBUG_NEUROGLANCER = False
+# DEBUG_NEUROGLANCER = (False,True)[DEV_MODE]
+RECIPE_LOGGING = 0
+# RECIPE_LOGGING = int(getpass.getuser() in ('joelyancey','joely'))
 
 '''Main Objects'''
 # datamodel = None
@@ -95,21 +100,11 @@ TACC_MAX_CPUS = 90 # 128 hardware cores/node on Lonestar6
 QTWEBENGINE_RASTER_THREADS = 256
 DEFAULT_PLAYBACK_SPEED = 4.0 # playback speed (fps)
 TARGET_THUMBNAIL_SIZE = 256
-# if 'Joels-' in platform.node():
-#     DEV_MODE = 1
-# else:
-#     DEV_MODE = 0
-DEV_MODE = 0
 PROFILING_MODE = False
 PRINT_EXAMPLE_ARGS = True
 AUTOSAVE = True
 DAEMON_THREADS = True
-# USE_EXTRA_THREADING = True
-USE_EXTRA_THREADING = False
-DEBUG_MP = False
-DEBUG_NEUROGLANCER = False
-# DEBUG_MP = (False,True)[DEV_MODE]
-# DEBUG_NEUROGLANCER = (False,True)[DEV_MODE]
+USE_EXTRA_THREADING = True
 PROFILER = False
 DUMMY = False
 USE_TENSORSTORE = True
