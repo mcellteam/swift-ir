@@ -496,9 +496,6 @@ class ProjectTab(QWidget):
         # cfg.baseViewer.shared_state.add_changed_callback(self.update_MA_ref_state)
         # NO CHANGE----------------------
 
-        logger.info("Setting up custom swim settings...")
-
-
         # MA Stage Buffer Widget
 
         self.MA_refViewerTitle = QLabel('Reference Section')

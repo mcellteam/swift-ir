@@ -123,8 +123,8 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
 
     n_imgs = len(dm)
     logger.info(f'# images: {n_imgs}')
-    # while any([x < n_imgs for x in count_files(dm.dest(), dm.scales())]):
-    while any([x < n_imgs - 1 for x in count_files(dm.dest(), dm.scales())]):
+    while any([x < n_imgs for x in count_files(dm.dest(), dm.scales())]):
+    # while any([x < n_imgs - 1 for x in count_files(dm.dest(), dm.scales())]):
         logger.info('Sleeping for 1 second...')
         time.sleep(1)
 

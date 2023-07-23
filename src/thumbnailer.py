@@ -16,7 +16,7 @@ from multiprocessing.pool import ThreadPool
 import subprocess as sp
 import tqdm
 import src.config as cfg
-from src.funcs_image import ImageSize
+from src.funcs_image import ImageSize, ImageIOSize
 from src.helpers import print_exception, get_appdir, get_bindir, natural_sort, absFilePaths
 
 __all__ = ['Thumbnailer']
@@ -171,7 +171,8 @@ class Thumbnailer:
             return
 
         try:
-            siz_x, siz_y = ImageSize(next(absFilePaths(src)))
+            # siz_x, siz_y = ImageSize(next(absFilePaths(src)))
+            siz_x, siz_y = ImageIOSize(next(absFilePaths(src)))
             scale_factor = int(max(siz_x, siz_y) / target_size)
             if full_size:
                 scale_factor = 1

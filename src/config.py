@@ -13,7 +13,7 @@ VERSION = '0.5.49'
 LOG_LEVEL = 1
 
 # RECIPE_LOGGING = 0
-RECIPE_LOGGING = int(getpass.getuser() == 'joelyancey')
+RECIPE_LOGGING = int(getpass.getuser() in ('joelyancey','joely'))
 
 '''Main Objects'''
 # datamodel = None
