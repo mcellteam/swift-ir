@@ -214,7 +214,10 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         '''
 
 
-
+        pbar = tqdm.tqdm(total=len(tasks), position=0, leave=True)
+        pbar.set_description("Computing Affines")
+        def update_pbar(*a):
+            pbar.update()
 
         def run_apply_async_multiprocessing(func, argument_list, num_processes):
 
