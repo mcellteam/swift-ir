@@ -105,20 +105,30 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
             tasks.append([base_name, al_name, rect, cafm, 128])
 
         cfg.mw.set_status('Generating aligned images. No progress bar available. Awaiting multiprocessing pool...')
-        pbar = tqdm.tqdm(total=len(tasks), position=0, leave=True)
-        pbar.set_description("Generating Alignment")
+        pbar = tqdm.tqdm(total=len(tasks), position=0, leave=True, desc="Generating Alignment")
 
-        def update_tqdm(*a):
+        def update_pbar(*a):
             pbar.update()
 
         t0 = time.time()
         # ctx = mp.get_context('forkserver')
         # with ctx.Pool(processes=cpus) as pool:
-        with ThreadPool(processes=cpus) as pool:
-            results = [pool.apply_async(func=run_mir, args=(task,), callback=update_tqdm) for task in tasks]
+        # with ThreadPool(processes=cpus) as pool:
+        #     results = [pool.apply_async(func=run_mir, args=(task,), callback=update_pbar) for task in tasks]
+        #     pool.close()
+        #     [p.get() for p in results]
+        #     pool.join()
+
+        def run_apply_async_multiprocessing(func, argument_list, num_processes):
+            pool = mp.Pool(processes=num_processes)
+            results = [pool.apply_async(func=func, args=(*argument,), callback=update_pbar) if isinstance(argument, tuple) else pool.apply_async(
+                func=func, args=(argument,), callback=update_pbar) for argument in argument_list]
             pool.close()
-            [p.get() for p in results]
-            pool.join()
+            result_list = [p.get() for p in results]
+            return result_list
+
+        run_apply_async_multiprocessing(func=run_mir, argument_list=tasks, num_processes=cpus)
+
 
         dm.t_generate = time.time() - t0
 
@@ -163,14 +173,13 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
             task = [i, al_name, zarr_group]
             tasks.append(task)
         # shuffle(tasks)
-        pbar = tqdm.tqdm(total=len(tasks), position=0, leave=True)
-        pbar.set_description("Converting Alignment to Zarr")
+        pbar = tqdm.tqdm(total=len(tasks), position=0, leave=True, desc="Converting Alignment to Zarr")
         t0 = time.time()
-        def update_tqdm(*a):
+        def update_pbar(*a):
             pbar.update()
         # with ctx.Pool(processes=cpus) as pool:
         with ThreadPool(processes=cpus) as pool:
-            results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_tqdm) for task in tasks]
+            results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_pbar) for task in tasks]
             pool.close()
             [p.get() for p in results]
             pool.join()

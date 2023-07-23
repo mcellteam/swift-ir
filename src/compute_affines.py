@@ -220,14 +220,11 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             pbar.update()
 
         def run_apply_async_multiprocessing(func, argument_list, num_processes):
-
-            pool = Pool(processes=num_processes)
-
+            pool = mp.Pool(processes=num_processes)
             results = [pool.apply_async(func=func, args=(*argument,), callback=update_pbar) if isinstance(argument, tuple) else pool.apply_async(
                 func=func, args=(argument,), callback=update_pbar) for argument in argument_list]
             pool.close()
             result_list = [p.get() for p in results]
-
             return result_list
 
         all_results = run_apply_async_multiprocessing(func=run_recipe, argument_list=tasks,
