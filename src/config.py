@@ -19,6 +19,11 @@ DEBUG_NEUROGLANCER = False
 # DEBUG_NEUROGLANCER = (False,True)[DEV_MODE]
 RECIPE_LOGGING = 0
 # RECIPE_LOGGING = int(getpass.getuser() in ('joelyancey','joely'))
+# TACC_MAX_CPUS = 122 # 128 hardware cores/node on Lonestar6
+TACC_MAX_CPUS = 90 # 128 hardware cores/node on Lonestar6
+# QTWEBENGINE_RASTER_THREADS = 1024
+QTWEBENGINE_RASTER_THREADS = 64
+TARGET_THUMBNAIL_SIZE = 256
 
 '''Main Objects'''
 # datamodel = None
@@ -93,13 +98,7 @@ CNAME = 'None'
 CLEVEL = 5
 
 '''Other Defaults'''
-# TACC_MAX_CPUS = 122 # 128 hardware cores/node on Lonestar6
-TACC_MAX_CPUS = 90 # 128 hardware cores/node on Lonestar6
-# TACC_MAX_CPUS = 50 # 128 hardware cores/node on Lonestar6
-# QTWEBENGINE_RASTER_THREADS = 1024
-QTWEBENGINE_RASTER_THREADS = 256
 DEFAULT_PLAYBACK_SPEED = 4.0 # playback speed (fps)
-TARGET_THUMBNAIL_SIZE = 256
 PROFILING_MODE = False
 PRINT_EXAMPLE_ARGS = True
 AUTOSAVE = True
