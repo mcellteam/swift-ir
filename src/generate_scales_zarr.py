@@ -74,7 +74,6 @@ def GenerateScalesZarr(dm, gui=True):
                 task_groups[s].append([ID, fn, out])
 
         for group in task_groups:
-            logger.info(f'Downsampling {group}...')
             pbar = tqdm.tqdm(total=len(task_groups[group]), position=0, leave=True)
             pbar.set_description(f"Converting {group} to Zarr")
             def update_tqdm(*a):
@@ -85,8 +84,6 @@ def GenerateScalesZarr(dm, gui=True):
                 pool.close()
                 [p.get() for p in results]
                 pool.join()
-            n_imgs = len(dm)
-            logger.info(f'# images: {n_imgs}')
 
 
 
