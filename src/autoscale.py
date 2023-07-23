@@ -115,13 +115,6 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
             list(tqdm.tqdm(pool.imap_unordered(run, task_groups[group]), total=len(task_groups[group]), desc=f"Downsampling {group}", position=0, leave=True))
             pool.close()
             pool.join()
-        n_imgs = len(dm)
-        logger.info(f'# images: {n_imgs}')
-        while count_files(dm.dest(), [group])[0] < n_imgs:
-            # while any([x < n_imgs - 1 for x in count_files(dm.dest(), dm.scales())]):
-            # logger.info('Sleeping for 1 second...')
-            time.sleep(1)
-
 
 
     # ctx = mp.get_context('forkserver')

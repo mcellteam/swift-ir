@@ -846,7 +846,7 @@ class NewConfigureProjectDialog(QDialog):
             self.accept()
 
     def initUI(self):
-        logger.critical('')
+        logger.info('')
 
         # self.cb_alignLowestScale = QCheckBox('Immediately Align the Coarsest Scale ')
         # def fn_align_coarsest():

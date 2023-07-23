@@ -62,27 +62,43 @@ def GenerateScalesZarr(dm, gui=True):
 
         print(f'\n\n################ Converting Downscales to Zarr ################\n')
 
-        tasks = []
-        for scale in dm.scales()[::-1]:
+        def update_tqdm(*a):
+            pbar.update()
+
+        task_groups = {}
+        for s in dm.scales()[::-1]:
+            task_groups[s] = []
             for ID, img in enumerate(imgs):
-                out = os.path.join(od, 's%d' % get_scale_val(scale))
-                fn = os.path.join(dest, scale, 'img_src', img)
-                tasks.append([ID, fn, out])
+                out = os.path.join(od, 's%d' % get_scale_val(s))
+                fn = os.path.join(dest, s, 'img_src', img)
+                task_groups[s].append([ID, fn, out])
+
+        for group in task_groups:
+            logger.info(f'Downsampling {group}...')
+            with ThreadPool(processes=cpus) as pool:
+                results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_tqdm) for task in tasks]
+                pool.close()
+                [p.get() for p in results]
+                pool.join()
+            n_imgs = len(dm)
+            logger.info(f'# images: {n_imgs}')
 
         pbar = tqdm.tqdm(total=len(tasks), position=0, leave=True)
         pbar.set_description("Converting Downsampled Images to Zarr")
         t0 = time.time()
 
-        def update_tqdm(*a):
-            pbar.update()
+
 
         # shuffle(tasks)
         # with ctx.Pool(processes=cpus) as pool:
-        with ThreadPool(processes=cpus) as pool:
-            results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_tqdm) for task in tasks]
-            pool.close()
-            [p.get() for p in results]
-            pool.join()
+        # with ThreadPool(processes=cpus) as pool:
+        #     results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_tqdm) for task in tasks]
+        #     pool.close()
+        #     [p.get() for p in results]
+        #     pool.join()
+
+
+
         dm.t_scaling_convert_zarr = time.time() - t0
         logger.info('<<<< Generate Zarr Scales End <<<<')
 
