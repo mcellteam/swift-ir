@@ -427,9 +427,12 @@ class MainWindow(QMainWindow):
         self.update()
 
     def initThreadpool(self, timeout=1000):
-        logger.info('')
-        self.threadpool = QThreadPool.globalInstance()
-        self.threadpool.setExpiryTimeout(timeout)  # ms
+        if cfg.USE_EXTRA_THREADING:
+            logger.info('')
+            self.threadpool = QThreadPool.globalInstance()
+            self.threadpool.setExpiryTimeout(timeout)  # ms
+        else:
+            self.threadpool = None
 
     def initImageAllocations(self):
         logger.info('')
