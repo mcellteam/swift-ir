@@ -89,7 +89,7 @@ class MAViewer(neuroglancer.Viewer):
         self.coordinate_space = ng.CoordinateSpace(
             names=['z', 'y', 'x'],
             units=['nm', 'nm', 'nm'],
-            scales=list(cfg.data.resolution(s=cfg.data.scale)), )
+            scales=list(cfg.data.resolution(s=cfg.data.scale_key)), )
             # scales=[1,1,1] )
 
         self._dontDraw = 0
@@ -262,7 +262,7 @@ class MAViewer(neuroglancer.Viewer):
         self.clear_layers()
         self.restoreManAlignPts()
 
-        sf = cfg.data.scale_val(s=cfg.data.scale)
+        sf = cfg.data.scale_val(s=cfg.data.scale_key)
         path = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(sf))
 
         if not os.path.exists(path):
@@ -816,7 +816,7 @@ class MAViewer(neuroglancer.Viewer):
             img_siz = cfg.data.image_size()
             img_w, img_h = img_siz[0], img_siz[1]
             # ww_full = cfg.data.stack()[cfg.data.zpos]['alignment']['swim_settings']['default_auto_swim_window_px']
-            ww_full = cfg.data['data']['defaults'][cfg.data.scale]['swim-window-px']
+            ww_full = cfg.data['data']['defaults'][cfg.data.scale_key]['swim-window-px']
 
             offset_x1 = (img_w / 2) - (ww_full[0] * (1 / 4))
             offset_x2 = (img_w / 2) + (ww_full[0] * (1 / 4))
@@ -1028,7 +1028,7 @@ class MAViewer(neuroglancer.Viewer):
 
             # logger.critical(f'[{self.role}] widget_w = {widget_w}, widget_h = {widget_h}')
 
-            res_z, res_y, res_x = cfg.data.resolution(s=cfg.data.scale) # nm per imagepixel
+            res_z, res_y, res_x = cfg.data.resolution(s=cfg.data.scale_key) # nm per imagepixel
             # tissue_h, tissue_w = res_y*frame[0], res_x*frame[1]  # nm of sample
             scale_h = ((res_y * tensor_y) / widget_h) * 1e-9  # nm/pixel (subtract height of ng toolbar)
             scale_w = ((res_x * tensor_x) / widget_w) * 1e-9  # nm/pixel (subtract width of sliders)
@@ -1045,7 +1045,7 @@ class MAViewer(neuroglancer.Viewer):
             # logger.critical(f'res_y          = {res_y}')
             # logger.critical(f'scale_h        = {scale_h}')
             # logger.critical(f'scale_w        = {scale_w}')
-            # logger.critical(f'cfg.data.scale = {cfg.data.scale}')
+            # logger.critical(f'cfg.data.scale_key = {cfg.data.scale_key}')
             # logger.critical(f'cs_scale       = {cs_scale}')
 
             # logger.info(f'Initializing crossSectionScale to calculated value times adjust {self.cs_scale} [{self.role}]')

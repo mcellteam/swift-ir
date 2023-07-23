@@ -181,7 +181,7 @@ class SnrPlot(QWidget):
         caller = inspect.stack()[1].function
         logger.info(f'caller={caller}')
         if cfg.data:
-            offset = self._getScaleOffset(s=cfg.data.scale)
+            offset = self._getScaleOffset(s=cfg.data.scale_key)
             pos = [cfg.data.zpos + offset, 1]
             # logger.info(f'pos = {pos}')
             self._curLayerLine.setPos(pos)
@@ -203,7 +203,7 @@ class SnrPlot(QWidget):
 
     def updateSpecialLayerLines(self):
         logger.info('')
-        offset = self._getScaleOffset(s=cfg.data.scale)
+        offset = self._getScaleOffset(s=cfg.data.scale_key)
         layers_mp = cfg.data.find_layers_with_manpoints()
         for line in self._mp_lines:   self.plot.removeItem(line)
         for label in self._mp_labels: self.plot.removeItem(label)
@@ -307,7 +307,7 @@ class SnrPlot(QWidget):
 
 
     def get_axis_data(self, s=None) -> tuple:
-        if s == None: s = cfg.data.scale
+        if s == None: s = cfg.data.scale_key
         x_axis, y_axis = [], []
         # for layer, snr in enumerate(cfg.data.snr_list(s=s)):
         # for layer, snr in enumerate(cfg.data.snr_list(s=s)[1:]): #0601+ #Todo
@@ -332,7 +332,7 @@ class SnrPlot(QWidget):
             self.plot.clear()
             self.plot.addItem(self._curLayerLine)
             if self.dock:
-                self.plotSingleScale(s=cfg.data.scale)
+                self.plotSingleScale(s=cfg.data.scale_key)
             else:
                 for s in cfg.data.scales()[::-1]:
                     if cfg.data.is_aligned(s=s):
@@ -376,8 +376,8 @@ class SnrPlot(QWidget):
 
 
     def plotSingleScale(self, s=None):
-        # logger.info(f'plotSingleScale (scale: {s}):')
-        if s == None: scale = cfg.data.scale
+        # logger.info(f'plotSingleScale (scale_key: {s}):')
+        if s == None: scale = cfg.data.scale_key
         x_axis, y_axis = self.get_axis_data(s=s)
         offset = self._getScaleOffset(s=s)
         x_axis = [x+offset for x in x_axis]
@@ -470,12 +470,12 @@ class SnrPlot(QWidget):
                 print_exception()
 
     def onSnrClick2(self, scale):
-        # logger.info(f'onSnrClick2 ({scale}):')
+        # logger.info(f'onSnrClick2 ({scale_key}):')
         self.selected_scale = scale
         cfg.main_window._changeScaleCombo.setCurrentText(scale)
 
 
-    # def onSnrClick(self, plot, points, scale):
+    # def onSnrClick(self, plot, points, scale_key):
     def onSnrClick(self, plot, points):
         logger.info(f'onSnrClick')
 

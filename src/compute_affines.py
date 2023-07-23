@@ -84,14 +84,14 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         rename_switch = False
         alignment_dict = dm['data']['scales'][scale]['stack']
 
-        # alignment_option = dm['data']['scales'][scale]['method_data']['alignment_option']
+        # alignment_option = dm['data']['scales'][scale_key]['method_data']['alignment_option']
         logger.info('Start Layer: %s /End layer: %s' % (str(start), str(end)))
 
-        # path = os.path.join(dm.dest(), scale, 'img_aligned')
+        # path = os.path.join(dm.dest(), scale_key, 'img_aligned')
         # if checkForTiffs(path):
-        #     # al_substack = dm['data']['scales'][scale]['stack'][start:]
+        #     # al_substack = dm['data']['scales'][scale_key]['stack'][start:]
         #     # remove_aligned(al_substack) #0903 Moved into conditional
-        #     dm.remove_aligned(scale, start, end)
+        #     dm.remove_aligned(scale_key, start, end)
 
         signals_dir = os.path.join(dm.dest(), scale, 'signals')
         if not os.path.exists(signals_dir):
@@ -126,6 +126,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['defaults'] = dm['data']['defaults']
             dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['image_src_size'] = dm['data']['scales'][scale]['image_src_size']
             dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['skipped'] = dm['data']['scales'][scale]['stack'][zpos]['skipped']
+            dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['dev_mode'] = cfg.DEV_MODE
+            dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['recipe_logging'] = cfg.RECIPE_LOGGING
 
             if dm['data']['scales'][scale]['isRefinement']:
                 scale_prev = dm.scales()[dm.scales().index(scale) + 1]
@@ -146,48 +148,38 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         dest = dm['data']['destination_path']
 
         cpus = min(psutil.cpu_count(logical=False), TACC_MAX_CPUS, n_tasks)
-        pbar_text = 'Computing Scale %d Transforms w/ SWIM (%d Cores)...' % (scale_val, cpus)
         print(f'\n\n################ Computing Alignment ################\n')
-
-        #
-        # task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, use_gui=use_gui)
-        # task_queue.taskPrefix = 'Computing Alignment for '
-        # task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in cfg.data()[start:end]]
-        # if end == None:
-        #     end = len(dm)
-        #
-        #
-        # task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in dm['data']['scales'][scale]['stack'][start:end]]
-        # # START TASK QUEUE
-        # task_queue.start(cpus)
-        # # align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_recipe_alignment.py')
-        # align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'recipe_maker.py')
-        # # ADD ALIGNMENT TASKS TO QUEUE
-        # for sec in substack:
-        #     zpos = dm_().index(sec)
-        #
-        #     if not sec['skipped']:
-        #         task_args = [sys.executable,
-        #                      align_job,             # Python program to run (single_alignment_job)
-        #                      json.dumps(copy.deepcopy(dm['data']['scales'][scale]['stack'][zpos]))
-        #                      ]
-        #         task_queue.add_task(task_args)
-        #         if use_gui:
-        #             if cfg.PRINT_EXAMPLE_ARGS:
-        #                 if zpos in range(start, start + 3):
-        #                     print("Section #%d (example):\n%s" % (zpos, " ".join(task_args)))
-        #
-        # # task_queue.work_q.join()
-        # # cfg.mw.hud.post('Computing Alignment Using SWIM...')
-        # dt = task_queue.collect_results()
-        # all_results = task_queue.task_dict
-
-
-        tasks = []
+        if end == None:
+            end = len(dm)
+        task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, use_gui=use_gui)
+        task_queue.taskPrefix = 'Computing Alignment for '
+        task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in cfg.data()[start:end]]
+        task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in dm['data']['scales'][scale]['stack'][start:end]]
+        # START TASK QUEUE
+        task_queue.start(cpus)
+        # align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_recipe_alignment.py')
+        align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'recipe_maker.py')
+        # ADD ALIGNMENT TASKS TO QUEUE
         for sec in substack:
             zpos = dm_().index(sec)
+
             if not sec['skipped']:
-                tasks.append(copy.deepcopy(dm['data']['scales'][scale]['stack'][zpos]))
+                encoded_data = json.dumps(copy.deepcopy(dm['data']['scales'][scale]['stack'][zpos]))
+                task_args = [sys.executable, align_job, encoded_data]
+                task_queue.add_task(task_args)
+
+        # task_queue.work_q.join()
+        # cfg.mw.hud.post('Computing Alignment Using SWIM...')
+        dt = task_queue.collect_results()
+        dm.t_align = dt
+        all_results = task_queue.task_dict
+
+
+        # tasks = []
+        # for sec in substack:
+        #     zpos = dm_().index(sec)
+        #     if not sec['skipped']:
+        #         tasks.append(copy.deepcopy(dm['data']['scales'][scale]['stack'][zpos]))
 
 
         '''
@@ -226,19 +218,19 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
 
 
-        def run_apply_async_multiprocessing(func, argument_list, num_processes):
-
-            pool = Pool(processes=num_processes)
-
-            results = [pool.apply_async(func=func, args=(*argument,), callback=update_pbar) if isinstance(argument, tuple) else pool.apply_async(
-                func=func, args=(argument,), callback=update_pbar) for argument in argument_list]
-            pool.close()
-            result_list = [p.get() for p in results]
-
-            return result_list
-
-        all_results = run_apply_async_multiprocessing(func=run_recipe, argument_list=tasks,
-                                                      num_processes=cpus)
+        # def run_apply_async_multiprocessing(func, argument_list, num_processes):
+        #
+        #     pool = Pool(processes=num_processes)
+        #
+        #     results = [pool.apply_async(func=func, args=(*argument,), callback=update_pbar) if isinstance(argument, tuple) else pool.apply_async(
+        #         func=func, args=(argument,), callback=update_pbar) for argument in argument_list]
+        #     pool.close()
+        #     result_list = [p.get() for p in results]
+        #
+        #     return result_list
+        #
+        # all_results = run_apply_async_multiprocessing(func=run_recipe, argument_list=tasks,
+        #                                               num_processes=cpus)
 
 
 
@@ -260,26 +252,30 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         al_stack_old = dm['data']['scales'][scale]['stack']
 
         # for tnum in range(len(task_list)):
-        # for tnum in range(len(all_results)):
-        for r in all_results:
-            # logger.info(f'Reading task results for {tnum}...')
+        for tnum in range(len(all_results)):
+        # for r in all_results:
+            logger.info(f'Reading task results for {tnum}...')
             # Get the updated datamodel previewmodel from stdout for the task
-            # parts = all_results[tnum]['stdout'].split('---JSON-DELIMITER---')
-            # dm_text = None
-            # for p in parts:
-            #     ps = p.strip()
-            #     if ps.startswith('{') and ps.endswith('}'):
-            #         dm_text = p
-            # if dm_text != None:
-            #     results_dict = json.loads(dm_text)
-            #     layer_index = results_dict['result']['alignment']['meta']['index']
-            #     al_stack_old[layer_index] = results_dict['result']
+            parts = all_results[tnum]['stdout'].split('---JSON-DELIMITER---')
+            dm_text = None
+            for p in parts:
+                ps = p.strip()
+                if ps.startswith('{') and ps.endswith('}'):
+                    dm_text = p
+            if dm_text != None:
+                results_dict = json.loads(dm_text)
+                layer_index = results_dict['alignment']['meta']['index']
+                al_stack_old[layer_index] = results_dict
 
-            layer_index = r['alignment']['meta']['index']
-            al_stack_old[r['alignment']['meta']['index']] = r
-        #
+
+            # # For use with ThreadPool ONLY
+            # layer_index = r['alignment']['meta']['index']
+            # al_stack_old[r['alignment']['meta']['index']] = r
+
+
+
         #     if all_results[tnum]['statusBar'] == 'task_error':
-        #         ref_fn = al_stack_old[layer_index]['reference']
+        #         ref_fn = al_stack_old[layer_index]['fn_reference']
         #         base_fn = al_stack_old[layer_index]['filename']
         #         if use_gui:
         #             cfg.mw.hud.post('Alignment Task Error at: ' +
@@ -301,6 +297,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         #         cfg.data['data']['scales'][scale]['stack'][i]['alignment']['method_results']['cumulative_afm']
 
         SetStackCafm(dm.get_iter(scale), scale=scale, poly_order=cfg.data.default_poly_order)
+
+
 
         for i, layer in enumerate(cfg.data.get_iter(scale)):
             layer['alignment_history'][cfg.data.get_current_method(l=i)]['cumulative_afm'] = \
@@ -329,7 +327,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             try:
                 # if cfg.USE_EXTRA_THREADING and use_gui:
                 #     cfg.mw.worker = BackgroundWorker(fn=GenerateAligned(
-                #         dm, scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=use_gui))
+                #         dm, scale_key, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=use_gui))
                 #     cfg.mw.threadpool.start(cfg.mw.worker)
                 # else:
                 GenerateAligned(dm, scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=use_gui)
@@ -347,7 +345,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             thumbnailer = Thumbnailer()
             try:
                 # if cfg.USE_EXTRA_THREADING and use_gui:
-                #     cfg.mw.worker = BackgroundWorker(fn=cfg.thumb.reduce_aligned(start=start, end=end, dest=dest, scale=scale, use_gui=use_gui))
+                #     cfg.mw.worker = BackgroundWorker(fn=cfg.thumb.reduce_aligned(start=start, end=end, dest=dest, scale_key=scale_key, use_gui=use_gui))
                 #     cfg.mw.threadpool.start(cfg.mw.worker)
                 # else:
                 thumbnailer.reduce_aligned(start=start, end=end, dest=dest, scale=scale, use_gui=use_gui)
@@ -387,12 +385,12 @@ def delete_correlation_signals(dm, scale, start, end):
             if os.path.isfile(f):  # this makes the code more robust
                 os.remove(f)
 
-# def delete_correlation_signals(dm, scale, start, end, dest):
+# def delete_correlation_signals(dm, scale_key, start, end, dest):
 #     logger.info('')
 #     for i in range(start, end):
-#         # sigs = cfg.data.get_signals_filenames(s=scale, l=i)
-#         sigs = get_signals_filenames(pdscale=scale)
-#         dir = os.path.join(sest, scale, 'signals')
+#         # sigs = cfg.data.get_signals_filenames(s=scale_key, l=i)
+#         sigs = get_signals_filenames(pdscale=scale_key)
+#         dir = os.path.join(sest, scale_key, 'signals')
 #         basename = os.path.basename(dm.base_image_name(s=s, l=l))
 #         filename, extension = os.path.splitext(basename)
 #         paths = os.path.join(dir, '%s_%s_*%s' % (filename, self.current_method, extension))
@@ -407,7 +405,7 @@ def delete_correlation_signals(dm, scale, start, end):
 
 
 
-# def get_signals_filenames(pd, scale):
+# def get_signals_filenames(destination, scale_key):
 #     dir = os.path.join(self.dest(), s, 'signals')
 #     basename = os.path.basename(dm.base_image_name(s=s, l=l))
 #     filename, extension = os.path.splitext(basename)
@@ -434,8 +432,8 @@ def checkForTiffs(path) -> bool:
 
 def write_run_to_file(dm, scale=None):
     logger.critical('Writing run to file...')
-    if scale == None: scale = dm.scale
-    # snr_avg = 'SNR=%.3f' % dm.snr_average(scale=scale)
+    if scale == None: scale = dm.scale_key
+    # snr_avg = 'SNR=%.3f' % dm.snr_average(scale_key=scale_key)
     timestamp = datetime.now().strftime("%Y%m%d_%H:%M:%S")
     results = 'results'
     # swim_input = 'swim=%.3f' % dm.swim_window()
@@ -516,7 +514,7 @@ if __name__ == '__main__':
     logger.info('Running ' + __file__ + '.__main__()')
     parser = argparse.ArgumentParser()
     parser.add_argument('--path', help='Path to project file')
-    parser.add_argument('--scale', help='Scale to use')
+    parser.add_argument('--scale_key', help='Scale to use')
     parser.add_argument('--start', default=0, help='Section index to start at')
     parser.add_argument('--end', default=None, help='Section index to end at')
     parser.add_argument('--bounding_box', default=False, help='Bounding Box On/Off')
@@ -534,7 +532,7 @@ if __name__ == '__main__':
     if args.scale:
         scale = args.scale
     else:
-        # scale = data['data']['current_scale']
+        # scale_key = data['data']['current_scale']
         scale = 'scale_4'
     start = args.start
     end = args.end

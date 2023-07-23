@@ -286,7 +286,7 @@ class ProjectTable(QWidget):
 
 
     def get_row_data(self, s=None, l=None):
-        if s == None: s = cfg.data.scale
+        if s == None: s = cfg.data.scale_key
         if l == None: l = cfg.data.zpos
 
         rowData = []
@@ -312,7 +312,7 @@ class ProjectTable(QWidget):
 
 
     def set_row_data(self, row):
-        scale = cfg.data.scale
+        scale = cfg.data.scale_key
 
         snr_4x = copy.deepcopy(cfg.data.snr_components(s=scale, l=row))
         row_data = self.get_row_data(s=scale, l=row)

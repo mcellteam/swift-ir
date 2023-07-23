@@ -1146,7 +1146,7 @@ class ProjectTab(QWidget):
                 try:
                     val = int(self._swimWindowControl.text())
                 except:
-                    self._swimWindowControl.setText(str(cfg.data['data']['defaults'][cfg.data.scale]['swim-window-px'][0]))
+                    self._swimWindowControl.setText(str(cfg.data['data']['defaults'][cfg.data.scale_key]['swim-window-px'][0]))
                     return
                 logger.info(f"val = {val}")
                 if (val % 2) == 1:
@@ -1484,7 +1484,7 @@ class ProjectTab(QWidget):
                 key = 'swim_out'
             elif self.rb_logs_mir_args.isChecked():
                 key = 'mir_args'
-            args = '\n'.join(cfg.data['data']['scales'][cfg.data.scale]['stack'][cfg.data.zpos]['alignment'][key][
+            args = '\n'.join(cfg.data['data']['scales'][cfg.data.scale_key]['stack'][cfg.data.zpos]['alignment'][key][
                                  'ingredient_0']).split(' ')
             for i, x in enumerate(args):
                 if x and x[0] == '/':
@@ -1503,7 +1503,7 @@ class ProjectTab(QWidget):
                 key = 'swim_out'
             elif self.rb_logs_mir_args.isChecked():
                 key = 'mir_args'
-            args = '\n'.join(cfg.data['data']['scales'][cfg.data.scale]['stack'][cfg.data.zpos]['alignment'][key][
+            args = '\n'.join(cfg.data['data']['scales'][cfg.data.scale_key]['stack'][cfg.data.zpos]['alignment'][key][
                                  'ingredient_1']).split(' ')
             for i, x in enumerate(args):
                 if x and x[0] == '/':
@@ -1522,7 +1522,7 @@ class ProjectTab(QWidget):
                 key = 'swim_out'
             elif self.rb_logs_mir_args.isChecked():
                 key = 'mir_args'
-            args = '\n'.join(cfg.data['data']['scales'][cfg.data.scale]['stack'][cfg.data.zpos]['alignment'][key][
+            args = '\n'.join(cfg.data['data']['scales'][cfg.data.scale_key]['stack'][cfg.data.zpos]['alignment'][key][
                                  'ingredient_2']).split(' ')
             for i, x in enumerate(args):
                 if x and x[0] == '/':
@@ -2445,7 +2445,7 @@ class ProjectTab(QWidget):
 
                 # self.blinkCur = 1 - self.blinkCur
                 # if self.blinkCur:
-                #     ref_index = cfg.data.get_index(cfg.data.reference())
+                #     ref_index = cfg.data.get_index(cfg.data.fn_reference())
                 #     logger.info(f'ref_index = {ref_index}')
                 #     cfg.emViewer.set_layer(ref_index)
                 # else:
@@ -2717,7 +2717,7 @@ class ProjectTab(QWidget):
     # def copySaveAlignment(self):
     #     logger.critical('')
     #     dt = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    #     path = os.path.join(cfg.data.dest(), cfg.data.scale, 'img_staged',str(cfg.data.zpos), dt)
+    #     path = os.path.join(cfg.data.dest(), cfg.data.scale_key, 'img_staged',str(cfg.data.zpos), dt)
     #     if not os.path.isdir(path):
     #         os.mkdir(path)
     #     file = cfg.data.filename()
@@ -3123,7 +3123,7 @@ class ProjectTab(QWidget):
             # self.deleteMpRefAction.triggered.connect(self.deleteMpRef)
             # menu.addAction(self.deleteMpRefAction)
             self.deleteAllMpRefAction = QAction('Clear All Reference Regions')
-            # self.deleteAllMpRefAction.setStatusTip('Delete all reference manual correspondence points')
+            # self.deleteAllMpRefAction.setStatusTip('Delete all fn_reference manual correspondence points')
             self.deleteAllMpRefAction.triggered.connect(self.deleteAllMpRef)
             menu.addAction(self.deleteAllMpRefAction)
             self.deleteAllPtsAction0 = QAction('Clear All Regions')
@@ -3355,7 +3355,7 @@ class ProjectTab(QWidget):
             self.updateTreeWidget()
             self.treeview_model.jumpToLayer()
 
-        self.btnCurSection.setToolTip('Jump to the data for current section and scale')
+        self.btnCurSection.setToolTip('Jump to the data for current section and scale_key')
         self.btnCurSection.setStyleSheet('font-size: 10px;')
         self.btnCurSection.setFixedSize(80, 18)
         self.btnCurSection.clicked.connect(fn)
@@ -3365,7 +3365,7 @@ class ProjectTab(QWidget):
             self.treeview.collapseAll()
 
         self.btnReloadDataTree = QPushButton('Reload')
-        self.btnReloadDataTree.setToolTip('Jump to the data for current section and scale')
+        self.btnReloadDataTree.setToolTip('Jump to the data for current section and scale_key')
         self.btnReloadDataTree.setStyleSheet('font-size: 10px;')
         self.btnReloadDataTree.setFixedSize(80, 18)
         self.btnReloadDataTree.clicked.connect(fn)
@@ -3380,7 +3380,7 @@ class ProjectTab(QWidget):
                     (int(self.le_tree_jumpToScale.text()) in cfg.data.scale_vals()):
                 scale = get_scale_key(int(self.le_tree_jumpToScale.text()))
             else:
-                scale = cfg.data.scale
+                scale = cfg.data.scale_key
             self.updateTreeWidget()
 
             keys = ['data', 'scales', scale, 'stack', section]
@@ -3405,6 +3405,8 @@ class ProjectTab(QWidget):
                     #     keys.extend(['alignment', 'method_results', 'ingredient_2'])
                     elif opt == 'SWIM Settings':
                         keys.extend(['alignment', 'swim_settings'])
+                    elif opt == 'Meta':
+                        keys.extend(['alignment', 'meta'])
                     # elif opt == 'SWIM Out':
                     #     keys.extend(['alignment', 'method_results', 'ingredient_2', 'swim_out'])
                     # elif opt == 'SWIM Err':
@@ -3442,7 +3444,7 @@ class ProjectTab(QWidget):
         #             (int(self.le_tree_jumpToScale.text()) in cfg.data.scale_vals()):
         #         requested_scale = int(self.le_tree_jumpToScale.text())
         #     else:
-        #         requested_scale = cfg.data.scale
+        #         requested_scale = cfg.data.scale_key
         #     self.updateTreeWidget()
         #     self.treeview_model.jumpToSection(sec=requested, s=get_scale_key(requested_scale))
         self.le_tree_jumpToSec.returnPressed.connect(goToData)
@@ -3453,7 +3455,7 @@ class ProjectTab(QWidget):
         #          'Alignment History']
         # items = ['--', 'Results', 'Alignment History', 'Method Results', 'SWIM Settings', 'SWIM Out',
         #          'SWIM Err', 'SWIM Arguments', 'MIR Err', 'MIR Out']
-        items = ['--', 'Results', 'Alignment History', 'Method Results', 'SWIM Settings']
+        items = ['--', 'Results', 'Alignment History', 'Method Results', 'SWIM Settings', 'Meta']
         self.combo_data_tree.addItems(items)
 
         self.btn_tree_go = QPushButton('Go')

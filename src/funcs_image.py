@@ -423,11 +423,11 @@ def SetSingleCafm(layer_dict, c_afm, bias_mat=None):
     return c_afm
 
 
-# def SetStackCafm(iterator, scale, poly_order=None):
+# def SetStackCafm(iterator, scale_key, poly_order=None):
 def SetStackCafm(iterator, scale, poly_order=None):
     '''Calculate cafm across the whole stack with optional bias correction'''
     logger.info(f'Setting Stack CAFM (polynoial: {poly_order})...')
-    # logger.info(f'Setting Stack CAFM (iterator={str(iterator)}, scale={scale}, poly_order={poly_order})...')
+    # logger.info(f'Setting Stack CAFM (iterator={str(iterator)}, scale_key={scale_key}, poly_order={poly_order})...')
     cfg.mw.tell('<span style="color: #FFFF66;"><b>Setting Stack CAFM...</b></span>')
     use_poly = (poly_order != None)
     if use_poly:
@@ -578,7 +578,7 @@ array([[   0,    0],
        [ 997,  580]], dtype=int32)
     '''
     logger.info('Computing Bounding Rect...')
-    if scale == None: scale = cfg.data.scale
+    if scale == None: scale = cfg.data.scale_key
 
     if cfg.SUPPORT_NONSQUARE:
         '''Non-square'''

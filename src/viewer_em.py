@@ -72,7 +72,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
         self.created = datetime.datetime.now()
         # self._layer = None
         self._layer = cfg.data.zpos
-        self.scale = cfg.data.scale
+        self.scale = cfg.data.scale_key
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
         self._settingZoom = False
         self.type = 'AbstractEMViewer'
@@ -99,14 +99,14 @@ class AbstractEMViewer(neuroglancer.Viewer):
         return ng.CoordinateSpace(
             names=['z', 'y', 'x'],
             units=['nm', 'nm', 'nm'],
-            scales=list(cfg.data.resolution(s=cfg.data.scale)),
+            scales=list(cfg.data.resolution(s=cfg.data.scale_key)),
         )
 
     def getCoordinateSpacePlanar(self):
         return ng.CoordinateSpace(
             names=['z', 'y', 'x'],
             units=['nm', 'nm', 'nm'],
-            scales=list(cfg.data.resolution(s=cfg.data.scale)),
+            scales=list(cfg.data.resolution(s=cfg.data.scale_key)),
         )
 
 
@@ -380,7 +380,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
     def get_zoom(self, w, h):
         _, tensor_y, tensor_x = cfg.tensor.shape
-        res_z, res_y, res_x = cfg.data.resolution(s=cfg.data.scale)  # nm per imagepixel
+        res_z, res_y, res_x = cfg.data.resolution(s=cfg.data.scale_key)  # nm per imagepixel
         scale_h = ((res_y * tensor_y) / h) * 1e-9  # nm/pixel
         scale_w = ((res_x * tensor_x) / w) * 1e-9  # nm/pixel
         cs_scale = max(scale_h, scale_w)
@@ -397,7 +397,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
         cfg.tensor = None
         try:
             # cfg.unal_tensor = get_zarr_tensor(unal_path).result()
-            sf = cfg.data.scale_val(s=cfg.data.scale)
+            sf = cfg.data.scale_val(s=cfg.data.scale_key)
             if cfg.data.is_aligned_and_generated():
                 path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(sf))
                 cfg.tensor = cfg.al_tensor = get_zarr_tensor(path).result()
@@ -497,9 +497,9 @@ class EMViewer(AbstractEMViewer):
         if cfg.data.skipped(l=z):
             return
 
-        # sf = cfg.data.scale_val(s=cfg.data.scale)
+        # sf = cfg.data.scale_val(s=cfg.data.scale_key)
         # path = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(sf))
-        path = os.path.join(cfg.data.dest(), cfg.data.scale, 'zarr_staged', '%d'%z)
+        path = os.path.join(cfg.data.dest(), cfg.data.scale_key, 'zarr_staged', '%d' % z)
 
         if not os.path.exists(path):
             cfg.main_window.warn('Data Store Not Found: %s' % path)
@@ -573,11 +573,11 @@ class EMViewer(AbstractEMViewer):
 #         self.coordinate_space = self.getCoordinateSpace()
 #
 #         self.get_tensors()
-#         sf = cfg.data.scale_val(s=cfg.data.scale)
+#         sf = cfg.data.scale_val(s=cfg.data.scale_key)
 #         path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(sf))
 #
 #         self.index = cfg.data.zpos
-#         # dir_staged = os.path.join(cfg.data.dest(), self.scale, 'zarr_staged', str(self.index), 'staged')
+#         # dir_staged = os.path.join(cfg.data.dest(), self.scale_key, 'zarr_staged', str(self.index), 'staged')
 #         # self.store = cfg.stageViewer = get_zarr_tensor(dir_staged).result()
 #
 #         tensor = get_zarr_tensor(path).result()
@@ -597,7 +597,7 @@ class EMViewer(AbstractEMViewer):
 #
 #         logger.info(f'Tensor Shape: {tensor.shape}')
 #
-#         sf = cfg.data.scale_val(s=cfg.data.scale)
+#         sf = cfg.data.scale_val(s=cfg.data.scale_key)
 #         self.ref_l, self.base_l, self.aligned_l = 'ref_%d' % sf, 'base_%d' % sf, 'aligned_%d' % sf
 #         with self.txn() as s:
 #             '''other settings:
@@ -692,7 +692,7 @@ class EMViewerSnr(AbstractEMViewer):
         # h = cfg.project_tab.snrPlotSplitter.geometry().height() / 3
         # w = cfg.project_tab.snrPlotSplitter.sizes()[1]
         # self.initZoom(h=h, w=w, adjust=1.20)
-        sf = cfg.data.scale_val(s=cfg.data.scale)
+        sf = cfg.data.scale_val(s=cfg.data.scale_key)
         self.ref_l, self.base_l, self.aligned_l = 'ref_%d' % sf, 'base_%d' % sf, 'aligned_%d' % sf
 
         with self.txn() as s:

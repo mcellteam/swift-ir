@@ -37,8 +37,8 @@ if __name__ == '__main__':
     stageit      = bool(int(sys.argv[5]))
     dest         = sys.argv[6]
     '''
-    out = os.path.join(od, 's%d' % get_scale_val(scale))
-    fn = os.path.join(dest, scale, 'img_src', img)
+    out = os.path.join(od, 's%d' % get_scale_val(scale_key))
+    fn = os.path.join(dest, scale_key, 'img_src', img)
     '''
     logger = logging.getLogger('job_convert_zarr.log')
     fh = logging.FileHandler(os.path.join(dest, 'logs', 'job_convert_zarr.log'))

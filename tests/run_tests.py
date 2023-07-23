@@ -73,4 +73,4 @@ if __name__ == '__main__':
 
 
 
-    # dm = ComputeAffines(scale=scale, path=path, start=0, end=None, use_gui=False, bounding_box=False)
+    # dm = ComputeAffines(scale_key=scale_key, path=path, start=0, end=None, use_gui=False, bounding_box=False)

@@ -3,6 +3,7 @@
 '''This file is for initializing global config and 'data' the dictionary datamodel state in memory.'''
 
 import platform
+import getpass
 # from src import shaders
 
 __all__ = ['data']
@@ -10,6 +11,9 @@ __all__ = ['data']
 VERSION = '0.5.49'
 
 LOG_LEVEL = 1
+
+# RECIPE_LOGGING = 0
+RECIPE_LOGGING = int(getpass.getuser() == 'joelyancey')
 
 '''Main Objects'''
 # datamodel = None
@@ -102,7 +106,7 @@ AUTOSAVE = True
 DAEMON_THREADS = True
 # USE_EXTRA_THREADING = True
 USE_EXTRA_THREADING = False
-DEBUG_MP = True
+DEBUG_MP = False
 DEBUG_NEUROGLANCER = False
 # DEBUG_MP = (False,True)[DEV_MODE]
 # DEBUG_NEUROGLANCER = (False,True)[DEV_MODE]

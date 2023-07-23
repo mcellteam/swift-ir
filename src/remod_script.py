@@ -61,7 +61,7 @@ def saveImage(img, ofn, qual=None, comp=1):
 def remod(ifns, ofns, halfwidth=10, halfexclwidth=0, topbot=False,
           TEST=False):
     print('remod:')
-    '''REMOD - Create reference images from a stack
+    '''REMOD - Create fn_reference images from a stack
     REMOD(ifns, ofnbase) loads all the images in IFNS (not all at once)
     and produces output images that are a box car average of nearby images
     with the central image excluded.
