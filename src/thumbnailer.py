@@ -171,8 +171,8 @@ class Thumbnailer:
             return
 
         try:
-            # siz_x, siz_y = ImageSize(next(absFilePaths(src)))
-            siz_x, siz_y = ImageIOSize(next(absFilePaths(src)))
+            siz_x, siz_y = ImageSize(next(absFilePaths(src)))
+            # siz_x, siz_y = ImageIOSize(next(absFilePaths(src)))
             scale_factor = int(max(siz_x, siz_y) / target_size)
             if full_size:
                 scale_factor = 1
