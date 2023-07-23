@@ -471,8 +471,8 @@ class OpenProject(QWidget):
             # self._buttonDelete.hide()
 
     def userSelectionChanged(self):
-        logger.info(f'>>>> userSelectionChanged >>>>')
-        caller = inspect.stack()[1].function
+        # logger.info(f'>>>> userSelectionChanged >>>>')
+        # caller = inspect.stack()[1].function
         # if caller == 'initTableData':
         #     return
         row = self.user_projects.table.currentIndex().row()
@@ -481,7 +481,7 @@ class OpenProject(QWidget):
                 self.selected_file = self.user_projects.table.item(row, 0).text()
             except:
                 pass
-            logger.info(f'row: {str(row)}, selected:\n{self.selected_file}')
+            logger.info(f'row {str(row)} selected: {self.selected_file}')
             self.setSelectionPathText(self.selected_file)
             self._buttonProjectFromTiffFolder1.setEnabled(validate_tiff_folder(self.selected_file))
             self.cbCalGrid.setVisible(validate_tiff_folder(self.selected_file))

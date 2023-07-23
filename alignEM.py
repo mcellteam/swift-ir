@@ -212,10 +212,10 @@ def main():
             with open(bashrc, "r") as f:
                 found = any(check_str in x for x in f)
 
-            logger.critical(f'Quick launch alias found? {found}')
+            logger.info(f'Quick launch alias found? {found}')
 
             if not found:
-                logger.critical("Adding quick launch alias 'alignem'..")
+                logger.info("Adding quick launch alias 'alignem'..")
                 with open(bashrc, "a+") as f:
                     f.write(appendme)
         except:

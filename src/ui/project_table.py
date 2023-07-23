@@ -198,7 +198,7 @@ class ProjectTable(QWidget):
         self.scaleLabel.setText(f"{cfg.data.scale_pretty()} | {siz[0]}x{siz[1]}px")
 
     def updateTableData(self):
-        logger.critical('')
+        logger.info('')
         cfg.mw.showZeroedPbar(set_n_processes=1, pbar_max=len(cfg.data))
 
         if self.btn_splash_load_table.isVisible():

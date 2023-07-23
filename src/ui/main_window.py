@@ -2535,8 +2535,8 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def closeEvent(self, event):
-        logger.critical("closeEvent called by %s..." % inspect.stack()[1].function)
-        # self.shutdownInstructions()
+        logger.info("closeEvent called by %s..." % inspect.stack()[1].function)
+        self.shutdownInstructions()
 
         self.exit_app()
         # QMainWindow.closeEvent(self, event)

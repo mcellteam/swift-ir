@@ -36,7 +36,8 @@ def GenerateScalesZarr(dm, gui=True):
         cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
     else:
 
-        logger.info('Generating Scaled Zarr Arrays...')
+        logger.info('Copy-converting TIFFs to NGFF-Compliant Zarr...')
+
         # Todo conditional handling of skips
 
         dest = dm.dest()

@@ -279,7 +279,6 @@ def BiasMat(x, bias_funcs):
 # For now the form of the functions is an Nth-order polynomial
 # def BiasFuncs(layerator, bias_funcs=None, poly_order=4):
 def BiasFuncs(layerator, poly_order=0, bias_funcs=None):
-    logger.critical('\n\nBiasFuncs:\n')
     poly_order = int(poly_order)
     n_tasks = sum(1 for _ in copy.deepcopy(layerator))
     if type(bias_funcs) == type(None):
