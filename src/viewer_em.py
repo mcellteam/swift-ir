@@ -432,9 +432,8 @@ class EMViewer(AbstractEMViewer):
 
     def initViewer(self, nglayout=None):
         caller = inspect.stack()[1].function
-        logger.info(f'[{caller}]')
-        # caller = inspect.stack()[1].function
-        # logger.info(f'Initializing Neuroglancer Viewer...\n')
+        if DEV:
+            logger.info(f'\n\n[DEV] [{caller}] Initializing Neuroglancer...\n\n')
         self._blockStateChanged = False
 
         if not nglayout:

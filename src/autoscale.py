@@ -36,7 +36,7 @@ mp.set_start_method('forkserver', force=True)
 
 
 def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
-    logger.critical('>>>> autoscale >>>>')
+    # logger.info('>>>> autoscale >>>>')
 
     # threadpool = QThreadPool.globalInstance()
     # threadpool.setExpiryTimeout(1000)
@@ -113,6 +113,8 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
         logger.info(f'Downsampling {group}...')
         with ctx.Pool() as pool:
             list(tqdm.tqdm(pool.imap_unordered(run, task_groups[group]), total=len(task_groups[group]), desc=f"Downsampling {group}", position=0, leave=True))
+            pool.close()
+            pool.join()
         n_imgs = len(dm)
         logger.info(f'# images: {n_imgs}')
         while count_files(dm.dest(), [group])[0] < n_imgs:
@@ -165,50 +167,8 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     # for s in dm.scales():
     #     dm.set_image_size(s=s)
 
-    logger.info('Copy-converting TIFFs to NGFF-Compliant Zarr...')
-    # if gui:
-    #     cfg.mw.tell('Copy-converting Downsampled Source Images to Zarr...')
-    #     # cfg.mw.showZeroedPbar()
-    # try:
-    #     worker = BackgroundWorker(fn=GenerateScalesZarr(dm, gui=gui))
-    #     threadpool.start(worker)
-    # except:
-    #     print_exception()
-    #     logger.warning('Something Unexpected Happened While Converting The Scale Hierarchy To Zarr')
-    #     if gui: cfg.mw.warn('Something Unexpected Happened While Generating Thumbnails')
-
-    logger.info("\n\nGnerating Zarr Scales...\n\n")
 
     GenerateScalesZarr(dm, gui=gui)
-
-    logger.info("\n\nFinished generating Zarrs of downsampled images. Waiting 1 seconds...\n\n")
-
-    time.sleep(1)
-
-
-
-    # if make_thumbnails:
-    #     logger.info('Generating Source Thumbnails...')
-    #     # if gui:
-    #     #     cfg.mw.tell('Generating Source Image Thumbnails...')
-    #     #     # cfg.mw.showZeroedPbar()
-    #     # try:
-    #     #     thumbnailer = Thumbnailer()
-    #     #     worker = BackgroundWorker(fn=thumbnailer.reduce_main(dest=dm.dest()))
-    #     #     threadpool.start(worker)
-    #     # except:
-    #     #     print_exception()
-    #     #     logger.warning('Something Unexpected Happened While Generating Source Thumbnails')
-    #     #     if gui: cfg.mw.warn('Something Unexpected Happened While Generating Source Thumbnails')
-    #     thumbnailer = Thumbnailer()
-    #     thumbnailer.reduce_main(dest=dm.dest())
-
-    # if gui:
-    #     cfg.mw.hidePbar()
-    #     # if cfg.mw._isProjectTab():
-    #     #     cfg.project_tab.initNeuroglancer()
-    #     cfg.mw.tell('**** Autoscaling Complete ****')
-
 
     cfg.mw.tell('**** Autoscaling Complete ****')
     logger.info('<<<< autoscale <<<<')

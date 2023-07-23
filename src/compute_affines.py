@@ -68,7 +68,6 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             logger.info(f'dm.dest(): {dm.dest()}')
             dm.set_defaults()
         else:
-            logger.critical('using GUI...')
             USE_FILE_IO = cfg.USE_FILE_IO
             DEV_MODE = cfg.DEV_MODE
             TACC_MAX_CPUS = cfg.TACC_MAX_CPUS
