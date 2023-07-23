@@ -25,6 +25,7 @@ TACC_MAX_CPUS = 80 # 128 hardware cores/node on Lonestar6
 QTWEBENGINE_RASTER_THREADS = 128
 TARGET_THUMBNAIL_SIZE = 256
 USE_EXTRA_THREADING = False
+UI_UPDATE_DELAY = 200 #ms
 
 '''Main Objects'''
 # datamodel = None

@@ -162,7 +162,6 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         # ADD ALIGNMENT TASKS TO QUEUE
         for sec in substack:
             zpos = dm_().index(sec)
-
             if not sec['skipped']:
                 encoded_data = json.dumps(copy.deepcopy(dm['data']['scales'][scale]['stack'][zpos]))
                 task_args = [sys.executable, align_job, encoded_data]
