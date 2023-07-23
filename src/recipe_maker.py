@@ -79,6 +79,7 @@ class align_recipe:
         self.initial_rotation = float(self.defaults['initial-rotation'])
         self.afm = np.array([[1., 0., 0.], [0., 1., 0.]])
 
+
         # Configure platform-specific path to executables for C SWiFT-IR
         slug = (('linux', 'darwin')[platform.system() == 'Darwin'], 'tacc')['tacc.utexas' in platform.node()]
         self.swim_c = f'{os.path.split(os.path.realpath(__file__))[0]}/lib/bin_{slug}/swim'
@@ -458,7 +459,7 @@ class align_ingredient:
 
 
     def run_swim(self):
-        SWIMlogger = logging.getLogger('root')
+        SWIMlogger = logging.getLogger('SWIMlogger')
 
         self.multi_swim_arg_str = self.get_swim_args()
 
