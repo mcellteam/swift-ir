@@ -60,7 +60,7 @@ def GenerateScalesZarr(dm, gui=True):
         print(f'\n\n################ Converting Downscales to Zarr ################\n')
 
         tasks = []
-        for scale in dm.scales():
+        for scale in dm.scales()[::-1]:
             for ID, img in enumerate(imgs):
                 out = os.path.join(od, 's%d' % get_scale_val(scale))
                 fn = os.path.join(dest, scale, 'img_src', img)
@@ -73,7 +73,7 @@ def GenerateScalesZarr(dm, gui=True):
         def update_tqdm(*a):
             pbar.update()
 
-        shuffle(tasks)
+        # shuffle(tasks)
         # with ctx.Pool(processes=cpus) as pool:
         with ThreadPool(processes=cpus) as pool:
             results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_tqdm) for task in tasks]
