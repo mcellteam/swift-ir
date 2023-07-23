@@ -126,10 +126,8 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
 
     dm.register_cafm_hashes(s=scale, start=start, end=end)
 
-    if cfg.ignore_pbar:
-        cfg.nProcessDone += 1
-        cfg.main_window.updatePbar()
-        cfg.main_window.setPbarText('Copy-converting Alignment to Zarr...')
+    logger.info('Sleeping for 1 seconds...')
+    time.sleep(1)
 
     pbar_text = 'Copy-converting Scale %d Alignment To Zarr (%d Cores)...' % (scale_val, cpus)
     if cfg.CancelProcesses:
@@ -178,6 +176,8 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
             pool.join()
         dt = time.time() - t0
         dm.t_convert_zarr = dt
+
+        cfg.main_window._autosave(silently=True) #0722+
 
 
 # def update_pbar():
