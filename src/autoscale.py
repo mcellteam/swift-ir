@@ -107,11 +107,18 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     # for task in tasks:
     #     run2(task)
 
+    ctx = mp.get_context('forkserver')
 
     for group in task_groups:
         logger.info(f'Downsampling {group}...')
-        with mp.Pool() as p:
-            list(tqdm.tqdm(p.imap_unordered(run, task_groups[group]), total=len(task_groups[group]), desc=f"Downsampling {group}"))
+        with ctx.Pool() as pool:
+            list(tqdm.tqdm(pool.imap_unordered(run, task_groups[group]), total=len(task_groups[group]), desc=f"Downsampling {group}", position=0, leave=True))
+        n_imgs = len(dm)
+        logger.info(f'# images: {n_imgs}')
+        while count_files(dm.dest(), [group])[0] < n_imgs:
+            # while any([x < n_imgs - 1 for x in count_files(dm.dest(), dm.scales())]):
+            logger.info('Sleeping for 1 second...')
+            time.sleep(1)
 
 
 
@@ -132,13 +139,13 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     dm.link_reference_sections(s_list=dm.scales()) #This is necessary
     dm.scale = dm.scales()[-1]
 
-
-    n_imgs = len(dm)
-    logger.info(f'# images: {n_imgs}')
-    while any([x < n_imgs for x in count_files(dm.dest(), dm.scales())]):
-    # while any([x < n_imgs - 1 for x in count_files(dm.dest(), dm.scales())]):
-        logger.info('Sleeping for 1 second...')
-        time.sleep(1)
+    # WAIT FOR CORRECT NUMBER OF OUTPUT IMAGES
+    # n_imgs = len(dm)
+    # logger.info(f'# images: {n_imgs}')
+    # while any([x < n_imgs for x in count_files(dm.dest(), dm.scales())]):
+    # # while any([x < n_imgs - 1 for x in count_files(dm.dest(), dm.scales())]):
+    #     logger.info('Sleeping for 1 second...')
+    #     time.sleep(1)
 
     # count_files(dm.dest(), dm.scales())
     # logger.info("\n\nFinished generating downsampled source images. Sleeping for 5 seconds...\n\n")
