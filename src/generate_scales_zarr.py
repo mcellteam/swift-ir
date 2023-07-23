@@ -17,7 +17,6 @@ import tqdm
 import numcodecs
 import zarr
 numcodecs.blosc.use_threads = False
-from libtiff import TIFF
 
 import libtiff
 libtiff.libtiff_ctypes.suppress_warnings()
@@ -92,7 +91,7 @@ def convert_zarr(task):
     fn = task[1]
     out = task[2]
     store = zarr.open(out, write_empty_chunks=False)
-    tif = TIFF.open(fn)
+    tif = libtiff.TIFF.open(fn)
     img = tif.read_image()[:, ::-1]  # np.array
     store[ID, :, :] = img  # store: <zarr.core.Array (19, 1244, 1130) uint8>
     store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
