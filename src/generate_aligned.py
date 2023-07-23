@@ -163,7 +163,7 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
             zarr_group = os.path.join(dm.dest(), 'img_aligned.zarr', 's%d' % scale_val)
             task = [i, al_name, zarr_group]
             tasks.append(task)
-        shuffle(tasks)
+        # shuffle(tasks)
         pbar = tqdm.tqdm(total=len(tasks), position=0, leave=True)
         pbar.set_description("Converting Alignment to Zarr")
         t0 = time.time()

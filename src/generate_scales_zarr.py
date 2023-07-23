@@ -66,7 +66,6 @@ def GenerateScalesZarr(dm, gui=True):
                 fn = os.path.join(dest, scale, 'img_src', img)
                 tasks.append([ID, fn, out])
 
-        logger.info("RUNNING MULTIPROCESSING POOL (CONVERT ZARR)...")
         pbar = tqdm.tqdm(total=len(tasks), position=0, leave=True)
         pbar.set_description("Converting Downsampled Images to Zarr")
         t0 = time.time()
@@ -81,7 +80,6 @@ def GenerateScalesZarr(dm, gui=True):
             pool.close()
             [p.get() for p in results]
             pool.join()
-        logger.info("----------END----------")
         dm.t_scaling_convert_zarr = time.time() - t0
         logger.info('<<<< Generate Zarr Scales End <<<<')
 

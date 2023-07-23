@@ -84,8 +84,9 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
                 try:    shutil.copy(fn, ofn)
                 except: logger.warning("Unable to link or copy from " + fn + " to " + ofn)
     logger.info('Creating downsampling tasks...')
-    tasks = []
-    for s in dm.downscales():  # value string '1 2 4'
+    task_groups = {}
+    for s in dm.downscales()[::-1]:  # value string '1 2 4'
+        task_groups[s] = []
         scale_val = get_scale_val(s)
         for i, layer in enumerate(dm['data']['scales'][s]['stack']):
             base       = dm.base_image_name(s=s, l=i)
@@ -93,7 +94,7 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
             ofn        = os.path.join(dm.dest(), s, 'img_src', os.path.split(if_arg)[1]) # <-- wrong path on second project
             of_arg     = 'of=%s' % ofn
             scale_arg  = '+%d' % scale_val
-            tasks.append([iscale2_c, scale_arg, of_arg, if_arg])
+            task_groups[s].append([iscale2_c, scale_arg, of_arg, if_arg])
             layer['filename'] = ofn #0220+
 
 
@@ -106,8 +107,11 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     # for task in tasks:
     #     run2(task)
 
-    with mp.Pool() as p:
-        list(tqdm.tqdm(p.imap_unordered(run, tasks), total=len(tasks)))
+
+    for group in task_groups:
+        logger.info(f'Downsampling {group}...')
+        with mp.Pool() as p:
+            list(tqdm.tqdm(p.imap_unordered(run, task_groups[group]), total=len(task_groups[group]), desc=f"Downsampling {group}"))
 
 
 
@@ -143,7 +147,7 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     # count_files(dm.dest(), dm.scales())
 
     src_img_size = dm.image_size(s='scale_1')
-    for s in dm.scales():
+    for s in dm.scales()[::-1]:
         if s == 'scale_1':
             continue
         sv = dm.scale_val(s)
