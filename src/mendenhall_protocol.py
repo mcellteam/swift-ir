@@ -106,7 +106,7 @@ class Mendenhall(QObject):
     def preallocate(self):
         if self.image_size:
             preallocation_size = 10
-            cfg.main_window.hud.post(f'Preallocating Zarr, Preallocation Size: {preallocation_size}')
+            cfg.main_window.hud.post(f'Allocating Zarr, Preallocation Size: {preallocation_size}')
             preallocate_zarr(name=self.zarr_name,
                              group=self.zarr_group,
                              dimx=self.image_size[0],

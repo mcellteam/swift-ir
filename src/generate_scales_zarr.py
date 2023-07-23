@@ -81,9 +81,9 @@ def GenerateScalesZarr(dm, gui=True):
             t0 = time.time()
             with ThreadPool(processes=cpus) as pool:
                 results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_tqdm) for task in task_groups[group]]
-                pool.close()
-                [p.get() for p in results]
-                pool.join()
+                # pool.close()
+                # [p.get() for p in results]
+                # pool.join()
 
 
 
