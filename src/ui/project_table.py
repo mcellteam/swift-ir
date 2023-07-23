@@ -79,12 +79,12 @@ class ProjectTable(QWidget):
         }
         
         QHeaderView::section {
-            font-size: 14pt;
+            font-size: 12pt;
         }
         
         QTableWidget {
             gridline-color: #161c20;
-            font-size: 12pt;
+            font-size: 10pt;
         }
         
         QTableWidget QTableCornerButton::section {
@@ -232,7 +232,7 @@ class ProjectTable(QWidget):
 
 
     def setColumnWidths(self):
-        self.table.setColumnWidth(0, 80)  # 0 index
+        self.table.setColumnWidth(0, 90)  # 0 index
         self.table.setColumnWidth(1, 170)   # 1 Filename
         self.table.setColumnWidth(2, 80)   # 2 SNR
         self.table.setColumnWidth(3, 80)  # 10 Last Aligned datetime
@@ -374,15 +374,15 @@ class ProjectTable(QWidget):
                 self.table.setCellWidget(row, col, vw)
             elif col == 2:
                 lab1 = QLabel('%.3g' % float(row_data[2]))
-                lab1.setStyleSheet("font-weight: 600; font-size: 14px;")
+                lab1.setStyleSheet("font-weight: 600; font-size: 13px;")
                 m = self.m[method]
                 lab2 = QLabel(m)
                 if m == 'Default Grid':
-                    lab2.setStyleSheet("font-size: 12px; color: #00BF00;")
+                    lab2.setStyleSheet("font-size: 11px; color: #00BF00;")
                 elif method == 'Custom Grid':
-                    lab2.setStyleSheet("font-size: 12px; color: #8f99fb;")
+                    lab2.setStyleSheet("font-size: 11px; color: #8f99fb;")
                 else:
-                    lab2.setStyleSheet("font-size: 12px; color: #010fcc;")
+                    lab2.setStyleSheet("font-size: 11px; color: #010fcc;")
 
                 vw = VWidget(lab1,lab2)
                 vw.layout.setAlignment(Qt.AlignCenter)
