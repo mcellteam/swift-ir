@@ -98,16 +98,16 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
 
     t0 = time.time()
 
-    # with ThreadPool(processes=cpus) as pool:
-    #     pool.map(run, tqdm.tqdm(tasks, total=len(tasks)))
-    #     pool.close()
-    #     pool.join()
-    print(f'\n\n################ Generating Scales ################\n')
-    ctx = mp.get_context('forkserver')
-    with ctx.Pool(processes=cpus) as pool:
-        results = pool.map(run, tasks)
+    with ThreadPool(processes=cpus) as pool:
+        pool.map(run, tqdm.tqdm(tasks, total=len(tasks)))
         pool.close()
         pool.join()
+    print(f'\n\n################ Generating Scales ################\n')
+    # ctx = mp.get_context('forkserver')
+    # with ctx.Pool(processes=cpus) as pool:
+    #     pool.map(run, tasks)
+    #     pool.close()
+    #     pool.join()
     # ctx = mp.get_context('forkserver')
     # pool = ctx.Pool(processes=cpus)
     # pool.map(run, tqdm.tqdm(tasks, total=len(tasks), desc="Downsampling", position=0, leave=True))
