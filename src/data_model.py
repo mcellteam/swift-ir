@@ -1909,7 +1909,7 @@ class DataModel:
                 self._data['data']['scales'][s]['stack'][l]['alignment']['manual_swim_window_px'] = int(pixels * sf + 0.5)
 
     def set_manual_swim_windows_to_default(self, s_list=None, current_only=False) -> None:
-        logger.info('')
+        # logger.info('')
         import src.config as cfg
         if s_list == None:
             s_list = self.finer_scales()
@@ -1919,7 +1919,7 @@ class DataModel:
         # for s in self.scales():
         for s in s_list:
             man_ww = man_ww_full / self.scale_val(s)
-            logger.info(f'Manual SWIM window size for {s} to {man_ww}')
+            # logger.info(f'Manual SWIM window size for {s} to {man_ww}')
             if current_only:
                 self.stack(s)[self.zpos]['alignment']['manual_swim_window_px'] = man_ww
             else:
