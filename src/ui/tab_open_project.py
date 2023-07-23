@@ -1220,11 +1220,11 @@ class UserProjects(QWidget):
         self.table.clearContents()
         font0 = QFont()
         # font0.setBold(True)
-        font0.setPointSize(9)
+        font0.setPointSize(8)
 
         font1 = QFont()
-        font1.setBold(True)
-        font1.setPointSize(10)
+        # font1.setBold(True)
+        font1.setPointSize(9)
         self.table.setRowCount(0)
         for i, row in enumerate(self.get_data()):
             # logger.info(f'>>>> row #{i} >>>>')
