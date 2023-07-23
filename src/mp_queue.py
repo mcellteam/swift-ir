@@ -310,6 +310,7 @@ class TaskQueue(QObject):
                             # QApplication.processEvents()
                             sys.exit(1)
 
+                    logger.info(f"# tasks remaining: {n_tasks - realtime}")
                     # if (not cfg.ignore_pbar) and self.use_gui:
                     #     try:
                     #         self.parent.updatePbar(n_tasks - realtime)
