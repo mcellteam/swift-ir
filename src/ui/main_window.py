@@ -402,7 +402,8 @@ class MainWindow(QMainWindow):
 
     def shutdownNeuroglancer(self):
         if ng.is_server_running():
-            logger.critical('Stopping Neuroglancer...')
+            if DEV:
+                logger.critical('[DEV] Stopping Neuroglancer...')
             # self.tell('Stopping Neuroglancer...')
             ng.server.stop()
             time.sleep(.1)
@@ -1280,7 +1281,6 @@ class MainWindow(QMainWindow):
             self.warn('%s is not a valid target for alignment!' % cfg.data.scale_pretty(scale))
             return
         self.tell('Aligning All Sections (%s)...' % cfg.data.scale_pretty())
-        logger.critical(f'alignAll caller={caller}, set_pbar={set_pbar} >>>>')
         # if set_pbar:
         #     logger.critical('set_pbar >>>>')
         #     cfg.ignore_pbar = False
@@ -1638,7 +1638,7 @@ class MainWindow(QMainWindow):
 
     def scale_up(self) -> None:
         '''Callback function for the Next Scale button.'''
-        logger.info('scale_up >>>>')
+        logger.info('')
         if not self._working:
             if self._scaleUpButton.isEnabled():
                 self._changeScaleCombo.setCurrentIndex(self._changeScaleCombo.currentIndex() - 1)  # Changes Scale
@@ -2210,7 +2210,7 @@ class MainWindow(QMainWindow):
         if not self._working:
             if caller in ('main', 'scale_down', 'scale_up'):
                 if self._isProjectTab():
-                    logger.info(f'[{caller}]')
+                    # logger.info(f'[{caller}]')
                     requested_scale = cfg.data.scales()[self._changeScaleCombo.currentIndex()]
                     cfg.pt.warning_cafm.hide()
                     cfg.pt.project_table.wTable.hide()

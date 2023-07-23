@@ -252,7 +252,6 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         # for tnum in range(len(task_list)):
         for tnum in range(len(all_results)):
         # for r in all_results:
-            logger.info(f'Reading task results for {tnum}...')
             # Get the updated datamodel previewmodel from stdout for the task
             parts = all_results[tnum]['stdout'].split('---JSON-DELIMITER---')
             dm_text = None
