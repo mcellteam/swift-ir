@@ -72,6 +72,8 @@ class align_recipe:
         else:
             self.wht = self.alignment['swim_settings']['signal-whitening']
             self.iters = self.alignment['swim_settings']['iterations']
+        if self.meta['isRefinement']:
+            self.iters = 1
         self.grid_custom_regions  = self.alignment['swim_settings']['grid-custom-regions']
         self.ingredients = []
         self.initial_rotation = float(self.defaults['initial-rotation'])
