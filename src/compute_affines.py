@@ -221,7 +221,6 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         def run_apply_async_multiprocessing(func, argument_list, num_processes):
 
             pool = Pool(processes=num_processes)
-
             results = [pool.apply_async(func=func, args=(*argument,), callback=update_pbar) if isinstance(argument, tuple) else pool.apply_async(
                 func=func, args=(argument,), callback=update_pbar) for argument in argument_list]
             pool.close()
@@ -248,9 +247,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         # updated_model = copy.deepcopy(dm) # Integrate output of each task into a new combined datamodel previewmodel
 
         logger.info('Reading task results and updating data model...')
-        al_stack_old = dm['data']['scales'][scale]['stack']
-
-        # # For use with Muiltiprocessing Queue ONLY
+        # al_stack_old = dm['data']['scales'][scale]['stack']
+        # # For use with mp_queue.py ONLY
         # for tnum in range(len(all_results)):
         #     # Get the updated datamodel previewmodel from stdout for the task
         #     parts = all_results[tnum]['stdout'].split('---JSON-DELIMITER---')
@@ -268,7 +266,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
         # # For use with ThreadPool ONLY
         for r in all_results:
-            al_stack_old[r['alignment']['meta']['index']] = r
+            dm['data']['scales'][scale]['stack'][r['alignment']['meta']['index']] = r
 
 
         SetStackCafm(dm.get_iter(scale), scale=scale, poly_order=cfg.data.default_poly_order)
