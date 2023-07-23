@@ -69,7 +69,7 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     # Create Scale 1 Symlinks
     logger.info('Creating Scale 1 symlinks')
     if gui:
-        cfg.main_window.tell('Sym-linking full scale images...')
+        cfg.main_window.tell('Sym-linking full scale_key images...')
     src_path = dm.source_path()
     for img in dm.basefilenames():
         fn = os.path.join(src_path, img)

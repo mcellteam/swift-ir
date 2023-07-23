@@ -696,10 +696,14 @@ class OpenProject(QWidget):
             # self.showMainUI()
             dm.set_defaults()
 
+            initLogFiles(dm)
+
             cfg.project_tab = ProjectTab(self, path=path, datamodel=dm)
 
-            initLogFiles(dm)
-            # cfg.mw._disableGlobTabs()
+            # initLogFiles(dm)
+
+
+            cfg.mw._disableGlobTabs()
 
             # self.user_projects.table.rowCount()
 
@@ -722,6 +726,7 @@ class OpenProject(QWidget):
             twi.setFont(font0)
             self.user_projects.table.setItem(rc, 1, twi)
             cfg.mw.set_status('')
+            QApplication.processEvents()
             try:
                 if dm['data']['autoalign_flag']:
                     cfg.mw.tell(
@@ -767,12 +772,13 @@ class OpenProject(QWidget):
                 except:
                     print_exception()
                 finally:
+                    cfg.mw.enableAllTabs()
                     cfg.mw.setUpdatesEnabled(True)
         cfg.mw.setNoPbarMessage(False)
 
         QApplication.processEvents()
 
-        logger.info(f'Appending {filename} to .swift_cache...')
+        logger.info(f'Appending project to .swift_cache...')
         userprojectspath = os.path.join(os.path.expanduser('~'), '.swift_cache')
         with open(userprojectspath, 'a') as f:
             f.write(filename + '\n')
@@ -1280,7 +1286,7 @@ class UserProjects(QWidget):
 
         logger.info(f'# saved projects: {len(self.project_paths)}')
         for p in self.project_paths:
-            logger.info(f'Getting table entry data for {p}...')
+            logger.info(f'Collecting data of {p}...')
 
             try:
                 with open(p, 'r') as f:

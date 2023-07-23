@@ -22,7 +22,7 @@ class CustomWebEnginePage(QWebEnginePage):
             w.setUrl(url)
             w.show()
 
-            # Keep reference to external window, so it isn't cleared up.
+            # Keep fn_reference to external window, so it isn't cleared up.
             self.external_windows.append(w)
             return False
         return super().acceptNavigationRequest(url, _type, isMainFrame)

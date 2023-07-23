@@ -1,6 +1,6 @@
 import numpy as np
 import argparse
-# import pandas as pd
+# import pandas as destination
 
 def invertAffine(afm):
     '''INVERTAFFINE - Invert affine transform
@@ -13,7 +13,7 @@ def invertAffine(afm):
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
 
-    # df = pd.read_csv('src/utils/cafm.csv', sep=',', header=None)
+    # df = destination.read_csv('src/utils/cafm.csv', sep=',', header=None)
     df = pd.read_csv('src/utils/cafm.csv', sep=',', header=None)
     print(df.values)
 

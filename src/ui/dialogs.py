@@ -896,7 +896,7 @@ class NewConfigureProjectDialog(QDialog):
         self.scales_input.setFixedWidth(130)
         self.scales_input.setText(scales_str)
         self.scales_input.setAlignment(Qt.AlignCenter)
-        tip = "Scale factors, space-delimited.\nExample: To generate a 4x 2x and 1x scale hierarchy:\n\n4 2 1"
+        tip = "Scale factors, space-delimited.\nExample: To generate a 4x 2x and 1x scale_key hierarchy:\n\n4 2 1"
         self.scale_instructions_label = QLabel(tip)
         self.scale_instructions_label.setStyleSheet("font-size: 11px;")
         self.scales_input.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))

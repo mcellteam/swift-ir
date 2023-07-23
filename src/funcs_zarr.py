@@ -106,7 +106,7 @@ def get_zarr_array_layer_view(zarr_path:str, l=None):
 
 
 def get_tensor_from_tiff(dir=None, s=None, l=None):
-    if s == None: s = cfg.data.scale
+    if s == None: s = cfg.data.scale_key
     if l == None: l = cfg.data.zpos
     fn = os.path.basename(cfg.data.base_image_name(s=s, l=l))
     path = os.path.join(cfg.data.dest(), s, 'img_src', fn)

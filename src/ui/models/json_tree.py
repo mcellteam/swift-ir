@@ -360,7 +360,7 @@ class JsonModel(QAbstractItemModel):
             return item.value
 
     def collapseIndex(self, s=None, l=None):
-        if s == None: s = cfg.data.scale
+        if s == None: s = cfg.data.scale_key
         if l == None: l = cfg.data.zpos
         cfg.project_tab.treeview.collapseAll()
         keys = ['data', 'scales', s, 'stack', l]
@@ -410,7 +410,7 @@ class JsonModel(QAbstractItemModel):
             self.getIndex(findkeys, treeitem=next_treeitem)
 
     def jumpToLayer(self, s=None, l=None):
-        if s == None: s = cfg.data.scale
+        if s == None: s = cfg.data.scale_key
         if l == None: l = cfg.data.zpos
         # cfg.project_tab.treeview.collapseAll()
         keys = ['data', 'scales', s, 'stack', l]
@@ -420,14 +420,14 @@ class JsonModel(QAbstractItemModel):
         cfg.project_tab.treeview.scrollTo(self.next_treeitem, QAbstractItemView.PositionAtTop)
 
     def jumpToScale(self, s=None):
-        if s == None: s = cfg.data.scale
+        if s == None: s = cfg.data.scale_key
         keys = ['data', 'scales', s]
         self.getIndex(findkeys=keys, expand=True)
         cfg.project_tab.treeview.scrollTo(self.next_treeitem, QAbstractItemView.PositionAtTop)
 
 
     def jumpToSection(self, sec, s=None):
-        if s == None: s = cfg.data.scale
+        if s == None: s = cfg.data.scale_key
         keys = ['data', 'scales', s, 'stack', sec]
         self.getIndex(findkeys=keys, expand=True)
         cfg.project_tab.treeview.scrollTo(self.next_treeitem, QAbstractItemView.PositionAtTop)

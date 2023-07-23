@@ -63,8 +63,8 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
         # print_example_cafms(scale_dict)
 
         # try:
-        #     bias_path = os.path.join(dm.dest(), scale, 'bias_data')
-        #     save_bias_analysis(layers=dm.get_iter(s=scale), bias_path=bias_path)
+        #     bias_path = os.path.join(dm.dest(), scale_key, 'bias_data')
+        #     save_bias_analysis(layers=dm.get_iter(s=scale_key), bias_path=bias_path)
         # except:
         #     print_exception()
 
@@ -85,7 +85,7 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
             rect = [0, 0, w, h] # might need to swap w/h for Zarr
         logger.info(f'Aligned Size      : {rect[2:]}')
         logger.info(f'Offsets           : {rect[0]}, {rect[1]}')
-        # args_list = makeTasksList(dm, iter(stack[start:end]), job_script, scale, rect) #0129-
+        # args_list = makeTasksList(dm, iter(stack[start:end]), job_script, scale_key, rect) #0129-
         if end:
             cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(range(start,end)))
         else:
@@ -145,7 +145,7 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
                              overwrite=True)
 
         # Create "staged" Zarr hierarchy and its groups
-        # dir = os.path.join(dm.dest(), scale)
+        # dir = os.path.join(dm.dest(), scale_key)
         # stage_path = os.path.join(dir, 'zarr_staged')
         # store = zarr.DirectoryStore(stage_path)  # Does not create directory
         # root = zarr.group(store=store, overwrite=False)  # <-- creates physical directory.
@@ -236,9 +236,9 @@ def tryRemoveDatFiles(dm, scale, path):
     # bb_str = str(dm.has_bb())
     # poly_order_str = str(cfg.data.default_poly_order)
     bias_data_path = os.path.join(path, scale, 'bias_data')
-    # tryRemoveFile(os.path.join(path, scale,
+    # tryRemoveFile(os.path.join(path, scale_key,
     #                            'swim_log_' + bb_str + '_' + null_cafm_str + '_' + poly_order_str + '.dat'))
-    # tryRemoveFile(os.path.join(path, scale,
+    # tryRemoveFile(os.path.join(path, scale_key,
     #                            'mir_commands_' + bb_str + '_' + null_cafm_str + '_' + poly_order_str + '.dat'))
     tryRemoveFile(os.path.join(path, scale, 'swim_log.dat'))
     tryRemoveFile(os.path.join(path, scale, 'mir_commands.dat'))
@@ -262,6 +262,10 @@ def print_example_cafms(dm):
         print(str(dm.cafm(l=0)))
         print(str(dm.cafm(l=1)))
         print(str(dm.cafm(l=2)))
+        print('Last Three CAFMs:')
+        print(str(dm.cafm(l=len(cfg.data) - 3)))
+        print(str(dm.cafm(l=len(cfg.data) - 2)))
+        print(str(dm.cafm(l=len(cfg.data - 1))))
         # print('-----------------------------------')
     except:
         pass

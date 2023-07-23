@@ -68,7 +68,7 @@ class Flicker(QLabel):
 
         self.a = cfg.data.thumbnail_aligned(l=p)
 
-        reference = cfg.data['data']['scales'][cfg.data.scale]['stack'][cfg.data.zpos]['reference']
+        reference = cfg.data['data']['scales'][cfg.data.scale_key]['stack'][cfg.data.zpos]['reference']
         ind_reference = cfg.data.get_index(reference)
 
         # self.b = cfg.data.thumbnail_aligned(l=max(0, p - 1))
@@ -127,7 +127,7 @@ class Flicker(QLabel):
 
                 qp.drawPixmap(rect, pm)
 
-                if (not cfg.data.skipped()) and (cfg.data.reference() != ''):
+                if (not cfg.data.skipped()) and (cfg.data.fn_reference() != ''):
                     font = QFont()
                     font.setBold(True)
                     # size = max(min(int(11 * (max(pm.height(), 1) / 60)), 14), 7)

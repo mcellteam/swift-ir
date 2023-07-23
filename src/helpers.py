@@ -709,7 +709,7 @@ def exist_aligned_zarr(scale: str) -> bool:
             result = False
         else:
             result = True
-        logger.critical('Returning Result %r for scale %s' % (result, scale))
+        logger.critical('Returning Result %r for scale_key %s' % (result, scale))
         return result
     else:
         logger.warning(f'called by {caller} but there is no cfg.data!')
@@ -1283,12 +1283,12 @@ def file_hash(file_path):
 
 # def print_dat_files() -> None:
 #     '''Prints the .dat files for the current s, if they exist .'''
-#     bias_data_path = os.path.join(cfg.datamodel['data']['destination_path'], cfg.datamodel.scale, 'bias_data')
+#     bias_data_path = os.path.join(cfg.datamodel['data']['destination_path'], cfg.datamodel.scale_key, 'bias_data')
 #     if are_images_imported():
 #         logger.info('Printing .dat Files')
 #         try:
 #             logger.info("_____________________BIAS DATA_____________________")
-#             logger.info("Scale %d____________________________________________" % get_scale_val(cfg.datamodel.scale))
+#             logger.info("Scale %d____________________________________________" % get_scale_val(cfg.datamodel.scale_key))
 #             with open(os.path.join(bias_data_path, 'snr_1.dat'), 'r') as f:
 #                 snr_1 = f.read()
 #                 logger.info('snr_1               : %s' % snr_1)

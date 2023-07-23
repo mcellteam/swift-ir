@@ -690,7 +690,7 @@ class MainWindow(QMainWindow):
             files = []
             for i in range(0, 4):
                 name = '%s_%s_%s_%d%s' % (filename, cfg.data.current_method, tkarg, i, extension)
-                files.append(os.path.join(cfg.data.dest(), cfg.data.scale, 'tmp', name))
+                files.append(os.path.join(cfg.data.dest(), cfg.data.scale_key, 'tmp', name))
 
             method = cfg.data.current_method
 
@@ -706,7 +706,7 @@ class MainWindow(QMainWindow):
                         use = cfg.data.grid_default_regions[i]
 
                     # logger.info(f'file  : {files[i]}  exists? : {os.path.exists(files[i])}  use? : {use}')
-                    path = os.path.join(cfg.data.dest(), cfg.data.scale, 'tmp', files[i])
+                    path = os.path.join(cfg.data.dest(), cfg.data.scale_key, 'tmp', files[i])
                     if use and os.path.exists(path):
                         cfg.pt.match_thumbnails[i].path = path
                         try:
@@ -721,7 +721,7 @@ class MainWindow(QMainWindow):
                 n_ref = len(cfg.data.manpoints()['ref'])
                 n_base = len(cfg.data.manpoints()['base'])
                 for i in range(0, 4):
-                    path = os.path.join(cfg.data.dest(), cfg.data.scale, 'tmp', files[i])
+                    path = os.path.join(cfg.data.dest(), cfg.data.scale_key, 'tmp', files[i])
                     # if DEV:
                     #     logger.info(f'path: {path}')
                     #     logger.info(f'i = {i}, n_ref = {n_ref}, n_base = {n_base}')
@@ -890,7 +890,7 @@ class MainWindow(QMainWindow):
     def _showSNRcheck(self, s=None):
         # logger.info('')
         # caller = inspect.stack()[1].function
-        if s == None: s = cfg.data.scale
+        if s == None: s = cfg.data.scale_key
         if cfg.data.is_aligned():
             # logger.info('Checking SNR data for %s...' % cfg.data.scale_pretty(s=s))
             failed = cfg.data.check_snr_status()
@@ -909,7 +909,7 @@ class MainWindow(QMainWindow):
 
     def fix_cafm(self):
         first_cafm_false = cfg.data.first_cafm_false()
-        self.regenerate(scale=cfg.data.scale, start=first_cafm_false, end=len(cfg.data), reallocate_zarr=False)
+        self.regenerate(scale=cfg.data.scale_key, start=first_cafm_false, end=len(cfg.data), reallocate_zarr=False)
 
         self.dataUpdateWidgets()
 
@@ -917,7 +917,7 @@ class MainWindow(QMainWindow):
     def regenerateOne(self):
         start = cfg.data.zpos
         end = cfg.data.zpos + 1
-        self.regenerate(scale=cfg.data.scale, start=start, end=end)
+        self.regenerate(scale=cfg.data.scale_key, start=start, end=end)
 
 
     def regenerate(self, scale, start=0, end=None, reallocate_zarr=True) -> None:
@@ -1082,7 +1082,7 @@ class MainWindow(QMainWindow):
 
 
     def onAlignmentEnd(self, start, end):
-        logger.critical('Running Post-Alignment Tasks...')
+        logger.info('Running Post-Alignment Tasks...')
         # self.alignmentFinished.emit()
         t0 = time.time()
         try:
@@ -1135,7 +1135,7 @@ class MainWindow(QMainWindow):
             ntasks = 4 * len(alignThese)
             self.showZeroedPbar(set_n_processes=ntasks)
             for s in alignThese:
-                cfg.data.scale = s
+                cfg.data.scale_key = s
                 # cfg.project_tab.initNeuroglancer()
                 cfg.project_tab.refreshTab()
                 self.dataUpdateWidgets()
@@ -1158,7 +1158,7 @@ class MainWindow(QMainWindow):
         self.tell('Re-aligning Sections #%d through #%d (%s)...' %
                   (start, end, cfg.data.scale_pretty()))
         self.align(
-            scale=cfg.data.scale,
+            scale=cfg.data.scale_key,
             start=start,
             end=end,
             renew_od=False,
@@ -1185,7 +1185,7 @@ class MainWindow(QMainWindow):
         self.tell('Re-aligning Sections #%d through #%d (%s)...' %
                   (start, end, cfg.data.scale_pretty()))
         self.align(
-            scale=cfg.data.scale,
+            scale=cfg.data.scale_key,
             start=start,
             end=end,
             renew_od=False,
@@ -1208,7 +1208,7 @@ class MainWindow(QMainWindow):
         if quick_swim:
             cfg.ignore_pbar = True
         self.align(
-            scale=cfg.data.scale,
+            scale=cfg.data.scale_key,
             start=start,
             end=end,
             renew_od=False,
@@ -1247,7 +1247,7 @@ class MainWindow(QMainWindow):
         cfg.nProcessSteps = 4
         self.setPbarMax(4)
         self.align(
-            scale=cfg.data.scale,
+            scale=cfg.data.scale_key,
             start=start,
             end=end,
             renew_od=False,
@@ -1272,7 +1272,7 @@ class MainWindow(QMainWindow):
 
         if (not force) and (not self._isProjectTab()):
             return
-        scale = cfg.data.scale
+        scale = cfg.data.scale_key
         if not self.verify_alignment_readiness():
             self.warn('%s is not a valid target for alignment!' % cfg.data.scale_pretty(scale))
             return
@@ -1293,7 +1293,7 @@ class MainWindow(QMainWindow):
         # cfg.event = multiprocessing.Event()
         cfg.data.set_has_bb(cfg.data.use_bb())  # Critical, also see regenerate
         self.align(
-            scale=cfg.data.scale,
+            scale=cfg.data.scale_key,
             start=0,
             end=None,
             renew_od=True,
@@ -1393,9 +1393,9 @@ class MainWindow(QMainWindow):
         #         try:
         #             if cfg.USE_EXTRA_THREADING:
         #                 self.worker = BackgroundWorker(fn=GenerateAligned(
-        #                     scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit))
+        #                     scale_key, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit))
         #                 self.threadpool.start(self.worker)
-        #             else: GenerateAligned(scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit)
+        #             else: GenerateAligned(scale_key, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit)
         #         except:
         #             print_exception()
         #         finally:
@@ -1993,9 +1993,9 @@ class MainWindow(QMainWindow):
             self.notes.clear()
             if self._isProjectTab():
                 self.notes.setPlaceholderText('Enter notes about %s here...'
-                                              % cfg.data.base_image_name(s=cfg.data.scale, l=cfg.data.zpos))
-                if cfg.data.notes(s=cfg.data.scale, l=cfg.data.zpos):
-                    self.notes.setPlainText(cfg.data.notes(s=cfg.data.scale, l=cfg.data.zpos))
+                                              % cfg.data.base_image_name(s=cfg.data.scale_key, l=cfg.data.zpos))
+                if cfg.data.notes(s=cfg.data.scale_key, l=cfg.data.zpos):
+                    self.notes.setPlainText(cfg.data.notes(s=cfg.data.scale_key, l=cfg.data.zpos))
             else:
                 self.notes.clear()
                 self.notes.setPlaceholderText('Notes are stored automatically...')
@@ -2015,7 +2015,7 @@ class MainWindow(QMainWindow):
             self.tell(f'Automatic playback speed set to {new_speed}fps')
 
     def updateHistoryListWidget(self, s=None):
-        if s == None: s = cfg.data.scale
+        if s == None: s = cfg.data.scale_key
         self.history_label = QLabel('<b>Saved Alignments (Scale %d)</b>' % get_scale_val(s))
         self._hstry_listWidget.clear()
         dir = os.path.join(cfg.data.dest(), s, 'history')
@@ -2029,7 +2029,7 @@ class MainWindow(QMainWindow):
         name = self._hstry_listWidget.currentItem().text()
         if cfg.project_tab:
             if name:
-                path = os.path.join(cfg.data.dest(), cfg.data.scale, 'history', name)
+                path = os.path.join(cfg.data.dest(), cfg.data.scale_key, 'history', name)
                 with open(path, 'r') as f:
                     project = json.load(f)
                 self.projecthistory_model.load(project)
@@ -2040,7 +2040,7 @@ class MainWindow(QMainWindow):
         new_name, ok = QInputDialog.getText(self, 'Rename', 'New Name:')
         if not ok: return
         old_name = self._hstry_listWidget.currentItem().text()
-        dir = os.path.join(cfg.data.dest(), cfg.data.scale, 'history')
+        dir = os.path.join(cfg.data.dest(), cfg.data.scale_key, 'history')
         old_path = os.path.join(dir, old_name)
         new_path = os.path.join(dir, new_name)
         try:
@@ -2060,7 +2060,7 @@ class MainWindow(QMainWindow):
             logger.info("Returning without changing anything.")
             return
         self.tell('Loading %s')
-        path = os.path.join(cfg.data.dest(), cfg.data.scale, 'history', name)
+        path = os.path.join(cfg.data.dest(), cfg.data.scale_key, 'history', name)
         with open(path, 'r') as f:
             scale = json.load(f)
         self.tell('Swapping Current Scale %d Dictionary with %s' % (scale_val, name))
@@ -2071,7 +2071,7 @@ class MainWindow(QMainWindow):
         logger.info('Loading History File...')
         name = self._hstry_listWidget.currentItem().text()
         if name is None: return
-        path = os.path.join(cfg.data.dest(), cfg.data.scale, 'history', name)
+        path = os.path.join(cfg.data.dest(), cfg.data.scale_key, 'history', name)
         logger.info('Removing archival alignment %s...' % path)
         try:
             os.remove(path)
@@ -2083,7 +2083,7 @@ class MainWindow(QMainWindow):
     def historyItemClicked(self, qmodelindex):
         item = self._hstry_listWidget.currentItem()
         logger.info(f"Selected {item.text()}")
-        path = os.path.join(cfg.data.dest(), cfg.data.scale, 'history', item.text())
+        path = os.path.join(cfg.data.dest(), cfg.data.scale_key, 'history', item.text())
         with open(path, 'r') as f:
             scale = json.load(f)
 
@@ -2194,7 +2194,7 @@ class MainWindow(QMainWindow):
                 # return lst
             lst = ['%d / %d x %dpx' % (cfg.data.scale_val(s=s), *cfg.data.image_size(s=s)) for s in cfg.data.scales()]
             self._changeScaleCombo.addItems(lst)
-            self._changeScaleCombo.setCurrentIndex(cfg.data.scales().index(cfg.data.scale))
+            self._changeScaleCombo.setCurrentIndex(cfg.data.scales().index(cfg.data.scale_key))
             self._scales_combobox_switch = 1
         else:
             self._changeScaleCombo.clear()
@@ -2202,7 +2202,7 @@ class MainWindow(QMainWindow):
     def fn_scales_combobox(self) -> None:
         caller = inspect.stack()[1].function
         if self._scales_combobox_switch == 0:
-            # logger.warning(f"[{caller}] scale change blocked by _scales_combobox_switch switch")
+            # logger.warning(f"[{caller}] scale_key change blocked by _scales_combobox_switch switch")
             return
         if not self._working:
             if caller in ('main', 'scale_down', 'scale_up'):
@@ -2212,7 +2212,7 @@ class MainWindow(QMainWindow):
                     cfg.pt.warning_cafm.hide()
                     cfg.pt.project_table.wTable.hide()
                     cfg.pt.project_table.btn_splash_load_table.show()
-                    cfg.data.scale = requested_scale
+                    cfg.data.scale_key = requested_scale
                     self.updateEnabledButtons()
                     self.dataUpdateWidgets()
                     self.setControlPanelData()
@@ -2241,7 +2241,7 @@ class MainWindow(QMainWindow):
                 self.tell('Exported: %s' % file)
                 self.tell(f"AFMs exported successfully to '{file}'")
             else:
-                self.warn('Current scale is not aligned. Nothing to export.')
+                self.warn('Current scale_key is not aligned. Nothing to export.')
         else:
             self.warn('No open projects. Nothing to export.')
 
@@ -2735,7 +2735,7 @@ class MainWindow(QMainWindow):
 
     def invalidate_all(self, s=None):
         if ng.is_server_running():
-            if s == None: s = cfg.data.scale
+            if s == None: s = cfg.data.scale_key
             if cfg.data.is_mendenhall():
                 cfg.emViewer.menLV.invalidate()
             else:
@@ -3695,6 +3695,7 @@ class MainWindow(QMainWindow):
 
 
     def addGlobTab(self, tab_widget, name):
+        logger.info(f'Adding Tab:\nType: {type(tab_widget)}\nName: {name}')
         cfg.tabsById[id(tab_widget)] = {}
         cfg.tabsById[id(tab_widget)]['name'] = name
         cfg.tabsById[id(tab_widget)]['type'] = type(tab_widget)
@@ -3804,13 +3805,13 @@ class MainWindow(QMainWindow):
 
     def new_mendenhall_protocol(self):
         # self.new_project(mendenhall=True)
-        # scale = cfg.data.scale
+        # scale_key = cfg.data.scale_key
         # cfg.data['data']['cname'] = 'none'
         # cfg.data['data']['clevel'] = 5
         # cfg.data['data']['chunkshape'] = (1, 512, 512)
-        # cfg.data['data']['scales'][scale]['resolution_x'] = 2
-        # cfg.data['data']['scales'][scale]['resolution_y'] = 2
-        # cfg.data['data']['scales'][scale]['resolution_z'] = 50
+        # cfg.data['data']['scales'][scale_key]['resolution_x'] = 2
+        # cfg.data['data']['scales'][scale_key]['resolution_y'] = 2
+        # cfg.data['data']['scales'][scale_key]['resolution_z'] = 50
         # self.mendenhall = Mendenhall(parent=self, data=cfg.data)
         # self.mendenhall.set_directory()
         # self.mendenhall.start_watching()
@@ -4918,7 +4919,7 @@ class MainWindow(QMainWindow):
         self.navControls = HWidget(self.scaleWidget, self.sectionIndexWidget)
         self.navControls.layout.setSpacing(8)
 
-        tip = """Align and generate all sections for the current scale"""
+        tip = """Align and generate all sections for the current scale_key"""
         self._btn_alignAll = QPushButton(f"Align All {hotkey('A')}")
         self._btn_alignAll.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self._btn_alignAll.setEnabled(False)
@@ -4971,7 +4972,7 @@ class MainWindow(QMainWindow):
         self._btn_regenerate.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self._btn_regenerate.setEnabled(False)
         self._btn_regenerate.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        self._btn_regenerate.clicked.connect(lambda: self.regenerate(scale=cfg.data.scale))
+        self._btn_regenerate.clicked.connect(lambda: self.regenerate(scale=cfg.data.scale_key))
         self._btn_regenerate.setEnabled(False)
 
         self.gb_ctlActions = QGroupBox("Scale Actions")
@@ -5729,7 +5730,7 @@ class MainWindow(QMainWindow):
     def setControlPanelData(self):
         logger.info('')
         if self._isProjectTab():
-            cfg.pt._swimWindowControl.setText(str(getData(f'data,defaults,{cfg.data.scale},swim-window-px')[0]))
+            cfg.pt._swimWindowControl.setText(str(getData(f'data,defaults,{cfg.data.scale_key},swim-window-px')[0]))
             cfg.pt._swimWindowControl.setValidator(QIntValidator(0, cfg.data.image_size()[0]))
             cfg.pt.sb_whiteningControl.setValue(float(getData('data,defaults,signal-whitening')))
             cfg.pt.sb_SWIMiterations.setValue(int(getData('data,defaults,swim-iterations')))
@@ -6304,29 +6305,29 @@ FAQs:
 
 Q: What is AlignEM-SWiFT?
 A: AlignEM-SWiFt is a software tool specialized for registering electron micrographs. It is
-   able to generate scale image hierarchies, compute affine transforms, and generate aligned
+   able to generate scale_key image hierarchies, compute affine transforms, and generate aligned
    images using multi-image rendering.
 
 Q: Can AlignEM-SWiFT be used to register or "align" non-EM images?
 A: Yes, but its forte is aligning EM images which tend to be large, and greyscale. AlignEM-SWIFT
    provides functionality for downscaling and the ability to pass alignment results (affines)
-   from lower scale levels to higher ones.
+   from lower scale_key levels to higher ones.
 
 Q: What are scales?
-A: In AlignEM-SWiFT a "scale" means a downsampled (or decreased resolution) series of images.
+A: In AlignEM-SWiFT a "scale_key" means a downsampled (or decreased resolution) series of images.
 
 Q: Why should data be scaled? Is it okay to align the full resolution series with brute force?
 A: You could, but EM images tend to run large. A more efficient workflow is to:
    1) generate a hierarchy of downsampled images from the full resolution images
    2) align the lowest resolution images first
-   3) pass the computed affines to the scale of next-highest resolution, and repeat
+   3) pass the computed affines to the scale_key of next-highest resolution, and repeat
       until the full resolution images are in alignment. In these FAQs this is referred to
-      as "climbing the scale hierarchy""
+      as "climbing the scale_key hierarchy""
 
-Q: Why do SNR values not necessarily increase as we "climb the scale hierarchy"?
+Q: Why do SNR values not necessarily increase as we "climb the scale_key hierarchy"?
 A: SNR values returned by SWIM are a relative metric which depend on image resolution. It is
    therefore most useful when comparing the relative alignment quality of aligned image
-   pairs at the same scale.
+   pairs at the same scale_key.
 
 Q: Why are the selected manual correlation regions not mutually independent? In other words,
    why does moving or removing an argument to SWIM affect the signal-to-noise ratio and

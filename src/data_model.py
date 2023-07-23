@@ -64,7 +64,7 @@ class DataModel:
 
     """ Encapsulate datamodel dictionary and wrap with methods for convenience """
     def __init__(self, data=None, name=None, quietly=False, mendenhall=False):
-        # self._current_version = 0.50
+        self._current_version = cfg.VERSION
         if not quietly:
             logger.info('>>>> __init__ >>>>')
         if data:
@@ -124,7 +124,7 @@ class DataModel:
             logger.warning('No Images Found')
 
     # def loc(self):
-    #     return self._data['data']['scales'][self.scale]['stack']
+    #     return self._data['data']['scales'][self.scale_key]['stack']
 
     def to_file(self):
         path = os.path.join(self.dest(), 'state_' + time() + '.swiftir')
@@ -237,6 +237,14 @@ class DataModel:
         self._data['rendering']['contrast'] = val
 
     @property
+    def scale_key(self):
+        return self._data['data']['current_scale']
+
+    @scale_key.setter
+    def scale_key(self, str):
+        self._data['data']['current_scale'] = str
+
+    @property
     def scale(self):
         return self._data['data']['current_scale']
 
@@ -248,7 +256,7 @@ class DataModel:
     def current_method(self):
         # caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
-        # self._data['data']['scales'][self.scale]['stack'][self.zpos].setdefault('current_method', 'grid-default')
+        # self._data['data']['scales'][self.scale_key]['stack'][self.zpos].setdefault('current_method', 'grid-default')
         try:
             return self._data['data']['scales'][self.scale]['stack'][self.zpos]['current_method']
         except:
@@ -258,7 +266,7 @@ class DataModel:
 
     @current_method.setter
     def current_method(self, str):
-        # self._data['data']['scales'][self.scale]['stack'][self.zpos]['current_method'] = str
+        # self._data['data']['scales'][self.scale_key]['stack'][self.zpos]['current_method'] = str
         # for s in self.scales():
         for s in self.finer_scales():
             self._data['data']['scales'][s]['stack'][self.zpos]['current_method'] = str
@@ -394,23 +402,23 @@ class DataModel:
             return True
 
     def is_alignable(self) -> bool:
-        '''Checks if the current scale is able to be aligned'''
+        '''Checks if the current scale_key is able to be aligned'''
         # logger.info('')
         try:
             scales_list = self.scales()
             cur_scale_key = self.scale
             coarsest_scale = scales_list[-1]
             if cur_scale_key == coarsest_scale:
-                # logger.info("is cur scale alignable? returning True")
+                # logger.info("is cur scale_key alignable? returning True")
                 return True
 
             cur_scale_index = scales_list.index(cur_scale_key)
             next_coarsest_scale_key = scales_list[cur_scale_index + 1]
             if not self.is_aligned(s=next_coarsest_scale_key):
-                # logger.critical(f"is {self.scale} alignable? False because previous scale is not aligned")
+                # logger.critical(f"is {self.scale_key} alignable? False because previous scale_key is not aligned")
                 return False
             else:
-                # logger.critical(f'is {self.scale} alignable? Returning True')
+                # logger.critical(f'is {self.scale_key} alignable? Returning True')
                 return True
         except:
             print_exception()
@@ -643,7 +651,7 @@ class DataModel:
 
 
     # def corr_signal_path(self, i, s=None, l=None):
-    #     if s == None: s = self.scale
+    #     if s == None: s = self.scale_key
     #     if l == None: l = self.zpos
     #     img = self.base_image_name(s=s, l=l)
     #     return os.path.join(self.dest(), s, 'signals' , 'corr_spot_%d_' %i + img)
@@ -746,7 +754,7 @@ class DataModel:
             if not self.cafm_hash_comports(l=l):
                 logger.info(f'returning {l}')
                 return l
-            # if not self._data['data']['scales'][self.scale]['stack'][l]['cafm_comports']:
+            # if not self._data['data']['scales'][self.scale_key]['stack'][l]['cafm_comports']:
             #     return l
 
 
@@ -924,10 +932,10 @@ class DataModel:
                 # layer['alignment_history']['manual-hint'].setdefault('affine_matrix', init_afm)
                 # layer['alignment_history']['manual-strict'].setdefault('affine_matrix', init_afm)
 
-                # if cfg.data.scale != cfg.data.coarsest_scale_key():
+                # if cfg.data.scale_key != cfg.data.coarsest_scale_key():
                 #     for i, section in range(0, len(cfg.data)):
                 #         scales = cfg.data.scales()
-                #         scale_prev = scales[scales.index(scale) + 1]
+                #         scale_prev = scales[scales.index(scale_key) + 1]
                 #         scale_prev_dict = cfg.data['data']['scales'][scale_prev]['stack']
                 #         prev_method = scale_prev_dict[i]['current_method']
                 #         scale_prev_dict[i]['alignment_history'].setdefault[prev_method]['affine_matrix']
@@ -1386,8 +1394,8 @@ class DataModel:
         return self._data['data']['scales'][s]['stack'][l]['alignment']['manpoints']
 
     def set_manpoints(self, role, matchpoints, l=None):
-        '''Sets manual correspondence points for a single section at the current scale, and applies
-         scaling factor then sets the same points for all scale levels above the current scale.'''
+        '''Sets manual correspondence points for a single section at the current scale_key, and applies
+         scaling factor then sets the same points for all scale_key levels above the current scale_key.'''
         if l == None: l = self.zpos
         logger.info(f"Writing manual points to project dictionary for section #{l}: {matchpoints}")
         # scale_vals  = [x for x in self.scale_vals() if x <= self.scale_val()]
@@ -1411,7 +1419,6 @@ class DataModel:
             img_width = self.image_size(s=s)[0]
             mir_coords = [[img_width - pt[1], pt[0]] for pt in coords]
             self._data['data']['scales'][s]['stack'][l]['alignment']['manpoints_mir'][role] = mir_coords
-
 
             # if role == 'base':
             #     if l+1 in range(0,len(self)):
@@ -1503,7 +1510,7 @@ class DataModel:
     #         layer['alignment']['manpoints']['base'] = []
 
     # def annotations(self, s=None, l=None):
-    #     if s == None: s = self.scale
+    #     if s == None: s = self.scale_key
     #     if l == None: l = self.zpos
     #     layer = self._data['data']['scales'][s]['stack'][l]
     #     r = layer['images']['ref']['metadata']['annotations']
@@ -1611,7 +1618,7 @@ class DataModel:
         return self._data['data']['scales'][s]['resolution']
     #
     # def res_x(self, s=None) -> int:
-    #     if s == None: s = self.scale
+    #     if s == None: s = self.scale_key
     #     if 'resolution_x' in self._data['data']['scales'][s]:
     #         return int(self._data['data']['scales'][s]['resolution_x'])
     #     else:
@@ -1619,7 +1626,7 @@ class DataModel:
     #         # return int(2)
     #
     # def res_y(self, s=None) -> int:
-    #     if s == None: s = self.scale
+    #     if s == None: s = self.scale_key
     #     if 'resolution_y' in self._data['data']['scales'][s]:
     #         return int(self._data['data']['scales'][s]['resolution_y'])
     #     else:
@@ -1627,17 +1634,17 @@ class DataModel:
     #         # return int(2)
     #
     # def res_z(self, s=None) -> int:
-    #     if s == None: s = self.scale
+    #     if s == None: s = self.scale_key
     #     if 'resolution_z' in self._data['data']['scales'][s]:
     #         return int(self._data['data']['scales'][s]['resolution_z'])
     #     else:
     #         logger.warning('resolution_z not in dictionary')
     #         # return int(50)
 
-    # def set_resolutions(self, scale, res_x:int, res_y:int, res_z:int):
-    #     self._data['data']['scales'][scale]['resolution_x'] = res_x
-    #     self._data['data']['scales'][scale]['resolution_y'] = res_y
-    #     self._data['data']['scales'][scale]['resolution_z'] = res_z
+    # def set_resolutions(self, scale_key, res_x:int, res_y:int, res_z:int):
+    #     self._data['data']['scales'][scale_key]['resolution_x'] = res_x
+    #     self._data['data']['scales'][scale_key]['resolution_y'] = res_y
+    #     self._data['data']['scales'][scale_key]['resolution_z'] = res_z
 
     def set_resolution(self, s, res_x:int, res_y:int, res_z:int):
         self._data['data']['scales'][s]['resolution'] = (res_z, res_y, res_x)
@@ -1765,7 +1772,7 @@ class DataModel:
 
     def set_whitening(self, f: float) -> None:
         '''Sets the Whitening Factor for the Current Layer.'''
-        # self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['method_data']['whitening_factor'] = f
+        # self._data['data']['scales'][self.scale_key]['stack'][self.zpos]['alignment']['method_data']['whitening_factor'] = f
         self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['swim_settings']['signal-whitening'] = f
 
 
@@ -1798,7 +1805,7 @@ class DataModel:
 
     def propagate_swim_1x1_custom_px(self, start, end):
         '''Sets the SWIM Window for the Current Section across all scales.'''
-        # img_w, img_h = self.image_size(s=self.scale)
+        # img_w, img_h = self.image_size(s=self.scale_key)
         for l in range(start, end):
             pixels = self._data['data']['scales'][self.scale]['stack'][l]['alignment']['grid_custom_px_1x1']
             for s in self.finer_scales():
@@ -1837,11 +1844,11 @@ class DataModel:
 
     def propagate_swim_2x2_custom_px(self, start, end):
         '''Returns the SWIM Window in pixels'''
-        # img_w, img_h = self.image_size(s=self.scale)
+        # img_w, img_h = self.image_size(s=self.scale_key)
         for l in range(start, end):
             pixels = self._data['data']['scales'][self.scale]['stack'][l]['alignment']['grid_custom_px_2x2']
             for s in self.finer_scales(include_self=False):
-                sf = self.scale_val() / get_scale_val(s)  # scale factor
+                sf = self.scale_val() / get_scale_val(s)  # scale_key factor
                 self._data['data']['scales'][s]['stack'][l]['alignment']['grid_custom_px_2x2'] = [int(pixels[0] * sf + 0.5), int(pixels[1] * sf + 0.5)]
 
 
@@ -1854,7 +1861,7 @@ class DataModel:
         if s_list == None:
             s_list = self.finer_scales()
 
-        img_size = self.image_size(self.scales()[0])  # largest scale size
+        img_size = self.image_size(self.scales()[0])  # largest scale_key size
         # man_ww_full = min(img_size[0], img_size[1]) * cfg.DEFAULT_AUTO_SWIM_WINDOW_PERC
         if factor == None:
             factor = cfg.DEFAULT_AUTO_SWIM_WINDOW_PERC
@@ -1898,7 +1905,7 @@ class DataModel:
         for l in range(start, end):
             pixels = self._data['data']['scales'][self.scale]['stack'][l]['alignment']['manual_swim_window_px']
             for s in self.finer_scales():
-                sf = self.scale_val() / get_scale_val(s)  # scale factor
+                sf = self.scale_val() / get_scale_val(s)  # scale_key factor
                 self._data['data']['scales'][s]['stack'][l]['alignment']['manual_swim_window_px'] = int(pixels * sf + 0.5)
 
     def set_manual_swim_windows_to_default(self, s_list=None, current_only=False) -> None:
@@ -1907,7 +1914,7 @@ class DataModel:
         if s_list == None:
             s_list = self.finer_scales()
 
-        img_size = self.image_size(self.scales()[0])  # largest scale size
+        img_size = self.image_size(self.scales()[0])  # largest scale_key size
         man_ww_full = min(img_size[0], img_size[1]) * cfg.DEFAULT_MANUAL_SWIM_WINDOW_PERC
         # for s in self.scales():
         for s in s_list:
@@ -1934,7 +1941,7 @@ class DataModel:
 
 
     # def propagate_manual_regions(self, s=None):
-    #     if s==None: s=self.scale
+    #     if s==None: s=self.scale_key
     #
     #     # scale_1_ww = ww * self.scale_val()
     #     # scale_vals  = [x for x in self.scale_vals() if x <= self.scale_val()]
@@ -1942,10 +1949,10 @@ class DataModel:
     #     # for s in self.scales():
     #
     #
-    #     for scale in self.finer_scales(s=s):
+    #     for scale_key in self.finer_scales(s=s):
     #         for section in range(0,len(self)):
     #             ww = self.manual_swim_window_px(s=s)
-    #             self._data['data']['scales'][scale]['stack'][section][
+    #             self._data['data']['scales'][scale_key]['stack'][section][
     #                 'alignment']['manual_settings']['manual_swim_window_px'] = ww * (1 / get_scale_val(s))
 
 
@@ -1969,7 +1976,7 @@ class DataModel:
         try:
             return tuple(self._data['data']['scales'][s]['image_src_size'])
         except:
-            logger.info(f"[{caller}] No key 'image_src_size' found (scale:{s}). Adding it now...")
+            logger.info(f"[{caller}] No key 'image_src_size' found (scale_key:{s}). Adding it now...")
             try:
                 self.set_image_size(s=s)
                 answer = tuple(self._data['data']['scales'][s]['image_src_size'])
@@ -1982,7 +1989,7 @@ class DataModel:
     def set_image_size(self, s=None) -> None:
         if s == None: s = self.scale
         caller = inspect.stack()[1].function
-        logger.info(f"[{caller}] scale={s}")
+        logger.info(f"[{caller}] scale_key={s}")
         # self._data['data']['scales'][s]['image_src_size'] = ImageSize(self.path_base(s=s))
         self._data['data']['scales'][s]['image_src_size'] = list(ImageSize(self.path_base(s=s)))
         val = self._data['data']['scales'][s]['image_src_size']
@@ -1995,7 +2002,7 @@ class DataModel:
         try:
             return tuple(self._data['data']['scales'][s]['image_aligned_size'])
         except:
-            logger.info(f"No key 'image_aligned_size' found (scale:{s}). Adding it now...")
+            logger.info(f"No key 'image_aligned_size' found (scale_key:{s}). Adding it now...")
             try:
                 self.set_image_aligned_size(s=s)
                 answer = tuple(self._data['data']['scales'][s]['image_aligned_size'])
@@ -2022,7 +2029,7 @@ class DataModel:
 
     # def poly_order(self, s=None) -> int:
     #     '''Returns the Polynomial Order for the Current Scale.'''
-    #     if s == None: s = self.scale
+    #     if s == None: s = self.scale_key
     #     return int(self._data['data']['scales'][s]['poly_order'])
 
     # def use_corrective_polynomial(self) -> bool:
@@ -2037,7 +2044,7 @@ class DataModel:
 
     # def al_option(self, s=None) -> str:
     #     '''Gets the Alignment Option for the Current Scale.'''
-    #     if s == None: s = self.scale
+    #     if s == None: s = self.scale_key
     #     return self._data['data']['scales'][s]['method_data']['alignment_option']
 
     def path_ref(self, s=None, l=None) -> str:
@@ -2153,12 +2160,12 @@ class DataModel:
 
     # def set_poly_order(self, x: int, s=None) -> None:
     #     '''Sets the Polynomial Order for the Current Scale.'''
-    #     if s == None: s = self.scale
+    #     if s == None: s = self.scale_key
     #     self._data['data']['scales'][s]['poly_order'] = int(x)
 
     # def set_use_poly_order(self, b: bool) -> None:
     #     '''Sets the Null Cafm Trends On/Off State for the Current Scale.'''
-    #     self._data['data']['scales'][self.scale]['null_cafm_trends'] = bool(b)
+    #     self._data['data']['scales'][self.scale_key]['null_cafm_trends'] = bool(b)
 
     def set_al_dict(self, aldict, s=None):
         if s == None: s = self.scale
@@ -2188,7 +2195,7 @@ class DataModel:
 
 
     # def method(self, s=None, l=None):
-    #     if s == None: s = self.scale
+    #     if s == None: s = self.scale_key
     #     if l == None: l = self.zpos
     #     return self._data['data']['scales'][s]['stack'][l]['alignment']['method']
 
@@ -2273,7 +2280,7 @@ class DataModel:
 
     def clear_all_skips(self):
         try:
-            # for scale in self.scales():
+            # for scale_key in self.scales():
             for scale in self.finer_scales():
                 scale_key = str(scale)
                 for layer in self._data['data']['scales'][scale_key]['stack']:
@@ -2283,7 +2290,7 @@ class DataModel:
 
     def append_image(self, file):
         scale = self.scale
-        # logger.info("Adding Image: %s, role: base, scale: %s" % (file, scale))
+        # logger.info("Adding Image: %s, role: base, scale_key: %s" % (file, scale_key))
         self._data['data']['scales'][scale]['stack'].append(copy.deepcopy(layer_template))
         self._data['data']['scales'][scale]['stack'][len(self) - 1]['filename'] = file
         self._data['data']['scales'][scale]['stack'][len(self) - 1]['reference'] = ''
@@ -2291,30 +2298,30 @@ class DataModel:
     def append_images(self, files):
         scale = self.scale
         for file in files:
-            # logger.info("Adding Image: %s, role: base, scale: %s" % (file, scale))
+            # logger.info("Adding Image: %s, role: base, scale_key: %s" % (file, scale_key))
             self._data['data']['scales'][scale]['stack'].append(copy.deepcopy(layer_template))
             self._data['data']['scales'][scale]['stack'][len(self) - 1]['filename'] = file
             self._data['data']['scales'][scale]['stack'][len(self) - 1]['reference'] = ''
 
     # def append_empty(self):
     #     logger.critical('MainWindow.append_empty:')
-    #     scale = self.scale
-    #     used_for_this_role = ['base' in l['images'].keys() for l in self.stack(s=scale)]
+    #     scale_key = self.scale_key
+    #     used_for_this_role = ['base' in l['images'].keys() for l in self.stack(s=scale_key)]
     #     layer_index = -1
     #     if False in used_for_this_role:
     #         layer_index = used_for_this_role.index(False)
     #     else:
-    #         self._data['data']['scales'][scale]['stack'].append(copy.deepcopy(layer_template))
-    #         layer_index_for_new_role = len(self['data']['scales'][scale]['stack']) - 1
-    #     self._data['data']['scales'][scale]['stack'][layer_index]['filename'] = ''
+    #         self._data['data']['scales'][scale_key]['stack'].append(copy.deepcopy(layer_template))
+    #         layer_index_for_new_role = len(self['data']['scales'][scale_key]['stack']) - 1
+    #     self._data['data']['scales'][scale_key]['stack'][layer_index]['filename'] = ''
 
 
-    # def add_img(self, scale, layer, role, filename=''):
-    #     logger.info(f'Adding Image ({scale}, {layer}, {role}): {filename}...')
-    #     self._data['data']['scales'][scale]['stack'][layer]['images'][role] = copy.deepcopy(image_template)
-    #     self._data['data']['scales'][scale]['stack'][layer]['images'][role]['filename'] = filename
-    #     self._data['data']['scales'][scale]['stack'][layer]['img'] = copy.deepcopy(image_template) # 0119+
-    #     self._data['data']['scales'][scale]['stack'][layer]['img'] = filename                      # 0119+
+    # def add_img(self, scale_key, layer, role, filename=''):
+    #     logger.info(f'Adding Image ({scale_key}, {layer}, {role}): {filename}...')
+    #     self._data['data']['scales'][scale_key]['stack'][layer]['images'][role] = copy.deepcopy(image_template)
+    #     self._data['data']['scales'][scale_key]['stack'][layer]['images'][role]['filename'] = filename
+    #     self._data['data']['scales'][scale_key]['stack'][layer]['img'] = copy.deepcopy(image_template) # 0119+
+    #     self._data['data']['scales'][scale_key]['stack'][layer]['img'] = filename                      # 0119+
 
 
     def anySkips(self) -> bool:
@@ -2436,7 +2443,7 @@ class DataModel:
 
 
     # def propagate_up_from(self, scale_from=None):
-    #     if scale_from == None: scale_from=self.scale
+    #     if scale_from == None: scale_from=self.scale_key
     #
     #         it = self.get_iter(s=scale_from)
     #

@@ -749,7 +749,7 @@ def meanImageNoBlack(ifns, stretch=False, minvalid=1):
 #def remod(ifns, ofnbase, halfwidth=10, halfexclwidth=0, topbot=False,
 def remod(ifns, ofns, halfwidth=10, halfexclwidth=0, topbot=False,
           TEST=False):
-    '''REMOD - Create reference images from a stack
+    '''REMOD - Create fn_reference images from a stack
     REMOD(ifns, ofnbase) loads all the images in IFNS (not all at once)
     and produces output images that are a box car average of nearby images
     with the central image excluded.

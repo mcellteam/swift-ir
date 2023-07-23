@@ -88,7 +88,7 @@ class Thumbnailer:
                 logger.info(f'start: {start}, end: {end}')
                 #Special handling for corrspot files since they are variable in # and never 1:1 with project files
                 for i in range(start,end):
-                    basename = os.path.basename(cfg.data.base_image_name(s=cfg.data.scale, l=i))
+                    basename = os.path.basename(cfg.data.base_image_name(s=cfg.data.scale_key, l=i))
                     filename, extension = os.path.splitext(basename)
                     method = cfg.data.section(l=i)['current_method']
                     # old_thumbnails = glob(os.path.join(od, '*' + '_' + method + '_' + baseFileNames[i]))
@@ -130,8 +130,8 @@ class Thumbnailer:
             cfg.data.t_thumbs_spot = dt
             cfg.main_window.tell('Discarding Raw (Full Size) Correlation Signals...')
             try:
-                shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale, 'signals_raw'), ignore_errors=True)
-                shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale, 'signals_raw'), ignore_errors=True)
+                shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale_key, 'signals_raw'), ignore_errors=True)
+                shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale_key, 'signals_raw'), ignore_errors=True)
             except:
                 print_exception()
             else:

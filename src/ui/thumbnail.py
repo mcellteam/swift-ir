@@ -264,21 +264,21 @@ class ThumbnailFast(QLabel):
                         l = self.l
                     else:
                         method = cfg.data.current_method
-                        s = cfg.data.scale
+                        s = cfg.data.scale_key
                         l = cfg.data.zpos
 
                     img_size = cfg.data.image_size()
-                    # sf = self.r.getCoords()[2] / img_size[0]  # scale factor
-                    sf = (self.r.getCoords()[2] - self.r.getCoords()[0]) / img_size[0]  # scale factor
+                    # sf = self.r.getCoords()[2] / img_size[0]  # scale_key factor
+                    sf = (self.r.getCoords()[2] - self.r.getCoords()[0]) / img_size[0]  # scale_key factor
 
                     if method == 'grid-default':
                         # cp = QPoint(self.r.center())  # center point
-                        # ww = tuple(cfg.data['data']['defaults'][cfg.data.scale]['swim-window-px'])
+                        # ww = tuple(cfg.data['data']['defaults'][cfg.data.scale_key]['swim-window-px'])
                         # for i,r in enumerate(get_default_grid_rects(sf, img_size, ww, cp.x(), cp.y(), self.r.getCoords())):
                         #     qp.setPen(QPen(QColor(cfg.glob_colors[i]), 2, Qt.DotLine))
                         #     qp.drawRect(r)
 
-                        ww1x1 = cfg.data['data']['defaults'][cfg.data.scale]['swim-window-px']
+                        ww1x1 = cfg.data['data']['defaults'][cfg.data.scale_key]['swim-window-px']
                         ww2x2 = [x / 2 for x in ww1x1]
 
                         a = [(img_size[0] - ww1x1[0])/2 + ww2x2[0]/2, (img_size[1] - ww1x1[1])/2 + ww2x2[1]/2]
