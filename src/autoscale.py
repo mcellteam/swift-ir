@@ -67,7 +67,7 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     iscale2_c = os.path.join(my_path, 'lib', get_bindir(), 'iscale2')
 
     # Create Scale 1 Symlinks
-    logger.info('Creating Scale 1 symlinks')
+    logger.info('Creating Scale 1 symlinks...')
     if gui:
         cfg.main_window.tell('Sym-linking full scale_key images...')
     src_path = dm.source_path()
@@ -83,7 +83,7 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
                 logger.warning("Unable to link from %s to %s. Copying instead." % (fn, ofn))
                 try:    shutil.copy(fn, ofn)
                 except: logger.warning("Unable to link or copy from " + fn + " to " + ofn)
-
+    logger.info('Creating downsampling tasks...')
     tasks = []
     for s in dm.downscales():  # value string '1 2 4'
         scale_val = get_scale_val(s)
@@ -96,13 +96,21 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
             tasks.append([iscale2_c, scale_arg, of_arg, if_arg])
             layer['filename'] = ofn #0220+
 
-    t0 = time.time()
 
-    with ThreadPool(processes=cpus) as pool:
-        pool.map(run, tqdm.tqdm(tasks, total=len(tasks)))
-        pool.close()
-        pool.join()
     print(f'\n\n################ Generating Scales ################\n')
+    t0 = time.time()
+    # with ThreadPool(processes=cpus) as pool:
+    #     pool.map(run, tqdm.tqdm(tasks, total=len(tasks)))
+    #     pool.close()
+    #     pool.join()
+    # for task in tasks:
+    #     run2(task)
+
+    with mp.Pool() as p:
+        list(tqdm.tqdm(p.imap_unordered(run, tasks), total=len(tasks)))
+
+
+
     # ctx = mp.get_context('forkserver')
     # with ctx.Pool(processes=cpus) as pool:
     #     pool.map(run, tasks)
@@ -198,10 +206,76 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
 def run(task):
     """Call run(), catch exceptions."""
     try:
-        sp.Popen(task, bufsize=-1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
-        # sp.Popen(task, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
+        # sp.Popen(task, bufsize=-1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
+        sp.Popen(task, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
     except Exception as e:
         print("error: %s run(*%r)" % (e, task))
+
+
+class Command(object):
+    # https://stackoverflow.com/questions/1191374/using-module-subprocess-with-timeout
+    def __init__(self, cmd):
+        self.cmd = cmd
+        self.process = None
+
+    def run(self, timeout):
+        def target():
+            print('Thread started')
+            self.process = sp.Popen(self.cmd, shell=True)
+            self.process.communicate()
+            print('Thread finished')
+
+        thread = sp.Thread(target=target)
+        thread.start()
+
+        thread.join(timeout)
+        if thread.is_alive():
+            print('Terminating process')
+            self.process.terminate()
+            thread.join()
+        print(self.process.returncode)
+
+
+from os import kill
+from signal import alarm, signal, SIGALRM, SIGKILL
+from subprocess import PIPE, Popen
+
+def run2(args, cwd = None, shell = False, kill_tree = True, timeout = -1, env = None):
+    '''
+    Run a command with a timeout after which it will be forcibly
+    killed.
+    '''
+    class Alarm(Exception):
+        pass
+    def alarm_handler(signum, frame):
+        raise Alarm
+    p = Popen(args, shell = shell, cwd = cwd, stdout = PIPE, stderr = PIPE, env = env)
+    if timeout != -1:
+        signal(SIGALRM, alarm_handler)
+        alarm(timeout)
+    try:
+        stdout, stderr = p.communicate()
+        if timeout != -1:
+            alarm(0)
+    except Alarm:
+        pids = [p.pid]
+        if kill_tree:
+            pids.extend(get_process_children(p.pid))
+        for pid in pids:
+            # process might have died before getting to this line
+            # so wrap to avoid OSError: no such process
+            try:
+                kill(pid, SIGKILL)
+            except OSError:
+                pass
+        return -9, '', ''
+    return p.returncode, stdout, stderr
+
+def get_process_children(pid):
+    p = Popen('ps --no-headers -o pid --ppid %d' % pid, shell = True,
+              stdout = PIPE, stderr = PIPE)
+    stdout, stderr = p.communicate()
+    return [int(p) for p in stdout.split()]
 
 
 def count_files(dest, scales):
