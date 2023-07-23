@@ -119,7 +119,7 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
         logger.info(f'# images: {n_imgs}')
         while count_files(dm.dest(), [group])[0] < n_imgs:
             # while any([x < n_imgs - 1 for x in count_files(dm.dest(), dm.scales())]):
-            logger.info('Sleeping for 1 second...')
+            # logger.info('Sleeping for 1 second...')
             time.sleep(1)
 
 
@@ -255,7 +255,7 @@ def count_files(dest, scales):
         path = os.path.join(dest, s, 'img_src')
         files = [f for f in listdir(path) if isfile(join(path, f))]
         result.append(len(files))
-        print(f"# {s} Files: {len(files)}")
+        print(f"# {s} Files: {len(files)}", end="\r")
     return result
 
 # if any(count_files(dm))

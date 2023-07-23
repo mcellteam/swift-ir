@@ -19,6 +19,9 @@ import zarr
 numcodecs.blosc.use_threads = False
 from libtiff import TIFF
 
+import libtiff
+libtiff.libtiff_ctypes.suppress_warnings()
+
 __all__ = ['GenerateScalesZarr']
 
 logger = logging.getLogger(__name__)
