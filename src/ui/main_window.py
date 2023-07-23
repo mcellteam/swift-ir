@@ -478,7 +478,7 @@ class MainWindow(QMainWindow):
         self.uiUpdateTimer.timeout.connect(self.dataUpdateWidgets)
         # self.uiUpdateTimer.setInterval(250)
         # self.uiUpdateTimer.setInterval(450)
-        self.uiUpdateTimer.setInterval(350)
+        self.uiUpdateTimer.setInterval(cfg.UI_UPDATE_DELAY)
 
         # self.uiUpdateRegularTimer = QTimer()
         # # self.uiUpdateRegularTimer.setInterval(1000)
