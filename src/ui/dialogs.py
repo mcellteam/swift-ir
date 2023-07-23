@@ -16,7 +16,7 @@ from qtpy.QtCore import Qt, Slot, QAbstractListModel, QModelIndex, QUrl, QDir, Q
 from qtpy.QtGui import QDoubleValidator, QFont, QIntValidator, QPixmap, QColor, QIcon
 import src.config as cfg
 from src.helpers import get_scale_val, do_scales_exist, is_joel, is_tacc, hotkey
-from src.funcs_image import ImageSize
+from src.funcs_image import ImageSize, ImageIOSize
 from src.ui.layouts import VBL, HBL, VWidget, HWidget
 from src.ui.thumbnail import Thumbnail, ThumbnailFast
 
@@ -172,20 +172,22 @@ class QFileDialogPreview(QFileDialog):
         self.filesSelected.connect(self.onFilesSelected)
         self._fileSelected = None
         self._filesSelected = None
+        self.pixmap = None
 
     def onChange(self, path):
         # logger.info('')
-        pixmap = QPixmap(path)
-        if(pixmap.isNull()):
+        self.pixmap = QPixmap(path)
+        if(self.pixmap.isNull()):
             self.mpPreview.setText('Preview')
             self.imageDimensionsLabel.setText('')
         else:
-            self.mpPreview.setPixmap(pixmap.scaled(self.mpPreview.width(),
+            self.mpPreview.setPixmap(self.pixmap.scaled(self.mpPreview.width(),
                                                    self.mpPreview.height(),
                                                    Qt.KeepAspectRatio,
                                                    Qt.SmoothTransformation))
             logger.info(f'Selected File: {path}')
-            img_siz = ImageSize(path)
+            # img_siz = ImageSize(path)
+            img_siz = ImageIOSize(path)
             self.imageDimensionsLabel.setText('Size: %dx%dpx' %(img_siz[0], img_siz[1]))
 
 

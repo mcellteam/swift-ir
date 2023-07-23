@@ -35,7 +35,7 @@ def imageio_read_image(img_path:str):
     '''
     return iio.imread(img_path)
 
-def get_size_image_size_imageio(path):
+def ImageIOSize(path):
     '''
     Returns the size in pixels of the source images
     :return width: Width of the source images.
@@ -43,7 +43,7 @@ def get_size_image_size_imageio(path):
     :return height: Height of the source images.
     :rtype height: int
     '''
-    width, height = imageio_read_image(path).size
+    width, height = imageio_read_image(path).shape
     #Todo finish this function
     return width, height
 

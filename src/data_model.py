@@ -26,7 +26,7 @@ import numpy as np
 from src.data_structs import data_template, layer_template
 from src.helpers import print_exception, exist_aligned_zarr, get_scales_with_generated_alignments, getOpt, \
     caller_name
-from src.funcs_image import ComputeBoundingRect, ImageSize
+from src.funcs_image import ComputeBoundingRect, ImageSize, ImageIOSize
 try:
     import src.config as cfg
 except:
@@ -1990,8 +1990,8 @@ class DataModel:
         if s == None: s = self.scale
         caller = inspect.stack()[1].function
         logger.info(f"[{caller}] scale_key={s}")
-        # self._data['data']['scales'][s]['image_src_size'] = ImageSize(self.path_base(s=s))
-        self._data['data']['scales'][s]['image_src_size'] = list(ImageSize(self.path_base(s=s)))
+        # self._data['data']['scales'][s]['image_src_size'] = list(ImageSize(self.path_base(s=s)))
+        self._data['data']['scales'][s]['image_src_size'] = list(ImageIOSize(self.path_base(s=s)))
         val = self._data['data']['scales'][s]['image_src_size']
         logger.critical(f'Just Set {s} image size to {val}')
         # logger.critical(f'\n\nScale Image Sizes Resolved, {self.scale_pretty(s=s)}: {self.image_size(s=s)}\n')
@@ -2014,7 +2014,7 @@ class DataModel:
 
     def set_image_aligned_size(self, s=None) -> None:
         if s == None: s = self.scale
-        self._data['data']['scales'][s]['image_aligned_size'] = ImageSize(self.path_aligned(s=s))
+        self._data['data']['scales'][s]['image_aligned_size'] = ImageIOSize(self.path_aligned(s=s))
         val = self._data['data']['scales'][s]['image_src_size']
         # logger.info(f'Just Set {s} image size to {val}')
         # logger.info(f'Aligned Image Size is {self.scale_pretty(s=s)}: {self.image_size(s=s)}')
@@ -2155,7 +2155,7 @@ class DataModel:
 
     def set_image_size_directly(self, size, s=None):
         if s == None: s = self.scale
-        logger.info(f"Setting Image Sizes Directly, {s}, ImageSize: {size}")
+        logger.info(f"Setting Image Sizes Directly, {s}, image size: {size}")
         self._data['data']['scales'][s]['image_src_size'] = size
 
     # def set_poly_order(self, x: int, s=None) -> None:
