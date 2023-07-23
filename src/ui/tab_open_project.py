@@ -1158,6 +1158,7 @@ class UserProjects(QWidget):
 
         # self.setStyleSheet("color: #161c20;")
         self.setStyleSheet("font-size: 10px; color: #161c20;")
+        self.table.setStyleSheet("font-size: 10px; color: #161c20;")
 
 
     def updateRowHeight(self, h):
