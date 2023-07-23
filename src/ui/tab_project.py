@@ -171,9 +171,10 @@ class ProjectTab(QWidget):
         cfg.data = self.datamodel
 
     def _onTabChange(self):
-        logger.info('>>>> _onTabChange >>>>')
-        # QApplication.restoreOverrideCursor()
         index = self._tabs.currentIndex()
+        logger.info(f'Tab changed {index}')
+        # QApplication.restoreOverrideCursor()
+
         cfg.data['state']['current_tab'] = index
 
         if index == 0:
@@ -203,8 +204,6 @@ class ProjectTab(QWidget):
             self.snr_plot.initSnrPlot()
 
         cfg.mw.dataUpdateWidgets()
-
-        logger.info('<<<< _onTabChange <<<<')
 
     # def refreshTab(self, index=None):
     def refreshTab(self):
@@ -3981,7 +3980,6 @@ class ProjectTab(QWidget):
                 except:
                     print_exception()
 
-            logger.info("continuing...")
             self.lowX_left_fl = QFormLayout()
             self.lowX_left_fl.setContentsMargins(0, 0, 0, 0)
             self.lowX_left_fl.setVerticalSpacing(1)

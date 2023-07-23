@@ -2225,7 +2225,7 @@ class MainWindow(QMainWindow):
                     self._showSNRcheck()
                     cfg.project_tab.refreshTab()
             else:
-                logger.warning(f"[{caller}] caller disallowed")
+                logger.warning(f"[{caller}] scale change disallowed")
 
 
     def export_afms(self):
@@ -3698,7 +3698,7 @@ class MainWindow(QMainWindow):
 
 
     def addGlobTab(self, tab_widget, name):
-        logger.info(f'Adding Tab:\nType: {type(tab_widget)}\nName: {name}')
+        logger.info(f'Adding Tab, type: {type(tab_widget)}\nName: {name}')
         cfg.tabsById[id(tab_widget)] = {}
         cfg.tabsById[id(tab_widget)]['name'] = name
         cfg.tabsById[id(tab_widget)]['type'] = type(tab_widget)
