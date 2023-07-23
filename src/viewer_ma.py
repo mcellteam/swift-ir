@@ -1006,7 +1006,7 @@ class MAViewer(neuroglancer.Viewer):
         self._blockStateChanged = False
 
     def initZoom(self):
-        logger.critical(f'[{self.role}] [{caller_name()}] Calling initZoom...')
+        logger.info(f'[{caller_name()}] [{self.role}] Calling initZoom...')
         adjust = 1.12
         # logger.critical(f'[{self.role}] self.cs_scale = {self.cs_scale}')
         if self.cs_scale:

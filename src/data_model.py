@@ -1989,7 +1989,7 @@ class DataModel:
     def set_image_size(self, s=None) -> None:
         if s == None: s = self.scale
         caller = inspect.stack()[1].function
-        logger.info(f"[{caller}] scale_key={s}")
+        # logger.info(f"[{caller}] scale_key={s}")
         self._data['data']['scales'][s]['image_src_size'] = list(ImageSize(self.path_base(s=s)))
         # self._data['data']['scales'][s]['image_src_size'] = list(ImageIOSize(self.path_base(s=s)))
         val = self._data['data']['scales'][s]['image_src_size']
@@ -2056,8 +2056,6 @@ class DataModel:
     def path_base(self, s=None, l=None) -> str:
         if s == None: s = self.scale
         if l == None: l = self.zpos
-        # Todo -- Refactor!
-        logger.info(f"s = {s}, l = {l}, name = {self._data['data']['scales'][s]['stack'][l]['filename']}")
         try:
             name = self._data['data']['scales'][s]['stack'][l]['filename']
             return name

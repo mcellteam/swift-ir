@@ -445,7 +445,7 @@ class OpenProject(QWidget):
         # logger.info(f'Validating path : {path}')
         if validate_project_selection(path):
             self._buttonOpen.setText(f"Open Project {hotkey('O')}")
-            logger.info(f'The path selected is a valid AlignEM-SWIFT project')
+            logger.info(f'path is a valid AlignEM-SWIFT project')
             self.validity_label.hide()
             self._buttonOpen.setEnabled(True)
 
@@ -481,7 +481,7 @@ class OpenProject(QWidget):
                 self.selected_file = self.user_projects.table.item(row, 0).text()
             except:
                 pass
-            logger.info(f'row {str(row)} selected: {self.selected_file}')
+            logger.info(f'row {str(row)}, {self.selected_file}')
             self.setSelectionPathText(self.selected_file)
             self._buttonProjectFromTiffFolder1.setEnabled(validate_tiff_folder(self.selected_file))
             self.cbCalGrid.setVisible(validate_tiff_folder(self.selected_file))
@@ -922,7 +922,7 @@ class OpenProject(QWidget):
 
             # filename = self.selected_file
             filename = self.selectionReadout.text()
-            logger.info(f'Opening Project {filename}...')
+            logger.info(f'Opening {filename}...')
             try:
                 with open(filename, 'r') as f:
                     cfg.data = DataModel(data=json.load(f))
@@ -989,12 +989,12 @@ class OpenProject(QWidget):
             logger.warning('Canceling Delete Project Permanently Instruction...')
             return
         if reply == QMessageBox.Ok:
-            logger.info('Deleting Project File %s...' % project_file)
+            logger.info('Deleting file %s...' % project_file)
             cfg.mw.tell('Reclaiming Disk Space. Deleting Project File %s...' % project_file)
             logger.warning('Executing Delete Project Permanently Instruction...')
 
-        logger.info(f'Deleting Project File: {project_file}...')
-        cfg.mw.warn(f'Deleting Project File: {project_file}...')
+        logger.info(f'Deleting project {project_file}...')
+        cfg.mw.warn(f'Deleting project {project_file}...')
         try:
             os.remove(project_file)
         except:
