@@ -210,8 +210,7 @@ def preallocate_zarr(dm, name, group, dimx, dimy, dimz, dtype, overwrite, gui=Tr
     path_out = os.path.join(path_zarr, group)
     path_base = os.path.basename(src)
     path_relative = os.path.join(path_base, name)
-    logger.info(f'Preallocating Zarr array...'
-                    f' dimx: {dimx}, dimy: {dimy}, dimz: {dimz}')
+    logger.info(f'allocating zarray (shape: {dimx}x{dimy}x{dimz})')
 
     if gui:
         cfg.main_window.hud(f'Preallocating {path_base}/{group} Zarr...')

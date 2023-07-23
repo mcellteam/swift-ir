@@ -113,8 +113,8 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
         # logger.info(f'Downsampling {group}...')
         with ctx.Pool() as pool:
             list(tqdm.tqdm(pool.imap_unordered(run, task_groups[group]), total=len(task_groups[group]), desc=f"Downsampling {group}", position=0, leave=True))
-            pool.close()
-            pool.join()
+            # pool.close()
+            # pool.join()
 
 
     # ctx = mp.get_context('forkserver')
