@@ -310,42 +310,38 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
         save2file(dm=dm,name=dm.dest())
 
+        logger.info('Sleeping for 1 seconds...')
+        time.sleep(1)
+
         if not swim_only:
             if use_gui:
                 if cfg.mw._isProjectTab():
                     if not cfg.pt._toggleAutogenerate.isChecked():
                         logger.info('Toggle auto-generate is OFF. Returning...')
                         return
-                if cfg.ignore_pbar:
-                    cfg.nProcessDone += 1
-                    cfg.mw.updatePbar()
-                    cfg.mw.setPbarText('Generating Alignment...')
-
             try:
-                # if cfg.USE_EXTRA_THREADING and use_gui:
-                #     cfg.mw.worker = BackgroundWorker(fn=GenerateAligned(
-                #         dm, scale_key, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=use_gui))
-                #     cfg.mw.threadpool.start(cfg.mw.worker)
-                # else:
-                GenerateAligned(dm, scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=use_gui)
+                if cfg.USE_EXTRA_THREADING and use_gui:
+                    cfg.mw.worker = BackgroundWorker(fn=GenerateAligned(
+                        dm, scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=use_gui))
+                    cfg.mw.threadpool.start(cfg.mw.worker)
+                else:
+                    GenerateAligned(dm, scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=use_gui)
 
             except:
                 print_exception()
             finally:
                 logger.info('Generate Alignment Finished')
 
-            if cfg.ignore_pbar and use_gui:
-                cfg.nProcessDone += 1
-                cfg.mw.updatePbar()
-                cfg.mw.setPbarText('Generating Aligned Thumbnail...')
+            logger.info('Sleeping for 1 seconds...')
+            time.sleep(1)
 
             thumbnailer = Thumbnailer()
             try:
-                # if cfg.USE_EXTRA_THREADING and use_gui:
-                #     cfg.mw.worker = BackgroundWorker(fn=cfg.thumb.reduce_aligned(start=start, end=end, dest=dest, scale_key=scale_key, use_gui=use_gui))
-                #     cfg.mw.threadpool.start(cfg.mw.worker)
-                # else:
-                thumbnailer.reduce_aligned(start=start, end=end, dest=dest, scale=scale, use_gui=use_gui)
+                if cfg.USE_EXTRA_THREADING and use_gui:
+                    cfg.mw.worker = BackgroundWorker(fn=cfg.thumb.reduce_aligned(start=start, end=end, dest=dest, scale_key=scale_key, use_gui=use_gui))
+                    cfg.mw.threadpool.start(cfg.mw.worker)
+                else:
+                    thumbnailer.reduce_aligned(start=start, end=end, dest=dest, scale=scale, use_gui=use_gui)
             except:
                 print_exception()
             finally:
