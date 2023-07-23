@@ -186,8 +186,8 @@ class QFileDialogPreview(QFileDialog):
                                                    Qt.KeepAspectRatio,
                                                    Qt.SmoothTransformation))
             logger.info(f'Selected File: {path}')
-            # img_siz = ImageSize(path)
-            img_siz = ImageIOSize(path)
+            img_siz = ImageSize(path)
+            # img_siz = ImageIOSize(path)
             self.imageDimensionsLabel.setText('Size: %dx%dpx' %(img_siz[0], img_siz[1]))
 
 
