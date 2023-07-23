@@ -723,11 +723,6 @@ class OpenProject(QWidget):
             twi.setFont(f)
             self.user_projects.table.setItem(rc, 0, twi)
 
-            f = QFont()
-            f.setPointSize(9)
-            twi = QTableWidgetItem(cfg.data.dest())
-            twi.setFont(f)
-            self.user_projects.table.setItem(rc, 1, twi)
             cfg.mw.set_status('')
             QApplication.processEvents()
             try:

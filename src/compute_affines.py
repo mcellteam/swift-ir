@@ -50,7 +50,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
     if cfg.CancelProcesses:
         cfg.mw.warn('Canceling Compute Affine Tasks')
     else:
-        logger.info(f'\n\nPreparing Alignment Tasks...\n')
+        logger.info(f'Preparing Alignment Tasks...')
         logger.info(f'path: {path}')
 
         # if path:
