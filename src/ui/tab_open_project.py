@@ -690,7 +690,7 @@ class OpenProject(QWidget):
 
             # cfg.project_tab = ProjectTab(self, path=path, datamodel=dm)
             ID = id(cfg.project_tab)
-            logger.critical(f'New Tab ID: {ID}')
+            logger.info(f'New Tab ID: {ID}')
             cfg.dataById[id(cfg.project_tab)] = dm
 
             # self.showMainUI()
@@ -1215,11 +1215,11 @@ class UserProjects(QWidget):
         self.table.clearContents()
         font0 = QFont()
         # font0.setBold(True)
-        font0.setPointSize(8)
+        font0.setPointSize(10)
 
         font1 = QFont()
-        # font1.setBold(True)
-        font1.setPointSize(9)
+        font1.setBold(True)
+        font1.setPointSize(10)
         self.table.setRowCount(0)
         for i, row in enumerate(self.get_data()):
             # logger.info(f'>>>> row #{i} >>>>')
