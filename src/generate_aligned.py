@@ -223,7 +223,7 @@ def convert_zarr(task):
         ID = task[0]
         fn = task[1]
         out = task[2]
-        store = zarr.open(out, write_empty_chunks=False)
+        store = zarr.open(out, write_empty_chunks=False, mode='w')
         tif = libtiff.TIFF.open(fn)
         img = tif.read_image()[:, ::-1]  # np.array
         # img = imread(fn)[:, ::-1]
