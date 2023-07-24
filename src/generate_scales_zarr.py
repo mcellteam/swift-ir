@@ -67,13 +67,14 @@ def GenerateScalesZarr(dm, gui=True):
                 fn = os.path.join(dest, s, 'img_src', img)
                 task_groups[s].append([ID, fn, out])
 
+        t0 = time.time()
         for group in task_groups:
             pbar = tqdm.tqdm(total=len(task_groups[group]), position=0, leave=True, desc=f"Converting {group} to Zarr")
             def update_pbar(*a):
                 pbar.update()
-            t0 = time.time()
-            with mp.Pool(processes=cpus) as pool:
-                results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_pbar) for task in task_groups[group]]
+
+            with ThreadPool(processes=cpus) as pool:
+                [pool.apply_async(func=convert_zarr, args=(task,), callback=update_pbar) for task in task_groups[group]]
                 pool.close()
                 # [p.get() for p in results]
                 pool.join()
@@ -86,18 +87,10 @@ def GenerateScalesZarr(dm, gui=True):
 
 
 
-        # shuffle(tasks)
-        # with ctx.Pool(processes=cpus) as pool:
-        # with ThreadPool(processes=cpus) as pool:
-        #     results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_tqdm) for task in tasks]
-        #     pool.close()
-        #     [p.get() for p in results]
-        #     pool.join()
-
 
 
         dm.t_scaling_convert_zarr = time.time() - t0
-        logger.info('<<<< Generate Zarr Scales End <<<<')
+        # logger.info('<<<< Generate Zarr Scales End <<<<')
 
 def convert_zarr(task):
     ID = task[0]
