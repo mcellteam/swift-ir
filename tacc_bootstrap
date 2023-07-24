@@ -120,7 +120,15 @@ export LIBTIFF_STRILE_ARRAY_MAX_RESIZE_COUNT=1000000000
 #echo "Disabling QtWebEngine sandbox..."
 #export QTWEBENGINE_CHROMIUM_FLAGS='--disable-sandbox'
 #export QTWEBENGINE_DISABLE_SANDBOX=1
+echo "Setting BLOSC_NTHREADS=1..."
 export BLOSC_NTHREADS=1
+
+echo "Setting OPENBLAS_NUM_THREADS=1..."
+export OPENBLAS_NUM_THREADS=1
+echo "Setting OMP_NUM_THREADS=1..."
+export OMP_NUM_THREADS=1
+echo "Setting MKL_NUM_THREADS=1..."
+export MKL_NUM_THREADS=1
 
 echo "Activating Preconfigured Conda Environment..."
 conda activate /work/08507/joely/ls6/miniconda3/envs/alignTACC1024
