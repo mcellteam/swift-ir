@@ -6090,6 +6090,10 @@ class MainWindow(QMainWindow):
                     else:
                         cfg.pt.set_transforming()
 
+        elif event.key() == Qt.Key_Delete:
+            if self._isOpenProjTab():
+                self._getTabObject().delete_project()
+
         # elif event.key() == Qt.Key_Shift:
         #     if self._isProjectTab():
         #         cur = cfg.pt._tabs.currentIndex()

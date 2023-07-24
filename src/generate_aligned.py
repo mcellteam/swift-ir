@@ -120,15 +120,21 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
         #     [p.get() for p in results]
         #     pool.join()
 
-        def run_apply_async_multiprocessing(func, argument_list, num_processes):
-            pool = mp.Pool(processes=num_processes)
-            results = [pool.apply_async(func=func, args=(*argument,), callback=update_pbar) if isinstance(argument, tuple) else pool.apply_async(
-                func=func, args=(argument,), callback=update_pbar) for argument in argument_list]
+        # def run_apply_async_multiprocessing(func, argument_list, num_processes):
+        #     pool = mp.Pool(processes=num_processes)
+        #     results = [pool.apply_async(func=func, args=(*argument,), callback=update_pbar) if isinstance(argument, tuple) else pool.apply_async(
+        #         func=func, args=(argument,), callback=update_pbar) for argument in argument_list]
+        #     pool.close()
+        #     result_list = [p.get() for p in results]
+        #     return result_list
+        #
+        # run_apply_async_multiprocessing(func=run_mir, argument_list=tasks, num_processes=cpus)
+        #
+        with ThreadPool(processes=cpus) as pool:
+            results = [pool.apply_async(func=run_mir, args=(task,), callback=update_pbar) for task in tasks]
             pool.close()
-            result_list = [p.get() for p in results]
-            return result_list
-
-        run_apply_async_multiprocessing(func=run_mir, argument_list=tasks, num_processes=cpus)
+            [p.get() for p in results]
+            # pool.join()
 
 
         dm.t_generate = time.time() - t0
