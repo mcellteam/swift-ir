@@ -183,8 +183,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             return
 
         cpus = min(psutil.cpu_count(logical=False), TACC_MAX_CPUS, n_tasks)
-        if scale_val == 1:
-            cpus -= 20
+        # if scale_val == 1:
+        #     cpus -= 40
         logger.info(f"# cpus for alignment: {cpus}")
 
         tasks = []
