@@ -219,8 +219,7 @@ def preallocate_zarr(dm, name, group, dimx, dimy, dimz, dtype, overwrite, gui=Tr
         return
     shape = (dimz, dimy, dimx)  # Todo check this, inverting x & y
 
-    output_text = f'\n' \
-                  f'\n  Zarr root : {path_relative}' \
+    output_text = f'\n  Zarr root : {path_relative}' \
                   f'\n      group :   └ {group}({name}) {dtype} {cname}/{clevel}' \
                   f'\n      shape : {str(shape)} ' \
                   f'\n      chunk : {chunkshape}'

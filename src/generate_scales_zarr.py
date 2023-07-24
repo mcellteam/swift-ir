@@ -14,6 +14,7 @@ from src.helpers import get_scale_val, get_img_filenames, print_exception, renew
     reorder_tasks
 from src.funcs_zarr import preallocate_zarr
 import tqdm
+import imagecodecs
 import numcodecs
 import zarr
 numcodecs.blosc.use_threads = False
@@ -83,6 +84,7 @@ def GenerateScalesZarr(dm, gui=True):
                 [p.get() for p in results]
                 # pool.join()
             logger.info(f"Elapsed Time: {'%.3g' % (time.time() - t)}s")
+            time.sleep(1)
 
 
 
@@ -97,14 +99,21 @@ def GenerateScalesZarr(dm, gui=True):
         dm.t_scaling_convert_zarr = time.time() - t0
         # logger.info('<<<< Generate Zarr Scales End <<<<')
 
+def imread(filename):
+    # return first image in TIFF file as numpy array
+    with open(filename, 'rb') as fh:
+        data = fh.read()
+    return imagecodecs.tiff_decode(data)
+
 def convert_zarr(task):
     try:
         ID = task[0]
         fn = task[1]
         out = task[2]
         store = zarr.open(out, write_empty_chunks=False)
-        tif = libtiff.TIFF.open(fn)
-        img = tif.read_image()[:, ::-1]  # np.array
+        # tif = libtiff.TIFF.open(fn)
+        # img = tif.read_image()[:, ::-1]  # np.array
+        img = imread(fn)[:, ::-1]
         store[ID, :, :] = img  # store: <zarr.core.Array (19, 1244, 1130) uint8>
         # store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
         return 0
