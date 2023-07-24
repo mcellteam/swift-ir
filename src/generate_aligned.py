@@ -208,9 +208,9 @@ def convert_zarr(task):
         fn = task[1]
         out = task[2]
         store = zarr.open(out, write_empty_chunks=False)
-        # tif = libtiff.TIFF.open(fn)
-        # img = tif.read_image()[:, ::-1]  # np.array
-        img = imread(fn)[:, ::-1]
+        tif = libtiff.TIFF.open(fn)
+        img = tif.read_image()[:, ::-1]  # np.array
+        # img = imread(fn)[:, ::-1]
         store[ID, :, :] = img  # store: <zarr.core.Array (19, 1244, 1130) uint8>
         # store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
         return 0
