@@ -1289,7 +1289,7 @@ class UserProjects(QWidget):
 
         logger.info(f'# saved projects: {len(self.project_paths)}')
         for p in self.project_paths:
-            logger.info(f'Collecting data of {p}...')
+            logger.info(f'Collecting {p}...')
 
             try:
                 with open(p, 'r') as f:
