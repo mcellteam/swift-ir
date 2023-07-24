@@ -1072,9 +1072,7 @@ class OpenProject(QWidget):
             self.deleteContextAction.triggered.connect(self.deleteContextMethod)
             menu.addAction(self.deleteContextAction)
 
-            menu.exec_()
-            # if menu.exec_(event.globalPos()):
-            #     item = source.itemAt(event.pos())
+            menu.exec_(event.globalPos())
             return True
         return super().eventFilter(source, event)
 
