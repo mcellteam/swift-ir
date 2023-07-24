@@ -82,7 +82,7 @@ def GenerateScalesZarr(dm, gui=True):
                 pool.close()
                 [p.get() for p in results]
                 pool.join()
-            logger.info(f"Elapsed Time: {time.time() - t}")
+            logger.info(f"Elapsed Time: {'%.3g' % (time.time() - t)}s")
             time.sleep(1)
 
 
