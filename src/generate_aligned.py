@@ -141,10 +141,9 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
 
         dm.set_image_aligned_size()
 
+    time.sleep(1)
     dm.register_cafm_hashes(s=scale, start=start, end=end)
 
-    logger.info('Sleeping for 1 seconds...')
-    time.sleep(1)
 
     pbar_text = 'Copy-converting Scale %d Alignment To Zarr (%d Cores)...' % (scale_val, cpus)
     if cfg.CancelProcesses:
