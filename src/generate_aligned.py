@@ -192,6 +192,7 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
             # pool.join()
         dt = time.time() - t0
         dm.t_convert_zarr = dt
+        time.sleep(1)
 
         cfg.main_window._autosave(silently=True) #0722+
 
