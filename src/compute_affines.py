@@ -50,6 +50,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
     if cfg.CancelProcesses:
         cfg.mw.warn('Canceling Compute Affine Tasks')
     else:
+        print(f'\n\n################ Computing Alignment ################\n')
         logger.info(f'Preparing Alignment Tasks...')
         logger.info(f'path: {path}')
 
@@ -145,8 +146,6 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         delete_correlation_signals(dm=dm, scale=scale, start=start, end=end)
         dest = dm['data']['destination_path']
         cpus = min(psutil.cpu_count(logical=False), TACC_MAX_CPUS, n_tasks)
-
-        print(f'\n\n################ Computing Alignment ################\n')
 
 
         # if end == None:
