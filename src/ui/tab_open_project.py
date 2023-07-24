@@ -1289,7 +1289,7 @@ class UserProjects(QWidget):
                     twi.setFont(font1)
                     self.table.setItem(i, j, twi)
                 elif j in (1,2,3):
-                    # logger.critical(f"j={j}, path={item}")
+                    logger.info(f"j={j}, path={item}")
                     if item == 'No Thumbnail':
                         thumbnail = ThumbnailFast(self)
                         self.table.setCellWidget(i, j, thumbnail)
@@ -1397,7 +1397,7 @@ class UserProjects(QWidget):
             # timer.report(extra='extra (cal grid)...')
             extra_toplevel_paths = glob(f'{project_dir}/*.tif')
             logger.critical(f"extra_toplevel_paths = {extra_toplevel_paths}")
-            if extra_toplevel_paths:
+            if extra_toplevel_paths != []:
                 extra.append(extra_toplevel_paths[0])
             else:
                 extra.append('No Thumbnail')
