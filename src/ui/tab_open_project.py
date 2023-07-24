@@ -1269,8 +1269,8 @@ class UserProjects(QWidget):
     def set_data(self):
         logger.info('')
         # logger.info(">>>> set_data >>>>")
-        # caller = inspect.stack()[1].function
-        # logger.info(f'caller: {caller}')
+        caller = inspect.stack()[1].function
+        logger.info(f'[{caller}]')
         self.table.clearContents()
         font0 = QFont()
         # font0.setBold(True)
@@ -1329,6 +1329,7 @@ class UserProjects(QWidget):
             self.table.verticalHeader().resizeSection(section, self.ROW_HEIGHT)
 
         self.table.sortByColumn(4, Qt.DescendingOrder)
+        logger.info('----Table Data Set----')
 
 
 
