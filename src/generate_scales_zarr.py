@@ -72,7 +72,7 @@ def GenerateScalesZarr(dm, gui=True):
         t0 = time.time()
         for group in task_groups:
             t = time.time()
-            logger.info(f'Converting {group} to Zarr...')
+            # logger.info(f'Converting {group} to Zarr...')
             pbar = tqdm.tqdm(total=len(task_groups[group]), position=0, leave=True, desc=f"Converting {group} to Zarr")
             def update_pbar(*a):
                 pbar.update()
