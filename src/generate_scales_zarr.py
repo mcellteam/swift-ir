@@ -76,30 +76,19 @@ def GenerateScalesZarr(dm, gui=True):
         for group in task_groups:
             t = time.time()
             # logger.info(f'Converting {group} to Zarr...')
-            pbar = tqdm.tqdm(total=len(task_groups[group]), position=0, leave=True, desc=f"Converting {group} to Zarr")
-            def update_pbar(*a):
-                pbar.update()
-
+            # pbar = tqdm.tqdm(total=len(task_groups[group]), position=0, leave=True, desc=f"Converting {group} to Zarr")
+            # def update_pbar(*a):
+            #     pbar.update()
             # with ThreadPool(processes=cpus) as pool:
             #     results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_pbar) for task in task_groups[group]]
             #     pool.close()
             #     [p.get() for p in results]
 
             with ThreadPoolExecutor(max_workers=cpus) as executor:
-                list(tqdm.tqdm(executor.map(convert_zarr, task_groups[group]), total=len(task_groups[group])))
-
+                list(tqdm.tqdm(executor.map(convert_zarr, task_groups[group]), total=len(task_groups[group]), position=0, leave=True, desc=f"Converting {group} to Zarr"))
 
             logger.info(f"Elapsed Time: {'%.3g' % (time.time() - t)}s")
             time.sleep(1)
-
-
-
-        # pbar = tqdm.tqdm(total=len(tasks), position=0, leave=True)
-        # pbar.set_description("Converting Downsampled Images to Zarr")
-        # t0 = time.time()
-
-
-
 
         t_elapsed = time.time() - t0
         dm.t_scaling_convert_zarr = t_elapsed
@@ -117,7 +106,7 @@ def convert_zarr(task):
         ID = task[0]
         fn = task[1]
         out = task[2]
-        store = zarr.open(out, write_empty_chunks=False)
+        store = zarr.open(out, write_empty_chunks=False, mode='w')
         tif = libtiff.TIFF.open(fn)
         img = tif.read_image()[:, ::-1]  # np.array
         # img = imread(fn)[:, ::-1]
