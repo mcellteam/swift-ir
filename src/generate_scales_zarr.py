@@ -78,9 +78,7 @@ def GenerateScalesZarr(dm, gui=True):
                 results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_pbar) for task in task_groups[group]]
                 pool.close()
                 [p.get() for p in results]
-                # pool.join()
-
-            pbar = tqdm.tqdm(total=len(task_groups[group]), position=0, leave=True, desc=f"Converting {group} to Zarr")
+                pool.join()
 
 
 

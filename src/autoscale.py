@@ -114,7 +114,7 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
         with ctx.Pool() as pool:
             list(tqdm.tqdm(pool.imap_unordered(run, task_groups[group]), total=len(task_groups[group]), desc=f"Downsampling {group}", position=0, leave=True))
             pool.close() #0723+
-            # pool.join()
+            pool.join()
 
 
     # ctx = mp.get_context('forkserver')
@@ -135,12 +135,11 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     dm.scale = dm.scales()[-1]
 
     # WAIT FOR CORRECT NUMBER OF OUTPUT IMAGES
-    # n_imgs = len(dm)
-    # logger.info(f'# images: {n_imgs}')
-    # while any([x < n_imgs for x in count_files(dm.dest(), dm.scales())]):
-    # # while any([x < n_imgs - 1 for x in count_files(dm.dest(), dm.scales())]):
-    #     logger.info('Sleeping for 1 second...')
-    #     time.sleep(1)
+    n_imgs = len(dm)
+    logger.info(f'# images: {n_imgs}')
+    while any([x < n_imgs for x in count_files(dm.dest(), dm.scales())]):
+        logger.info('Sleeping for 1 second...')
+        time.sleep(1)
 
     # count_files(dm.dest(), dm.scales())
     # logger.info("\n\nFinished generating downsampled source images. Sleeping for 5 seconds...\n\n")
