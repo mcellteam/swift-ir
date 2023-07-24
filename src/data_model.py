@@ -1078,8 +1078,8 @@ class DataModel:
         except:
             t2 = t2m = "???"
 
-        t3, t4, t5, t6, t7 = {}, {}, {}, {}, {}
-        t3m, t4m, t5m, t6m, t7m = {}, {}, {}, {}, {}
+        t3, t4, t5, t6 = {}, {}, {}, {}
+        t3m, t4m, t5m, t6m = {}, {}, {}, {}
         for s in self.scales():
             try:
                 t3[s] = (f"%.1fs" % self['data']['benchmarks']['scales'][s]['t_align']).rjust(12)
@@ -1105,12 +1105,6 @@ class DataModel:
             except:
                 t6[s] = t6m[s] = "???"
 
-            try:
-                t7[s] = (f"%.1fs" % self['data']['benchmarks']['scales'][s]['t_thumbs_spot']).rjust(12)
-                t7m[s] = (f"%.3fm" % (self['data']['benchmarks']['scales'][s]['t_thumbs_spot'] / 60))
-            except:
-                t7[s] = t7m[s] = "???"
-
         timings = []
         timings.append(('Generate Scale Hierarchy', t0 + ' / ' + t0m))
         timings.append(('Convert All Scales to Zarr', t1 + ' / ' + t1m))
@@ -1128,10 +1122,6 @@ class DataModel:
         timings.append(('Generate Aligned TIFF Thumbnails', ''))
         for s in cfg.data.scales():
             timings.append(('  ' + cfg.data.scale_pretty(s), '%s / %s' % (t6[s], t6m[s])))
-        timings.append(('Generate Correlation Signal Thumbnails', ''))
-        for s in cfg.data.scales():
-            timings.append(('  ' + cfg.data.scale_pretty(s), '%s / %s' % (t7[s], t7m[s])))
-        return timings
 
 
     def previous_method_results(self, s=None, l=None):
