@@ -179,7 +179,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             zpos = dm_().index(sec)
             if not sec['skipped']:
                 tasks.append(copy.deepcopy(dm['data']['scales'][scale]['stack'][zpos]))
-
+        t0 = time.time()
 
         '''
         # ctx = mp.get_context('forkserver')
@@ -229,6 +229,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         all_results = run_apply_async_multiprocessing(func=run_recipe, argument_list=tasks,
                                                       num_processes=cpus)
 
+        dm.t_align = time.time() - t0
 
 
         if cfg.CancelProcesses:
