@@ -1000,6 +1000,8 @@ class OpenProject(QWidget):
 
                     project = os.path.splitext(project_file)[0]
 
+                    cfg.mw.set_status(f'Delete {project}')
+
                     cfg.mw.warn("Delete this project? %s" % project_file)
                     txt = "Are you sure you want to PERMANENTLY DELETE " \
                           "the following project?\n\n" \
@@ -1022,8 +1024,12 @@ class OpenProject(QWidget):
                         cfg.mw.tell('Reclaiming Disk Space. Deleting Project File %s...' % project_file)
                         logger.warning('Executing Delete Project Permanently Instruction...')
 
-                    logger.info(f'Deleting project {project_file}...')
-                    cfg.mw.warn(f'Deleting project {project_file}...')
+
+
+                    logger.info(f'Deleting project file {project_file}...')
+                    cfg.mw.warn(f'Deleting project file {project_file}...')
+                    cfg.mw.set_status(f'Deleting {project_file}...')
+
                     try:
                         os.remove(project_file)
                     except:
@@ -1034,8 +1040,9 @@ class OpenProject(QWidget):
                     # configure_project_paths()
                     # self.user_projects.set_data()
 
-                    logger.info('Deleting project directory: %s...' % project)
-                    cfg.mw.warn('Deleting project directory: %s...' % project)
+                    logger.info(f'Deleting project directory {project}...')
+                    cfg.mw.warn(f'Deleting project directory {project}...')
+                    cfg.mw.set_status(f'Deleting {project_file}...')
                     try:
                         run_subprocess(["rm","-rf", project])
                         # delete_recursive(dir=project)
@@ -1059,7 +1066,8 @@ class OpenProject(QWidget):
                     self.selectionReadout.setText('')
 
                     cfg.mw.tell('Deletion Complete!')
-                    logger.info('Deletion Complete')
+                    cfg.mw.set_status('Deletion Complete')
+                    logger.info('Deletion tasks finished')
                 else:
                     logger.warning('(!) Invalid target for deletion: %s' % project_file)
 
@@ -1288,6 +1296,7 @@ class UserProjects(QWidget):
                     twi.setFont(font1)
                     self.table.setItem(i, j, twi)
                 elif j in (1,2,3):
+                    logger.critical(f"j={j}, path={item}")
                     if item == 'No Thumbnail':
                         thumbnail = ThumbnailFast(self)
                         self.table.setCellWidget(i, j, thumbnail)
