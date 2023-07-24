@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CACHER="1"
+CACHER="0"
 DEBUG="0"
 PULL="1"
 
