@@ -54,7 +54,7 @@ if __name__ == '__main__':
     # img = TIFFfile(fn)  # pylibtiff -- LIBTIFF (pure Python module)
     # img = tifffile.imread(fn)
     store[ID,:,:] = img # store: <zarr.core.Array (19, 1244, 1130) uint8>
-    store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
+    # store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
     # store.attrs['ID'] = ID
     # store.attrs[f'{ID}_stageit'] = stageit
     # store.attrs['fn'] = fn

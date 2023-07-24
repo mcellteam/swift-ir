@@ -202,7 +202,7 @@ def convert_zarr(task):
     tif = libtiff.TIFF.open(fn)
     img = tif.read_image()[:, ::-1]  # np.array
     store[ID, :, :] = img  # store: <zarr.core.Array (19, 1244, 1130) uint8>
-    store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
+    # store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
 
 
 def makeTasksList(dm, iter, job_script, scale, rect, zarr_group):
