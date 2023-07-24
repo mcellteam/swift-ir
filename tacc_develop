@@ -1,12 +1,25 @@
 #!/bin/bash
 
+CACHER="0"
 DEBUG="0"
+PULL="1"
 
+echo "Parsing cli arguments..."
 for i in "$@"; do
   case $i in
+    -c|--cacher)
+      CACHER="1"
+      shift
+      ;;
     -d|--debug)
       DEBUG="1"
-      shift # past argument with no value
+      shift
+      ;;
+    -*|--*)
+      echo "Unknown option $i"
+      exit 1
+      ;;
+    *)
       ;;
   esac
 done
@@ -19,8 +32,15 @@ echo "Loading impi/19.0.9 module..."
 ml impi/19.0.9
 echo "Loading fftw3/3.3.10 module..."
 ml fftw3/3.3.10
+
+if [ "$CACHER" = "1" ] ; then
+  echo "Loading python_cacher module..."
+  ml python_cacher/1.2
+fi
+
 echo "Activating Conda Environment Configured for Lonestar6..."
 conda activate /work/08507/joely/ls6/miniconda3/envs/alignTACC1024
+
 echo "Increasing LIBTIFF_STRILE_ARRAY_MAX_RESIZE_COUNT by 1000x to prevent libtiff from blocking excessive memory usage..."
 export LIBTIFF_STRILE_ARRAY_MAX_RESIZE_COUNT=1000000000
 
