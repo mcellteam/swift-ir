@@ -79,10 +79,11 @@ def GenerateScalesZarr(dm, gui=True):
 
             with ThreadPool(processes=cpus) as pool:
                 [pool.apply_async(func=convert_zarr, args=(task,), callback=update_pbar) for task in task_groups[group]]
-                # pool.close()
+                pool.close()
                 # [p.get() for p in results]
-                # pool.join()
+                pool.join()
             logger.info(f"Elapsed Time: {time.time() - t}")
+            time.sleep(1)
 
 
 

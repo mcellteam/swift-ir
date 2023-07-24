@@ -734,7 +734,7 @@ class OpenProject(QWidget):
                     cfg.ignore_pbar = False
                     cfg.mw.showZeroedPbar(set_n_processes=7)
                     autoscale(dm=dm, make_thumbnails=True, set_pbar=False)
-                    logger.info("\n\nFinished autoscaling.\n\n")
+                    logger.info("\n\nFinished autoscaling.\n")
                     # cfg.mw.setdw_matches(True)
                     logger.info('Initializing alignment...')
                     cfg.mw.alignAll(set_pbar=False, force=True, ignore_bb=True)
