@@ -1781,7 +1781,7 @@ class MainWindow(QMainWindow):
                     return
                 else:
                     self.uiUpdateTimer.start()
-                    logger.info('Updating UI on Timeout [viewer_em.WorkerSignals]...')
+                    logger.info('Updating UI on timeout...')
 
             # cfg.project_tab._overlayRect.hide()
             cfg.project_tab._overlayLab.hide()

@@ -848,11 +848,15 @@ class OpenProject(QWidget):
 
         if dialog.exec_() == QDialog.Accepted:
             filenames = dialog.selectedFiles()
+            dialog.pixmap = None #0723+
         else:
             logger.warning('Import images dialog did not return a valid file list')
             cfg.mw.warn('Import images dialog did not return a valid file list')
             self.showMainUI()
+            dialog.pixmap = None #0723+
             return 1
+
+
 
         if filenames == 1:
             logger.warning('New Project Canceled')
