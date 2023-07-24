@@ -4222,8 +4222,8 @@ class MainWindow(QMainWindow):
 
         self.alignAllAction = QAction('Align All Current Scale', self)
         self.alignAllAction.triggered.connect(self.alignAll)
-        self.alignAllAction.setShortcut('Ctrl+A')
-        self.alignAllAction.setShortcutContext(Qt.ApplicationShortcut)
+        # self.alignAllAction.setShortcut('Ctrl+A')
+        # self.alignAllAction.setShortcutContext(Qt.ApplicationShortcut)
         alignMenu.addAction(self.alignAllAction)
 
         self.alignAllScalesAction = QAction('Align Scales to Full Res', self)
@@ -4923,7 +4923,8 @@ class MainWindow(QMainWindow):
         self.navControls.layout.setSpacing(8)
 
         tip = """Align and generate all sections for the current scale_key"""
-        self._btn_alignAll = QPushButton(f"Align All {hotkey('A')}")
+        # self._btn_alignAll = QPushButton(f"Align All {hotkey('A')}")
+        self._btn_alignAll = QPushButton(f"Align All")
         self._btn_alignAll.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self._btn_alignAll.setEnabled(False)
         self._btn_alignAll.setFocusPolicy(Qt.FocusPolicy.NoFocus)
