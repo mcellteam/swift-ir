@@ -3625,8 +3625,15 @@ class MainWindow(QMainWindow):
             # cfg.pt.match_widget.adjustSize()
             # cfg.pt.tn_widget.adjustSize()
 
+    def set_elapsed(self, t, desc=""):
+        txt = f"Elapsed Time : %.3gs / %.3gm" % (t, t / 60)
+        if desc:
+            txt += " (%s)" % desc
+        self.set_status(txt)
+
 
     def _disableGlobTabs(self):
+        logger.info('')
         indexes = list(range(0, self.globTabs.count()))
         indexes.remove(self.globTabs.currentIndex())
         for i in indexes:
@@ -3634,6 +3641,7 @@ class MainWindow(QMainWindow):
         # self._btn_refreshTab.setEnabled(False)
 
     def enableAllTabs(self):
+        logger.info('')
         indexes = list(range(0, self.globTabs.count()))
         for i in indexes:
             self.globTabs.setTabEnabled(i, True)

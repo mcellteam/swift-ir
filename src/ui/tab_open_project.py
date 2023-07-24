@@ -433,6 +433,7 @@ class OpenProject(QWidget):
 
 
     def hideMainUI(self):
+        logger.info('')
         self._splitter.hide()
         self._actions_widget.hide()
         self.new_project_header.show()
@@ -440,6 +441,7 @@ class OpenProject(QWidget):
 
 
     def showMainUI(self):
+        logger.info('')
         self._splitter.show()
         self._actions_widget.show()
         self.new_project_header.hide()
@@ -666,7 +668,7 @@ class OpenProject(QWidget):
 
             cfg.data.set_source_path(os.path.dirname(self.NEW_PROJECT_IMAGES[0]))  # Critical!
             cfg.mw.tell(f'Importing {len(self.NEW_PROJECT_IMAGES)} Images...')
-            logger.info(f'Selected Images: \n{self.NEW_PROJECT_IMAGES}')
+            # logger.info(f'Selected Images: \n{self.NEW_PROJECT_IMAGES}')
             cfg.data.append_images(self.NEW_PROJECT_IMAGES)
 
             cfg.mw.tell(f'Dimensions: %dx%d' % cfg.data.image_size(s='scale_1'))
@@ -678,14 +680,13 @@ class OpenProject(QWidget):
             '''Step 3/3'''
             self.new_project_lab1.setText('New Project (Step: 3/3) - Global Configuration')
             cfg.mw.set_status('New Project (Step: 3/3) - Global Configuration')
-            logger.info('Showing new configure project dialog')
+
             dialog = NewConfigureProjectDialog(parent=self)
             dialog.setWindowFlags(Qt.FramelessWindowHint)
             self.vbl_main.addWidget(dialog)
             # cfg.data = dm
             result = dialog.exec()
             self.showMainUI()
-            # logger.info(f'result = {result}, type = {type(result)}')
             cfg.mw.set_status('')
             if result:
                 logger.info('Save File Path: %s' % path)
@@ -711,12 +712,6 @@ class OpenProject(QWidget):
 
 
             cfg.mw._disableGlobTabs()
-
-            # self.user_projects.table.rowCount()
-
-            font = QFont()
-            font.setPointSize(11)
-            font.setBold(True)
 
             # self.table.setItem(i, j, item)
             rc = self.user_projects.table.rowCount()
@@ -863,8 +858,6 @@ class OpenProject(QWidget):
             dialog.pixmap = None #0723+
             return 1
 
-
-
         if filenames == 1:
             logger.warning('New Project Canceled')
             cfg.mw.warn('No Project Canceled')
@@ -880,7 +873,7 @@ class OpenProject(QWidget):
         # cfg.data.append_images(files_sorted)
         # cfg.data.link_reference_sections()
 
-        logger.critical(f'destination: {cfg.data.dest()}')
+        logger.info(f'destination: {cfg.data.dest()}')
 
 
 
@@ -1296,7 +1289,7 @@ class UserProjects(QWidget):
                     twi.setFont(font1)
                     self.table.setItem(i, j, twi)
                 elif j in (1,2,3):
-                    logger.critical(f"j={j}, path={item}")
+                    # logger.critical(f"j={j}, path={item}")
                     if item == 'No Thumbnail':
                         thumbnail = ThumbnailFast(self)
                         self.table.setCellWidget(i, j, thumbnail)
