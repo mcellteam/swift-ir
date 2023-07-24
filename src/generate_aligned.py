@@ -21,7 +21,7 @@ libtiff.libtiff_ctypes.suppress_warnings()
 
 import src.config as cfg
 from src.save_bias_analysis import save_bias_analysis
-from src.helpers import get_scale_val, print_exception, reorder_tasks, renew_directory, file_hash
+from src.helpers import get_scale_val, print_exception, reorder_tasks, renew_directory, file_hash, pretty_elapsed
 from src.mp_queue import TaskQueue
 from src.funcs_image import SetStackCafm
 from src.funcs_zarr import preallocate_zarr
@@ -136,8 +136,10 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
             [p.get() for p in results]
             # pool.join()
 
+        t_elapsed = time.time() - t0
+        dm.t_generate = t_elapsed
+        cfg.main_window.set_elapsed(t_elapsed, f'Generate alignment')
 
-        dm.t_generate = time.time() - t0
 
         dm.set_image_aligned_size()
 
@@ -189,8 +191,15 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
             pool.close()
             [p.get() for p in results]
             # pool.join()
-        dt = time.time() - t0
-        dm.t_convert_zarr = dt
+
+        _it = 0
+        while (count_aligned_files(dm.dest(), scale) < len(dm)) or _it > 4:
+            # logger.info('Sleeping for 1 second...')
+            time.sleep(1)
+            _it += 1
+        t_elapsed = time.time() - t0
+        dm.t_convert_zarr = t_elapsed
+        cfg.main_window.set_elapsed(t_elapsed, f'Copy-convert alignment to Zarr')
         time.sleep(1)
 
         cfg.main_window._autosave(silently=True) #0722+
@@ -254,6 +263,12 @@ def makeTasksList(dm, iter, job_script, scale, rect, zarr_group):
         args_list.append(args)
     return args_list
 
+def count_aligned_files(dest, s):
+    path = os.path.join(dest, s, 'img_aligned')
+    files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
+    # print(f"# {s} Files: {len(files)}")
+    print(f"# complete: {len(files)}", end="\r")
+    return len(files)
 
 def tryRemoveFile(directory):
     try:

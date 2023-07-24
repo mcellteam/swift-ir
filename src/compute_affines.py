@@ -18,6 +18,7 @@ from datetime import datetime
 from pathlib import Path
 from multiprocessing import Pool
 from multiprocessing.pool import ThreadPool
+from concurrent.futures import ThreadPoolExecutor
 import multiprocessing as mp
 import subprocess as sp
 import numpy as np
@@ -35,6 +36,7 @@ from src.background_worker import BackgroundWorker
 import src.config as cfg
 from src.ui.timer import Timer
 from src.recipe_maker import run_recipe
+from src.helpers import pretty_elapsed
 
 
 __all__ = ['ComputeAffines']
@@ -200,14 +202,19 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             pbar.update()
 
         # PRETTY SURE THIS IS THE BEST/FASTEST/LEAST MEMORY CONSUMPTION/REPORTS ERRORS BACK SOONEST
-        with ThreadPool(processes=cpus) as pool:
-        # with mp.Pool(processes=cpus) as pool:
-            results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_pbar) for task in tasks]
-            pool.close()
-            all_results = [p.get() for p in results]
-            # pool.join()
+        # with ThreadPool(processes=cpus) as pool:
+        # # with mp.Pool(processes=cpus) as pool:
+        #     results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_pbar) for task in tasks]
+        #     pool.close()
+        #     all_results = [p.get() for p in results]
+        #     # pool.join()
 
-        dm.t_align = time.time() - t0
+        with ThreadPoolExecutor(max_workers=cpus) as executor:
+            all_results = list(tqdm.tqdm(executor.map(run_recipe, tasks), total=len(tasks), position=0, leave=True))
+
+        t_elapsed = time.time() - t0
+        dm.t_align = t_elapsed
+        cfg.main_window.set_elapsed(t_elapsed, f"Compute affines {scale}")
 
 
         # task_dict = {}

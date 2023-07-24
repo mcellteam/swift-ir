@@ -1983,9 +1983,8 @@ class DataModel:
         # logger.info(f"[{caller}] scale_key={s}")
         self._data['data']['scales'][s]['image_src_size'] = list(ImageSize(self.path_base(s=s)))
         # self._data['data']['scales'][s]['image_src_size'] = list(ImageIOSize(self.path_base(s=s)))
-        val = self._data['data']['scales'][s]['image_src_size']
-        logger.critical(f'Just Set {s} image size to {val}')
-        # logger.critical(f'\n\nScale Image Sizes Resolved, {self.scale_pretty(s=s)}: {self.image_size(s=s)}\n')
+        # val = self._data['data']['scales'][s]['image_src_size']
+        # logger.critical(f'Just Set {s} image size to {val}')
 
     def image_size_aligned(self, s=None) -> tuple:
         if s == None: s = self.scale

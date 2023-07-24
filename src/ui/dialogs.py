@@ -140,6 +140,7 @@ class SaveExitAppDialog(QDialog):
 class QFileDialogPreview(QFileDialog):
     def __init__(self, *args, **kwargs):
         QFileDialog.__init__(self, *args, **kwargs)
+        logger.info('')
         self.setOption(QFileDialog.DontUseNativeDialog, True)
         # self.setFixedSize(self.width() + 360, self.height())
         self.mpPreview = QLabel("Preview", self)
@@ -767,6 +768,7 @@ class ConfigProjectDialog(QDialog):
 class NewConfigureProjectDialog(QDialog):
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
+        logger.info('')
         self.parent = parent
         self.setModal(True)
         # self.setWindowFlags(Qt.Widget)

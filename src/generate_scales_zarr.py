@@ -9,9 +9,11 @@ import argparse
 from random import shuffle
 import multiprocessing as mp
 from multiprocessing.pool import ThreadPool
+from concurrent.futures import ThreadPoolExecutor
+
 import src.config as cfg
 from src.helpers import get_scale_val, get_img_filenames, print_exception, renew_directory, \
-    reorder_tasks
+    reorder_tasks, pretty_elapsed
 from src.funcs_zarr import preallocate_zarr
 import tqdm
 import imagecodecs
@@ -78,11 +80,18 @@ def GenerateScalesZarr(dm, gui=True):
             def update_pbar(*a):
                 pbar.update()
 
-            with ThreadPool(processes=cpus) as pool:
-                results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_pbar) for task in task_groups[group]]
-                pool.close()
-                [p.get() for p in results]
-                # pool.join()
+            # with ThreadPool(processes=cpus) as pool:
+            #     results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_pbar) for task in task_groups[group]]
+            #     pool.close()
+            #     [p.get() for p in results]
+            #     # pool.join()
+
+            with ThreadPoolExecutor(max_workers=cpus) as executor:
+                list(tqdm.tqdm(executor.map(convert_zarr, task_groups[group]), total=len(task_groups[group])))
+
+
+
+
             logger.info(f"Elapsed Time: {'%.3g' % (time.time() - t)}s")
             time.sleep(1)
 
@@ -95,8 +104,9 @@ def GenerateScalesZarr(dm, gui=True):
 
 
 
-
-        dm.t_scaling_convert_zarr = time.time() - t0
+        t_elapsed = time.time() - t0
+        dm.t_scaling_convert_zarr = t_elapsed
+        cfg.main_window.set_elapsed(t_elapsed, "Copy-convert scales to Zarr")
         # logger.info('<<<< Generate Zarr Scales End <<<<')
 
 def imread(filename):

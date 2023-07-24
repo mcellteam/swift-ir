@@ -8,11 +8,10 @@ import shutil
 import logging
 import traceback
 from datetime import datetime
-from os import listdir
-from os.path import isfile, join
 import multiprocessing as mp
 import subprocess as sp
 from multiprocessing.pool import ThreadPool
+from concurrent.futures import ThreadPoolExecutor
 import tqdm
 
 # from thumbnailer import Thumbnailer
@@ -25,7 +24,7 @@ import src.config as cfg
 
 
 from src.helpers import print_exception, get_scale_val, create_project_structure_directories, \
-    get_bindir
+    get_bindir, pretty_elapsed
 
 
 __all__ = ['autoscale']
@@ -39,25 +38,7 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
 
     print(f'\n\n################ Generating Downsampled Images ################\n')
 
-    # threadpool = QThreadPool.globalInstance()
-    # threadpool.setExpiryTimeout(1000)
-    #
-    # # Todo This should check for existence of original source files before doing anything
-    #
-    # logger.info('Generating TIFF Scale Image Hierarchy...')
-    # if gui:
-    #     cfg.mw.tell('Generating TIFF Scale Image Hierarchy...')
-    #     if set_pbar:
-    #         cfg.mw.showZeroedPbar(set_n_processes=3)
-    # try:
-    #     worker = BackgroundWorker(fn=GenerateScales(dm=dm, gui=gui))
-    #     threadpool.start(worker)
-    # except:
-    #     print_exception()
-    #     logger.warning('Something Unexpected Happened While Generating TIFF Scale Hierarchy')
-    #     if gui: cfg.mw.warn('Something Unexpected Happened While Generating TIFF Scale Hierarchy')
-
-
+    # Todo This should check for existence of original source files before doing anything
     if cfg.CancelProcesses:
         cfg.main_window.warn('Canceling Tasks: Generate Scale Image Hierarchy')
         cfg.main_window.warn('Canceling Tasks: Copy-convert Scale Images to Zarr')
@@ -70,7 +51,7 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     # Create Scale 1 Symlinks
     logger.info('Creating Scale 1 symlinks...')
     if gui:
-        cfg.main_window.tell('Sym-linking full scale_key images...')
+        cfg.main_window.tell('Sym-linking full scale images...')
     src_path = dm.source_path()
     for img in dm.basefilenames():
         fn = os.path.join(src_path, img)
@@ -84,6 +65,7 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
                 logger.warning("Unable to link from %s to %s. Copying instead." % (fn, ofn))
                 try:    shutil.copy(fn, ofn)
                 except: logger.warning("Unable to link or copy from " + fn + " to " + ofn)
+
     logger.info('Creating downsampling tasks...')
     task_groups = {}
     for s in dm.downscales()[::-1]:  # value string '1 2 4'
@@ -121,16 +103,19 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
         #     pool.close() #0723+
         #     pool.join()
 
+        # with mp.Pool(processes=cpus) as pool:
         with mp.Pool(processes=cpus) as pool:
             pool.map(run, tqdm.tqdm(task_groups[group], total=len(task_groups[group]), desc=f"Downsampling {group}", position=0, leave=True))
             pool.close()
             pool.join()
+
 
         while any([x < n_imgs for x in count_files(dm.dest(), [group])]):
             # logger.info('Sleeping for 1 second...')
             time.sleep(1)
 
         logger.info(f"Elapsed Time: {'%.3g' % (time.time() - t)}s")
+        cfg.main_window.set_elapsed(time.time() - t, f'Generate {group}')
 
 
     # ctx = mp.get_context('forkserver')
@@ -256,12 +241,11 @@ def get_process_children(pid):
     stdout, stderr = p.communicate()
     return [int(p) for p in stdout.split()]
 
-
 def count_files(dest, scales):
     result = []
     for s in scales:
         path = os.path.join(dest, s, 'img_src')
-        files = [f for f in listdir(path) if isfile(join(path, f))]
+        files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
         result.append(len(files))
         # print(f"# {s} Files: {len(files)}")
         print(f"# {s} Files: {len(files)}", end="\r")

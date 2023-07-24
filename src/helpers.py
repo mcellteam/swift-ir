@@ -432,6 +432,8 @@ def is_joel() -> bool:
 
     return (getpass.getuser() == 'joelyancey')
 
+def pretty_elapsed(t):
+    return f"Elapsed Time: %.3gs / %.3gm" % (t, t/60)
 
 def get_bindir() -> str:
     '''Checks operating system. Returns the operating system-dependent
