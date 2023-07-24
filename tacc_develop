@@ -23,6 +23,13 @@ echo "Activating Conda Environment Configured for Lonestar6..."
 conda activate /work/08507/joely/ls6/miniconda3/envs/alignTACC1024
 echo "Increasing LIBTIFF_STRILE_ARRAY_MAX_RESIZE_COUNT by 1000x to prevent libtiff from blocking excessive memory usage..."
 export LIBTIFF_STRILE_ARRAY_MAX_RESIZE_COUNT=1000000000
+echo "Setting OPENBLAS_NUM_THREADS=1..."
+export OPENBLAS_NUM_THREADS=1
+echo "Setting OMP_NUM_THREADS=1..."
+export OMP_NUM_THREADS=1
+echo "Setting MKL_NUM_THREADS=1..."
+export MKL_NUM_THREADS=1
+
 echo "Checking out git branch..."
 cd $WORK/swift-ir
 git fetch
