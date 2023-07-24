@@ -207,6 +207,7 @@ class ProjectTab(QWidget):
 
     # def refreshTab(self, index=None):
     def refreshTab(self):
+        logger.info('')
         if DEV:
             logger.critical(f'[{caller_name()}]')
 
@@ -217,12 +218,12 @@ class ProjectTab(QWidget):
             self.initNeuroglancer()
 
         elif index == 1:
-            pts_ref = cfg.refViewer.pts
-            pts_base = cfg.baseViewer.pts
+            # pts_ref = cfg.refViewer.pts
+            # pts_base = cfg.baseViewer.pts
             self.shutdownNeuroglancer()
             self.initNeuroglancer()
-            cfg.refViewer.pts = pts_ref
-            cfg.baseViewer.pts = pts_base
+            # cfg.refViewer.pts = pts_ref
+            # cfg.baseViewer.pts = pts_base
             # cfg.mw.setTargKargPixmaps()
             # cfg.mw.updateCorrSignalsDrawer()
         elif index == 2:
