@@ -107,22 +107,23 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     # for task in tasks:
     #     run2(task)
 
-    ctx = mp.get_context('forkserver')
+    # ctx = mp.get_context('forkserver')
     n_imgs = len(dm)
+    logger.info(f'# images: {n_imgs}')
+
 
     for group in task_groups:
-        # logger.info(f'Downsampling {group}...')
+        logger.info(f'Downsampling {group}...')
         # with ctx.Pool() as pool:
         #     list(tqdm.tqdm(pool.imap_unordered(run, task_groups[group]), total=len(task_groups[group]), desc=f"Downsampling {group}", position=0, leave=True))
         #     pool.close() #0723+
         #     pool.join()
-        with ctx.Pool(processes=cpus) as pool:
+
+        with mp.Pool(processes=cpus) as pool:
             pool.map(run, tqdm.tqdm(task_groups[group], total=len(task_groups[group]), desc=f"Downsampling {group}", position=0, leave=True))
             pool.close()
             pool.join()
 
-
-        # logger.info(f'# images: {n_imgs}')
         while any([x < n_imgs for x in count_files(dm.dest(), dm.scales())]):
             # logger.info('Sleeping for 1 second...')
             time.sleep(1)
@@ -258,7 +259,8 @@ def count_files(dest, scales):
         path = os.path.join(dest, s, 'img_src')
         files = [f for f in listdir(path) if isfile(join(path, f))]
         result.append(len(files))
-        print(f"# {s} Files: {len(files)}", end="\r")
+        print(f"# {s} Files: {len(files)}")
+        # print(f"# {s} Files: {len(files)}", end="\r")
     return result
 
 # if any(count_files(dm))
