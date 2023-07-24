@@ -174,6 +174,19 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
 
 
+
+        # dm.t_align = time.time() - t0
+
+
+        if cfg.CancelProcesses:
+            logger.warning('Canceling Processes!')
+            return
+
+        cpus = min(psutil.cpu_count(logical=False), TACC_MAX_CPUS, n_tasks)
+        if scale_val == 1:
+            cpus -= 20
+        logger.info(f"# cpus for alignment: {cpus}")
+
         tasks = []
         for sec in substack:
             zpos = dm_().index(sec)
@@ -181,60 +194,14 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                 tasks.append(copy.deepcopy(dm['data']['scales'][scale]['stack'][zpos]))
         t0 = time.time()
 
-        '''
-        # ctx = mp.get_context('forkserver')
-        # pbar = tqdm.tqdm(total=len(tasks), position=0, leave=True)
-        # pbar.set_description("Computing Affines")
-        # def update_tqdm(*a):
-        #     pbar.update()
-        # t0 = time.time()
-        # # with ctx.Pool(processes=cpus) as pool:
-        # with ThreadPool(processes=cpus) as pool:
-        #     results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_tqdm) for task in tasks]
-        #     pool.close()
-        #     all_results = [p.get() for p in results]
-        #     pool.join()
-
-
-
-        # t0 = time.time()
-        # ctx = mp.get_context('forkserver')
-        # all_results = []
-        # with ctx.Pool(processes=cpus) as pool:
-        #
-        #     # all_results = pool.map(run_recipe, tasks)
-        #     for result in tqdm.tqdm(pool.map(run_recipe, tasks)):
-        #         all_results.append(result)
-
-
-        # dm.t_align = time.time() - t0
-
-
-        '''
-
-
         pbar = tqdm.tqdm(total=len(tasks), position=0, leave=True)
         pbar.set_description("Computing Affines")
         def update_pbar(*a):
             pbar.update()
 
-        # def run_apply_async_multiprocessing(func, argument_list, num_processes):
-        #     pool = mp.Pool(processes=num_processes)
-        #     results = [pool.apply_async(func=func, args=(*argument,), callback=update_pbar) if isinstance(argument, tuple) else pool.apply_async(
-        #         func=func, args=(argument,), callback=update_pbar) for argument in argument_list]
-        #     pool.close()
-        #     result_list = [p.get() for p in results]
-        #     return result_list
-        #
-        # all_results = run_apply_async_multiprocessing(func=run_recipe, argument_list=tasks,
-        #                                               num_processes=cpus)
-
-        cpus = min(psutil.cpu_count(logical=False), TACC_MAX_CPUS, n_tasks)
-        if scale_val == 1:
-            cpus -= 20
         # PRETTY SURE THIS IS THE BEST/FASTEST/LEAST MEMORY CONSUMPTION/REPORTS ERRORS BACK SOONEST
-        # with ThreadPool(processes=cpus) as pool:
-        with mp.Pool(processes=cpus) as pool:
+        with ThreadPool(processes=cpus) as pool:
+        # with mp.Pool(processes=cpus) as pool:
             results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_pbar) for task in tasks]
             pool.close()
             all_results = [p.get() for p in results]
@@ -242,10 +209,6 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
         dm.t_align = time.time() - t0
 
-
-        if cfg.CancelProcesses:
-            logger.warning('Canceling Processes!')
-            return
 
         # task_dict = {}
         # index_arg = 3
@@ -255,10 +218,9 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         #     task_dict[int(t['args'][index_arg])] = t
         # task_list = [task_dict[k] for k in sorted(task_dict.keys())]
         # updated_model = copy.deepcopy(dm) # Integrate output of each task into a new combined datamodel previewmodel
-
-        logger.info('Reading task results and updating data model...')
-        # al_stack_old = dm['data']['scales'][scale]['stack']
-        # # For use with mp_queue.py ONLY
+        #
+        # logger.info('Reading task results and updating data model...')
+        # # # For use with mp_queue.py ONLY
         # for tnum in range(len(all_results)):
         #     # Get the updated datamodel previewmodel from stdout for the task
         #     parts = all_results[tnum]['stdout'].split('---JSON-DELIMITER---')
@@ -270,7 +232,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         #     if dm_text != None:
         #         results_dict = json.loads(dm_text)
         #         layer_index = results_dict['alignment']['meta']['index']
-        #         al_stack_old[layer_index] = results_dict
+        #         dm['data']['scales'][scale]['stack'][layer_index] = results_dict
 
 
 
