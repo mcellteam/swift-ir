@@ -11,6 +11,7 @@ import platform
 import textwrap
 from glob import glob
 from pathlib import Path
+import subprocess as sp
 import multiprocessing as mp
 import libtiff
 libtiff.libtiff_ctypes.suppress_warnings()
@@ -1008,11 +1009,14 @@ class OpenProject(QWidget):
         # else:
         #     cfg.mw.hud.done()
 
+        # configure_project_paths()
+        # self.user_projects.set_data()
+
         logger.info('Deleting Project Data: %s...' % project)
         cfg.mw.warn('Deleting Project Data: %s...' % project)
         try:
-
-            delete_recursive(dir=project)
+            run_subprocess(["rm","-rf", project])
+            # delete_recursive(dir=project)
             # shutil.rmtree(project, ignore_errors=True, onerror=handleError)
             # shutil.rmtree(project, ignore_errors=True, onerror=handleError)
         except:
@@ -1025,7 +1029,7 @@ class OpenProject(QWidget):
         configure_project_paths()
         if cfg.mw.globTabs.currentWidget().__class__.__name__ == 'OpenProject':
             try:
-                cfg.mw.globTabs.currentWidget().user_projects.set_data()
+                self.user_projects.set_data()
             except:
                 logger.warning('There was a problem updating the project list')
                 print_exception()
@@ -1048,6 +1052,15 @@ class OpenProject(QWidget):
         #     self.delete_project()
         # else:
         #     super().keyPressEvent(event)
+
+def run_subprocess(task):
+    """Call run(), catch exceptions."""
+    try:
+        # sp.Popen(task, bufsize=-1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
+        sp.Popen(task, bufsize=-1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
+        # sp.Popen(task, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
+    except Exception as e:
+        print("error: %s run(*%r)" % (e, task))
 
 def getSideBarPlacesProjectName():
     corral_projects_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/3dem-1076/Projects_AlignEM'
