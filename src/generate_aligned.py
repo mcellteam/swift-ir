@@ -13,6 +13,7 @@ import multiprocessing as mp
 from multiprocessing.pool import ThreadPool
 import tqdm
 import zarr
+import imagecodecs
 import numcodecs
 numcodecs.blosc.use_threads = False
 import libtiff
@@ -193,17 +194,43 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
 #     logger.info('')
 #     cfg.mw.pbar.setValue(cfg.mw.pbar.value()+1)
 
+def imread(filename):
+    # return first image in TIFF file as numpy array
+    with open(filename, 'rb') as fh:
+        data = fh.read()
+    return imagecodecs.tiff_decode(data)
 
-def convert_zarr(task):
-    ID = task[0]
-    fn = task[1]
-    out = task[2]
-    store = zarr.open(out, write_empty_chunks=False)
-    tif = libtiff.TIFF.open(fn)
-    img = tif.read_image()[:, ::-1]  # np.array
-    store[ID, :, :] = img  # store: <zarr.core.Array (19, 1244, 1130) uint8>
-    # store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
 
+def convert_zarr1(task):
+    try:
+        ID = task[0]
+        fn = task[1]
+        out = task[2]
+        store = zarr.open(out, write_empty_chunks=False)
+        tif = libtiff.TIFF.open(fn)
+        img = tif.read_image()[:, ::-1]  # np.array
+        store[ID, :, :] = img  # store: <zarr.core.Array (19, 1244, 1130) uint8>
+        # store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
+        return 0
+    except Exception as e:
+        print(e)
+        return 1
+
+def convert_zarr2(task):
+    try:
+        ID = task[0]
+        fn = task[1]
+        out = task[2]
+        store = zarr.open(out, write_empty_chunks=False)
+        # tif = libtiff.TIFF.open(fn)
+        # img = tif.read_image()[:, ::-1]  # np.array
+        img = imread(fn)[:, ::-1]
+        store[ID, :, :] = img  # store: <zarr.core.Array (19, 1244, 1130) uint8>
+        # store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
+        return 0
+    except Exception as e:
+        print(e)
+        return 1
 
 def makeTasksList(dm, iter, job_script, scale, rect, zarr_group):
     logger.info('Making Generate Alignment Tasks List...')
