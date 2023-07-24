@@ -182,7 +182,7 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
             results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_pbar) for task in tasks]
             pool.close()
             [p.get() for p in results]
-            pool.join()
+            # pool.join()
         dt = time.time() - t0
         dm.t_convert_zarr = dt
 

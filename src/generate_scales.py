@@ -74,7 +74,6 @@ def GenerateScales(dm, gui=True):
         # with ctx.Pool(processes=cpus) as pool:
         #     pool.map(run, tasks)
         #     pool.close()
-        #     pool.join()
         pool = ctx.Pool(processes=cpus)
         pool.map(run, tasks)
         pool.close()
