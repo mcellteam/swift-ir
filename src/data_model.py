@@ -2352,7 +2352,7 @@ class DataModel:
         '''This is not pretty. Needs to be refactored ASAP.
         Two callers: 'new_project', 'prepare_generate_scales_worker'
         '''
-        logger.info('')
+        # logger.info('')
         cur_scales = list(map(str, self.scale_vals()))
         try:
             input_scales = [str(v) for v in sorted([get_scale_val(s) for s in scale_string.strip().split(' ')])]
@@ -2363,17 +2363,16 @@ class DataModel:
         if (input_scales != cur_scales):
             input_scale_keys = [get_scale_key(v) for v in input_scales]
             scales_to_remove = list(set(self.scales()) - set(input_scale_keys) - {'scale_1'})
-            logger.info(f'Removing Scale Keys: {scales_to_remove}...')
+            # logger.info(f'Removing Scale Keys: {scales_to_remove}...')
             for key in scales_to_remove:
                 self._data['data']['scales'].pop(key)
             scales_to_add = list(set(input_scale_keys) - set(self.scales()))
-            logger.info(f'Adding Scale Keys (copying from scale_1): {scales_to_add}...')
+            # logger.info(f'Adding Scale Keys (copying from scale_1): {scales_to_add}...')
             for key in scales_to_add:
                 new_stack = [deepcopy(l) for l in self.stack(s='scale_1')]
                 # self._data['data']['scales'][key] = \
                 #     {'stack': new_stack, 'method_data': { 'alignment_option': 'init_affine' } }
-                self._data['data']['scales'][key] = \
-                    {'stack': new_stack}
+                self._data['data']['scales'][key] = {'stack': new_stack}
 
 
     def first_unskipped(self, s=None):
