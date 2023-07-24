@@ -229,6 +229,9 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         # all_results = run_apply_async_multiprocessing(func=run_recipe, argument_list=tasks,
         #                                               num_processes=cpus)
 
+        cpus = min(psutil.cpu_count(logical=False), TACC_MAX_CPUS, n_tasks)
+        if scale_val == 1:
+            cpus -= 20
         # PRETTY SURE THIS IS THE BEST/FASTEST/LEAST MEMORY CONSUMPTION/REPORTS ERRORS BACK SOONEST
         with ThreadPool(processes=cpus) as pool:
             results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_pbar) for task in tasks]
@@ -289,6 +292,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
 
         save2file(dm=dm,name=dm.dest())
+
+        cpus = min(psutil.cpu_count(logical=False), TACC_MAX_CPUS, n_tasks)
 
         logger.info('Sleeping for 1 seconds...')
         time.sleep(1)
