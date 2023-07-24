@@ -218,16 +218,22 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         def update_pbar(*a):
             pbar.update()
 
-        def run_apply_async_multiprocessing(func, argument_list, num_processes):
-            pool = mp.Pool(processes=num_processes)
-            results = [pool.apply_async(func=func, args=(*argument,), callback=update_pbar) if isinstance(argument, tuple) else pool.apply_async(
-                func=func, args=(argument,), callback=update_pbar) for argument in argument_list]
-            pool.close()
-            result_list = [p.get() for p in results]
-            return result_list
+        # def run_apply_async_multiprocessing(func, argument_list, num_processes):
+        #     pool = mp.Pool(processes=num_processes)
+        #     results = [pool.apply_async(func=func, args=(*argument,), callback=update_pbar) if isinstance(argument, tuple) else pool.apply_async(
+        #         func=func, args=(argument,), callback=update_pbar) for argument in argument_list]
+        #     pool.close()
+        #     result_list = [p.get() for p in results]
+        #     return result_list
+        #
+        # all_results = run_apply_async_multiprocessing(func=run_recipe, argument_list=tasks,
+        #                                               num_processes=cpus)
 
-        all_results = run_apply_async_multiprocessing(func=run_recipe, argument_list=tasks,
-                                                      num_processes=cpus)
+        with ThreadPool(processes=cpus) as pool:
+            results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_pbar) for task in tasks]
+            pool.close()
+            all_results = [p.get() for p in results]
+            # pool.join()
 
         dm.t_align = time.time() - t0
 
