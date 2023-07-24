@@ -79,9 +79,9 @@ def GenerateScalesZarr(dm, gui=True):
 
             with ThreadPool(processes=cpus) as pool:
                 [pool.apply_async(func=convert_zarr, args=(task,), callback=update_pbar) for task in task_groups[group]]
-                pool.close()
+                # pool.close()
                 # [p.get() for p in results]
-                pool.join()
+                # pool.join()
             logger.info(f"Elapsed Time: {time.time() - t}")
 
 
@@ -98,14 +98,19 @@ def GenerateScalesZarr(dm, gui=True):
         # logger.info('<<<< Generate Zarr Scales End <<<<')
 
 def convert_zarr(task):
-    ID = task[0]
-    fn = task[1]
-    out = task[2]
-    store = zarr.open(out, write_empty_chunks=False)
-    tif = libtiff.TIFF.open(fn)
-    img = tif.read_image()[:, ::-1]  # np.array
-    store[ID, :, :] = img  # store: <zarr.core.Array (19, 1244, 1130) uint8>
-    store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
+    try:
+        ID = task[0]
+        fn = task[1]
+        out = task[2]
+        store = zarr.open(out, write_empty_chunks=False)
+        tif = libtiff.TIFF.open(fn)
+        img = tif.read_image()[:, ::-1]  # np.array
+        store[ID, :, :] = img  # store: <zarr.core.Array (19, 1244, 1130) uint8>
+        store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
+        return 0
+    except:
+        print_exception()
+        return 1
 
 
 if __name__ == '__main__':
