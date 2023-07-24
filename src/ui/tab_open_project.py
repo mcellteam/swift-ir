@@ -1269,8 +1269,8 @@ class UserProjects(QWidget):
     def set_data(self):
         logger.info('')
         # logger.info(">>>> set_data >>>>")
-        caller = inspect.stack()[1].function
-        logger.info(f'[{caller}]')
+        # caller = inspect.stack()[1].function
+        # logger.info(f'[{caller}]')
         self.table.clearContents()
         font0 = QFont()
         # font0.setBold(True)
@@ -1289,7 +1289,7 @@ class UserProjects(QWidget):
                     twi.setFont(font1)
                     self.table.setItem(i, j, twi)
                 elif j in (1,2,3):
-                    logger.info(f"j={j}, path={item}")
+                    # logger.info(f"j={j}, path={item}")
                     if item == 'No Thumbnail':
                         thumbnail = ThumbnailFast(self)
                         self.table.setCellWidget(i, j, thumbnail)
