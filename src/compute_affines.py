@@ -209,6 +209,9 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             all_results = [p.get() for p in results]
             # pool.join()
 
+        # with ThreadPoolExecutor(max_workers=cpus) as executor:
+        #     all_results = list(tqdm.tqdm(executor.map(run_recipe, tasks), total=len(tasks), position=0, leave=True))
+
         t_elapsed = time.time() - t0
         dm.t_align = t_elapsed
         cfg.main_window.set_elapsed(t_elapsed, f"Compute affines {scale}")
