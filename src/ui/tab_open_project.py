@@ -12,6 +12,8 @@ import textwrap
 from glob import glob
 from pathlib import Path
 import multiprocessing as mp
+import libtiff
+libtiff.libtiff_ctypes.suppress_warnings()
 
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QCheckBox, QLabel, QAbstractItemView, \
     QSplitter, QTableWidget, QTableWidgetItem, QSlider, QGridLayout, QFrame, QPushButton, \
@@ -734,7 +736,7 @@ class OpenProject(QWidget):
                     autoscale(dm=dm, make_thumbnails=True, set_pbar=False)
                     logger.info("\n\nFinished autoscaling.\n\n")
                     # cfg.mw.setdw_matches(True)
-                    logger.info('\n\nAligning All...\n\n')
+                    logger.info('Initializing alignment...')
                     cfg.mw.alignAll(set_pbar=False, force=True, ignore_bb=True)
 
                 else:

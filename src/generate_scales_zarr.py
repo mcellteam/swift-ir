@@ -58,12 +58,8 @@ def GenerateScalesZarr(dm, gui=True):
                              dtype='uint8',
                              overwrite=True,
                              gui=gui)
-        n_tasks = len(dm) * dm.n_scales()
 
         print(f'\n\n################ Converting Downscales to Zarr ################\n')
-
-        # def update_tqdm(*a):
-        #     pbar.update()
 
         task_groups = {}
         for s in dm.scales()[::-1]:
@@ -74,18 +70,17 @@ def GenerateScalesZarr(dm, gui=True):
                 task_groups[s].append([ID, fn, out])
 
         for group in task_groups:
-            pbar = tqdm.tqdm(total=len(task_groups[group]), position=0, leave=True)
-            pbar.set_description(f"Converting {group} to Zarr")
-            def update_tqdm(*a):
+            pbar = tqdm.tqdm(total=len(task_groups[group]), position=0, leave=True, desc=f"Converting {group} to Zarr")
+            def update_pbar(*a):
                 pbar.update()
             t0 = time.time()
             with ThreadPool(processes=cpus) as pool:
-                results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_tqdm) for task in task_groups[group]]
-                # pool.close()
-                # [p.get() for p in results]
+                results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_pbar) for task in task_groups[group]]
+                pool.close()
+                [p.get() for p in results]
                 # pool.join()
 
-
+            pbar = tqdm.tqdm(total=len(task_groups[group]), position=0, leave=True, desc=f"Converting {group} to Zarr")
 
 
 
