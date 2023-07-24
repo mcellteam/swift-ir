@@ -1397,7 +1397,8 @@ class UserProjects(QWidget):
             except: location.append('Unknown')
             # timer.report(extra='extra (cal grid)...')
             extra_toplevel_paths = glob(f'{project_dir}/*.tif')
-            logger.critical(f"extra_toplevel_paths = {extra_toplevel_paths}")
+            # logger.critical(f"extra_toplevel_paths = {extra_toplevel_paths}")
+            #Todo refactor this
             if extra_toplevel_paths != []:
                 extra.append(extra_toplevel_paths[0])
             else:
