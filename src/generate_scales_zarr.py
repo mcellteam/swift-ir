@@ -59,6 +59,8 @@ def GenerateScalesZarr(dm, gui=True):
                              overwrite=True,
                              gui=gui)
 
+        time.sleep(1)
+
         task_groups = {}
         for s in dm.scales()[::-1]:
             task_groups[s] = []
@@ -69,6 +71,8 @@ def GenerateScalesZarr(dm, gui=True):
 
         t0 = time.time()
         for group in task_groups:
+            t = time.time()
+            logger.info(f'Converting {group} to Zarr...')
             pbar = tqdm.tqdm(total=len(task_groups[group]), position=0, leave=True, desc=f"Converting {group} to Zarr")
             def update_pbar(*a):
                 pbar.update()
@@ -78,6 +82,7 @@ def GenerateScalesZarr(dm, gui=True):
                 pool.close()
                 # [p.get() for p in results]
                 pool.join()
+            logger.info(f"Elapsed Time: {time.time() - t}")
 
 
 

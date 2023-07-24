@@ -423,8 +423,6 @@ class ProjectTab(QWidget):
         self.detailsSNR.setStyleSheet(style)
         self.detailsSNR.hide()
 
-        logger.info("Setting up zoom slider...")
-
         self.zoomSlider = DoubleSlider(Qt.Orientation.Vertical, self)
         self.zoomSlider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.zoomSlider.setMouseTracking(True)
@@ -464,7 +462,6 @@ class ProjectTab(QWidget):
         vlab.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self.ZdisplaySliderAndLabel.addWidget(vlab)
 
-        logger.info('Setting up webengines...')
         self.MA_webengine_ref = WebEngine(ID='ref')
         self.MA_webengine_ref.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.MA_webengine_base = WebEngine(ID='base')
@@ -1227,8 +1224,6 @@ class ProjectTab(QWidget):
         self.gb_outputSettings.setObjectName('gb_cpanel')
         self.gb_outputSettings.setLayout(self.flSettings)
 
-        logger.info("Setting up scroll areas...")
-
         self.fl_results = QFormLayout()
         self.fl_results.setVerticalSpacing(2)
         self.fl_results.setContentsMargins(0, 0, 0, 0)
@@ -1318,8 +1313,6 @@ class ProjectTab(QWidget):
         self.MA_use_global_defaults_lab = QLabel('Global defaults will be used.')
         self.MA_use_global_defaults_lab.setStyleSheet('font-size: 13px; font-weight: 600;')
         self.MA_use_global_defaults_lab.setAlignment(Qt.AlignCenter)
-
-        logger.info("Setting up method radiobuttons...")
 
         self.method_rb0 = QRadioButton('Default Grid')
         self.method_rb0.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -1575,8 +1568,6 @@ class ProjectTab(QWidget):
         self.MA_stackedWidget.addWidget(self.gb_MA_settings)
         self.MA_stackedWidget.addWidget(self.MA_points_tab)
 
-        logger.info("Setting up ng stack widget...")
-
         # 0617
         self.sw_alignment_editor = QStackedWidget()
         self.sw_alignment_editor.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -1697,9 +1688,6 @@ class ProjectTab(QWidget):
         # def testFn():
         #     print('Test Function Called...')
         # self.testButton.clicked.connect(testFn)
-
-        logger.info("Setting up ng widget...")
-
 
         self.gl_sw_main = QGridLayout()
         self.gl_sw_main.setSpacing(0)
@@ -1999,8 +1987,6 @@ class ProjectTab(QWidget):
         self.sideSliders.setFixedWidth(16)
         self.sideSliders.layout.setSpacing(0)
         self.sideSliders.setStyleSheet("""background-color: #222222; color: #ede9e8;""")
-
-        logger.info("Setting up reference/transforming thumbnails...")
 
         '''REFERENCE AND TRANSFORMING THUMBNAILS WITH PAINTED SWIM REGION ANNOTATIONS'''
         # self.tn_tra_overlay = QLabel('Excluded')
