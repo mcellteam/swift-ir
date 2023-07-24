@@ -2266,7 +2266,7 @@ class MainWindow(QMainWindow):
     def show_warning(self, title, text):
         QMessageBox.warning(None, title, text)
 
-    # def delete_project(self):
+    # def delete_projects(self):
     #     logger.critical('')
     #     project_file = cfg.selected_file
     #     project = os.path.splitext(project_file)[0]
@@ -6093,7 +6093,7 @@ class MainWindow(QMainWindow):
 
         elif event.key() == Qt.Key_Delete:
             if self._isOpenProjTab():
-                self._getTabObject().delete_project()
+                self._getTabObject().delete_projects()
 
         # elif event.key() == Qt.Key_Shift:
         #     if self._isProjectTab():

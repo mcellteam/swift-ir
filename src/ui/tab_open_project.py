@@ -19,8 +19,8 @@ libtiff.libtiff_ctypes.suppress_warnings()
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QCheckBox, QLabel, QAbstractItemView, \
     QSplitter, QTableWidget, QTableWidgetItem, QSlider, QGridLayout, QFrame, QPushButton, \
     QSizePolicy, QSpacerItem, QLineEdit, QMessageBox, QDialog, QFileDialog, QStyle, QStyledItemDelegate, \
-    QListView, QApplication, QScrollArea
-from qtpy.QtCore import Qt, QRect, QUrl, QDir, QSize, QPoint
+    QListView, QApplication, QScrollArea, QMenu, QAction
+from qtpy.QtCore import Qt, QRect, QUrl, QDir, QSize, QPoint, QEvent
 from qtpy.QtGui import QGuiApplication, QFont, QPixmap, QPainter, QKeySequence, QColor
 
 from src.ui.file_browser import FileBrowser
@@ -74,6 +74,8 @@ class OpenProject(QWidget):
 
         # self.setStyleSheet("font-size: 10px; color: #f3f6fb;")
         self.setStyleSheet("font-size: 10px; color: #161c20;")
+
+        self.installEventFilter(self)
 
     def onClipboardChanged(self):
         # print('Clipboard changed!')
@@ -223,7 +225,7 @@ class OpenProject(QWidget):
         self._buttonDelete.setShortcut('Ctrl+D')
         self._buttonDelete.setStyleSheet('font-size: 9px;')
         self._buttonDelete.setEnabled(False)
-        self._buttonDelete.clicked.connect(self.delete_project)
+        self._buttonDelete.clicked.connect(self.delete_projects)
         self._buttonDelete.setFixedSize(button_size)
         # self._buttonDelete.hide()
 
@@ -473,7 +475,9 @@ class OpenProject(QWidget):
             # self._buttonOpen.hide()
             # self._buttonDelete.hide()
 
+
     def userSelectionChanged(self):
+        logger.info('')
         # logger.info(f'>>>> userSelectionChanged >>>>')
         # caller = inspect.stack()[1].function
         # if caller == 'initTableData':
@@ -969,89 +973,126 @@ class OpenProject(QWidget):
         else:
             cfg.mw.warn("Invalid Path")
 
+    def getSelectedRows(self):
+        return [x.row() for x in self.user_projects.table.selectionModel().selectedRows()]
 
-    def delete_project(self):
+    def getSelectedProjects(self):
+        selected_rows = [x.row() for x in self.user_projects.table.selectionModel().selectedRows()]
+        files = [self.user_projects.table.item(row, 0).text() for row in selected_rows]
+        return files
+
+    def deleteContextMethod(self):
         logger.info('')
-        # project_file = self.selected_file
-        project_file = self.selectionReadout.text()
-        project = os.path.splitext(project_file)[0]
-        if not validate_project_selection(project_file):
-            logger.warning('Invalid Project For Deletion (!)\n%s' % project)
-            return
-        cfg.mw.warn("Delete this project? %s" % project)
-        txt = "Are you sure you want to PERMANENTLY DELETE " \
-              "the following project?\n\n" \
-              "Project: %s" % project
-        msgbox = QMessageBox(QMessageBox.Warning,
-                             'Confirm Delete Project',
-                             txt,
-                             buttons=QMessageBox.Cancel | QMessageBox.Yes
-                             )
-        msgbox.setIcon(QMessageBox.Critical)
-        msgbox.setMaximumWidth(350)
-        msgbox.setDefaultButton(QMessageBox.Cancel)
-        reply = msgbox.exec_()
-        if reply == QMessageBox.Cancel:
-            cfg.mw.tell('Canceling Delete Project Permanently Instruction...')
-            logger.warning('Canceling Delete Project Permanently Instruction...')
-            return
-        if reply == QMessageBox.Ok:
-            logger.info('Deleting file %s...' % project_file)
-            cfg.mw.tell('Reclaiming Disk Space. Deleting Project File %s...' % project_file)
-            logger.warning('Executing Delete Project Permanently Instruction...')
+        selected_projects = self.getSelectedProjects()
+        self.delete_projects(project_files=selected_projects)
 
-        logger.info(f'Deleting project {project_file}...')
-        cfg.mw.warn(f'Deleting project {project_file}...')
-        try:
-            os.remove(project_file)
-        except:
-            print_exception()
-        # else:
-        #     cfg.mw.hud.done()
 
-        # configure_project_paths()
-        # self.user_projects.set_data()
 
-        logger.info('Deleting Project Data: %s...' % project)
-        cfg.mw.warn('Deleting Project Data: %s...' % project)
-        try:
-            run_subprocess(["rm","-rf", project])
-            # delete_recursive(dir=project)
-            # shutil.rmtree(project, ignore_errors=True, onerror=handleError)
-            # shutil.rmtree(project, ignore_errors=True, onerror=handleError)
-        except:
-            cfg.mw.warn('An Error Was Encountered During Deletion of the Project Directory')
-            print_exception()
-        else:
-            cfg.mw.hud.done()
+    def delete_projects(self, project_files=None):
+        logger.info('')
+        if project_files == None:
+            project_files = [self.selectionReadout.text()]
 
-        cfg.mw.tell('Wrapping up...')
-        configure_project_paths()
-        if cfg.mw.globTabs.currentWidget().__class__.__name__ == 'OpenProject':
-            try:
-                self.user_projects.set_data()
-            except:
-                logger.warning('There was a problem updating the project list')
-                print_exception()
 
-        self.selectionReadout.setText('')
+        for project_file in project_files:
+            if project_file != '':
+                if validate_project_selection(project_file):
 
-        cfg.mw.tell('Deletion Complete!')
-        logger.info('Deletion Complete')
+                    project = os.path.splitext(project_file)[0]
+
+                    cfg.mw.warn("Delete this project? %s" % project_file)
+                    txt = "Are you sure you want to PERMANENTLY DELETE " \
+                          "the following project?\n\n" \
+                          "Project: %s" % project_file
+                    msgbox = QMessageBox(QMessageBox.Warning,
+                                         'Confirm Delete Project',
+                                         txt,
+                                         buttons=QMessageBox.Cancel | QMessageBox.Yes
+                                         )
+                    msgbox.setIcon(QMessageBox.Critical)
+                    msgbox.setMaximumWidth(350)
+                    msgbox.setDefaultButton(QMessageBox.Cancel)
+                    reply = msgbox.exec_()
+                    if reply == QMessageBox.Cancel:
+                        cfg.mw.tell('Canceling Delete Project Permanently Instruction...')
+                        logger.warning('Canceling Delete Project Permanently Instruction...')
+                        return
+                    if reply == QMessageBox.Ok:
+                        logger.info('Deleting file %s...' % project_file)
+                        cfg.mw.tell('Reclaiming Disk Space. Deleting Project File %s...' % project_file)
+                        logger.warning('Executing Delete Project Permanently Instruction...')
+
+                    logger.info(f'Deleting project {project_file}...')
+                    cfg.mw.warn(f'Deleting project {project_file}...')
+                    try:
+                        os.remove(project_file)
+                    except:
+                        print_exception()
+                    # else:
+                    #     cfg.mw.hud.done()
+
+                    # configure_project_paths()
+                    # self.user_projects.set_data()
+
+                    logger.info('Deleting project directory: %s...' % project)
+                    cfg.mw.warn('Deleting project directory: %s...' % project)
+                    try:
+                        run_subprocess(["rm","-rf", project])
+                        # delete_recursive(dir=project)
+                        # shutil.rmtree(project, ignore_errors=True, onerror=handleError)
+                        # shutil.rmtree(project, ignore_errors=True, onerror=handleError)
+                    except:
+                        cfg.mw.warn('An Error Was Encountered During Deletion of the Project Directory')
+                        print_exception()
+                    else:
+                        cfg.mw.hud.done()
+
+                    cfg.mw.tell('Wrapping up...')
+                    configure_project_paths()
+                    if cfg.mw.globTabs.currentWidget().__class__.__name__ == 'OpenProject':
+                        try:
+                            self.user_projects.set_data()
+                        except:
+                            logger.warning('There was a problem updating the project list')
+                            print_exception()
+
+                    self.selectionReadout.setText('')
+
+                    cfg.mw.tell('Deletion Complete!')
+                    logger.info('Deletion Complete')
+                else:
+                    logger.warning('(!) Invalid target for deletion: %s' % project_file)
+
+
+    def eventFilter(self, source, event):
+        if event.type() == QEvent.ContextMenu:
+            logger.info('')
+            menu = QMenu()
+            self.deleteContextAction = QAction('Delete')
+            self.deleteContextAction.triggered.connect(self.deleteContextMethod)
+            menu.addAction(self.deleteContextAction)
+
+            menu.exec_()
+            # if menu.exec_(event.globalPos()):
+            #     item = source.itemAt(event.pos())
+            return True
+        return super().eventFilter(source, event)
+
 
     # def keyPressEvent(self, event):
     #     print(event)
     #     self.keyevent = event
     #
     #     if event.matches(QKeySequence.Delete):
-    #         self.delete_project()
+    #         self.delete_projects()
 
 
         # if event.key() == Qt.Key_Delete:
-        #     # self.parent.parent.delete_project()
-        #     self.delete_project()
+        #     # self.parent.parent.delete_projects()
+        #     self.delete_projects()
         # else:
         #     super().keyPressEvent(event)
+
 
 def run_subprocess(task):
     """Call run(), catch exceptions."""
@@ -1107,8 +1148,8 @@ def getSideBarPlacesImportImages():
 #     def keyPressEvent(self, event):
 #         print(event.key())
 #         if event.key() == Qt.Key_Delete:
-#             # self.parent.parent.delete_project()
-#             cfg.mw._getTabObject().delete_project()
+#             # self.parent.parent.delete_projects()
+#             cfg.mw._getTabObject().delete_projects()
 #         else:
 #             super().keyPressEvent(event)
 
