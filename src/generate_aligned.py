@@ -187,14 +187,11 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
         def update_pbar(*a):
             pbar.update()
         # with ctx.Pool(processes=cpus) as pool:
-        with ThreadPoolExecutor(max_workers=cpus) as executor:
-            list(tqdm.tqdm(executor.map(convert_zarr, tasks), total=len(tasks), position=0, leave=True))
-
-        # with ThreadPool(processes=cpus) as pool:
-        #     results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_pbar) for task in tasks]
-        #     pool.close()
-        #     [p.get() for p in results]
-        #     # pool.join()
+        with ThreadPool(processes=cpus) as pool:
+            results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_pbar) for task in tasks]
+            pool.close()
+            [p.get() for p in results]
+            # pool.join()
 
         _it = 0
         while (count_aligned_files(dm.dest(), scale) < len(dm)) or _it > 4:
