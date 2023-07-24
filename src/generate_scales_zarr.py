@@ -80,14 +80,13 @@ def GenerateScalesZarr(dm, gui=True):
             def update_pbar(*a):
                 pbar.update()
 
-            with ThreadPool(processes=cpus) as pool:
-                results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_pbar) for task in task_groups[group]]
-                pool.close()
-                [p.get() for p in results]
-                # pool.join()
+            # with ThreadPool(processes=cpus) as pool:
+            #     results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_pbar) for task in task_groups[group]]
+            #     pool.close()
+            #     [p.get() for p in results]
 
-            # with ThreadPoolExecutor(max_workers=cpus) as executor:
-            #     list(tqdm.tqdm(executor.map(convert_zarr, task_groups[group]), total=len(task_groups[group])))
+            with ThreadPoolExecutor(max_workers=cpus) as executor:
+                list(tqdm.tqdm(executor.map(convert_zarr, task_groups[group]), total=len(task_groups[group])))
 
 
             logger.info(f"Elapsed Time: {'%.3g' % (time.time() - t)}s")

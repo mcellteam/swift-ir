@@ -101,13 +101,10 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
         # with ctx.Pool() as pool:
         #     list(tqdm.tqdm(pool.imap_unordered(run, task_groups[group]), total=len(task_groups[group]), desc=f"Downsampling {group}", position=0, leave=True))
         #     pool.close() #0723+
-        #     pool.join()
 
-        # with mp.Pool(processes=cpus) as pool:
         # with mp.Pool(processes=cpus) as pool:
         #     pool.map(run, tqdm.tqdm(task_groups[group], total=len(task_groups[group]), desc=f"Downsampling {group}", position=0, leave=True))
         #     pool.close()
-        #     pool.join()
 
         with ThreadPoolExecutor(max_workers=cpus) as executor:
             list(tqdm.tqdm(executor.map(run, task_groups[group]), total=len(task_groups[group]), position=0, leave=True))
