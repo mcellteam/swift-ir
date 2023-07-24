@@ -64,6 +64,8 @@ os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt5'
 os.environ["BLOSC_NTHREADS"] = "1"
 import sys, signal, logging, argparse
 import faulthandler
+import libtiff
+libtiff.libtiff_ctypes.suppress_warnings()
 
 from qtpy import QtCore
 from qtpy.QtCore import QCoreApplication, Qt
