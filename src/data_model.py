@@ -1122,6 +1122,7 @@ class DataModel:
         timings.append(('Generate Aligned TIFF Thumbnails', ''))
         for s in cfg.data.scales():
             timings.append(('  ' + cfg.data.scale_pretty(s), '%s / %s' % (t6[s], t6m[s])))
+        return timings
 
 
     def previous_method_results(self, s=None, l=None):
