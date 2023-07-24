@@ -36,7 +36,8 @@ mp.set_start_method('forkserver', force=True)
 
 
 def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
-    # logger.info('>>>> autoscale >>>>')
+
+    print(f'\n\n################ Generating Downsampled Images ################\n')
 
     # threadpool = QThreadPool.globalInstance()
     # threadpool.setExpiryTimeout(1000)
@@ -98,7 +99,7 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
             layer['filename'] = ofn #0220+
 
 
-    print(f'\n\n################ Generating Scales ################\n')
+
     t0 = time.time()
     # with ThreadPool(processes=cpus) as pool:
     #     pool.map(run, tqdm.tqdm(tasks, total=len(tasks)))

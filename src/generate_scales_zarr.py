@@ -37,7 +37,7 @@ def GenerateScalesZarr(dm, gui=True):
     if cfg.CancelProcesses:
         cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
     else:
-
+        print(f'\n\n################ Converting Downscales to Zarr ################\n')
         logger.info('Copy-converting TIFFs to NGFF-Compliant Zarr...')
 
         # Todo conditional handling of skips
@@ -59,8 +59,6 @@ def GenerateScalesZarr(dm, gui=True):
                              overwrite=True,
                              gui=gui)
 
-        print(f'\n\n################ Converting Downscales to Zarr ################\n')
-
         task_groups = {}
         for s in dm.scales()[::-1]:
             task_groups[s] = []
@@ -74,10 +72,10 @@ def GenerateScalesZarr(dm, gui=True):
             def update_pbar(*a):
                 pbar.update()
             t0 = time.time()
-            with ThreadPool(processes=cpus) as pool:
+            with mp.Pool(processes=cpus) as pool:
                 results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_pbar) for task in task_groups[group]]
                 pool.close()
-                [p.get() for p in results]
+                # [p.get() for p in results]
                 pool.join()
 
 
