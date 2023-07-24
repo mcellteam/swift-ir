@@ -104,10 +104,13 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
         #     pool.join()
 
         # with mp.Pool(processes=cpus) as pool:
-        with mp.Pool(processes=cpus) as pool:
-            pool.map(run, tqdm.tqdm(task_groups[group], total=len(task_groups[group]), desc=f"Downsampling {group}", position=0, leave=True))
-            pool.close()
-            pool.join()
+        # with mp.Pool(processes=cpus) as pool:
+        #     pool.map(run, tqdm.tqdm(task_groups[group], total=len(task_groups[group]), desc=f"Downsampling {group}", position=0, leave=True))
+        #     pool.close()
+        #     pool.join()
+
+        with ThreadPoolExecutor(max_workers=cpus) as executor:
+            list(tqdm.tqdm(executor.map(run, task_groups[group]), total=len(task_groups[group]), position=0, leave=True))
 
 
         while any([x < n_imgs for x in count_files(dm.dest(), [group])]):
@@ -135,19 +138,6 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     dm.link_reference_sections(s_list=dm.scales()) #This is necessary
     dm.scale = dm.scales()[-1]
 
-    # WAIT FOR CORRECT NUMBER OF OUTPUT IMAGES
-    # n_imgs = len(dm)
-    # # logger.info(f'# images: {n_imgs}')
-    # while any([x < n_imgs for x in count_files(dm.dest(), dm.scales())]):
-    #     # logger.info('Sleeping for 1 second...')
-    #     time.sleep(1)
-
-    # count_files(dm.dest(), dm.scales())
-    # logger.info("\n\nFinished generating downsampled source images. Sleeping for 5 seconds...\n\n")
-    # time.sleep(5)
-    # logger.info("Finished Sleeping...")
-    # count_files(dm.dest(), dm.scales())
-
     src_img_size = dm.image_size(s='scale_1')
     for s in dm.scales()[::-1]:
         if s == 'scale_1':
@@ -156,10 +146,6 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
         siz = (int(src_img_size[0] / sv), int(src_img_size[1] / sv))
         logger.info(f"setting {s} image size to {siz}...")
         dm['data']['scales'][s]['image_src_size'] = siz
-
-    # for s in dm.scales():
-    #     dm.set_image_size(s=s)
-
 
     GenerateScalesZarr(dm, gui=gui)
 
