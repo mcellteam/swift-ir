@@ -658,8 +658,8 @@ class OpenProject(QWidget):
             self.NEW_PROJECT_IMAGES = natural_sort(self.NEW_PROJECT_IMAGES)
 
             if cfg.data['data']['has_cal_grid']:
-                self.NEW_PROJECT_IMAGES = self.NEW_PROJECT_IMAGES[1:]
                 cfg.data['data']['cal_grid_path'] = self.NEW_PROJECT_IMAGES[0]
+                self.NEW_PROJECT_IMAGES = self.NEW_PROJECT_IMAGES[1:]
                 try:
                     shutil.copy(cfg.data['data']['cal_grid_path'], cfg.data.dest())
                 except:
