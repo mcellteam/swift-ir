@@ -1023,8 +1023,10 @@ class OpenProject(QWidget):
             menu.addAction(deleteContextAction)
 
             if self.getNumRowsSelected() == 1:
-                copyPathAction = QAction('Delete')
-                copyPathAction.triggered.connect(lambda: QApplication.clipboard().setText(self.getSelectedProjects()[0]))
+                # copyPathAction = QAction('Copy Path')
+                path = self.getSelectedProjects()[0]
+                copyPathAction = QAction(f"Copy '{self.getSelectedProjects()[0]}'")
+                copyPathAction.triggered.connect(lambda: QApplication.clipboard().setText(path))
                 logger.info(f"Added to Clipboard: {QApplication.clipboard().text()}")
                 menu.addAction(copyPathAction)
 
