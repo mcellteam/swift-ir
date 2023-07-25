@@ -738,7 +738,7 @@ class OpenProject(QWidget):
                     logger.info('Generating Source Thumbnails...')
                     thumbnailer = Thumbnailer()
                     worker = BackgroundWorker(fn=thumbnailer.reduce_main(dest=dm.dest()))
-                    cfg.main_window.start(worker)
+                    cfg.mw.threadpool.start(worker)
                     thumbnailer = Thumbnailer()
                     cfg.data.t_thumbs = thumbnailer.reduce_main(dest=dm.dest())
             except:
@@ -913,10 +913,12 @@ class OpenProject(QWidget):
             cfg.mw.warn("Invalid Path")
 
     def getSelectedRows(self):
+        logger.info(f"{[x.row() for x in self.user_projects.table.selectionModel().selectedRows()]}")
         return [x.row() for x in self.user_projects.table.selectionModel().selectedRows()]
 
     def getSelectedProjects(self):
-        return [self.user_projects.table.item(r, 0).text() for r in self.user_projects.table.selectionModel().selectedRows()]
+        logger.info(f"{[self.user_projects.table.item(r, 0).text() for r in self.getSelectedRows()]}")
+        return [self.user_projects.table.item(r, 0).text() for r in self.getSelectedRows()]
 
     def getNumRowsSelected(self):
         return len(self.getSelectedProjects())
@@ -1164,12 +1166,6 @@ class UserProjects(QWidget):
         # self.layout.addWidget(controls)
         self.setLayout(self.layout)
         self.set_data()
-        # self.updateRowHeight(self.ROW_HEIGHT)
-        # self.updateRowHeight(getOpt('state,open_project_tab,row_height'))
-
-        # self.setStyleSheet("color: #161c20;")
-        self.setStyleSheet("font-size: 9px; color: #161c20; font-family: Tahoma, sans-serif;")
-        self.table.setStyleSheet("font-size: 9px; color: #161c20; font-family: Tahoma, sans-serif;")
 
 
     def updateRowHeight(self, h):
