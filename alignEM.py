@@ -192,7 +192,7 @@ def main():
     else:
         logger.setLevel(LOGLEVELS[args.loglevel])
     if args.debug_mp:
-        cfg.DEBUG_MP = True
+        cfg.DEBUG_MP = 1
     # if args.no_tensorstore: cfg.USE_TENSORSTORE = False
     if args.headless:  cfg.HEADLESS = True
     if args.no_splash: cfg.NO_SPLASH = True

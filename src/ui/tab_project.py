@@ -23,7 +23,7 @@ from qtpy.QtGui import QPainter, QBrush, QFont, QPixmap, QColor, QCursor, QPalet
 from qtpy.QtWebEngineWidgets import *
 import src.config as cfg
 from src.helpers import print_exception, getOpt, setOpt, getData, setData, get_scale_key, natural_sort, hotkey, \
-    get_appdir, caller_name, is_joel, make_affine_widget_HTML
+    get_appdir, caller_name, is_tacc, is_joel, make_affine_widget_HTML
 from src.viewer_em import EMViewer, EMViewerSnr
 from src.viewer_ma import MAViewer
 from src.ui.snr_plot import SnrPlot
@@ -2280,12 +2280,63 @@ class ProjectTab(QWidget):
         self.gb_method_selection.setStyleSheet('font-size: 11px; padding: 2px;')
 
 
+
+
+        self.le_tacc_num_cores = QLineEdit()
+        self.le_tacc_num_cores.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.le_tacc_num_cores.setFixedHeight(18)
+        self.le_tacc_num_cores.setFixedWidth(30)
+        self.le_tacc_num_cores.setValidator(QIntValidator(1,128))
+        def update_tacc_max_cores():
+            logger.info('')
+            n = int(self.le_tacc_num_cores.text())
+            cfg.TACC_MAX_CPUS = n
+            cfg.main_window.tell(f"Maximum # of cores is now set to: {n}")
+        self.le_tacc_num_cores.setText(str(cfg.TACC_MAX_CPUS))
+        self.le_tacc_num_cores.textEdited.connect(update_tacc_max_cores)
+        self.le_tacc_num_cores.returnPressed.connect(update_tacc_max_cores)
+
+        self.le_qtwebengine_raster_threads = QLineEdit()
+        self.le_qtwebengine_raster_threads.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.le_qtwebengine_raster_threads.setFixedHeight(18)
+        self.le_qtwebengine_raster_threads.setFixedWidth(30)
+        self.le_qtwebengine_raster_threads.setValidator(QIntValidator())
+        def update_raster_threads():
+            logger.info('')
+            n = int(self.le_qtwebengine_raster_threads.text())
+            cfg.QTWEBENGINE_RASTER_THREADS = n
+            cfg.main_window.tell(f"# QtWebengine raster threads is now set to: {n}")
+        self.le_qtwebengine_raster_threads.setText(str(cfg.QTWEBENGINE_RASTER_THREADS))
+        self.le_qtwebengine_raster_threads.textEdited.connect(update_raster_threads)
+        self.le_qtwebengine_raster_threads.returnPressed.connect(update_raster_threads)
+
+        self.cb_recipe_logging = QCheckBox()
+        self.cb_recipe_logging.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        def update_recipe_logging():
+            logger.info('')
+            b = self.cb_recipe_logging.isChecked()
+            cfg.RECIPE_LOGGING = int(b)
+            cfg.main_window.tell(f"# Recipe Logging is now set to: {b}")
+        self.cb_recipe_logging.setChecked(cfg.RECIPE_LOGGING)
+        self.cb_recipe_logging.toggled.connect(update_recipe_logging)
+
+        self.w_tacc = QWidget()
+        self.w_tacc.setContentsMargins(2,2,2,2)
+        self.fl_tacc = QFormLayout()
+        self.w_tacc.setLayout(self.fl_tacc)
+        self.fl_tacc.addRow(f"maximum # processors", self.le_tacc_num_cores)
+        self.fl_tacc.addRow(f"QtWebengine # raster threads", self.le_qtwebengine_raster_threads)
+        self.fl_tacc.addRow(f"recipe_maker logging", self.cb_recipe_logging)
+
         self.sideTabs = QTabWidget()
         # self.sideTabs.addTab(self.MA_stackedWidget, 'Configure')
         self.sideTabs.addTab(self.sa_lowest8, 'Lowest 8 SNR')
         self.sideTabs.addTab(self.sa_details, 'Details')
         self.sideTabs.addTab(self.sa_runtimes, 'Timings')
         self.sideTabs.addTab(self.logs_widget, 'Logs')
+        if is_tacc() or is_joel():
+            self.sideTabs.addTab(self.w_tacc, 'Other')
+
         self.sideTabs.currentChanged.connect(self.onSideTabChange)
 
         self.gb_sideTabs = QGroupBox()
@@ -3754,132 +3805,17 @@ class ProjectTab(QWidget):
 
 
     def updateTimingsWidget(self):
-        # logger.info('')
-        caller = inspect.stack()[1].function
-        # if DEV:
-        #     logger.info(f'[{caller}]')
+        logger.info('')
         try:
-            # try:
-            #     t0 = (f"%.1fs" % cfg.data['data']['benchmarks']['t_scaling']).rjust(12)
-            #     t0m = (f"%.3fm" % (cfg.data['data']['benchmarks']['t_scaling'] / 60))
-            # except:
-            #     t0 = t0m = "???"
-            #
-            # try:
-            #     t1 = (f"%.1fs" % cfg.data['data']['benchmarks']['t_scaling_convert_zarr']).rjust(12)
-            #     t1m = (f"%.3fm" % (cfg.data['data']['benchmarks']['t_scaling_convert_zarr'] / 60))
-            # except:
-            #     t1 = t1m = "???"
-            #
-            # try:
-            #     t2 = (f"%.1fs" % cfg.data['data']['benchmarks']['t_thumbs']).rjust(12)
-            #     t2m = (f"%.3fm" % (cfg.data['data']['benchmarks']['t_thumbs'] / 60))
-            # except:
-            #     t2 = t2m = "???"
-            #
-            # t3, t4, t5, t6, t7 = {}, {}, {}, {}, {}
-            # t3m, t4m, t5m, t6m, t7m = {}, {}, {}, {}, {}
-            # for s in cfg.data.scales():
-            #     try:
-            #         t3[s] = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_align']).rjust(12)
-            #         t3m[s] = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_align'] / 60))
-            #     except:
-            #         t3[s] = t3m[s] = "???"
-            #
-            #     try:
-            #         t4[s] = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_convert_zarr']).rjust(12)
-            #         t4m[s] = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_convert_zarr'] / 60))
-            #     except:
-            #         t4[s] = t4m[s] = "???"
-            #
-            #     try:
-            #         t5[s] = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_generate']).rjust(12)
-            #         t5m[s] = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_generate'] / 60))
-            #     except:
-            #         t5[s] = t5m[s] = "???"
-            #
-            #     try:
-            #         t6[s] = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_aligned']).rjust(12)
-            #         t6m[s] = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_aligned'] / 60))
-            #     except:
-            #         t6[s] = t6m[s] = "???"
-            #
-            #     try:
-            #         t7[s] = (f"%.1fs" % cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_spot']).rjust(12)
-            #         t7m[s] = (f"%.3fm" % (cfg.data['data']['benchmarks']['scales'][s]['t_thumbs_spot'] / 60))
-            #     except:
-            #         t7[s] = t7m[s] = "???"
-            #
-            #
-            # timings = []
-            # timings.append(('Generate Scale Hierarchy', t0 + ' / ' + t0m))
-            # timings.append(('Convert All Scales to Zarr', t1 + ' / ' + t1m))
-            # timings.append(('Generate Source Image Thumbnails', t2 + ' / ' + t2m))
-            #
-            #
-            #
-            # # fl_l.addRow('Generate Scale Hierarchy', QLabel(t0 + ' / ' + t0m))
-            # # fl_l.addRow('Convert All Scales to Zarr', QLabel(t1 + ' / ' + t1m))
-            # # fl_l.addRow('Generate Source Image Thumbnails', QLabel(t2 + ' / ' + t2m))
-            # # fl_l.addRow('Compute Affines', QLabel('\n'.join(['  %s: %s / %s' % (s, t3[s],t3m[s]) for s in cfg.data.scales()])))
-            # # fl_l.addRow('Compute Affines', QLabel(''))
-            # timings.append(('Compute Affines', ''))
-            # for s in cfg.data.scales():
-            #     # fl_l.addRow('  ' + cfg.data.scale_pretty(s), QLabel('%s / %s' % (t3[s], t3m[s])))
-            #     timings.append(('  ' + cfg.data.scale_pretty(s), '%s / %s' % (t3[s], t3m[s])))
-            # # fl_l.addRow('Generate Aligned TIFFs', QLabel(''))
-            # timings.append(('Generate Aligned TIFFs', ''))
-            # for s in cfg.data.scales():
-            #     # fl_l.addRow('  ' + cfg.data.scale_pretty(s), QLabel('%s / %s' % (t4[s], t4m[s])))
-            #     timings.append(('  ' + cfg.data.scale_pretty(s), '%s / %s' % (t4[s], t4m[s])))
-            # # fl_l.addRow('Convert Aligned TIFFs to Zarr', QLabel(''))
-            # timings.append(('Convert Aligned TIFFs to Zarr', ''))
-            # for s in cfg.data.scales():
-            #     # fl_l.addRow('  ' + cfg.data.scale_pretty(s), QLabel('%s / %s' % (t5[s], t5m[s])))
-            #     timings.append(('  ' + cfg.data.scale_pretty(s), '%s / %s' % (t5[s], t5m[s])))
-            # # fl_l.addRow('Generate Aligned TIFF Thumbnails', QLabel(''))
-            # timings.append(('Generate Aligned TIFF Thumbnails', ''))
-            # for s in cfg.data.scales():
-            #     # fl_l.addRow('  ' + cfg.data.scale_pretty(s), QLabel('%s / %s' % (t6[s], t6m[s])))
-            #     timings.append(('  ' + cfg.data.scale_pretty(s), '%s / %s' % (t6[s], t6m[s])))
-            # # fl_l.addRow('Generate Correlation Signal Thumbnails', QLabel(''))
-            # timings.append(('Generate Correlation Signal Thumbnails', ''))
-            # for s in cfg.data.scales():
-            #     # fl_l.addRow('  ' + cfg.data.scale_pretty(s), QLabel('%s / %s' % (t7[s], t7m[s])))
-            #     timings.append(('  ' + cfg.data.scale_pretty(s), '%s / %s' % (t7[s], t7m[s])))
-
             fl_l = QFormLayout()
             fl_l.setContentsMargins(0, 0, 0, 0)
             fl_l.setVerticalSpacing(1)
             for t in cfg.data.timings:
                 fl_l.addRow(t[0], QLabel(t[1]))
-
-
-            # fl_l.addRow('Compute Affines', QLabel('\n'.join(['  %s: %s / %s' % (s, t3[s], t3m[s]) for s in cfg.data.scales()])))
-            # fl_l.addRow('Generate Aligned TIFFs', QLabel('\n'.join(['  %s: %s / %s' % (s, t4[s],t4m[s]) for s in cfg.data.scales()])))
-            # fl_l.addRow('Convert Aligned TIFFs to Zarr', QLabel('\n'.join(['  %s: %s / %s' % (s, t5[s],t5m[s]) for s in cfg.data.scales()])))
-            # fl_l.addRow('Generate Aligned TIFF Thumbnails', QLabel('\n'.join(['  %s: %s / %s' % (s, t6[s],t6m[s]) for s in cfg.data.scales()])))
-            # fl_l.addRow('Generate Correlation Signal Thumbnails', QLabel('\n'.join(['  %s: %s / %s' % (s, t7[s],t7m[s]) for s in cfg.data.scales()])))
-
-            # self.runtimeWidget.setText(
-            #     f"Gen. Scales{br}{br}{br}{br}{br}{br}:{br}{a}{t0}{br}{br}"
-            #     f"Convert Zarr{br}{br}{br}{br}{br}:{br}{a}{t1}{nl}"
-            #     f"Source Thumbs{br}{br}{br}{br}:{br}{a}{t2}{br}{br}"
-            #     f"Compute Affines{br}{br}:{br}{a}{t3}{nl}"
-            #     f"Gen. Alignment{br}{br}{br}:{br}{a}{t4}{br}{br}"
-            #     f"Aligned Thumbs{br}{br}{br}:{br}{a}{t5}{nl}"
-            #     f"Corr Spot Thumbs{br}:{br}{a}{t6}"
-            # )
             w = QWidget()
             w.setContentsMargins(0, 0, 0, 0)
-            w.setStyleSheet("""
-            QLabel{
-                color: #161c20;
-                font-size: 8px;
-            }
-            """)
+            w.setStyleSheet("""QLabel{color: #161c20; font-size: 8px;}""")
             w.setLayout(fl_l)
-
             cfg.project_tab.sa_runtimes.setWidget(w)
 
         except:

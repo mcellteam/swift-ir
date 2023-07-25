@@ -278,14 +278,14 @@ class align_recipe:
                 if self.cur_method in ('grid-default', 'grid-custom', 'manual-hint'):
 
                     try: self.data['alignment']['mir_err']['ingredient_%d' % i] = ing.ww
-                    except: print_exception(self.destination, extra=f"ww issue")
+                    except: self.data['alignment']['mir_err']['ingredient_%d' % i] = 'Null'
 
                     try: self.data['alignment']['swim_args']['ingredient_%d' % i] = ing.multi_swim_arg_str()
-                    except: print_exception(self.destination, extra=f"ingedient {i}, ID: {ing.ID}")
+                    except: self.data['alignment']['swim_args']['ingredient_%d' % i] = 'Null'
                     try: self.data['alignment']['swim_out']['ingredient_%d' % i] = ing.swim_output
-                    except: print_exception(self.destination, extra=f"ingedient {i}, ID: {ing.ID}")
+                    except: self.data['alignment']['swim_out']['ingredient_%d' % i] = 'Null'
                     try: self.data['alignment']['swim_err']['ingredient_%d' % i] = ing.swim_err_lines
-                    except: print_exception(self.destination, extra=f"ingedient {i}, ID: {ing.ID}")
+                    except: self.data['alignment']['swim_err']['ingredient_%d' % i] = 'Null'
                     try: self.data['alignment']['mir_toks']['ingredient_%d' % i] = ing.mir_toks
                     except: self.data['alignment']['mir_toks']['ingredient_%d' % i] = 'Null'
                     try: self.data['alignment']['mir_script']['ingredient_%d' % i] = ing.mir_script

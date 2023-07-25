@@ -775,6 +775,9 @@ class DataModel:
         self._data.setdefault('rendering', {})
         self._data.setdefault('state', {})
         self._data.setdefault('system', {})
+        # self._data['system'].setdefault('max_processors', cfg.TACC_MAX_CPUS)
+        # self._data['system'].setdefault('max_qtwebengine_threads', cfg.QTWEBENGINE_RASTER_THREADS)
+        # self._data['system'].setdefault('recipe_logging', cfg.RECIPE_LOGGING)
         self._data['state'].pop('stage_viewer', None)
         self._data['state']['mode'] = 'stack-xy' # TEMPORARY FORCE
         self._data['state']['has_cal_grid'] = False

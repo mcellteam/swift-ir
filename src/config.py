@@ -13,14 +13,14 @@ VERSION = '0.5.49'
 
 LOG_LEVEL = 1
 DEV_MODE = 1
-DEBUG_MP = False
+DEBUG_MP = 0
 # DEBUG_MP = (False,True)[DEV_MODE]
-DEBUG_NEUROGLANCER = False
+DEBUG_NEUROGLANCER = 0
 # DEBUG_NEUROGLANCER = (False,True)[DEV_MODE]
 # RECIPE_LOGGING = 0
 # RECIPE_LOGGING = (False,True)[DEV_MODE]
 # RECIPE_LOGGING = int(getpass.getuser() in ('joelyancey','joely'))
-RECIPE_LOGGING = True
+RECIPE_LOGGING = 1
 # TACC_MAX_CPUS = 122 # 128 hardware cores/node on Lonestar6
 # TACC_MAX_CPUS = 80 # 128 hardware cores/node on Lonestar6
 TACC_MAX_CPUS = 104 # x3 is > 304
