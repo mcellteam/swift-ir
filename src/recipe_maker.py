@@ -413,11 +413,12 @@ class align_ingredient:
             self.ms_names.append(b_arg)
 
             args = ArgString(sep=' ')
-            # if len(self.ww) == 1:
-            #     args.append("ww_%s" % self.ww)
-            # else:
-            #     args.append("ww_%sx%s" % (self.ww[0], self.ww[1]))
-            args.append("ww_%s" % self.ww[0])
+            if len(self.ww) == 1:
+                args.append("ww_%s" % self.ww)
+            else:
+                args.append("ww_%sx%s" % (self.ww[0], self.ww[1]))
+            # args.append("ww_%s" % self.ww[0])
+            args.append("-v")
             # args.append('ww_' + self.swim_ww_arg)
             if self.alignment['swim_settings']['clobber_fixed_noise']:
                 args.append('-f%d' % self.alignment['swim_settings']['clobber_fixed_noise_px'])
@@ -671,7 +672,7 @@ def run_command(cmd, arg_list=None, cmd_input=None, extra='', scale=''):
                       f"Scale           : {scale}\n"
                       f"Description     : {extra}\n"
                       f"arg_list        : {arg_list}\n"
-                      f"Running command :\n{(' '.join(cmd_arg_list), 'None')[cmd_arg_list == '']}\n"
+                      f"Running command :\n{(cmd_arg_list, 'None')[cmd_arg_list == '']}\n"
                       f"Passing data    :\n{(cmd_input, 'None')[cmd_input == '']}\n\n"
                       f">> stdout\n{(cmd_stdout, 'None')[cmd_stdout == '']}\n"
                       f">> stderr\n{(cmd_stderr, 'None')[cmd_stderr == '']}\n"
