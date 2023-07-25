@@ -719,7 +719,7 @@ class OpenProject(QWidget):
             self.user_projects.table.setRowHeight(rc, self.row_height_slider.value())
 
             f = QFont()
-            f.setPointSize(10)
+            f.setPointSize(9)
             f.setBold(True)
             twi = QTableWidgetItem('Initializing\nProject...')
             twi.setFont(f)
@@ -970,10 +970,10 @@ class OpenProject(QWidget):
         return [x.row() for x in self.user_projects.table.selectionModel().selectedRows()]
 
     def getSelectedProjects(self):
-        selected_rows = [x.row() for x in self.user_projects.table.selectionModel().selectedRows()]
-        files = [self.user_projects.table.item(row, 0).text() for row in selected_rows]
-        logger.info(f'selected projects: {files}')
-        return files
+        return [self.user_projects.table.item(r, 0).text() for r in self.user_projects.table.selectionModel().selectedRows()]
+
+    def getNumRowsSelected(self):
+        return len(self.getSelectedProjects())
 
     def deleteContextMethod(self):
         logger.info('')
@@ -1070,9 +1070,16 @@ class OpenProject(QWidget):
         if event.type() == QEvent.ContextMenu:
             logger.info('')
             menu = QMenu()
-            self.deleteContextAction = QAction('Delete')
-            self.deleteContextAction.triggered.connect(self.deleteContextMethod)
-            menu.addAction(self.deleteContextAction)
+            deleteContextAction = QAction('Delete')
+            deleteContextAction.triggered.connect(self.deleteContextMethod)
+            menu.addAction(deleteContextAction)
+
+            if self.getNumRowsSelected() == 1:
+                copyPathAction = QAction('Delete')
+                copyPathAction.triggered.connect(lambda: QApplication.clipboard().setText(self.getSelectedProjects()[0]))
+                logger.info(f"Added to Clipboard: {QApplication.clipboard().text()}")
+                menu.addAction(copyPathAction)
+
 
             menu.exec_(event.globalPos())
             return True
@@ -1215,8 +1222,8 @@ class UserProjects(QWidget):
         # self.updateRowHeight(getOpt('state,open_project_tab,row_height'))
 
         # self.setStyleSheet("color: #161c20;")
-        self.setStyleSheet("font-size: 10px; color: #161c20;")
-        self.table.setStyleSheet("font-size: 10px; color: #161c20;")
+        self.setStyleSheet("font-size: 9px; color: #161c20;")
+        self.table.setStyleSheet("font-size: 9px; color: #161c20;")
 
 
     def updateRowHeight(self, h):
@@ -1273,13 +1280,14 @@ class UserProjects(QWidget):
         # caller = inspect.stack()[1].function
         # logger.info(f'[{caller}]')
         self.table.clearContents()
+        self.table.clear()
         font0 = QFont()
         # font0.setBold(True)
-        font0.setPointSize(10)
+        font0.setPointSize(9)
 
         font1 = QFont()
-        font1.setBold(True)
-        font1.setPointSize(10)
+        # font1.setBold(True)
+        font1.setPointSize(9)
         self.table.setRowCount(0)
         for i, row in enumerate(self.get_data()):
             # logger.info(f'>>>> row #{i} >>>>')
@@ -1296,9 +1304,14 @@ class UserProjects(QWidget):
                         self.table.setCellWidget(i, j, thumbnail)
                     else:
                         thumbnail = ThumbnailFast(self, path=item)
-                        self.table.setCellWidget(i, j, thumbnail)
+                        self.table.setCellWidget(iitem, j, thumbnail)
                 elif j in (4,5):
-                    twi = QTableWidgetItem(item.replace("_", " "))
+                    item.replace("_", " ")
+                    if item[13] == '-':
+                        item[16] = ':'
+                    if item[13] == '-':
+                        item[16] = ':'
+                    twi = QTableWidgetItem()
                     twi.setFont(font0)
                     self.table.setItem(i, j, twi)
                 elif j in (6,7):
