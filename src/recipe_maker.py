@@ -260,26 +260,25 @@ class align_recipe:
             # self.data['alignment']['crop_str_mir'] = {}
             for i,ing in enumerate(self.ingredients):
                 try: self.data['alignment']['method_results']['ingredient_%d' % i] = {}
-                except: print_exception(self.destination, extra=f"ingedient {i}, ID: {ing.ID}")
+                except: self.data['alignment']['method_results']['ingredient_%d' % i] = 'Null'
                 try: self.data['alignment']['method_results']['ingredient_%d' % i]['ww'] = ing.ww
-                except: print_exception(self.destination, extra=f"ingedient {i}, ID: {ing.ID}")
-                # if self.cur_method == 'manual-hint':
+                except: self.data['alignment']['method_results']['ingredient_%d' % i]['ww'] = 'Null'
                 try: self.data['alignment']['method_results']['ingredient_%d' % i]['psta'] = str(ing.psta)
-                except: print_exception(self.destination, extra=f"ingedient {i}, ID: {ing.ID}")
+                except: self.data['alignment']['method_results']['ingredient_%d' % i]['psta'] = 'Null'
                 try: self.data['alignment']['method_results']['ingredient_%d' % i]['pmov'] = str(ing.pmov)
-                except: print_exception(self.destination, extra=f"ingedient {i}, ID: {ing.ID}")
-                if self.cur_method in ('grid-default', 'grid-custom'):
-                    try: self.data['alignment']['method_results']['ingredient_%d' % i]['adjust_x'] = str(ing.adjust_x)
-                    except: print_exception(self.destination, extra=f"ingedient {i}, ID: {ing.ID}")
-                    try: self.data['alignment']['method_results']['ingredient_%d' % i]['adjust_y'] = str(ing.adjust_y)
-                    except: print_exception(self.destination, extra=f"ingedient {i}, ID: {ing.ID}")
-                    try: self.data['alignment']['method_results']['ingredient_%d' % i]['afm'] = str(ing.afm)
-                    except: print_exception(self.destination, extra=f"ingedient {i}, ID: {ing.ID}")
-                if self.cur_method in ('grid-default', 'grid-custom', 'manual-hint'):
+                except: self.data['alignment']['method_results']['ingredient_%d' % i]['pmov'] = 'Null'
 
+                if self.cur_method in ('grid-default', 'grid-custom'):
+                    try: self.data['alignment']['method_results']['ingredient_%d' % i]['afm'] = str(ing.afm)
+                    except: self.data['alignment']['method_results']['ingredient_%d' % i]['afm'] = 'Null'
+                    try: self.data['alignment']['method_results']['ingredient_%d' % i]['adjust_x'] = str(ing.adjust_x)
+                    except: self.data['alignment']['method_results']['ingredient_%d' % i]['adjust_x'] = 'Null'
+                    try: self.data['alignment']['method_results']['ingredient_%d' % i]['adjust_y'] = str(ing.adjust_y)
+                    except: self.data['alignment']['method_results']['ingredient_%d' % i]['adjust_y'] = 'Null'
+
+                if self.cur_method in ('grid-default', 'grid-custom', 'manual-hint'):
                     try: self.data['alignment']['mir_err']['ingredient_%d' % i] = ing.ww
                     except: self.data['alignment']['mir_err']['ingredient_%d' % i] = 'Null'
-
                     try: self.data['alignment']['swim_args']['ingredient_%d' % i] = ing.multi_swim_arg_str()
                     except: self.data['alignment']['swim_args']['ingredient_%d' % i] = 'Null'
                     try: self.data['alignment']['swim_out']['ingredient_%d' % i] = ing.swim_output
