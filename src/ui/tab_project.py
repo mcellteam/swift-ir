@@ -2283,7 +2283,7 @@ class ProjectTab(QWidget):
 
 
         self.le_tacc_num_cores = QLineEdit()
-        self.le_tacc_num_cores.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # self.le_tacc_num_cores.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.le_tacc_num_cores.setFixedHeight(18)
         self.le_tacc_num_cores.setFixedWidth(30)
         self.le_tacc_num_cores.setValidator(QIntValidator(1,128))
@@ -2297,7 +2297,7 @@ class ProjectTab(QWidget):
         self.le_tacc_num_cores.returnPressed.connect(update_tacc_max_cores)
 
         self.le_qtwebengine_raster_threads = QLineEdit()
-        self.le_qtwebengine_raster_threads.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # self.le_qtwebengine_raster_threads.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.le_qtwebengine_raster_threads.setFixedHeight(18)
         self.le_qtwebengine_raster_threads.setFixedWidth(30)
         self.le_qtwebengine_raster_threads.setValidator(QIntValidator())
