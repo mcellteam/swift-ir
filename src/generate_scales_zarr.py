@@ -39,61 +39,55 @@ def GenerateScalesZarr(dm, gui=True):
     pbar_text = 'Generating Zarr Scale Arrays (%d Cores)...' % cpus
     if cfg.CancelProcesses:
         cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
-    else:
-        print(f'\n\n################ Converting Downscales to Zarr ################\n')
-        logger.info('Copy-converting TIFFs to NGFF-Compliant Zarr...')
+        return
 
-        # Todo conditional handling of skips
+    print(f'\n\n################ Converting Downscales to Zarr ################\n')
+    logger.info('Copy-converting TIFFs to NGFF-Compliant Zarr...')
 
-        dest = dm.dest()
-        imgs = get_img_filenames(os.path.join(dest, 'scale_1', 'img_src'))
-        od = os.path.abspath(os.path.join(dest, 'img_src.zarr'))
-        renew_directory(directory=od, gui=gui)
-        for scale in dm.scales():
-            x, y = dm.image_size(s=scale)
-            group = 's%d' % get_scale_val(scale)
-            preallocate_zarr(dm=dm,
-                             name='img_src.zarr',
-                             group=group,
-                             dimx=x,
-                             dimy=y,
-                             dimz=len(dm),
-                             dtype='uint8',
-                             overwrite=True,
-                             gui=gui)
+    # Todo conditional handling of skips
 
+    dest = dm.dest()
+    imgs = get_img_filenames(os.path.join(dest, 'scale_1', 'img_src'))
+    od = os.path.abspath(os.path.join(dest, 'img_src.zarr'))
+    renew_directory(directory=od, gui=gui)
+    for scale in dm.scales():
+        x, y = dm.image_size(s=scale)
+        group = 's%d' % get_scale_val(scale)
+        preallocate_zarr(dm=dm, name='img_src.zarr', group=group,
+                         dimx=x, dimy=y, dimz=len(dm), dtype='uint8',overwrite=True, gui=gui)
+
+    time.sleep(1)
+
+    task_groups = {}
+    for s in dm.scales()[::-1]:
+        task_groups[s] = []
+        for ID, img in enumerate(imgs):
+            out = os.path.join(od, 's%d' % get_scale_val(s))
+            fn = os.path.join(dest, s, 'img_src', img)
+            task_groups[s].append([ID, fn, out])
+
+    t0 = time.time()
+    for group in task_groups:
+        t = time.time()
+        # logger.info(f'Converting {group} to Zarr...')
+        # pbar = tqdm.tqdm(total=len(task_groups[group]), position=0, leave=True, desc=f"Converting {group} to Zarr")
+        # def update_pbar(*a):
+        #     pbar.update()
+        # with ThreadPool(processes=cpus) as pool:
+        #     results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_pbar) for task in task_groups[group]]
+        #     pool.close()
+        #     [p.get() for p in results]
+
+        with ThreadPoolExecutor(max_workers=cpus) as executor:
+            list(tqdm.tqdm(executor.map(convert_zarr, task_groups[group]), total=len(task_groups[group]), position=0, leave=True, desc=f"Converting {group} to Zarr"))
+
+        logger.info(f"Elapsed Time: {'%.3g' % (time.time() - t)}s")
         time.sleep(1)
 
-        task_groups = {}
-        for s in dm.scales()[::-1]:
-            task_groups[s] = []
-            for ID, img in enumerate(imgs):
-                out = os.path.join(od, 's%d' % get_scale_val(s))
-                fn = os.path.join(dest, s, 'img_src', img)
-                task_groups[s].append([ID, fn, out])
-
-        t0 = time.time()
-        for group in task_groups:
-            t = time.time()
-            # logger.info(f'Converting {group} to Zarr...')
-            # pbar = tqdm.tqdm(total=len(task_groups[group]), position=0, leave=True, desc=f"Converting {group} to Zarr")
-            # def update_pbar(*a):
-            #     pbar.update()
-            # with ThreadPool(processes=cpus) as pool:
-            #     results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_pbar) for task in task_groups[group]]
-            #     pool.close()
-            #     [p.get() for p in results]
-
-            with ThreadPoolExecutor(max_workers=cpus) as executor:
-                list(tqdm.tqdm(executor.map(convert_zarr, task_groups[group]), total=len(task_groups[group]), position=0, leave=True, desc=f"Converting {group} to Zarr"))
-
-            logger.info(f"Elapsed Time: {'%.3g' % (time.time() - t)}s")
-            time.sleep(1)
-
-        t_elapsed = time.time() - t0
-        dm.t_scaling_convert_zarr = t_elapsed
-        cfg.main_window.set_elapsed(t_elapsed, "Copy-convert scales to Zarr")
-        # logger.info('<<<< Generate Zarr Scales End <<<<')
+    t_elapsed = time.time() - t0
+    dm.t_scaling_convert_zarr = t_elapsed
+    cfg.main_window.set_elapsed(t_elapsed, "Copy-convert scales to Zarr")
+    # logger.info('<<<< Generate Zarr Scales End <<<<')
 
 def imread(filename):
     # return first image in TIFF file as numpy array
