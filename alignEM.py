@@ -64,6 +64,7 @@ os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt5'
 os.environ["BLOSC_NTHREADS"] = "1"
 import sys, signal, logging, argparse
 import faulthandler
+from concurrent.futures import ThreadPoolExecutor
 
 from qtpy import QtCore
 from qtpy.QtCore import QCoreApplication, Qt
@@ -259,6 +260,10 @@ def main():
     logger.info('Setting Qt.AA_ShareOpenGLContexts')
     QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created. #2230-
     QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseDesktopOpenGL)
+
+
+    # report the number of worker threads chosen by default
+    logger.info(f"ThreadPoolExecutor _max_workers: {ThreadPoolExecutor()._max_workers}")
 
     initialize_user_preferences()
     configure_project_paths()
