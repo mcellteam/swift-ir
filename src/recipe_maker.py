@@ -375,6 +375,12 @@ class align_ingredient:
             self.afm = self.run_manual_mir()
         else:
             swim_output = self.run_swim()
+            if swim_output == ['']:
+                print(f"[{self.alignment['meta']['index']}] SWIM output is an empty string! - Returning...")
+                self.snr = np.zeros(len(self.psta[0]))
+                self.snr_report = snr_report(self.snr)
+                return self.afm
+            self.crop_match_signals()
             self.afm = self.ingest_swim_output(swim_output)
         return self.afm
 
@@ -478,6 +484,15 @@ class align_ingredient:
         SWIMlogger.critical(f"\nSWIM Out:\n{str(self.swim_output)}\n\n")
         SWIMlogger.critical(f"\nSWIM Err:\n{str(self.swim_err_lines)}\n\n")
 
+
+        return self.swim_output
+
+
+    def get_mir_args(self):
+        pass
+
+    def crop_match_signals(self):
+
         px_keep = 128
         if self.recipe.cur_method in ('grid-default', 'grid-custom'):
             w = str(int(self.ww[0] / 2.0))
@@ -518,21 +533,10 @@ class align_ingredient:
             except:
                 print_exception()
 
-        return self.swim_output
-
-
-    def get_mir_args(self):
-        pass
 
 
 
     def ingest_swim_output(self, swim_output):
-
-        if swim_output == ['']:
-            print(f"[{self.alignment['meta']['index']}] SWIM output is an empty string! - Returning...")
-            self.snr = np.zeros(len(self.psta[0]))
-            self.snr_report = snr_report(self.snr)
-            return self.afm
 
 
         if (len(swim_output) == 1) and (self.recipe.cur_method in ('default-grid', 'custom-grid')):
