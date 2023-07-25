@@ -1250,7 +1250,7 @@ class UserProjects(QWidget):
                         self.table.setCellWidget(i, j, thumbnail)
                     else:
                         thumbnail = ThumbnailFast(self, path=item)
-                        self.table.setCellWidget(iitem, j, thumbnail)
+                        self.table.setCellWidget(item, j, thumbnail)
                 elif j in (4,5):
                     item.replace("_", " ")
                     if item[13] == '-':
