@@ -51,7 +51,7 @@ class align_recipe:
         self.data = data
         self.meta = self.data['alignment']['meta']
         self.configure_logging()
-        self.cur_method = self.data['current_method']
+        self.cur_method = self.meta['current_method']
         self.defaults = self.meta['defaults']
         self.destination = self.meta['destination_path']
         self.scale_key = self.meta['scale_key']
@@ -59,8 +59,8 @@ class align_recipe:
         self.dev_mode = self.meta['dev_mode']
         self.scale_dir = os.path.join(self.meta['destination_path'], self.meta['scale_key'])
         self.init_afm = np.array(self.meta['init_afm'])
-        self.fn_reference = self.data['reference']
-        self.fn_transforming = self.data['filename']
+        self.fn_reference = self.meta['fn_reference']
+        self.fn_transforming = self.meta['fn_transforming']
         self.alignment = self.data['alignment']
         self.alignment['method_results'].setdefault('affine_matrix', self.init_afm.tolist())
         self.alignment['method_results'].setdefault('snr', [])

@@ -130,6 +130,9 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['skipped'] = dm['data']['scales'][scale]['stack'][zpos]['skipped']
             dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['dev_mode'] = cfg.DEV_MODE
             dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['recipe_logging'] = cfg.RECIPE_LOGGING
+            dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['fn_transforming'] = dm['data']['scales'][scale]['stack'][zpos]['filename']
+            dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['fn_reference'] = dm['data']['scales'][scale]['stack'][zpos]['transforming']
+            dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['current_method'] = dm['data']['scales'][scale]['stack'][zpos]['current_method']
 
             if dm['data']['scales'][scale]['isRefinement']:
                 scale_prev = dm.scales()[dm.scales().index(scale) + 1]
@@ -204,8 +207,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         # with mp.Pool(processes=cpus) as pool:
 
         # PRETTY SURE THIS IS THE BEST/FASTEST/LEAST MEMORY CONSUMPTION/REPORTS ERRORS BACK SOONEST
-        with ThreadPool(processes=cpus) as pool:
-        # with mp.Pool(processes=cpus) as pool:
+        # with ThreadPool(processes=cpus) as pool:
+        with mp.Pool(processes=cpus, maxtasksperchild=1) as pool:
             results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_pbar) for task in tasks]
             pool.close()
             all_results = [p.get() for p in results]
