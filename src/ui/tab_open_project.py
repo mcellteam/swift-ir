@@ -21,7 +21,7 @@ from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QCheckBox, QLabel,
     QSizePolicy, QSpacerItem, QLineEdit, QMessageBox, QDialog, QFileDialog, QStyle, QStyledItemDelegate, \
     QListView, QApplication, QScrollArea, QMenu, QAction
 from qtpy.QtCore import Qt, QRect, QUrl, QDir, QSize, QPoint, QEvent
-from qtpy.QtGui import QGuiApplication, QFont, QPixmap, QPainter, QKeySequence, QColor
+from qtpy.QtGui import QGuiApplication, QFont, QPixmap, QPainter, QKeySequence, QColor, QBrush
 
 from src.ui.file_browser import FileBrowser
 from src.ui.file_browser_tacc import FileBrowserTacc
@@ -928,6 +928,9 @@ class OpenProject(QWidget):
         selected_projects = self.getSelectedProjects()
         self.delete_projects(project_files=selected_projects)
 
+    def openContextMethod(self):
+        logger.info('')
+        self.open_project_selected()
 
 
     def delete_projects(self, project_files=None):
@@ -1018,18 +1021,22 @@ class OpenProject(QWidget):
         if event.type() == QEvent.ContextMenu:
             logger.info('')
             menu = QMenu()
-            deleteContextAction = QAction('Delete')
-            deleteContextAction.triggered.connect(self.deleteContextMethod)
-            menu.addAction(deleteContextAction)
+
+            openContextAction = QAction('Open')
+            openContextAction.triggered.connect(self.openContextMethod)
+            menu.addAction(openContextAction)
 
             if self.getNumRowsSelected() == 1:
                 # copyPathAction = QAction('Copy Path')
+                # path = self.getSelectedProjects()[0]
                 path = self.getSelectedProjects()[0]
-                copyPathAction = QAction(f"Copy '{self.getSelectedProjects()[0]}'")
-                copyPathAction.triggered.connect(lambda: QApplication.clipboard().setText(path))
+                copyPathAction = QAction(f"Copy Path '{self.getSelectedProjects()[0]}'")
                 logger.info(f"Added to Clipboard: {QApplication.clipboard().text()}")
                 menu.addAction(copyPathAction)
 
+            deleteContextAction = QAction('Delete')
+            deleteContextAction.triggered.connect(self.deleteContextMethod)
+            menu.addAction(deleteContextAction)
 
             menu.exec_(event.globalPos())
             return True
@@ -1169,6 +1176,28 @@ class UserProjects(QWidget):
         self.setLayout(self.layout)
         self.set_data()
 
+        self.table.setMouseTracking(True)
+
+        self.current_hover = [0, 0]
+        self.table.cellEntered.connect(self.cellHover)
+
+    def cellHover(self, row, column):
+        self.current_hover = [row, column]
+
+    # btn.clicked.connect(lambda state, x=zpos: self.jump_to_manual(x))
+
+    # def setNotes(self, index, txt):
+    #     caller = inspect.stack()[1].function
+    #     if caller != 'updateNotes':
+    #         self.statusBar.showMessage('Note Saved!', 3000)
+    #
+    #         # cfg.data.save_notes(text=txt, l=index)
+    #     else:
+    #         cfg.settings['notes']['global_notes'] = self.notes.toPlainText()
+    #     self.notes.update()
+
+
+
 
     def updateRowHeight(self, h):
         for section in range(self.table.verticalHeader().count()):
@@ -1224,7 +1253,6 @@ class UserProjects(QWidget):
         # caller = inspect.stack()[1].function
         # logger.info(f'[{caller}]')
         self.table.clearContents()
-        self.table.clear()
         font0 = QFont()
         # font0.setBold(True)
         font0.setPointSize(9)
@@ -1285,6 +1313,7 @@ class UserProjects(QWidget):
             self.table.verticalHeader().resizeSection(section, self.ROW_HEIGHT)
 
         self.table.sortByColumn(4, Qt.DescendingOrder)
+
         logger.info('----Table Data Set----')
 
 

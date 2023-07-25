@@ -195,7 +195,7 @@ class Thumbnailer:
         if filenames == None:
             filenames = natural_sort(glob(os.path.join(src, '*.tif')))[start:end]
 
-        cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(filenames))
+        cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(filenames)),1)
 
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S")
         tnLogger.info(f'\n==== {timestamp} ====\n'

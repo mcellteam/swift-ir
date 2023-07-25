@@ -188,9 +188,9 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             logger.warning('Canceling Processes!')
             return
 
-        cpus = min(psutil.cpu_count(logical=False), TACC_MAX_CPUS, n_tasks)
-        if scale_val == 1:
-            cpus -= 20
+        cpus = max(min(psutil.cpu_count(logical=False), TACC_MAX_CPUS, n_tasks),1)
+        # if scale_val == 1:
+        #     cpus -= 20
         logger.info(f"# cpus for alignment: {cpus}")
 
         f_recipe_maker = f'{os.path.split(os.path.realpath(__file__))[0]}/src/recipe_maker.py'
@@ -214,7 +214,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         # PRETTY SURE THIS IS THE BEST/FASTEST/LEAST MEMORY CONSUMPTION/REPORTS ERRORS BACK SOONEST
         # with ThreadPool(processes=cpus) as pool:
         ctx = mp.get_context('forkserver')
-        with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
+        # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
+        with ctx.Pool(processes=cpus) as pool:
             # results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_pbar) for task in tasks]
             for task in tasks:
                 apply_results.append(pool.apply_async(func=run_recipe, args=(task,), callback=update_pbar))
@@ -283,7 +284,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
         save2file(dm=dm,name=dm.dest())
 
-        cpus = min(psutil.cpu_count(logical=False), TACC_MAX_CPUS, n_tasks)
+        cpus = max(min(psutil.cpu_count(logical=False), TACC_MAX_CPUS, n_tasks),1)
 
         logger.info('Sleeping for 1 seconds...')
         time.sleep(1)

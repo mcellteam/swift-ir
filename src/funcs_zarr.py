@@ -161,7 +161,7 @@ def loadTiffsMp(directory:str):
     :rtype: list[numpy.ndarray]
     '''
     tifs = glob(os.path.join(directory, '*.tif'))
-    cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
+    cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2,1)
     pool = mp.Pool(processes=cpus)
     start = time.time()
     image_arrays = pool.map(imageio_read_image, tifs)

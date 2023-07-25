@@ -738,7 +738,7 @@ class MAViewer(neuroglancer.Viewer):
         self._blockStateChanged = True
         # caller = inspect.stack()[1].function
 
-        self.undrawSWIMwindows() #todo try without this!
+        # self.undrawSWIMwindows() #todo try without this! #todo try doing this closer to redraw
 
         if cfg.data.zpos == cfg.data.first_unskipped():
             return
@@ -899,7 +899,7 @@ class MAViewer(neuroglancer.Viewer):
                     )
                 )
 
-
+        # self.undrawSWIMwindows()
         with self.txn() as s:
             # for i,ann in enumerate(annotations):
             s.layers['SWIM'] = ng.LocalAnnotationLayer(

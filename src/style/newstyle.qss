@@ -238,6 +238,41 @@ QMenu::item {
 }
 
 
+QMenuBar {
+background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 lightgray, stop:1 darkgray);
+}
+
+QMenuBar::item {
+spacing: 3px; /* spacing between menu bar items */
+padding: 1px 4px;
+background: transparent;
+border-radius: 4px;
+}
+
+QMenuBar::item:selected { /* when selected using mouse or keyboard */
+background: #a8a8a8;
+}
+
+QMenuBar::item:pressed {
+background: #888888;
+}
+
+/* Menus - context items and menubar items /
+QMenu {
+background-color: rgb(149, 166, 174); / grau */
+}
+
+QMenu::item {
+background-color: transparent;
+}
+
+QMenu::item:selected {
+background-color: rgb(163, 3, 47); /* rot */
+}
+
+
+
+
 
 QHeaderView {
   /*background-color: #161c20;*/

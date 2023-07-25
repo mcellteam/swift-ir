@@ -102,7 +102,7 @@ class MainWindow(QMainWindow):
     # alignmentFinished = Signal()
     updateTable = Signal()
     cancelMultiprocessing = Signal()
-    zposChanged = Signal()
+    # zposChanged = Signal()
     # swimWindowChanged = Signal()
 
 
@@ -130,12 +130,8 @@ class MainWindow(QMainWindow):
             self.restoreState(self.settings.value("windowState"))
             self.restoreGeometry(self.settings.value("geometry"))
 
-        # self.menu = self.menuBar()
         self.menu = QMenu()
-        # self.menu = QMenuBar()
         # self.menu.setFixedWidth(700)
-        # self.setMenuBar(self.menu)
-        # self.menu = QMenu()
         cfg.thumb = Thumbnailer()
         self.installEventFilter(self)
         # self.setAttribute(Qt.WA_AcceptTouchEvents, True)
@@ -199,7 +195,8 @@ class MainWindow(QMainWindow):
         self.setCorner(Qt.BottomRightCorner, Qt.RightDockWidgetArea )
         self.setDockNestingEnabled(True)
 
-
+    def TO(self):
+        return self._getTabObject()
 
 
     def memory(self):
@@ -305,13 +302,7 @@ class MainWindow(QMainWindow):
             if not cfg.data['state']['tra_ref_toggle']:
                 cfg.pt.set_transforming()
 
-            # if cfg.data['state']['current_tab'] == 1:
-            #     cfg.baseViewer.set_layer(cfg.data.zpos)
-            #     cfg.refViewer.set_layer(cfg.data.get_ref_index()) #0611+
-            #     # cfg.stageViewer.set_layer(cfg.data.zpos) #stageViewer
-            # else:
-            #     cfg.emViewer.set_layer(cfg.data.zpos)
-
+            #????????
             if cfg.pt._tabs.currentIndex() == 0:
                 cfg.emViewer.set_layer(cfg.data.zpos)
             elif cfg.pt._tabs.currentIndex() == 1:
@@ -332,7 +323,7 @@ class MainWindow(QMainWindow):
             #     else:
             #         cfg.emViewer.set_layer(cfg.data.zpos)
             self.dataUpdateWidgets()
-            self.zposChanged.emit()
+            # self.zposChanged.emit()
             # else:
             #     logger.info(f'Zpos is the same! sender: {self.sender()}. Canceling...')
 
@@ -1148,10 +1139,12 @@ class MainWindow(QMainWindow):
 
             self.onAlignmentEnd()
 
-    def alignRange(self):
+    def alignRange(self, start=None, end=None):
         cfg.ignore_pbar = False
-        start = int(self.startRangeInput.text())
-        end = int(self.endRangeInput.text()) + 1
+        if start == None:
+            start = int(self.startRangeInput.text())
+        if end == None:
+            end = int(self.endRangeInput.text()) + 1
         if cfg.pt._toggleAutogenerate.isChecked():
             self.showZeroedPbar(set_n_processes=4)
         else:
@@ -1784,9 +1777,29 @@ class MainWindow(QMainWindow):
                     self.uiUpdateTimer.start()
                     logger.info('Updating UI on timeout...')
 
-            # cfg.project_tab._overlayRect.hide()
-            cfg.project_tab._overlayLab.hide()
-            cfg.project_tab.tn_tra_overlay.hide()
+            if cfg.data.skipped():
+                # cfg.project_tab._overlayRect.setStyleSheet('background-color: rgba(0, 0, 0, 0.5);')
+                txt = '\n'.join(textwrap.wrap('EXCLUDED: %s' % cfg.data.name_base(), width=35))
+                cfg.project_tab._overlayLab.setText(txt)
+                cfg.project_tab._overlayLab.show()
+            else:
+                cfg.project_tab._overlayLab.hide()
+
+            if cfg.data.skipped():
+                cfg.project_tab._overlayLab.show()
+                self.tell("Exclude: %s" % cfg.data.name_base())
+                if self.dw_thumbs.isVisible():
+                    cfg.project_tab.tn_ref.hide()
+                    cfg.project_tab.tn_ref_lab.hide()
+                    cfg.project_tab.tn_tra_overlay.show()
+            else:
+                cfg.project_tab._overlayLab.hide()
+                self.tell("Include: %s" % cfg.data.name_base())
+                if self.dw_thumbs.isVisible():
+                    cfg.project_tab.tn_ref.show()
+                    cfg.project_tab.tn_ref_lab.show()
+                    cfg.project_tab.tn_tra_overlay.hide()
+
 
             cur = cfg.data.zpos
 
@@ -1832,9 +1845,6 @@ class MainWindow(QMainWindow):
             if self.dw_thumbs.isVisible():
                 if cfg.data.skipped():
                     # cfg.project_tab._overlayRect.setStyleSheet('background-color: rgba(0, 0, 0, 0.5);')
-                    txt = '\n'.join(textwrap.wrap('EXCLUDED: %s' % cfg.data.name_base(), width=35))
-                    cfg.project_tab._overlayLab.setText(txt)
-                    cfg.project_tab._overlayLab.show()
                     cfg.project_tab.tn_tra_overlay.show()
                     cfg.project_tab.tn_ref.hide()
                     # cfg.project_tab._overlayRect.show()
@@ -3627,8 +3637,8 @@ class MainWindow(QMainWindow):
             # cfg.pt.match_widget.adjustSize()
             # cfg.pt.tn_widget.adjustSize()
 
-            self.dw_matches.setMaximumWidth(999)
-            self.dw_thumbs.setMaximumWidth(999)
+            # self.dw_matches.setMaximumWidth(999)
+            # self.dw_thumbs.setMaximumWidth(999)
 
     def set_elapsed(self, t, desc=""):
         txt = f"Elapsed Time : %.3gs / %.3gm" % (t, t / 60)
@@ -5257,8 +5267,8 @@ class MainWindow(QMainWindow):
             if caller != 'updateNotes':
                 if self._isProjectTab():
                     if cfg.data:
-                        self.statusBar.showMessage('Note Saved!', 3000)
                         cfg.data.save_notes(text=self.notes.toPlainText())
+                        self.statusBar.showMessage('Note Saved!', 3000)
                 else:
                     cfg.settings['notes']['global_notes'] = self.notes.toPlainText()
                 self.notes.update()
@@ -6017,11 +6027,31 @@ class MainWindow(QMainWindow):
         # M Key: event.key(): 77 <class 'int'>
         # Command key modifier: event.nativeModifiers(): 1048840 <class 'int'>
 
+        ek = event.key()
+        envk = event.nativeVirtualKey()
+        if ek == 35 and envk == 20:
+            logger.info("Shift + 3 was pressed")
+
+
+
 
 
         if event.key() == Qt.Key_Escape:
             if self.isMaximized():
                 self.showNormal()
+
+        # Shift key workaround
+        # elif event.key() == 16777248:
+        #     logger.info('16777248 was pressed!')
+        #     if self._isProjectTab():
+        #         cur = cfg.pt._tabs.currentIndex()
+        #         cfg.pt._tabs.setCurrentIndex((cur + 1) % 5)
+        # elif event.key() == Qt.Key_Shift:
+        #     logger.info(f"{Qt.Key_Shift} was pressed")
+        #     if self._isProjectTab():
+        #         cur = cfg.pt._tabs.currentIndex()
+        #         cfg.pt._tabs.setCurrentIndex((cur + 1) % 5)
+
         elif event.key() == Qt.Key_F11:
             if self.isMaximized():
                 self.showNormal()
@@ -6107,11 +6137,6 @@ class MainWindow(QMainWindow):
         elif event.key() == Qt.Key_Delete:
             if self._isOpenProjTab():
                 self._getTabObject().delete_projects()
-
-        # elif event.key() == Qt.Key_Shift:
-        #     if self._isProjectTab():
-        #         cur = cfg.pt._tabs.currentIndex()
-        #         cfg.pt._tabs.setCurrentIndex((cur + 1) % 5)
 
         # elif event.key() == Qt.Key_Shift:
         # elif event.key() == Qt.Key_M:
