@@ -280,7 +280,7 @@ class align_recipe:
                     try: self.data['alignment']['mir_err']['ingredient_%d' % i] = ing.ww
                     except: print_exception(self.destination, extra=f"ww issue")
 
-                    try: self.data['alignment']['swim_args']['ingredient_%d' % i] = ing.multi_swim_arg_str
+                    try: self.data['alignment']['swim_args']['ingredient_%d' % i] = ing.multi_swim_arg_str()
                     except: print_exception(self.destination, extra=f"ingedient {i}, ID: {ing.ID}")
                     try: self.data['alignment']['swim_out']['ingredient_%d' % i] = ing.swim_output
                     except: print_exception(self.destination, extra=f"ingedient {i}, ID: {ing.ID}")
@@ -413,12 +413,11 @@ class align_ingredient:
             self.ms_names.append(b_arg)
 
             args = ArgString(sep=' ')
-            if len(self.ww) == 1:
-                # args.append(str(int(self.ww)))
-                args.append("%s" % self.ww)
-            else:
-                # args.append(str(int(self.ww[0])) + "x" + str(int(self.ww[1])))
-                args.append("%sx%s" % (self.ww[0], self.ww[1]))
+            # if len(self.ww) == 1:
+            #     args.append("ww_%s" % self.ww)
+            # else:
+            #     args.append("ww_%sx%s" % (self.ww[0], self.ww[1]))
+            args.append("ww_%s" % self.ww[0])
             # args.append('ww_' + self.swim_ww_arg)
             if self.alignment['swim_settings']['clobber_fixed_noise']:
                 args.append('-f%d' % self.alignment['swim_settings']['clobber_fixed_noise_px'])
@@ -473,11 +472,18 @@ class align_ingredient:
         self.multi_swim_arg_str = self.get_swim_args()
         SWIMlogger.critical(f'Multi-SWIM Argument String:\n{self.multi_swim_arg_str()}')
 
+        # if len(self.ww) == 1:
+        #     # args.append(str(int(self.ww)))
+        #     arg = "%s" % self.ww
+        # else:
+        #     # args.append(str(int(self.ww[0])) + "x" + str(int(self.ww[1])))
+        #     arg = "%sx%s" % (self.ww[0], self.ww[1])
+        arg = "%sx%s" % tuple(self.ww)
 
         o = run_command(
             self.recipe.swim_c,
             # arg_list=[self.swim_ww_arg],
-            arg_list=[],
+            arg_list=[arg],
             cmd_input=self.multi_swim_arg_str(),
             extra=f'Automatic SWIM Alignment ({self.ID})',
             scale=self.alignment['meta']['scale_val']
