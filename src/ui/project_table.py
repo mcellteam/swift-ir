@@ -8,9 +8,10 @@ import inspect
 import logging
 import textwrap
 
-from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QAbstractItemView, \
-    QTableWidget, QTableWidgetItem, QSlider, QLabel, QPushButton, QSizePolicy, QFrame, QHeaderView
-from qtpy.QtCore import Qt, QRect, QAbstractTableModel, Signal
+from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QAbstractItemView, QApplication, \
+    QTableWidget, QTableWidgetItem, QSlider, QLabel, QPushButton, QSizePolicy, QFrame, QHeaderView, QAction, QMenu, \
+    QTextEdit
+from qtpy.QtCore import Qt, QRect, QAbstractTableModel, Signal, QEvent, QRunnable
 from qtpy.QtGui import QPainter, QPixmap, QImage
 from src.ui.thumbnail import ThumbnailFast, CorrSignalThumbnail
 from src.ui.layouts import VBL, HBL, VWidget, HWidget
@@ -34,6 +35,7 @@ class ProjectTable(QWidget):
         self.INITIAL_ROW_HEIGHT = 80
         self.image_col_width = self.INITIAL_ROW_HEIGHT
         self.data = None
+        self.installEventFilter(self)
         self.table = QTableWidget()
         self.table.verticalHeader().setVisible(False)
         self.table.setWordWrap(True)
@@ -98,6 +100,21 @@ class ProjectTable(QWidget):
 
 
 
+    def getSelectedRows(self):
+        logger.info(f"{[x.row() for x in self.table.selectionModel().selectedRows()]}")
+        return [x.row() for x in self.table.selectionModel().selectedRows()]
+
+    def getSelectedProjects(self):
+        selected_rows = self.getSelectedRows()
+        logger.info(f'selected row: {selected_rows}')
+        logger.info(f"{[self.table.item(r, 1).text() for r in selected_rows]}")
+        return [self.table.item(r, 1).text() for r in self.getSelectedRows()]
+
+    def getNumRowsSelected(self):
+        return len(self.getSelectedRows())
+
+
+
     # def onDoubleClick(self, item=None):
     #     logger.critical('')
     #     # print(cur_method(item))
@@ -133,13 +150,18 @@ class ProjectTable(QWidget):
 
 
     def set_column_headers(self):
-        labels = ['Z-index', 'Section\nReference', 'SNR/\nMethod', 'Last\nAligned', 'Reference', 'Transforming', 'Aligned\nResult',
+        labels = ['Z-index', 'Section vs.\nReference', 'SNR/\nMethod', 'Last\nAligned', 'Reference', 'Transforming', 'Aligned\nResult',
                   'Match\nSignal 1', 'Match\nSignal 2', 'Match\nSignal 3', 'Match\nSignal 4', 'Notes']
         self.table.setHorizontalHeaderLabels(labels)
         self.table.setColumnCount(len(labels))
 
 
     def initTableData(self):
+        self.btn_splash_load_table.setText("Loading...")
+
+
+
+
         self.wTable.hide()
         t = time.time()
         timer = Timer()
@@ -148,9 +170,7 @@ class ProjectTable(QWidget):
         logger.info(f'')
         # cfg.main_window.tell('Updating Table Data...')
         self.table.setUpdatesEnabled(False)
-        # cfg.mw.showZeroedPbar(set_n_processes=1, pbar_max=len(cfg.data))
-        cfg.mw.showZeroedPbar(set_n_processes=False, pbar_max=len(cfg.data))
-        # self.table.clearContents()
+        self.table.clearContents()
         # self.table.clear()
         # self.table.setRowCount(0)
         self.set_column_headers() #Critical
@@ -172,6 +192,8 @@ class ProjectTable(QWidget):
         finally:
             timer.report()
 
+            self.btn_splash_load_table.setText("Load Table")
+
             self.updateTableTitle()
             self.btn_splash_load_table.hide()
             self.table.setUpdatesEnabled(True)
@@ -189,6 +211,7 @@ class ProjectTable(QWidget):
             self.table.update()
             timer.report()
             self.wTable.show()
+
             logger.info('Data table finished loading.')
 
         logger.info(f'<<<< initTableData [{caller}]')
@@ -320,6 +343,8 @@ class ProjectTable(QWidget):
         if method == 'grid-custom':
             regions = copy.deepcopy(cfg.data.get_grid_custom_regions(l=row))
         # for j, item in enumerate(row):
+
+        self.all_notes = []
         for col in range(0, len(row_data)):
             if col == 0:
                 # self.table.setItem(row, col, QTableWidgetItem('\n'.join(textwrap.wrap(str(row_data[0]), 20))))
@@ -464,9 +489,77 @@ class ProjectTable(QWidget):
                     # tn.set_no_image()
                     self.table.setCellWidget(row, col, tn)
             elif col == 11:
-                self.table.setItem(row, col, QTableWidgetItem(str(row_data[col])))
+
+                notes = QTextEdit()
+                notes.setObjectName('Notes')
+                notes.setPlaceholderText('Notes...')
+                if cfg.data.notes(l=row):
+                    notes.setText(cfg.data.notes(l=row))
+                notes.setStyleSheet("""
+                    background-color: #ede9e8;
+                    color: #161c20;
+                    font-size: 11px;
+                """)
+                self.all_notes.append(notes)
+                notes.textChanged.connect(lambda index=row, txt=notes.toPlainText(): self.setNotes(index, txt))
+                self.table.setCellWidget(row, col, notes)
             else:
                 self.table.setItem(row, col, QTableWidgetItem(str(row_data[col])))
+
+    def alignHighlighted(self):
+        logger.info('')
+        for r in self.getSelectedRows():
+            cfg.mw.setZpos(z=r)
+            cfg.main_window.alignOne()
+            QApplication.processEvents()
+            if cfg.pt._tabs.currentIndex() == 0:
+                cfg.emViewer.set_layer(cfg.data.zpos)
+            elif cfg.pt._tabs.currentIndex() == 1:
+                cfg.baseViewer.set_layer(cfg.data.zpos)
+                cfg.refViewer.set_layer(cfg.data.get_ref_index(l=cfg.data.zpos))
+
+    # btn.clicked.connect(lambda state, x=zpos: self.jump_to_manual(x))
+
+    def setNotes(self, index, txt):
+        caller = inspect.stack()[1].function
+        logger.info(f"caller = {caller}\n"
+                    f"index  = {index}\n"
+                    f"txt    = {txt}")
+        cfg.data.save_notes(text=txt, l=index)
+        cfg.main_window.statusBar.showMessage('Note Saved!', 3000)
+        self.all_notes[index].update()
+
+
+
+    def eventFilter(self, source, event):
+        if event.type() == QEvent.ContextMenu:
+            logger.info('')
+            menu = QMenu()
+
+            if self.getNumRowsSelected() == 1:
+                # path = self.getSelectedProjects()[0]
+
+                pass
+
+            # if self.getNumRowsSelected() > 1:
+            if cfg.data.is_aligned():
+                # self._min = min(self.getSelectedRows())
+                # self._max = max(self.getSelectedRows())
+                txt = f'Align Selected ({self.getSelectedRows()})'
+                alignedSelectedRangeAction = QAction(txt)
+                # alignedSelectedRangeAction = QAction(f'Align Selected ({self.getSelectedRows()})')
+                # logger.info(f'Multiple rows are selected! _min={self._min}, _max={self._max}')
+                # path = self.getSelectedProjects()[0]
+                # copyPathAction = QAction(f"Copy Path '{self.getSelectedProjects()[0]}'")
+                # logger.info(f"Added to Clipboard: {QApplication.clipboard().text()}")
+                alignedSelectedRangeAction.triggered.connect(self.alignHighlighted)
+                menu.addAction(alignedSelectedRangeAction)
+
+            menu.exec_(event.globalPos())
+            return True
+        return super().eventFilter(source, event)
+
+
 
     def initUI(self):
         logger.info('')
@@ -604,21 +697,6 @@ class ClickLabel(QLabel):
 #             painter.drawText(option.rect.x(), option.rect.y() - 5, '<SNR>')
 
 
-
-class TableModel(QAbstractTableModel):
-    def __init__(self, data):
-        super().__init__()
-        self._data = data
-
-    def data(self, index, role):
-        if role == Qt.DisplayRole:
-            return self._data[index.row()][index.column()]
-
-    def rowCount(self, parent=None):
-        return len(self._data)
-
-    def columnCount(self, parent=None):
-        return len(self._data[0])
 
 
 class ImageWidget(QWidget):

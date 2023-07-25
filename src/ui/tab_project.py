@@ -69,68 +69,31 @@ class ProjectTab(QWidget):
         self.webengine.setMouseTracking(True)
         self.focusedViewer = None
         # self.setAutoFillBackground(True)
-
         self.indexConfigure = 0
-
-        '''primary tab widgets'''
         self.table_container = QWidget()
         self._wdg_treeview = QWidget()
-
         self.initShader()
         self.initUI_Neuroglancer()
         self.initUI_table()
         self.initUI_JSON()
         self.initUI_plot()
-        # self.initUI_Neuroglancer()
         self.initTabs()
         self._tabs.currentChanged.connect(self._onTabChange)
         self.manAlignBufferRef = []
         self.manAlignBufferBase = []
         self.mp_colors = cfg.glob_colors
-
-        self.MA_ref_cscale = None
-        self.MA_ref_zoom = None
-        self.MA_base_cscale = None
-        self.MA_base_zoom = None
         self._allow_zoom_change = True
-
-        # h = self.MA_webengine_ref.geometry().height()
-        # self.MA_stageSplitter.setSizes([int(.7 * h), int(.3 * h)])
-        # self.MA_stageSplitter.setSizes([400, 600]) #Todo refactor
-
-        self.Q1.setAutoFillBackground(True)
-        self.Q2.setAutoFillBackground(True)
-        self.Q3.setAutoFillBackground(True)
-        self.Q4.setAutoFillBackground(True)
-
+        # self.Q1.setAutoFillBackground(True)
+        # self.Q2.setAutoFillBackground(True)
+        # self.Q3.setAutoFillBackground(True)
+        # self.Q4.setAutoFillBackground(True)
         self.oldPos = None
-
-        self._isMatchPlaying = 0
-
         self.blinkTimer = QTimer(self)
         self.blinkTimer.setInterval(300)
         # self.blinkTimer.timeout.connect(self.onBlinkTimer)
         # self.blinkTimer.timeout.connect(cfg.emViewer.blink)
-
         self.blinkCur = 0
-
-        # cfg.main_window.resizeThings()
-
-        # self.initNgStackViewer()
         self.initNeuroglancer(init_all=True)
-
-        # QTimer.singleShot(375, cfg.mw.resizeThings)
-        # QTimer.singleShot(575, cfg.mw.resizeThings)
-
-        # QTimer.singleShot(600, cfg.mw.resizeThings) #Prev
-
-        # self.resizeTimer = QTimer(self)
-        # self.resizeTimer.setInterval(500)
-        # self.resizeTimer.timeout.connect(cfg.mw.resizeThings)
-        # self.resizeTimer.start()
-
-
-
 
     # def display_shortcuts(self):
     #     for action in self.findChildren(QAction) :
@@ -152,19 +115,6 @@ class ProjectTab(QWidget):
     #     for event, action in events:
     #         QShortcut(event, self, action)
 
-
-    # def mousePressEvent(self, event):
-    #     if event.button() == Qt.MouseButton.LeftButton:
-    #         self.oldPos = event.globalPos()
-    #
-    # def mouseMoveEvent(self, event):
-    #     if self.oldPos is not None:
-    #         delta = event.globalPos() - self.oldPos
-    #         self.move(self.pos() + delta)
-    #         self.oldPos = event.globalPos()
-    #
-    # def mouseReleaseEvent(self, event):
-    #     self.oldPos = None
 
     def load_data_from_treeview(self):
         self.datamodel = DataModel(self.treeview_model.to_json())
@@ -3605,6 +3555,7 @@ class ProjectTab(QWidget):
         # self._tabs.addTab(VWidget(self.w_ng_extended_toolbar, self.shaderToolbar, self.webengine), 'Neuroglancer')
         self._tabs.addTab(VWidget(self.w_ng_extended_toolbar, self.shaderToolbar, self.webengine), 'Neuroglancer')
         self._tabs.addTab(self.splitterEditAlignment, 'Edit Alignment')
+
         # self._tabs.addTab(self.wEditAlignment, ' 3DEM ')
         self._tabs.addTab(self.table_container, ' Table ')
         self._tabs.addTab(self._wdg_treeview, ' Raw Data ')

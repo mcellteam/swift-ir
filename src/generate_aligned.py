@@ -90,9 +90,9 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
         logger.info(f'Offsets           : {rect[0]}, {rect[1]}')
         # args_list = makeTasksList(dm, iter(stack[start:end]), job_script, scale_key, rect) #0129-
         if end:
-            cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(range(start,end)))
+            cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(range(start,end))),1)
         else:
-            cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(range(start, len(dm))))
+            cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(range(start, len(dm)))),1)
         pbar_text = 'Generating Scale %d Alignment w/ MIR (%d Cores)...' % (scale_val, cpus)
         dest = dm['data']['destination_path']
 

@@ -31,7 +31,7 @@ class SnrThumbnail(QWidget):
         self.snr = snr
         self.thumbnail = CorrSignalThumbnail(self)
         self.thumbnail.setScaledContents(True)
-        self.label = QLabel('%.3f' % self.snr)
+        self.label = QLabel('%.3g' % self.snr)
         self.label.setStyleSheet('color: #ff0000')
         self.no_image_path = os.path.join(get_appdir(), 'resources', 'no-image.png')
         # layout = QGridLayout()
@@ -93,8 +93,8 @@ class ThumbnailFast(QLabel):
         self._noImage = 0
         self.path = path
         pixmap = QPixmap(32, 32)
-        pixmap.fill(QColor('#dadada'))  # fill the map with black
         self.setPixmap(pixmap)
+
         if self.path:
             self.setPixmap(QPixmap(self.path))
         else:
@@ -104,15 +104,6 @@ class ThumbnailFast(QLabel):
         self.name = name
         self.s = s
         self.l = l
-
-        # self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
-        # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-
-
-        # policy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-        # policy.setHeightForWidth(True)
-        # self.setSizePolicy(policy)
-
 
         self.map_border_color = {
             'match0': cfg.glob_colors[0],
@@ -124,6 +115,13 @@ class ThumbnailFast(QLabel):
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        # self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+        # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # policy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        # policy.setHeightForWidth(True)
+        # self.setSizePolicy(policy)
+
 
     def mousePressEvent(self, e):
         x, y, = (
@@ -768,7 +766,7 @@ class CorrSignalThumbnail(QLabel):
         # logger.critical('')
         self._noImage = 0
         self.path = path
-        self.snr = snr
+        self.snr = '%.3g' % snr
         try:
             self.setPixmap(QPixmap(self.path))
             # self.label.setText('%.3f' % self.snr)
