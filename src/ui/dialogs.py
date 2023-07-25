@@ -460,12 +460,12 @@ class ConfigAppDialog(QDialog):
             cfg.main_window.hud('Applying Application Settings...')
             # cfg.USE_TENSORSTORE = self.tsCheckbox.isChecked()
             cfg.HEADLESS = self.headlessCheckbox.isChecked()
-            cfg.DEBUG_NEUROGLANCER = self.ngdebugCheckbox.isChecked()
+            cfg.DEBUG_NEUROGLANCER = int(self.ngdebugCheckbox.isChecked())
             if ng.is_server_running():
                 logger.info(f'Setting Neuroglancer Server Debugging: {cfg.DEBUG_NEUROGLANCER}')
                 ng.server.debug = cfg.DEBUG_NEUROGLANCER
 
-            cfg.DEBUG_MP = self.mpdebugCheckbox.isChecked()
+            cfg.DEBUG_MP = int(self.mpdebugCheckbox.isChecked())
             cfg.FAULT_HANDLER = self.faultCheckbox.isChecked()
             if cfg.FAULT_HANDLER:
                 if not faulthandler.is_enabled():

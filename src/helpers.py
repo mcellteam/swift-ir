@@ -430,7 +430,7 @@ def is_joel() -> bool:
     # else:
     #     return False
 
-    return (getpass.getuser() == 'joelyancey')
+    return getpass.getuser() == 'joelyancey'
 
 def pretty_elapsed(t):
     return f"Elapsed Time: %.3gs / %.3gm" % (t, t/60)
