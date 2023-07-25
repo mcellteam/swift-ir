@@ -280,7 +280,7 @@ class align_recipe:
                     try: self.data['alignment']['mir_err']['ingredient_%d' % i] = ing.ww
                     except: print_exception(self.destination, extra=f"ww issue")
 
-                    try: self.data['alignment']['swim_args']['ingredient_%d' % i] = ing.multi_arg_str
+                    try: self.data['alignment']['swim_args']['ingredient_%d' % i] = ing.multi_swim_arg_str
                     except: print_exception(self.destination, extra=f"ingedient {i}, ID: {ing.ID}")
                     try: self.data['alignment']['swim_out']['ingredient_%d' % i] = ing.swim_output
                     except: print_exception(self.destination, extra=f"ingedient {i}, ID: {ing.ID}")
@@ -391,10 +391,7 @@ class align_ingredient:
 
         afm_arg = '%.6f %.6f %.6f %.6f' % (self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
 
-        if isinstance(self.ww, float) or isinstance(self.ww, int):
-            self.swim_ww_arg = str(int(self.ww))
-        else:
-            self.swim_ww_arg = str(int(self.ww[0])) + "x" + str(int(self.ww[1])) #<--
+
 
         basename = os.path.basename(self.recipe.fn_transforming)
         filename, extension = os.path.splitext(basename)
@@ -416,7 +413,13 @@ class align_ingredient:
             self.ms_names.append(b_arg)
 
             args = ArgString(sep=' ')
-            args.append('ww_' + self.swim_ww_arg)
+            if len(self.ww) == 1:
+                # args.append(str(int(self.ww)))
+                args.append("%s" % self.ww)
+            else:
+                # args.append(str(int(self.ww[0])) + "x" + str(int(self.ww[1])))
+                args.append("%sx%s" % (self.ww[0], self.ww[1]))
+            # args.append('ww_' + self.swim_ww_arg)
             if self.alignment['swim_settings']['clobber_fixed_noise']:
                 args.append('-f%d' % self.alignment['swim_settings']['clobber_fixed_noise_px'])
             # args.add_flag(flag='-i', arg=str(self.rcipe.iters))
@@ -468,11 +471,13 @@ class align_ingredient:
         SWIMlogger = logging.getLogger('SWIMlogger')
 
         self.multi_swim_arg_str = self.get_swim_args()
-
         SWIMlogger.critical(f'Multi-SWIM Argument String:\n{self.multi_swim_arg_str()}')
+
+
         o = run_command(
             self.recipe.swim_c,
-            arg_list=[self.swim_ww_arg],
+            # arg_list=[self.swim_ww_arg],
+            arg_list=[],
             cmd_input=self.multi_swim_arg_str(),
             extra=f'Automatic SWIM Alignment ({self.ID})',
             scale=self.alignment['meta']['scale_val']
@@ -653,13 +658,15 @@ def run_command(cmd, arg_list=None, cmd_input=None, extra='', scale=''):
     nl = '\n'
     # Note: decode bytes if universal_newlines=False in Popen (cmd_stdout.decode('utf-8'))
     cmd_proc = sp.Popen(cmd_arg_list, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
+    # cmd_stdout, cmd_stderr = cmd_proc.communicate(cmd_input)
     cmd_stdout, cmd_stderr = cmd_proc.communicate(cmd_input)
     RMlogger = logging.getLogger('recipemaker')
     RMlogger.critical(f"\n========== Run Command [{time.time()}] ==========\n"
                       f"Scale           : {scale}\n"
                       f"Description     : {extra}\n"
-                      f"Running command :\n{(nl.join(cmd_arg_list), 'None')[cmd_arg_list == '']}\n"
-                      f"Passing data    :\n{(cmd_input, 'None')[cmd_input == '']}\n\n"
+                      f"arg_list        : {arg_list}\n"
+                      f"Running command :\n{(' '.join(cmd_arg_list), 'None')[cmd_arg_list == '']}\n"
+                      f"Passing data    :\n{(cmd_input[1:], 'None')[cmd_input == '']}\n\n"
                       f">> stdout\n{(cmd_stdout, 'None')[cmd_stdout == '']}\n"
                       f">> stderr\n{(cmd_stderr, 'None')[cmd_stderr == '']}\n"
                       )
