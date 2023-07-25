@@ -287,13 +287,13 @@ class align_recipe:
                     try: self.data['alignment']['swim_err']['ingredient_%d' % i] = ing.swim_err_lines
                     except: print_exception(self.destination, extra=f"ingedient {i}, ID: {ing.ID}")
                     try: self.data['alignment']['mir_toks']['ingredient_%d' % i] = ing.mir_toks
-                    except: print_exception(self.destination, extra=f"ingedient {i}, ID: {ing.ID}")
+                    except: self.data['alignment']['mir_toks']['ingredient_%d' % i] = 'Null'
                     try: self.data['alignment']['mir_script']['ingredient_%d' % i] = ing.mir_script
-                    except: print_exception(self.destination, extra=f"ingedient {i}, ID: {ing.ID}")
+                    except: self.data['alignment']['mir_script']['ingredient_%d' % i] = 'Null'
                     try: self.data['alignment']['mir_out']['ingredient_%d' % i] = ing.mir_out_lines
-                    except: print_exception(self.destination, extra=f"ingedient {i}, ID: {ing.ID}")
+                    except: self.data['alignment']['mir_out']['ingredient_%d' % i] = 'Null'
                     try: self.data['alignment']['mir_err']['ingredient_%d' % i] = ing.mir_err_lines
-                    except: print_exception(self.destination, extra=f"ingedient {i}, ID: {ing.ID}")
+                    except: self.data['alignment']['mir_err']['ingredient_%d' % i] = 'Null'
 
 
         self.data['alignment_hash'] = dict_hash(self.data['alignment_history'][self.cur_method])

@@ -815,12 +815,12 @@ class MainWindow(QMainWindow):
             cfg.data['state']['tool_windows']['raw_thumbnails'] = state
 
 
-        # if state:
-        #     QApplication.processEvents()
-        #     cfg.mw.dataUpdateWidgets()
-        #     h = self.dw_thumbs.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
-        #     self.dw_thumbs.setMaximumWidth(int(h / 2 + .5))
-        #     # cfg.pt.tn_widget.resize(QSize(int(h / 2 + .5), cfg.pt.tn_widget.height()))
+        if state:
+            cfg.mw.dataUpdateWidgets()
+            QApplication.processEvents()
+            h = self.dw_thumbs.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
+            self.dw_thumbs.setMaximumWidth(int(h / 2 + .5))
+            # cfg.pt.tn_widget.resize(QSize(int(h / 2 + .5), cfg.pt.tn_widget.height()))
 
 
 
@@ -833,17 +833,18 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             cfg.data['state']['tool_windows']['signals'] = state
 
-        # if state:
-        #     # cfg.pt.match_widget.adjustSize() #MUCH BETTER OFF
-        #     self.setUpdatesEnabled(True)
-        #     QApplication.processEvents()
-        #     self.updateCorrSignalsDrawer()
-        #     self.setTargKargPixmaps()
-        #
-        #     if cfg.data.is_aligned():
-        #         h = self.dw_matches.height() - cfg.pt.mwTitle.height()
-        #         self.dw_matches.setMaximumWidth(int(h /2 + .5))
-        #         # cfg.pt.match_widget.resize(int(h / 2 + .5), h)
+        if state:
+            # cfg.pt.match_widget.adjustSize() #MUCH BETTER OFF
+            # self.setUpdatesEnabled(True)
+
+            self.updateCorrSignalsDrawer()
+            self.setTargKargPixmaps()
+            QApplication.processEvents()
+
+            if cfg.data.is_aligned():
+                h = self.dw_matches.height() - cfg.pt.mwTitle.height()
+                self.dw_matches.setMaximumWidth(int(h /2 + .5))
+                # cfg.pt.match_widget.resize(int(h / 2 + .5), h)
 
 
 
@@ -3556,8 +3557,8 @@ class MainWindow(QMainWindow):
     def resizeEvent(self, e):
         logger.info('')
 
-        # self.dw_matches.setMaximumWidth(999)
-        # self.dw_thumbs.setMaximumWidth(999)
+        self.dw_matches.setMaximumWidth(999)
+        self.dw_thumbs.setMaximumWidth(999)
         # if self._isProjectTab():
         #
         #     if self.dw_matches.isVisible():
@@ -3591,6 +3592,7 @@ class MainWindow(QMainWindow):
 
 
     def changeEvent(self, event):
+        logger.info('')
 
         # self.dw_matches.setMaximumWidth(999)
         # self.dw_thumbs.setMaximumWidth(999)
@@ -3624,6 +3626,9 @@ class MainWindow(QMainWindow):
 
             # cfg.pt.match_widget.adjustSize()
             # cfg.pt.tn_widget.adjustSize()
+
+            self.dw_matches.setMaximumWidth(999)
+            self.dw_thumbs.setMaximumWidth(999)
 
     def set_elapsed(self, t, desc=""):
         txt = f"Elapsed Time : %.3gs / %.3gm" % (t, t / 60)
