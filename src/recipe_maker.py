@@ -527,8 +527,6 @@ class align_ingredient:
 
 
     def ingest_swim_output(self, swim_output):
-        print(f"type(swim_output) = {type(swim_output)}")
-        print(f"swim_output = {swim_output}")
 
         if swim_output == ['']:
             print(f"[{self.alignment['meta']['index']}] SWIM output is an empty string! - Returning...")

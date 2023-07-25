@@ -210,9 +210,10 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         # with ThreadPool(processes=cpus) as pool:
         ctx = mp.get_context('forkserver')
         with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
-            results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_pbar) for task in tasks]
-            pool.close()
-            all_results = [p.get() for p in results]
+            all_results = pool.map(run_recipe, tasks)
+            # results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_pbar) for task in tasks]
+            # pool.close()
+            # all_results = [p.get() for p in results]
 
         # with ThreadPoolExecutor(max_workers=cpus) as executor:
         #     all_results = list(tqdm.tqdm(executor.map(run_recipe, tasks), total=len(tasks), position=0, leave=True))
