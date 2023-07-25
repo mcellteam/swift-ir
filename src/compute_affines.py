@@ -131,7 +131,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['dev_mode'] = cfg.DEV_MODE
             dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['recipe_logging'] = cfg.RECIPE_LOGGING
             dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['fn_transforming'] = dm['data']['scales'][scale]['stack'][zpos]['filename']
-            dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['fn_reference'] = dm['data']['scales'][scale]['stack'][zpos]['transforming']
+            dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['fn_reference'] = dm['data']['scales'][scale]['stack'][zpos]['reference']
             dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['current_method'] = dm['data']['scales'][scale]['stack'][zpos]['current_method']
 
             if dm['data']['scales'][scale]['isRefinement']:
