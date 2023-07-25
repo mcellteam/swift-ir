@@ -666,7 +666,7 @@ def run_command(cmd, arg_list=None, cmd_input=None, extra='', scale=''):
                       f"Description     : {extra}\n"
                       f"arg_list        : {arg_list}\n"
                       f"Running command :\n{(' '.join(cmd_arg_list), 'None')[cmd_arg_list == '']}\n"
-                      f"Passing data    :\n{(cmd_input[1:], 'None')[cmd_input == '']}\n\n"
+                      f"Passing data    :\n{(cmd_input, 'None')[cmd_input == '']}\n\n"
                       f">> stdout\n{(cmd_stdout, 'None')[cmd_stdout == '']}\n"
                       f">> stderr\n{(cmd_stderr, 'None')[cmd_stderr == '']}\n"
                       )
