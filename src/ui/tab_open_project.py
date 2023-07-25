@@ -972,6 +972,7 @@ class OpenProject(QWidget):
     def getSelectedProjects(self):
         selected_rows = [x.row() for x in self.user_projects.table.selectionModel().selectedRows()]
         files = [self.user_projects.table.item(row, 0).text() for row in selected_rows]
+        logger.info(f'selected projects: {files}')
         return files
 
     def deleteContextMethod(self):
