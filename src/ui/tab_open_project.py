@@ -225,7 +225,7 @@ class OpenProject(QWidget):
         self._buttonDelete.setShortcut('Ctrl+D')
         self._buttonDelete.setStyleSheet('font-size: 9px;')
         self._buttonDelete.setEnabled(False)
-        self._buttonDelete.clicked.connect(self.delete_projects)
+        self._buttonDelete.clicked.connect(lambda: self.delete_projects())
         self._buttonDelete.setFixedSize(button_size)
         # self._buttonDelete.hide()
 
