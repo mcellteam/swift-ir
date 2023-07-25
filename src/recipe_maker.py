@@ -667,7 +667,7 @@ def run_command(cmd, arg_list=None, cmd_input=None, extra='', scale=''):
     # cmd_stdout, cmd_stderr = cmd_proc.communicate(cmd_input)
     cmd_stdout, cmd_stderr = cmd_proc.communicate(cmd_input)
     RMlogger = logging.getLogger('recipemaker')
-    RMlogger.critical(f"\n========== Run Command [{time.time()}] ==========\n"
+    RMlogger.critical(f"\n========== Run Command [PID: {cmd_proc.pid}] ==========\n"
                       f"Scale           : {scale}\n"
                       f"Description     : {extra}\n"
                       f"arg_list        : {arg_list}\n"
