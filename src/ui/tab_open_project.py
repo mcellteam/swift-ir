@@ -34,6 +34,7 @@ from src.helpers import get_project_list, list_paths_absolute, get_bytes, absFil
     get_appdir, caller_name
 from src.data_model import DataModel
 from src.ui.tab_project import ProjectTab
+from src.background_worker import BackgroundWorker
 from src.ui.timer import Timer
 from src.ui.tab_zarr import ZarrTab
 from src.ui.dialogs import QFileDialogPreview, NewConfigureProjectDialog
@@ -700,19 +701,10 @@ class OpenProject(QWidget):
             ID = id(cfg.project_tab)
             logger.info(f'New Tab ID: {ID}')
             cfg.dataById[id(cfg.project_tab)] = dm
-
-            # self.showMainUI()
             dm.set_defaults()
-
             initLogFiles(dm)
-
             cfg.project_tab = ProjectTab(self, path=path, datamodel=dm)
-
-            # initLogFiles(dm)
-
-
             cfg.mw._disableGlobTabs()
-
             # self.table.setItem(i, j, item)
             rc = self.user_projects.table.rowCount()
             self.user_projects.table.insertRow(rc)
@@ -744,27 +736,18 @@ class OpenProject(QWidget):
                 make_thumbnails = True
                 if make_thumbnails:
                     logger.info('Generating Source Thumbnails...')
-                    # if gui:
-                    #     cfg.mw.tell('Generating Source Image Thumbnails...')
-                    #     # cfg.mw.showZeroedPbar()
-                    # try:
-                    #     thumbnailer = Thumbnailer()
-                    #     worker = BackgroundWorker(fn=thumbnailer.reduce_main(dest=dm.dest()))
-                    #     threadpool.start(worker)
-                    # except:
-                    #     print_exception()
-                    #     logger.warning('Something Unexpected Happened While Generating Source Thumbnails')
-                    #     if gui: cfg.mw.warn('Something Unexpected Happened While Generating Source Thumbnails')
                     thumbnailer = Thumbnailer()
-                    dt = thumbnailer.reduce_main(dest=dm.dest())
-                    cfg.data.t_thumbs = dt
+                    worker = BackgroundWorker(fn=thumbnailer.reduce_main(dest=dm.dest()))
+                    cfg.main_window.start(worker)
+                    thumbnailer = Thumbnailer()
+                    cfg.data.t_thumbs = thumbnailer.reduce_main(dest=dm.dest())
             except:
                 print_exception()
             finally:
                 # cfg.mw.enableAllTabs()
-                # QApplication.processEvents()
-                cfg.mw._autosave(silently=True)
+                QApplication.processEvents()
                 cfg.data = dm
+                cfg.mw._autosave(silently=True)
                 cfg.mw.addGlobTab(cfg.project_tab, os.path.basename(path))
                 cfg.mw.setUpdatesEnabled(False)
                 try:
@@ -780,20 +763,16 @@ class OpenProject(QWidget):
 
         logger.info(f'Appending project to .swift_cache...')
         userprojectspath = os.path.join(os.path.expanduser('~'), '.swift_cache')
-        with open(userprojectspath, 'a') as f:
-            f.write(filename + '\n')
+        try:
+            with open(userprojectspath, 'a') as f:
+                f.write(filename + '\n')
+        except:
+            print_exception()
         cfg.mw._autosave()
         self.user_projects.set_data()
         cfg.mw._is_initialized = 1
-
         QApplication.processEvents()
         cfg.pt.initNeuroglancer()
-        # if cfg.data.is_aligned():
-        #     cfg.pt.updateLowest8widget()
-        #     cfg.mw.setdw_hud(True)
-        #     cfg.mw.setdw_thumbs(True)
-        #     cfg.mw.setdw_matches(True)
-
         logger.critical('<<<< new_project <<<<')
 
 
@@ -817,45 +796,20 @@ class OpenProject(QWidget):
         dialog.setModal(True)
         urls = dialog.sidebarUrls()
         dialog.setSidebarUrls(urls)
-
-
-
-        # urls = self.name_dialog.sidebarUrls()
-        #
-        # corral_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/3dem-1076/Projects_AlignEM'
-        #
-        # if '.tacc.utexas.edu' in platform.node():
-        #     urls.append(QUrl.fromLocalFile(os.getenv('SCRATCH')))
-        #     urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
-        #     urls.append(QUrl.fromLocalFile(os.getenv('HOME')))
-        #     urls.append(QUrl.fromLocalFile(corral_dir))
-        #
-        # else:
-        #     urls.append(QUrl.fromLocalFile(QDir.homePath()))
-        #     urls.append(QUrl.fromLocalFile('/tmp'))
-        #     if os.path.exists('/Volumes'):
-        #         urls.append(QUrl.fromLocalFile('/Volumes'))
-        #     if is_joel():
-        #         if os.path.exists('/Volumes/3dem_data'):
-        #             urls.append(QUrl.fromLocalFile('/Volumes/3dem_data'))
-        # self.name_dialog.setSidebarUrls(urls)
-
         places = getSideBarPlacesImportImages()
-
         sidebar = self.findChild(QListView, "sidebar")
         delegate = StyledItemDelegate(sidebar)
         delegate.mapping = places
         sidebar.setItemDelegate(delegate)
 
-
         if dialog.exec_() == QDialog.Accepted:
             filenames = dialog.selectedFiles()
-            dialog.pixmap = None #0723+
+            dialog.pixmap = None
         else:
             logger.warning('Import images dialog did not return a valid file list')
             cfg.mw.warn('Import images dialog did not return a valid file list')
             self.showMainUI()
-            dialog.pixmap = None #0723+
+            dialog.pixmap = None
             return 1
 
         if filenames == 1:
@@ -865,14 +819,6 @@ class OpenProject(QWidget):
             return 1
 
         self.NEW_PROJECT_IMAGES = natural_sort(filenames)
-
-        # files_sorted = natural_sort(filenames)
-        # cfg.data.set_source_path(os.path.dirname(files_sorted[0])) #Critical!
-        # cfg.mw.tell(f'Importing {len(files_sorted)} Images...')
-        # logger.info(f'Selected Images: \n{files_sorted}')
-        # cfg.data.append_images(files_sorted)
-        # cfg.data.link_reference_sections()
-
         logger.info(f'destination: {cfg.data.dest()}')
 
 
