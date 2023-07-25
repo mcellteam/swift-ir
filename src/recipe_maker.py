@@ -473,13 +473,13 @@ class align_ingredient:
         self.multi_swim_arg_str = self.get_swim_args()
         SWIMlogger.critical(f'Multi-SWIM Argument String:\n{self.multi_swim_arg_str()}')
 
-        # if len(self.ww) == 1:
-        #     # args.append(str(int(self.ww)))
-        #     arg = "%s" % self.ww
-        # else:
-        #     # args.append(str(int(self.ww[0])) + "x" + str(int(self.ww[1])))
-        #     arg = "%sx%s" % (self.ww[0], self.ww[1])
-        arg = "%sx%s" % tuple(self.ww)
+        if len(self.ww) == 1:
+            # args.append(str(int(self.ww)))
+            arg = "%s" % self.ww
+        else:
+            # args.append(str(int(self.ww[0])) + "x" + str(int(self.ww[1])))
+            arg = "%sx%s" % (self.ww[0], self.ww[1])
+        # arg = "%sx%s" % tuple(self.ww)
 
         o = run_command(
             self.recipe.swim_c,
