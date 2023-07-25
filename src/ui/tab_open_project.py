@@ -1168,8 +1168,8 @@ class UserProjects(QWidget):
         # self.updateRowHeight(getOpt('state,open_project_tab,row_height'))
 
         # self.setStyleSheet("color: #161c20;")
-        self.setStyleSheet("font-size: 9px; color: #161c20;")
-        self.table.setStyleSheet("font-size: 9px; color: #161c20;")
+        self.setStyleSheet("font-size: 9px; color: #161c20; font-family: Tahoma, sans-serif;")
+        self.table.setStyleSheet("font-size: 9px; color: #161c20; font-family: Tahoma, sans-serif;")
 
 
     def updateRowHeight(self, h):
