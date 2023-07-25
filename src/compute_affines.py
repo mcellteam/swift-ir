@@ -205,6 +205,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
         # PRETTY SURE THIS IS THE BEST/FASTEST/LEAST MEMORY CONSUMPTION/REPORTS ERRORS BACK SOONEST
         with ThreadPool(processes=cpus) as pool:
+        # with mp.Pool(processes=cpus) as pool:
             results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_pbar) for task in tasks]
             pool.close()
             all_results = [p.get() for p in results]
