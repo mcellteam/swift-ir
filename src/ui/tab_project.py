@@ -2316,9 +2316,19 @@ class ProjectTab(QWidget):
             logger.info('')
             b = self.cb_recipe_logging.isChecked()
             cfg.RECIPE_LOGGING = int(b)
-            cfg.main_window.tell(f"# Recipe Logging is now set to: {b}")
+            cfg.main_window.tell(f"Recipe logging is now set to: {b}")
         self.cb_recipe_logging.setChecked(cfg.RECIPE_LOGGING)
         self.cb_recipe_logging.toggled.connect(update_recipe_logging)
+
+        self.cb_dev_mode = QCheckBox()
+        self.cb_dev_mode.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        def update_dev_mode():
+            logger.info('')
+            b = self.cb_dev_mode.isChecked()
+            cfg.DEV_MODE = int(b)
+            cfg.main_window.tell(f"Dev mode is now set to: {b}")
+        self.cb_dev_mode.setChecked(cfg.DEV_MODE)
+        self.cb_dev_mode.toggled.connect(update_dev_mode)
 
         self.w_tacc = QWidget()
         self.w_tacc.setContentsMargins(2,2,2,2)
@@ -2326,7 +2336,8 @@ class ProjectTab(QWidget):
         self.w_tacc.setLayout(self.fl_tacc)
         self.fl_tacc.addRow(f"maximum # processors", self.le_tacc_num_cores)
         self.fl_tacc.addRow(f"QtWebengine # raster threads", self.le_qtwebengine_raster_threads)
-        self.fl_tacc.addRow(f"recipe_maker logging", self.cb_recipe_logging)
+        self.fl_tacc.addRow(f"RECIPE_LOGGING", self.cb_recipe_logging)
+        self.fl_tacc.addRow(f"DEV_MODE", self.cb_dev_mode)
 
         self.sideTabs = QTabWidget()
         # self.sideTabs.addTab(self.MA_stackedWidget, 'Configure')
