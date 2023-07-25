@@ -209,16 +209,19 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         def update_pbar(*a):
             pbar.update()
 
-        # with mp.Pool(processes=cpus) as pool:
+        apply_results = []
 
         # PRETTY SURE THIS IS THE BEST/FASTEST/LEAST MEMORY CONSUMPTION/REPORTS ERRORS BACK SOONEST
         # with ThreadPool(processes=cpus) as pool:
         ctx = mp.get_context('forkserver')
         with ctx.Pool(processes=8, maxtasksperchild=1) as pool:
-            all_results = pool.map(run_recipe, tasks)
             # results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_pbar) for task in tasks]
-            # pool.close()
-            # all_results = [p.get() for p in results]
+            for task in tasks:
+                apply_results.append(pool.apply_async(func=run_recipe, args=(task,), callback=update_pbar))
+                # pool.close()
+                # pool.join()
+            pool.close()
+            all_results = [p.get() for p in apply_results]
 
         # with ThreadPoolExecutor(max_workers=int(4)) as executor:
         #     all_results = list(tqdm.tqdm(executor.map(run_recipe, tasks), total=len(tasks), position=0, leave=True))
