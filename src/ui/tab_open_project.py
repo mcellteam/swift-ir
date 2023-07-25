@@ -1257,7 +1257,7 @@ class UserProjects(QWidget):
                         item[16] = ':'
                     if item[13] == '-':
                         item[16] = ':'
-                    twi = QTableWidgetItem()
+                    twi = QTableWidgetItem(item)
                     twi.setFont(font0)
                     self.table.setItem(i, j, twi)
                 elif j in (6,7):
