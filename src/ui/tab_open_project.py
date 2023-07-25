@@ -1113,7 +1113,7 @@ class UserProjects(QWidget):
 
         # self.initial_row_height = 64
         # self.ROW_HEIGHT = 64
-        self.ROW_HEIGHT = 70
+        self.ROW_HEIGHT = 64
 
         self.counter1 = 0
         self.counter2 = 0
@@ -1253,10 +1253,8 @@ class UserProjects(QWidget):
                         self.table.setCellWidget(i, j, thumbnail)
                 elif j in (4,5):
                     item.replace("_", " ")
-                    if item[13] == '-':
-                        item[16] = ':'
-                    if item[13] == '-':
-                        item[16] = ':'
+                    item.replace('-', ':')
+                    # item = item[9:].replace('-', ':')
                     twi = QTableWidgetItem(item)
                     twi.setFont(font0)
                     self.table.setItem(i, j, twi)
