@@ -598,7 +598,7 @@ class MainWindow(QMainWindow):
                                 cfg.pt.msList[i].set_no_image()
                                 continue
 
-                            cfg.pt.msList[i].set_data(path=names[i], snr=snr)
+                            cfg.pt.msList[i].set_data(path=names[i], snr=float(snr))
                             # cfg.pt.msList[i].update()
 
                             count += 1
@@ -635,7 +635,7 @@ class MainWindow(QMainWindow):
                                 print_exception()
                                 continue
 
-                            cfg.pt.msList[i].set_data(path=thumbs[i], snr=snr)
+                            cfg.pt.msList[i].set_data(path=thumbs[i], snr=float(snr))
                         except:
                             print_exception()
                             cfg.pt.msList[i].set_no_image()
@@ -2493,14 +2493,14 @@ class MainWindow(QMainWindow):
                     data_cp = copy.deepcopy(cfg.data)
                     # data_cp.make_paths_relative(start=cfg.data.dest())
                     data_cp_json = data_cp.to_dict()
+                    name = cfg.data.dest()
                     if not silently:
-                        logger.info('---- SAVING DATA TO PROJECT FILE ----')
+                        logger.info(f'---- SAVING DATA PROJECT TO FILE ----\n{name}')
                     jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
                     proj_json = jde.encode(data_cp_json)
-                    name = cfg.data.dest()
+
                     if not name.endswith('.swiftir'):
                         name += ".swiftir"
-                    logger.info('Save Name: %s' % name)
                     with open(name, 'w') as f:
                         f.write(proj_json)
 

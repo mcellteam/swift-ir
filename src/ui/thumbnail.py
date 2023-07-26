@@ -657,7 +657,8 @@ class CorrSignalThumbnail(QLabel):
             # self.setPixmap(pixmap)
             self.set_no_image()
 
-        self.snr = snr
+        # self.snr = snr
+        self.snr = 0.0
         self.extra = extra
         self.name = name
         self.no_image_path = os.path.join(get_appdir(), 'resources', 'no-image.png')
@@ -751,10 +752,14 @@ class CorrSignalThumbnail(QLabel):
                         # loc = QPoint(0, self.rect().height() - 4)
                         # loc = QPoint(16, self.rect().height() - 6)
                         loc = QPointF(coords[0] + pm.width()/2 - size, coords[3] - 2)
-                        if self.extra:
-                            qp.drawText(loc, '%.1f' %self.snr + '\n' + self.extra)
-                        else:
-                            qp.drawText(loc, '%.1f' %self.snr)
+                        logger.info(f"self.snr = {self.snr}")
+                        try:
+                            if self.extra:
+                                qp.drawText(loc, '%.2g' %self.snr + '\n' + self.extra)
+                            else:
+                                qp.drawText(loc, '%.2g' %self.snr)
+                        except:
+                            print_exception()
                 return
             # except ZeroDivisionError:
             except:

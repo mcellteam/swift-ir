@@ -78,19 +78,13 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         # alignment_option = dm['data']['scales'][scale_key]['method_data']['alignment_option']
         logger.info('Start Layer: %s /End layer: %s' % (str(start), str(end)))
 
-        # path = os.path.join(dm.dest(), scale_key, 'img_aligned')
-        # if checkForTiffs(path):
-        #     # al_substack = dm['data']['scales'][scale_key]['stack'][start:]
-        #     # remove_aligned(al_substack) #0903 Moved into conditional
-        #     dm.remove_aligned(scale_key, start, end)
+        # checkForTiffs(path)
 
         signals_dir = os.path.join(dm.dest(), scale, 'signals')
         if not os.path.exists(signals_dir):
             os.mkdir(signals_dir)
 
-
-
-        dm.clear_method_results(scale=scale, start=start, end=end) #1109 Should this be on the copy?
+        dm.clear_method_results(scale=scale, start=start, end=end)
         if rename_switch:
             rename_layers(use_scale=scale, al_dict=alignment_dict)
 
@@ -98,8 +92,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         # substack = dm()[start:end]
 
         first_unskipped = cfg.data.first_unskipped(s=scale)
-        logger.info('# Sections         : %d' % len(dm))
-        logger.info('First unskipped    : %d' % first_unskipped)
+        # logger.info('# Sections         : %d' % len(dm))
+        # logger.info('First unskipped    : %d' % first_unskipped)
 
         scale_val = get_scale_val(scale)
         tasks = []
@@ -139,8 +133,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                     sec['alignment']['meta']['init_afm'] = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
 
                 tasks.append(copy.deepcopy(sec))
-            else:
-                logger.info(f"Dropping task for {zpos}")
+            # else:
+            #     logger.info(f"Dropping task for {zpos}")
 
 
         delete_correlation_signals(dm=dm, scale=scale, start=start, end=end)
@@ -191,10 +185,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
 
         # ctx = mp.get_context('forkserver')
-        with mp.Pool(processes=cpus) as pool:
-        # with ThreadPool(processes=cpus) as pool:
-
-        # with ThreadPool(processes=cpus) as pool:
+        # with mp.Pool(processes=cpus) as pool:
+        with ThreadPool(processes=cpus) as pool:
             results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_pbar) for task in tasks]
             pool.close()
             all_results = [p.get() for p in results]

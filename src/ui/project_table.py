@@ -77,30 +77,30 @@ class ProjectTable(QWidget):
              'manual-hint':'Match Region',
              'manual-strict':'Match Point'}
 
-        # self.table.setStyleSheet("QTableWidget {font-size: 10px;}")
-        self.table.setStyleSheet("""
-        QWidget {
-            background-color: #f3f6fb;
-            color: #161c20;
-        }
-        
-        QHeaderView::section {
-            font-size: 12pt;
-        }
-        
-        QTableWidget {
-            gridline-color: #161c20;
-            font-size: 10pt;
-        }
-        
-        QTableWidget QTableCornerButton::section {
-            background-color: #f3f6fb;
-            border: 1px solid #161c20;
-        }
-        QTableWidget::item:selected{ background-color: #dadada;}
-        
-        QTableWidget::item {padding: 2px; color: #161c20;}
-        """)
+        # self.table.setStyleSheet("""
+        # QWidget {
+        #     background-color: #f3f6fb;
+        #     color: #161c20;
+        #     font-size: 10px;
+        # }
+        #
+        # QHeaderView::section {
+        #     font-size: 12pt;
+        # }
+        #
+        # QTableWidget {
+        #     gridline-color: #161c20;
+        #     font-size: 10pt;
+        # }
+        #
+        # QTableWidget QTableCornerButton::section {
+        #     background-color: #f3f6fb;
+        #     border: 1px solid #161c20;
+        # }
+        # QTableWidget::item:selected{ background-color: #dadada;}
+        #
+        # QTableWidget::item {padding: 2px; color: #161c20;}
+        # """)
 
 
 
