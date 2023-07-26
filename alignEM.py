@@ -58,6 +58,7 @@ https://github.com/nexpy/nexpy/issues/398
 """
 import os
 import asyncio
+import subprocess as sp
 import qtpy
 # os.environ['QT_API'] = 'pyqt5'
 os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt5'
@@ -218,6 +219,8 @@ def main():
                 logger.info("Adding quick launch alias 'alignem'..")
                 with open(bashrc, "a+") as f:
                     f.write(appendme)
+                logger.info("Sourcing bashrc...")
+                sp.call(['source', '$HOME/.bashrc'])
 
             appendme = """alias alignemdev='source $WORK/swift-ir/tacc_develop'"""
             check_str = """alias alignemdev="""
@@ -228,6 +231,8 @@ def main():
                 logger.info("Adding quick launch alias 'alignemdev'..")
                 with open(bashrc, "a+") as f:
                     f.write(appendme)
+                logger.info("Sourcing bashrc...")
+                sp.call(['source', '$HOME/.bashrc'])
         except:
             print_exception()
 
