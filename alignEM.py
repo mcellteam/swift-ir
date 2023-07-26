@@ -223,7 +223,6 @@ def main():
                     with open(bashrc, "a+") as f:
                         f.write(appendme)
                     logger.info("Sourcing bashrc...")
-                    sp.call(['source', '$HOME/.bashrc'])
             except:
                 print_exception()
 
@@ -238,7 +237,6 @@ def main():
                     with open(bashrc, "a+") as f:
                         f.write(appendme)
                     logger.info("Sourcing bashrc...")
-                    sp.call(['source', '$HOME/.bashrc'])
             except:
                 print_exception()
         except:
