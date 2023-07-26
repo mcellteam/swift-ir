@@ -88,6 +88,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             os.mkdir(signals_dir)
 
 
+
         dm.clear_method_results(scale=scale, start=start, end=end) #1109 Should this be on the copy?
         if rename_switch:
             rename_layers(use_scale=scale, al_dict=alignment_dict)
@@ -185,21 +186,21 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
         t0 = time.time()
 
-        # pbar = tqdm.tqdm(total=len(tasks), desc="Compute Affines", position=0, leave=True)
-        # def update_pbar(*a):
-        #     pbar.update()
+        pbar = tqdm.tqdm(total=len(tasks), desc="Compute Affines", position=0, leave=True)
+        def update_pbar(*a):
+            pbar.update()
 
 
         ctx = mp.get_context('forkserver')
-        # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
-        with ThreadPool(processes=cpus) as pool:
-            # results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_pbar) for task in tasks]
-            # pool.close()
-            # all_results = [p.get() for p in results]
+        with mp.Pool(processes=cpus, maxtasksperchild=1) as pool:
+        # with ThreadPool(processes=cpus) as pool:
+            results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_pbar) for task in tasks]
+            pool.close()
+            all_results = [p.get() for p in results]
             # # pool.join()
 
-            all_results = pool.map(run_recipe,
-                     tqdm.tqdm(tasks, total=len(tasks), desc="Compute Affines", position=0, leave=True))
+            # all_results = pool.map(run_recipe,
+            #          tqdm.tqdm(tasks, total=len(tasks), desc="Compute Affines", position=0, leave=True))
             # pool.close()
             # pool.join()
 
