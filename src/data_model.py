@@ -1558,8 +1558,10 @@ class DataModel:
             return self._data['data']['scales'][s]['stack'][l]['alignment']['method_results']['cumulative_afm']
             # return self._data['data']['scales'][s]['stack'][l]['alignment_history'][self.get_current_method(s=s, l=l)]['cumulative_afm']
         except:
-            caller = inspect.stack()[1].function
-            print_exception(extra=f'Layer {l}, caller: {caller}')
+            # caller = inspect.stack()[1].function
+            # print_exception(extra=f'Layer {l}, caller: {caller}')
+            exi = sys.exc_info()
+            logger.warning(f"[{l}] {exi[0]} {exi[1]}")
             return [[1, 0, 0], [0, 1, 0]]
 
 
