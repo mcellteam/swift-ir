@@ -62,8 +62,9 @@ def get_zarr_tensor(zarr_path):
     #     total_bytes_limit = 250_000_000_000 # just under 256 GB
     # else:
     #     total_bytes_limit = 6_000_000_000
-    total_bytes_limit = (6_000_000_000, 200_000_000_000_000)['.tacc.utexas.edu' in platform.node()]
-    arr = ts.open({
+    # total_bytes_limit = (20_000_000_000, 200_000_000_000_000)['.tacc.utexas.edu' in platform.node()]
+    total_bytes_limit = 1_000_000_000 #0726+
+    future = ts.open({
         'dtype': 'uint8',
         'driver': 'zarr',
         'kvstore': {
@@ -73,12 +74,13 @@ def get_zarr_tensor(zarr_path):
         },
         'context': {
             'cache_pool': {'total_bytes_limit': total_bytes_limit},
-            # 'data_copy_concurrency': {'limit': 128},
-            # 'file_io_concurrency': {'limit': 128},
+            'data_copy_concurrency': {'limit': 128}, #0726+
+            'file_io_concurrency': {'limit': 128}, #0726+
         },
-        'recheck_cached_data': 'open',
+        # 'recheck_cached_data': 'open',
+        'recheck_cached_data': True, #0726 revert to default (True)
     })
-    return arr
+    return future
 
 
 def get_zarr_array_layer_view(zarr_path:str, l=None):

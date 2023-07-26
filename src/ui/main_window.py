@@ -3993,7 +3993,8 @@ class MainWindow(QMainWindow):
     def initAllViewers(self):
         if self._isProjectTab():
             for v in cfg.project_tab.get_viewers():
-                v.initViewer()
+                import asyncio
+                asyncio.run(v.initViewer())
 
 
 
@@ -6129,6 +6130,7 @@ class MainWindow(QMainWindow):
                     self.incrementZoomOut()
 
         elif event.key() == Qt.Key_Slash:
+            self.setUpdatesEnabled(False)
             if self._isProjectTab():      
                 if cfg.pt._tabs.currentIndex() == 1:
                     logger.info(f"Qt.Key_Slash was pressed, tra_ref_toggle={cfg.data['state']['tra_ref_toggle']}")
@@ -6136,6 +6138,7 @@ class MainWindow(QMainWindow):
                         cfg.pt.set_reference()
                     else:
                         cfg.pt.set_transforming()
+            self.setUpdatesEnabled(True)
 
         elif event.key() == Qt.Key_Delete:
             if self._isOpenProjTab():

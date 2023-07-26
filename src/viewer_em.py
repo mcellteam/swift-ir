@@ -400,10 +400,14 @@ class AbstractEMViewer(neuroglancer.Viewer):
             sf = cfg.data.scale_val(s=cfg.data.scale_key)
             if cfg.data.is_aligned_and_generated():
                 path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(sf))
-                cfg.tensor = cfg.al_tensor = get_zarr_tensor(path).result()
+                future = get_zarr_tensor(path)
+                future.add_done_callback(lambda f: print(f'Callback: {f.result().domain}'))
+                cfg.tensor = cfg.al_tensor = future.result()
             else:
                 path = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(sf))
-                cfg.tensor = cfg.unal_tensor = get_zarr_tensor(path).result()
+                future = get_zarr_tensor(path)
+                future.add_done_callback(lambda f: print(f'Callback: {f.result().domain}'))
+                cfg.tensor = cfg.unal_tensor = future.result()
 
         except Exception as e:
             logger.warning('Failed to acquire Tensorstore view')
@@ -428,9 +432,11 @@ class EMViewer(AbstractEMViewer):
         self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
 
         self.type = 'EMViewer'
-        self.initViewer()
+        # self.initViewer()
+        asyncio.run(self.initViewer())
 
-    def initViewer(self, nglayout=None):
+
+    async def initViewer(self, nglayout=None):
         caller = inspect.stack()[1].function
         if DEV:
             logger.info(f'\n\n[DEV] [{caller}] Initializing Neuroglancer...\n\n')
@@ -448,7 +454,8 @@ class EMViewer(AbstractEMViewer):
             cfg.main_window.warn('Zarr Not Found: %s' % path)
             return
 
-        self.store = cfg.tensor = get_zarr_tensor(path).result()
+        # self.store = cfg.tensor = get_zarr_tensor(path).result()
+        self.store = cfg.tensor = await get_zarr_tensor(path)
 
         self.coordinate_space = self.getCoordinateSpace()
 

@@ -77,30 +77,30 @@ class ProjectTable(QWidget):
              'manual-hint':'Match Region',
              'manual-strict':'Match Point'}
 
-        # self.table.setStyleSheet("""
-        # QWidget {
-        #     background-color: #f3f6fb;
-        #     color: #161c20;
-        #     font-size: 10px;
-        # }
-        #
-        # QHeaderView::section {
-        #     font-size: 12pt;
-        # }
-        #
-        # QTableWidget {
-        #     gridline-color: #161c20;
-        #     font-size: 10pt;
-        # }
-        #
-        # QTableWidget QTableCornerButton::section {
-        #     background-color: #f3f6fb;
-        #     border: 1px solid #161c20;
-        # }
-        # QTableWidget::item:selected{ background-color: #dadada;}
-        #
-        # QTableWidget::item {padding: 2px; color: #161c20;}
-        # """)
+        self.table.setStyleSheet("""
+        QWidget {
+            background-color: #f3f6fb;
+            color: #161c20;
+            font-size: 10px;
+        }
+
+        QHeaderView::section {
+            font-size: 10pt;
+        }
+
+        QTableWidget {
+            gridline-color: #161c20;
+            font-size: 10pt;
+        }
+
+        QTableWidget QTableCornerButton::section {
+            background-color: #f3f6fb;
+            border: 1px solid #161c20;
+        }
+        QTableWidget::item:selected{ background-color: #dadada;}
+
+        QTableWidget::item {padding: 2px; color: #161c20;}
+        """)
 
 
 
@@ -392,7 +392,7 @@ class ProjectTable(QWidget):
                 lab1.setStyleSheet("font-weight: 600; font-size: 12px; background: transparent;")
                 if cfg.data.skipped(l=row):
                     lab2 = QLabel('* Exclude')
-                    lab2.setStyleSheet("font-size: 12px; color: #d0342c; padding:2px; background: transparent;")
+                    lab2.setStyleSheet("font-size: 11px; color: #d0342c; padding:2px; background: transparent;")
                     vw = VWidget(lab1,lab2)
                     vw.layout.setAlignment(Qt.AlignVCenter)
                 else:

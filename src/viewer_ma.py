@@ -15,6 +15,7 @@ import inspect
 import logging
 import datetime
 import argparse
+import asyncio
 import functools
 import time
 from collections import OrderedDict
@@ -95,7 +96,8 @@ class MAViewer(neuroglancer.Viewer):
         self._dontDraw = 0
 
         # QApplication.processEvents()
-        self.initViewer()
+        # self.initViewer()
+        asyncio.run(self.initViewer())
 
 
     def __del__(self):
@@ -244,7 +246,7 @@ class MAViewer(neuroglancer.Viewer):
             cs.status_messages['message'] = msg
 
 
-    def initViewer(self, obey_zpos=True):
+    async def initViewer(self, obey_zpos=True):
         # caller = inspect.stack()[1].function
         self._blockStateChanged = False
         if DEV:
@@ -270,7 +272,8 @@ class MAViewer(neuroglancer.Viewer):
             logger.warning('Data Store Not Found: %s' % path); return
 
         try:
-            self.store = get_zarr_tensor(path).result()
+            # self.store = get_zarr_tensor(path).result()
+            self.store = await get_zarr_tensor(path)
         except Exception as e:
             cfg.main_window.warn('Unable to Load Data Store at %s' % path)
             raise e
