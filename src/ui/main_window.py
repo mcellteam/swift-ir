@@ -805,13 +805,13 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             cfg.data['state']['tool_windows']['raw_thumbnails'] = state
 
-
-        if state:
-            cfg.mw.dataUpdateWidgets()
-            QApplication.processEvents()
-            h = self.dw_thumbs.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
-            self.dw_thumbs.setMaximumWidth(int(h / 2 + .5))
-            # cfg.pt.tn_widget.resize(QSize(int(h / 2 + .5), cfg.pt.tn_widget.height()))
+        if self._isProjectTab():
+            if state:
+                cfg.mw.dataUpdateWidgets()
+                QApplication.processEvents()
+                h = self.dw_thumbs.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
+                self.dw_thumbs.setMaximumWidth(int(h / 2 + .5))
+                # cfg.pt.tn_widget.resize(QSize(int(h / 2 + .5), cfg.pt.tn_widget.height()))
 
 
 
@@ -824,18 +824,18 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             cfg.data['state']['tool_windows']['signals'] = state
 
-        if state:
-            # cfg.pt.match_widget.adjustSize() #MUCH BETTER OFF
-            # self.setUpdatesEnabled(True)
+        if self._isProjectTab():
+            if state:
+                # cfg.pt.match_widget.adjustSize() #MUCH BETTER OFF
+                # self.setUpdatesEnabled(True)
+                self.updateCorrSignalsDrawer()
+                self.setTargKargPixmaps()
+                QApplication.processEvents()
 
-            self.updateCorrSignalsDrawer()
-            self.setTargKargPixmaps()
-            QApplication.processEvents()
-
-            if cfg.data.is_aligned():
-                h = self.dw_matches.height() - cfg.pt.mwTitle.height()
-                self.dw_matches.setMaximumWidth(int(h /2 + .5))
-                # cfg.pt.match_widget.resize(int(h / 2 + .5), h)
+                if cfg.data.is_aligned():
+                    h = self.dw_matches.height() - cfg.pt.mwTitle.height()
+                    self.dw_matches.setMaximumWidth(int(h /2 + .5))
+                    # cfg.pt.match_widget.resize(int(h / 2 + .5), h)
 
 
 

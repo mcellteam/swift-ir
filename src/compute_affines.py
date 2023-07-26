@@ -94,20 +94,10 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
         # substack = copy.deepcopy(dm()[start:end])
         # substack = dm()[start:end]
-        n_tasks = n_skips = 0
-        for layer in dm()[start:end]: # Operating on the Copy!
-            if not layer['skipped']:
-                n_tasks +=1
-            else:
-                n_skips +=1
 
         first_unskipped = cfg.data.first_unskipped(s=scale)
-        # logger.info('# Sections (total)         : %d' % len(dm))
-        # logger.info('# Tasks (excluding skips)  : %d' % n_tasks)
-        # logger.info('# Skipped Layers           : %d' % n_skips)
-        # logger.info('First Unskipped            : %d' % first_unskipped)
-
-
+        logger.info('# Sections         : %d' % len(dm))
+        logger.info('First unskipped    : %d' % first_unskipped)
 
         scale_val = get_scale_val(scale)
         tasks = []
@@ -116,6 +106,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             zpos = dm().index(sec)
 
             if not sec['skipped'] and (zpos != first_unskipped):
+                logger.info(f'Adding task for {zpos}')
                 sec['alignment']['meta'] = {}
                 zpos = dm().index(sec)
                 sec['alignment']['meta']['index'] = zpos
@@ -146,8 +137,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                     sec['alignment']['meta']['init_afm'] = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
 
                 tasks.append(sec)
-            # else:
-            #     logger.info(f"DROPPING TASK FOR {zpos}")
+            else:
+                logger.info(f"Dropping task for {zpos}")
 
 
         delete_correlation_signals(dm=dm, scale=scale, start=start, end=end)
@@ -185,7 +176,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             logger.warning('Canceling Processes!')
             return
 
-        cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, n_tasks),1)
+        cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks)),1)
 
         logger.info(f"# cpus for alignment: {cpus}")
 
@@ -194,19 +185,24 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
         t0 = time.time()
 
-        pbar = tqdm.tqdm(total=len(tasks), position=0, leave=True)
-        pbar.set_description("Compute Affines")
-        def update_pbar(*a):
-            pbar.update()
+        # pbar = tqdm.tqdm(total=len(tasks), desc="Compute Affines", position=0, leave=True)
+        # def update_pbar(*a):
+        #     pbar.update()
 
 
         ctx = mp.get_context('forkserver')
         # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
-        with ctx.Pool(processes=cpus) as pool:
-            results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_pbar) for task in tasks]
-            pool.close()
-            all_results = [p.get() for p in results]
+        with ThreadPool(processes=cpus) as pool:
+            # results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_pbar) for task in tasks]
+            # pool.close()
+            # all_results = [p.get() for p in results]
+            # # pool.join()
+
+            all_results = pool.map(run_recipe,
+                     tqdm.tqdm(tasks, total=len(tasks), desc="Compute Affines", position=0, leave=True))
+            # pool.close()
             # pool.join()
+
         # with ThreadPoolExecutor(max_workers=cpus) as pool:
         #     # all_results = list(pool.map(run_recipe, tqdm.tqdm(tasks, total=len(tasks), desc="Compute Affines", position=0, leave=True)))
         #
@@ -214,9 +210,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         #     concurrent.futures.wait(futures)
 
         logger.info("Compute Affines Finished")
+        sys.stdout.flush()
 
-        # with ThreadPoolExecutor(max_workers=int(4)) as executor:
-        #     all_results = list(tqdm.tqdm(executor.map(run_recipe, tasks), total=len(tasks), position=0, leave=True))
 
         t_elapsed = time.time() - t0
         dm.t_align = t_elapsed
