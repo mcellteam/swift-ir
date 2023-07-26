@@ -22,10 +22,6 @@ ENABLE_LOGGING = 0
 
 
 logger = logging.getLogger(__name__)
-# MAlogger      = logging.getLogger('MAlogger')
-# SWIMlogger    = logging.getLogger('SWIMlogger')
-# RMlogger      = logging.getLogger('recipemaker')
-# scratchlogger = logging.getLogger('scratch')
 
 def run_recipe(data):
     '''Assemble and execute an alignment recipe
@@ -40,12 +36,6 @@ def run_recipe(data):
     return data
 
 class align_recipe:
-
-    # global scratchlogger
-
-    # global SWIMlogger
-    # global RMlogger
-    # global MAlogger
 
     def __init__(self, data):
         self.data = data
@@ -148,8 +138,8 @@ class align_recipe:
 
             if self.meta['isRefinement']:
                 '''Perform affine refinement'''
-                self.add_ingredients([align_ingredient(mode='SWIM-Grid', ww=ww_2x2, psta=psta_2x2, afm=self.init_afm, ID='Grid2x2-a')])
-                self.add_ingredients([align_ingredient(mode='SWIM-Grid', ww=ww_2x2, psta=psta_2x2, afm=self.afm, ID='Grid2x2-b', last=True)])
+                self.add_ingredients([align_ingredient(mode='SWIM-Grid', ww=ww_2x2, psta=psta_2x2, ID='Grid2x2-a'),
+                                      align_ingredient(mode='SWIM-Grid', ww=ww_2x2, psta=psta_2x2, ID='Grid2x2-b', last=True)])
             else:
                 '''Perform affine initialization'''
                 self.add_ingredients([
@@ -391,8 +381,6 @@ class align_ingredient:
         self.cy = int(self.recipe.siz[1] / 2.0)
 
         afm_arg = '%.6f %.6f %.6f %.6f' % (self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
-
-
 
         basename = os.path.basename(self.recipe.fn_transforming)
         filename, extension = os.path.splitext(basename)
