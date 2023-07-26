@@ -10,6 +10,7 @@ __all__ = ['data']
 
 VERSION = '0.5.49'
 
+LOOP = None
 
 LOG_LEVEL = 1
 DEBUG_MP = 0

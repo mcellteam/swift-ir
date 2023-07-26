@@ -41,6 +41,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_zarr_tensor(zarr_path):
+# async def get_zarr_tensor(zarr_path):
     '''
     Returns an asynchronous TensorStore future object which is a webengineview
     into the Zarr image on disk. All TensorStore indexing operations

@@ -2743,8 +2743,8 @@ class ProjectTab(QWidget):
 
     @Slot()
     def dataUpdateMA(self):
-        if DEV:
-            logger.critical(f"[DEV] called by {caller_name()}")
+        # if DEV:
+        #     logger.critical(f"[DEV] called by {caller_name()}")
 
         #0526 set skipped overlay
 
@@ -2865,8 +2865,6 @@ class ProjectTab(QWidget):
             # if cfg.data.current_method in ('manual-hint', 'manual-strict'):
             if self.method_rb2.isChecked():
                 logger.info('')
-                if DEV:
-                    logger.critical(f"{caller_name()}")
                 # self.setUpdatesEnabled(False)
                 self.updateEnabledButtonsMA() #0610+
                 self.update_MA_list_base()

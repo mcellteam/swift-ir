@@ -432,11 +432,12 @@ class EMViewer(AbstractEMViewer):
         self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
 
         self.type = 'EMViewer'
-        # self.initViewer()
-        asyncio.run(self.initViewer())
+        self.initViewer()
+        # asyncio.ensure_future(self.initViewer())
 
 
-    async def initViewer(self, nglayout=None):
+    # async def initViewer(self, nglayout=None):
+    def initViewer(self, nglayout=None):
         caller = inspect.stack()[1].function
         if DEV:
             logger.info(f'\n\n[DEV] [{caller}] Initializing Neuroglancer...\n\n')
@@ -454,8 +455,8 @@ class EMViewer(AbstractEMViewer):
             cfg.main_window.warn('Zarr Not Found: %s' % path)
             return
 
-        # self.store = cfg.tensor = get_zarr_tensor(path).result()
-        self.store = cfg.tensor = await get_zarr_tensor(path)
+        self.store = cfg.tensor = get_zarr_tensor(path).result()
+        # self.store = cfg.tensor = await get_zarr_tensor(path).result()
 
         self.coordinate_space = self.getCoordinateSpace()
 

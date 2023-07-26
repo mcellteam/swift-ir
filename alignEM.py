@@ -57,6 +57,7 @@ https://github.com/nexpy/nexpy/issues/398
 
 """
 import os
+import asyncio
 import qtpy
 # os.environ['QT_API'] = 'pyqt5'
 os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt5'
@@ -67,7 +68,7 @@ import faulthandler
 from concurrent.futures import ThreadPoolExecutor
 
 from qtpy import QtCore
-from qtpy.QtCore import QCoreApplication, Qt
+from qtpy.QtCore import QCoreApplication, Qt, QEventLoop
 from qtpy.QtWidgets import QApplication
 from src.ui.main_window import MainWindow
 from src.utils.add_logging_level import addLoggingLevel
@@ -153,7 +154,6 @@ def main():
     # logger.critical('new cwd: %s' % os.getcwd())
 
     QCoreApplication.setApplicationName("ALIGNEM-SWIFT")
-
 
     addLoggingLevel('VERSIONCHECK', logging.DEBUG + 5)
     logging.getLogger('init').setLevel("VERSIONCHECK")
@@ -278,6 +278,7 @@ def main():
 
     # app = QApplication([])
     app = QApplication(sys.argv)
+
     app.setStyle('Fusion')
     # app.setStyle('Breeze')
     # app.setStyle('Oxygen')
