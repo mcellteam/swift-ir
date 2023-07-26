@@ -148,7 +148,8 @@ class align_recipe:
 
             if self.meta['isRefinement']:
                 '''Perform affine refinement'''
-                self.add_ingredients([align_ingredient(mode='SWIM-Grid', ww=ww_2x2, psta=psta_2x2, afm=self.init_afm, ID='Grid2x2', last=True)])
+                self.add_ingredients([align_ingredient(mode='SWIM-Grid', ww=ww_2x2, psta=psta_2x2, afm=self.init_afm, ID='Grid2x2-a', last=True)])
+                self.add_ingredients([align_ingredient(mode='SWIM-Grid', ww=ww_2x2, psta=psta_2x2, afm=self.afm, ID='Grid2x2-b', last=True)])
             else:
                 '''Perform affine initialization'''
                 self.add_ingredients([
