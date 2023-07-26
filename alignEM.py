@@ -63,7 +63,7 @@ import threading
 import cProfile
 import pstats
 import qtpy
-import subprocess
+import subprocess as sp
 # os.environ['QT_API'] = 'pyqt5'
 os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt5'
 # os.environ["BLOSC_NOLOCK"] = "1"
