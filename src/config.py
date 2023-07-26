@@ -12,15 +12,13 @@ VERSION = '0.5.49'
 
 
 LOG_LEVEL = 1
-DEV_MODE = 0
 DEBUG_MP = 0
 # DEBUG_MP = (False,True)[DEV_MODE]
 DEBUG_NEUROGLANCER = 0
 # DEBUG_NEUROGLANCER = (False,True)[DEV_MODE]
-# RECIPE_LOGGING = 0
-# RECIPE_LOGGING = (False,True)[DEV_MODE]
 # RECIPE_LOGGING = int(getpass.getuser() in ('joelyancey','joely'))
 RECIPE_LOGGING = 0
+DEV_MODE = 0
 # TACC_MAX_CPUS = 122 # 128 hardware cores/node on Lonestar6
 # TACC_MAX_CPUS = 80 # 128 hardware cores/node on Lonestar6
 TACC_MAX_CPUS = 104 # x3 is > 304
@@ -79,14 +77,14 @@ DEFAULT_DTYPE                 = '|u1'
 # DEFAULT_MANUAL_SWIM_WINDOW    = int(128)
 DEFAULT_MANUAL_SWIM_WINDOW    = int(256)
 DEFAULT_MANUAL_SWIM_WINDOW_PERC = float(.125)
-# DEFAULT_AUTO_SWIM_WINDOW_PERC   = float(0.8125)
-DEFAULT_AUTO_SWIM_WINDOW_PERC   = float(0.9000) #new default
+DEFAULT_AUTO_SWIM_WINDOW_PERC   = float(0.8125)
+# DEFAULT_AUTO_SWIM_WINDOW_PERC   = float(0.9000) #new default
 # DEFAULT_MANUAL_WHITENING      = float(-0.6800)
 DEFAULT_CLOBBER_PX            = 3
 DEFAULT_SWIM_ITERATIONS       = 3 # in pixels
 
-# DEFAULT_WHITENING             = float(-0.6800)
-DEFAULT_WHITENING             = float(-0.6500)
+DEFAULT_WHITENING             = float(-0.6800)
+# DEFAULT_WHITENING             = float(-0.6500)
 DEFAULT_CORRECTIVE_POLYNOMIAL = None
 
 '''Default Image Resolution (Voxel Dimensions)'''
