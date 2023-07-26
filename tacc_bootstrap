@@ -78,6 +78,7 @@ cd $WORK/swift-ir
 
 echo "Checking out development_ng branch..."
 git checkout development_ng
+git fetch remotes/origin/fb30_joel
 git pull
 
 echo "Purging modules..."
