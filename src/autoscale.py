@@ -94,6 +94,7 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     n_imgs = len(dm)
     logger.info(f'# images: {n_imgs}')
 
+    logger.info(f"cpus: {cpus}")
 
     for group in task_groups:
         logger.info(f'Downsampling {group}...')
