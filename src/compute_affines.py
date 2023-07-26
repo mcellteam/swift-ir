@@ -430,7 +430,7 @@ def get_scale_val(scale_of_any_type) -> int:
 def print_exception():
     tstamp = datetime.now().strftime("%Y%m%d_%H:%M:%S")
     exi = sys.exc_info()
-    txt = f"  [{tstamp}]\nError Type : {exi[0]}\nError Value : {exi[1]}\n{traceback.format_exc()}"
+    txt = f" [{tstamp}]\nError Type/Value : {exi[0]} / {exi[1]}\n{traceback.format_exc()}"
     logger.warning(txt)
 
     if cfg.data:

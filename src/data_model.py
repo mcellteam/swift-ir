@@ -7,6 +7,7 @@ using any number of technologies.
 """
 import os
 import re
+import sys
 import copy
 import json
 import inspect
@@ -1184,12 +1185,15 @@ class DataModel:
             if type(components) == float:
                 return components
             else:
-                # return statistics.fmean(map(float, components))
-                return statistics.fmean(components)
+                return statistics.fmean(map(float, components))
+                # return statistics.fmean(components)
         except:
-            print_exception()
+            # print_exception()
             # logger.warning('Unable to return SNR for layer #%d' %l)
-            logger.warning('Unable to return SNR for layer #%d. Returning 0.0...' % l)
+            tstamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            exi = sys.exc_info()
+            txt = f" [{tstamp}] Error Type/Value : {exi[0]} / {exi[1]}"
+            logger.warning(f"{txt}\n[{l}] Unable to return SNR. Returning 0.0")
             return 0.0
 
     def snr_prev(self, s=None, l=None) -> float:

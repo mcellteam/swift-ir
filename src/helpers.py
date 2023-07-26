@@ -793,7 +793,7 @@ def print_exception(extra=''):
         except:
             print_exception()
 
-    txt = f"  [{tstamp}]\nError Type : {exi[0]}\nError Value : {exi[1]}\n{traceback.format_exc()}{extra}\n"
+    txt = f" [{tstamp}]\nError Type/Value : {exi[0]} {exi[1]}\n{traceback.format_exc()}{extra}"
     logger.warning(txt)
 
     if cfg.data:
