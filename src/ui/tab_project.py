@@ -3320,7 +3320,7 @@ class ProjectTab(QWidget):
         self.table_container.setStyleSheet("background-color: #222222; color: #f3f6fb;")
         # self.project_table.initTableData()
 
-        self.project_table.initTableData()
+        # self.project_table.initTableData()
 
     def updateTreeWidget(self):
         # cfg.mw.statusBar.showMessage('Loading data into tree view...')
