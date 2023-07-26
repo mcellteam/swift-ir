@@ -98,7 +98,10 @@ class ThumbnailFast(QLabel):
         if self.path:
             image = QImage(path)
             # self.setPixmap(QPixmap.fromImage(image).scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation))
-            self.setPixmap(QPixmap.fromImage(image))
+            if os.path.exists(path):
+                self.setPixmap(QPixmap.fromImage(QImage(path)))
+            else:
+                self.set_no_image()
 
 
             # self.setPixmap(QPixmap(self.path))
@@ -175,7 +178,10 @@ class ThumbnailFast(QLabel):
             # self.setPixmap(QPixmap(self.path))
             # self.label.setText('%.3f' % self.snr)
 
-            self.setPixmap(QPixmap.fromImage(QImage(self.path)))
+            if os.path.exists(path):
+                self.setPixmap(QPixmap.fromImage(QImage(path)))
+            else:
+                self.set_no_image()
 
         except:
             print_exception(extra=f'WARNING path={self.path}')
@@ -467,7 +473,10 @@ class CorrSignalThumbnail(QLabel):
         if self.path:
             # image = QImage(path)
             # self.setPixmap(QPixmap.fromImage(image).scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation))
-            self.setPixmap(QPixmap.fromImage(QImage(path)))
+            if os.path.exists(path):
+                self.setPixmap(QPixmap.fromImage(QImage(path)))
+            else:
+                self.set_no_image()
 
             # self.setPixmap(QPixmap(self.path))
         else:
@@ -596,8 +605,10 @@ class CorrSignalThumbnail(QLabel):
             # self.setPixmap(QPixmap(self.path))
             # self.setPixmap(QPixmap(self.path))
             # self.label.setText('%.3f' % self.snr)
-
-            self.setPixmap(QPixmap.fromImage(QImage(path)))
+            if os.path.exists(path):
+                self.setPixmap(QPixmap.fromImage(QImage(path)))
+            else:
+                self.set_no_image()
 
         except:
             print_exception()
