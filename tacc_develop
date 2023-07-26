@@ -1,0 +1,74 @@
+#!/bin/bash
+
+CACHER="0"
+DEBUG="0"
+PULL="1"
+
+echo "Parsing cli arguments..."
+for i in "$@"; do
+  case $i in
+    -c|--cacher)
+      CACHER="1"
+      shift
+      ;;
+    -d|--debug)
+      DEBUG="1"
+      shift
+      ;;
+    -*|--*)
+      echo "Unknown option $i"
+      exit 1
+      ;;
+    *)
+      ;;
+  esac
+done
+
+echo "Loading intel/19.1.1 module..."
+ml intel/19.1.1
+echo "Loading swr/21.2.5 module..."
+ml swr/21.2.5
+echo "Loading impi/19.0.9 module..."
+ml impi/19.0.9
+echo "Loading fftw3/3.3.10 module..."
+ml fftw3/3.3.10
+
+if [ "$CACHER" = "1" ] ; then
+  echo "Loading python_cacher module..."
+  ml python_cacher/1.2
+fi
+
+echo "Activating Conda Environment Configured for Lonestar6..."
+conda activate /work/08507/joely/ls6/miniconda3/envs/alignTACC1024
+
+echo "Increasing LIBTIFF_STRILE_ARRAY_MAX_RESIZE_COUNT by 1000x to prevent libtiff from blocking excessive memory usage..."
+export LIBTIFF_STRILE_ARRAY_MAX_RESIZE_COUNT=1000000000
+
+echo "Setting BLOSC_NTHREADS=1..."
+export BLOSC_NTHREADS=1
+
+echo "Setting OPENBLAS_NUM_THREADS=1..."
+export OPENBLAS_NUM_THREADS=1
+echo "Setting OMP_NUM_THREADS=1..."
+export OMP_NUM_THREADS=1
+echo "Setting MKL_NUM_THREADS=1..."
+export MKL_NUM_THREADS=1
+
+echo "Checking out git branch..."
+cd $WORK/swift-ir
+git fetch
+git checkout remotes/origin/fb30_joel
+echo "Pulling changes..."
+git pull
+echo "Most recent commit:"
+git log -1
+#python3 $WORK/swift-ir/alignEM.py
+
+if [ "$DEBUG" = "1" ] ; then
+  echo "Loading valgrind module for debugging..."
+  echo "Setting PYTHONFAULTHANDLER=1 PYTHONMALLOC=malloc..."
+  module load valgrind
+  PYTHONFAULTHANDLER=1 PYTHONMALLOC=malloc catchsegv valgrind --leak-check=full --show-leak-kinds=all -s python3 $WORK/swift-ir/alignEM.py
+else
+  python3 $WORK/swift-ir/alignEM.py
+fi
