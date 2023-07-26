@@ -855,6 +855,8 @@ class OpenProject(QWidget):
     def open_project_selected(self):
         # caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
+
+        cfg.mw.set_status("Loading Project...")
         cfg.mw._is_initialized = 0
         path = self.selectionReadout.text()
         if validate_zarr_selection(path):
