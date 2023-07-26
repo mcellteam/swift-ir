@@ -138,7 +138,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                 else:
                     sec['alignment']['meta']['init_afm'] = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
 
-                tasks.append(sec)
+                tasks.append(copy.deepcopy(sec))
             else:
                 logger.info(f"Dropping task for {zpos}")
 
@@ -146,10 +146,14 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         delete_correlation_signals(dm=dm, scale=scale, start=start, end=end)
         dest = dm['data']['destination_path']
 
+        if cfg.CancelProcesses:
+            logger.warning('Canceling Processes!')
+            return
 
-        # if end == None:
-        #     end = len(dm)
-        # task_queue = TaskQueue(n_tasks=n_tasks, dest=dest, use_gui=use_gui)
+        cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks)),1)
+        t0 = time.time()
+
+        # task_queue = TaskQueue(n_tasks=len(tasks), dest=dest, use_gui=use_gui)
         # task_queue.taskPrefix = 'Computing Alignment for '
         # task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in cfg.data()[start:end]]
         # task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in dm['data']['scales'][scale]['stack'][start:end]]
@@ -157,43 +161,39 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         # task_queue.start(cpus)
         # # align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_recipe_alignment.py')
         # align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'recipe_maker.py')
-        # # ADD ALIGNMENT TASKS TO QUEUE
-        # for sec in substack:
-        #     zpos = dm_().index(sec)
+        # logger.info('adding tasks to the queue...')
+        # for sec in dm()[start:end]:
         #     if not sec['skipped']:
-        #         encoded_data = json.dumps(copy.deepcopy(sec))
+        #         # encoded_data = json.dumps(copy.deepcopy(sec))
+        #         encoded_data = json.dumps(sec)
         #         task_args = [sys.executable, align_job, encoded_data]
         #         task_queue.add_task(task_args)
-        #
-        # # task_queue.work_q.join()
-        # # cfg.mw.hud.post('Computing Alignment Using SWIM...')
+        # logger.info('collecting results...')
         # dt = task_queue.collect_results()
         # dm.t_align = dt
         # all_results = task_queue.task_dict
-
+        #
         # dm.t_align = time.time() - t0
 
 
-        if cfg.CancelProcesses:
-            logger.warning('Canceling Processes!')
-            return
 
-        cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks)),1)
 
         logger.info(f"# cpus for alignment: {cpus}")
 
         # f_recipe_maker = f'{os.path.split(os.path.realpath(__file__))[0]}/src/recipe_maker.py'
 
 
-        t0 = time.time()
+
 
         pbar = tqdm.tqdm(total=len(tasks), desc="Compute Affines", position=0, leave=True)
         def update_pbar(*a):
             pbar.update()
 
 
-        ctx = mp.get_context('forkserver')
-        with mp.Pool(processes=cpus, maxtasksperchild=1) as pool:
+        # ctx = mp.get_context('forkserver')
+        with mp.Pool(processes=cpus) as pool:
+        # with ThreadPool(processes=cpus) as pool:
+
         # with ThreadPool(processes=cpus) as pool:
             results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_pbar) for task in tasks]
             pool.close()
