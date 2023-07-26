@@ -208,15 +208,24 @@ def main():
             print_exception()
         try:
             bashrc = os.path.join(os.getenv('HOME'), '.bashrc')
+
             appendme = """alias alignem='source $WORK/swift-ir/tacc_bootstrap'"""
-            check_str = """alias alignem"""
+            check_str = """alias alignem="""
             with open(bashrc, "r") as f:
                 found = any(check_str in x for x in f)
-
-            logger.info(f'Quick launch alias found? {found}')
-
+            logger.info(f"Quick launch alias 'alignem' found? {found}")
             if not found:
                 logger.info("Adding quick launch alias 'alignem'..")
+                with open(bashrc, "a+") as f:
+                    f.write(appendme)
+
+            appendme = """alias alignemdev='source $WORK/swift-ir/tacc_develop'"""
+            check_str = """alias alignemdev="""
+            with open(bashrc, "r") as f:
+                found = any(check_str in x for x in f)
+            logger.info(f"Quick launch alias 'alignemdev' found? {found}")
+            if not found:
+                logger.info("Adding quick launch alias 'alignemdev'..")
                 with open(bashrc, "a+") as f:
                     f.write(appendme)
         except:
