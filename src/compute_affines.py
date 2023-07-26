@@ -57,6 +57,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         print(f'\n\n################ Computing Alignment ################\n')
         cfg.mw._autosave()
         # if path:
+        use_gui = 1
         if not use_gui:
             with open(path, 'r') as f:
                 try:
@@ -107,7 +108,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             zpos = dm().index(sec)
 
             if not sec['skipped'] and (zpos != first_unskipped):
-                logger.info(f'Adding task for {zpos}')
+                # logger.info(f'Adding task for {zpos}')
                 sec['alignment']['meta'] = {}
                 zpos = dm().index(sec)
                 sec['alignment']['meta']['index'] = zpos
