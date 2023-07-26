@@ -219,7 +219,7 @@ def main():
                     found = any(check_str in x for x in f)
                 logger.info(f"Quick launch alias 'alignem' found? {found}")
                 if not found:
-                    logger.info("Adding quick launch alias 'alignem'...")
+                    logger.critical("Adding quick launch alias 'alignem'...")
                     with open(bashrc, "a+") as f:
                         f.write(appendme)
                     logger.info("Sourcing bashrc...")
@@ -233,7 +233,7 @@ def main():
                     found = any(check_str in x for x in f)
                 logger.info(f"Quick launch alias 'alignemdev' found? {found}")
                 if not found:
-                    logger.info("Adding quick launch alias 'alignemdev'...")
+                    logger.critical("Adding quick launch alias 'alignemdev'...")
                     with open(bashrc, "a+") as f:
                         f.write(appendme)
                     logger.info("Sourcing bashrc...")
