@@ -143,8 +143,10 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         if cfg.CancelProcesses:
             logger.warning('Canceling Processes!')
             return
-
-        cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks)),1)
+        if scale == 'scale_1':
+            cpus = 30
+        else:
+            cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks)),1)
         t0 = time.time()
 
         # task_queue = TaskQueue(n_tasks=len(tasks), dest=dest, use_gui=use_gui)
@@ -258,8 +260,11 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
         save2file(dm=dm,name=dm.dest())
 
+
         logger.info('Sleeping for 1 seconds...')
         time.sleep(1)
+
+        cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks)), 1)
 
         if not swim_only:
             if use_gui:
