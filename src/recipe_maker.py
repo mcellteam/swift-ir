@@ -148,14 +148,15 @@ class align_recipe:
 
             if self.meta['isRefinement']:
                 '''Perform affine refinement'''
-                self.add_ingredients([align_ingredient(mode='SWIM-Grid', ww=ww_2x2, psta=psta_2x2, afm=self.init_afm, ID='Grid2x2-a', last=True)])
+                self.add_ingredients([align_ingredient(mode='SWIM-Grid', ww=ww_2x2, psta=psta_2x2, afm=self.init_afm, ID='Grid2x2-a')])
                 self.add_ingredients([align_ingredient(mode='SWIM-Grid', ww=ww_2x2, psta=psta_2x2, afm=self.afm, ID='Grid2x2-b', last=True)])
             else:
                 '''Perform affine initialization'''
                 self.add_ingredients([
                     align_ingredient(mode='SWIM-Grid', ww=ww_1x1, psta=psta_1, ID='Grid1x1'),
                     align_ingredient(mode='SWIM-Grid', ww=ww_2x2, psta=psta_2x2, ID='Grid2x2-a'),
-                    align_ingredient(mode='SWIM-Grid', ww=ww_2x2, psta=psta_2x2, ID='Grid2x2-b', last=True)])
+                    align_ingredient(mode='SWIM-Grid', ww=ww_2x2, psta=psta_2x2, ID='Grid2x2-c'),
+                    align_ingredient(mode='SWIM-Grid', ww=ww_2x2, psta=psta_2x2, ID='Grid2x2-d', last=True)])
         elif self.cur_method == 'grid-custom':
             ww_1x1 = self.alignment['grid_custom_px_1x1']
             ww_2x2 = self.alignment['grid_custom_px_2x2']
