@@ -84,6 +84,9 @@ class DataModel:
         if not quietly:
             logger.info('<<<< __init__ <<<<')
 
+    def __iter__(self):
+        for item in self['data']['scales'][self.scale]['stack'][self.zpos]:
+            yield item
 
     def __call__(self):
         return self.stack()

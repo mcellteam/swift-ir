@@ -1321,7 +1321,7 @@ class MainWindow(QMainWindow):
         # cafms_before = cfg.data.cafm_list()
 
         if end == None:
-            end = len(cfg.data)
+            end = len(cfg.data) - 1
 
         self.onAlignmentStart(scale=scale)
         self.tell("%s Affines (%s)..." % (('Initializing', 'Refining')[cfg.data.isRefinement()], cfg.data.scale_pretty(s=scale)))
@@ -5441,8 +5441,8 @@ class MainWindow(QMainWindow):
             color: #f3f6fb;
             min-width: 120px;
             height: 18px;
-            padding-left:0px;
-            padding-right:0px;
+            padding-left:2px;
+            padding-right:2px;
             font-size: 10px;
             border-width: 0px;
         }
@@ -6097,7 +6097,8 @@ class MainWindow(QMainWindow):
             # self.setdw_matches(not self.tbbMatches.isChecked())
 
         elif event.key() == Qt.Key_S:
-            self.save()
+            # self.save()
+            self._autosave()
 
         elif event.key() == Qt.Key_D:
             if self._isProjectTab():
