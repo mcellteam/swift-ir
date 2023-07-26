@@ -1795,6 +1795,8 @@ class DataModel:
         #     self.set_auto_swim_windows_to_default(current_only=True)
         if (pixels % 2) == 1:
             pixels -= 1
+            if int(pixels/2) % 2 == 1:
+                pixels -= 2
         img_w, img_h = self.image_size(s=self.scale)
         pixels = pixels
         pixels_y = (pixels / img_w) * img_h
@@ -1824,6 +1826,7 @@ class DataModel:
 
     def set_swim_2x2_custom_px(self, pixels=None):
         '''Returns the SWIM Window in pixels'''
+        caller = inspect.stack()[1].function
         # if pixels == None:
         #     self.set_auto_swim_windows_to_default(current_only=True)
         if (pixels % 2) == 1:
@@ -1834,14 +1837,17 @@ class DataModel:
         pixels_y = (pixels / img_w) * img_h
         # for s in self.scales():
 
-        logger.critical(f'setting 2x2 pixels to {pixels}, {pixels_y}')
-        logger.critical(f"{ int(self.swim_1x1_custom_px()[1] / 2 + 0.5)}")
+        logger.critical(f'[{caller}] pixels: {pixels}, pixels_y: {pixels_y}')
+        logger.critical(f"    {int(self.swim_1x1_custom_px()[1] / 2 + 0.5)}")
 
         if (2 * pixels) <= self.swim_1x1_custom_px()[0]:
             self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['grid_custom_px_2x2'] = [pixels, pixels_y]
         else:
-            self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['grid_custom_px_2x2'] = [int(self.swim_1x1_custom_px()[0] / 2 + 0.5),
-                                                          int(self.swim_1x1_custom_px()[1] / 2 + 0.5)]
+            force_pixels = [int(self.swim_1x1_custom_px()[0] / 2 + 0.5),int(self.swim_1x1_custom_px()[1] / 2 + 0.5)]
+            if (force_pixels[0] % 2) == 1:
+                force_pixels[0] -= 1
+                force_pixels[1] -= 1
+            self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['grid_custom_px_2x2'] = force_pixels
 
 
     def propagate_swim_2x2_custom_px(self, start, end):

@@ -176,13 +176,13 @@ class MAViewer(neuroglancer.Viewer):
         #NotCulpableForFlickerGlitch
         # if self.type != 'EMViewerStage':
         self._blockStateChanged = True
-        if DEV:
-            logger.critical(f'[{self.role}] [{caller_name()}]\n'
-                            f'Setting layer:\n'
-                            f'zpos={zpos},\n'
-                            f'self.index before={self.index},\n'
-                            f'voxel coords before={self.state.voxel_coordinates}\n'
-                            f'...')
+        # if DEV:
+        #     logger.critical(f'[{self.role}] [{caller_name()}]\n'
+        #                     f'Setting layer:\n'
+        #                     f'zpos={zpos},\n'
+        #                     f'self.index before={self.index},\n'
+        #                     f'voxel coords before={self.state.voxel_coordinates}\n'
+        #                     f'...')
 
         prev_index = self.index
 
@@ -318,17 +318,17 @@ class MAViewer(neuroglancer.Viewer):
             s.show_panel_borders = False
 
 
-
         self.drawSWIMwindow()
 
         if self.webengine:
             self.webengine.setUrl(QUrl(self.get_viewer_url()))
+            # self.webengine.reload()
             self.webengine.setFocus()
 
         # self.set_brightness()
         # self.set_contrast()
         # QApplication.processEvents()
-        # self.drawSWIMwindow()
+        self.drawSWIMwindow()
 
         self.initZoom()
 
