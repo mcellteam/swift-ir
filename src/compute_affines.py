@@ -286,7 +286,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             thumbnailer = Thumbnailer()
             try:
                 if cfg.USE_EXTRA_THREADING and use_gui:
-                    cfg.mw.worker = BackgroundWorker(fn=cfg.thumb.reduce_aligned(start=start, end=end, dest=dest, scale_key=scale, use_gui=use_gui))
+                    cfg.mw.worker = BackgroundWorker(fn=cfg.thumb.reduce_aligned(start=start, end=end, dest=dest, scale=scale, use_gui=use_gui))
                     cfg.mw.threadpool.start(cfg.mw.worker)
                 else:
                     thumbnailer.reduce_aligned(start=start, end=end, dest=dest, scale=scale, use_gui=use_gui)
