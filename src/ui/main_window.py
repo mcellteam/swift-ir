@@ -1035,6 +1035,8 @@ class MainWindow(QMainWindow):
         t0 = time.time()
         dt = datetime.datetime.now()
 
+        self._working = True
+
         cfg.project_tab.tn_ms0.set_no_image()
         cfg.project_tab.tn_ms1.set_no_image()
         cfg.project_tab.tn_ms2.set_no_image()
