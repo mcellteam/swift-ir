@@ -6,6 +6,7 @@ import time
 import json
 import psutil
 import logging
+import concurrent
 import zarr
 import numpy as np
 from random import shuffle
@@ -14,6 +15,7 @@ from multiprocessing.pool import ThreadPool
 from concurrent.futures import ThreadPoolExecutor
 import tqdm
 import zarr
+import neuroglancer as ng
 import imagecodecs
 import numcodecs
 numcodecs.blosc.use_threads = False
@@ -43,179 +45,177 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
 
     if cfg.CancelProcesses:
         cfg.main_window.warn('Canceling Generate Alignment')
+        return
+
+
+    tryRemoveDatFiles(dm, scale,dm.dest())
+
+    SetStackCafm(dm.get_iter(scale), scale=scale, poly_order=cfg.data.default_poly_order)
+
+    cfg.data.propagate_swim_1x1_custom_px(start=start, end=end)
+    cfg.data.propagate_swim_2x2_custom_px(start=start, end=end)
+    cfg.data.propagate_manual_swim_window_px(start=start, end=end)
+
+    od = os.path.join(dm.dest(), scale, 'img_aligned')
+    if renew_od:
+        renew_directory(directory=od)
+    # print_example_cafms(scale_dict)
+
+    # try:
+    #     bias_path = os.path.join(dm.dest(), scale_key, 'bias_data')
+    #     save_bias_analysis(layers=dm.get_iter(s=scale_key), bias_path=bias_path)
+    # except:
+    #     print_exception()
+
+    print_example_cafms(dm)
+
+    if dm.has_bb():
+        # Note: now have got new cafm's -> recalculate bounding box
+        rect = dm.set_calculate_bounding_rect(s=scale) # Only after SetStackCafm
+        logger.info(f'Bounding Box           : ON\nNew Bounding Box  : {str(rect)}')
+        logger.info(f'Corrective Polynomial  : {cfg.data.default_poly_order} (Polynomial Order: {cfg.data.default_poly_order})')
     else:
-        # if ng.is_server_running():
-        #     logger.info('Stopping Neuroglancer...')
-        #     ng.server.stop()
+        logger.info(f'Bounding Box      : OFF')
+        w, h = dm.image_size(s=scale)
+        rect = [0, 0, w, h] # might need to swap w/h for Zarr
+    logger.info(f'Aligned Size      : {rect[2:]}')
+    logger.info(f'Offsets           : {rect[0]}, {rect[1]}')
+    # args_list = makeTasksList(dm, iter(stack[start:end]), job_script, scale_key, rect) #0129-
+    if end:
+        cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(range(start,end))),1)
+    else:
+        cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(range(start, len(dm)))),1)
+    dest = dm['data']['destination_path']
+    print(f'\n\n################ Generating Aligned Images ################\n')
 
-        tryRemoveDatFiles(dm, scale,dm.dest())
+    tasks = []
+    for layer in iter(dm()[start:end]):
+        base_name = layer['filename']
+        _ , fn = os.path.split(base_name)
+        al_name = os.path.join(dest, scale, 'img_aligned', fn)
+        cafm = layer['alignment']['method_results']['cumulative_afm']
+        tasks.append([base_name, al_name, rect, cafm, 128])
 
-        Z_STRIDE = 0
+    cfg.mw.set_status('Generating aligned images. No progress bar available. Awaiting multiprocessing pool...')
+    # pbar = tqdm.tqdm(total=len(tasks), position=0, leave=True, desc="Generating Alignment")
 
-        path = os.path.split(os.path.realpath(__file__))[0]
+    # def update_pbar(*a):
+    #     pbar.update()
 
-        SetStackCafm(dm.get_iter(scale), scale=scale, poly_order=cfg.data.default_poly_order)
+    t0 = time.time()
+    # ctx = mp.get_context('forkserver')
+    # with ctx.Pool(processes=cpus) as pool:
+    # with ThreadPool(processes=cpus) as pool:
+    #     results = [pool.apply_async(func=run_mir, args=(task,), callback=update_pbar) for task in tasks]
+    #     pool.close()
+    #     [p.get() for p in results]
+    #     pool.join()
 
-        cfg.data.propagate_swim_1x1_custom_px(start=start, end=end)
-        cfg.data.propagate_swim_2x2_custom_px(start=start, end=end)
-        cfg.data.propagate_manual_swim_window_px(start=start, end=end)
+    # def run_apply_async_multiprocessing(func, argument_list, num_processes):
+    #     pool = mp.Pool(processes=num_processes)
+    #     results = [pool.apply_async(func=func, args=(*argument,), callback=update_pbar) if isinstance(argument, tuple) else pool.apply_async(
+    #         func=func, args=(argument,), callback=update_pbar) for argument in argument_list]
+    #     pool.close()
+    #     result_list = [p.get() for p in results]
+    #     return result_list
+    #
+    # run_apply_async_multiprocessing(func=run_mir, argument_list=tasks, num_processes=cpus)
+    #
+    """Non-blocking"""
+    # with ThreadPool(processes=cpus) as pool:
+    #     results = [pool.apply_async(func=run_mir, args=(task,), callback=update_pbar) for task in tasks]
+    #     pool.close()
+    #     [p.get() for p in results]
 
-        od = os.path.join(dm.dest(), scale, 'img_aligned')
-        if renew_od:
-            renew_directory(directory=od)
-        # print_example_cafms(scale_dict)
+    """Blocking"""
+    # with ThreadPool(processes=cpus) as pool:
+    with ThreadPoolExecutor(max_workers=cpus) as pool:
+        list(pool.map(run_mir, tqdm.tqdm(tasks, total=len(tasks), desc="Generate Alignment", position=0, leave=True)))
+        # for i in e.map(time.sleep, s):
+        #     print(i)
 
-        # try:
-        #     bias_path = os.path.join(dm.dest(), scale_key, 'bias_data')
-        #     save_bias_analysis(layers=dm.get_iter(s=scale_key), bias_path=bias_path)
-        # except:
-        #     print_exception()
+        # futures = [pool.submit(run_mir, task) for task in tasks]
+        # concurrent.futures.wait(futures)
 
-        print_example_cafms(dm)
-
-        if dm.has_bb():
-            # Note: now have got new cafm's -> recalculate bounding box
-            rect = dm.set_calculate_bounding_rect(s=scale) # Only after SetStackCafm
-            logger.info(f'Bounding Box           : ON\nNew Bounding Box  : {str(rect)}')
-            logger.info(f'Corrective Polynomial  : {cfg.data.default_poly_order} (Polynomial Order: {cfg.data.default_poly_order})')
-        else:
-            logger.info(f'Bounding Box      : OFF')
-            w, h = dm.image_size(s=scale)
-            rect = [0, 0, w, h] # might need to swap w/h for Zarr
-        logger.info(f'Aligned Size      : {rect[2:]}')
-        logger.info(f'Offsets           : {rect[0]}, {rect[1]}')
-        # args_list = makeTasksList(dm, iter(stack[start:end]), job_script, scale_key, rect) #0129-
-        if end:
-            cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(range(start,end))),1)
-        else:
-            cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(range(start, len(dm)))),1)
-        pbar_text = 'Generating Scale %d Alignment w/ MIR (%d Cores)...' % (scale_val, cpus)
-        dest = dm['data']['destination_path']
-
-        print(f'\n\n################ Generating Aligned Images ################\n')
-
-        tasks = []
-        for layer in iter(dm()[start:end]):
-            base_name = layer['filename']
-            _ , fn = os.path.split(base_name)
-            al_name = os.path.join(dest, scale, 'img_aligned', fn)
-            cafm = layer['alignment']['method_results']['cumulative_afm']
-            tasks.append([base_name, al_name, rect, cafm, 128])
-
-        cfg.mw.set_status('Generating aligned images. No progress bar available. Awaiting multiprocessing pool...')
-        pbar = tqdm.tqdm(total=len(tasks), position=0, leave=True, desc="Generating Alignment")
-
-        def update_pbar(*a):
-            pbar.update()
-
-        t0 = time.time()
-        # ctx = mp.get_context('forkserver')
-        # with ctx.Pool(processes=cpus) as pool:
-        # with ThreadPool(processes=cpus) as pool:
-        #     results = [pool.apply_async(func=run_mir, args=(task,), callback=update_pbar) for task in tasks]
-        #     pool.close()
-        #     [p.get() for p in results]
-        #     pool.join()
-
-        # def run_apply_async_multiprocessing(func, argument_list, num_processes):
-        #     pool = mp.Pool(processes=num_processes)
-        #     results = [pool.apply_async(func=func, args=(*argument,), callback=update_pbar) if isinstance(argument, tuple) else pool.apply_async(
-        #         func=func, args=(argument,), callback=update_pbar) for argument in argument_list]
-        #     pool.close()
-        #     result_list = [p.get() for p in results]
-        #     return result_list
-        #
-        # run_apply_async_multiprocessing(func=run_mir, argument_list=tasks, num_processes=cpus)
-        #
-        """Non-blocking"""
-        with ThreadPool(processes=cpus) as pool:
-            results = [pool.apply_async(func=run_mir, args=(task,), callback=update_pbar) for task in tasks]
-            pool.close()
-            [p.get() for p in results]
-            # pool.join()
-
-        """Blocking"""
-        # with ThreadPool(processes=cpus) as pool:
-        with ThreadPoolExecutor(max_workers=cpus) as executor:
-        # with ThreadPool(processes=cpus) as pool:
-        #     pool.map(run_mir, tqdm.tqdm(tasks, total=len(tasks), desc="Generating Alignment", position=0, leave=True))
-            executor.map(run_mir, tqdm.tqdm(tasks, total=len(tasks), desc="Generating Alignment", position=0, leave=True))
-            pool.close()
-            pool.join()
-
-        t_elapsed = time.time() - t0
-        dm.t_generate = t_elapsed
-        cfg.main_window.set_elapsed(t_elapsed, f'Generate alignment')
+    logger.info("Generate Alignment Finished")
 
 
-        dm.set_image_aligned_size()
+    t_elapsed = time.time() - t0
+    dm.t_generate = t_elapsed
+    cfg.main_window.set_elapsed(t_elapsed, f'Generate alignment')
 
     time.sleep(1)
-    dm.register_cafm_hashes(s=scale, start=start, end=end)
 
+    dm.register_cafm_hashes(s=scale, start=start, end=end)
+    dm.set_image_aligned_size()
 
     pbar_text = 'Copy-converting Scale %d Alignment To Zarr (%d Cores)...' % (scale_val, cpus)
     if cfg.CancelProcesses:
         cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
-    else:
-        if reallocate_zarr:
-            preallocate_zarr(dm=dm,
-                             name='img_aligned.zarr',
-                             group='s%d' % scale_val,
-                             dimx=rect[2],
-                             dimy=rect[3],
-                             dimz=len(dm),
-                             dtype='|u1',
-                             overwrite=True)
+        return
+    if reallocate_zarr:
+        preallocate_zarr(dm=dm,
+                         name='img_aligned.zarr',
+                         group='s%d' % scale_val,
+                         dimx=rect[2],
+                         dimy=rect[3],
+                         dimz=len(dm),
+                         dtype='|u1',
+                         overwrite=True)
 
-        # Create "staged" Zarr hierarchy and its groups
-        # dir = os.path.join(dm.dest(), scale_key)
-        # stage_path = os.path.join(dir, 'zarr_staged')
-        # store = zarr.DirectoryStore(stage_path)  # Does not create directory
-        # root = zarr.group(store=store, overwrite=False)  # <-- creates physical directory.
-        # for i in range(len(dm)):
-        #     if not os.path.exists(os.path.join(stage_path, str(i))):
-        #         logger.info('creating group: %s' %str(i))
-        #         root.create_group(str(i))
+    # Create "staged" Zarr hierarchy and its groups
+    # dir = os.path.join(dm.dest(), scale_key)
+    # stage_path = os.path.join(dir, 'zarr_staged')
+    # store = zarr.DirectoryStore(stage_path)  # Does not create directory
+    # root = zarr.group(store=store, overwrite=False)  # <-- creates physical directory.
+    # for i in range(len(dm)):
+    #     if not os.path.exists(os.path.join(stage_path, str(i))):
+    #         logger.info('creating group: %s' %str(i))
+    #         root.create_group(str(i))
 
-        print(f'\n\n################ Copy-convert Alignment To Zarr ################\n')
+    print(f'\n\n################ Copy-convert Alignment To Zarr ################\n')
 
-        tasks = []
-        for i in range(start,end):
-            _ , fn = os.path.split(dm()[i]['filename'])
-            al_name = os.path.join(dm.dest(), scale, 'img_aligned', fn)
-            zarr_group = os.path.join(dm.dest(), 'img_aligned.zarr', 's%d' % scale_val)
-            task = [i, al_name, zarr_group]
-            tasks.append(task)
-        # shuffle(tasks)
-        pbar = tqdm.tqdm(total=len(tasks), position=0, leave=True, desc="Converting Alignment to Zarr")
-        t0 = time.time()
-        def update_pbar(*a):
-            pbar.update()
-        # with ctx.Pool(processes=cpus) as pool:
-        """Non-blocking"""
-        # with ThreadPool(processes=cpus) as pool:
-        #     results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_pbar) for task in tasks]
-        #     pool.close()
-        #     [p.get() for p in results]
-        #     # pool.join()
-        """Blocking"""
-        with ThreadPool(processes=cpus) as pool:
-            pool.map(convert_zarr, tqdm.tqdm(tasks, total=len(tasks), desc="Converting Alignment to Zarr", position=0, leave=True))
-            pool.close()
-            pool.join()
+    tasks = []
+    for i in range(start,end):
+        _ , fn = os.path.split(dm()[i]['filename'])
+        al_name = os.path.join(dm.dest(), scale, 'img_aligned', fn)
+        zarr_group = os.path.join(dm.dest(), 'img_aligned.zarr', 's%d' % scale_val)
+        task = [i, al_name, zarr_group]
+        tasks.append(task)
+    # shuffle(tasks)
 
-        _it = 0
-        while (count_aligned_files(dm.dest(), scale) < len(dm)) or _it > 4:
-            # logger.info('Sleeping for 1 second...')
-            time.sleep(1)
-            _it += 1
-        t_elapsed = time.time() - t0
-        dm.t_convert_zarr = t_elapsed
-        cfg.main_window.set_elapsed(t_elapsed, f'Copy-convert alignment to Zarr')
+
+    t0 = time.time()
+
+    if ng.is_server_running():
+        logger.info('Stopping Neuroglancer...')
+        ng.server.stop()
+
+    # with ctx.Pool(processes=cpus) as pool:
+    """Non-blocking"""
+    # with ThreadPool(processes=cpus) as pool:
+    #     results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_pbar) for task in tasks]
+    #     pool.close()
+    #     [p.get() for p in results]
+    #     # pool.join()
+    """Blocking"""
+    # with ThreadPool(processes=cpus) as pool:
+    with ThreadPoolExecutor(max_workers=cpus) as executor:
+        list(executor.map(convert_zarr, tqdm.tqdm(tasks, total=len(tasks), desc="Convert Alignment to Zarr", position=0, leave=True)))
+
+    logger.info("Convert Alignment to Zarr Finished")
+
+    _it = 0
+    while (count_aligned_files(dm.dest(), scale) < len(dm)) or _it > 4:
+        # logger.info('Sleeping for 1 second...')
         time.sleep(1)
+        _it += 1
+    t_elapsed = time.time() - t0
+    dm.t_convert_zarr = t_elapsed
+    cfg.main_window.set_elapsed(t_elapsed, f'Copy-convert alignment to Zarr')
+    time.sleep(1)
 
-        cfg.main_window._autosave(silently=True) #0722+
+    cfg.main_window._autosave(silently=True) #0722+
 
 
 # def update_pbar():
@@ -227,7 +227,6 @@ def imread(filename):
     with open(filename, 'rb') as fh:
         data = fh.read()
     return imagecodecs.tiff_decode(data)
-
 
 
 def convert_zarr(task):
@@ -316,16 +315,12 @@ def tryRemoveDatFiles(dm, scale, path):
 
 def print_example_cafms(dm):
     try:
-        # print('-----------------------------------')
         print('First Three CAFMs:')
         print(str(dm.cafm(l=0)))
-        print(str(dm.cafm(l=1)))
-        print(str(dm.cafm(l=2)))
-        print('Last Three CAFMs:')
-        print(str(dm.cafm(l=len(cfg.data) - 3)))
-        print(str(dm.cafm(l=len(cfg.data) - 2)))
-        print(str(dm.cafm(l=len(cfg.data - 1))))
-        # print('-----------------------------------')
+        if len(dm) > 1:
+            print(str(dm.cafm(l=1)))
+        if len(dm) > 2:
+            print(str(dm.cafm(l=2)))
     except:
         pass
 

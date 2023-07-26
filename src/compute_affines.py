@@ -19,6 +19,7 @@ from datetime import datetime
 from pathlib import Path
 from multiprocessing import Pool
 from multiprocessing.pool import ThreadPool
+import concurrent
 from concurrent.futures import ThreadPoolExecutor
 import multiprocessing as mp
 import subprocess as sp
@@ -54,10 +55,6 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         cfg.mw.warn('Canceling Compute Affine Tasks')
     else:
         print(f'\n\n################ Computing Alignment ################\n')
-        logger.info(f'Preparing Alignment Tasks...')
-        logger.info(f'path: {path}')
-        logger.critical(f"end (before): {end}")
-
         cfg.mw._autosave()
         # if path:
         if not use_gui:
@@ -68,10 +65,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                     logger.warning(e)
                     return
             dm = DataModel(data)
-            logger.info(f'dm.dest(): {dm.dest()}')
             dm.set_defaults()
-
-        logger.critical(f"end (after): {end}")
 
         scratchpath = os.path.join(dm.dest(), 'logs', 'scratch.log')
         if os.path.exists(scratchpath):
@@ -98,48 +92,62 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         if rename_switch:
             rename_layers(use_scale=scale, al_dict=alignment_dict)
 
-        dm_ = copy.deepcopy(dm) # Copy the datamodel previewmodel for this datamodel to add local fields for SWiFT
-        substack = dm_()[start:end]
+        # substack = copy.deepcopy(dm()[start:end])
         # substack = dm()[start:end]
         n_tasks = n_skips = 0
-        for layer in substack: # Operating on the Copy!
-            if not layer['skipped']: n_tasks +=1
-            else:                    n_skips +=1
-        logger.info('# Sections (total)         : %d' % len(dm))
-        logger.info('# Tasks (excluding skips)  : %d' % n_tasks)
-        logger.info('# Skipped Layers           : %d' % n_skips)
+        for layer in dm()[start:end]: # Operating on the Copy!
+            if not layer['skipped']:
+                n_tasks +=1
+            else:
+                n_skips +=1
+
+        first_unskipped = cfg.data.first_unskipped(s=scale)
+        # logger.info('# Sections (total)         : %d' % len(dm))
+        # logger.info('# Tasks (excluding skips)  : %d' % n_tasks)
+        # logger.info('# Skipped Layers           : %d' % n_skips)
+        # logger.info('First Unskipped            : %d' % first_unskipped)
+
+
 
         scale_val = get_scale_val(scale)
-        for sec in substack:
+        tasks = []
+        for sec in dm()[start:end]:
+            # zpos = sec['alignment']['meta']['index']
             zpos = dm().index(sec)
 
-            dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta'] = {}
-            dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['index'] = zpos
-            dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['scale_val'] = scale_val
-            dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['scale_key'] = scale
-            dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['isRefinement'] = dm['data']['scales'][scale]['isRefinement']
-            dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['destination_path'] = dm['data']['destination_path']
-            dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['defaults'] = dm['data']['defaults']
-            dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['image_src_size'] = dm['data']['scales'][scale]['image_src_size']
-            dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['skipped'] = dm['data']['scales'][scale]['stack'][zpos]['skipped']
-            dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['dev_mode'] = cfg.DEV_MODE
-            dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['recipe_logging'] = cfg.RECIPE_LOGGING
-            dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['fn_transforming'] = dm['data']['scales'][scale]['stack'][zpos]['filename']
-            dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['fn_reference'] = dm['data']['scales'][scale]['stack'][zpos]['reference']
-            dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['current_method'] = dm['data']['scales'][scale]['stack'][zpos]['current_method']
+            if not sec['skipped'] and (zpos != first_unskipped):
+                sec['alignment']['meta'] = {}
+                zpos = dm().index(sec)
+                sec['alignment']['meta']['index'] = zpos
+                sec['alignment']['meta']['scale_val'] = scale_val
+                sec['alignment']['meta']['scale_key'] = scale
+                sec['alignment']['meta']['isRefinement'] = dm['data']['scales'][scale]['isRefinement']
+                sec['alignment']['meta']['destination_path'] = dm['data']['destination_path']
+                sec['alignment']['meta']['defaults'] = dm['data']['defaults']
+                sec['alignment']['meta']['image_src_size'] = dm['data']['scales'][scale]['image_src_size']
+                sec['alignment']['meta']['skipped'] = sec['skipped']
+                sec['alignment']['meta']['dev_mode'] = cfg.DEV_MODE
+                sec['alignment']['meta']['recipe_logging'] = cfg.RECIPE_LOGGING
+                sec['alignment']['meta']['fn_transforming'] = sec['filename']
+                sec['alignment']['meta']['fn_reference'] = sec['reference']
+                sec['alignment']['meta']['current_method'] = sec['current_method']
 
-            if dm['data']['scales'][scale]['isRefinement']:
-                scale_prev = dm.scales()[dm.scales().index(scale) + 1]
-                prev_scale_val = int(scale_prev[len('scale_'):])
-                upscale = (float(prev_scale_val) / float(scale_val))
-                init_afm = np.array(copy.deepcopy(dm['data']['scales'][scale_prev]['stack'][zpos]['alignment']['method_results']['affine_matrix']))
-                # prev_method = scale_prev_dict[zpos]['current_method']
-                # prev_afm = copy.deepcopy(np.array(scale_prev_dict[zpos]['alignment_history'][prev_method]['affine_matrix']))
-                init_afm[0][2] *= upscale
-                init_afm[1][2] *= upscale
-                dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['init_afm'] = init_afm.tolist()
-            else:
-                dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['init_afm'] = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
+                if dm['data']['scales'][scale]['isRefinement']:
+                    scale_prev = dm.scales()[dm.scales().index(scale) + 1]
+                    prev_scale_val = int(scale_prev[len('scale_'):])
+                    upscale = (float(prev_scale_val) / float(scale_val))
+                    init_afm = np.array(copy.deepcopy(dm['data']['scales'][scale_prev]['stack'][zpos]['alignment']['method_results']['affine_matrix']))
+                    # prev_method = scale_prev_dict[zpos]['current_method']
+                    # prev_afm = copy.deepcopy(np.array(scale_prev_dict[zpos]['alignment_history'][prev_method]['affine_matrix']))
+                    init_afm[0][2] *= upscale
+                    init_afm[1][2] *= upscale
+                    sec['alignment']['meta']['init_afm'] = init_afm.tolist()
+                else:
+                    sec['alignment']['meta']['init_afm'] = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
+
+                tasks.append(sec)
+            # else:
+            #     logger.info(f"DROPPING TASK FOR {zpos}")
 
 
         delete_correlation_signals(dm=dm, scale=scale, start=start, end=end)
@@ -160,7 +168,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         # for sec in substack:
         #     zpos = dm_().index(sec)
         #     if not sec['skipped']:
-        #         encoded_data = json.dumps(copy.deepcopy(dm['data']['scales'][scale]['stack'][zpos]))
+        #         encoded_data = json.dumps(copy.deepcopy(sec))
         #         task_args = [sys.executable, align_job, encoded_data]
         #         task_queue.add_task(task_args)
         #
@@ -178,62 +186,37 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             return
 
         cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, n_tasks),1)
-        # if scale_val == 1:
-        #     cpus -= 20
+
         logger.info(f"# cpus for alignment: {cpus}")
 
-        f_recipe_maker = f'{os.path.split(os.path.realpath(__file__))[0]}/src/recipe_maker.py'
+        # f_recipe_maker = f'{os.path.split(os.path.realpath(__file__))[0]}/src/recipe_maker.py'
 
-        tasks = []
-        first_unskipped = cfg.data.first_unskipped(s=scale)
 
-        logger.critical(f"first_unskipped={first_unskipped}")
-        logger.critical(f"cfg.data.skips_list()={cfg.data.skips_list()}")
-        logger.critical(f"start={start}")
-        logger.critical(f"end={end}")
-        for sec in substack:
-            zpos = dm_().index(sec)
-            logger.critical(f"ZPOS={zpos}")
-            if not sec['skipped']:
-                if not first_unskipped:
-
-                    # tasks.append(copy.deepcopy(dm['data']['scales'][scale]['stack'][zpos]))
-                    # tasks.append([sys.executable, f_recipe_maker, copy.deepcopy(dm['data']['scales'][scale]['stack'][zpos])])
-                    tasks.append(dm['data']['scales'][scale]['stack'][zpos])
-
-                    logger.info(f"{dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['index']}")
         t0 = time.time()
 
         pbar = tqdm.tqdm(total=len(tasks), position=0, leave=True)
-        pbar.set_description("Computing Affines")
+        pbar.set_description("Compute Affines")
         def update_pbar(*a):
             pbar.update()
 
-        apply_results = []
 
-        # PRETTY SURE THIS IS THE BEST/FASTEST/LEAST MEMORY CONSUMPTION/REPORTS ERRORS BACK SOONEST
-        # with ThreadPool(processes=cpus) as pool:
         ctx = mp.get_context('forkserver')
         # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
         with ctx.Pool(processes=cpus) as pool:
-            # results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_pbar) for task in tasks]
-            for task in tasks:
-                apply_results.append(pool.apply_async(func=run_recipe, args=(task,), callback=update_pbar))
-                # pool.close()
-                # pool.join()
+            results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_pbar) for task in tasks]
             pool.close()
-            all_results = [p.get() for p in apply_results]
+            all_results = [p.get() for p in results]
+            # pool.join()
+        # with ThreadPoolExecutor(max_workers=cpus) as pool:
+        #     # all_results = list(pool.map(run_recipe, tqdm.tqdm(tasks, total=len(tasks), desc="Compute Affines", position=0, leave=True)))
+        #
+        #     futures = [pool.submit(run_recipe, task) for task in tqdm.tqdm(tasks, total=len(tasks), desc="Compute Affines", position=0, leave=True)]
+        #     concurrent.futures.wait(futures)
 
-            pool.join() #0725+
+        logger.info("Compute Affines Finished")
 
         # with ThreadPoolExecutor(max_workers=int(4)) as executor:
         #     all_results = list(tqdm.tqdm(executor.map(run_recipe, tasks), total=len(tasks), position=0, leave=True))
-
-        # with mp.Pool(processes=cpus) as pool:
-        #     # for task in tqdm.tqdm(tasks, range(10)), total=len(tasks)):
-        #     #     print(f'Got result: {result}', flush=True)
-        #     all_results = pool.map(tasks)
-
 
         t_elapsed = time.time() - t0
         dm.t_align = t_elapsed
