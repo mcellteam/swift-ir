@@ -35,6 +35,10 @@ class ProjectTable(QWidget):
         self.INITIAL_ROW_HEIGHT = 80
         self.image_col_width = self.INITIAL_ROW_HEIGHT
         self.data = None
+        self._ms0 = []
+        self._ms1 = []
+        self._ms2 = []
+        self._ms3 = []
         self.installEventFilter(self)
         self.table = QTableWidget()
         self.table.verticalHeader().setVisible(False)
@@ -159,7 +163,10 @@ class ProjectTable(QWidget):
     def initTableData(self):
         self.btn_splash_load_table.setText("Loading...")
 
-
+        self._ms0 = [None] * len(cfg.data)
+        self._ms1 = [None] * len(cfg.data)
+        self._ms2 = [None] * len(cfg.data)
+        self._ms3 = [None] * len(cfg.data)
 
 
         self.wTable.hide()
@@ -345,7 +352,11 @@ class ProjectTable(QWidget):
         # for j, item in enumerate(row):
 
         self.all_notes = []
+
+        self._ms = []
+
         for col in range(0, len(row_data)):
+
             if col == 0:
                 # self.table.setItem(row, col, QTableWidgetItem('\n'.join(textwrap.wrap(str(row_data[0]), 20))))
                 # self.table.setCellWidget(row, col, tn)
@@ -438,6 +449,7 @@ class ProjectTable(QWidget):
                         assert snr_4x[0] > 0.0
 
                     tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x.pop(0), name='ms0')
+                    self._ms0[row] = tn
                     if cfg.data.skipped(l=row):
                         tn.set_no_image()
                     self.table.setCellWidget(row, col, tn)
@@ -453,6 +465,7 @@ class ProjectTable(QWidget):
                     else:
                         assert snr_4x[0] > 0.0
                     tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x.pop(0), name='ms1')
+                    self._ms1[row] = tn
                     if cfg.data.skipped(l=row):
                         tn.set_no_image()
                     self.table.setCellWidget(row, col, tn)
@@ -467,6 +480,7 @@ class ProjectTable(QWidget):
                     else:
                         assert snr_4x[0] > 0.0
                     tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x.pop(0), name='ms2')
+                    self._ms2[row] = tn
                     if cfg.data.skipped(l=row):
                         tn.set_no_image()
                     self.table.setCellWidget(row, col, tn)
@@ -481,6 +495,7 @@ class ProjectTable(QWidget):
                     else:
                         assert snr_4x[0] > 0.0
                     tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x.pop(0), name='ms3')
+                    self._ms3[row] = tn
                     if cfg.data.skipped(l=row):
                         tn.set_no_image()
                     self.table.setCellWidget(row, col, tn)
@@ -522,7 +537,7 @@ class ProjectTable(QWidget):
 
     def setNotes(self, index, txt):
         caller = inspect.stack()[1].function
-        logger.info(f"caller = {caller}\n"
+        logger.info(f"\ncaller = {caller}\n"
                     f"index  = {index}\n"
                     f"txt    = {txt}")
         cfg.data.save_notes(text=txt, l=index)

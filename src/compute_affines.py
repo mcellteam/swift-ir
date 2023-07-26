@@ -56,7 +56,9 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         print(f'\n\n################ Computing Alignment ################\n')
         logger.info(f'Preparing Alignment Tasks...')
         logger.info(f'path: {path}')
+        logger.critical(f"end (before): {end}")
 
+        cfg.mw._autosave()
         # if path:
         if not use_gui:
             with open(path, 'r') as f:
@@ -65,20 +67,11 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                 except Exception as e:
                     logger.warning(e)
                     return
-            USE_FILE_IO = 0
-            DEV_MODE = False
-            TACC_MAX_CPUS = 122
             dm = DataModel(data)
             logger.info(f'dm.dest(): {dm.dest()}')
             dm.set_defaults()
-        else:
-            USE_FILE_IO = cfg.USE_FILE_IO
-            DEV_MODE = cfg.DEV_MODE
-            TACC_MAX_CPUS = cfg.TACC_MAX_CPUS
-            # dm = cfg.data
 
-        if end == None:
-            end = dm.count
+        logger.critical(f"end (after): {end}")
 
         scratchpath = os.path.join(dm.dest(), 'logs', 'scratch.log')
         if os.path.exists(scratchpath):
@@ -151,7 +144,6 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
         delete_correlation_signals(dm=dm, scale=scale, start=start, end=end)
         dest = dm['data']['destination_path']
-        cpus = min(psutil.cpu_count(logical=False), TACC_MAX_CPUS, n_tasks)
 
 
         # if end == None:
@@ -178,9 +170,6 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         # dm.t_align = dt
         # all_results = task_queue.task_dict
 
-
-
-
         # dm.t_align = time.time() - t0
 
 
@@ -188,7 +177,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             logger.warning('Canceling Processes!')
             return
 
-        cpus = max(min(psutil.cpu_count(logical=False), TACC_MAX_CPUS, n_tasks),1)
+        cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, n_tasks),1)
         # if scale_val == 1:
         #     cpus -= 20
         logger.info(f"# cpus for alignment: {cpus}")
@@ -196,12 +185,23 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         f_recipe_maker = f'{os.path.split(os.path.realpath(__file__))[0]}/src/recipe_maker.py'
 
         tasks = []
+        first_unskipped = cfg.data.first_unskipped(s=scale)
+
+        logger.critical(f"first_unskipped={first_unskipped}")
+        logger.critical(f"cfg.data.skips_list()={cfg.data.skips_list()}")
+        logger.critical(f"start={start}")
+        logger.critical(f"end={end}")
         for sec in substack:
             zpos = dm_().index(sec)
+            logger.critical(f"ZPOS={zpos}")
             if not sec['skipped']:
-                # tasks.append(copy.deepcopy(dm['data']['scales'][scale]['stack'][zpos]))
-                # tasks.append([sys.executable, f_recipe_maker, copy.deepcopy(dm['data']['scales'][scale]['stack'][zpos])])
-                tasks.append(dm['data']['scales'][scale]['stack'][zpos])
+                if not first_unskipped:
+
+                    # tasks.append(copy.deepcopy(dm['data']['scales'][scale]['stack'][zpos]))
+                    # tasks.append([sys.executable, f_recipe_maker, copy.deepcopy(dm['data']['scales'][scale]['stack'][zpos])])
+                    tasks.append(dm['data']['scales'][scale]['stack'][zpos])
+
+                    logger.info(f"{dm['data']['scales'][scale]['stack'][zpos]['alignment']['meta']['index']}")
         t0 = time.time()
 
         pbar = tqdm.tqdm(total=len(tasks), position=0, leave=True)
@@ -223,6 +223,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                 # pool.join()
             pool.close()
             all_results = [p.get() for p in apply_results]
+
+            pool.join() #0725+
 
         # with ThreadPoolExecutor(max_workers=int(4)) as executor:
         #     all_results = list(tqdm.tqdm(executor.map(run_recipe, tasks), total=len(tasks), position=0, leave=True))
@@ -283,8 +285,6 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
 
         save2file(dm=dm,name=dm.dest())
-
-        cpus = max(min(psutil.cpu_count(logical=False), TACC_MAX_CPUS, n_tasks),1)
 
         logger.info('Sleeping for 1 seconds...')
         time.sleep(1)

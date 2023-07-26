@@ -73,10 +73,6 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
 
         print_example_cafms(dm)
 
-        if end == None:
-            end = len(dm)
-        n_tasks = len(list(range(start,end)))
-
         if dm.has_bb():
             # Note: now have got new cafm's -> recalculate bounding box
             rect = dm.set_calculate_bounding_rect(s=scale) # Only after SetStackCafm
@@ -131,11 +127,21 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
         #
         # run_apply_async_multiprocessing(func=run_mir, argument_list=tasks, num_processes=cpus)
         #
+        """Non-blocking"""
         with ThreadPool(processes=cpus) as pool:
             results = [pool.apply_async(func=run_mir, args=(task,), callback=update_pbar) for task in tasks]
             pool.close()
             [p.get() for p in results]
             # pool.join()
+
+        """Blocking"""
+        # with ThreadPool(processes=cpus) as pool:
+        with ThreadPoolExecutor(max_workers=cpus) as executor:
+        # with ThreadPool(processes=cpus) as pool:
+        #     pool.map(run_mir, tqdm.tqdm(tasks, total=len(tasks), desc="Generating Alignment", position=0, leave=True))
+            executor.map(run_mir, tqdm.tqdm(tasks, total=len(tasks), desc="Generating Alignment", position=0, leave=True))
+            pool.close()
+            pool.join()
 
         t_elapsed = time.time() - t0
         dm.t_generate = t_elapsed
@@ -187,11 +193,17 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
         def update_pbar(*a):
             pbar.update()
         # with ctx.Pool(processes=cpus) as pool:
+        """Non-blocking"""
+        # with ThreadPool(processes=cpus) as pool:
+        #     results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_pbar) for task in tasks]
+        #     pool.close()
+        #     [p.get() for p in results]
+        #     # pool.join()
+        """Blocking"""
         with ThreadPool(processes=cpus) as pool:
-            results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_pbar) for task in tasks]
+            pool.map(convert_zarr, tqdm.tqdm(tasks, total=len(tasks), desc="Converting Alignment to Zarr", position=0, leave=True))
             pool.close()
-            [p.get() for p in results]
-            # pool.join()
+            pool.join()
 
         _it = 0
         while (count_aligned_files(dm.dest(), scale) < len(dm)) or _it > 4:

@@ -756,7 +756,8 @@ class CorrSignalThumbnail(QLabel):
                         else:
                             qp.drawText(loc, '%.1f' %self.snr)
                 return
-            except ZeroDivisionError:
+            # except ZeroDivisionError:
+            except:
                 # logger.warning('Cannot divide by zero')
                 print_exception()
         super().paintEvent(event)

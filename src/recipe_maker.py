@@ -416,8 +416,7 @@ class align_ingredient:
                 args.append("ww_%s" % self.ww)
             else:
                 args.append("ww_%sx%s" % (self.ww[0], self.ww[1]))
-            # args.append("ww_%s" % self.ww[0])
-            args.append("-v")
+            # args.append("-v")
             # args.append('ww_' + self.swim_ww_arg)
             if self.alignment['swim_settings']['clobber_fixed_noise']:
                 args.append('-f%d' % self.alignment['swim_settings']['clobber_fixed_noise_px'])
@@ -664,7 +663,6 @@ def run_command(cmd, arg_list=None, cmd_input=None, extra='', scale=''):
     nl = '\n'
     # Note: decode bytes if universal_newlines=False in Popen (cmd_stdout.decode('utf-8'))
     cmd_proc = sp.Popen(cmd_arg_list, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
-    # cmd_stdout, cmd_stderr = cmd_proc.communicate(cmd_input)
     cmd_stdout, cmd_stderr = cmd_proc.communicate(cmd_input)
     RMlogger = logging.getLogger('recipemaker')
     RMlogger.critical(f"\n========== Run Command [PID: {cmd_proc.pid}] ==========\n"
