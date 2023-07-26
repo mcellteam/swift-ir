@@ -737,9 +737,6 @@ class OpenProject(QWidget):
                 if make_thumbnails:
                     logger.info('Generating Source Thumbnails...')
                     thumbnailer = Thumbnailer()
-                    worker = BackgroundWorker(fn=thumbnailer.reduce_main(dest=dm.dest()))
-                    cfg.mw.threadpool.start(worker)
-                    thumbnailer = Thumbnailer()
                     cfg.data.t_thumbs = thumbnailer.reduce_main(dest=dm.dest())
             except:
                 print_exception()

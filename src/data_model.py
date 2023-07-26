@@ -863,6 +863,7 @@ class DataModel:
         for s in self.scales():
             logger.info('Setting defaults for %s' % self.scale_pretty(s=s))
             scale = self._data['data']['scales'][s]
+            scale.setdefault('stack', []) #0725+
             scale.setdefault('use_bounding_rect', cfg.DEFAULT_BOUNDING_BOX)
             scale.setdefault('has_bounding_rect', cfg.DEFAULT_BOUNDING_BOX) #0512+
             scale.setdefault('resolution', (cfg.DEFAULT_RESZ, cfg.DEFAULT_RESY, cfg.DEFAULT_RESX))
@@ -947,6 +948,10 @@ class DataModel:
                 #         scale_prev_dict[i]['alignment_history'].setdefault[prev_method]['affine_matrix']
 
                 layer.setdefault('alignment', {})
+                # layer['alignment'].setdefault('meta', {})
+                layer['alignment']['meta'] = {} #<-- might be a good idea, to recreate this from scratch every time
+                # layer['alignment']['meta'].setdefault('index', i)
+                layer['alignment']['meta']['index'] = i
                 layer['alignment'].setdefault('dev_mode', cfg.DEV_MODE)
                 layer['alignment'].setdefault('swim_settings', {})
                 # logger.critical(f"{os.path.join(self.dest(), s, 'tmp')}")

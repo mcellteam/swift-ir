@@ -412,7 +412,7 @@ class align_ingredient:
             self.ms_names.append(b_arg)
 
             args = ArgString(sep=' ')
-            if len(self.ww) == 1:
+            if type(self.ww) == float or type(self.ww) == int:
                 args.append("ww_%s" % self.ww)
             else:
                 args.append("ww_%sx%s" % (self.ww[0], self.ww[1]))
@@ -471,7 +471,7 @@ class align_ingredient:
         self.multi_swim_arg_str = self.get_swim_args()
         SWIMlogger.critical(f'Multi-SWIM Argument String:\n{self.multi_swim_arg_str()}')
 
-        if len(self.ww) == 1:
+        if type(self.ww) == float or type(self.ww) == int:
             # args.append(str(int(self.ww)))
             arg = "%s" % self.ww
         else:
