@@ -12,7 +12,7 @@ from functools import cache
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QCheckBox, QLabel, QAbstractItemView, \
     QTableWidget, QTableWidgetItem, QSlider, QSizePolicy
 from qtpy.QtCore import Qt, QRect, QRectF, QSize, QPoint, QEvent, QPointF, QSizeF, Signal
-from qtpy.QtGui import QPixmap, QPainter, QColor, QBrush, QFont, QPen, QMouseEvent
+from qtpy.QtGui import QPixmap, QPainter, QColor, QBrush, QFont, QPen, QMouseEvent, QImage
 from src.helpers import absFilePaths
 from src.helpers import print_exception, get_appdir
 from src.funcs_image import ImageSize, ImageIOSize
@@ -96,7 +96,12 @@ class ThumbnailFast(QLabel):
         self.setPixmap(pixmap)
 
         if self.path:
-            self.setPixmap(QPixmap(self.path))
+            image = QImage(path)
+            # self.setPixmap(QPixmap.fromImage(image).scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            self.setPixmap(QPixmap.fromImage(image))
+
+
+            # self.setPixmap(QPixmap(self.path))
         else:
             self.set_no_image()
 
@@ -225,7 +230,9 @@ class ThumbnailFast(QLabel):
 
                 qp = QPainter(self)
 
+                # pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
                 self.r = QRect(0, 0, pm.width(), pm.height())
                 self.r.moveCenter(self.rect().center())
                 qp.drawPixmap(self.r, pm)
@@ -650,7 +657,11 @@ class CorrSignalThumbnail(QLabel):
         pixmap.fill(QColor('#dadada'))  # fill the map with black
         self.setPixmap(pixmap)
         if self.path:
-            self.setPixmap(QPixmap(self.path))
+            image = QImage(path)
+            # self.setPixmap(QPixmap.fromImage(image).scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            self.setPixmap(QPixmap.fromImage(image))
+
+            # self.setPixmap(QPixmap(self.path))
         else:
             # pixmap = QPixmap(16, 16)
             # pixmap.fill(QColor('#141414'))  # fill the map with black
@@ -686,6 +697,7 @@ class CorrSignalThumbnail(QLabel):
                 # if originalRatio != currentRatio:
 
                 qp = QPainter(self)
+                # pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
                 self.r = QRect(0, 0, pm.width(), pm.height())

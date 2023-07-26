@@ -47,6 +47,7 @@ logger = logging.getLogger(__name__)
 DEV = is_joel()
 
 class ProjectTab(QWidget):
+    loadTable = Signal()
 
     def __init__(self,
                  parent,
@@ -3289,6 +3290,10 @@ class ProjectTab(QWidget):
     #     else:
     #         logger.warning('cfg.emViewer.state.cross_section_scale does not exist!')
 
+    @Slot()
+    def async_table_load(self):
+        self.loadTable.emit()
+
     def initUI_table(self):
         '''Layer View Widget'''
         logger.info('')
@@ -3308,6 +3313,8 @@ class ProjectTab(QWidget):
         self.table_container.setLayout(hbl)
         self.table_container.setStyleSheet("background-color: #222222; color: #f3f6fb;")
         # self.project_table.initTableData()
+
+        self.project_table.initTableData()
 
     def updateTreeWidget(self):
         # cfg.mw.statusBar.showMessage('Loading data into tree view...')
