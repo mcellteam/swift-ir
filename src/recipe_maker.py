@@ -412,10 +412,14 @@ class align_ingredient:
             self.ms_names.append(b_arg)
 
             args = ArgString(sep=' ')
+            # if type(self.ww) == float or type(self.ww) == int:
+            #     args.append("ww_%s" % self.ww)
+            # else:
+            #     args.append("ww_%dx%d" % (self.ww[0], self.ww[1]))
             if type(self.ww) == float or type(self.ww) == int:
-                args.append("ww_%s" % self.ww)
+                args.append("%d" % self.ww)
             else:
-                args.append("ww_%sx%s" % (self.ww[0], self.ww[1]))
+                args.append("%dx%d" % (self.ww[0], self.ww[1]))
             # args.append("-v")
             # args.append('ww_' + self.swim_ww_arg)
             if self.alignment['swim_settings']['clobber_fixed_noise']:
@@ -473,10 +477,10 @@ class align_ingredient:
 
         if type(self.ww) == float or type(self.ww) == int:
             # args.append(str(int(self.ww)))
-            arg = "%s" % self.ww
+            arg = "%d" % self.ww
         else:
             # args.append(str(int(self.ww[0])) + "x" + str(int(self.ww[1])))
-            arg = "%sx%s" % (self.ww[0], self.ww[1])
+            arg = "%dx%d" % (self.ww[0], self.ww[1])
         # arg = "%sx%s" % tuple(self.ww)
 
         o = run_command(
