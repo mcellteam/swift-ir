@@ -62,6 +62,7 @@ class ProjectTab(QWidget):
         self.setUpdatesEnabled(True)
         # self.webengine = QWebEngineView()
         self.webengine = WebEngine(ID='emViewer')
+        self.webengine.setStyleSheet("background-color: #000000;")
         self.webengine.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         # self.webengine.setFocusPolicy(Qt.FocusPolicy.WheelFocus)
         self.webengine.loadFinished.connect(lambda: print('Web engine load finished!'))
@@ -143,6 +144,7 @@ class ProjectTab(QWidget):
             self.updateLowest8widget()
             self.updateDetailsPanel()
             self.updateTimingsWidget()
+            self.update_MA_list_widgets() #0726+
 
         elif index == 2:
             self.project_table.table.selectRow(cfg.data.zpos)
@@ -206,11 +208,11 @@ class ProjectTab(QWidget):
     def initNeuroglancer(self, init_all=False):
         caller = inspect.stack()[1].function
         if cfg.mw._is_initialized == 0:
-            logger.warning(f"[{caller}] UNABLE TO INITIALIZE NEUROGLANCER AT THIS TIME")
+            logger.info(f"[{caller}] UNABLE TO INITIALIZE NEUROGLANCER AT THIS TIME")
             return
 
         if cfg.mw._working:
-            logger.warning(f"[{caller}] UNABLE TO INITIALIZE NEUROGLANCER AT THIS TIME... BUSY WORKING!")
+            logger.info(f"[{caller}] UNABLE TO INITIALIZE NEUROGLANCER AT THIS TIME... BUSY WORKING!")
             return
 
         # logger.info('')
@@ -220,8 +222,8 @@ class ProjectTab(QWidget):
         if DEV:
             logger.critical(f"[DEV][{caller_name()}] Initializing Neuroglancer...")
         if cfg.data['state']['current_tab'] == 1 or init_all:
-            self.MA_webengine_ref.setUrl(QUrl("http://localhost:8888/"))
-            self.MA_webengine_base.setUrl(QUrl("http://localhost:8888/"))
+            # self.MA_webengine_ref.setUrl(QUrl("http://localhost:8888/"))
+            # self.MA_webengine_base.setUrl(QUrl("http://localhost:8888/"))
             self.refViewer = cfg.refViewer = MAViewer(role='ref', webengine=self.MA_webengine_ref)
             self.baseViewer = cfg.baseViewer = MAViewer(role='base', webengine=self.MA_webengine_base)
 
@@ -419,8 +421,12 @@ class ProjectTab(QWidget):
         self.ZdisplaySliderAndLabel.addWidget(vlab)
 
         self.MA_webengine_ref = WebEngine(ID='ref')
+        self.MA_webengine_ref.setStyleSheet("background-color: #000000;")
+        self.MA_webengine_ref.page().setBackgroundColor(Qt.transparent) #0726+
         self.MA_webengine_ref.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.MA_webengine_base = WebEngine(ID='base')
+        self.MA_webengine_base.setStyleSheet("background-color: #000000;")
+        self.MA_webengine_base.page().setBackgroundColor(Qt.transparent) #0726+
         self.MA_webengine_base.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         setWebengineProperties(self.MA_webengine_ref)
@@ -431,8 +437,8 @@ class ProjectTab(QWidget):
         # self.MA_webengine_base.setMinimumWidth(100)
         self.MA_webengine_ref.setMouseTracking(True)
         self.MA_webengine_base.setMouseTracking(True)
-        self.MA_webengine_ref.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.MA_webengine_base.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # self.MA_webengine_ref.setFocusPolicy(Qt.FocusPolicy.NoFocus) #0726-
+        # self.MA_webengine_base.setFocusPolicy(Qt.FocusPolicy.NoFocus) #0726-
         # self.MA_webengine_ref.setFocusPolicy(Qt.FocusPolicy.WheelFocus)
         # self.MA_webengine_base.setFocusPolicy(Qt.FocusPolicy.WheelFocus)
 
@@ -635,6 +641,7 @@ class ProjectTab(QWidget):
         self.btnQuickSWIM.setFixedHeight(22)
         self.btnQuickSWIM.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnQuickSWIM.clicked.connect(lambda: cfg.main_window.alignOne(quick_swim=True))
+        self.btnQuickSWIM.clicked.connect(lambda: cfg.mw.setdw_matches(True))
         hbl = HBL()
         hbl.setSpacing(0)
         hbl.setContentsMargins(2, 2, 2, 2)
@@ -1534,7 +1541,7 @@ class ProjectTab(QWidget):
 
         self.cl_tra = ClickLabel(' Transforming ')
         self.cl_tra.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.cl_tra.setMinimumWidth(64)
+        self.cl_tra.setMinimumWidth(128)
         # self.cl_tra.setAlignment(Qt.AlignCenter)
         self.cl_tra.setAlignment(Qt.AlignLeft)
         self.cl_tra.setFixedHeight(16)
@@ -1543,7 +1550,7 @@ class ProjectTab(QWidget):
 
         self.cl_ref = ClickLabel(' Reference ')
         self.cl_ref.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.cl_ref.setMinimumWidth(64)
+        self.cl_ref.setMinimumWidth(128)
         # self.cl_ref.setAlignment(Qt.AlignCenter)
         self.cl_ref.setAlignment(Qt.AlignRight)
         self.cl_ref.setFixedHeight(16)
@@ -1558,8 +1565,8 @@ class ProjectTab(QWidget):
         self.wSwitchRefTra.setStyleSheet("background-color: #222222;")
         self.wSwitchRefTra.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         # self.wSwitchRefTra.setContentsMargins(0, 0, 0, 0)
-        self.labAlignTo = QLabel('Aligns To ➤')
-        self.labAlignTo.setFixedWidth(100)
+        self.labAlignTo = QLabel(f"Aligns To {hotkey('/')} ➤")
+        self.labAlignTo.setFixedWidth(120)
         self.labAlignTo.setAlignment(Qt.AlignHCenter)
         self.labAlignTo.setStyleSheet('background-color: #ede9e8; color: #161c20; font-size: 11px; font-weight: 600; border-radius: 8px; padding-left: 1px; padding-right: 1px;')
         gl = QGridLayout()
@@ -2854,9 +2861,10 @@ class ProjectTab(QWidget):
         cfg.mw._btn_alignOne.setToolTip('\n'.join(textwrap.wrap(realign_tip, width=35)))
 
     def update_MA_list_widgets(self):
-        logger.info('')
         if self._tabs.currentIndex() == 1:
-            if cfg.data.current_method in ('manual-hint', 'manual-strict'):
+            # if cfg.data.current_method in ('manual-hint', 'manual-strict'):
+            if self.method_rb2.isChecked():
+                logger.info('')
                 if DEV:
                     logger.critical(f"{caller_name()}")
                 # self.setUpdatesEnabled(False)
@@ -3796,48 +3804,48 @@ class ProjectTab(QWidget):
 
 
     def updateDetailsPanel(self):
+        logger.info('')
+        logger.info(f'self._tabs.currentIndex() = {self._tabs.currentIndex()}')
 
         if self._tabs.currentIndex() == 1:
-            if self.secDetails_w.isVisible():
-                caller = inspect.stack()[1].function
-                logger.critical(f'caller: {caller}')
-                self.secName.setText(cfg.data.filename_basename())
-                ref = cfg.data.reference_basename()
-                if ref == '':
-                    ref = 'None'
-                self.secReference.setText(ref)
+            caller = inspect.stack()[1].function
+            logger.critical(f'caller: {caller}')
+            self.secName.setText(cfg.data.filename_basename())
+            ref = cfg.data.reference_basename()
+            if ref == '':
+                ref = 'None'
+            self.secReference.setText(ref)
 
-                self.secAlignmentMethod.setText(cfg.data.method_pretty())
-                # self.secSNR.setText(cfg.data.snr_report()[5:])
-                # self.secSNR.setText('<span style="font-color: red;"><b>%.2f</b></span>' % cfg.data.snr())
-
-                # self.secDetails[2][1].setText(str(cfg.data.skips_list()))
-                skips = cfg.data.skips_list()
-                if skips == []:
-                    self.secExcluded.setText('None')
+            self.secAlignmentMethod.setText(cfg.data.method_pretty())
+            # self.secSNR.setText(cfg.data.snr_report()[5:])
+            # self.secSNR.setText('<span style="font-color: red;"><b>%.2f</b></span>' % cfg.data.snr())
+            # self.secDetails[2][1].setText(str(cfg.data.skips_list()))
+            skips = cfg.data.skips_list()
+            if skips == []:
+                self.secExcluded.setText('None')
+            else:
+                self.secExcluded.setText('\n'.join([f'z-index: {a}, name: {b}' for a, b in skips]))
+            self.secHasBB.setText(str(cfg.data.has_bb()))
+            self.secUseBB.setText(str(cfg.data.use_bb()))
+            self.secSrcImageSize.setText('%dx%d pixels' % cfg.data.image_size())
+            if cfg.data.is_aligned():
+                try:
+                    self.secAlignedImageSize.setText('%dx%d pixels' % cfg.data.image_size_aligned())
+                except:
+                    print_exception()
+                if cfg.data.zpos <= cfg.data.first_unskipped():
+                    self.secSNR.setText('--')
                 else:
-                    self.secExcluded.setText('\n'.join([f'z-index: {a}, name: {b}' for a, b in skips]))
-                self.secHasBB.setText(str(cfg.data.has_bb()))
-                self.secUseBB.setText(str(cfg.data.use_bb()))
-                self.secSrcImageSize.setText('%dx%d pixels' % cfg.data.image_size())
-                if cfg.data.is_aligned():
                     try:
-                        self.secAlignedImageSize.setText('%dx%d pixels' % cfg.data.image_size_aligned())
+                        self.secSNR.setText(
+                            '<span style="color: #a30000;"><b>%.2f</b></span><span>&nbsp;&nbsp;(%s)</span>' % (
+                                cfg.data.snr(), ",  ".join(["%.2f" % x for x in cfg.data.snr_components()])))
                     except:
                         print_exception()
-                    if cfg.data.zpos <= cfg.data.first_unskipped():
-                        self.secSNR.setText('--')
-                    else:
-                        try:
-                            self.secSNR.setText(
-                                '<span style="color: #a30000;"><b>%.2f</b></span><span>&nbsp;&nbsp;(%s)</span>' % (
-                                    cfg.data.snr(), ",  ".join(["%.2f" % x for x in cfg.data.snr_components()])))
-                        except:
-                            print_exception()
-                else:
-                    self.secAlignedImageSize.setText('--')
-                    self.secSNR.setText('--')
-                self.secDefaults.setText(cfg.data.defaults_pretty)
+            else:
+                self.secAlignedImageSize.setText('--')
+                self.secSNR.setText('--')
+            self.secDefaults.setText(cfg.data.defaults_pretty)
 
     def jump_to_manual(self, requested) -> None:
         logger.info(f'requested: {requested}')

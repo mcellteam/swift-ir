@@ -138,7 +138,7 @@ class ProjectTable(QWidget):
 
     def selection_changed(self):
         caller = inspect.stack()[1].function
-        logger.critical(f'caller: {caller}')
+        logger.info(f'[{caller}]')
         if caller not in ('initTableData', 'updateTableData'):
             if cfg.project_tab._tabs.currentIndex() == 2:
                 row = self.table.currentIndex().row()
@@ -178,8 +178,8 @@ class ProjectTable(QWidget):
         # cfg.main_window.tell('Updating Table Data...')
         self.table.setUpdatesEnabled(False)
         self.table.clearContents()
-        # self.table.clear()
-        # self.table.setRowCount(0)
+        self.table.clear()
+        self.table.setRowCount(0)
         self.set_column_headers() #Critical
         cnt = 0
         cfg.mw.showZeroedPbar(set_n_processes=1, pbar_max=cfg.data.count)

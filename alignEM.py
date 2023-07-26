@@ -268,8 +268,7 @@ def main():
 
     logger.info('Setting Qt.AA_ShareOpenGLContexts')
     QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created. #2230-
-    QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseDesktopOpenGL)
-
+    # QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseDesktopOpenGL) #0226-
 
     # report the number of worker threads chosen by default
     logger.info(f"ThreadPoolExecutor _max_workers: {ThreadPoolExecutor()._max_workers}")
