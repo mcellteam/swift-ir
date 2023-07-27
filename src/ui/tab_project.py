@@ -1925,6 +1925,7 @@ class ProjectTab(QWidget):
             self.tbbBlinkToggle.setIcon(qta.icon(
                 ('mdi.toggle-switch-off-outline', 'mdi.toggle-switch')[getData('state,blink')],
                 color='#f3f6fb'))
+
             if getData('state,blink'):
                 self.blinkTimer.timeout.connect(cfg.emViewer.blink)
                 cfg.project_tab.blinkTimer.start()

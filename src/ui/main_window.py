@@ -829,7 +829,7 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             setData('state,blink', False)
             cfg.pt.blinkTimer.stop()
-            cfg.pt.tbbBlinkToggle.setIcon(qta.icon('mdi.toggle-switch'), color='#f3f6fb')
+            cfg.pt.tbbBlinkToggle.setIcon(qta.icon('mdi.toggle-switch', color='#f3f6fb'))
 
             if state:
                 # cfg.pt.match_widget.adjustSize() #MUCH BETTER OFF
