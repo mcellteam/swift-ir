@@ -211,7 +211,7 @@ def main():
             bashrc = os.path.join(os.getenv('HOME'), '.bashrc')
 
             try:
-                appendme = """alias alignem='source $WORK/swift-ir/tacc_bootstrap'"""
+                appendme = """\nalias alignem='source $WORK/swift-ir/tacc_bootstrap'"""
                 check_str = """alias alignem="""
                 with open(bashrc, "r") as f:
                     found = any(check_str in x for x in f)
@@ -226,7 +226,7 @@ def main():
                 print_exception()
 
             try:
-                appendme = """alias alignemdev='source $WORK/swift-ir/tacc_develop'"""
+                appendme = """\nalias alignemdev='source $WORK/swift-ir/tacc_develop'"""
                 check_str = """alias alignemdev="""
                 with open(bashrc, "r") as f:
                     found = any(check_str in x for x in f)
