@@ -406,7 +406,7 @@ class DataModel:
             return True
 
     def is_alignable(self) -> bool:
-        '''Checks if the current scale_key is able to be aligned'''
+        '''Checks if the current scale is able to be aligned'''
         # logger.info('')
         try:
             scales_list = self.scales()

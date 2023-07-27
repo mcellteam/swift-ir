@@ -826,7 +826,16 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             cfg.data['state']['tool_windows']['signals'] = state
 
+        if not state:
+            setData('state,blink', False)
+            cfg.pt.blinkTimer.stop()
+            cfg.pt..tbbBlinkToggle.setIcon(qta.icon(
+                ('mdi.toggle-switch-off-outline', 'mdi.toggle-switch')[getData('state,blink')],
+                color='#f3f6fb'))
+
         if self._isProjectTab():
+
+
             if state:
                 # cfg.pt.match_widget.adjustSize() #MUCH BETTER OFF
                 # self.setUpdatesEnabled(True)
@@ -1797,28 +1806,17 @@ class MainWindow(QMainWindow):
                     logger.info('Updating UI on timeout...')
 
             if cfg.data.skipped():
-                # cfg.project_tab._overlayRect.setStyleSheet('background-color: rgba(0, 0, 0, 0.5);')
-                txt = '\n'.join(textwrap.wrap('EXCLUDED: %s' % cfg.data.name_base(), width=35))
-                cfg.project_tab._overlayLab.setText(txt)
                 cfg.project_tab._overlayLab.show()
-            else:
-                cfg.project_tab._overlayLab.hide()
-
-            if cfg.data.skipped():
-                cfg.project_tab._overlayLab.show()
-                self.tell("Exclude: %s" % cfg.data.name_base())
                 if self.dw_thumbs.isVisible():
                     cfg.project_tab.tn_ref.hide()
                     cfg.project_tab.tn_ref_lab.hide()
                     cfg.project_tab.tn_tra_overlay.show()
             else:
                 cfg.project_tab._overlayLab.hide()
-                self.tell("Include: %s" % cfg.data.name_base())
                 if self.dw_thumbs.isVisible():
                     cfg.project_tab.tn_ref.show()
                     cfg.project_tab.tn_ref_lab.show()
                     cfg.project_tab.tn_tra_overlay.hide()
-
 
             cur = cfg.data.zpos
 
@@ -2104,7 +2102,6 @@ class MainWindow(QMainWindow):
                     cfg.project_tab.tn_tra_overlay.show()
             else:
                 cfg.project_tab._overlayLab.hide()
-                self.tell("Include: %s" % cfg.data.name_base())
                 if self.dw_thumbs.isVisible():
                     cfg.project_tab.tn_ref.show()
                     cfg.project_tab.tn_ref_lab.show()
@@ -3914,10 +3911,6 @@ class MainWindow(QMainWindow):
     def changeEvent(self, event):
         logger.info('')
 
-        # self.dw_matches.setMaximumWidth(999)
-        # self.dw_thumbs.setMaximumWidth(999)
-
-
         # Allows catching of window maximized/unmaximized events
         if event.type() == QEvent.WindowStateChange:
             if event.oldState() and Qt.WindowMinimized:
@@ -3933,22 +3926,6 @@ class MainWindow(QMainWindow):
                     # QApplication.processEvents()
                     cfg.project_tab.initNeuroglancer()
 
-            # if self.dw_matches.isVisible():
-            #     if cfg.data.is_aligned():
-            #         h = cfg.pt.ktarg_table.height() - cfg.pt.mwTitle.height()
-            #         # self.dw_matches.setMaximumWidth(int(h / 2 + .5))
-            #         cfg.pt.match_widget.resize(int(h / 2 + .5), h)
-            #
-            # if self.dw_thumbs.isVisible():
-            #     h = cfg.pt.tn_widget.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
-            #     # self.dw_thumbs.setMaximumWidth(int(h / 2 + .5))
-            #     cfg.pt.tn_widget.resize(QSize(int(h / 2 + .5), cfg.pt.tn_widget.height()))
-
-            # cfg.pt.match_widget.adjustSize()
-            # cfg.pt.tn_widget.adjustSize()
-
-            # self.dw_matches.setMaximumWidth(999)
-            # self.dw_thumbs.setMaximumWidth(999)
 
     def set_elapsed(self, t, desc=""):
         txt = f"Elapsed Time : %.3gs / %.3gm" % (t, t / 60)
@@ -5253,7 +5230,7 @@ class MainWindow(QMainWindow):
         self.navControls = HWidget(self.scaleWidget, self.sectionIndexWidget)
         self.navControls.layout.setSpacing(8)
 
-        tip = """Align and generate all sections for the current scale_key"""
+        tip = """Align and generate all sections for the current scale"""
         # self._btn_alignAll = QPushButton(f"Align All {hotkey('A')}")
         self._btn_alignAll = QPushButton(f"Align All")
         self._btn_alignAll.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -5391,6 +5368,10 @@ class MainWindow(QMainWindow):
                 self.setUpdatesEnabled(False)
                 w = 180
                 self.resizeDocks((self.dw_matches, self.dw_thumbs), (w, w), Qt.Horizontal)
+                self.resizeDocks((self.dw_hud, self.dw_snr), (w, w), Qt.Horizontal)
+                self.resizeDocks((self.dw_hud, self.dw_python), (w, w), Qt.Horizontal)
+                self.resizeDocks((self.dw_snr, self.dw_python), (w, w), Qt.Horizontal)
+                self.resizeDocks((self.dw_hud, self.dw_snr, self.dw_python), (w, w, w), Qt.Horizontal)
                 self.setUpdatesEnabled(True)
 
         self.dw_matches.dockLocationChanged.connect(fn_vert_dock_locations_changed)
