@@ -27,35 +27,32 @@ def run_recipe(data):
     '''Assemble and execute an alignment recipe
     :param data: data for a single pairwise alignment as Python dictionary.
     '''
-    if os.path.basename(data['reference']) != '':
-        recipe = align_recipe(data=data,)
-        recipe.assemble_recipe()
-        recipe.execute_recipe()
-        data = recipe.set_results()
+    # if os.path.basename(data['meta']['fn_reference']) != '':
+    recipe = align_recipe(data=data,)
+    recipe.assemble_recipe()
+    recipe.execute_recipe()
+    data = recipe.set_results()
     return data
 
 class align_recipe:
 
     def __init__(self, data):
         self.data = data
-        self.meta = self.data['alignment']['meta']
+        self.meta = self.data['meta']
         self.configure_logging()
-        self.cur_method = self.meta['current_method']
+        self.method = self.meta['method']
         self.defaults = self.meta['defaults']
         self.siz = self.meta['image_src_size']
         self.scale_dir = os.path.join(self.meta['destination_path'], self.meta['scale_key'])
-        self.fn_reference = self.meta['fn_reference']
-        self.fn_transforming = self.meta['fn_transforming']
-        self.alignment = self.data['alignment']
-        if self.cur_method == 'grid-default':
+        if self.method == 'grid-default':
             self.wht = self.defaults['signal-whitening']
             self.iters = self.defaults['swim-iterations']
         else:
-            self.wht = self.alignment['swim_settings']['signal-whitening']
-            self.iters = self.alignment['swim_settings']['iterations']
+            self.wht = self.data['swim_settings']['signal-whitening']
+            self.iters = self.data['swim_settings']['iterations']
         if self.meta['isRefinement']:
             self.iters = 3
-        self.grid_custom_regions  = self.alignment['swim_settings']['grid-custom-regions']
+        self.grid_custom_regions  = self.data['swim_settings']['grid-custom-regions']
         self.ingredients = []
         self.initial_rotation = float(self.defaults['initial-rotation'])
         # self.afm = np.array([[1., 0., 0.], [0., 1., 0.]])
@@ -105,7 +102,7 @@ class align_recipe:
 
         # Example: psta_2x2 = [[256. 768. 256. 768.] [256. 256. 768. 768.]]
 
-        if self.cur_method == 'grid-default':
+        if self.method == 'grid-default':
             nx, ny = 2, 2
             pa = np.zeros((2, nx * ny))  # Point Array (2x4) points
             sx = int(self.siz[0] / 2.0)  # Initial Size of each window
@@ -129,9 +126,9 @@ class align_recipe:
                     align_ingredient(mode='SWIM-Grid', ww=ww_2x2, psta=psta_2x2, ID='Grid2x2-a'),
                     align_ingredient(mode='SWIM-Grid', ww=ww_2x2, psta=psta_2x2, ID='Grid2x2-c'),
                     align_ingredient(mode='SWIM-Grid', ww=ww_2x2, psta=psta_2x2, ID='Grid2x2-d', last=True)])
-        elif self.cur_method == 'grid-custom':
-            ww_1x1 = self.alignment['grid_custom_px_1x1']
-            ww_2x2 = self.alignment['grid_custom_px_2x2']
+        elif self.method == 'grid-custom':
+            ww_1x1 = self.data['grid_custom_px_1x1']
+            ww_2x2 = self.data['grid_custom_px_2x2']
             x1 = ((self.siz[0] - ww_1x1[0]) / 2) + (ww_2x2[0] / 2)
             x2 = self.siz[0] - x1
             y1 = ((self.siz[1] - ww_1x1[1]) / 2) + (ww_2x2[1] / 2)
@@ -150,15 +147,15 @@ class align_recipe:
                 align_ingredient(mode='SWIM-Grid', ww=ww_2x2, psta=psta_2x2, ID='Grid2x2-d', last=True),
             ])
         else:
-            ww = self.alignment['manual_swim_window_px']
-            man_pmov = np.array(self.alignment['manpoints_mir']['base']).transpose()
-            man_psta = np.array(self.alignment['manpoints_mir']['ref']).transpose()
-            if self.cur_method == 'manual-hint':
+            ww = self.data['manual_swim_window_px']
+            man_pmov = np.array(self.data['manpoints_mir']['base']).transpose()
+            man_psta = np.array(self.data['manpoints_mir']['ref']).transpose()
+            if self.method == 'manual-hint':
                 self.add_ingredients([
                     align_ingredient(mode='MIR', ww=[ww,ww], psta=man_psta, pmov=man_pmov),
                     align_ingredient(mode='SWIM-Manual', ww=[ww,ww], psta=man_psta, pmov=man_pmov, ID='Manual-a'),
                     align_ingredient(mode='SWIM-Manual', ww=[ww,ww], psta=man_psta, pmov=man_pmov, ID='Manual-b', last=True)])
-            elif self.cur_method == 'manual-strict':
+            elif self.method == 'manual-strict':
                 self.add_ingredients([align_ingredient(mode='MIR', ww=[ww,ww], psta=man_psta, pmov=man_pmov, last=True)])
 
 
@@ -166,7 +163,7 @@ class align_recipe:
 
         self.afm = np.array(self.meta['init_afm'])
 
-        if (self.fn_reference == self.fn_transforming) or (self.fn_reference == ''):
+        if (self.meta['fn_reference'] == self.meta['fn_transforming']) or (self.meta['fn_reference'] == ''):
             print_exception(extra=f'Image Has No Reference!')
             return
 
@@ -197,77 +194,82 @@ class align_recipe:
         except:
             snr_list = list(snr)
 
-        self.data['alignment']['swim_args'] = {}
-        self.data['alignment']['swim_out'] = {}
-        self.data['alignment']['swim_err'] = {}
-        self.data['alignment']['mir_toks'] = {}
-        self.data['alignment']['mir_script'] = {}
-        self.data['alignment']['mir_out'] = {}
-        self.data['alignment']['mir_err'] = {}
+        self.data['swim_args'] = {}
+        self.data['swim_out'] = {}
+        self.data['swim_err'] = {}
+        self.data['mir_toks'] = {}
+        self.data['mir_script'] = {}
+        self.data['mir_out'] = {}
+        self.data['mir_err'] = {}
 
-        self.data['alignment']['method_results']['snr'] = snr_list
-        self.data['alignment']['method_results']['snr_report'] = str(snr_report)
-        self.data['alignment']['method_results']['snr_average'] = sum(snr_list) / len(snr_list)
-        self.data['alignment']['method_results']['affine_matrix'] = afm.tolist()
-        self.data['alignment']['method_results']['swim_pos'] = self.ingredients[-1].psta.tolist()
-        self.data['alignment']['method_results']['datetime'] = time
-        self.data['alignment']['method_results']['wht'] = self.wht
-        self.data['alignment']['method_results']['swim-iterations'] = self.iters
-        self.data['alignment']['method_results']['current_method'] = self.cur_method
-        self.data['alignment']['method_results']['siz']= self.siz
-        self.data['alignment']['method_results']['memory_mb'] = self.megabytes()
-        self.data['alignment']['method_results']['memory_gb'] = self.gigabytes()
+        self.data['method_results']['snr'] = snr_list
+        self.data['method_results']['snr_report'] = str(snr_report)
+        self.data['method_results']['snr_average'] = sum(snr_list) / len(snr_list)
+        self.data['method_results']['affine_matrix'] = afm.tolist()
+        self.data['method_results']['swim_pos'] = self.ingredients[-1].psta.tolist()
+        self.data['method_results']['datetime'] = time
+        self.data['method_results']['wht'] = self.wht
+        self.data['method_results']['swim-iterations'] = self.iters
+        self.data['method_results']['method'] = self.method
+        self.data['method_results']['siz']= self.siz
+        self.data['method_results']['memory_mb'] = self.megabytes()
+        self.data['method_results']['memory_gb'] = self.gigabytes()
 
-        if self.cur_method == 'grid-custom':
-            self.data['alignment']['method_results']['grid_custom_regions'] = self.grid_custom_regions
+        if self.method == 'grid-custom':
+            self.data['method_results']['grid_custom_regions'] = self.grid_custom_regions
 
         self.data.setdefault('alignment_history', {})
-        self.data['alignment_history'][self.cur_method] = self.data['alignment']['method_results']
+        self.data['alignment_history'][self.method] = self.data['method_results']
+
+        for i,ing in enumerate(self.ingredients):
+            try: self.data['swim_args']['ingredient_%d' % i] = ing.multi_swim_arg_str()
+            except: self.data['swim_args']['ingredient_%d' % i] = 'Null'
+
+
 
 
         if self.meta['dev_mode']:
             for i,ing in enumerate(self.ingredients):
-                try: self.data['alignment']['method_results']['ingredient_%d' % i] = {}
-                except: self.data['alignment']['method_results']['ingredient_%d' % i] = 'Null'
-                try: self.data['alignment']['method_results']['ingredient_%d' % i]['ww'] = ing.ww
-                except: self.data['alignment']['method_results']['ingredient_%d' % i]['ww'] = 'Null'
-                try: self.data['alignment']['method_results']['ingredient_%d' % i]['psta'] = str(ing.psta)
-                except: self.data['alignment']['method_results']['ingredient_%d' % i]['psta'] = 'Null'
-                try: self.data['alignment']['method_results']['ingredient_%d' % i]['pmov'] = str(ing.pmov)
-                except: self.data['alignment']['method_results']['ingredient_%d' % i]['pmov'] = 'Null'
+                try: self.data['method_results']['ingredient_%d' % i] = {}
+                except: self.data['method_results']['ingredient_%d' % i] = 'Null'
+                try: self.data['method_results']['ingredient_%d' % i]['ww'] = ing.ww
+                except: self.data['method_results']['ingredient_%d' % i]['ww'] = 'Null'
+                try: self.data['method_results']['ingredient_%d' % i]['psta'] = str(ing.psta)
+                except: self.data['method_results']['ingredient_%d' % i]['psta'] = 'Null'
+                try: self.data['method_results']['ingredient_%d' % i]['pmov'] = str(ing.pmov)
+                except: self.data['method_results']['ingredient_%d' % i]['pmov'] = 'Null'
 
-                if self.cur_method in ('grid-default', 'grid-custom'):
-                    try: self.data['alignment']['method_results']['ingredient_%d' % i]['afm'] = str(ing.afm)
-                    except: self.data['alignment']['method_results']['ingredient_%d' % i]['afm'] = 'Null'
-                    try: self.data['alignment']['method_results']['ingredient_%d' % i]['adjust_x'] = str(ing.adjust_x)
-                    except: self.data['alignment']['method_results']['ingredient_%d' % i]['adjust_x'] = 'Null'
-                    try: self.data['alignment']['method_results']['ingredient_%d' % i]['adjust_y'] = str(ing.adjust_y)
-                    except: self.data['alignment']['method_results']['ingredient_%d' % i]['adjust_y'] = 'Null'
+                if self.method in ('grid-default', 'grid-custom'):
+                    try: self.data['method_results']['ingredient_%d' % i]['afm'] = str(ing.afm)
+                    except: self.data['method_results']['ingredient_%d' % i]['afm'] = 'Null'
+                    try: self.data['method_results']['ingredient_%d' % i]['adjust_x'] = str(ing.adjust_x)
+                    except: self.data['method_results']['ingredient_%d' % i]['adjust_x'] = 'Null'
+                    try: self.data['method_results']['ingredient_%d' % i]['adjust_y'] = str(ing.adjust_y)
+                    except: self.data['method_results']['ingredient_%d' % i]['adjust_y'] = 'Null'
 
-                if self.cur_method in ('grid-default', 'grid-custom', 'manual-hint'):
-                    try: self.data['alignment']['mir_err']['ingredient_%d' % i] = ing.ww
-                    except: self.data['alignment']['mir_err']['ingredient_%d' % i] = 'Null'
-                    try: self.data['alignment']['swim_args']['ingredient_%d' % i] = ing.multi_swim_arg_str()
-                    except: self.data['alignment']['swim_args']['ingredient_%d' % i] = 'Null'
-                    try: self.data['alignment']['swim_out']['ingredient_%d' % i] = ing.swim_output
-                    except: self.data['alignment']['swim_out']['ingredient_%d' % i] = 'Null'
-                    try: self.data['alignment']['swim_err']['ingredient_%d' % i] = ing.swim_err_lines
-                    except: self.data['alignment']['swim_err']['ingredient_%d' % i] = 'Null'
-                    try: self.data['alignment']['mir_toks']['ingredient_%d' % i] = ing.mir_toks
-                    except: self.data['alignment']['mir_toks']['ingredient_%d' % i] = 'Null'
-                    try: self.data['alignment']['mir_script']['ingredient_%d' % i] = ing.mir_script
-                    except: self.data['alignment']['mir_script']['ingredient_%d' % i] = 'Null'
-                    try: self.data['alignment']['mir_out']['ingredient_%d' % i] = ing.mir_out_lines
-                    except: self.data['alignment']['mir_out']['ingredient_%d' % i] = 'Null'
-                    try: self.data['alignment']['mir_err']['ingredient_%d' % i] = ing.mir_err_lines
-                    except: self.data['alignment']['mir_err']['ingredient_%d' % i] = 'Null'
+                if self.method in ('grid-default', 'grid-custom', 'manual-hint'):
+                    try: self.data['mir_err']['ingredient_%d' % i] = ing.ww
+                    except: self.data['mir_err']['ingredient_%d' % i] = 'Null'
+                    try: self.data['swim_args']['ingredient_%d' % i] = ing.multi_swim_arg_str()
+                    except: self.data['swim_args']['ingredient_%d' % i] = 'Null'
+                    try: self.data['swim_out']['ingredient_%d' % i] = ing.swim_output
+                    except: self.data['swim_out']['ingredient_%d' % i] = 'Null'
+                    try: self.data['swim_err']['ingredient_%d' % i] = ing.swim_err_lines
+                    except: self.data['swim_err']['ingredient_%d' % i] = 'Null'
+                    try: self.data['mir_toks']['ingredient_%d' % i] = ing.mir_toks
+                    except: self.data['mir_toks']['ingredient_%d' % i] = 'Null'
+                    try: self.data['mir_script']['ingredient_%d' % i] = ing.mir_script
+                    except: self.data['mir_script']['ingredient_%d' % i] = 'Null'
+                    try: self.data['mir_out']['ingredient_%d' % i] = ing.mir_out_lines
+                    except: self.data['mir_out']['ingredient_%d' % i] = 'Null'
+                    try: self.data['mir_err']['ingredient_%d' % i] = ing.mir_err_lines
+                    except: self.data['mir_err']['ingredient_%d' % i] = 'Null'
 
         return self.data
 
     def add_ingredients(self, ingredients):
         for ingredient in ingredients:
             ingredient.recipe = self
-            ingredient.alignment = self.data['alignment']
             self.ingredients.append(ingredient)
 
 
@@ -275,7 +277,7 @@ class align_ingredient:
     '''
     Universal class for alignment ingredients of recipes
 
-    Ingredients come in 3 main types where the cur_method is determined by value of align_mode
+    Ingredients come in 3 main types where the method is determined by value of align_mode
     1)  If ingredient_mode is 'Manual-Hint' or 'Manual-Hint' then this is manual alignment
         We calculate the afm directly using psta and pmov as the matching points
     2)  If ingredient_mode is 'SWIM-Manual', then this is a SWIM to refine the alignment
@@ -290,7 +292,6 @@ class align_ingredient:
     '''
     def __init__(self, mode, ww=None, psta=None, pmov=None, afm=None, rota=None, ID='', last=False):
         self.recipe = None
-        self.alignment = None
         self.mode = mode
         self.swim_drift = 0.0
         self.afm = afm
@@ -339,7 +340,7 @@ class align_ingredient:
         else:
             swim_output = self.run_swim()
             if swim_output == ['']:
-                print(f"[{self.alignment['meta']['index']}] SWIM output is an empty string! - Returning...")
+                print(f"[{self.recipe.data['meta']['index']}] SWIM output is an empty string! - Returning...")
                 self.snr = np.zeros(len(self.psta[0]))
                 self.snr_report = snr_report(self.snr)
                 return self.afm
@@ -351,50 +352,50 @@ class align_ingredient:
     def get_swim_args(self):
         self.cx = int(self.recipe.siz[0] / 2.0)
         self.cy = int(self.recipe.siz[1] / 2.0)
-        basename = os.path.basename(self.recipe.fn_transforming)
+        basename = os.path.basename(self.recipe.meta['fn_transforming'])
         filename, extension = os.path.splitext(basename)
         multi_arg_str = ArgString(sep='\n')
         self.ms_names = []
         for i in range(len(self.psta[0])):
-            if self.recipe.cur_method == 'grid-custom':
+            if self.recipe.method == 'grid-custom':
                 if self.ID != 'Grid1x1':
                     if not self.recipe.grid_custom_regions[i]:
                         continue
             # correlation signals argument (output path)
             b_arg = os.path.join( self.recipe.scale_dir, 'signals', '%s_%s_%d%s' %
-                                  (filename, self.recipe.cur_method, i, extension))
+                                  (filename, self.recipe.method, i, extension))
             self.ms_names.append(b_arg)
             args = ArgString(sep=' ')
             args.append("%dx%d" % (self.ww[0], self.ww[1]))
-            if self.alignment['meta']['verbose_swim']:
+            if self.recipe.data['meta']['verbose_swim']:
                 args.append("-v")
-            if self.alignment['swim_settings']['clobber_fixed_noise']:
-                args.append('-f%d' % self.alignment['swim_settings']['clobber_fixed_noise_px'])
+            if self.recipe.data['swim_settings']['clobber_fixed_noise']:
+                args.append('-f%d' % self.recipe.data['swim_settings']['clobber_fixed_noise_px'])
             args.add_flag(flag='-i', arg=str(self.recipe.iters))
             args.add_flag(flag='-w', arg=str(self.recipe.wht))
-            if self.recipe.cur_method in ('grid-default', 'grid-custom'):
+            if self.recipe.method in ('grid-default', 'grid-custom'):
                 self.offx = int(self.psta[0][i] - self.cx)
                 self.offy = int(self.psta[1][i] - self.cy)
                 args.add_flag(flag='-x', arg='%d' % self.offx)
                 args.add_flag(flag='-y', arg='%d' % self.offy)
             args.add_flag(flag='-b', arg=b_arg)
             if self.last:
-                if self.alignment['karg']:
-                    k_arg_name = '%s_%s_k_%d%s' % (filename, self.recipe.cur_method, i, extension)
+                if self.recipe.data['karg']:
+                    k_arg_name = '%s_%s_k_%d%s' % (filename, self.recipe.method, i, extension)
                     k_arg_path = os.path.join(self.recipe.scale_dir, 'tmp', k_arg_name)
                     args.add_flag(flag='-k', arg=k_arg_path)
-                if self.alignment['targ']:
-                    t_arg_name = '%s_%s_t_%d%s' % (filename, self.recipe.cur_method, i, extension)
+                if self.recipe.data['targ']:
+                    t_arg_name = '%s_%s_t_%d%s' % (filename, self.recipe.method, i, extension)
                     t_arg_path = os.path.join(self.recipe.scale_dir, 'tmp', t_arg_name)
                     args.add_flag(flag='-t', arg=t_arg_path)
-            args.append(self.alignment['swim_settings']['extra_kwargs'])
-            args.append(self.recipe.fn_reference)
-            if self.recipe.cur_method in ('manual-hint'):
+            args.append(self.recipe.data['swim_settings']['extra_kwargs'])
+            args.append(self.recipe.meta['fn_reference'])
+            if self.recipe.method in ('manual-hint'):
                 args.append('%s %s' % (self.psta[0][i], self.psta[1][i]))
             else:
                 args.append('%s %s' % (self.cx, self.cy))
-            args.append(self.recipe.fn_transforming)
-            if self.recipe.cur_method in ('manual-hint'):
+            args.append(self.recipe.meta['fn_transforming'])
+            if self.recipe.method in ('manual-hint'):
                 args.append('%s %s' % (self.pmov[0][i], self.pmov[1][i]))
             else:
                 self.adjust_x = '%.6f' % (self.cx + self.afm[0, 2])
@@ -404,7 +405,7 @@ class align_ingredient:
             if abs(r) > 0:
                 args.append(convert_rotation(r))
             args.append('%.6f %.6f %.6f %.6f' % (self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1]))
-            args.append(self.alignment['swim_settings']['extra_args'])
+            args.append(self.recipe.data['swim_settings']['extra_args'])
             multi_arg_str.append(args())
         return multi_arg_str
 
@@ -426,7 +427,7 @@ class align_ingredient:
     def crop_match_signals(self):
 
         px_keep = 128
-        if self.recipe.cur_method in ('grid-default', 'grid-custom'):
+        if self.recipe.method in ('grid-default', 'grid-custom'):
             w = str(int(self.ww[0] / 2.0))
             h = str(int(self.ww[1] / 2.0))
             x1 = str(int((self.ww[0] - px_keep) / 2.0))
@@ -459,7 +460,7 @@ class align_ingredient:
 
     def ingest_swim_output(self, swim_output):
 
-        if (len(swim_output) == 1) and (self.recipe.cur_method in ('default-grid', 'custom-grid')):
+        if (len(swim_output) == 1) and (self.recipe.method in ('default-grid', 'custom-grid')):
             toks = swim_output[0].replace('(', ' ').replace(')', ' ').strip().split()
             self.dx = float(toks[8])
             self.dy = float(toks[9])
@@ -481,7 +482,7 @@ class align_ingredient:
                 try:
                     mir_toks = [toks[k] for k in [2, 3, 5, 6]]
                 except:
-                    print_exception(extra=f"Section #{self.alignment['meta']['index']}\n"
+                    print_exception(extra=f"Section #{self.recipe.data['meta']['index']}\n"
                                           f"mir toks are: {str(toks)}\n"
                                           f"swim_output: {swim_output}")
                 self.mir_script += ' '.join(mir_toks) + '\n'
