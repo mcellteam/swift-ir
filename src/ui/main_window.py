@@ -3926,7 +3926,7 @@ class MainWindow(QMainWindow):
         txt = f"Elapsed Time : %.3gs / %.3gm" % (t, t / 60)
         if desc:
             txt += " (%s)" % desc
-        self.hud.tell(txt)
+        self.tell(txt)
         self.set_status(txt)
 
 
