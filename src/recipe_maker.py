@@ -30,9 +30,8 @@ def run_recipe(data):
     if os.path.basename(data['reference']) != '':
         recipe = align_recipe(data=data,)
         recipe.assemble_recipe()
-        o = recipe.execute_recipe()
-        if o == 0:
-            recipe.set_results()
+        recipe.execute_recipe()
+        data = recipe.set_results()
     return data
 
 class align_recipe:
@@ -261,6 +260,8 @@ class align_recipe:
                     except: self.data['alignment']['mir_out']['ingredient_%d' % i] = 'Null'
                     try: self.data['alignment']['mir_err']['ingredient_%d' % i] = ing.mir_err_lines
                     except: self.data['alignment']['mir_err']['ingredient_%d' % i] = 'Null'
+
+        return self.data
 
     def add_ingredients(self, ingredients):
         for ingredient in ingredients:
