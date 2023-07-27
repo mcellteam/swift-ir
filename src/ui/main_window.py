@@ -826,15 +826,10 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             cfg.data['state']['tool_windows']['signals'] = state
 
-        if not state:
+        if self._isProjectTab():
             setData('state,blink', False)
             cfg.pt.blinkTimer.stop()
-            cfg.pt..tbbBlinkToggle.setIcon(qta.icon(
-                ('mdi.toggle-switch-off-outline', 'mdi.toggle-switch')[getData('state,blink')],
-                color='#f3f6fb'))
-
-        if self._isProjectTab():
-
+            cfg.pt.tbbBlinkToggle.setIcon(qta.icon('mdi.toggle-switch'), color='#f3f6fb')
 
             if state:
                 # cfg.pt.match_widget.adjustSize() #MUCH BETTER OFF
@@ -3931,6 +3926,7 @@ class MainWindow(QMainWindow):
         txt = f"Elapsed Time : %.3gs / %.3gm" % (t, t / 60)
         if desc:
             txt += " (%s)" % desc
+        self.hud.tell(txt)
         self.set_status(txt)
 
 

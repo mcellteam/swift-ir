@@ -3803,11 +3803,10 @@ class ProjectTab(QWidget):
 
     def updateDetailsPanel(self):
         logger.info('')
-        logger.info(f'self._tabs.currentIndex() = {self._tabs.currentIndex()}')
 
         if self._tabs.currentIndex() == 1:
             caller = inspect.stack()[1].function
-            logger.critical(f'caller: {caller}')
+            logger.info(f'[{caller}] Updating details panel...')
             self.secName.setText(cfg.data.filename_basename())
             ref = cfg.data.reference_basename()
             if ref == '':
