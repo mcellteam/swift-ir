@@ -84,7 +84,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         if not os.path.exists(signals_dir):
             os.mkdir(signals_dir)
 
-        # dm.clear_method_results(scale=scale, start=start, end=end)
+        # dm.clear_method_results(scale=scale, start=start, end=end) #0727-
         if rename_switch:
             rename_layers(use_scale=scale, al_dict=alignment_dict)
 
