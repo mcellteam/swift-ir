@@ -14,6 +14,8 @@ DEBUG="0"
 PULL="1"
 FORCE="0"
 
+echo "development_ng version of this script"
+
 echo "Parsing cli arguments..."
 for i in "$@"; do
   case $i in
