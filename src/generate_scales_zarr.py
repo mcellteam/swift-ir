@@ -53,8 +53,17 @@ def GenerateScalesZarr(dm, gui=True):
     for scale in dm.scales():
         x, y = dm.image_size(s=scale)
         group = 's%d' % get_scale_val(scale)
-        preallocate_zarr(dm=dm, name='img_src.zarr', group=group,
-                         dimx=x, dimy=y, dimz=len(dm), dtype='uint8',overwrite=True, gui=gui)
+        # preallocate_zarr(dm=dm, name='img_src.zarr', group=group, dimx=x, dimy=y, dimz=len(dm), dtype='uint8',overwrite=True, gui=gui)
+        preallocate_zarr(dm=dm, name='img_src.zarr', group=group, dimx=x, dimy=y, dimz=len(dm), dtype='|u1',overwrite=True, gui=gui)
+
+        # preallocate_zarr(dm=dm,
+        #                  name='img_aligned.zarr',
+        #                  group='s%d' % scale_val,
+        #                  dimx=rect[2],
+        #                  dimy=rect[3],
+        #                  dimz=len(dm),
+        #                  dtype='|u1',
+        #                  overwrite=True)
 
     time.sleep(1)
 

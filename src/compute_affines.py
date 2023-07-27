@@ -115,6 +115,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                 sec['alignment']['meta']['skipped'] = sec['skipped']
                 sec['alignment']['meta']['dev_mode'] = cfg.DEV_MODE
                 sec['alignment']['meta']['recipe_logging'] = cfg.RECIPE_LOGGING
+                sec['alignment']['meta']['verbose_swim'] = cfg.VERBOSE_SWIM
                 sec['alignment']['meta']['fn_transforming'] = sec['filename']
                 sec['alignment']['meta']['fn_reference'] = sec['reference']
                 sec['alignment']['meta']['current_method'] = sec['current_method']
