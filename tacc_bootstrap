@@ -12,6 +12,7 @@
 CACHER="0"
 DEBUG="0"
 PULL="1"
+FORCE="0"
 
 echo "Parsing cli arguments..."
 for i in "$@"; do
@@ -24,8 +25,17 @@ for i in "$@"; do
       DEBUG="1"
       shift # past argument with no value
       ;;
+    -f|--force)
+      echo "Forcing reinstallation of miniconda.
+      FORCE="1"
+      shift
+      ;;
     -p=*|--pull=*)
       PULL="${i#*=}"
+      shift
+      ;;
+    -t|--test)
+      echo "This is a test.
       shift
       ;;
     -*|--*)
@@ -40,13 +50,13 @@ done
 echo "CACHER  : ${CACHER}"
 echo "DEBUG   : ${DEBUG}"
 echo "PULL    : ${PULL}"
+echo "FORCE   : ${FORCE}"
 
 echo "Setting things up..."
 
 echo "Checking if miniconda3 is installed..."
-if [ ! -d "$WORK/miniconda3" ]; then
-  echo "Miniconda not found in $WORK..."
-  echo "Installing..."
+if [ ! -d "$WORK/miniconda3" ] | [ "$FORCE" = "1" ]; then
+  echo "Installing miniconda..."
   mkdir -p $WORK/miniconda3
   wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O $WORK/miniconda3/miniconda.sh
   bash $WORK/miniconda3/miniconda.sh -b -u -p $WORK/miniconda3
@@ -66,8 +76,8 @@ $WORK/miniconda3/bin/conda init bash
 #conda update --name base conda -y
 
 echo "Checking if AlignEM-SWiFT exists in $WORK..."
-if [ ! -d "$WORK/swift-ir" ]; then
-  echo "AlignEM-SWiFT not found in $WORK..."
+if [ ! -d "$WORK/swift-ir" ] | [ "$FORCE" = "1" ]; then
+  echo "Reinstalling AlignEM-SWiFT..."
   cd $WORK
   git clone https://github.com/mcellteam/swift-ir.git
 fi
@@ -96,8 +106,8 @@ fi
 #git stash
 #git pull --ff-only
 
-echo "Activating conda environment..."
-conda activate /work/08507/joely/ls6/miniconda3/envs/alignTACC1024
+#echo "Activating conda environment..."
+#conda activate /work/08507/joely/ls6/miniconda3/envs/alignTACC1024
 
 #echo "Unsetting MAX_NUM_THREADS..."
 #unset MAX_NUM_THREADS
@@ -123,7 +133,6 @@ export LIBTIFF_STRILE_ARRAY_MAX_RESIZE_COUNT=1000000000
 #export QTWEBENGINE_DISABLE_SANDBOX=1
 echo "Setting BLOSC_NTHREADS=1..."
 export BLOSC_NTHREADS=1
-
 echo "Setting OPENBLAS_NUM_THREADS=1..."
 export OPENBLAS_NUM_THREADS=1
 echo "Setting OMP_NUM_THREADS=1..."
@@ -131,8 +140,8 @@ export OMP_NUM_THREADS=1
 echo "Setting MKL_NUM_THREADS=1..."
 export MKL_NUM_THREADS=1
 
-echo "Activating Preconfigured Conda Environment..."
-conda activate /work/08507/joely/ls6/miniconda3/envs/alignTACC1024
+#echo "Activating Preconfigured Conda Environment..."
+#conda activate /work/08507/joely/ls6/miniconda3/envs/alignTACC1024
 
 echo "Environment Variables:"
 conda env config vars list
@@ -150,6 +159,10 @@ if [ "$CACHER" = "1" ] ; then
   echo "Loading python_cacher module..."
   ml python_cacher/1.2
 fi
+
+echo "Activating Preconfigured Conda Environment..."
+conda activate /work/08507/joely/ls6/miniconda3/envs/alignTACC1024
+
 
 echo "3D Acceleration/OpenGL Rendering:"
 swr glxinfo -B

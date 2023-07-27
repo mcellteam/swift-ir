@@ -15,6 +15,10 @@ for i in "$@"; do
       DEBUG="1"
       shift
       ;;
+    -t|--test)
+      echo "This is a test.
+      shift
+      ;;
     -*|--*)
       echo "Unknown option $i"
       exit 1
