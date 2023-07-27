@@ -769,7 +769,6 @@ class DataModel:
 
     def set_defaults(self):
         logger.info(f'[{inspect.stack()[1].function}] Setting Defaults')
-        import src.config as cfg
 
         initial_zpos = int(len(self)/2)
         self._data['data']['zposition'] = initial_zpos

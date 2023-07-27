@@ -58,7 +58,6 @@ from src.data_model import DataModel
 from src.funcs_zarr import tiffs2MultiTiff
 from src.generate_aligned import GenerateAligned
 # from src.generate_scales import GenerateScales
-from src.generate_scales_zarr import GenerateScalesZarr
 from src.helpers import run_checks, setOpt, getOpt, getData, setData, print_exception, get_scale_val, \
     natural_sort, tracemalloc_start, tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, \
     exist_aligned_zarr, configure_project_paths, isNeuroglancerRunning, \
@@ -1464,27 +1463,27 @@ class MainWindow(QMainWindow):
     # def generate_multiscale_zarr(self):
     #     pass
 
-    def export(self):
-        if self._working == True:
-            self.warn('Another Process is Already Running')
-            return
-        logger.critical('Exporting To Zarr...')
-        self.tell('Exporting...')
-        self.tell('Generating Neuroglancer-Compatible Zarr...')
-        src = os.path.abspath(cfg.data['data']['destination_path'])
-        out = os.path.abspath(os.path.join(src, 'img_aligned.zarr'))
-        try:
-            if cfg.USE_EXTRA_THREADING:
-                self.worker = BackgroundWorker(fn=GenerateScalesZarr())
-                self.threadpool.start(self.worker)
-            else:
-                GenerateScalesZarr()
-        except:
-            print_exception()
-            logger.error('Zarr Export Encountered an Exception')
-
-        self._callbk_unsavedChanges()
-        self.tell('Process Finished')
+    # def export(self):
+    #     if self._working == True:
+    #         self.warn('Another Process is Already Running')
+    #         return
+    #     logger.critical('Exporting To Zarr...')
+    #     self.tell('Exporting...')
+    #     self.tell('Generating Neuroglancer-Compatible Zarr...')
+    #     src = os.path.abspath(cfg.data['data']['destination_path'])
+    #     out = os.path.abspath(os.path.join(src, 'img_aligned.zarr'))
+    #     try:
+    #         if cfg.USE_EXTRA_THREADING:
+    #             self.worker = BackgroundWorker(fn=GenerateScalesZarr())
+    #             self.threadpool.start(self.worker)
+    #         else:
+    #             GenerateScalesZarr()
+    #     except:
+    #         print_exception()
+    #         logger.error('Zarr Export Encountered an Exception')
+    #
+    #     self._callbk_unsavedChanges()
+    #     self.tell('Process Finished')
 
     @Slot()
     def clear_skips(self):

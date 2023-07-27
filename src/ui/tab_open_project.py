@@ -609,8 +609,8 @@ class OpenProject(QWidget):
             cfg.mw.set_status('')
 
             filename.replace(' ','_')
-            if not filename.endswith('.swiftir'):
-                filename += ".swiftir"
+            fn, ext = os.path.splitext(filename)
+            filename = fn + ".swiftir"
             if os.path.exists(filename):
                 logger.warning("The file '%s' already exists." % filename)
                 cfg.mw.warn("The file '%s' already exists." % filename)
@@ -773,7 +773,6 @@ class OpenProject(QWidget):
         logger.critical('<<<< new_project <<<<')
 
 
-
     def import_multiple_images(self, path):
         ''' Import images into data '''
         cfg.mw.tell('Import Images:')
@@ -871,7 +870,27 @@ class OpenProject(QWidget):
 
             # filename = self.selected_file
             filename = self.selectionReadout.text()
+            fn, ext = os.path.splitext(filename)
+            if ext == '.json':
+                logger.info('Opening OLD alignem-swift project')
+                new_name = fn + '.swiftir'
+                print(f"new name: {new_name}")
+                with open(filename, 'r') as f:
+                    data = json.load(f)
+                    al_stack = data['data']['scales']['scale_1']['alignment_stack']
+                    imgs = []
+                    for l in al_stack:
+                        imgs.append(os.path.dirname(new_name) + '/' + l['images']['base']['filename'])
+                    print(imgs)
+                    self.NEW_PROJECT_IMAGES = imgs
+                    self.NEW_PROJECT_PATH = new_name
+                    self.new_project(skip_to_config=True)
+                    # print(json.dumps(data, indent=4))
+                return
+
+
             logger.info(f'Opening {filename}...')
+
             try:
                 with open(filename, 'r') as f:
                     cfg.data = DataModel(data=json.load(f))
@@ -886,7 +905,8 @@ class OpenProject(QWidget):
                 logger.info(f'Project Opened!')
             append_project_path(filename)
             cfg.data.set_paths_absolute(filename=filename)
-            cfg.project_tab = ProjectTab(self, path=cfg.data.dest() + '.swiftir', datamodel=cfg.data)
+            # cfg.project_tab = ProjectTab(self, path=cfg.data.dest() + '.swiftir', datamodel=cfg.data)
+            cfg.project_tab = ProjectTab(self, path=cfg.data.dest(), datamodel=cfg.data)
             cfg.dataById[id(cfg.project_tab)] = cfg.data
             cfg.mw.setUpdatesEnabled(False)
             try:
@@ -895,7 +915,8 @@ class OpenProject(QWidget):
                 print_exception()
             finally:
                 cfg.mw.setUpdatesEnabled(True)
-            cfg.mw.addGlobTab(cfg.project_tab, os.path.basename(cfg.data.dest()) + '.swiftir')
+            # cfg.mw.addGlobTab(cfg.project_tab, os.path.basename(cfg.data.dest()) + '.swiftir')
+            cfg.mw.addGlobTab(cfg.project_tab, os.path.basename(cfg.data.dest()))
             cfg.mw._setLastTab()
             # cfg.mw.hud.done()
             cfg.mw._is_initialized = 1
@@ -1453,7 +1474,8 @@ def validate_project_selection(path) -> bool:
     # logger.info('Validating selection %s...' % cfg.selected_file)
     # called by setSelectionPathText
     path, extension = os.path.splitext(path)
-    if extension != '.swiftir':
+    # if extension != '.swiftir':
+    if extension not in ('.swiftir','.json'):
         return False
     else:
         # logger.info('Directory contains .zarray -> selection is a valid project')

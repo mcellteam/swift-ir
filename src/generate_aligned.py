@@ -276,6 +276,8 @@ def makeTasksList(dm, iter, job_script, scale, rect, zarr_group):
         args_list.append(args)
     return args_list
 
+
+
 def count_aligned_files(dest, s):
     path = os.path.join(dest, s, 'img_aligned')
     files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
