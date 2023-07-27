@@ -137,6 +137,12 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
         # futures = [pool.submit(run_mir, task) for task in tasks]
         # concurrent.futures.wait(futures)
 
+    _it = 0
+    while (count_aligned_files(dm.dest(), scale) < len(dm)) or _it > 4:
+        # logger.info('Sleeping for 1 second...')
+        time.sleep(1)
+        _it += 1
+
     logger.info("Generate Alignment Finished")
 
 
@@ -184,7 +190,6 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
         tasks.append(task)
     # shuffle(tasks)
 
-
     t0 = time.time()
 
     if ng.is_server_running():
@@ -199,17 +204,11 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
     #     [p.get() for p in results]
     #     # pool.join()
     """Blocking"""
-    # with ThreadPool(processes=cpus) as pool:
     with ThreadPoolExecutor(max_workers=cpus) as executor:
         list(executor.map(convert_zarr, tqdm.tqdm(tasks, total=len(tasks), desc="Convert Alignment to Zarr", position=0, leave=True)))
 
     logger.info("Convert Alignment to Zarr Finished")
 
-    _it = 0
-    while (count_aligned_files(dm.dest(), scale) < len(dm)) or _it > 4:
-        # logger.info('Sleeping for 1 second...')
-        time.sleep(1)
-        _it += 1
     t_elapsed = time.time() - t0
     dm.t_convert_zarr = t_elapsed
     cfg.main_window.set_elapsed(t_elapsed, f'Copy-convert alignment to Zarr')

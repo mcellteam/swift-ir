@@ -28,11 +28,11 @@ def run_recipe(data):
     :param data: data for a single pairwise alignment as Python dictionary.
     '''
     if os.path.basename(data['reference']) != '':
-        recipe = align_recipe(
-            data=data,)
+        recipe = align_recipe(data=data,)
         recipe.assemble_recipe()
-        recipe.execute_recipe()
-
+        o = recipe.execute_recipe()
+        if o == 0:
+            recipe.set_results()
     return data
 
 class align_recipe:
@@ -43,19 +43,11 @@ class align_recipe:
         self.configure_logging()
         self.cur_method = self.meta['current_method']
         self.defaults = self.meta['defaults']
-        self.destination = self.meta['destination_path']
-        self.scale_key = self.meta['scale_key']
         self.siz = self.meta['image_src_size']
-        self.dev_mode = self.meta['dev_mode']
         self.scale_dir = os.path.join(self.meta['destination_path'], self.meta['scale_key'])
-        self.init_afm = np.array(self.meta['init_afm'])
         self.fn_reference = self.meta['fn_reference']
         self.fn_transforming = self.meta['fn_transforming']
         self.alignment = self.data['alignment']
-        self.alignment['method_results'].setdefault('affine_matrix', self.init_afm.tolist())
-        self.alignment['method_results'].setdefault('snr', [])
-        self.alignment['method_results'].setdefault('snr_report', 'SNR: --')
-        self.option = ('init_affine','refine_affine')[self.meta['isRefinement']]
         if self.cur_method == 'grid-default':
             self.wht = self.defaults['signal-whitening']
             self.iters = self.defaults['swim-iterations']
@@ -69,30 +61,23 @@ class align_recipe:
         self.initial_rotation = float(self.defaults['initial-rotation'])
         self.afm = np.array([[1., 0., 0.], [0., 1., 0.]])
 
-
         # Configure platform-specific path to executables for C SWiFT-IR
         slug = (('linux', 'darwin')[platform.system() == 'Darwin'], 'tacc')['tacc.utexas' in platform.node()]
         self.swim_c = f'{os.path.split(os.path.realpath(__file__))[0]}/lib/bin_{slug}/swim'
         self.mir_c = f'{os.path.split(os.path.realpath(__file__))[0]}/lib/bin_{slug}/mir'
 
 
-    def __str__(self):
-        s = "align_recipe: \n"
-        s += "  dir: " + str(self.scale_dir) + "\n"
-        s += "  sta: " + str(self.fn_reference) + "\n"
-        s += "  mov: " + str(self.fn_transforming) + "\n"
-
-
     def configure_logging(self):
-        MAlogger = logging.getLogger('MAlogger')
-        SWIMlogger = logging.getLogger('SWIMlogger')
-        RMlogger = logging.getLogger('recipemaker')
         logger = logging.getLogger(__name__)
+        MAlogger = logging.getLogger('MAlogger')
+        RMlogger = logging.getLogger('recipemaker')
+        Exceptlogger = logging.getLogger('exceptlogger')
+        Exceptlogger.addHandler(
+            logging.FileHandler(os.path.join(self.meta['destination_path'], 'logs', 'exceptions.log')))
         if self.meta['recipe_logging']:
             MAlogger.addHandler(logging.FileHandler(os.path.join(self.meta['destination_path'], 'logs', 'manual_align.log')))
-            SWIMlogger.addHandler(logging.FileHandler(os.path.join(self.meta['destination_path'], 'logs', 'swim.log')))
             RMlogger.addHandler(logging.FileHandler(os.path.join(self.meta['destination_path'], 'logs', 'recipemaker.log')))
-            # scratchpath = os.path.join(destination, 'logs', 'scratch.log')
+            # scratchpath = os.path.join(self.meta['destination_path'], 'logs', 'scratch.log')
             # try: os.remove(scratchpath)
             # except OSError: pass
             # fh = logging.FileHandler(scratchpath)
@@ -100,7 +85,6 @@ class align_recipe:
             # scratchlogger.addHandler(fh)
         else:
             MAlogger.disabled = True
-            SWIMlogger.disabled = True
             RMlogger.disabled = True
             logger.disabled = True
 
@@ -113,7 +97,6 @@ class align_recipe:
 
 
     def assemble_recipe(self):
-        # scratchlogger.critical(f'ASSEMBLING RECIPE [{self.cur_method}]...:')
 
         # Set up 1x1 point and window
         pa = np.zeros((2, 1))  # Point Array for one point
@@ -133,7 +116,7 @@ class align_recipe:
                     pa[0, x + nx * y] = int(0.5 * sx + sx * x)  # Point Array (2x4) points
                     pa[1, x + nx * y] = int(0.5 * sy + sy * y)  # Point Array (2x4) points
             psta_2x2 = pa
-            ww_1x1 = self.defaults[self.scale_key]['swim-window-px']
+            ww_1x1 = self.defaults[self.meta['scale_key']]['swim-window-px']
             ww_2x2 = [int(ww_1x1[0]/2), int(ww_1x1[1]/2)]
 
             if self.meta['isRefinement']:
@@ -172,84 +155,77 @@ class align_recipe:
             man_psta = np.array(self.alignment['manpoints_mir']['ref']).transpose()
             if self.cur_method == 'manual-hint':
                 self.add_ingredients([
-                    align_ingredient(mode='MIR', ww=ww, psta=man_psta, pmov=man_pmov),
-                    align_ingredient(mode='SWIM-Manual', ww=ww, psta=man_psta, pmov=man_pmov, ID='Manual-a'),
-                    align_ingredient(mode='SWIM-Manual', ww=ww, psta=man_psta, pmov=man_pmov, ID='Manual-b', last=True)])
+                    align_ingredient(mode='MIR', ww=[ww,ww], psta=man_psta, pmov=man_pmov),
+                    align_ingredient(mode='SWIM-Manual', ww=[ww,ww], psta=man_psta, pmov=man_pmov, ID='Manual-a'),
+                    align_ingredient(mode='SWIM-Manual', ww=[ww,ww], psta=man_psta, pmov=man_pmov, ID='Manual-b', last=True)])
             elif self.cur_method == 'manual-strict':
-                self.add_ingredients([align_ingredient(mode='MIR', ww=ww, psta=man_psta, pmov=man_pmov, last=True)])
+                self.add_ingredients([align_ingredient(mode='MIR', ww=[ww,ww], psta=man_psta, pmov=man_pmov, last=True)])
 
 
     def execute_recipe(self):
 
-        self.afm = self.init_afm
+        self.afm = np.array(self.meta['init_afm'])
 
         if (self.fn_reference == self.fn_transforming) or (self.fn_reference == ''):
-            '''handle case where fn_reference is itself'''
-            snr = np.array([0.0])
-            snr_report = 'SNR: %.1f (+-%.1f n:%d)  <%.1f  %.1f>' % (
-                snr.mean(), snr.std(), len(snr), snr.min(), snr.max())
-            afm = self.init_afm
-        else:
+            print_exception(extra=f'Image Has No Reference!')
+            return
+
+        for i, ingredient in enumerate(self.ingredients):
             try:
-                # Execute each ingredient in recipe
-                for i, ingredient in enumerate(self.ingredients):
-                    ingredient.afm = self.afm
-                    try:
-                        self.afm = ingredient.execute_ingredient()
-                    except:
-                        print_exception(self.destination, extra=f'Error on ingredient {i} of {len(self.ingredients)}')
-                snr = self.ingredients[-1].snr
-                snr_report = self.ingredients[-1].snr_report
-                afm = self.ingredients[-1].afm
+                ingredient.afm = self.afm
+                self.afm = ingredient.execute_ingredient()
             except:
-                snr = np.array([0.0])
-                snr_report = 'SNR: %.1f (+-%.1f n:%d)  <%.1f  %.1f>' % (
-                    snr.mean(), snr.std(), len(snr), snr.min(), snr.max())
-                afm = self.init_afm
+                print_exception(extra=f'Exception raised on ingredient {i} of {len(self.ingredients)}')
+
+
+    def set_results(self):
 
         time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        afm = np.array([[1., 0., 0.], [0., 1., 0.]])
+        snr = np.array([0.0])
+        snr_report = 'SNR: %.1f (+-%.1f n:%d)  <%.1f  %.1f>' % (
+            snr.mean(), snr.std(), len(snr), snr.min(), snr.max())
+        try:
+            afm = self.ingredients[-1].afm
+            snr = self.ingredients[-1].snr
+            snr_report = self.ingredients[-1].snr_report
+        except:
+            print_exception()
 
         try:
             snr_list = snr.tolist()
         except:
             snr_list = list(snr)
+
+        self.data['alignment']['swim_args'] = {}
+        self.data['alignment']['swim_out'] = {}
+        self.data['alignment']['swim_err'] = {}
+        self.data['alignment']['mir_toks'] = {}
+        self.data['alignment']['mir_script'] = {}
+        self.data['alignment']['mir_out'] = {}
+        self.data['alignment']['mir_err'] = {}
+
         self.data['alignment']['method_results']['snr'] = snr_list
-        self.data['alignment']['method_results']['snr_type'] = str(type(snr))
-        self.data['alignment']['method_results']['snr_str'] = str(snr)
         self.data['alignment']['method_results']['snr_report'] = str(snr_report)
         self.data['alignment']['method_results']['snr_average'] = sum(snr_list) / len(snr_list)
-
         self.data['alignment']['method_results']['affine_matrix'] = afm.tolist()
         self.data['alignment']['method_results']['swim_pos'] = self.ingredients[-1].psta.tolist()
         self.data['alignment']['method_results']['datetime'] = time
         self.data['alignment']['method_results']['wht'] = self.wht
         self.data['alignment']['method_results']['swim-iterations'] = self.iters
-        self.data['alignment']['method_results']['option'] = self.option
         self.data['alignment']['method_results']['current_method'] = self.cur_method
-        self.data['alignment']['method_results']['ingredients'] = {}
-        self.data['alignment']['method_results']['fn_reference']= self.fn_reference
-        self.data['alignment']['method_results']['fn_transforming']= self.fn_transforming
         self.data['alignment']['method_results']['siz']= self.siz
-        try:    self.data['alignment']['method_results']['memory_mb'] = self.megabytes()
-        except: print_exception(self.destination)
-        try:    self.data['alignment']['method_results']['memory_gb'] = self.gigabytes()
-        except: print_exception(self.destination)
+        self.data['alignment']['method_results']['memory_mb'] = self.megabytes()
+        self.data['alignment']['method_results']['memory_gb'] = self.gigabytes()
 
         if self.cur_method == 'grid-custom':
             self.data['alignment']['method_results']['grid_custom_regions'] = self.grid_custom_regions
 
         self.data.setdefault('alignment_history', {})
-        self.data['alignment_history'].setdefault(self.cur_method, [])
         self.data['alignment_history'][self.cur_method] = self.data['alignment']['method_results']
-        if self.dev_mode:
-            self.data['alignment']['swim_args'] = {}
-            self.data['alignment']['swim_out'] = {}
-            self.data['alignment']['swim_err'] = {}
-            self.data['alignment']['mir_toks'] = {}
-            self.data['alignment']['mir_script'] = {}
-            self.data['alignment']['mir_out'] = {}
-            self.data['alignment']['mir_err'] = {}
-            # self.data['alignment']['crop_str_mir'] = {}
+
+
+        if self.meta['dev_mode']:
             for i,ing in enumerate(self.ingredients):
                 try: self.data['alignment']['method_results']['ingredient_%d' % i] = {}
                 except: self.data['alignment']['method_results']['ingredient_%d' % i] = 'Null'
@@ -285,12 +261,6 @@ class align_recipe:
                     except: self.data['alignment']['mir_out']['ingredient_%d' % i] = 'Null'
                     try: self.data['alignment']['mir_err']['ingredient_%d' % i] = ing.mir_err_lines
                     except: self.data['alignment']['mir_err']['ingredient_%d' % i] = 'Null'
-
-
-        self.data['alignment_hash'] = dict_hash(self.data['alignment_history'][self.cur_method])
-
-        return afm
-
 
     def add_ingredients(self, ingredients):
         for ingredient in ingredients:
@@ -379,51 +349,32 @@ class align_ingredient:
     def get_swim_args(self):
         self.cx = int(self.recipe.siz[0] / 2.0)
         self.cy = int(self.recipe.siz[1] / 2.0)
-
-        afm_arg = '%.6f %.6f %.6f %.6f' % (self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
-
         basename = os.path.basename(self.recipe.fn_transforming)
         filename, extension = os.path.splitext(basename)
-
         multi_arg_str = ArgString(sep='\n')
-
         self.ms_names = []
-
         for i in range(len(self.psta[0])):
-
             if self.recipe.cur_method == 'grid-custom':
                 if self.ID != 'Grid1x1':
                     if not self.recipe.grid_custom_regions[i]:
                         continue
-
             # correlation signals argument (output path)
             b_arg = os.path.join( self.recipe.scale_dir, 'signals', '%s_%s_%d%s' %
                                   (filename, self.recipe.cur_method, i, extension))
             self.ms_names.append(b_arg)
-
             args = ArgString(sep=' ')
-            # if type(self.ww) == float or type(self.ww) == int:
-            #     args.append("ww_%s" % self.ww)
-            # else:
-            #     args.append("ww_%dx%d" % (self.ww[0], self.ww[1]))
-            if type(self.ww) == float or type(self.ww) == int:
-                args.append("%d" % self.ww)
-            else:
-                args.append("%dx%d" % (self.ww[0], self.ww[1]))
-            # args.append("-v")
-            # args.append('ww_' + self.swim_ww_arg)
+            args.append("%dx%d" % (self.ww[0], self.ww[1]))
+            if self.alignment['meta']['verbose_swim']:
+                args.append("-v")
             if self.alignment['swim_settings']['clobber_fixed_noise']:
                 args.append('-f%d' % self.alignment['swim_settings']['clobber_fixed_noise_px'])
-            # args.add_flag(flag='-i', arg=str(self.rcipe.iters))
             args.add_flag(flag='-i', arg=str(self.recipe.iters))
             args.add_flag(flag='-w', arg=str(self.recipe.wht))
             if self.recipe.cur_method in ('grid-default', 'grid-custom'):
                 self.offx = int(self.psta[0][i] - self.cx)
                 self.offy = int(self.psta[1][i] - self.cy)
-                # self.offx = '%.6f' % (self.psta[0][i] - self.cx)
-                # self.offy = '%.6f' % (self.psta[1][i] - self.cy)
-                args.add_flag(flag='-x', arg=str(self.offx))
-                args.add_flag(flag='-y', arg=str(self.offy))
+                args.add_flag(flag='-x', arg='%d' % self.offx)
+                args.add_flag(flag='-y', arg='%d' % self.offy)
             args.add_flag(flag='-b', arg=b_arg)
             if self.last:
                 if self.alignment['karg']:
@@ -450,45 +401,20 @@ class align_ingredient:
             r = self.recipe.initial_rotation
             if abs(r) > 0:
                 args.append(convert_rotation(r))
-            args.append(afm_arg)
+            args.append('%.6f %.6f %.6f %.6f' % (self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1]))
             args.append(self.alignment['swim_settings']['extra_args'])
             multi_arg_str.append(args())
-
         return multi_arg_str
 
 
-
-
     def run_swim(self):
-        SWIMlogger = logging.getLogger('SWIMlogger')
-
         self.multi_swim_arg_str = self.get_swim_args()
-        SWIMlogger.critical(f'Multi-SWIM Argument String:\n{self.multi_swim_arg_str()}')
-
-        if type(self.ww) == float or type(self.ww) == int:
-            # args.append(str(int(self.ww)))
-            arg = "%d" % self.ww
-        else:
-            # args.append(str(int(self.ww[0])) + "x" + str(int(self.ww[1])))
-            arg = "%dx%d" % (self.ww[0], self.ww[1])
-        # arg = "%sx%s" % tuple(self.ww)
-
-        o = run_command(
-            self.recipe.swim_c,
-            # arg_list=[self.swim_ww_arg],
-            arg_list=[arg],
-            cmd_input=self.multi_swim_arg_str(),
-            extra=f'Automatic SWIM Alignment ({self.ID})',
-            scale=self.alignment['meta']['scale_val']
-        )
-
-        self.swim_output = o['out'].strip().split('\n')
-        self.swim_err_lines = o['err'].strip().split('\n')
-
-        SWIMlogger.critical(f"\nSWIM Out:\n{str(self.swim_output)}\n\n")
-        SWIMlogger.critical(f"\nSWIM Err:\n{str(self.swim_err_lines)}\n\n")
-
-
+        logging.getLogger('recipemaker').critical(f'Multi-SWIM Argument String:\n{self.multi_swim_arg_str()}')
+        arg = "%dx%d" % (self.ww[0], self.ww[1])
+        out, err = run_command(self.recipe.swim_c, arg_list=[arg],
+                               cmd_input=self.multi_swim_arg_str(), desc=f'SWIM alignment')
+        self.swim_output = out.strip().split('\n')
+        self.swim_err_lines = err.strip().split('\n')
         return self.swim_output
 
 
@@ -510,38 +436,26 @@ class align_ingredient:
             x1 = y1 = str(int((self.ww - px_keep) / 2.0))
             x2 = y2 = str(int((.50 * self.ww) + (px_keep / 2.0)))
 
-
         for name in self.ms_names:
             self.crop_str_args = [
                 'B', w, h, '1',
                 '\nZ',
                 '\nF', name,
                 '\n0', '0', x1, y1,
-                f'\n{w}', '0', x2, y1,
-                f'\n{w}', h, x2, y2,
+                '\n%s'%w, '0', x2, y1,
+                '\n%s'%w, h, x2, y2,
                 '\n0', h, x1, y2,
                 '\nT',
                 '\n0', '1', '2',
                 '\n2', '3', '0',
                 '\nW', name
             ]
-            # self.crop_str_mir = f"""B {w} {h} 1\nZ\nF {name}\n0 0 {x1} {y1}\n{w} 0 {x2} {y1}\n{w} {h} {x2} {y2}\n0 {h} {x1} {y2}\nT\n0 1 2\n2 3 0\nW {name}"""
             self.crop_str_mir = ' '.join(self.crop_str_args)
             logger.critical(f'MIR crop string:\n{self.crop_str_mir}')
-            try:
-                o = run_command(self.recipe.mir_c,
-                                arg_list=[],
-                                cmd_input=self.crop_str_mir,
-                                extra=f'MIR the Match Signals to crop ({self.ID})',
-                                scale=self.alignment['meta']['scale_val'])
-            except:
-                print_exception()
-
-
+            _, _ = run_command(self.recipe.mir_c, cmd_input=self.crop_str_mir, desc=f'Crop match signals')
 
 
     def ingest_swim_output(self, swim_output):
-
 
         if (len(swim_output) == 1) and (self.recipe.cur_method in ('default-grid', 'custom-grid')):
             toks = swim_output[0].replace('(', ' ').replace(')', ' ').strip().split()
@@ -561,13 +475,6 @@ class align_ingredient:
             for i,l in enumerate(swim_output):
                 toks = l.replace('(', ' ').replace(')', ' ').strip().split()
                 logger.critical(f"SWIM output tokens, line {i}: {str(toks)}")
-                '''
-                example:
-                toks (i):
-                ['28.6102:', '/Users/joelyancey/glanceem_swift/test_projects/test5/scale_4/img_src/dummy4.tif', '256', '768', '/Users/joelyancey/glanceem_swift/test_projects/test5/scale_4/img_src/dummy5.tif', '246.664', '751.303', '1.00504', '-0.005244', '0.004421', '0.98697', '-0.808517', '-4.85767', '4.92449']
-                type: <class 'list'>
-                '''
-
                 self.mir_toks[i] = str(toks)
                 try:
                     mir_toks = [toks[k] for k in [2, 3, 5, 6]]
@@ -578,16 +485,9 @@ class align_ingredient:
                 self.mir_script += ' '.join(mir_toks) + '\n'
                 snr_list.append(float(toks[0][0:-1]))
             self.mir_script += 'R\n'
-            logger.critical(f"\n\nmir_toks:\n{mir_toks}\n\n")
-            logger.critical(f"\n\nmir_script:\n{self.mir_script}\n\n")
-            o = run_command(self.recipe.mir_c,
-                            arg_list=[],
-                            cmd_input=self.mir_script,
-                            extra=f'MIR the SWIM offsets to get affine ({self.ID})',
-                            scale=self.alignment['meta']['scale_val']
-                            )
-            self.mir_out_lines = o['out'].strip().split('\n')
-            self.mir_err_lines = o['err'].strip().split('\n')
+            out, err = run_command(self.recipe.mir_c, cmd_input=self.mir_script, desc=f'MIR compose affine',)
+            self.mir_out_lines = out.strip().split('\n')
+            self.mir_err_lines = err.strip().split('\n')
 
             aim = np.eye(2, 3, dtype=np.float32)
 
@@ -615,16 +515,10 @@ class align_ingredient:
             mir_script_mp += f'{self.psta[0][i]} {self.psta[1][i]} {self.pmov[0][i]} {self.pmov[1][i]}\n'
         mir_script_mp += 'R'
         self.mir_script = mir_script_mp
-
-        o = run_command(
-            self.recipe.mir_c,
-            arg_list=[],
-            cmd_input=mir_script_mp,
-            extra='MIR to get affine using manual correspondence points',
-            scale=self.alignment['meta']['scale_val']
-        )
-        mir_mp_out_lines = o['out'].strip().split('\n')
-        mir_mp_err_lines = o['err'].strip().split('\n')
+        out, err = run_command(self.recipe.mir_c, cmd_input=mir_script_mp,
+            desc='MIR to compose affine (strict manual)',)
+        mir_mp_out_lines = out.strip().split('\n')
+        mir_mp_err_lines = err.strip().split('\n')
         MAlogger.critical(f'\n==========\n'
                           f'MIR script:\n{mir_script_mp}\n'
                           f'manual mir Out:\n{mir_mp_out_lines}\n\n'
@@ -649,26 +543,20 @@ class align_ingredient:
         return self.afm
 
 
-def run_command(cmd, arg_list=None, cmd_input=None, extra='', scale=''):
+def run_command(cmd, arg_list=(), cmd_input=None, desc=''):
     cmd_arg_list = [cmd]
-    if arg_list != None:
-        cmd_arg_list = [a for a in arg_list]
-        cmd_arg_list.insert(0, cmd)
-    nl = '\n'
+    cmd_arg_list.extend(arg_list)
     # Note: decode bytes if universal_newlines=False in Popen (cmd_stdout.decode('utf-8'))
     cmd_proc = sp.Popen(cmd_arg_list, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
     cmd_stdout, cmd_stderr = cmd_proc.communicate(cmd_input)
-    RMlogger = logging.getLogger('recipemaker')
-    RMlogger.critical(f"\n========== Run Command [PID: {cmd_proc.pid}] ==========\n"
-                      f"Scale           : {scale}\n"
-                      f"Description     : {extra}\n"
-                      f"arg_list        : {arg_list}\n"
-                      f"Running command :\n{(cmd_arg_list, 'None')[cmd_arg_list == '']}\n"
-                      f"Passing data    :\n{(cmd_input, 'None')[cmd_input == '']}\n\n"
-                      f">> stdout\n{(cmd_stdout, 'None')[cmd_stdout == '']}\n"
-                      f">> stderr\n{(cmd_stderr, 'None')[cmd_stderr == '']}\n"
-                      )
-    return ({'out': cmd_stdout, 'err': cmd_stderr})
+    logging.getLogger('recipemaker').critical(
+        f"\n======== Run Command [PID: {cmd_proc.pid}] ========\n"
+        f"Description     : {desc}\n"
+        f"Running command : {cmd_arg_list}\n"
+        f"Passing data    : {cmd_input}\n\n"
+        f">> stdout\n{cmd_stdout}\n>> stderr\n{cmd_stderr}\n"
+    )
+    return cmd_stdout, cmd_stderr
 
 
 class SWIMparser:
@@ -724,14 +612,11 @@ def convert_rotation(degrees):
     deg2rad = 2*np.pi/360.
     return np.sin(deg2rad*degrees)
 
-def print_exception(dest=None, extra='None'):
+def print_exception(extra='None'):
     tstamp = datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S")
     exi = sys.exc_info()
     txt = f"  [{tstamp}]\nError Type : {exi[0]}\nError Value : {exi[1]}\n{traceback.format_exc()}\nAdditional Details: {extra}"
-    print(txt)
-    lf = os.path.join(dest, 'logs', 'exceptions.log')
-    with open(lf, 'a+') as f:
-        f.write('\n' + txt)
+    logging.getLogger('exceptlogger').warning(txt)
 
 def dict_hash(dictionary: Dict[str, Any]) -> str:
     """
@@ -756,20 +641,3 @@ if __name__ == '__main__':
     print("---JSON-DELIMITER---")
     sys.stdout.close()
     sys.stderr.close()
-
-
-'''
-SWIM output (example)
-
->> stdout
-12.4662: /Users/joelyancey/glanceem_swift/test_projects/test5/scale_4/img_src/dummy2.tif 256 256 /Users/joelyancey/glanceem_swift/test_projects/test5/scale_4/img_src/dummy3.tif 261.361 241.863  1 0 0 1 (5.36096 -14.1372 15.1195)
-10.1774: /Users/joelyancey/glanceem_swift/test_projects/test5/scale_4/img_src/dummy2.tif 768 256 /Users/joelyancey/glanceem_swift/test_projects/test5/scale_4/img_src/dummy3.tif 782.292 235.2  1 0 0 1 (14.2921 -20.8 25.2369)
-16.512: /Users/joelyancey/glanceem_swift/test_projects/test5/scale_4/img_src/dummy2.tif 256 768 /Users/joelyancey/glanceem_swift/test_projects/test5/scale_4/img_src/dummy3.tif 255.506 767.735  1 0 0 1 (-0.493896 -0.264648 0.560333)
-12.5832: /Users/joelyancey/glanceem_swift/test_projects/test5/scale_4/img_src/dummy2.tif 768 768 /Users/joelyancey/glanceem_swift/test_projects/test5/scale_4/img_src/dummy3.tif 773.354 780.944  1 0 0 1 (5.35358 12.9438 14.0073)
-
->> stderr
-None
-
-
-
-'''
