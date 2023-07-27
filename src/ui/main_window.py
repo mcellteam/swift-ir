@@ -583,7 +583,7 @@ class MainWindow(QMainWindow):
 
 
             # logger.critical('thumbs: %s' % str(thumbs))
-            # logger.critical('snr_vals: %s' % str(snr_vals))
+            logger.info('snr_vals: %s' % str(snr_vals))
             method = cfg.data.get_current_method(l=z)
             if method == 'grid-custom':
                 regions = cfg.data.grid_custom_regions
@@ -596,7 +596,6 @@ class MainWindow(QMainWindow):
                                 snr = snr_vals[count]
                                 assert snr > 0.0
                             except:
-                                print_exception()
                                 cfg.pt.msList[i].set_no_image()
                                 continue
 

@@ -118,7 +118,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                 sec['alignment']['meta']['verbose_swim'] = cfg.VERBOSE_SWIM
                 sec['alignment']['meta']['fn_transforming'] = sec['filename']
                 sec['alignment']['meta']['fn_reference'] = sec['reference']
-                sec['alignment']['meta']['current_method'] = sec['current_method']
+                sec['alignment']['meta']['method'] = sec['current_method']
 
                 if dm['data']['scales'][scale]['isRefinement']:
                     scale_prev = dm.scales()[dm.scales().index(scale) + 1]
@@ -133,7 +133,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                 else:
                     sec['alignment']['meta']['init_afm'] = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
 
-                tasks.append(copy.deepcopy(sec))
+                tasks.append(copy.deepcopy(sec['alignment']))
             # else:
             #     logger.info(f"Dropping task for {zpos}")
 
@@ -243,7 +243,10 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
         # # For use with ThreadPool ONLY
         for r in all_results:
-            dm['data']['scales'][scale]['stack'][r['alignment']['meta']['index']] = r
+            index = r['meta']['index']
+            method = r['meta']['method']
+            dm['data']['scales'][scale]['stack'][index]['alignment'] = r
+            dm['data']['scales'][scale]['stack'][index]['alignment_history'][method] = r['method_results']
 
 
         SetStackCafm(dm.get_iter(scale), scale=scale, poly_order=cfg.data.default_poly_order)
