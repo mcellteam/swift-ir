@@ -16,7 +16,7 @@ for i in "$@"; do
       shift
       ;;
     -t|--test)
-      echo "This is a test.
+      echo "This is a test."
       shift
       ;;
     -*|--*)
