@@ -59,7 +59,7 @@ class align_recipe:
         self.grid_custom_regions  = self.alignment['swim_settings']['grid-custom-regions']
         self.ingredients = []
         self.initial_rotation = float(self.defaults['initial-rotation'])
-        self.afm = np.array([[1., 0., 0.], [0., 1., 0.]])
+        # self.afm = np.array([[1., 0., 0.], [0., 1., 0.]])
 
         # Configure platform-specific path to executables for C SWiFT-IR
         slug = (('linux', 'darwin')[platform.system() == 'Darwin'], 'tacc')['tacc.utexas' in platform.node()]
