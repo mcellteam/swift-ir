@@ -14,6 +14,9 @@ DEBUG="0"
 PULL="1"
 FORCE="0"
 
+echo "fb30_joel version of this script"
+
+
 echo "Parsing cli arguments..."
 for i in "$@"; do
   case $i in
@@ -26,7 +29,7 @@ for i in "$@"; do
       shift # past argument with no value
       ;;
     -f|--force)
-      echo "Forcing reinstallation of miniconda.
+      echo "Forcing reinstallation of miniconda."
       FORCE="1"
       shift
       ;;
@@ -35,7 +38,7 @@ for i in "$@"; do
       shift
       ;;
     -t|--test)
-      echo "This is a test.
+      echo "This is a test."
       shift
       ;;
     -*|--*)

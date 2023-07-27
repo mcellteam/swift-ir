@@ -4,6 +4,9 @@ CACHER="0"
 DEBUG="0"
 PULL="1"
 
+
+echo "fb30_joel version of this script"
+
 echo "Parsing cli arguments..."
 for i in "$@"; do
   case $i in
