@@ -207,7 +207,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         #     concurrent.futures.wait(futures)
 
         logger.info("Compute Affines Finished")
-        sys.stdout.flush()
+        # sys.stdout.flush()
 
 
         t_elapsed = time.time() - t0
