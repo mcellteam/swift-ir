@@ -129,7 +129,6 @@ class AbstractEMViewer(neuroglancer.Viewer):
             if self.state.relative_display_scales == None:
                 self.set_zmag()
 
-
         if self.rev_mapping[self.state.layout.type] != getData('state,ng_layout'):
             self.signals.layoutChanged.emit()
             # logger.info(f'Setting layout to: {self.state.layout.type}')
@@ -144,10 +143,6 @@ class AbstractEMViewer(neuroglancer.Viewer):
                 self.signals.zoomChanged.emit(val)
 
         # self.post_message(f"Voxel Coordinates: {str(self.state.voxel_coordinates)}")
-
-        # self.post_message(f"Voxel Coordinates: {str(self.state.voxel_coordinates)}")
-
-        self.signals.stateChanged.emit()
 
 
     @Slot()
@@ -331,7 +326,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
             logger.warning('Unable to set Z-mag')
             print_exception()
         else:
-            logger.info(f'[{caller}] Successfully set Z-mag!')
+            if DEV:
+                logger.info(f'[{caller}] Successfully set Z-mag!')
         self._blockStateChanged = False
 
 
@@ -368,7 +364,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
     # def initZoom(self, w, h, adjust=1.20):
     def initZoom(self, w, h, adjust=1.10):
-        QApplication.processEvents()
+        # QApplication.processEvents()
         # logger.info(f'w={w}, h={h}')
         # self._settingZoom = True
         # logger.critical(f'initZoom... w={w}, h={h}')
@@ -378,14 +374,14 @@ class AbstractEMViewer(neuroglancer.Viewer):
             # logger.info(f'w={w}, h={h}, cs_scale={self.cs_scale}')
             with self.txn() as s:
                 s.cross_section_scale = self.cs_scale
-            logger.critical(f"\n\nself.cs_scale set!! {self.cs_scale}\n\n")
+            # logger.critical(f"\n\nself.cs_scale set!! {self.cs_scale}\n\n")
         else:
             # logger.info(f'w={w}, h={h}')
             self.cs_scale = self.get_zoom(w=w, h=h)
             adjusted = self.cs_scale * adjust
             with self.txn() as s:
                 s.cross_section_scale = adjusted
-        logger.critical(f"self.cs_scale = {self.cs_scale}")
+        # logger.critical(f"self.cs_scale = {self.cs_scale}")
         self.signals.zoomChanged.emit(self.cs_scale * 250000000)
 
 
