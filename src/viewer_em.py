@@ -384,7 +384,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
         res_z, res_y, res_x = cfg.data.resolution(s=cfg.data.scale_key)  # nm per imagepixel
         scale_h = ((res_y * tensor_y) / h) * 1e-9  # nm/pixel
         scale_w = ((res_x * tensor_x) / w) * 1e-9  # nm/pixel
-        cs_scale = max(scale_h, scale_w)
+        # cs_scale = max(scale_h, scale_w)
+        cs_scale = scale_w
         return cs_scale
 
     # 2048 image_pixels x 4 nm/image_pixel = # nanometers
