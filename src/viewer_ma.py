@@ -397,7 +397,8 @@ class MAViewer(neuroglancer.Viewer):
     def on_state_changed_any(self):
 
         if self.state.relative_display_scales == None:
-            self.state.relative_display_scales = {'z': 10}
+            with self.txn() as s:
+                s.relativeDisplayScales = {"z": 10}
 
         # self.post_message(f"Voxel Coordinates: {str(self.state.voxel_coordinates)}")
         if self._blockStateChanged:
@@ -413,9 +414,9 @@ class MAViewer(neuroglancer.Viewer):
         #     if self.state.cross_section_scale < .001:
         #         self.cs_scale = self.state.cross_section_scale
 
-        if self.state.relativeDisplayScales == None:
-            logger.info("setting Zmag!")
-            self._set_zmag()
+        # if self.state.relativeDisplayScales == None:
+        #     logger.info("setting Zmag!")
+        #     self._set_zmag()
 
         self.signals.stateChanged.emit()
 
