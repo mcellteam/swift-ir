@@ -480,7 +480,10 @@ class SnrPlot(QWidget):
         logger.info(f'onSnrClick')
 
         if self.pt_selected:
-            self.pt_selected.resetPen()
+            try:
+                self.pt_selected.resetPen()
+            except:
+                print_exception()
             self.pt_selected.resetBrush()
             self.pt_selected.setSymbol('o')
 
