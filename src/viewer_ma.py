@@ -409,9 +409,10 @@ class MAViewer(neuroglancer.Viewer):
         #     if self.state.cross_section_scale < .001:
         #         self.cs_scale = self.state.cross_section_scale
 
-        # This part is identical to emViewer
-        if self._zmag_set < 10:
-            self._zmag_set += 1
+        if self.state.relativeDisplayScales == None:
+            logger.info("setting Zmag!")
+            self._set_zmag()
+
         self.signals.stateChanged.emit()
 
 
@@ -999,15 +1000,15 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def _set_zmag(self):
-        self._blockStateChanged = True
-        if self._zmag_set < 8:
-            self._zmag_set += 1
-            try:
-                with self.txn() as s:
-                    s.relativeDisplayScales = {"z": 10}
-            except:
-                print_exception()
-        self._blockStateChanged = False
+        # self._blockStateChanged = True
+        # if self._zmag_set < 8:
+        #     self._zmag_set += 1
+        try:
+            with self.txn() as s:
+                s.relativeDisplayScales = {"z": 10}
+        except:
+            print_exception()
+        # self._blockStateChanged = False
 
     def initZoom(self):
         logger.info(f'[{caller_name()}] [{self.role}] Calling initZoom...')

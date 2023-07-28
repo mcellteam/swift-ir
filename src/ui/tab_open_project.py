@@ -30,7 +30,7 @@ from src.thumbnailer import Thumbnailer
 from src.autoscale import autoscale
 from src.helpers import get_project_list, list_paths_absolute, get_bytes, absFilePaths, getOpt, setOpt, \
     print_exception, append_project_path, configure_project_paths, delete_recursive, \
-    create_project_structure_directories, makedirs_exist_ok, natural_sort, initLogFiles, is_tacc, is_joel, hotkey, \
+    create_project_structure_directories, makedirs_exist_ok, natural_sort, is_tacc, is_joel, hotkey, \
     get_appdir, caller_name
 from src.data_model import DataModel
 from src.ui.tab_project import ProjectTab
@@ -702,7 +702,7 @@ class OpenProject(QWidget):
             logger.info(f'New Tab ID: {ID}')
             cfg.dataById[id(cfg.project_tab)] = dm
             dm.set_defaults()
-            initLogFiles(dm)
+            # initLogFiles(dm)
             cfg.project_tab = ProjectTab(self, path=path, datamodel=dm)
             cfg.mw._disableGlobTabs()
             # self.table.setItem(i, j, item)
