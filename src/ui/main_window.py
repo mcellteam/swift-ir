@@ -310,6 +310,9 @@ class MainWindow(QMainWindow):
                 cfg.baseViewer.set_layer(cfg.data.zpos)
                 cfg.refViewer.set_layer(cfg.data.get_ref_index())  # 0611+
 
+            if self.dw_snr.isVisible():
+                cfg.project_tab.dSnr_plot.initSnrPlot()
+
 
             # if on_state_change:
             #     if getData('state,manual_mode'):
@@ -2648,7 +2651,6 @@ class MainWindow(QMainWindow):
                 self.globTabs.setCurrentIndex(i)
                 return
         self.globTabs.addTab(OpenProject(), 'Project Manager')
-        self._setLastTab()
 
     def detachNeuroglancer(self):
         logger.info('')
@@ -3791,6 +3793,21 @@ class MainWindow(QMainWindow):
         #     print('Test Function Called...')
         # self.testButton.clicked.connect(testFn)
 
+        self.tbbProjects = QToolButton()
+        def fn_projectmanager():
+            logger.info('')
+            for i in range(self.globTabs.count()):
+                if self.globTabs.widget(i).__class__.__name__ == 'OpenProject':
+                    self.globTabs.setCurrentIndex(i)
+                    return
+            self.globTabs.addTab(OpenProject(), 'Project Manager')
+
+
+        self.tbbProjects.setToolTip("Project Manager")
+        self.tbbProjects.pressed.connect(fn_projectmanager)
+        self.tbbProjects.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.tbbProjects.setIcon(qta.icon("fa.folder", color='#161c20'))
+
         self.tbbMenu = QToolButton()
         self.tbbMenu.setToolTip("Menu")
         self.tbbMenu.setMenu(self.menu)
@@ -3805,6 +3822,7 @@ class MainWindow(QMainWindow):
 
         toolbuttons = [
             self.tbbMenu,
+            self.tbbProjects,
             self.tbbRefresh,
             self.tbbGettingStarted,
             self.tbbFAQ,
@@ -3820,11 +3838,11 @@ class MainWindow(QMainWindow):
             self.tbbDetachNgButton
         ]
 
-        names = ['Menu', ' &Refresh','Getting\nStarted',' FAQ','Glossary','Issue\nTracker','3DEM\nData',' &Matches', 'SNR P&lot', 'Ref/Tra\n&Thumbs', '   &HUD', '  &Notes', '&Python\nConsole', '&Detach\nNG']
+        names = ['Menu', 'Projects', ' &Refresh','Getting\nStarted',' FAQ','Glossary','Issue\nTracker','3DEM\nData',' &Matches', 'SNR P&lot', 'Ref/Tra\n&Thumbs', '   &HUD', '  &Notes', '&Python\nConsole', '&Detach\nNG']
         for b,n in zip(toolbuttons,names):
             b.setText(n)
             b.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-            b.setFixedSize(QSize(80,24))
+            b.setFixedSize(QSize(70,28))
             b.setIconSize(QSize(30,30))
             b.setFocusPolicy(Qt.FocusPolicy.NoFocus)
             b.setStyleSheet("""
@@ -3841,14 +3859,15 @@ class MainWindow(QMainWindow):
 
 
         # self.newLabel = QLabel(' ← New! ')
-        self.newLabel = QLabel('⇡ New!')
+        self.newLabel = QLabel('↑ New!')
         # self.newLabel.setFixedHeight(13)
-        self.newLabel.setFixedSize(QSize(34, 14))
-        self.newLabel.setStyleSheet("background-color: #AAFF00; color: #161c20; font-size: 8px; border-radius: 4px; margin: 1px;")
+        self.newLabel.setFixedSize(QSize(40, 14))
+        self.newLabel.setStyleSheet("background-color: #AAFF00; color: #161c20; font-size: 8px; border-radius: 2px; margin: 1px;")
         self.newLabel.setAlignment(Qt.AlignRight)
         self.w_newLabel = HWidget(self.newLabel, ExpandingWidget(self))
 
         self.toolbar.addWidget(self.tbbMenu)
+        self.toolbar.addWidget(self.tbbProjects)
         self.toolbar.addWidget(self.tbbRefresh)
         self.toolbar.addWidget(self.tbbGettingStarted)
         self.toolbar.addWidget(self.tbbFAQ)
@@ -5144,6 +5163,7 @@ class MainWindow(QMainWindow):
         self._scaleSetWidget.layout.setAlignment(Qt.AlignCenter)
 
         self._sectionSlider = QSlider(Qt.Orientation.Horizontal, self)
+        # self._sectionSlider.setMaximumWidth(220)
         self._sectionSlider.setObjectName('z-index-slider')
         self._sectionSlider.setFocusPolicy(Qt.StrongFocus)
         self._sectionSlider.valueChanged.connect(self.jump_to_slider)
@@ -6062,7 +6082,7 @@ class MainWindow(QMainWindow):
     def initLaunchTab(self):
         self._launchScreen = OpenProject()
         self.globTabs.addTab(self._launchScreen, 'Project Manager')
-        self.globTabs.tabBar().setTabButton(0, QTabBar.RightSide,None)
+        # self.globTabs.tabBar().setTabButton(0, QTabBar.RightSide,None)
         self._setLastTab()
 
     def get_application_root(self):
