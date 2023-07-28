@@ -123,7 +123,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
         # logger.info(f"[{caller}]")
         if self.state.relative_display_scales == None:
             with self.txn() as s:
-                s.relativeDisplayScales = {"z": 10}
+                s.relativeDisplayScales = {"z": 1}
 
 
         if self.rev_mapping[self.state.layout.type] != getData('state,ng_layout'):
