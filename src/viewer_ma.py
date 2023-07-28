@@ -402,7 +402,7 @@ class MAViewer(neuroglancer.Viewer):
         if self._blockStateChanged:
             return
 
-        if cfg.data.scale_val() < 2:
+        if cfg.data.scale_val() > 2:
             if self.state.relative_display_scales == None:
                 self.set_zmag()
 
