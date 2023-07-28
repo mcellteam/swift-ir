@@ -135,7 +135,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
         #     self.signals.zoomChanged.emit(1.0)
 
         if self.state.cross_section_scale:
-            val = (self.state.cross_section_scale, self.state.cross_section_scale / 250000000)[self.state.cross_section_scale > 1000]
+            val = (self.state.cross_section_scale, self.state.cross_section_scale * 250000000)[self.state.cross_section_scale < .001]
 
             # logger.critical(f"{val} ~= {getData('state,ng_zoom')} ? {round(val, 3) == round(getData('state,ng_zoom'), 3)}")
             if round(val, 3) != round(getData('state,ng_zoom'), 3):
@@ -368,8 +368,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
             self.set_state(state)
 
     # def initZoom(self, w, h, adjust=1.20):
-    def initZoom(self, w, h, adjust=1.05):
-        # QApplication.processEvents()
+    def initZoom(self, w, h, adjust=1.10):
+        QApplication.processEvents()
         # logger.info(f'w={w}, h={h}')
         # self._settingZoom = True
         # logger.critical(f'initZoom... w={w}, h={h}')
@@ -397,6 +397,9 @@ class AbstractEMViewer(neuroglancer.Viewer):
         scale_w = ((res_x * tensor_x) / w) * 1e-9  # nm/pixel
         cs_scale = max(scale_h, scale_w)
         return cs_scale
+
+    # 2048 image_pixels x 4 nm/image_pixel = # nanometers
+    #
 
 
     def get_tensors(self):
