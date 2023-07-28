@@ -814,11 +814,12 @@ class DataModel:
             self._data['state'].setdefault('show_axis_lines',True)
             print_exception()
 
-        try:
-            self._data['state'].setdefault('show_ng_controls', getOpt('neuroglancer,SHOW_UI_CONTROLS'))
-        except:
-            self._data['state'].setdefault('show_ng_controls',True)
-            print_exception()
+        # try:
+        #     self._data['state'].setdefault('show_ng_controls', getOpt('neuroglancer,SHOW_UI_CONTROLS'))
+        # except:
+        #     self._data['state'].setdefault('show_ng_controls',True)
+        #     print_exception()
+        self._data['state']['show_ng_controls'] = False
 
         # logger.critical(str(self._data['state']))
 

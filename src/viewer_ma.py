@@ -307,8 +307,7 @@ class MAViewer(neuroglancer.Viewer):
             # s.position = [0.5, y / 2, x / 2]
             # s.voxel_coordinates = [self.index, y / 2, x / 2]
             s.voxel_coordinates = [self.index + .5, y / 2, x / 2]
-            # s.layers['ann'].annotations = list(self.pts.values())
-            # s.crossSectionScale = 2
+            s.projectionScale = 1
 
         self.actions.add('add_manpoint', self.add_matchpoint)
         self.actions.add('swim', self.swim)

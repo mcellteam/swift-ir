@@ -276,9 +276,6 @@ class ProjectTab(QWidget):
 
             # cfg.baseViewer.shared_state.add_changed_callback(cfg.emViewer.set_zmag)
             # cfg.baseViewer.signals.zoomChanged.connect(self.setZoomSlider) # Not responsible #WasOn
-
-            cfg.baseViewer.signals.stateChanged.connect(cfg.baseViewer._set_zmag)  # Not responsible
-            cfg.refViewer.signals.stateChanged.connect(cfg.refViewer._set_zmag)  # Not responsible
             
             cfg.baseViewer.signals.swimAction.connect(cfg.main_window.alignOne)
             cfg.refViewer.signals.swimAction.connect(cfg.main_window.alignOne)
@@ -293,7 +290,6 @@ class ProjectTab(QWidget):
             self.viewer = cfg.emViewer = EMViewer(webengine=self.webengine)
             self.viewer.initZoom(self.webengine.width(), self.webengine.height())
             cfg.emViewer.signals.zposChanged.connect(cfg.main_window.dataUpdateWidgets)
-            # cfg.emViewer.signals.stateChanged.connect(self.viewer._set_zmag)
             cfg.emViewer.signals.layoutChanged.connect(self.slot_layout_changed)
             cfg.emViewer.signals.zoomChanged.connect(self.slot_zoom_changed)
             # cfg.emViewer.signals.zoomChanged.connect(self.setZoomSlider)

@@ -119,12 +119,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
     @Slot()
     def on_state_changed_any(self):
         # zoom bug factor = 250000000s
-        caller = inspect.stack()[1].function
-        logger.info(f"[{caller}]")
-
-        # if self.state.relativeDisplayScales == None:
-        #     logger.info("setting Zmag!")
-        #     self._set_zmag()
+        # caller = inspect.stack()[1].function
+        # logger.info(f"[{caller}]")
 
         if self.rev_mapping[self.state.layout.type] != getData('state,ng_layout'):
             self.signals.layoutChanged.emit()
@@ -136,8 +132,6 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
         if self.state.cross_section_scale:
             val = (self.state.cross_section_scale, self.state.cross_section_scale * 250000000)[self.state.cross_section_scale < .001]
-
-            # logger.critical(f"{val} ~= {getData('state,ng_zoom')} ? {round(val, 3) == round(getData('state,ng_zoom'), 3)}")
             if round(val, 3) != round(getData('state,ng_zoom'), 3):
                 self.signals.zoomChanged.emit(val)
 
@@ -145,11 +139,6 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
         # self.post_message(f"Voxel Coordinates: {str(self.state.voxel_coordinates)}")
 
-        if getData('state,blink'):
-            return
-        # logger.info(f'on_state_changed_any [{self.type}] [i={self._zmag_set}] >>>>')
-        # if self._zmag_set < 10:
-        #     self._zmag_set += 1
         self.signals.stateChanged.emit()
 
 
@@ -495,10 +484,8 @@ class EMViewer(AbstractEMViewer):
                 s.crossSectionBackgroundColor = '#808080'
             else:
                 s.crossSectionBackgroundColor = '#222222'
-
-            # s.relativeDisplayScales = {"z": 10}
-            s.projectionScale = 1
             s.show_default_annotations = getData('state,show_yellow_frame')
+            s.projectionScale = 1
 
 
         with self.config_state.txn() as s:
