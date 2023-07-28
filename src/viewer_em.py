@@ -122,9 +122,9 @@ class AbstractEMViewer(neuroglancer.Viewer):
         caller = inspect.stack()[1].function
         logger.info(f"[{caller}]")
 
-        if self.state.relativeDisplayScales == None:
-            logger.info("setting Zmag!")
-            self._set_zmag()
+        # if self.state.relativeDisplayScales == None:
+        #     logger.info("setting Zmag!")
+        #     self._set_zmag()
 
         if self.rev_mapping[self.state.layout.type] != getData('state,ng_layout'):
             self.signals.layoutChanged.emit()
