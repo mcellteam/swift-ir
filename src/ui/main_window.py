@@ -2700,10 +2700,8 @@ class MainWindow(QMainWindow):
         cfg.project_tab.updateTimingsWidget()
         cfg.project_tab.updateMethodSelectWidget()
         cfg.project_tab.dataUpdateMA() #Important must come after initNeuroglancer
+        self.dataUpdateWidgets()
         check_project_status()
-        if cfg.mw.dw_snr.isVisible():
-            self.dw_snr.setWidget(cfg.pt.dSnr_plot)
-            self.dSnr_plot.initSnrPlot()
         QApplication.processEvents()
 
         # QTimer.singleShot(1000, lambda: self.initNeuroglancer(init_all=True))
@@ -3793,10 +3791,20 @@ class MainWindow(QMainWindow):
         #     print('Test Function Called...')
         # self.testButton.clicked.connect(testFn)
 
+        self.tbbMenu = QToolButton()
+        self.tbbMenu.setToolTip("Menu")
+        self.tbbMenu.setMenu(self.menu)
+        self.tbbMenu.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.tbbMenu.setPopupMode(QToolButton.InstantPopup)
+        # self.tbbMenu.setToolTip(f"Menu")
+        # self.tbbMenu.clicked.connect(fn_glossary)
+        self.tbbMenu.setIcon(qta.icon("mdi.menu", color='#161c20'))
+
 
 
 
         toolbuttons = [
+            self.tbbMenu,
             self.tbbRefresh,
             self.tbbGettingStarted,
             self.tbbFAQ,
@@ -3812,14 +3820,15 @@ class MainWindow(QMainWindow):
             self.tbbDetachNgButton
         ]
 
-        names = [' &Refresh','Getting\nStarted',' FAQ','Glossary','Issue\nTracker','3DEM\nData',' &Matches', 'SNR P&lot', 'Ref/Tra\n&Thumbs', '   &HUD', '  &Notes', '&Python\nConsole', '&Detach\nNG']
+        names = ['Menu', ' &Refresh','Getting\nStarted',' FAQ','Glossary','Issue\nTracker','3DEM\nData',' &Matches', 'SNR P&lot', 'Ref/Tra\n&Thumbs', '   &HUD', '  &Notes', '&Python\nConsole', '&Detach\nNG']
         for b,n in zip(toolbuttons,names):
             b.setText(n)
             b.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-            b.setFixedSize(QSize(80,28))
+            b.setFixedSize(QSize(80,24))
+            b.setIconSize(QSize(30,30))
             b.setFocusPolicy(Qt.FocusPolicy.NoFocus)
             b.setStyleSheet("""
-            font-size: 10px; 
+            font-size: 9px; 
             font-weight: 600; 
             color: #161c20;
             padding: 1px;
@@ -3829,17 +3838,15 @@ class MainWindow(QMainWindow):
             # b.setLayoutDirection(Qt.RightToLeft)
 
 
-        self.tbbMenu = QToolButton()
-        self.tbbMenu.setMenu(self.menu)
-        self.tbbMenu.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.tbbMenu.setPopupMode(QToolButton.InstantPopup)
-        # self.tbbMenu.setToolTip(f"Menu")
-        # self.tbbMenu.clicked.connect(fn_glossary)
-        self.tbbMenu.setIcon(qta.icon("mdi.menu", color='#161c20'))
 
-        self.newLabel = QLabel(' ← New! ')
-        self.newLabel.setFixedHeight(16)
-        self.newLabel.setStyleSheet("background-color: #AAFF00; color: #161c20; font-size: 10px; border-radius: 4px;")
+
+        # self.newLabel = QLabel(' ← New! ')
+        self.newLabel = QLabel('⇡ New!')
+        # self.newLabel.setFixedHeight(13)
+        self.newLabel.setFixedSize(QSize(34, 14))
+        self.newLabel.setStyleSheet("background-color: #AAFF00; color: #161c20; font-size: 8px; border-radius: 4px; margin: 1px;")
+        self.newLabel.setAlignment(Qt.AlignRight)
+        self.w_newLabel = HWidget(self.newLabel, ExpandingWidget(self))
 
         self.toolbar.addWidget(self.tbbMenu)
         self.toolbar.addWidget(self.tbbRefresh)
@@ -3848,7 +3855,8 @@ class MainWindow(QMainWindow):
         self.toolbar.addWidget(self.tbbGlossary)
         self.toolbar.addWidget(self.tbbReportBug)
         self.toolbar.addWidget(self.tbb3demdata)
-        self.toolbar.addWidget(self.newLabel)
+        # self.toolbar.addWidget(self.newLabel)
+        self.toolbar.addWidget(self.w_newLabel)
         self.toolbar.addWidget(ExpandingWidget(self))
         # self.toolbar.addWidget(self.testButton)
         self.toolbar.addWidget(self.tbbThumbnails)
@@ -3858,11 +3866,7 @@ class MainWindow(QMainWindow):
         self.toolbar.addWidget(self.tbbPython)
         self.toolbar.addWidget(self.tbbNotes)
         self.toolbar.addWidget(self.tbbDetachNgButton)
-        # self.toolbar.addWidget(self.tbbMenu)
 
-
-        # self.toolbar.layout().setSpacing(2)
-        # self.toolbar.layout().setAlignment(Qt.AlignRight)
         self.toolbar.setStyleSheet('font-size: 10px; font-weight: 600; color: #161c20;')
 
     def resizeEvent(self, e):
@@ -5328,7 +5332,7 @@ class MainWindow(QMainWindow):
                     border-width: 0px;
                 }""")
         self.dw_thumbs.setWidget(QLabel('Null Widget'))
-        self.addDockWidget(Qt.LeftDockWidgetArea, self.dw_thumbs)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.dw_thumbs)
         self.dw_thumbs.hide()
 
         self.dw_matches = DockWidget('Matches & Match Signals', self)
@@ -5349,7 +5353,7 @@ class MainWindow(QMainWindow):
                     border-width: 0px;
                 }""")
         self.dw_matches.setWidget(QLabel('Null Widget'))
-        self.addDockWidget(Qt.LeftDockWidgetArea, self.dw_matches)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.dw_matches)
         self.dw_matches.hide()
 
 
@@ -6009,12 +6013,9 @@ class MainWindow(QMainWindow):
         self.globTabs.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.sw_pbar.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
-        # self.addToolBar(self.toolbar)
-
-
 
         # self.globTabsAndCpanel = VWidget(self.toolbar, self.globTabs, self.cpanel, self.sw_pbar)
-        self.addToolBar(self.toolbar)
+        self.addToolBar(Qt.LeftToolBarArea, self.toolbar)
         # self.globTabsAndCpanel = VWidget(self.globTabs, self.cpanel, self.sw_pbar)
         # self.globTabsAndCpanel = VWidget(self.globTabs, self.sa_cpanel, self.sw_pbar)
         self.globTabsAndCpanel = VWidget(self.globTabs, self.toolbar_cpanel, self.sw_pbar)

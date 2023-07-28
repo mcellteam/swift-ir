@@ -1186,7 +1186,7 @@ class UserProjects(QWidget):
         # self.table.cellClicked.connect(lambda: print('cellClicked was emitted!'))
         # self.table.itemChanged.connect(lambda: print('itemChanged was emitted!'))
 
-        self.table.setColumnCount(12)
+        self.table.setColumnCount(11)
         self.set_headers()
 
         self.layout = QVBoxLayout()
