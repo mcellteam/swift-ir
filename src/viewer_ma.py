@@ -403,7 +403,7 @@ class MAViewer(neuroglancer.Viewer):
             return
 
         if self.state.relative_display_scales == None:
-            self.set_zmag(1)
+            self.set_zmag(1.01)
 
 
 
