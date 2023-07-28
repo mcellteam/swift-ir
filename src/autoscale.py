@@ -110,7 +110,7 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
         #     pool.map(run, tqdm.tqdm(task_groups[group], total=len(task_groups[group]), desc=f"Downsampling {group}", position=0, leave=True))
         #     pool.close()
 
-        with ThreadPoolExecutor(max_workers=10) as executor:
+        with ThreadPoolExecutor(max_workers=cpus) as executor:
             list(tqdm.tqdm(executor.map(run, task_groups[group]), total=len(task_groups[group]), position=0, leave=True))
 
 
