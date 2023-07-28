@@ -420,7 +420,6 @@ class MainWindow(QMainWindow):
         self.update()
 
     def initThreadpool(self, timeout=1000):
-        logger.info('')
         if cfg.USE_EXTRA_THREADING:
             logger.info('')
             self.threadpool = QThreadPool.globalInstance()
