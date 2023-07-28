@@ -402,8 +402,9 @@ class MAViewer(neuroglancer.Viewer):
         if self._blockStateChanged:
             return
 
-        if self.state.relative_display_scales == None:
-            self.set_zmag(1.01)
+        if cfg.data.scale_val() < 2:
+            if self.state.relative_display_scales == None:
+                self.set_zmag()
 
 
 
@@ -987,7 +988,7 @@ class MAViewer(neuroglancer.Viewer):
         # logger.info(f'caller: {caller}')
         try:
             state = copy.deepcopy(self.state)
-            state.relativeDisplayScales = {'z': val}
+            state.relativeDisplayScales =  {'z': 10, 'y': 1, 'x': 1}
             self.set_state(state)
         except:
             logger.warning('Unable to set Z-mag')

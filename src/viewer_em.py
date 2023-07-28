@@ -125,8 +125,9 @@ class AbstractEMViewer(neuroglancer.Viewer):
         if self._blockStateChanged:
             return
 
-        if self.state.relative_display_scales == None:
-            self.set_zmag()
+        if cfg.data.scale_val() < 2:
+            if self.state.relative_display_scales == None:
+                self.set_zmag()
 
 
         if self.rev_mapping[self.state.layout.type] != getData('state,ng_layout'):
@@ -323,7 +324,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
         try:
             res = cfg.data.resolution()
             state = copy.deepcopy(self.state)
-            state.relativeDisplayScales = {'z': res[0], 'y': res[1], 'x': res[2]}
+            # state.relativeDisplayScales = {'z': res[0] * 1e9, 'y': res[1], 'x': res[2]}
+            state.relativeDisplayScales = {'z': 10, 'y': 1, 'x': 1}
             self.set_state(state)
         except:
             logger.warning('Unable to set Z-mag')
@@ -488,8 +490,7 @@ class EMViewer(AbstractEMViewer):
             s.show_scale_bar = True
             s.show_axis_lines = getData('state,show_axis_lines')
             s.position=[cfg.data.zpos + 0.5, self.store.shape[1]/2, self.store.shape[2]/2]
-            # s.layers['layer'] = ng.ImageLayer( source=cfg.LV, shader=cfg.data['rendering']['shader'], )
-            s.layers['layer'] = ng.ImageLayer( source=cfg.LV)
+            s.layers['layer'] = ng.ImageLayer( source=cfg.LV, shader=cfg.data['rendering']['shader'], )
             if getData('state,neutral_contrast'):
                 s.crossSectionBackgroundColor = '#808080'
             else:
