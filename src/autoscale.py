@@ -106,12 +106,12 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
         #     list(tqdm.tqdm(pool.imap_unordered(run, task_groups[group]), total=len(task_groups[group]), desc=f"Downsampling {group}", position=0, leave=True))
         #     pool.close() #0723+
 
-        with ThreadPool(processes=cpus) as pool:
-            pool.map(run, tqdm.tqdm(task_groups[group], total=len(task_groups[group]), desc=f"Downsampling {group}", position=0, leave=True))
-            pool.close()
+        # with ThreadPool(processes=cpus) as pool:
+        #     pool.map(run, tqdm.tqdm(task_groups[group], total=len(task_groups[group]), desc=f"Downsampling {group}", position=0, leave=True))
+        #     pool.close()
 
-        # with ThreadPoolExecutor(max_workers=cpus) as executor:
-        #     list(tqdm.tqdm(executor.map(run, task_groups[group]), total=len(task_groups[group]), position=0, leave=True))
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            list(tqdm.tqdm(executor.map(run, task_groups[group]), total=len(task_groups[group]), position=0, leave=True))
 
 
         while any([x < n_imgs for x in count_files(dm.dest(), [group])]):
@@ -178,7 +178,7 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     t0 = time.time()
     for group in task_groups:
         t = time.time()
-        with ThreadPoolExecutor(max_workers=cpus) as executor:
+        with ThreadPoolExecutor(max_workers=10) as executor:
             list(tqdm.tqdm(executor.map(convert_zarr, task_groups[group]), total=len(task_groups[group]), position=0, leave=True, desc=f"Converting {group} to Zarr"))
         logger.info(f"Elapsed Time: {'%.3g' % (time.time() - t)}s")
         time.sleep(1)
