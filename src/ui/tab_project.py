@@ -177,8 +177,8 @@ class ProjectTab(QWidget):
             self.shutdownNeuroglancer()
             self.initNeuroglancer()
 
-            if getData('state,ng_layout') == 'xy':
-                cfg.emViewer.initZoom(self.webengine.width() / 500000000, self.webengine.height() / 500000000)
+            # if getData('state,ng_layout') == 'xy':
+            #     cfg.emViewer.initZoom(self.webengine.width() / 500000000, self.webengine.height() / 500000000)
 
         elif index == 1:
             # pts_ref = cfg.refViewer.pts

@@ -839,10 +839,10 @@ class MainWindow(QMainWindow):
                 self.setTargKargPixmaps()
                 QApplication.processEvents()
 
-                if cfg.data.is_aligned():
-                    h = self.dw_matches.height() - cfg.pt.mwTitle.height()
-                    self.dw_matches.setMaximumWidth(int(h /2 + .5))
-                    # cfg.pt.match_widget.resize(int(h / 2 + .5), h)
+                h = self.dw_matches.height() - cfg.pt.mwTitle.height()
+                self.dw_matches.setMaximumWidth(int(h /2 + .5))
+                # cfg.pt.match_widget.resize(int(h / 2 + .5), h)
+
 
 
 
