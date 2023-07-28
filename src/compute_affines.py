@@ -38,7 +38,7 @@ from src.background_worker import BackgroundWorker
 import src.config as cfg
 from src.ui.timer import Timer
 from src.recipe_maker import run_recipe
-from src.helpers import pretty_elapsed
+from src.helpers import pretty_elapsed, is_tacc
 
 
 __all__ = ['ComputeAffines']
@@ -105,6 +105,13 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                 # logger.info(f'Adding task for {zpos}')
                 sec['alignment']['meta'] = {}
                 zpos = dm().index(sec)
+                sec['alignment']['method_results'].pop('swim_args', None)
+                sec['alignment']['method_results'].pop('swim_out', None)
+                sec['alignment']['method_results'].pop('swim_err', None)
+                sec['alignment']['method_results'].pop('mir_toks', None)
+                sec['alignment']['method_results'].pop('mir_script', None)
+                sec['alignment']['method_results'].pop('mir_out', None)
+                sec['alignment']['method_results'].pop('mir_err', None)
                 sec['alignment']['meta']['index'] = zpos
                 sec['alignment']['meta']['scale_val'] = scale_val
                 sec['alignment']['meta']['scale_key'] = scale
@@ -144,10 +151,12 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         if cfg.CancelProcesses:
             logger.warning('Canceling Processes!')
             return
-        if scale == 'scale_1':
+
+
+        cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks)),1)
+        if is_tacc() and (scale == 'scale_1'):
             cpus = 30
-        else:
-            cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks)),1)
+
         t0 = time.time()
 
         # task_queue = TaskQueue(n_tasks=len(tasks), dest=dest, use_gui=use_gui)

@@ -166,9 +166,19 @@ class ProjectTab(QWidget):
 
         index = self._tabs.currentIndex()
 
+        self.datamodel['state']['blink'] = False
+        self.blinkTimer.stop()
+        self.tbbBlinkToggle.setIcon(qta.icon('mdi.toggle-switch-off-outline', color='#f3f6fb'))
+        self.tbbBlinkToggle.setChecked(False)
+
         if index == 0:
+            layout = cfg.emViewer.state.layout.type
+
             self.shutdownNeuroglancer()
             self.initNeuroglancer()
+
+            if getData('state,ng_layout') == 'xy':
+                cfg.emViewer.initZoom(self.webengine.width() / 500000000, self.webengine.height() / 500000000)
 
         elif index == 1:
             # pts_ref = cfg.refViewer.pts
@@ -269,9 +279,7 @@ class ProjectTab(QWidget):
 
             cfg.baseViewer.signals.stateChanged.connect(cfg.baseViewer._set_zmag)  # Not responsible
             cfg.refViewer.signals.stateChanged.connect(cfg.refViewer._set_zmag)  # Not responsible
-            # cfg.stageViewer.signals.stateChanged.connect(cfg.stageViewer._set_zmag)  # Not responsible
-
-
+            
             cfg.baseViewer.signals.swimAction.connect(cfg.main_window.alignOne)
             cfg.refViewer.signals.swimAction.connect(cfg.main_window.alignOne)
 
@@ -283,9 +291,13 @@ class ProjectTab(QWidget):
 
         if cfg.data['state']['current_tab'] == 0 or init_all:
             self.viewer = cfg.emViewer = EMViewer(webengine=self.webengine)
+            self.viewer.initZoom(self.webengine.width(), self.webengine.height())
             cfg.emViewer.signals.zposChanged.connect(cfg.main_window.dataUpdateWidgets)
             cfg.emViewer.signals.stateChanged.connect(self.viewer._set_zmag)
-            cfg.emViewer.signals.zoomChanged.connect(self.setZoomSlider)
+            cfg.emViewer.signals.layoutChanged.connect(self.slot_layout_changed)
+            cfg.emViewer.signals.zoomChanged.connect(self.slot_zoom_changed)
+            # cfg.emViewer.signals.zoomChanged.connect(self.setZoomSlider)
+
             # self.zoomSlider.sliderMoved.connect(self.onZoomSlider)  # Original #0314
             # self.zoomSlider.valueChanged.connect(self.onZoomSlider)
             # self.webengine.reload()
@@ -293,10 +305,35 @@ class ProjectTab(QWidget):
 
         cfg.mw.set_status('')
         cfg.mw.hud.done()
-        self.setZmag(10)
+        # self.setZmag(10)
         QApplication.processEvents()
 
 
+    def slot_layout_changed(self):
+        rev_mapping = {'yz':'xy', 'xy':'yz', 'xz':'xz', 'yz-3d':'xy-3d','xy-3d':'yz-3d',
+                   'xz-3d':'xz-3d', '4panel': '4panel', '3d': '3d'}
+        requested = rev_mapping[self.viewer.state.layout.type]
+        if DEV:
+            logger.critical(f"Layout changed! requested: {requested}")
+        setData('state,ng_layout', requested)
+        self.comboNgLayout.setCurrentText(requested)
+        # if getData('state,ng_layout') == 'xy':
+        #     # cfg.emViewer.initZoom(self.webengine.width() / 500000000, self.webengine.height() / 500000000)
+        #     cfg.emViewer.initZoom(self.webengine.width(), self.webengine.height())
+        cfg.mw.tell(f'Neuroglancer Layout (set from native NG controls): {requested}')
+
+    def slot_zoom_changed(self, val):
+        caller = inspect.stack()[1].function
+        logger.info('caller: %s' % caller)
+        if val > 1000:
+            val *= 250000000
+        if DEV:
+            logger.critical(f"Zoom changed! passed value: {val}")
+
+        setData('state,ng_zoom', val)
+        self.le_zoom.setText("%.2f" % val)
+        # setData('state,ng_zoom', self.viewer.state.cross_section_scale)
+        # self.le_zoom.setText(str(self.viewer.state.cross_section_scale))
 
 
 
@@ -305,21 +342,6 @@ class ProjectTab(QWidget):
     #     QTimer.singleShot(ms, self.initNeuroglancer)
 
         # self.updateProjectLabels()
-
-    def updateNeuroglancer(self):
-        caller = inspect.stack()[1].function
-        logger.info(f'Updating Neuroglancer Viewer (caller: {caller})')
-        for viewer in self.get_viewers():
-            viewer.initViewer()
-        # if getData('state,MANUAL_MODE'):
-        #     cfg.baseViewer.initViewer()
-        #     cfg.refViewer.initViewer()
-        #     cfg.stageViewer.initViewer()
-        #     self.update_MA_list_widgets() # <-- !!!
-        # else:
-        #     self.viewer.initViewer()
-
-        # self.setViewerModifications()
 
     # def setViewerModifications(self):
     #     logger.info('')
@@ -1935,10 +1957,35 @@ class ProjectTab(QWidget):
 
         self.tbbBlinkToggle.clicked.connect(blink_main_fn)
 
+        # ----------------
+        # widgets to gain insight into Neuroglancer state
+
+        self.le_zoom = QLineEdit()
+        self.le_zoom.setMaximumWidth(64)
+        self.le_zoom.setValidator(QDoubleValidator())
+        self.le_zoom.returnPressed.connect(lambda: setData('state,ng_zoom', float(self.le_zoom.text())))
+        self.le_zoom.returnPressed.connect(lambda: self.viewer.set_zoom(float(self.le_zoom.text())))
+
+        self.zoomLab = QLabel('Zoom:')
+        self.zoomLab.setStyleSheet("""color: #ede9e8; font-size: 10px; font-weight: 600;""")
+
+        self.w_zoom = HWidget(self.zoomLab, self.le_zoom)
+        self.w_zoom.setMaximumWidth(100)
+        self.w_zoom.layout.setAlignment(Qt.AlignLeft)
+
+        # ----------------
+
+
         self.w_ng_extended_toolbar.addWidget(self.labNgLayout)
         self.w_ng_extended_toolbar.addWidget(self.comboNgLayout)
         self.w_ng_extended_toolbar.addWidget(self.blinkLab)
         self.w_ng_extended_toolbar.addWidget(self.tbbBlinkToggle)
+        # ----------------
+        # Add additional widgets to gain insight into Neuroglancer state
+
+        self.w_ng_extended_toolbar.addWidget(self.w_zoom)
+
+        # ----------------
         self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
         self.w_ng_extended_toolbar.addWidget(self.ngcl_uiControls)
         self.w_ng_extended_toolbar.addWidget(self.ngcl_shader)
@@ -2643,9 +2690,10 @@ class ProjectTab(QWidget):
         caller = inspect.stack()[1].function
         if caller in ('main', '<lambda>'):
             choice = self.comboNgLayout.currentText()
-            logger.info('Setting ui,ng_layout to %s' % str(choice))
+            logger.info('Setting neuroglancer layout to %s' % choice)
             # setData('ui,ng_layout', choice)
             setData('state,ng_layout', choice)
+            cfg.mw.tell(f'Neuroglancer Layout: {choice}')
             try:
                 cfg.main_window.hud("Setting Neuroglancer Layout to '%s'... " % choice)
                 layout_actions = {
@@ -2659,7 +2707,7 @@ class ProjectTab(QWidget):
                     '4panel': cfg.main_window.ngLayout8Action
                 }
                 layout_actions[choice].setChecked(True)
-                self.updateNeuroglancer()
+                self.viewer.initViewer()
             except:
                 print_exception()
                 logger.error('Unable To Change Neuroglancer Layout')
@@ -3236,24 +3284,24 @@ class ProjectTab(QWidget):
         except:
             print_exception()
 
-    def setZmag(self, val):
-        logger.info(f'zpos={cfg.data.zpos} Setting Z-mag to {val} for all viewers...')
-        if cfg.mw._isProjectTab():
-            try:
-                if cfg.refViewer:
-                    cfg.refViewer.set_zmag(10)
-            except:
-                print_exception()
-            try:
-                if cfg.baseViewer:
-                    cfg.baseViewer.set_zmag(10)
-            except:
-                print_exception()
-            try:
-                if cfg.emViewer:
-                    cfg.emViewer.set_zmag(10)
-            except:
-                print_exception()
+    # def setZmag(self, val):
+    #     logger.info(f'zpos={cfg.data.zpos} Setting Z-mag to {val} for all viewers...')
+    #     if cfg.mw._isProjectTab():
+    #         try:
+    #             if cfg.refViewer:
+    #                 cfg.refViewer.set_zmag(10)
+    #         except:
+    #             print_exception()
+    #         try:
+    #             if cfg.baseViewer:
+    #                 cfg.baseViewer.set_zmag(10)
+    #         except:
+    #             print_exception()
+    #         try:
+    #             if cfg.emViewer:
+    #                 cfg.emViewer.set_zmag(10)
+    #         except:
+    #             print_exception()
 
     def onSliderZmag(self):
 
@@ -3769,7 +3817,14 @@ class ProjectTab(QWidget):
         # if cfg.data['state']['current_tab'] == 1:
         #     viewers.extend([cfg.emViewer])
         # return viewers
-        return [cfg.emViewer, cfg.refViewer, cfg.baseViewer]
+        viewers = []
+        if cfg.emViewer:
+            viewers.append(cfg.emViewer)
+        if cfg.baseViewer:
+            viewers.append(cfg.baseViewer)
+        if cfg.refViewer:
+            viewers.append(cfg.refViewer)
+        return viewers
 
     def paintEvent(self, pe):
         '''Enables widget to be style-ized'''

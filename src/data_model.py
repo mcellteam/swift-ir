@@ -785,16 +785,22 @@ class DataModel:
         self._data['state']['mode'] = 'stack-xy' # TEMPORARY FORCE
         self._data['state']['has_cal_grid'] = False
         # self._data['state'].setdefault('ng_layout', 'xy')
-        self._data['state']['ng_layout'] = '4panel'
+        self._data['state'].setdefault('ng_layout','4panel')
+        self._data['state'].setdefault('ng_zoom', 1.0)
         self._data['state']['current_tab'] = 0
         self._data['state'].setdefault('blink', False)
         self._data['state'].setdefault('tool_windows', {})
         # Set default to value from user preferences... Todo: all user preferences should work this way
-        try:
-            self._data['state'].setdefault('neutral_contrast', getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'))
-        except:
-            self._data['state'].setdefault('neutral_contrast',True)
-            print_exception()
+
+
+        self._data['state']['neutral_contrast'] = False
+
+
+        # try:
+        #     self._data['state'].setdefault('neutral_contrast', getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'))
+        # except:
+        #     self._data['state'].setdefault('neutral_contrast',True)
+        #     print_exception()
 
         try:
             self._data['state'].setdefault('show_yellow_frame', getOpt('neuroglancer,SHOW_YELLOW_FRAME'))
@@ -1267,22 +1273,11 @@ class DataModel:
         #         return []
 
 
-    def snr_prev_components(self, s=None, l=None):
-        if s == None: s = self.scale
-        if l == None: l = self.zpos
-        try:
-            return self._data['data']['scales'][s]['stack'][l][
-                'alignment']['previous_method_results']['snr_prev']
-        except:
-            logger.warning('No Previous SNR data for %s, layer %d' %(s,l))
-            return []
-
 
     def snr_report(self, s=None, l=None) -> str:
         if s == None: s = self.scale
         if l == None: l = self.zpos
         try:
-            # return self._data['data']['scales'][s]['stack'][l]['alignment']['method_results']['snr_report']
             return self._data['data']['scales'][s]['stack'][l]['alignment_history'][self.get_current_method(s=s, l=l)]['snr_report']
         except:
             logger.warning('No SNR Report for Layer %d' % l)
@@ -1373,7 +1368,6 @@ class DataModel:
         '''
         if s == None: s = self.scale
         if l == None: l = self.zpos
-        # return self._data['data']['scales'][s]['stack'][l]['alignment']['method']
         return self._data['data']['scales'][s]['stack'][l]['current_method']
 
     def method_pretty(self, s=None, l=None):
@@ -2108,20 +2102,6 @@ class DataModel:
 
     def set_destination(self, s):
         self._data['data']['destination_path'] = s
-
-    def set_previous_results(self, s=None):
-        # logger.info('Setting PREVIOUS SNR, caller: %s...' % inspect.stack()[1].function)
-        if s == None: s = self.scale
-        logger.info('')
-        try:
-            for l in range(len(self)):
-                self._data['data']['scales'][s]['stack'][l][
-                    'alignment']['previous_method_results'] = \
-                    self._data['data']['scales'][s]['stack'][l][
-                        'alignment']['method_results']
-        except:
-            print_exception()
-            logger.warning('Unable to set previous SNR...')
 
     def set_skip(self, b: bool, s=None, l=None) -> None:
         if s == None: s = self.scale

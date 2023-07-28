@@ -13,7 +13,7 @@ sys.path.insert(1, context)
 
 from src.data_model import DataModel
 from src.autoscale import autoscale
-from src.helpers import create_project_structure_directories, get_scale_val, natural_sort, initLogFiles
+from src.helpers import create_project_structure_directories, get_scale_val, natural_sort
 
 def absoluteFilePaths(directory):
     for dirpath,_,filenames in os.walk(directory):
@@ -58,7 +58,7 @@ if __name__ == '__main__':
         dm.set_resolution(s=scale, res_x=res_x, res_y=res_y, res_z=res_z)
 
     dm.set_defaults()
-    initLogFiles(dm)
+    # initLogFiles(dm)
 
     print('autoscaling...')
     t0 = time.time()

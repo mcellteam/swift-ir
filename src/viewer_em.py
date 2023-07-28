@@ -43,7 +43,7 @@ import numpy as np
 ng.server.debug = cfg.DEBUG_NEUROGLANCER
 numcodecs.blosc.use_threads = False
 
-__all__ = ['EMViewer', 'EMViewerStage', 'EMViewerSnr', 'EMViewerMendenhall']
+__all__ = ['EMViewer', 'EMViewerSnr', 'EMViewerMendenhall']
 
 logger = logging.getLogger(__name__)
 # handler = logging.StreamHandler(stream=sys.stdout)
@@ -54,6 +54,7 @@ DEV = is_joel()
 class WorkerSignals(QObject):
     result = Signal(str)
     stateChanged = Signal()
+    layoutChanged = Signal()
     zposChanged = Signal()
     zoomChanged = Signal(float)
     mpUpdate = Signal()
@@ -68,17 +69,17 @@ class AbstractEMViewer(neuroglancer.Viewer):
         self.webengine = webengine
         self.name = name
         self.cs_scale = None
-        self._crossSectionScale = 1
         self.created = datetime.datetime.now()
         # self._layer = None
         self._layer = cfg.data.zpos
         self.scale = cfg.data.scale_key
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
-        self._settingZoom = False
         self.type = 'AbstractEMViewer'
         self._zmag_set = 0
         self._blinkState = 0
         self._blockStateChanged = False
+        self.rev_mapping = {'yz': 'xy', 'xy': 'yz', 'xz': 'xz', 'yz-3d': 'xy-3d', 'xy-3d': 'yz-3d',
+                       'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
 
 
     def __repr__(self):
@@ -114,16 +115,33 @@ class AbstractEMViewer(neuroglancer.Viewer):
     # def on_state_changed(self):
     #     pass
 
-    def diableZoom(self):
-        self._settingZoom = True
-        logger.info('Zoom disabled.')
-
-    def enableZoom(self):
-        self._settingZoom = False
-        logger.info('Zoom enabled.')
 
     @Slot()
     def on_state_changed_any(self):
+        # zoom bug factor = 250000000s
+        caller = inspect.stack()[1].function
+        logger.info(f"[{caller}]")
+
+        if self.state.relativeDisplayScales == None:
+            logger.info("setting Zmag!")
+            self._set_zmag()
+
+        if self.rev_mapping[self.state.layout.type] != getData('state,ng_layout'):
+            self.signals.layoutChanged.emit()
+            # logger.info(f'Setting layout to: {self.state.layout.type}')
+            # setData('state,ng_layout', self.state.layout.type)
+
+        # if self.state.cross_section_scale == None:
+        #     self.signals.zoomChanged.emit(1.0)
+
+        if self.state.cross_section_scale:
+            val = (self.state.cross_section_scale, self.state.cross_section_scale / 250000000)[self.state.cross_section_scale > 1000]
+
+            # logger.critical(f"{val} ~= {getData('state,ng_zoom')} ? {round(val, 3) == round(getData('state,ng_zoom'), 3)}")
+            # if val != getData('state,ng_zoom'):
+            # if round(val, 3) != round(getData('state,ng_zoom'), 3):
+            #     self.signals.zoomChanged.emit(self.state.cross_section_scale)
+
         # self.post_message(f"Voxel Coordinates: {str(self.state.voxel_coordinates)}")
 
         # self.post_message(f"Voxel Coordinates: {str(self.state.voxel_coordinates)}")
@@ -135,18 +153,17 @@ class AbstractEMViewer(neuroglancer.Viewer):
             self._zmag_set += 1
         self.signals.stateChanged.emit()
 
+
     @Slot()
     def on_state_changed(self):
 
-        if getData('state,blink'):
-            return
+        # if getData('state,blink'):
+        #     return
 
         if self._blockStateChanged:
             return
         # if getData('state,blink'):
         #     return
-        if self._settingZoom:
-            return
 
         caller = inspect.stack()[1].function
 
@@ -156,12 +173,12 @@ class AbstractEMViewer(neuroglancer.Viewer):
         # logger.info(f'[{caller}]')
 
         #CriticalMechanism
-        if not self.cs_scale:
-            if self.state.cross_section_scale:
-                if self.state.cross_section_scale > .0001:
-                    # if DEV:
-                    #     logger.info('perfect cs_scale captured! - %.3f' % self.state.cross_section_scale)
-                    self.cs_scale = self.state.cross_section_scale
+        # if not self.cs_scale:
+        #     if self.state.cross_section_scale:
+        #         if self.state.cross_section_scale > .0001:
+        #             if DEV:
+        #                 logger.info('[DEV] perfect cs_scale captured! - %.3f' % self.state.cross_section_scale)
+        #             self.cs_scale = self.state.cross_section_scale
 
         try:
             # print('requested layer: %s' % str(self.state.position[0]))
@@ -180,14 +197,6 @@ class AbstractEMViewer(neuroglancer.Viewer):
                     #     logger.info(f'[{caller}] (!) emitting get_loc: {request_layer} [cur_method={self.type}]')
                     # self.signals.zposChanged.emit(request_layer)
                     self.signals.zposChanged.emit()
-
-            zoom = self.state.cross_section_scale
-            if zoom:
-                if zoom != self._crossSectionScale:
-                    if DEV:
-                        logger.info(f'[{caller}] (!) emitting zoomChanged (state.cross_section_scale): {zoom:.3f}...')
-                    self.signals.zoomChanged.emit(zoom)
-                self._crossSectionScale = zoom
         except:
             print_exception()
 
@@ -302,13 +311,13 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
     def _set_zmag(self):
         # self._blockStateChanged = True
-        if self._zmag_set < 8:
-            self._zmag_set += 1
-            try:
-                with self.txn() as s:
-                    s.relativeDisplayScales = {"z": 10}
-            except:
-                print_exception()
+        # if self._zmag_set < 8:
+        #     self._zmag_set += 1
+        try:
+            with self.txn() as s:
+                s.relativeDisplayScales = {"z": 10}
+        except:
+            print_exception()
         # self._blockStateChanged = False
 
     def set_zmag(self, val=10):
@@ -359,7 +368,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
             state.layers.clear()
             self.set_state(state)
 
-    def initZoom(self, w, h, adjust=1.20):
+    # def initZoom(self, w, h, adjust=1.20):
+    def initZoom(self, w, h, adjust=1.05):
         # QApplication.processEvents()
         # logger.info(f'w={w}, h={h}')
         # self._settingZoom = True
@@ -369,13 +379,16 @@ class AbstractEMViewer(neuroglancer.Viewer):
         if self.cs_scale:
             # logger.info(f'w={w}, h={h}, cs_scale={self.cs_scale}')
             with self.txn() as s:
-                s.crossSectionScale = self.cs_scale
+                s.cross_section_scale = self.cs_scale
+            logger.critical(f"\n\nself.cs_scale set!! {self.cs_scale}\n\n")
         else:
             # logger.info(f'w={w}, h={h}')
-            cs_scale = self.get_zoom(w=w, h=h)
-            # self.cs_scale = cs_scale
+            self.cs_scale = self.get_zoom(w=w, h=h)
+            adjusted = self.cs_scale * adjust
             with self.txn() as s:
-                s.crossSectionScale = cs_scale * adjust
+                s.cross_section_scale = adjusted
+        logger.critical(f"self.cs_scale = {self.cs_scale}")
+        self.signals.zoomChanged.emit(self.cs_scale * 250000000)
 
 
     def get_zoom(self, w, h):
@@ -385,8 +398,6 @@ class AbstractEMViewer(neuroglancer.Viewer):
         scale_w = ((res_x * tensor_x) / w) * 1e-9  # nm/pixel
         cs_scale = max(scale_h, scale_w)
         return cs_scale
-
-        # self._settingZoom = False
 
 
     def get_tensors(self):
@@ -482,6 +493,9 @@ class EMViewer(AbstractEMViewer):
                 s.crossSectionBackgroundColor = '#808080'
             else:
                 s.crossSectionBackgroundColor = '#222222'
+
+            # s.relativeDisplayScales = {"z": 10}
+            s.projectionScale = 1
             s.show_default_annotations = getData('state,show_yellow_frame')
 
 
@@ -740,7 +754,6 @@ class EMViewerSnr(AbstractEMViewer):
             s.show_panel_borders = False
 
         # self._layer = math.floor(self.state.position[0])
-        self._crossSectionScale = self.state.cross_section_scale
         self.initial_cs_scale = self.state.cross_section_scale
 
         self.set_brightness()

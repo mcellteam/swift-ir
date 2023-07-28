@@ -61,7 +61,7 @@ from src.generate_aligned import GenerateAligned
 from src.helpers import run_checks, setOpt, getOpt, getData, setData, print_exception, get_scale_val, \
     natural_sort, tracemalloc_start, tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, \
     exist_aligned_zarr, configure_project_paths, isNeuroglancerRunning, \
-    update_preferences_model, delete_recursive, initLogFiles, is_mac, hotkey, make_affine_widget_HTML, \
+    update_preferences_model, delete_recursive, is_mac, hotkey, make_affine_widget_HTML, \
     check_project_status, caller_name, is_joel, is_tacc, run_command
 from src.ui.dialogs import AskContinueDialog, ConfigProjectDialog, ConfigAppDialog, NewConfigureProjectDialog, \
     open_project_dialog, export_affines_dialog, mendenhall_dialog, RechunkDialog, ExitAppDialog, SaveExitAppDialog
@@ -490,6 +490,8 @@ class MainWindow(QMainWindow):
         self._exiting = 0
         self._is_initialized = 0
         self._old_pos = None
+        self.curTabID = None
+        self._lastTab = None
 
     def initStyle(self):
         logger.info('')
@@ -828,7 +830,8 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             setData('state,blink', False)
             cfg.pt.blinkTimer.stop()
-            cfg.pt.tbbBlinkToggle.setIcon(qta.icon('mdi.toggle-switch', color='#f3f6fb'))
+            cfg.pt.tbbBlinkToggle.setIcon(qta.icon('mdi.mdi.toggle-switch-off-outline', color='#f3f6fb'))
+            cfg.pt.tbbBlinkToggle.setChecked(False)
 
             if state:
                 # cfg.pt.match_widget.adjustSize() #MUCH BETTER OFF
@@ -1041,7 +1044,7 @@ class MainWindow(QMainWindow):
         dt = datetime.datetime.now()
 
         self._working = True
-
+        
         cfg.project_tab.tn_ms0.set_no_image()
         cfg.project_tab.tn_ms1.set_no_image()
         cfg.project_tab.tn_ms2.set_no_image()
@@ -1052,31 +1055,29 @@ class MainWindow(QMainWindow):
         cfg.project_tab.matches_tn2.set_no_image()
         cfg.project_tab.matches_tn3.set_no_image()
 
-        logger_log = os.path.join(cfg.data.dest(), 'logs', 'logger.log')
-        mp_log = os.path.join(cfg.data.dest(), 'logs', 'multiprocessing.log')
-        manual_log = os.path.join(cfg.data.dest(), 'logs', 'manual_align.log')
-        swim_log = os.path.join(cfg.data.dest(), 'logs', 'swim.log')
-        thumbs_log = os.path.join(cfg.data.dest(), 'logs', 'thumbnails.log')
-        # open(logger_log, 'a+').close()
-        # open(mp_log, 'a+').close()
-        # open(manual_log, 'a+').close()
-        # open(thumbs_log, 'a+').close()
-        with open(logger_log, 'a+') as f:
-            f.write('\n\n====================== NEW RUN ' + str(dt) + ' ======================\n\n')
-        with open(manual_log, 'a+') as f:
-            f.write('\n\n====================== NEW RUN ' + str(dt) + ' ======================\n\n')
-        with open(mp_log, 'a+') as f:
-            f.write('\n\n====================== NEW RUN ' + str(dt) + ' ======================\n\n')
-        with open(swim_log, 'a+') as f:
-            f.write('\n\n====================== NEW RUN ' + str(dt) + ' ======================\n\n')
+        # logger_log = os.path.join(cfg.data.dest(), 'logs', 'logger.log')
+        # mp_log = os.path.join(cfg.data.dest(), 'logs', 'multiprocessing.log')
+        # manual_log = os.path.join(cfg.data.dest(), 'logs', 'manual_align.log')
+        # swim_log = os.path.join(cfg.data.dest(), 'logs', 'swim.log')
+        # thumbs_log = os.path.join(cfg.data.dest(), 'logs', 'thumbnails.log')
+        # # open(logger_log, 'a+').close()
+        # # open(mp_log, 'a+').close()
+        # # open(manual_log, 'a+').close()
+        # # open(thumbs_log, 'a+').close()
+        # with open(logger_log, 'a+') as f:
+        #     f.write('\n\n====================== NEW RUN ' + str(dt) + ' ======================\n\n')
+        # with open(manual_log, 'a+') as f:
+        #     f.write('\n\n====================== NEW RUN ' + str(dt) + ' ======================\n\n')
+        # with open(mp_log, 'a+') as f:
+        #     f.write('\n\n====================== NEW RUN ' + str(dt) + ' ======================\n\n')
+        # with open(swim_log, 'a+') as f:
+        #     f.write('\n\n====================== NEW RUN ' + str(dt) + ' ======================\n\n')
         # time point 5: = 0.0032761096954345703
         self.stopPlaybackTimer()
         self._disableGlobTabs()
         # self.pbarLabel.setText('Task (0/%d)...' % cfg.nProcessSteps)
         # if not cfg.ignore_pbar:
         #     self.showZeroedPbar()
-        if cfg.data.is_aligned(s=scale):
-            cfg.data.set_previous_results()
         self._autosave(silently=True)
         self._changeScaleCombo.setEnabled(False)
         check_project_status()
@@ -2676,7 +2677,7 @@ class MainWindow(QMainWindow):
                 Do not automatically save, there is nothing to save yet'''
         print(f'\n\n################ Loading Project - %s ################\n' % os.path.basename(cfg.data.dest()))
         self.tell("Loading Project '%s'..." % cfg.data.dest())
-        initLogFiles(cfg.data)
+        # initLogFiles(cfg.data)
 
         #Critical this might be critical for now
         # cfg.data['data']['current_scale'] = cfg.data.coarsest_scale_key() #0720-
@@ -4033,6 +4034,7 @@ class MainWindow(QMainWindow):
         # if caller not in ('onStartProject', '_setLastTab'): #0524-
         #     self.shutdownNeuroglancer()  # 0329+
 
+
         cfg.project_tab = None
         cfg.zarr_tab = None
         self.enableAllTabs()  # Critical - Necessary for case of glob tab closure during disabled state for MA Mode
@@ -4042,6 +4044,12 @@ class MainWindow(QMainWindow):
         # self._changeScaleCombo.setEnabled(True)  # needed for disable on MA
         # self.clearCorrSpotsDrawer()
         QApplication.restoreOverrideCursor()
+
+        if type(self._lastTab) == src.ui.tab_project.ProjectTab:
+            self._lastTab.datamodel['state']['blink'] = False
+            self._lastTab.blinkTimer.stop()
+            self._lastTab.tbbBlinkToggle.setIcon(qta.icon('mdi.toggle-switch-off-outline', color='#f3f6fb'))
+            self._lastTab.tbbBlinkToggle.setChecked(False)
 
         if self._getTabType() != 'ProjectTab':
             self.setCpanelVisibility(False)
@@ -4099,6 +4107,7 @@ class MainWindow(QMainWindow):
         self.updateEnabledButtons()
         self.updateNotes()
         self.setFocus()
+        self._lastTab = self._getTabObject()
         self.setUpdatesEnabled(True)
 
     def _onGlobTabClose(self, index):
@@ -4570,18 +4579,6 @@ class MainWindow(QMainWindow):
         mendenhallMenu.addAction(self.stopMendenhallAction)
 
         ngMenu = self.menu.addMenu("Neuroglancer")
-
-
-        self.blinkAction = QAction('Turn Blink On/Off', self)
-        # self.blinkAction.triggered.connect(self.turnBlinkOnOff)
-        def blink_fn():
-            if self._isProjectTab():
-                cfg.project_tab.blinkToggle.setChecked(not cfg.project_tab.blinkToggle.isChecked())
-
-        self.blinkAction.triggered.connect(blink_fn)
-        # self.blinkAction.setShortcut('Ctrl+B')
-        ngMenu.addAction(self.blinkAction)
-
 
         self.ngStateMenu = ngMenu.addMenu('JSON State')  # get_ng_state
         self.ngStateMenuText = QTextEdit(self)
@@ -6395,7 +6392,6 @@ class MainWindow(QMainWindow):
             if self._isProjectTab():
                 cfg.pt.blink_main_fn()
 
-            # cfg.project_tab.blinkToggle.setChecked(not cfg.project_tab.blinkToggle.isChecked())
 
         # elif event.key() == Qt.Key_V:
         #     self.enterExitManAlignMode()

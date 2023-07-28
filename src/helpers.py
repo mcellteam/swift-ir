@@ -49,7 +49,7 @@ __all__ = ['run_checks', 'is_tacc', 'is_linux', 'is_mac', 'create_paged_tiff', '
            'do_scales_exist', 'make_relative', 'make_absolute', 'are_aligned_images_generated', 'get_img_filenames',
            'print_exception', 'get_scale_key', 'get_scale_val', 'makedirs_exist_ok', 'print_project_tree',
            'verify_image_file', 'exist_aligned_zarr', 'get_scales_with_generated_alignments', 'handleError',
-           'count_widgets', 'find_allocated_widgets', 'absFilePaths', 'validate_file', 'initLogFiles', 'hotkey',
+           'count_widgets', 'find_allocated_widgets', 'absFilePaths', 'validate_file', 'hotkey',
            'caller_name'
            ]
 
