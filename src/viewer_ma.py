@@ -988,7 +988,7 @@ class MAViewer(neuroglancer.Viewer):
         # logger.info(f'caller: {caller}')
         try:
             state = copy.deepcopy(self.state)
-            state.relativeDisplayScales =  {'z': 10., 'y': 1.01, 'x': 1.01}
+            state.relativeDisplayScales = {'z': 2}
             self.set_state(state)
         except:
             logger.warning('Unable to set Z-mag')
