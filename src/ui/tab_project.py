@@ -1053,7 +1053,7 @@ class ProjectTab(QWidget):
         self.fl_MA_settings = QFormLayout()
         self.fl_MA_settings.setVerticalSpacing(1)
         self.fl_MA_settings.setHorizontalSpacing(2)
-        self.fl_MA_settings.setFormAlignment(Qt.AlignBottom)
+        self.fl_MA_settings.setFormAlignment(Qt.AlignCenter)
         self.fl_MA_settings.setContentsMargins(0, 0, 0, 0)
         # self.fl_MA_settings.addRow("Manual Window", self.MA_swim_window_widget)
         self.fl_MA_settings.addRow("SWIM 1x1 Window", self.AS_swim_window_widget)
