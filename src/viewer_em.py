@@ -126,7 +126,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
             return
 
         if self.state.relative_display_scales == None:
-            self.set_zmag(1.01)
+            self.set_zmag()
 
 
         if self.rev_mapping[self.state.layout.type] != getData('state,ng_layout'):
@@ -315,14 +315,15 @@ class AbstractEMViewer(neuroglancer.Viewer):
             print_exception()
         # self._blockStateChanged = False
 
-    def set_zmag(self, val=10):
+    def set_zmag(self, val):
         # logger.info(f'zpos={cfg.data.zpos} Setting Z-mag on {self.type}')
         caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
         self._blockStateChanged = True
         try:
+            res = cfg.data.resolution()
             state = copy.deepcopy(self.state)
-            state.relativeDisplayScales = {'z': val}
+            state.relativeDisplayScales = {'z': res[0], 'y': res[1], 'x': res[2]}
             self.set_state(state)
         except:
             logger.warning('Unable to set Z-mag')
