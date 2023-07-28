@@ -795,31 +795,30 @@ class DataModel:
 
         self._data['state']['neutral_contrast'] = False
 
-
-        # try:
-        #     self._data['state'].setdefault('neutral_contrast', getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'))
-        # except:
-        #     self._data['state'].setdefault('neutral_contrast',True)
-        #     print_exception()
+        try:
+            self._data['state'].setdefault('neutral_contrast', getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'))
+        except:
+            self._data['state'].setdefault('neutral_contrast', False)
+            print_exception()
 
         try:
             self._data['state'].setdefault('show_yellow_frame', getOpt('neuroglancer,SHOW_YELLOW_FRAME'))
         except:
-            self._data['state'].setdefault('show_yellow_frame',True)
+            self._data['state'].setdefault('show_yellow_frame', True)
             print_exception()
 
         try:
             self._data['state'].setdefault('show_axis_lines', getOpt('neuroglancer,SHOW_AXIS_LINES'))
         except:
-            self._data['state'].setdefault('show_axis_lines',True)
+            self._data['state'].setdefault('show_axis_lines', True)
             print_exception()
 
-        # try:
-        #     self._data['state'].setdefault('show_ng_controls', getOpt('neuroglancer,SHOW_UI_CONTROLS'))
-        # except:
-        #     self._data['state'].setdefault('show_ng_controls',True)
-        #     print_exception()
-        self._data['state']['show_ng_controls'] = False
+        try:
+            self._data['state'].setdefault('show_ng_controls', getOpt('neuroglancer,SHOW_UI_CONTROLS'))
+        except:
+            self._data['state'].setdefault('show_ng_controls', False)
+            print_exception()
+        # self._data['state']['show_ng_controls'] = False
 
         # logger.critical(str(self._data['state']))
 
