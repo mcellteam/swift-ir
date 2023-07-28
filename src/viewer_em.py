@@ -325,7 +325,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
             res = cfg.data.resolution()
             state = copy.deepcopy(self.state)
             # state.relativeDisplayScales = {'z': res[0] * 1e9, 'y': res[1], 'x': res[2]}
-            state.relativeDisplayScales = {'z': 10, 'y': 1, 'x': 1}
+            state.relativeDisplayScales = {'z': 10., 'y': 1.01, 'x': 1.01}
             self.set_state(state)
         except:
             logger.warning('Unable to set Z-mag')
