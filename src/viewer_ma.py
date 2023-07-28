@@ -396,12 +396,14 @@ class MAViewer(neuroglancer.Viewer):
     @Slot()
     def on_state_changed_any(self):
 
-        if self.state.relative_display_scales == None:
-            self.set_zmag(1)
+
 
         # self.post_message(f"Voxel Coordinates: {str(self.state.voxel_coordinates)}")
         if self._blockStateChanged:
             return
+
+        if self.state.relative_display_scales == None:
+            self.set_zmag(1)
 
 
 
@@ -990,9 +992,6 @@ class MAViewer(neuroglancer.Viewer):
         except:
             logger.warning('Unable to set Z-mag')
             print_exception()
-        else:
-            # logger.info('Successfully set Z-mag!')
-            pass
         self._blockStateChanged = False
 
 

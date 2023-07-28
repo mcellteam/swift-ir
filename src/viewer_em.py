@@ -121,6 +121,10 @@ class AbstractEMViewer(neuroglancer.Viewer):
         # zoom bug factor = 250000000s
         # caller = inspect.stack()[1].function
         # logger.info(f"[{caller}]")
+
+        if self._blockStateChanged:
+            return
+
         if self.state.relative_display_scales == None:
             self.set_zmag(1)
 
@@ -315,7 +319,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
         # logger.info(f'zpos={cfg.data.zpos} Setting Z-mag on {self.type}')
         # caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
-        # self._blockStateChanged = True
+        self._blockStateChanged = True
         try:
             state = copy.deepcopy(self.state)
             state.relativeDisplayScales = {'z': val}
@@ -325,7 +329,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
             print_exception()
         else:
             logger.info('Successfully set Z-mag!')
-        # self._blockStateChanged = False
+        self._blockStateChanged = False
 
 
     def updateScaleBar(self):
