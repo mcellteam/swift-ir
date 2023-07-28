@@ -787,8 +787,7 @@ class DataModel:
         # self._data['state'].setdefault('ng_layout', 'xy')
         self._data['state'].setdefault('ng_layout','4panel')
         self._data['state'].setdefault('ng_zoom', 1.0)
-        self._data['state']['current_tab'] = 0
-        self._data['state'].setdefault('blink', False)
+        self._data['state']['current_tab'] =         self._data['state'].setdefault('blink', False)
         self._data['state'].setdefault('tool_windows', {})
         # Set default to value from user preferences... Todo: all user preferences should work this way
 
