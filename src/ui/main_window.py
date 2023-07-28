@@ -3842,8 +3842,8 @@ class MainWindow(QMainWindow):
         for b,n in zip(toolbuttons,names):
             b.setText(n)
             b.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-            b.setFixedSize(QSize(70,28))
-            b.setIconSize(QSize(30,30))
+            b.setFixedSize(QSize(76,28))
+            b.setIconSize(QSize(22,22))
             b.setFocusPolicy(Qt.FocusPolicy.NoFocus)
             b.setStyleSheet("""
             font-size: 9px; 
