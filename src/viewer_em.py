@@ -138,9 +138,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
             val = (self.state.cross_section_scale, self.state.cross_section_scale / 250000000)[self.state.cross_section_scale > 1000]
 
             # logger.critical(f"{val} ~= {getData('state,ng_zoom')} ? {round(val, 3) == round(getData('state,ng_zoom'), 3)}")
-            # if val != getData('state,ng_zoom'):
-            # if round(val, 3) != round(getData('state,ng_zoom'), 3):
-            #     self.signals.zoomChanged.emit(self.state.cross_section_scale)
+            if round(val, 3) != round(getData('state,ng_zoom'), 3):
+                self.signals.zoomChanged.emit(val)
 
         # self.post_message(f"Voxel Coordinates: {str(self.state.voxel_coordinates)}")
 
