@@ -315,7 +315,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
             print_exception()
         # self._blockStateChanged = False
 
-    def set_zmag(self, val):
+    def set_zmag(self):
         # logger.info(f'zpos={cfg.data.zpos} Setting Z-mag on {self.type}')
         caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
