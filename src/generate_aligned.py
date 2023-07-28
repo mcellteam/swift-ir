@@ -204,7 +204,7 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
     #     [p.get() for p in results]
     #     # pool.join()
     """Blocking"""
-    with ThreadPoolExecutor(max_workers=cpus) as executor:
+    with ThreadPoolExecutor(max_workers=10) as executor:
         list(executor.map(convert_zarr, tqdm.tqdm(tasks, total=len(tasks), desc="Convert Alignment to Zarr", position=0, leave=True)))
 
     logger.info("Convert Alignment to Zarr Finished")
