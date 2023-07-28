@@ -293,7 +293,7 @@ class ProjectTab(QWidget):
             self.viewer = cfg.emViewer = EMViewer(webengine=self.webengine)
             self.viewer.initZoom(self.webengine.width(), self.webengine.height())
             cfg.emViewer.signals.zposChanged.connect(cfg.main_window.dataUpdateWidgets)
-            cfg.emViewer.signals.stateChanged.connect(self.viewer._set_zmag)
+            # cfg.emViewer.signals.stateChanged.connect(self.viewer._set_zmag)
             cfg.emViewer.signals.layoutChanged.connect(self.slot_layout_changed)
             cfg.emViewer.signals.zoomChanged.connect(self.slot_zoom_changed)
             # cfg.emViewer.signals.zoomChanged.connect(self.setZoomSlider)
