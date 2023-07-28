@@ -476,7 +476,7 @@ class EMViewer(AbstractEMViewer):
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
             # s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
-            s.show_scale_bar = False
+            s.show_scale_bar = True
             s.show_axis_lines = getData('state,show_axis_lines')
             s.position=[cfg.data.zpos + 0.5, self.store.shape[1]/2, self.store.shape[2]/2]
             s.layers['layer'] = ng.ImageLayer( source=cfg.LV, shader=cfg.data['rendering']['shader'], )
