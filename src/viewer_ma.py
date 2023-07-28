@@ -863,8 +863,6 @@ class MAViewer(neuroglancer.Viewer):
                             prefix=str(i),
                             z_index=self.index,
                             coords=pt,
-                            # ww_x=ww_2x2[0],
-                            # ww_y=ww_2x2[1],
                             ww_x=(ww_full[0] / 2) - 4,
                             ww_y=(ww_full[1] / 2) - 4,
                             color=colors[i],
@@ -886,20 +884,15 @@ class MAViewer(neuroglancer.Viewer):
             else:
                 ww_x = ww_y = cfg.data.manual_swim_window_px()
 
-
             for i, pt in enumerate(self.pts):
-                # coords = pt[1].point
-                # color = pt[0]
-                coords = pt.point
-                color = cfg.glob_colors[i]
                 annotations.extend(
                     self.makeRect(
                         prefix=str(i),
                         z_index=self.index,
-                        coords=(coords[2], coords[1]),
+                        coords=(pt.point[2], pt.point[1]),
                         ww_x=ww_x,
                         ww_y=ww_y,
-                        color=color,
+                        color=cfg.glob_colors[i],
                         marker_size=marker_size
                     )
                 )
