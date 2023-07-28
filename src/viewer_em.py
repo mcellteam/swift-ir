@@ -148,8 +148,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
         if getData('state,blink'):
             return
         # logger.info(f'on_state_changed_any [{self.type}] [i={self._zmag_set}] >>>>')
-        if self._zmag_set < 10:
-            self._zmag_set += 1
+        # if self._zmag_set < 10:
+        #     self._zmag_set += 1
         self.signals.stateChanged.emit()
 
 
