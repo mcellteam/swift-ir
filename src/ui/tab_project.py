@@ -320,12 +320,11 @@ class ProjectTab(QWidget):
 
     def slot_zoom_changed(self, val):
         caller = inspect.stack()[1].function
-        logger.info('caller: %s' % caller)
+        # logger.info('caller: %s' % caller)
         if val > 1000:
             val *= 250000000
         if DEV:
-            logger.critical(f"Zoom changed! passed value: {val}")
-
+            logger.info(f"[DEV] Zoom changed! passed value: {val:.3f}")
         setData('state,ng_zoom', val)
         self.le_zoom.setText("%.2f" % val)
         # setData('state,ng_zoom', self.viewer.state.cross_section_scale)

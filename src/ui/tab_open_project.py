@@ -926,6 +926,7 @@ class OpenProject(QWidget):
             finally:
                 cfg.mw.setUpdatesEnabled(True)
             # cfg.mw.addGlobTab(cfg.project_tab, os.path.basename(cfg.data.dest()) + '.swiftir')
+            cfg.mw._closeOpenProjectTab()
             cfg.mw.addGlobTab(cfg.project_tab, os.path.basename(cfg.data.dest()))
             cfg.mw._setLastTab()
             # cfg.mw.hud.done()
