@@ -16,6 +16,8 @@ import zarr
 import imagecodecs
 import libtiff
 import tqdm
+import numcodecs
+numcodecs.blosc.use_threads = False
 from src.funcs_zarr import preallocate_zarr
 from src.helpers import renew_directory, get_img_filenames
 # from thumbnailer import Thumbnailer

@@ -94,7 +94,7 @@ DEFAULT_RESX, DEFAULT_RESY, DEFAULT_RESZ = 2, 2, 50
 
 '''Default Zarr Chunk Shape'''
 # CHUNK_X, CHUNK_Y, CHUNK_Z = 128, 128, 1
-CHUNK_X, CHUNK_Y, CHUNK_Z = 512, 512, 1
+CHUNK_X, CHUNK_Y, CHUNK_Z = 1024, 1024, 1
 # CHUNK_X, CHUNK_Y, CHUNK_Z = 64, 64, 64
 
 '''Default Compression Parameters'''

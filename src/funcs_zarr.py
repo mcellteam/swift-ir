@@ -213,7 +213,7 @@ def preallocate_zarr(dm, name, group, dimx, dimy, dimz, dtype, overwrite, gui=Tr
     path_out = os.path.join(path_zarr, group)
     path_base = os.path.basename(src)
     path_relative = os.path.join(path_base, name)
-    logger.info(f'allocating zarray (shape: {dimx}x{dimy}x{dimz})...')
+    logger.info(f'allocating {name}/{group} (shape: {dimx}x{dimy}x{dimz})...')
 
     if gui:
         cfg.main_window.hud(f'Preallocating {path_base}/{group} Zarr...')
@@ -233,23 +233,11 @@ def preallocate_zarr(dm, name, group, dimx, dimy, dimz, dtype, overwrite, gui=Tr
         # synchronizer = zarr.ThreadSynchronizer()
         # arr = zarr.group(store=path_zarr, synchronizer=synchronizer) # overwrite cannot be set to True here, will overwrite entire Zarr
         arr = zarr.group(store=path_zarr)
-        # compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
-        if cname in ('zstd', 'zlib', 'gzip'):
-            compressor = Blosc(cname=cname, clevel=clevel)
-        # elif cname == 'zstd':
-        #     zarr.storage.default_compressor = Zstd(level=1)
-            # compressor = Zstd(level=clevel)
-        else:
-            compressor = None
+        compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
 
-        # if cname == 'zstd':
-        #     arr.zeros(name=group, shape=shape, chunks=chunkshape, dtype=dtype, overwrite=overwrite)
-        # else:
         # arr.zeros(name=group, shape=shape, chunks=chunkshape, dtype=dtype, compressor=compressor, overwrite=overwrite, synchronizer=synchronizer)
-        # arr.zeros(name=group, shape=shape, chunks=chunkshape, dtype=dtype, compressor=compressor, overwrite=overwrite)
-        arr.zeros(name=group, shape=shape, chunks=chunkshape, dtype='|u1', compressor=compressor, overwrite=overwrite)
-        '''dtype definitely sets the dtype, otherwise goes to float64 on Lonestar6, at least for use with tensorstore'''
-        # write_metadata_zarr_multiscale() # thon3 al   write single multiscale zarr for all aligned s
+        arr.zeros(name=group, shape=shape, chunks=chunkshape, dtype=dtype, compressor=compressor, overwrite=overwrite)
+        # write_metadata_zarr_multiscale()
     except:
         print_exception()
         logger.warning('Zarr Preallocation Encountered A Problem')
