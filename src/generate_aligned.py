@@ -129,13 +129,17 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
 
     """Blocking"""
     # with ThreadPool(processes=cpus) as pool:
-    with ThreadPoolExecutor(max_workers=cpus) as pool:
-        list(pool.map(run_mir, tqdm.tqdm(tasks, total=len(tasks), desc="Generate Alignment", position=0, leave=True)))
-        # for i in e.map(time.sleep, s):
-        #     print(i)
 
-        # futures = [pool.submit(run_mir, task) for task in tasks]
-        # concurrent.futures.wait(futures)
+    ctx = mp.get_context('forkserver')
+    with ctx.Pool() as pool:
+        list(tqdm.tqdm(pool.imap_unordered(run_mir, tasks), total=len(tasks), desc="Generate Alignment", position=0, leave=True))
+        pool.close()
+
+
+    # with ThreadPoolExecutor(max_workers=cpus) as pool:
+    #     list(pool.map(run_mir, tqdm.tqdm(tasks, total=len(tasks), desc="Generate Alignment", position=0, leave=True)))
+    #
+
 
     _it = 0
     while (count_aligned_files(dm.dest(), scale) < len(dm)) or _it > 4:
