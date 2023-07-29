@@ -193,7 +193,8 @@ class MainWindow(QMainWindow):
         # self.setWindowFlags(Qt.FramelessWindowHint)
 
         self.setCorner(Qt.BottomLeftCorner, Qt.LeftDockWidgetArea )
-        self.setCorner(Qt.BottomRightCorner, Qt.RightDockWidgetArea )
+        # self.setCorner(Qt.BottomRightCorner, Qt.RightDockWidgetArea )
+        self.setCorner(Qt.BottomRightCorner, Qt.BottomDockWidgetArea )
         self.setDockNestingEnabled(True)
 
     def TO(self):
@@ -832,7 +833,7 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             setData('state,blink', False)
             cfg.pt.blinkTimer.stop()
-            cfg.pt.tbbBlinkToggle.setIcon(qta.icon('mdi.mdi.toggle-switch-off-outline', color='#f3f6fb'))
+            cfg.pt.tbbBlinkToggle.setIcon(qta.icon('mdi.toggle-switch-off-outline', color='#f3f6fb'))
             cfg.pt.tbbBlinkToggle.setChecked(False)
 
             if state:
