@@ -125,9 +125,9 @@ class AbstractEMViewer(neuroglancer.Viewer):
         if self._blockStateChanged:
             return
 
-        if cfg.data.scale_val() > 2:
-            if self.state.relative_display_scales == None:
-                self.set_zmag()
+        # if cfg.data.scale_val() > 2:
+        #     if self.state.relative_display_scales == None:
+        #         self.set_zmag()
 
         if self.rev_mapping[self.state.layout.type] != getData('state,ng_layout'):
             self.signals.layoutChanged.emit()
