@@ -726,6 +726,7 @@ class OpenProject(QWidget):
             QApplication.processEvents()
 
             logger.critical("Creating new project...")
+            cfg.mw.setNoPbarMessage(True)
 
             cfg.mw.set_status('')
             QApplication.processEvents()
@@ -780,6 +781,7 @@ class OpenProject(QWidget):
         cfg.mw._is_initialized = 1
         QApplication.processEvents()
         cfg.pt.initNeuroglancer()
+        cfg.mw.setNoPbarMessage(False)
         logger.critical('<<<< new_project <<<<')
 
 
