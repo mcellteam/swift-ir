@@ -703,19 +703,29 @@ class OpenProject(QWidget):
             cfg.dataById[id(cfg.project_tab)] = dm
             dm.set_defaults()
             initLogFiles(dm)
-            cfg.project_tab = ProjectTab(self, path=path, datamodel=dm)
-            cfg.mw._disableGlobTabs()
-            # self.table.setItem(i, j, item)
-            rc = self.user_projects.table.rowCount()
-            self.user_projects.table.insertRow(rc)
-            self.user_projects.table.setRowHeight(rc, self.row_height_slider.value())
+            cfg.project_tab = cfg.pt = ProjectTab(self, path=path, datamodel=dm)
 
-            f = QFont()
-            f.setPointSize(9)
-            f.setBold(True)
-            twi = QTableWidgetItem('Initializing\nProject...')
-            twi.setFont(f)
-            self.user_projects.table.setItem(rc, 0, twi)
+
+            cfg.mw._closeOpenProjectTab()
+
+
+
+            # rc = self.user_projects.table.rowCount()
+            # self.user_projects.table.insertRow(rc)
+            # self.user_projects.table.setRowHeight(rc, self.row_height_slider.value())
+            # f = QFont()
+            # f.setPointSize(9)
+            # f.setBold(True)
+            # twi = QTableWidgetItem('Initializing\nProject...')
+            # twi.setFont(f)
+            # self.user_projects.table.setItem(rc, 0, twi)
+
+            # cfg.mw.addGlobTab(cfg.project_tab, os.path.basename(path))
+
+            # cfg.mw._disableGlobTabs()
+            QApplication.processEvents()
+
+            logger.critical("Creating new project...")
 
             cfg.mw.set_status('')
             QApplication.processEvents()
