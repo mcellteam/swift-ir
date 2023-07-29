@@ -3955,10 +3955,11 @@ class MainWindow(QMainWindow):
     def _disableGlobTabs(self):
         logger.info('')
         indexes = list(range(0, self.globTabs.count()))
-        indexes.remove(self.globTabs.currentIndex())
-        for i in indexes:
-            self.globTabs.setTabEnabled(i, False)
-        # self._btn_refreshTab.setEnabled(False)
+        if indexes:
+            indexes.remove(self.globTabs.currentIndex())
+            for i in indexes:
+                self.globTabs.setTabEnabled(i, False)
+            # self._btn_refreshTab.setEnabled(False)
 
     def enableAllTabs(self):
         logger.info('')
@@ -3995,6 +3996,13 @@ class MainWindow(QMainWindow):
             return True
         else:
             return False
+
+    def _closeOpenProjectTab(self):
+        for i in range(self.globTabs.count()):
+            if self.globTabs.widget(i).__class__.__name__ == 'OpenProject':
+                logger.info(f"Removing tab {i}...")
+                self.globTabs.removeTab(i)
+                return
 
     def _getTabType(self, index=None):
         try:
@@ -4055,6 +4063,8 @@ class MainWindow(QMainWindow):
         logger.info(f'_onGlobTabChange [{caller}]')
         # if caller not in ('onStartProject', '_setLastTab'): #0524-
         #     self.shutdownNeuroglancer()  # 0329+
+        if caller == '_closeOpenProjectTab':
+            return
 
 
         cfg.project_tab = None
