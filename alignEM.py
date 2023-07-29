@@ -244,7 +244,6 @@ def main():
 
 
     # https://doc.qt.io/qtforpython-5/PySide2/QtCore/Qt.html
-    QCoreApplication.setAttribute(Qt.AA_UseOpenGLES)
     # Forces the usage of OpenGL ES 2.0 or higher on platforms that
     # use dynamic loading of the OpenGL implementation.
 
@@ -278,8 +277,9 @@ def main():
         QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
     logger.info('Setting Qt.AA_ShareOpenGLContexts')
-    QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created. #2230-
-    QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseDesktopOpenGL) #0226-
+    # QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created. #2230-
+    # QCoreApplication.setAttribute(Qt.AA_UseOpenGLES)
+    # QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseDesktopOpenGL) #0226-
 
     # report the number of worker threads chosen by default
     logger.info(f"ThreadPoolExecutor _max_workers: {ThreadPoolExecutor()._max_workers}")
