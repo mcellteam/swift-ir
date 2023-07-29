@@ -141,11 +141,11 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
     #
 
 
-    _it = 0
-    while (count_aligned_files(dm.dest(), scale) < len(dm)) or _it > 4:
-        # logger.info('Sleeping for 1 second...')
-        time.sleep(1)
-        _it += 1
+    # _it = 0
+    # while (count_aligned_files(dm.dest(), scale) < len(dm)) or _it > 4:
+    #     # logger.info('Sleeping for 1 second...')
+    #     time.sleep(1)
+    #     _it += 1
 
     logger.info("Generate Alignment Finished")
 
