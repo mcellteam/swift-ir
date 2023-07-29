@@ -208,22 +208,19 @@ def remove_zarr(path) -> None:
 def preallocate_zarr(dm, name, group, dimx, dimy, dimz, dtype, overwrite, gui=True):
     '''zarr.blosc.list_compressors() -> ['blosclz', 'lz4', 'lz4hc', 'zlib', 'zstd']'''
     cname, clevel, chunkshape = dm.get_user_zarr_settings()
-    chunkshape = (1, dimy, dimx)
     src = os.path.abspath(dm.dest())
     path_zarr = os.path.join(src, name)
     path_out = os.path.join(path_zarr, group)
-    path_base = os.path.basename(src)
-    path_relative = os.path.join(path_base, name)
     logger.info(f'allocating {name}/{group} (shape: {dimx}x{dimy}x{dimz})...')
 
     if gui:
-        cfg.main_window.hud(f'Preallocating {path_base}/{group} Zarr...')
+        cfg.main_window.hud(f'Preallocating {os.path.basename(src)}/{group} Zarr...')
     if os.path.exists(path_out) and (overwrite == False):
         logger.warning('Overwrite is False - Returning')
         return
     shape = (dimz, dimy, dimx)  # Todo check this, inverting x & y
 
-    output_text = f'\n  Zarr root : {path_relative}' \
+    output_text = f'\n  Zarr root : {os.path.join(os.path.basename(src), name)}' \
                   f'\n      group :   └ {group}({name}) {dtype} {cname}/{clevel}' \
                   f'\n      shape : {str(shape)} ' \
                   f'\n      chunk : {chunkshape}'
