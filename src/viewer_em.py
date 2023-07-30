@@ -148,8 +148,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
     @Slot()
     def on_state_changed(self):
 
-        # if getData('state,blink'):
-        #     return
+        if getData('state,blink'):
+            return
 
         if self._blockStateChanged:
             return

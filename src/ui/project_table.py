@@ -378,7 +378,7 @@ class ProjectTable(QWidget):
                 lab = QLabel(str(row_data[0]))
                 lab.setAlignment(Qt.AlignCenter)
                 # lab.setStyleSheet("font-size: 12px; background-color: #ede9e8; color: #161c20;")
-                lab.setStyleSheet("font-size: 12px; color: #161c20; font-weight: 600;")
+                lab.setStyleSheet("font-size: 11px; color: #161c20; font-weight: 600; padding: 0px; margin: 0px;")
 
                 w = QWidget()
                 vbl = VBL(lab, btns)
@@ -412,7 +412,7 @@ class ProjectTable(QWidget):
                 self.table.setCellWidget(row, col, vw)
             elif col == 2:
                 lab1 = QLabel('%.3g' % float(row_data[2]))
-                lab1.setStyleSheet("font-weight: 600; font-size: 13px;")
+                lab1.setStyleSheet("font-weight: 600; font-size: 11px;")
                 m = self.m[method]
                 lab2 = QLabel(m)
                 if m == 'Default Grid':

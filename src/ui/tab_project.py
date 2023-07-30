@@ -3372,11 +3372,11 @@ class ProjectTab(QWidget):
         # time consuming - refactor?
         cfg.mw.tell('Loading data into tree view...')
         self.treeview_model.load(cfg.data.to_dict())
-        self.treeview.setModel(self.treeview_model)
+        # self.treeview.setModel(self.treeview_model)
         self.treeview.header().resizeSection(0, 340)
         # self.treeview.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        self.treeview.expandAll()
-        self.treeview.update()
+        # self.treeview.expandAll()
+        # self.treeview.update()
 
     def initUI_JSON(self):
         '''JSON Project View'''
@@ -3384,6 +3384,7 @@ class ProjectTab(QWidget):
         self.treeview = QTreeView()
         # self.treeview.setStyleSheet("color: #161c20;")
         self.treeview.setAnimated(True)
+        self.treeview.header().resizeSection(0, 340)
         self.treeview.setIndentation(14)
         self.treeview.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         # self.treeview.header().resizeSection(0, 380)
