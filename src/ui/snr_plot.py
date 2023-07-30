@@ -483,7 +483,7 @@ class SnrPlot(QWidget):
             try:
                 self.pt_selected.resetPen()
             except:
-                print_exception()
+                pass
             self.pt_selected.resetBrush()
             self.pt_selected.setSymbol('o')
 
