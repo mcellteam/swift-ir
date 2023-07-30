@@ -137,11 +137,17 @@ class SaveExitAppDialog(QDialog):
         self.setLayout(self.layout)
 
 
-class QFileDialogPreview(QFileDialog):
+class ImportImagesDialog(QFileDialog):
     def __init__(self, *args, **kwargs):
         QFileDialog.__init__(self, *args, **kwargs)
         logger.info('')
         self.setOption(QFileDialog.DontUseNativeDialog, True)
+        self.setWindowFlags(Qt.FramelessWindowHint)
+        self.setNameFilter('Images (*.tif *.tiff)')
+        self.setFileMode(QFileDialog.ExistingFiles)
+        self.setModal(True)
+        urls = self.sidebarUrls()
+        self.setSidebarUrls(urls)
         # self.setFixedSize(self.width() + 360, self.height())
         self.mpPreview = QLabel("Preview", self)
         # self.mpPreview.setFixedSize(360, 360)

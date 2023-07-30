@@ -32,7 +32,7 @@ class ProjectTable(QWidget):
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
         # self.INITIAL_ROW_HEIGHT = 128
-        self.INITIAL_ROW_HEIGHT = 80
+        self.INITIAL_ROW_HEIGHT = 70
         self.image_col_width = self.INITIAL_ROW_HEIGHT
         self.data = None
         self._ms0 = []
@@ -81,16 +81,16 @@ class ProjectTable(QWidget):
         QWidget {
             background-color: #f3f6fb;
             color: #161c20;
-            font-size: 10px;
+            font-size: 9px;
         }
 
         QHeaderView::section {
-            font-size: 10pt;
+            font-size: 9pt;
         }
 
         QTableWidget {
             gridline-color: #161c20;
-            font-size: 10pt;
+            font-size: 9pt;
         }
 
         QTableWidget QTableCornerButton::section {
@@ -363,13 +363,15 @@ class ProjectTable(QWidget):
 
                 b0 = QPushButton('View')
                 b0.clicked.connect(lambda state, x=row: self.jump_to_view(x))
-                b0.setStyleSheet("font-size: 12px; background-color: #ede9e8; color: #161c20; padding:2px; width: 26px; height: 14px; ")
+                # b0.setStyleSheet("font-size: 10px; background-color: #ede9e8; color: #161c20; padding:1px; width: 22px; height: 14px; ")
+                b0.setStyleSheet("font-size: 10px; background-color: #ede9e8; color: #161c20; padding:1px; ")
                 b1 = QPushButton('Edit')
                 b1.clicked.connect(lambda state, x=row: self.jump_to_edit(x))
-                b1.setStyleSheet("font-size: 12px; background-color: #ede9e8; color: #161c20;  padding:2px; width: 26px; height: 14px; ")
+                # b1.setStyleSheet("font-size: 10px; background-color: #ede9e8; color: #161c20;  padding:1px; width: 22px; height: 14px; ")
+                b1.setStyleSheet("font-size: 10px; background-color: #ede9e8; color: #161c20;  padding:1px; ")
                 b2 = QPushButton('Refresh Row')
                 b2.clicked.connect(lambda state, x=row: self.request_refresh(x))
-                b2.setStyleSheet("font-size: 12px; background-color: #ede9e8; color: #161c20;  padding:2px; ")
+                b2.setStyleSheet("font-size: 10px; background-color: #ede9e8; color: #161c20;  padding:1px; ")
                 btns = VWidget(HWidget(b0, b1),b2)
                 # btns.setStyleSheet("font-size: 12px; background-color: #161c20;")
 
@@ -392,7 +394,7 @@ class ProjectTable(QWidget):
                 lab1.setStyleSheet("font-weight: 600; font-size: 12px; background: transparent;")
                 if cfg.data.skipped(l=row):
                     lab2 = QLabel('* Exclude')
-                    lab2.setStyleSheet("font-size: 11px; color: #d0342c; padding:2px; background: transparent;")
+                    lab2.setStyleSheet("font-size: 10px; color: #d0342c; padding:2px; background: transparent;")
                     vw = VWidget(lab1,lab2)
                     vw.layout.setAlignment(Qt.AlignVCenter)
                 else:
@@ -403,7 +405,7 @@ class ProjectTable(QWidget):
                     if ref_offset > 1:
                         lab3_str += f' <span style="color: #d0342c;"><b>[{-ref_offset + 1}]</b></span>'
                     lab3 = QLabel(lab3_str)
-                    lab3.setStyleSheet("font-size: 10px; font-weight: 600; background: transparent;")
+                    lab3.setStyleSheet("font-size: 9px; font-weight: 600; background: transparent;")
                     vw = VWidget(lab1,lab2,lab3)
                     vw.setStyleSheet("background: transparent;")
                     vw.layout.setAlignment(Qt.AlignVCenter)
@@ -414,11 +416,11 @@ class ProjectTable(QWidget):
                 m = self.m[method]
                 lab2 = QLabel(m)
                 if m == 'Default Grid':
-                    lab2.setStyleSheet("font-size: 11px; color: #00BF00;")
+                    lab2.setStyleSheet("font-size: 10px; color: #00BF00;")
                 elif method == 'Custom Grid':
-                    lab2.setStyleSheet("font-size: 11px; color: #8f99fb;")
+                    lab2.setStyleSheet("font-size: 10px; color: #8f99fb;")
                 else:
-                    lab2.setStyleSheet("font-size: 11px; color: #010fcc;")
+                    lab2.setStyleSheet("font-size: 10px; color: #010fcc;")
 
                 vw = VWidget(lab1,lab2)
                 vw.layout.setAlignment(Qt.AlignCenter)
