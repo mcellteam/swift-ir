@@ -181,7 +181,10 @@ class SnrPlot(QWidget):
         caller = inspect.stack()[1].function
         logger.info(f'caller={caller}')
         if cfg.data:
-            offset = self._getScaleOffset(s=cfg.data.scale_key)
+            if self.dock:
+                offset = 0
+            else:
+                offset = self._getScaleOffset(s=cfg.data.scale_key)
             pos = [cfg.data.zpos + offset, 1]
             # logger.info(f'pos = {pos}')
             self._curLayerLine.setPos(pos)
@@ -326,8 +329,7 @@ class SnrPlot(QWidget):
 
     def plotData(self):
         '''Update SNR plot widget based on checked/unchecked state of checkboxes'''
-        caller = inspect.stack()[1].function
-        logger.debug(f'caller: {caller}')
+        # caller = inspect.stack()[1].function
         if cfg.data:
             self.plot.clear()
             self.plot.addItem(self._curLayerLine)
@@ -339,7 +341,6 @@ class SnrPlot(QWidget):
                         if self._snr_checkboxes[s].isChecked():
                             self.plotSingleScale(s=s)
             max_snr = cfg.data.snr_max_all_scales() #FixThis #Temporary
-            # max_snr = min(99, max(cfg.data.snr_list())) #FixThis #Temporary
             if not max_snr:
                 logger.warning('No max SNR, Nothing to plot - Returning')
                 return
@@ -372,7 +373,8 @@ class SnrPlot(QWidget):
                 self.plot.autoRange() # !!! #0601-
 
     def _getScaleOffset(self, s):
-        return cfg.data.scales()[::-1].index(s) * (.5/len(cfg.data.scales()))
+        # return cfg.data.scales()[::-1].index(s) * (.5/len(cfg.data.scales()))
+        return cfg.data.scales().index(s) * (.5/len(cfg.data.scales()))
 
 
     def plotSingleScale(self, s=None):
@@ -380,7 +382,11 @@ class SnrPlot(QWidget):
         if s == None: scale = cfg.data.scale_key
         x_axis, y_axis = self.get_axis_data(s=s)
         offset = self._getScaleOffset(s=s)
-        x_axis = [x+offset for x in x_axis]
+        if self.dock:
+            pass
+        else:
+            # add offset for plotting all scales
+            x_axis = [x+offset for x in x_axis]
         brush = self._plot_brushes[cfg.data.scales()[::-1].index(s)]
         self.snr_points[s] = pg.ScatterPlotItem(
             size=(11,7)[self.dock],
@@ -406,8 +412,11 @@ class SnrPlot(QWidget):
 
 
     def updateErrBars(self, s):
-        # logger.info('')
-        offset = self._getScaleOffset(s=s)
+        if self.dock:
+            offset = 0
+        else:
+            # add offset for plotting all scales
+            offset = self._getScaleOffset(s=s)
         errbars = cfg.data.snr_errorbars(s=s)
         n = len(cfg.data)
         # n = len(cfg.data) - 1 #Todo

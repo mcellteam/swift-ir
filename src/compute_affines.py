@@ -181,9 +181,6 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         #
         # dm.t_align = time.time() - t0
 
-
-
-
         logger.info(f"# cpus for alignment: {cpus}")
 
         # f_recipe_maker = f'{os.path.split(os.path.realpath(__file__))[0]}/src/recipe_maker.py'
@@ -193,28 +190,13 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             pbar.update()
 
 
-        # ctx = mp.get_context('forkserver')
-        # with ThreadPool(processes=cpus) as pool:
-        with mp.Pool(processes=cpus) as pool:
+        ctx = mp.get_context('forkserver')
+        with ctx.Pool(processes=cpus) as pool:
             results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_pbar) for task in tasks]
             pool.close()
             all_results = [p.get() for p in results]
-            # # pool.join()
-
-            # all_results = pool.map(run_recipe,
-            #          tqdm.tqdm(tasks, total=len(tasks), desc="Compute Affines", position=0, leave=True))
-            # pool.close()
-            # pool.join()
-
-        # with ThreadPoolExecutor(max_workers=cpus) as pool:
-        #     # all_results = list(pool.map(run_recipe, tqdm.tqdm(tasks, total=len(tasks), desc="Compute Affines", position=0, leave=True)))
-        #
-        #     futures = [pool.submit(run_recipe, task) for task in tqdm.tqdm(tasks, total=len(tasks), desc="Compute Affines", position=0, leave=True)]
-        #     concurrent.futures.wait(futures)
 
         logger.info("Compute Affines Finished")
-        # sys.stdout.flush()
-
 
         t_elapsed = time.time() - t0
         dm.t_align = t_elapsed
