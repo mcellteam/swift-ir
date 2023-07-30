@@ -195,7 +195,8 @@ class MainWindow(QMainWindow):
         self.setCorner(Qt.BottomLeftCorner, Qt.LeftDockWidgetArea )
         self.setCorner(Qt.TopLeftCorner, Qt.LeftDockWidgetArea )
         # self.setCorner(Qt.BottomRightCorner, Qt.RightDockWidgetArea )
-        self.setCorner(Qt.BottomRightCorner, Qt.BottomDockWidgetArea )
+        # self.setCorner(Qt.BottomRightCorner, Qt.BottomDockWidgetArea )
+        self.setCorner(Qt.BottomRightCorner, Qt.RightDockWidgetArea )
         self.setDockNestingEnabled(True)
 
     def TO(self):
@@ -845,8 +846,8 @@ class MainWindow(QMainWindow):
                 QApplication.processEvents()
 
                 h = self.dw_matches.height() - cfg.pt.mwTitle.height()
-                self.dw_matches.setMaximumWidth(int(h /2 + .5) - 4, h)
-                # cfg.pt.match_widget.resize(int(h / 2 + .5), h)
+                self.dw_matches.setMaximumWidth(int(h /2 + .5) - 4)
+                # cfg.pt.match_widget.resize(QSize(int(h /2 + .5) - 4, h))
 
 
 
@@ -3892,13 +3893,21 @@ class MainWindow(QMainWindow):
 
     def resizeEvent(self, e):
         logger.info('')
+        self.setUpdatesEnabled(False)
 
-        self.dw_matches.setMaximumWidth(999)
+        # self.dw_matches.setMaximumWidth(999)
         # self.dw_thumbs.setMaximumWidth(999)
 
-        h = self.dw_matches.height() - cfg.pt.mwTitle.height()
-        self.dw_matches.setMaximumWidth(int(h / 2 + .5) - 4)
-        self.match_widget.resize(int(h / 2 + .5) - 4, h)
+        if self.dw_thumbs.isVisible():
+            h = self.dw_thumbs.height()
+            self.dw_thumbs.setMaximumWidth(int(h / 2 + .5) - 4)
+
+        if self.dw_matches.isVisible():
+            h = self.dw_matches.height() - cfg.pt.mwTitle.height()
+            self.dw_matches.setMaximumWidth(int(h / 2 + .5) - 4)
+            # self.dw_matches.resize(QSize(int(h / 2 + .5) - 4, h))
+
+
         # if self._isProjectTab():
         #
         #     if self.dw_matches.isVisible():
@@ -3927,6 +3936,7 @@ class MainWindow(QMainWindow):
         #         self.dw_matches.setMaximumWidth(int(h /2 + .5))
         #         # cfg.pt.match_widget.resize(int(h / 2 + .5), h)
 
+        self.setUpdatesEnabled(True)
 
 
 
@@ -5287,13 +5297,15 @@ class MainWindow(QMainWindow):
         self._btn_alignForward.clicked.connect(self.alignForward)
 
         self.startRangeInput = QLineEdit()
-        self.startRangeInput.setAlignment(Qt.AlignCenter)
+        self.startRangeInput.setMaximumWidth(64)
         # self.startRangeInput.setFixedSize(30, 16)
+        self.startRangeInput.setAlignment(Qt.AlignCenter)
         self.startRangeInput.setEnabled(False)
 
         self.endRangeInput = QLineEdit()
-        self.endRangeInput.setAlignment(Qt.AlignCenter)
+        self.endRangeInput.setMaximumWidth(64)
         # self.endRangeInput.setFixedSize(30, 16)
+        self.endRangeInput.setAlignment(Qt.AlignCenter)
         self.endRangeInput.setEnabled(False)
 
         tip = """The range of sections to align."""

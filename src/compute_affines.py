@@ -188,17 +188,14 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
         # f_recipe_maker = f'{os.path.split(os.path.realpath(__file__))[0]}/src/recipe_maker.py'
 
-
-
-
         pbar = tqdm.tqdm(total=len(tasks), desc="Compute Affines", position=0, leave=True)
         def update_pbar(*a):
             pbar.update()
 
 
         # ctx = mp.get_context('forkserver')
-        # with mp.Pool(processes=cpus) as pool:
-        with ThreadPool(processes=cpus) as pool:
+        # with ThreadPool(processes=cpus) as pool:
+        with mp.Pool(processes=cpus) as pool:
             results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_pbar) for task in tasks]
             pool.close()
             all_results = [p.get() for p in results]
