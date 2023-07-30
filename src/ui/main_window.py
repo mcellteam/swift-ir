@@ -845,7 +845,7 @@ class MainWindow(QMainWindow):
                 QApplication.processEvents()
 
                 h = self.dw_matches.height() - cfg.pt.mwTitle.height()
-                self.dw_matches.setMaximumWidth(int(h /2 + .5) - 4)
+                self.dw_matches.setMaximumWidth(int(h /2 + .5) - 4, h)
                 # cfg.pt.match_widget.resize(int(h / 2 + .5), h)
 
 
@@ -3898,7 +3898,7 @@ class MainWindow(QMainWindow):
 
         h = self.dw_matches.height() - cfg.pt.mwTitle.height()
         self.dw_matches.setMaximumWidth(int(h / 2 + .5) - 4)
-        cfg.pt.match_widget.resize(int(h / 2 + .5) - 4)
+        self.match_widget.resize(int(h / 2 + .5) - 4, h)
         # if self._isProjectTab():
         #
         #     if self.dw_matches.isVisible():
@@ -5288,18 +5288,18 @@ class MainWindow(QMainWindow):
 
         self.startRangeInput = QLineEdit()
         self.startRangeInput.setAlignment(Qt.AlignCenter)
-        self.startRangeInput.setFixedSize(30, 16)
+        # self.startRangeInput.setFixedSize(30, 16)
         self.startRangeInput.setEnabled(False)
 
         self.endRangeInput = QLineEdit()
         self.endRangeInput.setAlignment(Qt.AlignCenter)
-        self.endRangeInput.setFixedSize(30, 16)
+        # self.endRangeInput.setFixedSize(30, 16)
         self.endRangeInput.setEnabled(False)
 
         tip = """The range of sections to align."""
         self.rangeInputWidget = HWidget(self.startRangeInput, QLabel(' : '), self.endRangeInput)
         self.rangeInputWidget.layout.setAlignment(Qt.AlignHCenter)
-        self.rangeInputWidget.setMaximumWidth(140)
+        self.rangeInputWidget.setMaximumWidth(150)
         self.rangeInputWidget.setToolTip(tip)
 
         tip = """Compute alignment and generate new images for range of sections"""
@@ -5322,7 +5322,7 @@ class MainWindow(QMainWindow):
         self.gb_ctlActions.setObjectName("gb_cpanel")
         self.gb_ctlActions.setStyleSheet("font-size: 9px;")
 
-        self.w_range = HWidget(VWidget(QLabel('Range: '), HWidget(self.rangeInputWidget, self.rangeInputWidget)), self._btn_alignRange)
+        self.w_range = HWidget(VWidget(QLabel('Range: '), self.rangeInputWidget), self._btn_alignRange)
         self.w_range.layout.setAlignment(Qt.AlignHCenter)
         self.w_range.layout.setSpacing(2)
 
