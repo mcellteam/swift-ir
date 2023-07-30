@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 mp.set_start_method('forkserver', force=True)
 
 
-def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
+def autoscale(dm:DataModel, gui=True):
 
     print(f'\n\n################ Generating Downsampled Images ################\n')
 
@@ -86,16 +86,8 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
             layer['filename'] = ofn #0220+
 
 
-
     t0 = time.time()
-    # with ThreadPool(processes=cpus) as pool:
-    #     pool.map(run, tqdm.tqdm(tasks, total=len(tasks)))
-    #     pool.close()
-    #     pool.join()
-    # for task in tasks:
-    #     run2(task)
 
-    # ctx = mp.get_context('forkserver')
     n_imgs = len(dm)
     logger.info(f'# images: {n_imgs}')
 
@@ -108,33 +100,10 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
             list(tqdm.tqdm(pool.imap_unordered(run, task_groups[group]), total=len(task_groups[group]), desc=f"Downsampling {group}", position=0, leave=True))
             pool.close() #0723+
 
-        # with ThreadPool(processes=cpus) as pool:
-        #     pool.map(run, tqdm.tqdm(task_groups[group], total=len(task_groups[group]), desc=f"Downsampling {group}", position=0, leave=True))
-        #     pool.close()
-
-        # with ThreadPoolExecutor(max_workers=cpus) as executor:
-        #     list(tqdm.tqdm(executor.map(run, task_groups[group]), total=len(task_groups[group]), position=0, leave=True))
-
-
-        # while any([x < n_imgs for x in count_files(dm.dest(), [group])]):
-        #     # logger.info('Sleeping for 1 second...')
-        #     time.sleep(1)
-
         logger.info(f"Elapsed Time: {'%.3g' % (time.time() - t)}s")
         cfg.main_window.set_elapsed(time.time() - t, f'Generate {group}')
 
     print("Finished generating images")
-    # ctx = mp.get_context('forkserver')
-    # with ctx.Pool(processes=cpus) as pool:
-    #     pool.map(run, tasks)
-    #     pool.close()
-    #     pool.join()
-    # ctx = mp.get_context('forkserver')
-    # pool = ctx.Pool(processes=cpus)
-    # pool.map(run, tqdm.tqdm(tasks, total=len(tasks), desc="Downsampling", position=0, leave=True))
-    # pool.close()
-    # pool.join()
-
     # show_mp_queue_results(task_queue=task_queue, dt=dt)
     dm.t_scaling = time.time() - t0
 
@@ -150,7 +119,6 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
         logger.info(f"setting {s} image size to {siz}...")
         dm['data']['scales'][s]['image_src_size'] = siz
 
-    # GenerateScalesZarr(dm, gui=gui)
 
     if cfg.CancelProcesses:
         cfg.main_window.warn('Canceling Tasks:  Copy-converting TIFFs to NGFF-Compliant Zarr')
@@ -162,28 +130,27 @@ def autoscale(dm:DataModel, make_thumbnails=True, gui=True, set_pbar=True):
     imgs = get_img_filenames(os.path.join(dest, 'scale_1', 'img_src'))
     od = os.path.abspath(os.path.join(dest, 'img_src.zarr'))
     renew_directory(directory=od, gui=gui)
-    for scale in dm.scales():
-        x, y = dm.image_size(s=scale)
-        group = 's%d' % get_scale_val(scale)
-        preallocate_zarr(dm=dm, name='img_src.zarr', group=group, dimx=x, dimy=y, dimz=len(dm), dtype='|u1', overwrite=True, gui=gui)
 
-    time.sleep(1)
+    t0 = time.time()
+    # for group in task_groups:
 
-    task_groups = {}
+    of = 'img_src.zarr'
     for s in dm.scales()[::-1]:
-        task_groups[s] = []
+        tasks = []
         for ID, img in enumerate(imgs):
             out = os.path.join(od, 's%d' % get_scale_val(s))
             fn = os.path.join(dest, s, 'img_src', img)
-            task_groups[s].append([ID, fn, out])
+            tasks.append([ID, fn, out])
 
-    t0 = time.time()
-    for group in task_groups:
+        x, y = dm.image_size(s=s)
+        shape = (len(dm), y, x)
+        grp = 's%d' % dm.scale_val(s=s)
+        preallocate_zarr(dm=dm, name=of, group=grp, shape=shape, dtype='|u1', overwrite=True, gui=gui)
         t = time.time()
         with ThreadPoolExecutor(max_workers=10) as executor:
-            list(tqdm.tqdm(executor.map(convert_zarr, task_groups[group]), total=len(task_groups[group]), position=0, leave=True, desc=f"Converting {group} to Zarr"))
-        logger.info(f"Elapsed Time: {'%.3g' % (time.time() - t)}s")
-        time.sleep(1)
+            list(tqdm.tqdm(executor.map(convert_zarr, tasks), total=len(tasks), position=0, leave=True, desc=f"Converting {s} to Zarr..."))
+        logger.info(f"ThreadPoolExecutor Time: {'%.3g' % (time.time() - t)}s")
+        # time.sleep(1)
 
     t_elapsed = time.time() - t0
     dm.t_scaling_convert_zarr = t_elapsed

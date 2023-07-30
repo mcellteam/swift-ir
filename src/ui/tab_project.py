@@ -1987,7 +1987,7 @@ class ProjectTab(QWidget):
         self.w_ng_extended_toolbar.addWidget(self.ngcl_shader)
         self.w_ng_extended_toolbar.addWidget(self.ngcl_bounds)
         self.w_ng_extended_toolbar.addWidget(self.ngcl_axes)
-        self.w_ng_extended_toolbar.addWidget(self.ngcl_snr)
+        # self.w_ng_extended_toolbar.addWidget(self.ngcl_snr)
         self.w_ng_extended_toolbar.addWidget(self.ngcl_background)
 
         self.sideSliders = VWidget(self.ZdisplaySliderAndLabel, self.zoomSliderAndLabel)
@@ -3671,7 +3671,7 @@ class ProjectTab(QWidget):
         color: #141414;
         background: #dadada;
         }""")
-        self.brightnessLE.setText('0.00')
+        self.brightnessLE.setText('0')
         # self.brightnessLE.setValidator(QDoubleValidator(-1.0, 1.0, 2))
         self.brightnessLE.setValidator(QIntValidator(-100, 100))
         self.brightnessLE.setFixedWidth(50)
@@ -3710,7 +3710,7 @@ class ProjectTab(QWidget):
         color: #141414;
         background: #dadada;
         }""")
-        self.contrastLE.setText('0.00')
+        self.contrastLE.setText('0')
         # self.contrastLE.setValidator(QDoubleValidator(-1.0, 1.0, 2))
         self.contrastLE.setValidator(QIntValidator(-100, 100))
         self.contrastLE.setFixedWidth(50)
@@ -3749,10 +3749,7 @@ class ProjectTab(QWidget):
         self.shaderToolbar.setFixedHeight(24)
 
         self.shaderToolbar.setStyleSheet("""background-color: #222222; color: #f3f6fb; font-size: 9px;""")
-        labShader = QLabel(' Shader: ')
-        labShader.setStyleSheet("font-size: 12px; font-weight: 600;")
         self.shaderToolbar.addWidget(ExpandingWidget(self))
-        self.shaderToolbar.addWidget(labShader)
         self.shaderToolbar.addWidget(self.bcWidget)
         self.shaderToolbar.addWidget(self.shaderSideButtons)
         self.shaderToolbar.addWidget(ExpandingWidget(self))

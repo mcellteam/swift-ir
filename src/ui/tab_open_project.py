@@ -37,7 +37,7 @@ from src.ui.tab_project import ProjectTab
 from src.background_worker import BackgroundWorker
 from src.ui.timer import Timer
 from src.ui.tab_zarr import ZarrTab
-from src.ui.dialogs import QFileDialogPreview, NewConfigureProjectDialog
+from src.ui.dialogs import ImportImagesDialog, NewConfigureProjectDialog
 from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter, YellowTextLabel, Button, SmallButton
 from src.ui.tab_project import VerticalLabel
 from src.ui.thumbnail import ThumbnailFast
@@ -630,7 +630,6 @@ class OpenProject(QWidget):
 
         makedirs_exist_ok(path, exist_ok=True)
 
-        # cfg.data = DataModel(name=path, mendenhall=mendenhall)
         cfg.data = dm = DataModel(name=self.NEW_PROJECT_PATH)
         # cfg.data.set_defaults()
 
@@ -642,130 +641,134 @@ class OpenProject(QWidget):
         # cfg.dataById[id(cfg.project_tab)] = cfg.data
         self.new_project_lab2.setText(path)
 
-        if mendenhall:
-            create_project_structure_directories(cfg.data.dest(), ['scale_1'])
-        else:
+        # if mendenhall:
+        #     create_project_structure_directories(cfg.data.dest(), ['scale_1'])
+        # else:
 
-            if not skip_to_config:
-                '''Step 2/3...'''
-                result = self.import_multiple_images(path)
-                if result == 1:
-                    cfg.mw.warn('No images were imported - canceling new project')
-                    self.showMainUI()
-                    cfg.mw.set_status('')
-                    return
+        if not skip_to_config:
+            '''Step 2/3...'''
 
+            cfg.mw.tell('Import Images:')
 
-            self.NEW_PROJECT_IMAGES = natural_sort(self.NEW_PROJECT_IMAGES)
-
-            if cfg.data['data']['has_cal_grid']:
-                cfg.data['data']['cal_grid_path'] = self.NEW_PROJECT_IMAGES[0]
-                self.NEW_PROJECT_IMAGES = self.NEW_PROJECT_IMAGES[1:]
-                try:
-                    shutil.copy(cfg.data['data']['cal_grid_path'], cfg.data.dest())
-                except:
-                    print_exception()
-
-
-            cfg.data.set_source_path(os.path.dirname(self.NEW_PROJECT_IMAGES[0]))  # Critical!
-            cfg.mw.tell(f'Importing {len(self.NEW_PROJECT_IMAGES)} Images...')
-            # logger.info(f'Selected Images: \n{self.NEW_PROJECT_IMAGES}')
-            cfg.data.append_images(self.NEW_PROJECT_IMAGES)
-
-            cfg.mw.tell(f'Dimensions: %dx%d' % cfg.data.image_size(s='scale_1'))
-
-            cfg.data.set_defaults()
-
-            self.le_project_name_w.hide()
-
-            '''Step 3/3'''
-            self.new_project_lab1.setText('New Project (Step: 3/3) - Global Configuration')
-            cfg.mw.set_status('New Project (Step: 3/3) - Global Configuration')
-
-            dialog = NewConfigureProjectDialog(parent=self)
-            dialog.setWindowFlags(Qt.FramelessWindowHint)
+            '''Step 2/3'''
+            '''Dialog for importing images. Returns list of filenames.'''
+            dialog = ImportImagesDialog()
             self.vbl_main.addWidget(dialog)
-            # cfg.data = dm
-            result = dialog.exec()
-            self.showMainUI()
-            cfg.mw.set_status('')
-            if result:
-                logger.info('Save File Path: %s' % path)
+            self.new_project_lab1.setText('New Project (Step: 2/3) - Import TIFF Images')
+            cfg.mw.set_status('New Project (Step: 2/3) - Import TIFF Images')
+            sidebar = self.findChild(QListView, "sidebar")
+            delegate = StyledItemDelegate(sidebar)
+            delegate.mapping = getSideBarPlacesImportImages()
+            sidebar.setItemDelegate(delegate)
+
+            if dialog.exec_() == QDialog.Accepted:
+                filenames = dialog.selectedFiles()
+                dialog.pixmap = None
             else:
-                # self.showMainUI()
-                dialog.close()
-                cfg.mw.set_status('')
+                logger.warning('Import images dialog did not return a valid file list')
+                cfg.mw.warn('Import images dialog did not return a valid file list')
+                self.showMainUI()
+                dialog.pixmap = None
                 return 1
 
-            # cfg.project_tab = ProjectTab(self, path=path, datamodel=dm)
-            ID = id(cfg.project_tab)
-            logger.info(f'New Tab ID: {ID}')
-            cfg.dataById[id(cfg.project_tab)] = dm
-            dm.set_defaults()
-            initLogFiles(dm)
-            cfg.project_tab = cfg.pt = ProjectTab(self, path=path, datamodel=dm)
+            if filenames == 1:
+                logger.warning('New Project Canceled')
+                cfg.mw.warn('No Project Canceled')
+                self.showMainUI()
+                return 1
+
+            self.NEW_PROJECT_IMAGES = natural_sort(filenames)
+            logger.info(f'destination: {cfg.data.dest()}')
 
 
-            cfg.mw._closeOpenProjectTab()
+        self.NEW_PROJECT_IMAGES = natural_sort(self.NEW_PROJECT_IMAGES)
 
+        makedirs_exist_ok(path, exist_ok=True)
 
-
-            # rc = self.user_projects.table.rowCount()
-            # self.user_projects.table.insertRow(rc)
-            # self.user_projects.table.setRowHeight(rc, self.row_height_slider.value())
-            # f = QFont()
-            # f.setPointSize(9)
-            # f.setBold(True)
-            # twi = QTableWidgetItem('Initializing\nProject...')
-            # twi.setFont(f)
-            # self.user_projects.table.setItem(rc, 0, twi)
-
-            # cfg.mw.addGlobTab(cfg.project_tab, os.path.basename(path))
-
-            # cfg.mw._disableGlobTabs()
-            QApplication.processEvents()
-
-            logger.critical("Creating new project...")
-            cfg.mw.setNoPbarMessage(True)
-
-            cfg.mw.set_status('')
-            QApplication.processEvents()
+        if cfg.data['data']['has_cal_grid']:
+            cfg.data['data']['cal_grid_path'] = self.NEW_PROJECT_IMAGES[0]
+            self.NEW_PROJECT_IMAGES = self.NEW_PROJECT_IMAGES[1:]
+            logger.info("Copying calibration grid image...")
             try:
-                if dm['data']['autoalign_flag']:
-                    cfg.mw.tell(
-                        f'Auto-align flag is set. Aligning {dm.scale_pretty(dm.coarsest_scale_key())}...')
-                    cfg.ignore_pbar = False
-                    cfg.mw.showZeroedPbar(set_n_processes=7)
-                    autoscale(dm=dm, make_thumbnails=True, set_pbar=False)
-                    logger.info("\n\nFinished autoscaling.\n")
-                    # cfg.mw.setdw_matches(True)
-                    logger.info('Initializing alignment...')
-                    cfg.mw.alignAll(set_pbar=False, force=True, ignore_bb=True)
+                shutil.copy(cfg.data['data']['cal_grid_path'], cfg.data.dest())
+            except:
+                print_exception()
 
-                else:
-                    autoscale(dm=dm, make_thumbnails=True, set_pbar=True)
-                make_thumbnails = True
-                if make_thumbnails:
-                    logger.info('Generating Source Thumbnails...')
-                    thumbnailer = Thumbnailer()
-                    cfg.data.t_thumbs = thumbnailer.reduce_main(dest=dm.dest())
+
+        cfg.data.set_source_path(os.path.dirname(self.NEW_PROJECT_IMAGES[0]))  # Critical!
+        cfg.mw.tell(f'Importing {len(self.NEW_PROJECT_IMAGES)} Images...')
+        # logger.info(f'Selected Images: \n{self.NEW_PROJECT_IMAGES}')
+        cfg.data.append_images(self.NEW_PROJECT_IMAGES)
+
+        cfg.mw.tell(f'Dimensions: %dx%d' % cfg.data.image_size(s='scale_1'))
+
+        cfg.data.set_defaults()
+
+        self.le_project_name_w.hide()
+
+        '''Step 3/3'''
+        self.new_project_lab1.setText('New Project (Step: 3/3) - Global Configuration')
+        cfg.mw.set_status('New Project (Step: 3/3) - Global Configuration')
+
+        dialog = NewConfigureProjectDialog(parent=self)
+        dialog.setWindowFlags(Qt.FramelessWindowHint)
+        self.vbl_main.addWidget(dialog)
+        # cfg.data = dm
+        result = dialog.exec()
+        self.showMainUI()
+        cfg.mw.set_status('')
+        if result:
+            logger.info('Save File Path: %s' % path)
+        else:
+            # self.showMainUI()
+            dialog.close()
+            cfg.mw.set_status('')
+            return 1
+
+        # cfg.project_tab = ProjectTab(self, path=path, datamodel=dm)
+        ID = id(cfg.project_tab)
+        logger.info(f'New Tab ID: {ID}')
+        cfg.dataById[id(cfg.project_tab)] = dm
+        dm.set_defaults()
+        initLogFiles(dm)
+        cfg.project_tab = cfg.pt = ProjectTab(self, path=path, datamodel=dm)
+
+        cfg.mw._closeOpenProjectTab()
+
+        # cfg.mw._disableGlobTabs()
+
+        logger.critical("Creating new project...")
+        cfg.mw.setNoPbarMessage(True)
+
+        cfg.mw.set_status('')
+        QApplication.processEvents()
+        try:
+            autoscale(dm)
+            logger.info("\n\nFinished autoscaling.\n")
+            if dm['data']['autoalign_flag']:
+                logger.info('Initializing alignment...')
+                cfg.mw.tell(
+                    f'Auto-align flag is set. Aligning {dm.scale_pretty(dm.coarsest_scale_key())}...')
+                cfg.mw.alignAll(set_pbar=False, force=True, ignore_bb=True)
+            logger.info('Generating Source Thumbnails...')
+            thumbnailer = Thumbnailer()
+            cfg.data.t_thumbs = thumbnailer.reduce_main(dest=dm.dest())
+        except:
+            print_exception()
+        finally:
+            # cfg.mw.enableAllTabs()
+            QApplication.processEvents()
+            cfg.data = dm
+            cfg.mw._autosave(silently=True)
+            cfg.mw.addGlobTab(cfg.project_tab, os.path.basename(path))
+            # cfg.mw.setUpdatesEnabled(False)
+            try:
+                cfg.mw.onStartProject()
             except:
                 print_exception()
             finally:
-                # cfg.mw.enableAllTabs()
-                QApplication.processEvents()
-                cfg.data = dm
-                cfg.mw._autosave(silently=True)
-                cfg.mw.addGlobTab(cfg.project_tab, os.path.basename(path))
-                cfg.mw.setUpdatesEnabled(False)
-                try:
-                    cfg.mw.onStartProject()
-                except:
-                    print_exception()
-                finally:
-                    cfg.mw.enableAllTabs()
-                    cfg.mw.setUpdatesEnabled(True)
-        cfg.mw.setNoPbarMessage(False)
+                cfg.mw.enableAllTabs()
+                # cfg.mw.setUpdatesEnabled(True)
 
         QApplication.processEvents()
 
@@ -783,52 +786,6 @@ class OpenProject(QWidget):
         cfg.pt.initNeuroglancer()
         cfg.mw.setNoPbarMessage(False)
         logger.critical('<<<< new_project <<<<')
-
-
-    def import_multiple_images(self, path):
-        ''' Import images into data '''
-        cfg.mw.tell('Import Images:')
-
-        '''Step 2/3'''
-        '''Dialog for importing images. Returns list of filenames.'''
-        dialog = QFileDialogPreview()
-        dialog.setWindowFlags(Qt.FramelessWindowHint)
-
-        self.vbl_main.addWidget(dialog)
-        # dialog.setOption(QFileDialog.DontUseNativeDialog)
-        self.new_project_lab1.setText('New Project (Step: 2/3) - Import TIFF Images')
-        cfg.mw.set_status('New Project (Step: 2/3) - Import TIFF Images')
-        # dialog.setWindowTitle('New Project (Step: 2/3) - Import TIFF Images')
-        dialog.setNameFilter('Images (*.tif *.tiff)')
-        dialog.setFileMode(QFileDialog.ExistingFiles)
-        dialog.setModal(True)
-        urls = dialog.sidebarUrls()
-        dialog.setSidebarUrls(urls)
-        places = getSideBarPlacesImportImages()
-        sidebar = self.findChild(QListView, "sidebar")
-        delegate = StyledItemDelegate(sidebar)
-        delegate.mapping = places
-        sidebar.setItemDelegate(delegate)
-
-        if dialog.exec_() == QDialog.Accepted:
-            filenames = dialog.selectedFiles()
-            dialog.pixmap = None
-        else:
-            logger.warning('Import images dialog did not return a valid file list')
-            cfg.mw.warn('Import images dialog did not return a valid file list')
-            self.showMainUI()
-            dialog.pixmap = None
-            return 1
-
-        if filenames == 1:
-            logger.warning('New Project Canceled')
-            cfg.mw.warn('No Project Canceled')
-            self.showMainUI()
-            return 1
-
-        self.NEW_PROJECT_IMAGES = natural_sort(filenames)
-        logger.info(f'destination: {cfg.data.dest()}')
-
 
 
     def setSelectionPathText(self, path):

@@ -193,6 +193,7 @@ class MainWindow(QMainWindow):
         # self.setWindowFlags(Qt.FramelessWindowHint)
 
         self.setCorner(Qt.BottomLeftCorner, Qt.LeftDockWidgetArea )
+        self.setCorner(Qt.TopLeftCorner, Qt.LeftDockWidgetArea )
         # self.setCorner(Qt.BottomRightCorner, Qt.RightDockWidgetArea )
         self.setCorner(Qt.BottomRightCorner, Qt.BottomDockWidgetArea )
         self.setDockNestingEnabled(True)
@@ -844,7 +845,7 @@ class MainWindow(QMainWindow):
                 QApplication.processEvents()
 
                 h = self.dw_matches.height() - cfg.pt.mwTitle.height()
-                self.dw_matches.setMaximumWidth(int(h /2 + .5))
+                self.dw_matches.setMaximumWidth(int(h /2 + .5) - 4)
                 # cfg.pt.match_widget.resize(int(h / 2 + .5), h)
 
 
@@ -3893,7 +3894,11 @@ class MainWindow(QMainWindow):
         logger.info('')
 
         self.dw_matches.setMaximumWidth(999)
-        self.dw_thumbs.setMaximumWidth(999)
+        # self.dw_thumbs.setMaximumWidth(999)
+
+        h = self.dw_matches.height() - cfg.pt.mwTitle.height()
+        self.dw_matches.setMaximumWidth(int(h / 2 + .5) - 4)
+        cfg.pt.match_widget.resize(int(h / 2 + .5) - 4)
         # if self._isProjectTab():
         #
         #     if self.dw_matches.isVisible():
@@ -5331,6 +5336,7 @@ class MainWindow(QMainWindow):
         self.newActionsWidget.setStyleSheet("font-size: 10px; font-weight: 600;")
 
         self.toolbar_cpanel = QToolBar()
+        # self.toolbar_cpanel.setMovable(False)
         self.toolbar_cpanel.setFixedHeight(38)
         self.toolbar_cpanel.addWidget(self.navControls)
         self.toolbar_cpanel.addWidget(self.newActionsWidget)
@@ -5393,7 +5399,7 @@ class MainWindow(QMainWindow):
             if self.dw_hud.isVisible():
                 self.setUpdatesEnabled(False)
                 w = 180
-                self.resizeDocks((self.dw_matches, self.dw_thumbs), (w, w), Qt.Horizontal)
+                # self.resizeDocks((self.dw_matches, self.dw_thumbs), (w, w), Qt.Horizontal)
                 self.resizeDocks((self.dw_hud, self.dw_snr), (w, w), Qt.Horizontal)
                 self.resizeDocks((self.dw_hud, self.dw_python), (w, w), Qt.Horizontal)
                 self.resizeDocks((self.dw_snr, self.dw_python), (w, w), Qt.Horizontal)
@@ -6049,7 +6055,9 @@ class MainWindow(QMainWindow):
         self.addToolBar(Qt.LeftToolBarArea, self.toolbar)
         # self.globTabsAndCpanel = VWidget(self.globTabs, self.cpanel, self.sw_pbar)
         # self.globTabsAndCpanel = VWidget(self.globTabs, self.sa_cpanel, self.sw_pbar)
-        self.globTabsAndCpanel = VWidget(self.globTabs, self.toolbar_cpanel, self.sw_pbar)
+        # self.globTabsAndCpanel = VWidget(self.globTabs, self.toolbar_cpanel, self.sw_pbar)
+        self.globTabsAndCpanel = VWidget(self.globTabs, self.sw_pbar)
+        self.addToolBar(Qt.TopToolBarArea, self.toolbar_cpanel)
         self.globTabsAndCpanel.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
         self.setCentralWidget(self.globTabsAndCpanel)
