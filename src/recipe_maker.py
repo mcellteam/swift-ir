@@ -639,6 +639,7 @@ def run_command(cmd, arg_list=(), cmd_input=None, desc=''):
     cmd_arg_list = [cmd]
     cmd_arg_list.extend(arg_list)
     # Note: decode bytes if universal_newlines False
+    print(os.environ)
     with sp.Popen(
         cmd_arg_list,
         stdin=sp.PIPE,
