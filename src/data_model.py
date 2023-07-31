@@ -1962,7 +1962,6 @@ class DataModel:
     #                 'alignment']['manual_settings']['manual_swim_window_px'] = ww * (1 / get_scale_val(s))
 
 
-
     def bounding_rect(self, s=None):
         if s == None: s = self.scale
         try:
