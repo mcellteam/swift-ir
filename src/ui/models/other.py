@@ -25,10 +25,10 @@ class TableModel(QAbstractTableModel):
         # the length (only works if all rows are an equal length)
         return len(self._data[0])
 
-#############################
+########
 # Below classes are from from:
 # https://www.pythonguis.com/faq/file-image-browser-app-with-thumbnails/
-#############################
+########
 
 class GeneralTableModel(QAbstractTableModel):
 

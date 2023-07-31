@@ -172,7 +172,7 @@ class ProjectTab(QWidget):
         self.tbbBlinkToggle.setChecked(False)
 
         if index == 0:
-            layout = cfg.emViewer.state.layout.type
+            # layout = cfg.emViewer.state.layout.type
 
             self.shutdownNeuroglancer()
             self.initNeuroglancer()
@@ -2059,7 +2059,7 @@ class ProjectTab(QWidget):
         # vbl.setSpacing(0)
         # self.tn_widget.setLayout(vbl)
 
-        ########################
+        ####
 
         # path = os.path.join(get_appdir(), 'resources', 'x_reticle.png')
         #

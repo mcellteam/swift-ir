@@ -54,7 +54,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
     if cfg.CancelProcesses:
         cfg.mw.warn('Canceling Compute Affine Tasks')
     else:
-        print(f'\n\n################ Computing Alignment ################\n')
+        print(f'\n\n######## Computing Alignment ########\n')
         cfg.mw._autosave()
         # if path:
         use_gui = 1
