@@ -133,8 +133,8 @@ class PythonConsoleWidget(QWidget):
         # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.layout.setSpacing(0)
         self.layout.setContentsMargins(0,0,0,0)
-        # self.pyconsole = PythonConsole()
-        self.pyconsole = QWidget()
+        self.pyconsole = PythonConsole()
+        # self.pyconsole = QWidget()
         self.layout.addWidget(self.pyconsole)
         self.setLayout(self.layout)
 
