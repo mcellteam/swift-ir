@@ -199,7 +199,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
 
 
-            all_results = list(tqdm.tqdm(pool.imap(run_recipe, tasks),
+            all_results = list(tqdm.tqdm(pool.imap(run_recipe, tasks,
+                                                   chunksize=5),
                                          total=len(tasks), desc="Compute Affines", position=0, leave=True))
 
 
