@@ -181,7 +181,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         #
         # dm.t_align = time.time() - t0
 
-        logger.info(f"# cpus for alignment: {cpus}")
+        # logger.info(f"# cpus for alignment: {cpus}")
 
         # f_recipe_maker = f'{os.path.split(os.path.realpath(__file__))[0]}/src/recipe_maker.py'
 
@@ -193,12 +193,12 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         ctx = mp.get_context('forkserver')
         # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
         # with mp.Pool(processes=cpus, maxtasksperchild=1) as pool:
-        with ThreadPool(processes=10) as pool:
+        with ThreadPoolExecutor(max_workers=40) as pool:
             # with ctx.Pool() as pool:
 
 
 
-            all_results = list(tqdm.tqdm(pool.imap(run_recipe, tasks),
+            all_results = list(tqdm.tqdm(pool.map(run_recipe, tasks),
                                          total=len(tasks)))
 
 
