@@ -1861,7 +1861,7 @@ class ProjectTab(QWidget):
             logger.info('')
             opt = getData('state,show_axis_lines')
             opt = not opt
-            opt = setData('state,show_axis_lines', opt)
+            setData('state,show_axis_lines', opt)
             # self.ngShowAxisLinesAction.setText(('Show Axis Lines', 'Hide Axis Lines')[opt])
             # for v in self.get_viewers():
             #     v.updateAxisLines()
