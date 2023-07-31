@@ -14,11 +14,11 @@ import subprocess as sp
 import numpy as np
 
 try:
-    from swiftir import applyAffine, reptoshape
+    from src.swiftir import applyAffine, reptoshape
 except Exception as e:
     print(e)
     try:
-        import src.swiftir
+        from swiftir import applyAffine, reptoshape
     except Exception as e:
         print(e)
 
