@@ -103,6 +103,7 @@ def autoscale(dm:DataModel, gui=True):
                            position=0,
                            leave=True))
             pool.close() #0723+
+            pool.join()
 
         dt = time.time() - t
         dm['data']['benchmarks']['scales'][group]['t_scale_generate'] = dt
