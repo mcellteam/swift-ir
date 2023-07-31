@@ -154,7 +154,7 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
     dm.t_generate = t_elapsed
     cfg.main_window.set_elapsed(t_elapsed, f'Generate alignment')
 
-    time.sleep(1)
+    # time.sleep(1)
 
     dm.register_cafm_hashes(s=scale, start=start, end=end)
     dm.set_image_aligned_size()
@@ -191,6 +191,7 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
         task = [i, al_name, zarr_group]
         tasks.append(task)
     # shuffle(tasks)
+
 
     t0 = time.time()
 
