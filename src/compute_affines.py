@@ -155,7 +155,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
         cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks)),1)
         if is_tacc() and (scale == 'scale_1'):
-            cpus = 50
+            cpus = 34
 
         t0 = time.time()
 
