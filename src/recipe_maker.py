@@ -112,27 +112,27 @@ class align_recipe:
 
             if self.meta['isRefinement']:
                 '''Perform affine refinement'''
-                # if self.meta['scale_key'] == 'scale_1':
-                #     self.add_ingredients([
-                #         align_ingredient(
-                #             mode='SWIM-Grid',
-                #             ww=ww_2x2,
-                #             psta=psta_2x2,
-                #             ID='g2x2-b',
-                #             last=True)])
-                # else:
-                self.add_ingredients([
-                    align_ingredient(
-                        mode='SWIM-Grid',
-                        ww=ww_2x2,
-                        psta=psta_2x2,
-                        ID='g2x2-a'),
-                    align_ingredient(
-                        mode='SWIM-Grid',
-                        ww=ww_2x2,
-                        psta=psta_2x2,
-                        ID='g2x2-b',
-                        last=True)])
+                if self.meta['scale_key'] == 'scale_1':
+                    self.add_ingredients([
+                        align_ingredient(
+                            mode='SWIM-Grid',
+                            ww=ww_2x2,
+                            psta=psta_2x2,
+                            ID='g2x2',
+                            last=True)])
+                else:
+                    self.add_ingredients([
+                        align_ingredient(
+                            mode='SWIM-Grid',
+                            ww=ww_2x2,
+                            psta=psta_2x2,
+                            ID='g2x2-a'),
+                        align_ingredient(
+                            mode='SWIM-Grid',
+                            ww=ww_2x2,
+                            psta=psta_2x2,
+                            ID='g2x2-b',
+                            last=True)])
             else:
                 '''Perform affine initialization'''
                 self.add_ingredients([
