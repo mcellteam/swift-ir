@@ -193,7 +193,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         ctx = mp.get_context('forkserver')
         # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
         # with mp.Pool(processes=cpus, maxtasksperchild=1) as pool:
-        with ThreadPool(processes=cpus) as pool:
+        with ThreadPool(processes=10) as pool:
             # with ctx.Pool() as pool:
 
 
