@@ -644,7 +644,8 @@ def run_command(cmd, arg_list=(), cmd_input=None, desc=''):
         stdin=sp.PIPE,
         stdout=sp.PIPE,
         stderr=sp.PIPE,
-        universal_newlines=True) as cmd_proc:
+        universal_newlines=True,
+        env=os.environ.copy()) as cmd_proc:
         cmd_stdout, cmd_stderr = cmd_proc.communicate(cmd_input)
     logging.getLogger('recipemaker').critical(
         f"\n======== Run Command [PID: {cmd_proc.pid}] ========\n"
