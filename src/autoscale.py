@@ -97,13 +97,18 @@ def autoscale(dm:DataModel, gui=True):
         t = time.time()
         ctx = mp.get_context('forkserver')
         with ctx.Pool() as pool:
-            list(tqdm.tqdm(pool.imap_unordered(run, task_groups[group]),
-                           total=len(task_groups[group]),
-                           desc=f"Downsampling {group}",
-                           position=0,
-                           leave=True))
+            # list(tqdm.tqdm(pool.imap_unordered(run, task_groups[group]),
+            #                total=len(task_groups[group]),
+            #                desc=f"Downsampling {group}",
+            #                position=0,
+            #                leave=True))
+            tqdm.tqdm(pool.imap_unordered(run, task_groups[group]),
+                      total=len(task_groups[group]),
+                      desc=f"Downsampling {group}",
+                      position=0,
+                      leave=True)
             pool.close() #0723+
-            pool.join()
+            pool.join() #Crit
 
         dt = time.time() - t
         dm['data']['benchmarks']['scales'][group]['t_scale_generate'] = dt
