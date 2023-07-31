@@ -3611,7 +3611,7 @@ class ProjectTab(QWidget):
         self._tabs.setObjectName('project_tabs')
         # self._tabs.addTab(self.splitter_ngPlusSideControls, ' 3DEM ')
         # self._tabs.addTab(VWidget(self.w_ng_extended_toolbar, self.shaderToolbar, self.webengine), 'Neuroglancer')
-        self._tabs.addTab(VWidget(self.w_ng_extended_toolbar, self.shaderToolbar, self.webengine), 'Neuroglancer')
+        self._tabs.addTab(VWidget(self.w_ng_extended_toolbar, self.shaderToolbar, self.webengine), 'View Alignment')
         self._tabs.addTab(self.splitterEditAlignment, 'Edit Alignment')
 
         # self._tabs.addTab(self.wEditAlignment, ' 3DEM ')

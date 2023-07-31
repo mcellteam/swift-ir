@@ -92,10 +92,10 @@ def autoscale(dm:DataModel, gui=True):
     logger.info(f'# images: {n_imgs}')
 
     logger.info(f"cpus: {cpus}")
+    ctx = mp.get_context('forkserver')
     for group in task_groups:
         logger.info(f'Downsampling {group}...')
         t = time.time()
-        ctx = mp.get_context('forkserver')
         with ctx.Pool() as pool:
             list(tqdm.tqdm(pool.map(run, task_groups[group]),
                            total=len(task_groups[group]),

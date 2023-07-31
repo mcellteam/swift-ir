@@ -5314,7 +5314,7 @@ class MainWindow(QMainWindow):
         tip = """The range of sections to align."""
         self.rangeInputWidget = HWidget(self.startRangeInput, QLabel(' : '), self.endRangeInput)
         self.rangeInputWidget.layout.setAlignment(Qt.AlignHCenter)
-        self.rangeInputWidget.setMaximumWidth(150)
+        self.rangeInputWidget.setMaximumWidth(110)
         self.rangeInputWidget.setToolTip(tip)
 
         tip = """Compute alignment and generate new images for range of sections"""
