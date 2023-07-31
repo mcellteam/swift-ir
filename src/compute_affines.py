@@ -198,8 +198,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
 
 
-            all_results = list(tqdm.tqdm(pool.map(run_recipe, tasks),
-                                         total=len(tasks)))
+            all_results = list(tqdm.tqdm(pool.imap(run_recipe, tasks),
+                                         total=len(tasks), desc="Compute Affines", position=0, leave=True))
 
 
             # results = [pool.apply_async(func=run_recipe, args=(task,),
