@@ -191,7 +191,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
 
         ctx = mp.get_context('forkserver')
-        with ctx.Pool(processes=cpus) as pool:
+        with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
             results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_pbar) for task in tasks]
             pool.close()
             all_results = [p.get() for p in results]
