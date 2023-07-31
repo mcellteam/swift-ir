@@ -554,13 +554,15 @@ class MainWindow(QMainWindow):
 
         if self.dw_matches.isVisible():
 
+            caller = inspect.stack()[1].function
+
             if z == None: z = cfg.data.zpos
 
             # caller = inspect.stack()[1].function
             if not self._isProjectTab():
                 return
 
-            logger.info('')
+            logger.info(f'[{caller}]')
 
             # if not cfg.data.is_aligned():
             #     cfg.pt.ms_widget.hide()
@@ -2679,7 +2681,8 @@ class MainWindow(QMainWindow):
     def onStartProject(self, mendenhall=False):
         '''Functions that only need to be run once per project
                 Do not automatically save, there is nothing to save yet'''
-        print(f'\n\n################ Loading Project - %s ################\n' % os.path.basename(cfg.data.dest()))
+        print(f'\n\n######## Loading Project - %s ########\n'
+              % os.path.basename(cfg.data.dest()))
         self.tell("Loading Project '%s'..." % cfg.data.dest())
         # initLogFiles(cfg.data)
 
@@ -3845,7 +3848,7 @@ class MainWindow(QMainWindow):
         for b,n in zip(toolbuttons,names):
             b.setText(n)
             b.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-            b.setFixedSize(QSize(70,28))
+            b.setFixedSize(QSize(72,28))
             b.setIconSize(QSize(22,22))
             b.setFocusPolicy(Qt.FocusPolicy.NoFocus)
             b.setStyleSheet("""
@@ -4651,7 +4654,7 @@ class MainWindow(QMainWindow):
         self.ngLayout6Action = QAction('xz-3d', self)
         self.ngLayout7Action = QAction('3d', self)
         self.ngLayout8Action = QAction('4panel', self)
-        #############
+        ####
         # ngPerspectiveMenu.addAction(self.ngLayout1Action)
         # ngPerspectiveMenu.addAction(self.ngLayout2Action)
         # ngPerspectiveMenu.addAction(self.ngLayout3Action)
@@ -4660,7 +4663,7 @@ class MainWindow(QMainWindow):
         # ngPerspectiveMenu.addAction(self.ngLayout6Action)
         # # ngPerspectiveMenu.addAction(self.ngLayout7Action)
         # ngPerspectiveMenu.addAction(self.ngLayout8Action)
-        #############
+        ####
         # self.ngLayout1Action.triggered.connect(lambda: self.comboboxNgLayout.setCurrentText('xy'))
         # self.ngLayout2Action.triggered.connect(lambda: self.comboboxNgLayout.setCurrentText('xz'))
         # self.ngLayout3Action.triggered.connect(lambda: self.comboboxNgLayout.setCurrentText('yz'))

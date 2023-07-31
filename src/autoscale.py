@@ -28,8 +28,8 @@ import src.config as cfg
 # from qtpy.QtCore import QThreadPool
 
 
-from src.helpers import print_exception, get_scale_val, create_project_structure_directories, \
-    get_bindir, pretty_elapsed
+from src.helpers import print_exception, get_scale_val, \
+    create_project_structure_directories, get_bindir, pretty_elapsed
 
 
 __all__ = ['autoscale']
@@ -41,12 +41,12 @@ mp.set_start_method('forkserver', force=True)
 
 def autoscale(dm:DataModel, gui=True):
 
-    print(f'\n\n################ Generating Downsampled Images ################\n')
+    print(f'\n\n######## Generating Downsampled Images ########\n')
 
-    # Todo This should check for existence of original source files before doing anything
+    # Todo This should check for source files before doing anything
     if cfg.CancelProcesses:
-        cfg.main_window.warn('Canceling Tasks: Generate Scale Image Hierarchy')
-        cfg.main_window.warn('Canceling Tasks: Copy-convert Scale Images to Zarr')
+        cfg.mw.warn('Canceling Tasks: Generate Scale Image Hierarchy')
+        cfg.mw.warn('Canceling Tasks: Copy-convert Scale Images to Zarr')
         return
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(dm) * len(dm.downscales()))
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
@@ -56,7 +56,7 @@ def autoscale(dm:DataModel, gui=True):
     # Create Scale 1 Symlinks
     logger.info('Creating Scale 1 symlinks...')
     if gui:
-        cfg.main_window.tell('Sym-linking full scale images...')
+        cfg.main_window.tell('Sym-linking scale 1 images...')
     src_path = dm.source_path()
     for img in dm.basefilenames():
         fn = os.path.join(src_path, img)
@@ -67,7 +67,8 @@ def autoscale(dm:DataModel, gui=True):
             except: pass
             try:    os.symlink(fn, ofn)
             except:
-                logger.warning("Unable to link from %s to %s. Copying instead." % (fn, ofn))
+                logger.warning("Unable to link %s to %s. Copying instead." %
+                               (fn, ofn))
                 try:    shutil.copy(fn, ofn)
                 except: logger.warning("Unable to link or copy from " + fn + " to " + ofn)
 
@@ -77,9 +78,8 @@ def autoscale(dm:DataModel, gui=True):
         task_groups[s] = []
         scale_val = get_scale_val(s)
         for i, layer in enumerate(dm['data']['scales'][s]['stack']):
-            base       = dm.base_image_name(s=s, l=i)
-            if_arg     = os.path.join(src_path, base)
-            ofn        = os.path.join(dm.dest(), s, 'img_src', os.path.split(if_arg)[1]) # <-- wrong path on second project
+            if_arg     = os.path.join(src_path, dm.base_image_name(s=s, l=i))
+            ofn        = os.path.join(dm.dest(), s, 'img_src', os.path.split(if_arg)[1])
             of_arg     = 'of=%s' % ofn
             scale_arg  = '+%d' % scale_val
             task_groups[s].append([iscale2_c, scale_arg, of_arg, if_arg])
@@ -97,7 +97,11 @@ def autoscale(dm:DataModel, gui=True):
         t = time.time()
         ctx = mp.get_context('forkserver')
         with ctx.Pool() as pool:
-            list(tqdm.tqdm(pool.imap_unordered(run, task_groups[group]), total=len(task_groups[group]), desc=f"Downsampling {group}", position=0, leave=True))
+            list(tqdm.tqdm(pool.imap_unordered(run, task_groups[group]),
+                           total=len(task_groups[group]),
+                           desc=f"Downsampling {group}",
+                           position=0,
+                           leave=True))
             pool.close() #0723+
 
         logger.info(f"Elapsed Time: {'%.3g' % (time.time() - t)}s")
@@ -121,10 +125,10 @@ def autoscale(dm:DataModel, gui=True):
 
 
     if cfg.CancelProcesses:
-        cfg.main_window.warn('Canceling Tasks:  Copy-converting TIFFs to NGFF-Compliant Zarr')
+        cfg.main_window.warn('Canceling Tasks:  Convert TIFFs to NGFF Zarr')
         return
 
-    print(f'\n\n################ Copy-converting TIFFs to NGFF-Compliant Zarr ################\n')
+    print(f'\n\n######## Copy-converting TIFFs to NGFF Zarr ########\n')
 
     dest = dm.dest()
     imgs = get_img_filenames(os.path.join(dest, 'scale_1', 'img_src'))
