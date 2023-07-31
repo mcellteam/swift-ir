@@ -409,7 +409,8 @@ class align_ingredient:
         else:
             swim_output = self.run_swim()
             if swim_output == ['']:
-                print(f"[{self.recipe.index}] SWIM Out is empty string! - ")
+                print(f"[{self.recipe.index}] SWIM Out is empty string!\n"
+                      f"Err:\n{self.swim_err_lines}")
                 self.snr = np.zeros(len(self.psta[0]))
                 self.snr_report = snr_report(self.snr)
                 return self.afm
