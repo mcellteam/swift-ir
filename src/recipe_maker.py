@@ -112,27 +112,27 @@ class align_recipe:
 
             if self.meta['isRefinement']:
                 '''Perform affine refinement'''
-                if self.meta['scale_key'] == 'scale_1':
-                    self.add_ingredients([
-                        align_ingredient(
-                            mode='SWIM-Grid',
-                            ww=ww_2x2,
-                            psta=psta_2x2,
-                            ID='g2x2-b',
-                            last=True)])
-                else:
-                    self.add_ingredients([
-                        align_ingredient(
-                            mode='SWIM-Grid',
-                            ww=ww_2x2,
-                            psta=psta_2x2,
-                            ID='g2x2-a'),
-                        align_ingredient(
-                            mode='SWIM-Grid',
-                            ww=ww_2x2,
-                            psta=psta_2x2,
-                            ID='g2x2-b',
-                            last=True)])
+                # if self.meta['scale_key'] == 'scale_1':
+                #     self.add_ingredients([
+                #         align_ingredient(
+                #             mode='SWIM-Grid',
+                #             ww=ww_2x2,
+                #             psta=psta_2x2,
+                #             ID='g2x2-b',
+                #             last=True)])
+                # else:
+                self.add_ingredients([
+                    align_ingredient(
+                        mode='SWIM-Grid',
+                        ww=ww_2x2,
+                        psta=psta_2x2,
+                        ID='g2x2-a'),
+                    align_ingredient(
+                        mode='SWIM-Grid',
+                        ww=ww_2x2,
+                        psta=psta_2x2,
+                        ID='g2x2-b',
+                        last=True)])
             else:
                 '''Perform affine initialization'''
                 self.add_ingredients([
@@ -635,7 +635,7 @@ def run_command(cmd, arg_list=(), cmd_input=None, desc=''):
         stdin=sp.PIPE,
         stdout=sp.PIPE,
         stderr=sp.PIPE,
-        universal_newlines=True)  as cmd_proc:
+        universal_newlines=True) as cmd_proc:
         cmd_stdout, cmd_stderr = cmd_proc.communicate(cmd_input)
     logging.getLogger('recipemaker').critical(
         f"\n======== Run Command [PID: {cmd_proc.pid}] ========\n"
