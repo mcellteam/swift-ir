@@ -185,9 +185,9 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
         # f_recipe_maker = f'{os.path.split(os.path.realpath(__file__))[0]}/src/recipe_maker.py'
 
-        pbar = tqdm.tqdm(total=len(tasks), desc="Compute Affines", position=0, leave=True)
-        def update_pbar(*a):
-            pbar.update()
+        # pbar = tqdm.tqdm(total=len(tasks), desc="Compute Affines", position=0, leave=True)
+        # def update_pbar(*a):
+        #     pbar.update()
 
 
         ctx = mp.get_context('forkserver')
