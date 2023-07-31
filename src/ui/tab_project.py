@@ -2346,7 +2346,7 @@ class ProjectTab(QWidget):
 
         self.sideTabs = QTabWidget()
         # self.sideTabs.addTab(self.MA_stackedWidget, 'Configure')
-        self.sideTabs.addTab(self.sa_lowest8, 'Lowest 8 SNR')
+        self.sideTabs.addTab(self.sa_lowest8, 'Worst 8 SNR')
         self.sideTabs.addTab(self.sa_details, 'Details')
         self.sideTabs.addTab(self.sa_runtimes, 'Timings')
         self.sideTabs.addTab(self.logs_widget, 'Logs')
@@ -2534,7 +2534,7 @@ class ProjectTab(QWidget):
     def updateAutoSwimRegions(self):
         logger.info('')
         if cfg.data.current_method == 'grid-custom':
-            cfg.data.grid_regions = [self.Q1.isClicked, self.Q2.isClicked, self.Q3.isClicked, self.Q4.isClicked]
+            cfg.data.grid_custom_regions = [self.Q1.isClicked, self.Q2.isClicked, self.Q3.isClicked, self.Q4.isClicked]
         self.updateAnnotations()
 
     def updateMethodSelectWidget(self, soft=False):
@@ -2839,7 +2839,7 @@ class ProjectTab(QWidget):
         method = cfg.data.current_method
         if method == 'grid-custom':
             cfg.mw._btn_alignOne.setEnabled(True)
-            grid = cfg.data.grid_regions
+            grid = cfg.data.grid_custom_regions
             self.Q1.setActivated(grid[0])
             self.Q2.setActivated(grid[1])
             self.Q3.setActivated(grid[2])
@@ -2885,7 +2885,7 @@ class ProjectTab(QWidget):
         realign_tip = 'SWIM align section #%d and generate an image' % sec
         if method == 'grid-custom':
             cfg.mw._btn_alignOne.setEnabled(True)
-            if sum(cfg.data.grid_regions) >= 3:
+            if sum(cfg.data.grid_custom_regions) >= 3:
                 cfg.mw._btn_alignOne.setEnabled(True)
                 realign_tip = 'SWIM align section #%d using custom grid method' % sec
             else:
