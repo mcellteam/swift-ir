@@ -878,6 +878,8 @@ class DataModel:
             self._data['data']['benchmarks']['scales'][s].setdefault('t_convert_zarr', 0.0)
             self._data['data']['benchmarks']['scales'][s].setdefault('t_thumbs_aligned', 0.0)
             self._data['data']['benchmarks']['scales'][s].setdefault('t_thumbs_spot', 0.0)
+            self._data['data']['benchmarks']['scales'][s].setdefault('t_scale_generate', 0.0)
+            self._data['data']['benchmarks']['scales'][s].setdefault('t_scale_convert', 0.0)
             # self._data['data']['benchmarks']['scales'][s].setdefault('thumb_scaling_factor_aligned', 0.0)
             self._data['data']['defaults']['scales'].setdefault(s, {})
             if s == self.coarsest_scale_key():
@@ -1094,9 +1096,10 @@ class DataModel:
         except:
             t2 = t2m = "???"
 
-        t3, t4, t5, t6 = {}, {}, {}, {}
-        t3m, t4m, t5m, t6m = {}, {}, {}, {}
+        t3, t4, t5, t6, t7, t8 = {}, {}, {}, {}, {}, {}
+        t3m, t4m, t5m, t6m, t7m, t8m = {}, {}, {}, {}, {}, {}
         for s in self.scales():
+
             try:
                 t3[s] = (f"%.1fs" % self['data']['benchmarks']['scales'][s]['t_align']).rjust(12)
                 t3m[s] = (f"%.3fm" % (self['data']['benchmarks']['scales'][s]['t_align'] / 60))
@@ -1121,11 +1124,33 @@ class DataModel:
             except:
                 t6[s] = t6m[s] = "???"
 
-        timings = []
-        timings.append(('Generate Scale Hierarchy', t0 + ' / ' + t0m))
-        timings.append(('Convert All Scales to Zarr', t1 + ' / ' + t1m))
-        timings.append(('Generate Source Image Thumbnails', t2 + ' / ' + t2m))
+            try:
+                t7[s] = (f"%.1fs" % self['data']['benchmarks']['scales'][s][
+                    't_scale_generate']).rjust(12)
+                t7m[s] = (f"%.3fm" % (self['data']['benchmarks']['scales'][s][
+                                        't_scale_generate'] / 60))
+            except:
+                t7[s] = t7m[s] = "???"
 
+            try:
+                t8[s] = (f"%.1fs" % self['data']['benchmarks']['scales'][s][
+                    't_scale_convert']).rjust(12)
+                t8m[s] = (f"%.3fm" % (self['data']['benchmarks']['scales'][s][
+                                        't_scale_convert'] / 60))
+            except:
+                t8[s] = t8m[s] = "???"
+
+        timings = []
+        # timings.append(('Generate Scale Hierarchy', t0 + ' / ' + t0m))
+        # timings.append(('Convert All Scales to Zarr', t1 + ' / ' + t1m))
+        # timings.append(('Generate Source Image Thumbnails', t2 + ' / ' + t2m))
+
+        timings.append(('Generate Scales', t0 + ' / ' + t0m + " (total)"))
+        for s in cfg.data.scales()[1:]:
+            timings.append(('  ' + cfg.data.scale_pretty(s), '%s / %s' % (t7[s], t7m[s])))
+        timings.append(('Convert Scales to Zarr', t1 + ' / ' + t1m + " (total)"))
+        for s in cfg.data.scales():
+            timings.append(('  ' + cfg.data.scale_pretty(s), '%s / %s' % (t8[s], t8m[s])))
         timings.append(('Compute Affines', ''))
         for s in cfg.data.scales():
             timings.append(('  ' + cfg.data.scale_pretty(s), '%s / %s' % (t3[s], t3m[s])))

@@ -104,7 +104,9 @@ def autoscale(dm:DataModel, gui=True):
                            leave=True))
             pool.close() #0723+
 
-        logger.info(f"Elapsed Time: {'%.3g' % (time.time() - t)}s")
+        dt = time.time() - t
+        dm['data']['benchmarks']['scales'][group]['t_scale_generate'] = dt
+        logger.info(f"Elapsed Time: {'%.3g' % dt}s")
         cfg.main_window.set_elapsed(time.time() - t, f'Generate {group}')
 
     print("Finished generating images")
@@ -153,7 +155,10 @@ def autoscale(dm:DataModel, gui=True):
         t = time.time()
         with ThreadPoolExecutor(max_workers=10) as executor:
             list(tqdm.tqdm(executor.map(convert_zarr, tasks), total=len(tasks), position=0, leave=True, desc=f"Converting {s} to Zarr..."))
-        logger.info(f"ThreadPoolExecutor Time: {'%.3g' % (time.time() - t)}s")
+
+        dt = time.time() - t
+        dm['data']['benchmarks']['scales'][s]['t_scale_convert'] = dt
+        logger.info(f"ThreadPoolExecutor Time: {'%.3g' % dt}s")
         # time.sleep(1)
 
     t_elapsed = time.time() - t0
