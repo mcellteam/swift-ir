@@ -155,7 +155,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
         cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks)),1)
         if is_tacc() and (scale == 'scale_1'):
-            cpus = 34
+            # cpus = 34
+            cpus = 50
 
         t0 = time.time()
 
@@ -181,7 +182,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         #
         # dm.t_align = time.time() - t0
 
-        # logger.info(f"# cpus for alignment: {cpus}")
+        logger.info(f"# cpus for alignment: {cpus}")
 
         # f_recipe_maker = f'{os.path.split(os.path.realpath(__file__))[0]}/src/recipe_maker.py'
 

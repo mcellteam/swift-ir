@@ -3,6 +3,7 @@
 import os
 import re
 import sys
+import time
 import copy
 import logging
 import platform
@@ -634,6 +635,7 @@ def run_command(cmd, arg_list=(), cmd_input=None, desc=''):
         f"Passing data    : {cmd_input}\n\n"
         f">> stdout\n{cmd_stdout}\n>> stderr\n{cmd_stderr}\n"
     )
+    time.sleep(.01)
     return cmd_stdout, cmd_stderr
 
 
