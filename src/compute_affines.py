@@ -154,8 +154,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
 
         cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks)),1)
-        # if is_tacc() and (scale == 'scale_1'):
-        #     cpus = 34
+        if is_tacc() and (scale == 'scale_1'):
+            cpus = 64
 
         t0 = time.time()
 
@@ -192,9 +192,11 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
         ctx = mp.get_context('forkserver')
         with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
-        # with ctx.Pool() as pool:
-            results = [pool.apply_async(func=run_recipe, args=(task,), callback=update_pbar) for task in tasks]
-            pool.close()
+            # with ctx.Pool() as pool:
+
+            results = [pool.apply_async(func=run_recipe, args=(task,),
+                                        callback=update_pbar) for task in tasks]
+            # pool.close()
             all_results = [p.get() for p in results]
 
         logger.info("Compute Affines Finished")
