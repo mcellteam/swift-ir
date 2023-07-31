@@ -305,6 +305,10 @@ class align_recipe:
             except: mr['ing%d' % i]['adjust_y'] = 'Null'
             try: mr['ing%d' % i]['afm'] = ing.afm.tolist()
             except: mr['ing%d' % i]['afm'] = 'Null'
+            try: mr['ing%d' % i]['t_swim'] = ing.t_swim
+            except: mr['ing%d' % i]['t_swim'] = 'Null'
+            try: mr['ing%d' % i]['t_mir'] = ing.t_mir
+            except: mr['ing%d' % i]['t_mir'] = 'Null'
 
         if self.meta['dev_mode']:
             mr['swim_args'] = {}
@@ -487,12 +491,14 @@ class align_ingredient:
         logging.getLogger('recipemaker').critical(
             f'Multi-SWIM Argument String:\n{self.multi_swim_arg_str()}')
         arg = "%dx%d" % (self.ww[0], self.ww[1])
+        t0 = time.time()
         out, err = run_command(
             self.recipe.swim_c,
             arg_list=[arg],
             cmd_input=self.multi_swim_arg_str(),
             desc=f'SWIM alignment'
         )
+        self.t_swim = time.time() - t0
         self.swim_output = out.strip().split('\n')
         self.swim_err_lines = err.strip().split('\n')
         return self.swim_output
@@ -569,11 +575,13 @@ class align_ingredient:
                 self.mir_script += ' '.join(mir_toks) + '\n'
                 snr_list.append(float(toks[0][0:-1]))
             self.mir_script += 'R\n'
+            t0 = time.time()
             out, err = run_command(
                 self.recipe.mir_c,
                 cmd_input=self.mir_script,
                 desc=f'MIR compose affine',
             )
+            self.t_mir = time.time() - t0
             self.mir_out_lines = out.strip().split('\n')
             self.mir_err_lines = err.strip().split('\n')
             aim = np.eye(2, 3, dtype=np.float32)
