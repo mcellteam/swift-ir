@@ -61,4 +61,8 @@ from .generate_aligned import *
 __all__.extend(generate_aligned.__all__)
 
 
+from . import compute_affines
+from .compute_affines import *
+__all__.extend(generate_aligned.__all__)
+
 
