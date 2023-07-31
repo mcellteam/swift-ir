@@ -112,18 +112,27 @@ class align_recipe:
 
             if self.meta['isRefinement']:
                 '''Perform affine refinement'''
-                self.add_ingredients([
-                    align_ingredient(
-                        mode='SWIM-Grid',
-                        ww=ww_2x2,
-                        psta=psta_2x2,
-                        ID='g2x2-a'),
-                    align_ingredient(
-                        mode='SWIM-Grid',
-                        ww=ww_2x2,
-                        psta=psta_2x2,
-                        ID='g2x2-b',
-                        last=True)])
+                if self.meta['scale_key'] == 'scale_1':
+                    self.add_ingredients([
+                        align_ingredient(
+                            mode='SWIM-Grid',
+                            ww=ww_2x2,
+                            psta=psta_2x2,
+                            ID='g2x2-b',
+                            last=True)])
+                else:
+                    self.add_ingredients([
+                        align_ingredient(
+                            mode='SWIM-Grid',
+                            ww=ww_2x2,
+                            psta=psta_2x2,
+                            ID='g2x2-a'),
+                        align_ingredient(
+                            mode='SWIM-Grid',
+                            ww=ww_2x2,
+                            psta=psta_2x2,
+                            ID='g2x2-b',
+                            last=True)])
             else:
                 '''Perform affine initialization'''
                 self.add_ingredients([
@@ -635,7 +644,7 @@ def run_command(cmd, arg_list=(), cmd_input=None, desc=''):
         f"Passing data    : {cmd_input}\n\n"
         f">> stdout\n{cmd_stdout}\n>> stderr\n{cmd_stderr}\n"
     )
-    time.sleep(.01)
+    # time.sleep(.01)
     return cmd_stdout, cmd_stderr
 
 
