@@ -619,14 +619,14 @@ class align_ingredient:
 def run_command(cmd, arg_list=(), cmd_input=None, desc=''):
     cmd_arg_list = [cmd]
     cmd_arg_list.extend(arg_list)
-    cmd_proc = sp.Popen(
+    # Note: decode bytes if universal_newlines False
+    with sp.Popen(
         cmd_arg_list,
         stdin=sp.PIPE,
         stdout=sp.PIPE,
         stderr=sp.PIPE,
-        universal_newlines=True  # Note: decode bytes if False
-    )
-    cmd_stdout, cmd_stderr = cmd_proc.communicate(cmd_input)
+        universal_newlines=True)  as cmd_proc:
+        cmd_stdout, cmd_stderr = cmd_proc.communicate(cmd_input)
     logging.getLogger('recipemaker').critical(
         f"\n======== Run Command [PID: {cmd_proc.pid}] ========\n"
         f"Description     : {desc}\n"
