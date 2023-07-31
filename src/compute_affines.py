@@ -26,8 +26,8 @@ import subprocess as sp
 import numpy as np
 import tqdm
 
-# sys.path.insert(1, os.path.dirname(os.path.split(os.path.realpath(__file__))[0]))
-# sys.path.insert(1, os.path.split(os.path.realpath(__file__))[0])
+sys.path.insert(1, os.path.dirname(os.path.split(os.path.realpath(__file__))[0]))
+sys.path.insert(1, os.path.split(os.path.realpath(__file__))[0])
 from src.data_model import DataModel
 from src.funcs_image import SetStackCafm
 from src.generate_aligned import GenerateAligned
