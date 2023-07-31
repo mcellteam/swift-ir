@@ -891,13 +891,15 @@ class OpenProject(QWidget):
             # cfg.mw.hud.done()
             cfg.mw._is_initialized = 1
 
-            QApplication.processEvents()
-            cfg.pt.initNeuroglancer()
             if cfg.data.is_aligned():
                 # cfg.pt.updateLowest8widget()
                 # cfg.mw.setdw_hud(True)
                 # cfg.mw.setdw_thumbs(True)
                 cfg.mw.setdw_matches(True)
+                cfg.mw.setdw_snr(True)
+
+            QApplication.processEvents()
+            cfg.pt.initNeuroglancer()
 
         else:
             cfg.mw.warn("Invalid Path")
