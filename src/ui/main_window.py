@@ -593,7 +593,7 @@ class MainWindow(QMainWindow):
             logger.info('snr_vals: %s' % str(snr_vals))
             method = cfg.data.get_current_method(l=z)
             if method == 'grid-custom':
-                regions = cfg.data.grid_regions
+                regions = cfg.data.grid_custom_regions
                 names = cfg.data.get_grid_custom_filenames(l=z)
                 # logger.info('names: %s' % str(names))
                 for i in range(4):
@@ -704,7 +704,7 @@ class MainWindow(QMainWindow):
                 for i in range(0, 4):
                     use = True
                     if method == 'grid-custom':
-                        use = cfg.data.grid_regions[i]
+                        use = cfg.data.grid_custom_regions[i]
                     elif method == 'grid-default':
                         use = cfg.data.grid_default_regions[i]
 

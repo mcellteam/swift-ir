@@ -788,7 +788,7 @@ class MAViewer(neuroglancer.Viewer):
 
             cps = []
             colors = []
-            regions = cfg.data.grid_regions
+            regions = cfg.data.grid_custom_regions
             # logger.info(f'regions: {regions}')
             if regions[0]:
                 # quadrant 1

@@ -487,14 +487,14 @@ class SnrPlot(QWidget):
     # def onSnrClick(self, plot, points, scale_key):
     def onSnrClick(self, plot, points):
         logger.info(f'onSnrClick')
-
+        logger.info(f"self.pt_selected = {self.pt_selected}")
         if self.pt_selected:
             try:
                 self.pt_selected.resetPen()
+                self.pt_selected.resetBrush()
+                self.pt_selected.setSymbol('o')
             except:
-                pass
-            self.pt_selected.resetBrush()
-            self.pt_selected.setSymbol('o')
+                print_exception()
 
         index = int(points[0].pos()[0])
         logger.info(f'index = {index}')
