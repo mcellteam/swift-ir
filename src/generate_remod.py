@@ -3,7 +3,7 @@
 import sys
 import os
 import glob
-import swiftir
+import src.swiftir
 
 if ( __name__ == '__main__'):
 
