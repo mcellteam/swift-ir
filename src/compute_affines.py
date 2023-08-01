@@ -221,7 +221,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'recipe_maker.py')
             logger.info('adding tasks to the queue...')
             for sec in dm()[start:end]:
-                if not sec['skipped']:
+                zpos = dm().index(sec)
+                if not sec['skipped'] and (zpos != first_unskipped):
                     # encoded_data = json.dumps(copy.deepcopy(sec))
                     encoded_data = json.dumps(sec['alignment'])
                     task_args = [sys.executable, align_job, encoded_data]
