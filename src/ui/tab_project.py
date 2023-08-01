@@ -2207,11 +2207,13 @@ class ProjectTab(QWidget):
         self.matchPlayTimer.timeout.connect(self.fn_toggleTargKarg)
 
         self.labMatches = QLabel('Auto-toggle:')
+        self.labMatches.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.labMatches.setAlignment(Qt.AlignRight)
         self.labMatches.setFixedHeight(14)
         self.labMatches.setStyleSheet('font-size: 10px; background-color: #ede9e8; color: #222222;')
 
         self.labMatchesTog = QLabel('Toggle:')
+        self.labMatchesTog.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.labMatchesTog.setAlignment(Qt.AlignRight)
         self.labMatchesTog.setFixedHeight(14)
         self.labMatchesTog.setStyleSheet('font-size: 10px; background-color: #ede9e8; color: #222222;')
