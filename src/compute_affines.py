@@ -207,8 +207,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                 index = r['meta']['index']
                 method = r['meta']['method']
                 dm['data']['scales'][scale]['stack'][index]['alignment'] = r
-                dm['data']['scales'][scale]['stack'][index][
-                    'alignment_history'][method] = r['method_results']
+                dm['data']['scales'][scale]['stack'][index]['alignment_history'][method] = r['method_results']
         else:
 
             task_queue = TaskQueue(n_tasks=len(tasks), dest=dest, use_gui=use_gui)
@@ -233,14 +232,6 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             all_results = task_queue.task_dict
 
             dm.t_align = time.time() - t0
-            task_dict = {}
-            index_arg = 3
-            for k in task_queue.task_dict.keys():
-                t = task_queue.task_dict[k]
-                logger.critical(f"\nt = {t}\n\n")
-                task_dict[int(t['args'][index_arg])] = t
-            task_list = [task_dict[k] for k in sorted(task_dict.keys())]
-            updated_model = copy.deepcopy(dm) # Integrate output of each task into a new combined datamodel previewmodel
 
             logger.info('Reading task results and updating data model...')
             # # For use with mp_queue.py ONLY
@@ -254,8 +245,10 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                         dm_text = p
                 if dm_text != None:
                     results_dict = json.loads(dm_text)
-                    layer_index = results_dict['alignment']['meta']['index']
-                    dm['data']['scales'][scale]['stack'][layer_index] = results_dict
+                    index = results_dict['meta']['index']
+                    method = results_dict['meta']['method']
+                    dm['data']['scales'][scale]['stack'][index]['alignment'] = results_dict
+                    dm['data']['scales'][scale]['stack'][index]['alignment_history'][method] = results_dict['method_results']
 
 
         logger.info("Compute Affines Finished")
