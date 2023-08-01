@@ -197,11 +197,6 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                     tqdm.tqdm(pool.imap(run_recipe, tasks, chunksize=5),
                               total=len(tasks), desc="Compute Affines",
                               position=0, leave=True))
-
-            t_elapsed = time.time() - t0
-            dm.t_align = t_elapsed
-            cfg.main_window.set_elapsed(t_elapsed, f"Compute affines {scale}")
-
             # # For use with ThreadPool ONLY
             for r in all_results:
                 index = r['meta']['index']
@@ -250,6 +245,9 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                     dm['data']['scales'][scale]['stack'][index]['alignment'] = results_dict
                     dm['data']['scales'][scale]['stack'][index]['alignment_history'][method] = results_dict['method_results']
 
+        t_elapsed = time.time() - t0
+        dm.t_align = t_elapsed
+        cfg.main_window.set_elapsed(t_elapsed, f"Compute affines {scale}")
 
         logger.info("Compute Affines Finished")
 
