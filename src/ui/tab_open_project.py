@@ -1246,6 +1246,7 @@ class UserProjects(QWidget):
         # logger.info(">>>> set_data >>>>")
         # caller = inspect.stack()[1].function
         # logger.info(f'[{caller}]')
+        self.table.clear()
         self.table.clearContents()
         font0 = QFont()
         # font0.setBold(True)
