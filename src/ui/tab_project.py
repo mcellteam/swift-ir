@@ -2331,6 +2331,17 @@ class ProjectTab(QWidget):
         self.cb_dev_mode.setChecked(cfg.DEV_MODE)
         self.cb_dev_mode.toggled.connect(update_dev_mode)
 
+        self.cb_use_pool = QCheckBox()
+        self.cb_use_pool.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        def update_mp_mode():
+            logger.info('')
+            b = self.cb_use_pool.isChecked()
+            cfg.USE_MULTIPROCESSING_POOL = int(b)
+            cfg.main_window.tell(f"Multiprocessing mode is now set to: "
+                                 f"{('task queue', 'pool')[b]}")
+        self.cb_use_pool.setChecked(cfg.USE_MULTIPROCESSING_POOL)
+        self.cb_use_pool.toggled.connect(update_mp_mode)
+
         self.w_tacc = QWidget()
         self.w_tacc.setContentsMargins(2,2,2,2)
         self.fl_tacc = QFormLayout()
@@ -2339,6 +2350,8 @@ class ProjectTab(QWidget):
         self.fl_tacc.addRow(f"QtWebengine # raster threads", self.le_qtwebengine_raster_threads)
         self.fl_tacc.addRow(f"RECIPE_LOGGING", self.cb_recipe_logging)
         self.fl_tacc.addRow(f"DEV_MODE", self.cb_dev_mode)
+        self.fl_tacc.addRow(f"Use mp.Pool (vs task queue)",
+                            self.cb_use_pool)
 
         self.sideTabs = QTabWidget()
         # self.sideTabs.addTab(self.MA_stackedWidget, 'Configure')
@@ -3374,10 +3387,28 @@ class ProjectTab(QWidget):
         # self.treeview.expandAll()
         # self.treeview.update()
 
+    #0731
+    def get_treeview_data(self, index=None):
+        logger.info(f'arg passed {index}')
+        if index == None:
+            index = self.treeview.selectedIndexes()[0]
+        logger.info(f'index is {index}')
+        cur_key = index.data()
+        par_key = index.parent().data()
+        # print(f"cur_key = {cur_key}")
+        # print(f"par_key = {par_key}")
+        if par_key == 'stack':
+            logger.info(f"setting z-position to {cur_key}")
+            cfg.mw.setZpos(int(cur_key))
+
+
     def initUI_JSON(self):
         '''JSON Project View'''
         logger.info('')
         self.treeview = QTreeView()
+        self.treeview.expanded.connect(lambda index: self.get_treeview_data(index))
+
+
         # self.treeview.setStyleSheet("color: #161c20;")
         self.treeview.setAnimated(True)
         self.treeview.header().resizeSection(0, 340)
