@@ -122,6 +122,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                 sec['alignment']['meta']['scale_val'] = scale_val
                 sec['alignment']['meta']['scale_key'] = scale
                 sec['alignment']['meta']['isRefinement'] = dm['data']['scales'][scale]['isRefinement']
+                sec['alignment']['meta']['isCoarsest'] = dm.coarsest_scale_key() == cfg.data.scale
                 sec['alignment']['meta']['destination_path'] = dm['data']['destination_path']
                 sec['alignment']['meta']['defaults'] = dm['data']['defaults']
                 sec['alignment']['meta']['img_size'] = dm['data']['scales'][scale]['image_src_size']
@@ -132,6 +133,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                 sec['alignment']['meta']['fn_transforming'] = sec['filename']
                 sec['alignment']['meta']['fn_reference'] = sec['reference']
                 sec['alignment']['meta']['method'] = sec['current_method']
+
 
                 if sec['current_method'] == 'grid-default':
                     sec['alignment']['meta']['whitening'] = cfg.data['data']['defaults']['signal-whitening']
@@ -293,8 +295,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             finally:
                 logger.info('Generate Alignment Finished')
 
-            logger.info('Sleeping for 1 seconds...')
-            time.sleep(1)
+            # logger.info('Sleeping for 1 seconds...')
+            # time.sleep(1)
 
             thumbnailer = Thumbnailer()
             try:
