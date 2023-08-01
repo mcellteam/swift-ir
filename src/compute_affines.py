@@ -190,7 +190,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         #     pbar.update()
 
 
-        if cfg.USE_MULTIPROCESSING_POOL:
+        if cfg.USE_POOL_FOR_SWIM:
             ctx = mp.get_context('forkserver')
             with ctx.Pool(processes=cpus) as pool:
                 all_results = list(
