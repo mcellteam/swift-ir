@@ -791,37 +791,33 @@ class DataModel:
         self._data['state'].setdefault('tool_windows', {})
         # Set default to value from user preferences... Todo: all user preferences should work this way
 
-
-        self._data['state']['neutral_contrast'] = False
-
-        self._data['state'].setdefault('neutral_contrast', False)
         # try:
         #     self._data['state'].setdefault('neutral_contrast', getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'))
         # except:
         #     self._data['state'].setdefault('neutral_contrast', False)
         #     print_exception()
+        self._data['state']['neutral_contrast'] = False
 
-        self._data['state'].setdefault('show_yellow_frame', False)
         # try:
         #     self._data['state'].setdefault('show_yellow_frame', getOpt('neuroglancer,SHOW_YELLOW_FRAME'))
         # except:
         #     self._data['state'].setdefault('show_yellow_frame', False)
         #     print_exception()
+        self._data['state']['show_yellow_frame'] = False
 
-        self._data['state'].setdefault('show_axis_lines', False)
         # try:
         #     self._data['state'].setdefault('show_axis_lines', getOpt('neuroglancer,SHOW_AXIS_LINES'))
         # except:
         #     self._data['state'].setdefault('show_axis_lines', False)
         #     print_exception()
+        self._data['state']['show_axis_lines'] = False
 
-        self._data['state'].setdefault('show_ng_controls', False)
         # try:
         #     self._data['state'].setdefault('show_ng_controls', getOpt('neuroglancer,SHOW_UI_CONTROLS'))
         # except:
         #     self._data['state'].setdefault('show_ng_controls', False)
         #     print_exception()
-
+        self._data['state']['show_ng_controls'] = False
 
 
         # self._data['state']['show_ng_controls'] = False
