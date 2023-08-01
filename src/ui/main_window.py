@@ -3904,13 +3904,14 @@ class MainWindow(QMainWindow):
         # self.dw_thumbs.setMaximumWidth(999)
 
         if self.dw_thumbs.isVisible():
-            h = self.dw_thumbs.height()
+            h = self.dw_thumbs.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
             self.dw_thumbs.setMaximumWidth(int(h / 2 + .5) - 4)
 
         if self.dw_matches.isVisible():
             h = self.dw_matches.height() - cfg.pt.mwTitle.height()
             self.dw_matches.setMaximumWidth(int(h / 2 + .5) - 4)
             # self.dw_matches.resize(QSize(int(h / 2 + .5) - 4, h))
+
 
 
         # if self._isProjectTab():
@@ -5385,7 +5386,7 @@ class MainWindow(QMainWindow):
                     margin: 0px;
                     border-width: 0px;
                 }""")
-        self.dw_thumbs.setWidget(QLabel('Null Widget'))
+        self.dw_thumbs.setWidget(NullWidget())
         self.addDockWidget(Qt.RightDockWidgetArea, self.dw_thumbs)
         self.dw_thumbs.hide()
 
@@ -5406,25 +5407,9 @@ class MainWindow(QMainWindow):
                     margin: 0px;
                     border-width: 0px;
                 }""")
-        self.dw_matches.setWidget(QLabel('Null Widget'))
+        self.dw_matches.setWidget(NullWidget())
         self.addDockWidget(Qt.RightDockWidgetArea, self.dw_matches)
         self.dw_matches.hide()
-
-
-        def fn_vert_dock_locations_changed():
-            logger.info('')
-            if self.dw_hud.isVisible():
-                self.setUpdatesEnabled(False)
-                w = 180
-                # self.resizeDocks((self.dw_matches, self.dw_thumbs), (w, w), Qt.Horizontal)
-                self.resizeDocks((self.dw_hud, self.dw_snr), (w, w), Qt.Horizontal)
-                self.resizeDocks((self.dw_hud, self.dw_python), (w, w), Qt.Horizontal)
-                self.resizeDocks((self.dw_snr, self.dw_python), (w, w), Qt.Horizontal)
-                self.resizeDocks((self.dw_hud, self.dw_snr, self.dw_python), (w, w, w), Qt.Horizontal)
-                self.setUpdatesEnabled(True)
-
-        self.dw_matches.dockLocationChanged.connect(fn_vert_dock_locations_changed)
-        self.dw_thumbs.dockLocationChanged.connect(fn_vert_dock_locations_changed)
 
 
 
@@ -5473,8 +5458,6 @@ class MainWindow(QMainWindow):
         self.dw_hud.setWidget(self.hud)
         self.dw_hud.hide()
         self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_hud)
-
-
 
         self.user = getpass.getuser()
         self.tell(f'Hello {self.user}. Please report any issues or bugs to joel@salk.edu.')
@@ -5957,6 +5940,25 @@ class MainWindow(QMainWindow):
 
         self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_snr)
         self.dw_snr.hide()
+
+
+        def fn_vert_dock_locations_changed():
+            logger.info('')
+            # if self.dw_hud.isVisible():
+            self.setUpdatesEnabled(False)
+            w = 180
+            self.resizeDocks((self.dw_matches, self.dw_thumbs), (w, w), Qt.Horizontal)
+            self.resizeDocks((self.dw_hud, self.dw_snr), (w, w), Qt.Horizontal)
+            self.resizeDocks((self.dw_hud, self.dw_python), (w, w), Qt.Horizontal)
+            self.resizeDocks((self.dw_snr, self.dw_python), (w, w), Qt.Horizontal)
+            self.resizeDocks((self.dw_hud, self.dw_snr, self.dw_python), (w, w, w), Qt.Horizontal)
+            self.setUpdatesEnabled(True)
+
+        self.dw_matches.dockLocationChanged.connect(fn_vert_dock_locations_changed)
+        self.dw_thumbs.dockLocationChanged.connect(fn_vert_dock_locations_changed)
+        self.dw_hud.dockLocationChanged.connect(fn_vert_dock_locations_changed)
+        self.dw_snr.dockLocationChanged.connect(fn_vert_dock_locations_changed)
+        self.dw_python.dockLocationChanged.connect(fn_vert_dock_locations_changed)
 
 
 

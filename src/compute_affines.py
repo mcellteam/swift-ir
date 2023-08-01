@@ -51,6 +51,12 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
     # logger.info(f'use_gui = {use_gui}')
 
+    if cfg.DEBUG_MP:
+        # if 1:
+        logger.info('Multiprocessing Module Debugging is ENABLED')
+        mpl = mp.log_to_stderr()
+        mpl.setLevel(logging.DEBUG)
+
     if cfg.CancelProcesses:
         cfg.mw.warn('Canceling Compute Affine Tasks')
     else:
@@ -163,31 +169,11 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks)),1)
         if is_tacc() and (scale == 'scale_1'):
             # cpus = 34
-            cpus = 30
+            cpus = cfg.SCALE_1_CORES_LIMIT
 
         t0 = time.time()
 
-        # task_queue = TaskQueue(n_tasks=len(tasks), dest=dest, use_gui=use_gui)
-        # task_queue.taskPrefix = 'Computing Alignment for '
-        # task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in cfg.data()[start:end]]
-        # task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in dm['data']['scales'][scale]['stack'][start:end]]
-        # # START TASK QUEUE
-        # task_queue.start(cpus)
-        # # align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_recipe_alignment.py')
-        # align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'recipe_maker.py')
-        # logger.info('adding tasks to the queue...')
-        # for sec in dm()[start:end]:
-        #     if not sec['skipped']:
-        #         # encoded_data = json.dumps(copy.deepcopy(sec))
-        #         encoded_data = json.dumps(sec)
-        #         task_args = [sys.executable, align_job, encoded_data]
-        #         task_queue.add_task(task_args)
-        # logger.info('collecting results...')
-        # dt = task_queue.collect_results()
-        # dm.t_align = dt
-        # all_results = task_queue.task_dict
-        #
-        # dm.t_align = time.time() - t0
+
 
         logger.info(f"# cpus for alignment: {cpus}")
 
@@ -198,64 +184,74 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         #     pbar.update()
 
 
-        ctx = mp.get_context('forkserver')
-        # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
-        # with mp.Pool(processes=cpus, maxtasksperchild=1) as pool:
-        # with ThreadPoolExecutor(max_workers=30) as pool:
-        with ctx.Pool(processes=cpus) as pool:
+        if cfg.USE_MULTIPROCESSING_POOL:
+            ctx = mp.get_context('forkserver')
+            with ctx.Pool(processes=cpus) as pool:
+                all_results = list(
+                    tqdm.tqdm(pool.imap(run_recipe, tasks, chunksize=5),
+                              total=len(tasks), desc="Compute Affines",
+                              position=0, leave=True))
 
+            t_elapsed = time.time() - t0
+            dm.t_align = t_elapsed
+            cfg.main_window.set_elapsed(t_elapsed, f"Compute affines {scale}")
 
+            # # For use with ThreadPool ONLY
+            for r in all_results:
+                index = r['meta']['index']
+                method = r['meta']['method']
+                dm['data']['scales'][scale]['stack'][index]['alignment'] = r
+                dm['data']['scales'][scale]['stack'][index][
+                    'alignment_history'][method] = r['method_results']
+        else:
 
-            all_results = list(tqdm.tqdm(pool.imap(run_recipe, tasks,
-                                                   chunksize=5),
-                                         total=len(tasks), desc="Compute Affines", position=0, leave=True))
+            task_queue = TaskQueue(n_tasks=len(tasks), dest=dest, use_gui=use_gui)
+            task_queue.taskPrefix = 'Computing Alignment for '
+            task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in cfg.data()[start:end]]
+            task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in dm['data']['scales'][scale]['stack'][start:end]]
+            # START TASK QUEUE
+            task_queue.start(cpus)
+            # align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_recipe_alignment.py')
+            align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'recipe_maker.py')
+            logger.info('adding tasks to the queue...')
+            for sec in dm()[start:end]:
+                if not sec['skipped']:
+                    # encoded_data = json.dumps(copy.deepcopy(sec))
+                    encoded_data = json.dumps(sec)
+                    task_args = [sys.executable, align_job, encoded_data]
+                    task_queue.add_task(task_args)
+            logger.info('collecting results...')
+            dt = task_queue.collect_results()
+            dm.t_align = dt
+            all_results = task_queue.task_dict
 
+            dm.t_align = time.time() - t0
+            task_dict = {}
+            index_arg = 3
+            for k in task_queue.task_dict.keys():
+                t = task_queue.task_dict[k]
+                logger.critical(f"\nt = {t}\n\n")
+                task_dict[int(t['args'][index_arg])] = t
+            task_list = [task_dict[k] for k in sorted(task_dict.keys())]
+            updated_model = copy.deepcopy(dm) # Integrate output of each task into a new combined datamodel previewmodel
 
-            # results = [pool.apply_async(func=run_recipe, args=(task,),
-            #                             callback=update_pbar) for task in tasks]
-            # pool.close()
-            # all_results = [p.get() for p in results]
+            logger.info('Reading task results and updating data model...')
+            # # For use with mp_queue.py ONLY
+            for tnum in range(len(all_results)):
+                # Get the updated datamodel previewmodel from stdout for the task
+                parts = all_results[tnum]['stdout'].split('---JSON-DELIMITER---')
+                dm_text = None
+                for p in parts:
+                    ps = p.strip()
+                    if ps.startswith('{') and ps.endswith('}'):
+                        dm_text = p
+                if dm_text != None:
+                    results_dict = json.loads(dm_text)
+                    layer_index = results_dict['alignment']['meta']['index']
+                    dm['data']['scales'][scale]['stack'][layer_index] = results_dict
+
 
         logger.info("Compute Affines Finished")
-
-        t_elapsed = time.time() - t0
-        dm.t_align = t_elapsed
-        cfg.main_window.set_elapsed(t_elapsed, f"Compute affines {scale}")
-
-
-        # task_dict = {}
-        # index_arg = 3
-        # for k in task_queue.task_dict.keys():
-        #     t = task_queue.task_dict[k]
-        #     logger.critical(f"\nt = {t}\n\n")
-        #     task_dict[int(t['args'][index_arg])] = t
-        # task_list = [task_dict[k] for k in sorted(task_dict.keys())]
-        # updated_model = copy.deepcopy(dm) # Integrate output of each task into a new combined datamodel previewmodel
-        #
-        # logger.info('Reading task results and updating data model...')
-        # # # For use with mp_queue.py ONLY
-        # for tnum in range(len(all_results)):
-        #     # Get the updated datamodel previewmodel from stdout for the task
-        #     parts = all_results[tnum]['stdout'].split('---JSON-DELIMITER---')
-        #     dm_text = None
-        #     for p in parts:
-        #         ps = p.strip()
-        #         if ps.startswith('{') and ps.endswith('}'):
-        #             dm_text = p
-        #     if dm_text != None:
-        #         results_dict = json.loads(dm_text)
-        #         layer_index = results_dict['alignment']['meta']['index']
-        #         dm['data']['scales'][scale]['stack'][layer_index] = results_dict
-
-
-
-        # # For use with ThreadPool ONLY
-        for r in all_results:
-            index = r['meta']['index']
-            method = r['meta']['method']
-            dm['data']['scales'][scale]['stack'][index]['alignment'] = r
-            dm['data']['scales'][scale]['stack'][index]['alignment_history'][method] = r['method_results']
-
 
         SetStackCafm(dm.get_iter(scale), scale=scale, poly_order=cfg.data.default_poly_order)
 
