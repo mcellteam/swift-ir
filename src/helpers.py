@@ -61,6 +61,9 @@ snapshot = None
 def hotkey(letter: str):
     return "(" + ('^', '⌘')[is_mac()] + "%s)" % letter
 
+def get_n_tacc_cores(n_tasks):
+    return max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, n_tasks),1)
+
 
 def run_checks():
     if not getData('state,manual_mode'):

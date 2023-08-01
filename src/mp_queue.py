@@ -82,14 +82,14 @@ def watchdog(wd_queue):
 
 class TaskQueue(QObject):
 
-    def __init__(self, n_tasks, dest, parent=None, start_method='forkserver', pbar_text=None, use_gui=True, limit_workers=None):
+    def __init__(self, n_tasks, dest, parent=None, start_method='forkserver', pbar_text=None, use_gui=True):
         QObject.__init__(self)
         self.dest = dest
         self.parent = parent
         self.use_gui = use_gui
         # if is_tacc():
         #     start_method = 'spawn'
-        self.limit_workers = limit_workers
+        # self.limit_workers = limit_workers
 
         self.start_method = start_method
         self.ctx = mp.get_context(self.start_method)
@@ -136,10 +136,11 @@ class TaskQueue(QObject):
         self.result_queue = self.ctx.Queue()
         self.task_dict = {}
         self.task_id = 0
-        if self.limit_workers:
-            self.n_workers = min(self.n_tasks, n_workers, self.limit_workers)
-        else:
-            self.n_workers = min(self.n_tasks, n_workers)
+        self.n_workers = n_workers
+        # if self.limit_workers:
+        #     self.n_workers = min(self.n_tasks, n_workers, self.limit_workers)
+        # else:
+        #     self.n_workers = min(self.n_tasks, n_workers)
         self.retries = retries
 
         # cfg.main_window.shutdownNeuroglancer()
