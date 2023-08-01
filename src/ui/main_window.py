@@ -812,15 +812,16 @@ class MainWindow(QMainWindow):
         tip1 = '\n'.join(f"Show Raw Thumbnails Tool Window ({hotkey('T')})")
         tip2 = '\n'.join(f"Hide Raw Thumbnails Tool Window ({hotkey('T')})")
         self.tbbThumbnails.setToolTip((tip1, tip2)[state])
+
         if self._isProjectTab():
             cfg.data['state']['tool_windows']['raw_thumbnails'] = state
 
-        if self._isProjectTab():
             if state:
                 cfg.mw.dataUpdateWidgets()
                 QApplication.processEvents()
+
                 h = self.dw_thumbs.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
-                self.dw_thumbs.setMaximumWidth(int(h / 2 + .5))
+                self.dw_thumbs.setMaximumWidth(int(h / 2 + .5) - 4)
                 # cfg.pt.tn_widget.resize(QSize(int(h / 2 + .5), cfg.pt.tn_widget.height()))
 
 
@@ -831,10 +832,10 @@ class MainWindow(QMainWindow):
         tip1 = '\n'.join(f"Show Matches and Signals Tool Window ({hotkey('M')})")
         tip2 = '\n'.join(f"Hide Matches and Signals Tool Window ({hotkey('M')})")
         self.tbbMatches.setToolTip((tip1, tip2)[state])
+
         if self._isProjectTab():
             cfg.data['state']['tool_windows']['signals'] = state
 
-        if self._isProjectTab():
             setData('state,blink', False)
             cfg.pt.blinkTimer.stop()
             cfg.pt.tbbBlinkToggle.setIcon(qta.icon('mdi.toggle-switch-off-outline', color='#f3f6fb'))
@@ -5947,11 +5948,14 @@ class MainWindow(QMainWindow):
             # if self.dw_hud.isVisible():
             self.setUpdatesEnabled(False)
             w = 180
-            self.resizeDocks((self.dw_matches, self.dw_thumbs), (w, w), Qt.Horizontal)
+            # self.splitDockWidget(self.dw_matches, self.dw_thumbs, Qt.Horizontal)
+            # self.resizeDocks((self.dw_matches, self.dw_thumbs), (w, w), Qt.Horizontal)
             self.resizeDocks((self.dw_hud, self.dw_snr), (w, w), Qt.Horizontal)
             self.resizeDocks((self.dw_hud, self.dw_python), (w, w), Qt.Horizontal)
             self.resizeDocks((self.dw_snr, self.dw_python), (w, w), Qt.Horizontal)
             self.resizeDocks((self.dw_hud, self.dw_snr, self.dw_python), (w, w, w), Qt.Horizontal)
+
+
             self.setUpdatesEnabled(True)
 
         self.dw_matches.dockLocationChanged.connect(fn_vert_dock_locations_changed)
@@ -5959,6 +5963,8 @@ class MainWindow(QMainWindow):
         self.dw_hud.dockLocationChanged.connect(fn_vert_dock_locations_changed)
         self.dw_snr.dockLocationChanged.connect(fn_vert_dock_locations_changed)
         self.dw_python.dockLocationChanged.connect(fn_vert_dock_locations_changed)
+
+        self.splitDockWidget(self.dw_matches, self.dw_thumbs, Qt.Horizontal)
 
 
 

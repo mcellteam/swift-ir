@@ -248,6 +248,13 @@ class AbstractEMViewer(neuroglancer.Viewer):
         with self.txn() as s:
             s.position = pos
 
+    def setHelpMenu(self, b):
+        logger.info(f"b = {b}")
+        state = copy.deepcopy(self.state)
+        state.help_panel.visible = bool(b)
+        self.set_state(state)
+
+
 
     def zoom(self):
         return copy.deepcopy(self.state.crossSectionScale)
@@ -496,10 +503,12 @@ class EMViewer(AbstractEMViewer):
             s.projectionScale = 1
 
 
+
         with self.config_state.txn() as s:
             s.show_ui_controls = getData('state,show_ng_controls')
             s.show_panel_borders = False
             # s.viewer_size = [100,100]
+
 
         self._layer = math.floor(self.state.position[0])
 
