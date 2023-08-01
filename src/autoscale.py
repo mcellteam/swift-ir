@@ -155,7 +155,7 @@ def autoscale(dm:DataModel, gui=True):
         preallocate_zarr(dm=dm, name=of, group=grp, shape=shape, dtype='|u1', overwrite=True, gui=gui)
         t = time.time()
         with ThreadPoolExecutor(max_workers=10) as executor:
-            list(tqdm.tqdm(executor.map(convert_zarr, tasks), total=len(tasks), position=0, leave=True, desc=f"Converting {s} to Zarr..."))
+            list(tqdm.tqdm(executor.map(convert_zarr, tasks), total=len(tasks), position=0, leave=True, desc=f"Converting {s} to Zarr"))
 
         dt = time.time() - t
         dm['data']['benchmarks']['scales'][s]['t_scale_convert'] = dt

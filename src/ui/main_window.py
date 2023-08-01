@@ -6209,7 +6209,7 @@ class MainWindow(QMainWindow):
         self.widgetPbar.layout.setContentsMargins(4, 0, 4, 0)
         self.widgetPbar.layout.setSpacing(4)
 
-        self.w_pbarUnavailable = QLabel('GUI Progress Bar Unavailable. See Progress in Terminal.')
+        self.w_pbarUnavailable = QLabel('GUI Progress Bar Unavailable. See Progress in Terminal...')
         self.w_pbarUnavailable.setFixedHeight(18)
         self.w_pbarUnavailable.setAlignment(Qt.AlignCenter)
         self.w_pbarUnavailable.setStyleSheet("""font-size: 12px; font-weight: 600; background-color: #161c20; color: #f3f6fb;""")
