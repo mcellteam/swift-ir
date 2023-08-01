@@ -281,8 +281,9 @@ class TaskQueue(QObject):
         n_tasks = len(self.task_dict)
         realtime = n_pending
         retries_tot = 0
+        self.pbar = tqdm.tqdm(total=n_tasks, desc="Compute Affines", position=0, leave=True)
+        # self.pbar = tqdm.tqdm(total=n_tasks, desc="Compute Affines")
 
-        pbar = tqdm.tqdm(total=n_tasks, desc="Compute Affines", position=0, leave=True)
 
         logger.info(f'Collecting results (num tasks:{len(self.task_dict)})...')
         try:
@@ -312,8 +313,12 @@ class TaskQueue(QObject):
                             cfg.main_window.cancelMultiprocessing.emit()
                             # QApplication.processEvents()
                             sys.exit(1)
-                    pbar.update(n_tasks - realtime)
+                    # self.pbar.update(n_tasks - realtime)
+                    # print(self.pbar.n)
                     # print(n_tasks - realtime)
+                    self.pbar.update(1)
+                    # print(self.pbar.n)
+
                     # sys.stdout.flush()
 
                     # print(f"n_pending = {n_pending}, n_tasks - realtime = {n_tasks - realtime}")
