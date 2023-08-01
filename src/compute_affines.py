@@ -209,9 +209,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             task_queue.taskPrefix = 'Computing Alignment for '
             task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in cfg.data()[start:end]]
             task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in dm['data']['scales'][scale]['stack'][start:end]]
-            # START TASK QUEUE
             task_queue.start(cpus)
-            # align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_recipe_alignment.py')
             align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'recipe_maker.py')
             logger.info('adding tasks to the queue...')
             for sec in dm()[start:end]:
@@ -221,7 +219,6 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                     encoded_data = json.dumps(sec['alignment'])
                     task_args = [sys.executable, align_job, encoded_data]
                     task_queue.add_task(task_args)
-            logger.info('collecting results...')
             dt = task_queue.collect_results()
             dm.t_align = dt
             all_results = task_queue.task_dict
