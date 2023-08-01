@@ -891,6 +891,8 @@ class OpenProject(QWidget):
             # cfg.mw.hud.done()
             cfg.mw._is_initialized = 1
 
+            QApplication.processEvents()
+
             if cfg.data.is_aligned():
                 # cfg.pt.updateLowest8widget()
                 # cfg.mw.setdw_hud(True)
