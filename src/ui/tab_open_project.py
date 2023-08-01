@@ -78,7 +78,7 @@ class OpenProject(QWidget):
 
         self.installEventFilter(self)
 
-        configure_project_paths()
+        # configure_project_paths()
 
     def onClipboardChanged(self):
         # print('Clipboard changed!')
@@ -996,7 +996,7 @@ class OpenProject(QWidget):
                         cfg.mw.hud.done()
 
                     cfg.mw.tell('Wrapping up...')
-                    configure_project_paths()
+                    # configure_project_paths()
                     if cfg.mw.globTabs.currentWidget().__class__.__name__ == 'OpenProject':
                         try:
                             self.user_projects.set_data()
@@ -1244,7 +1244,9 @@ class UserProjects(QWidget):
 
 
     def set_data(self):
-        logger.info('')
+        logger.critical('')
+
+        configure_project_paths()
         # logger.info(">>>> set_data >>>>")
         # caller = inspect.stack()[1].function
         # logger.info(f'[{caller}]')
