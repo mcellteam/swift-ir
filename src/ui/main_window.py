@@ -192,8 +192,9 @@ class MainWindow(QMainWindow):
 
         # self.setWindowFlags(Qt.FramelessWindowHint)
 
-        self.setCorner(Qt.BottomLeftCorner, Qt.LeftDockWidgetArea )
-        self.setCorner(Qt.TopLeftCorner, Qt.LeftDockWidgetArea )
+        # self.setCorner(Qt.BottomLeftCorner, Qt.LeftDockWidgetArea )
+        # self.setCorner(Qt.BottomLeftCorner, Qt.LeftToolBarArea )
+        # self.setCorner(Qt.TopLeftCorner, Qt.LeftDockWidgetArea )
         # self.setCorner(Qt.BottomRightCorner, Qt.RightDockWidgetArea )
         # self.setCorner(Qt.BottomRightCorner, Qt.BottomDockWidgetArea )
         self.setCorner(Qt.BottomRightCorner, Qt.RightDockWidgetArea )
@@ -5389,6 +5390,7 @@ class MainWindow(QMainWindow):
         self.newActionsWidget.setStyleSheet("font-size: 10px; font-weight: 600;")
 
         self.toolbar_cpanel = QToolBar()
+        self.toolbar_cpanel.setAllowedAreas(Qt.TopToolBarArea | Qt.BottomToolBarArea)
         # self.toolbar_cpanel.setMovable(False)
         self.toolbar_cpanel.setFixedHeight(38)
         self.toolbar_cpanel.addWidget(self.navControls)
@@ -6121,12 +6123,12 @@ class MainWindow(QMainWindow):
 
 
         # self.globTabsAndCpanel = VWidget(self.toolbar, self.globTabs, self.cpanel, self.sw_pbar)
-        self.addToolBar(Qt.LeftToolBarArea, self.toolbar)
         # self.globTabsAndCpanel = VWidget(self.globTabs, self.cpanel, self.sw_pbar)
         # self.globTabsAndCpanel = VWidget(self.globTabs, self.sa_cpanel, self.sw_pbar)
         # self.globTabsAndCpanel = VWidget(self.globTabs, self.toolbar_cpanel, self.sw_pbar)
         self.globTabsAndCpanel = VWidget(self.globTabs, self.sw_pbar)
-        self.addToolBar(Qt.TopToolBarArea, self.toolbar_cpanel)
+        self.addToolBar(Qt.BottomToolBarArea, self.toolbar_cpanel)
+        self.addToolBar(Qt.LeftToolBarArea, self.toolbar)
         self.globTabsAndCpanel.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
         self.setCentralWidget(self.globTabsAndCpanel)
