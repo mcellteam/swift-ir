@@ -1303,6 +1303,8 @@ class UserProjects(QWidget):
         # self.table.setColumnWidth(10, 100)
         # self.updateRowHeight(self.ROW_HEIGHT) #0508-
 
+        self.set_headers()
+
         # logger.info("<<<< set_data <<<<")
         for section in range(self.table.verticalHeader().count()):
             self.table.verticalHeader().resizeSection(section, self.ROW_HEIGHT)

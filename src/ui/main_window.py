@@ -3827,6 +3827,7 @@ class MainWindow(QMainWindow):
                     self.globTabs.setCurrentIndex(i)
                     return
             self.globTabs.addTab(OpenProject(), 'Project Manager')
+            self._switchtoOpenProjectTab()
 
 
         self.tbbProjects.setToolTip("Project Manager")
@@ -4044,6 +4045,12 @@ class MainWindow(QMainWindow):
                 self.globTabs.removeTab(i)
                 return
 
+    def _switchtoOpenProjectTab(self):
+        for i in range(self.globTabs.count()):
+            if self.globTabs.widget(i).__class__.__name__ == 'OpenProject':
+                self.globTabs.setCurrentIndex(i)
+                return
+
     def _getTabType(self, index=None):
         try:
             return self.globTabs.currentWidget().__class__.__name__
@@ -4105,7 +4112,6 @@ class MainWindow(QMainWindow):
         #     self.shutdownNeuroglancer()  # 0329+
         if caller == '_closeOpenProjectTab':
             return
-
 
         cfg.project_tab = None
         cfg.zarr_tab = None
