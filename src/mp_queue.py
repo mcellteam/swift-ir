@@ -313,7 +313,8 @@ class TaskQueue(QObject):
                             # QApplication.processEvents()
                             sys.exit(1)
                     pbar.update(n_tasks - realtime)
-                    sys.stdout.flush()
+                    # print(n_tasks - realtime)
+                    # sys.stdout.flush()
 
                     # print(f"n_pending = {n_pending}, n_tasks - realtime = {n_tasks - realtime}")
                     # logger.info(f"# tasks completed: {n_tasks - realtime}")
