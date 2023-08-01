@@ -771,6 +771,16 @@ class MainWindow(QMainWindow):
         self.tbbMatches.setChecked(self.dw_matches.isVisible())
         self.tbbSnr.setChecked(self.dw_snr.isVisible())
 
+        self.setUpdatesEnabled(False)
+        w = self.globTabs.width()
+        half_w = int(w / 2)
+        third_w = int(w / 3)
+        self.resizeDocks((self.dw_hud, self.dw_snr), (half_w, half_w), Qt.Horizontal)
+        self.resizeDocks((self.dw_hud, self.dw_python), (half_w, half_w), Qt.Horizontal)
+        self.resizeDocks((self.dw_snr, self.dw_python), (half_w, half_w), Qt.Horizontal)
+        self.resizeDocks((self.dw_hud, self.dw_snr, self.dw_python), (third_w, third_w, third_w), Qt.Horizontal)
+        self.setUpdatesEnabled(True)
+
 
     def setdw_python(self, state):
         caller = inspect.stack()[1].function
@@ -3207,7 +3217,7 @@ class MainWindow(QMainWindow):
         path = 'https://3dem.org/workbench/data/tapis/community/data-3dem-community/'
         browser = WebBrowser(self)
         browser.setUrl(QUrl(path))
-        self.addGlobTab(browser, '3DEM Community Data (TACC)')
+        self.addGlobTab(browser, 'Community Data (TACC)')
         self.setCpanelVisibility(False)
 
 
@@ -5632,6 +5642,18 @@ class MainWindow(QMainWindow):
             ('Hide Notes Tool Window', 'Show Notes Tool Window')[self.dw_notes.isHidden()]))
         # self.dw_notes.visibilityChanged.connect(self.dataUpdateResults()) #???
         self.dw_notes.visibilityChanged.connect(self.callbackDwVisibilityChanged)
+        def fn():
+            self.setUpdatesEnabled(False)
+            if self.dw_thumbs.isVisible():
+                h = self.dw_thumbs.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
+                self.dw_thumbs.setMaximumWidth(int(h / 2 + .5) - 4)
+
+            if self.dw_matches.isVisible():
+                h = self.dw_matches.height() - cfg.pt.mwTitle.height()
+                self.dw_matches.setMaximumWidth(int(h / 2 + .5) - 4)
+            self.setUpdatesEnabled(True)
+
+        self.dw_notes.visibilityChanged.connect(fn)
         self.dw_notes.setStyleSheet("""
                         QDockWidget {color: #161c20;}
                         QDockWidget::title {
@@ -5943,28 +5965,24 @@ class MainWindow(QMainWindow):
         self.dw_snr.hide()
 
 
-        def fn_vert_dock_locations_changed():
-            logger.info('')
-            # if self.dw_hud.isVisible():
-            self.setUpdatesEnabled(False)
-            w = self.globTabs.width()
-            half_w = int(w/2)
-            third_w = int(w/3)
-            # self.splitDockWidget(self.dw_matches, self.dw_thumbs, Qt.Horizontal)
-            # self.resizeDocks((self.dw_matches, self.dw_thumbs), (w, w), Qt.Horizontal)
-            self.resizeDocks((self.dw_hud, self.dw_snr), (half_w, half_w), Qt.Horizontal)
-            self.resizeDocks((self.dw_hud, self.dw_python), (half_w, half_w), Qt.Horizontal)
-            self.resizeDocks((self.dw_snr, self.dw_python), (half_w, half_w), Qt.Horizontal)
-            self.resizeDocks((self.dw_hud, self.dw_snr, self.dw_python), (third_w, third_w, third_w), Qt.Horizontal)
+        # def fn_vert_dock_locations_changed():
+        #     logger.info('')
+        #     # if self.dw_hud.isVisible():
+        #     self.setUpdatesEnabled(False)
+        #     w = self.globTabs.width()
+        #     half_w = int(w/2)
+        #     third_w = int(w/3)
+        #     self.resizeDocks((self.dw_hud, self.dw_snr), (half_w, half_w), Qt.Horizontal)
+        #     self.resizeDocks((self.dw_hud, self.dw_python), (half_w, half_w), Qt.Horizontal)
+        #     self.resizeDocks((self.dw_snr, self.dw_python), (half_w, half_w), Qt.Horizontal)
+        #     self.resizeDocks((self.dw_hud, self.dw_snr, self.dw_python), (third_w, third_w, third_w), Qt.Horizontal)
+        #     self.setUpdatesEnabled(True)
 
-
-            self.setUpdatesEnabled(True)
-
-        self.dw_matches.dockLocationChanged.connect(fn_vert_dock_locations_changed)
-        self.dw_thumbs.dockLocationChanged.connect(fn_vert_dock_locations_changed)
-        self.dw_hud.dockLocationChanged.connect(fn_vert_dock_locations_changed)
-        self.dw_snr.dockLocationChanged.connect(fn_vert_dock_locations_changed)
-        self.dw_python.dockLocationChanged.connect(fn_vert_dock_locations_changed)
+        # self.dw_matches.dockLocationChanged.connect(fn_vert_dock_locations_changed)
+        # self.dw_thumbs.dockLocationChanged.connect(fn_vert_dock_locations_changed)
+        # self.dw_hud.dockLocationChanged.connect(fn_vert_dock_locations_changed)
+        # self.dw_snr.dockLocationChanged.connect(fn_vert_dock_locations_changed)
+        # self.dw_python.dockLocationChanged.connect(fn_vert_dock_locations_changed)
 
         self.splitDockWidget(self.dw_matches, self.dw_thumbs, Qt.Horizontal)
 
