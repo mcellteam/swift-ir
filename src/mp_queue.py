@@ -9,6 +9,7 @@ import time
 import queue
 import inspect
 import datetime
+import tqdm
 
 import psutil
 from qtpy.QtCore import QObject
@@ -116,7 +117,7 @@ class TaskQueue(QObject):
         print(f"caller: {caller}")
 
     # def start(self, n_workers, retries=10) -> None:
-    def start(self, n_workers, retries=0) -> None:
+    def start(self, n_workers, retries=2) -> None:
 
         if cfg.CancelProcesses == True:
             cfg.main_window.warn('Canceling Tasks: %s' % self.pbar_text)
@@ -164,7 +165,7 @@ class TaskQueue(QObject):
         for i in range(self.n_workers):
             # if i != 0: sys.stderr.write('\n')
             sys.stderr.write('Starting Worker %d >>>>' % i)
-            logger.info('Starting Worker %d...' % i)
+            # logger.info('Starting Worker %d...' % i)
             try:
                 if cfg.DAEMON_THREADS:
                     p = self.ctx.Process(target=worker, daemon=True,
@@ -281,6 +282,8 @@ class TaskQueue(QObject):
         realtime = n_pending
         retries_tot = 0
 
+        pbar = tqdm.tqdm(total=n_tasks, desc="Compute Affines", position=0, leave=True)
+
         logger.info('Collecting Results...')
         try:
             while (retries_tot < self.retries + 1) and n_pending:
@@ -309,8 +312,8 @@ class TaskQueue(QObject):
                             cfg.main_window.cancelMultiprocessing.emit()
                             # QApplication.processEvents()
                             sys.exit(1)
-
-                    logger.info(f"# tasks completed: {n_tasks - realtime}")
+                    pbar.update(n_tasks - realtime)
+                    # logger.info(f"# tasks completed: {n_tasks - realtime}")
                     # if (not cfg.ignore_pbar) and self.use_gui:
                     #     try:
                     #         self.parent.updatePbar(n_tasks - realtime)

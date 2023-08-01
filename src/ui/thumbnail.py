@@ -536,7 +536,7 @@ class CorrSignalThumbnail(QLabel):
                 if self._noImage or self.extra == 'reticle':
                     self.pixmap().fill(QColor('#dadada'))
                     font = QFont()
-                    size = max(min(int(11 * (max(pm.height(), 1) / 80)), 16), 5)
+                    size = max(min(int(11 * (max(pm.height(), 1) / 80)), 14), 5)
                     font.setPointSize(size)
                     # font.setBold(True)
                     qp.setFont(font)
