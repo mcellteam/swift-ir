@@ -592,7 +592,7 @@ class MainWindow(QMainWindow):
 
 
             # logger.critical('thumbs: %s' % str(thumbs))
-            logger.info('snr_vals: %s' % str(snr_vals))
+            # logger.info(f"[{caller}] snr_vals: {str(snr_vals)}")
             method = cfg.data.get_current_method(l=z)
             if method == 'grid-custom':
                 regions = cfg.data.grid_custom_regions
@@ -665,11 +665,7 @@ class MainWindow(QMainWindow):
             if z == None:
                 z = cfg.data.zpos
 
-
-
-
-
-            logger.info('')
+            # logger.info('')
             # caller = inspect.stack()[1].function
             # logger.critical(f'setTargKargPixmaps [{caller}] >>>>')
 
