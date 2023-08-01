@@ -302,7 +302,6 @@ def validate_file(file) -> bool:
 
 
 def cleanup_project_list(paths: list) -> list:
-    logger.info('')
     # logger.info(f'paths: {paths}')
     paths = list(dict.fromkeys(paths))  # remove duplicates
     paths = [x for x in paths if x != '']
@@ -353,8 +352,8 @@ def append_project_path(path):
 
 
 def configure_project_paths():
-    caller = inspect.stack()[1].function
-    logger.info('')
+    # caller = inspect.stack()[1].function
+    # logger.info('')
     userprojectspath = os.path.join(os.path.expanduser('~'), '.swift_cache')
     if not os.path.exists(userprojectspath):
         open(userprojectspath, 'a').close()

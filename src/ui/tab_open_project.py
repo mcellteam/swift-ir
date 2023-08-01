@@ -78,6 +78,8 @@ class OpenProject(QWidget):
 
         self.installEventFilter(self)
 
+        configure_project_paths()
+
     def onClipboardChanged(self):
         # print('Clipboard changed!')
         buffer = QApplication.clipboard().text()
@@ -1316,10 +1318,11 @@ class UserProjects(QWidget):
 
 
     def get_data(self):
-        logger.info('')
+        caller = inspect.stack()[1].function
+        logger.info(f'caller: {caller}')
         # timer = Timer()
         # logger.info('>>>> get_data >>>>')
-        # caller = inspect.stack()[1].function
+
         # logger.info(f'caller: {caller}')
         self.project_paths = get_project_list()
         projects, thumbnail_first, thumbnail_last, created, modified, \
