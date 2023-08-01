@@ -1965,6 +1965,23 @@ class ProjectTab(QWidget):
         self.w_zoom.setMaximumWidth(100)
         self.w_zoom.layout.setAlignment(Qt.AlignLeft)
 
+
+        self.tbbNgHelp = QToolButton()
+        def fn_ng_help():
+            logger.info('')
+            cfg.emViewer.setHelpMenu(not self.tbbNgHelp.isChecked())
+            # if self.tbbNgHelp.isChecked():
+            #     self.tbbNgHelp.setIcon(qta.icon("fa.question", color='#161c20'))
+            # else:
+            #     self.tbbNgHelp.setIcon(qta.icon("fa.question", color='#f3f6fb'))
+
+        self.tbbNgHelp.setToolTip("Neuroglancer Help")
+        self.tbbNgHelp.setCheckable(True)
+        self.tbbNgHelp.pressed.connect(fn_ng_help)
+        self.tbbNgHelp.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.tbbNgHelp.setIcon(qta.icon("fa.question", color='#f3f6fb'))
+
+
         # ----------------
 
 
@@ -1976,6 +1993,7 @@ class ProjectTab(QWidget):
         # Add additional widgets to gain insight into Neuroglancer state
 
         self.w_ng_extended_toolbar.addWidget(self.w_zoom)
+        self.w_ng_extended_toolbar.addWidget(self.tbbNgHelp)
 
         # ----------------
         self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
