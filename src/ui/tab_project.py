@@ -3583,13 +3583,9 @@ class ProjectTab(QWidget):
         self._tabs = QTabWidget()
         self._tabs.setStyleSheet("""
         QTabBar::tab {
-            padding-left: 3px;
-            padding-right: 3x;
             padding-top: 1px;
             padding-bottom: 1px;
-            
             height: 16px;            
-            
             font-size: 11px;
             font-weight: 600;
             border: 1px solid #ede9e8;
