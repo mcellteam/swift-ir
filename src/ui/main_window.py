@@ -1117,6 +1117,8 @@ class MainWindow(QMainWindow):
             if cfg.event.is_set():
                 cfg.event.clear()
             self._working = False
+            self.setdw_snr(True)
+            self.setdw_matches(True)
             self._changeScaleCombo.setEnabled(True)
             self.hidePbar()
             self.enableAllTabs()
