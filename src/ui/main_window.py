@@ -1057,6 +1057,11 @@ class MainWindow(QMainWindow):
         t0 = time.time()
         dt = datetime.datetime.now()
 
+        self._btn_alignAll.setEnabled(False)
+        self._btn_alignForward.setEnabled(False)
+        self._btn_alignOne.setEnabled(False)
+        self._btn_alignRange.setEnabled(False)
+
         self._working = True
         
         cfg.project_tab.tn_ms0.set_no_image()
@@ -1068,6 +1073,8 @@ class MainWindow(QMainWindow):
         cfg.project_tab.matches_tn1.set_no_image()
         cfg.project_tab.matches_tn2.set_no_image()
         cfg.project_tab.matches_tn3.set_no_image()
+
+
 
         # logger_log = os.path.join(cfg.data.dest(), 'logs', 'logger.log')
         # mp_log = os.path.join(cfg.data.dest(), 'logs', 'multiprocessing.log')
@@ -1337,6 +1344,10 @@ class MainWindow(QMainWindow):
         # caller = inspect.stack()[1].function
         # if caller in ('alignGenerateOne','alignOne'):
         #     ALIGN_ONE = True
+        self.onAlignmentStart(scale=scale)
+        self.tell("%s Affines (%s)..." % (('Initializing', 'Refining')[cfg.data.isRefinement()], cfg.data.scale_pretty(s=scale)))
+
+
         logger.info(f'Aligning start:{start} -> end: {end}, {cfg.data.scale_pretty(scale)}...')
         self.tell(f'Alignment start:{start} -> end: {end}, {cfg.data.scale_pretty(scale)}...')
 
@@ -1347,8 +1358,8 @@ class MainWindow(QMainWindow):
         if end == None:
             end = len(cfg.data)
 
-        self.onAlignmentStart(scale=scale)
-        self.tell("%s Affines (%s)..." % (('Initializing', 'Refining')[cfg.data.isRefinement()], cfg.data.scale_pretty(s=scale)))
+        # self.onAlignmentStart(scale=scale)
+        # self.tell("%s Affines (%s)..." % (('Initializing', 'Refining')[cfg.data.isRefinement()], cfg.data.scale_pretty(s=scale)))
 
         if not ignore_bb:
             cfg.data.set_use_bounding_rect(cfg.pt._bbToggle.isChecked())
