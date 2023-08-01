@@ -5947,13 +5947,15 @@ class MainWindow(QMainWindow):
             logger.info('')
             # if self.dw_hud.isVisible():
             self.setUpdatesEnabled(False)
-            w = 180
+            w = self.globTabs.width()
+            half_w = int(w/2)
+            third_w = int(w/3)
             # self.splitDockWidget(self.dw_matches, self.dw_thumbs, Qt.Horizontal)
             # self.resizeDocks((self.dw_matches, self.dw_thumbs), (w, w), Qt.Horizontal)
-            self.resizeDocks((self.dw_hud, self.dw_snr), (w, w), Qt.Horizontal)
-            self.resizeDocks((self.dw_hud, self.dw_python), (w, w), Qt.Horizontal)
-            self.resizeDocks((self.dw_snr, self.dw_python), (w, w), Qt.Horizontal)
-            self.resizeDocks((self.dw_hud, self.dw_snr, self.dw_python), (w, w, w), Qt.Horizontal)
+            self.resizeDocks((self.dw_hud, self.dw_snr), (half_w, half_w), Qt.Horizontal)
+            self.resizeDocks((self.dw_hud, self.dw_python), (half_w, half_w), Qt.Horizontal)
+            self.resizeDocks((self.dw_snr, self.dw_python), (half_w, half_w), Qt.Horizontal)
+            self.resizeDocks((self.dw_hud, self.dw_snr, self.dw_python), (third_w, third_w, third_w), Qt.Horizontal)
 
 
             self.setUpdatesEnabled(True)
