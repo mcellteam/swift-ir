@@ -2380,11 +2380,10 @@ class ProjectTab(QWidget):
         self.w_tacc.setLayout(self.fl_tacc)
         self.fl_tacc.addRow(f"Max # cores (downsampled scales)", self.le_tacc_num_cores)
         self.fl_tacc.addRow(f"Max # cores (scale 1)", self.le_tacc_num_scale1_cores)
+        self.fl_tacc.addRow(f"Use mp.Pool (vs task queue)", self.cb_use_pool)
         self.fl_tacc.addRow(f"QtWebengine # raster threads", self.le_qtwebengine_raster_threads)
         self.fl_tacc.addRow(f"RECIPE_LOGGING", self.cb_recipe_logging)
         self.fl_tacc.addRow(f"DEV_MODE", self.cb_dev_mode)
-        self.fl_tacc.addRow(f"Use mp.Pool (vs task queue)",
-                            self.cb_use_pool)
 
         self.sideTabs = QTabWidget()
         # self.sideTabs.addTab(self.MA_stackedWidget, 'Configure')
