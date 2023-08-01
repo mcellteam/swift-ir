@@ -179,7 +179,7 @@ class SnrPlot(QWidget):
 
     def updateLayerLinePos(self):
         caller = inspect.stack()[1].function
-        logger.info(f'caller={caller}')
+        # logger.info(f'caller={caller}')
         if cfg.data:
             if self.dock:
                 offset = 0
