@@ -1383,7 +1383,7 @@ class MainWindow(QMainWindow):
             else:
                 ComputeAffines(scale, path=None, start=start, end=end, swim_only=swim_only, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=use_gui, dm=cfg.data)
         except:
-            print_exception();
+            print_exception()
             self.err('An Exception Was Raised During Alignment.')
 
 
