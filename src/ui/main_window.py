@@ -387,7 +387,7 @@ class MainWindow(QMainWindow):
                 # self.updateAllCpanelDetails()
                 self.setControlPanelData()
             elif self._isOpenProjTab():
-                configure_project_paths()
+                # configure_project_paths()
                 self._getTabObject().user_projects.set_data()
             elif self._getTabType() == 'WebBrowser':
                 self._getTabObject().browser.page().triggerAction(QWebEnginePage.Reload)
@@ -1066,6 +1066,7 @@ class MainWindow(QMainWindow):
         self._btn_alignForward.setEnabled(False)
         self._btn_alignOne.setEnabled(False)
         self._btn_alignRange.setEnabled(False)
+        self._btn_regenerate.setEnabled(False)
 
         self._working = True
         
@@ -4157,7 +4158,7 @@ class MainWindow(QMainWindow):
             self.dw_snr.setWidget(NullWidget())
 
         elif self._getTabType() == 'OpenProject':
-            configure_project_paths()
+            # configure_project_paths()
             self._getTabObject().user_projects.set_data()
 
         elif self._getTabType() == 'ProjectTab':

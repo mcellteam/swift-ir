@@ -263,9 +263,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
         save2file(dm=dm,name=dm.dest())
 
-
-        logger.info('Sleeping for 1 seconds...')
-        time.sleep(1)
+        # logger.info('Sleeping for 1 seconds...')
+        # time.sleep(1)
 
         cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks)), 1)
 
