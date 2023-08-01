@@ -281,19 +281,18 @@ class TaskQueue(QObject):
         n_tasks = len(self.task_dict)
         realtime = n_pending
         retries_tot = 0
-        self.pbar = tqdm.tqdm(total=n_tasks, desc="Compute Affines", position=0, leave=True)
-        # self.pbar = tqdm.tqdm(total=n_tasks, desc="Compute Affines")
+
 
 
         logger.info(f'Collecting results (num tasks:{len(self.task_dict)})...')
+
+        self.pbar = tqdm.tqdm(total=n_tasks, desc="Compute Affines", position=0, leave=True)
+        # self.pbar = tqdm.tqdm(total=n_tasks, desc="Compute Affines")
         try:
             while (retries_tot < self.retries + 1) and n_pending:
-
                 self.end_tasks()  # Add end sentinels (one/worker)
-
-                logger.info('# Tasks Pending   : %d' % n_pending)
+                # logger.info('# Tasks Pending   : %d' % n_pending)
                 retry_list = []
-
                 # Loop over pending tasks...
                 # Update progress bar and result queue as tasks finish (mp.Queue.get() is blocking).
                 for img_index, j in enumerate(range(n_pending)):
