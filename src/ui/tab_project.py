@@ -2309,11 +2309,25 @@ class ProjectTab(QWidget):
         def update_tacc_max_cores():
             logger.info('')
             n = int(self.le_tacc_num_cores.text())
-            cfg.TACC_MAX_CPUS = n
+            cfg.TACC_MAX_CPUS = int(n)
             cfg.main_window.tell(f"Maximum # of cores is now set to: {n}")
         self.le_tacc_num_cores.setText(str(cfg.TACC_MAX_CPUS))
         self.le_tacc_num_cores.textEdited.connect(update_tacc_max_cores)
         self.le_tacc_num_cores.returnPressed.connect(update_tacc_max_cores)
+
+        self.le_tacc_num_scale1_cores = QLineEdit()
+        # self.le_tacc_num_cores.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.le_tacc_num_scale1_cores.setFixedHeight(18)
+        self.le_tacc_num_scale1_cores.setFixedWidth(30)
+        self.le_tacc_num_scale1_cores.setValidator(QIntValidator(1,128))
+        def update_tacc_max_scale1_cores():
+            logger.info('')
+            n = int(self.le_tacc_num_scale1_cores.text())
+            cfg.SCALE_1_CORES_LIMIT = int(n)
+            cfg.main_window.tell(f"Maximum # of cores is now set to: {n}")
+        self.le_tacc_num_scale1_cores.setText(str(cfg.SCALE_1_CORES_LIMIT))
+        self.le_tacc_num_scale1_cores.textEdited.connect(update_tacc_max_scale1_cores)
+        self.le_tacc_num_scale1_cores.returnPressed.connect(update_tacc_max_scale1_cores)
 
         self.le_qtwebengine_raster_threads = QLineEdit()
         # self.le_qtwebengine_raster_threads.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -2364,7 +2378,8 @@ class ProjectTab(QWidget):
         self.w_tacc.setContentsMargins(2,2,2,2)
         self.fl_tacc = QFormLayout()
         self.w_tacc.setLayout(self.fl_tacc)
-        self.fl_tacc.addRow(f"maximum # processors", self.le_tacc_num_cores)
+        self.fl_tacc.addRow(f"Max # cores (downsampled scales)", self.le_tacc_num_cores)
+        self.fl_tacc.addRow(f"Max # cores (scale 1)", self.le_tacc_num_scale1_cores)
         self.fl_tacc.addRow(f"QtWebengine # raster threads", self.le_qtwebengine_raster_threads)
         self.fl_tacc.addRow(f"RECIPE_LOGGING", self.cb_recipe_logging)
         self.fl_tacc.addRow(f"DEV_MODE", self.cb_dev_mode)
