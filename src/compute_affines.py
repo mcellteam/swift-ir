@@ -38,7 +38,7 @@ from src.background_worker import BackgroundWorker
 import src.config as cfg
 from src.ui.timer import Timer
 from src.recipe_maker import run_recipe
-from src.helpers import pretty_elapsed, is_tacc
+from src.helpers import pretty_elapsed, is_tacc, get_n_tacc_cores
 
 
 __all__ = ['ComputeAffines']
@@ -111,7 +111,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             # zpos = sec['alignment']['meta']['index']
             zpos = dm().index(sec)
 
-            if not sec['skipped'] and (zpos != first_unskipped):
+            # if not sec['skipped'] and (zpos != first_unskipped):
+            if 1:
                 # logger.info(f'Adding task for {zpos}')
                 sec['alignment']['meta'] = {}
                 zpos = dm().index(sec)
@@ -159,7 +160,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                 else:
                     sec['alignment']['meta']['init_afm'] = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
 
-                tasks.append(copy.deepcopy(sec['alignment']))
+                if not sec['skipped'] and (zpos != first_unskipped):
+                    tasks.append(copy.deepcopy(sec['alignment']))
             # else:
             #     logger.info(f"Dropping task for {zpos}")
 
@@ -172,7 +174,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             return
 
 
-        cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks)),1)
+        cpus = get_n_tacc_cores(n_tasks=len(tasks))
         if is_tacc() and (scale == 'scale_1'):
             # cpus = 34
             cpus = cfg.SCALE_1_CORES_LIMIT
@@ -181,7 +183,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
 
 
-        logger.info(f"# cpus for alignment: {cpus}")
+        logger.info(f"# cores: {cpus}")
 
         # f_recipe_maker = f'{os.path.split(os.path.realpath(__file__))[0]}/src/recipe_maker.py'
 
@@ -266,7 +268,6 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         # logger.info('Sleeping for 1 seconds...')
         # time.sleep(1)
 
-        cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks)), 1)
 
         if not swim_only:
             if use_gui:
