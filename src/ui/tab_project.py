@@ -1708,28 +1708,29 @@ class ProjectTab(QWidget):
         self.comboNgLayout.activated.connect(self.onNgLayoutCombobox)
         self.comboNgLayout.setCurrentText(getData('state,ng_layout'))
 
-        self.ngcl_background = NgClickLabel(self)
+        # self.ngcl_background = NgClickLabel(self)
+        self.ngcl_background = QToolButton()
+        self.ngcl_background.setCheckable(True)
         self.ngcl_background.setText('Background')
         self.ngcl_background.setToolTip('Toggle Background')
 
-
-        if getData('state,neutral_contrast'):
-            self.ngcl_background.setStyleSheet("""background: #808080; color: #f3f6fb; 
-                        border-radius: 0px; padding: 2px; margin: 0px; border-color: #339933;""")
-        else:
-            self.ngcl_background.setStyleSheet("""background: #222222; color: #f3f6fb; 
-                        border-radius: 0px; padding: 2px; margin: 0px; border-color: #339933;""")
+        # if getData('state,neutral_contrast'):
+        #     self.ngcl_background.setStyleSheet("""background: #808080; color: #f3f6fb;
+        #                 border-radius: 3px; padding: 2px; margin: 0px; border-color: #339933;""")
+        # else:
+        #     self.ngcl_background.setStyleSheet("""background: #222222; color: #f3f6fb;
+        #                 border-radius: 3px; padding: 2px; margin: 0px; border-color: #339933;""")
 
         def fn():
             setData('state,neutral_contrast', not getData('state,neutral_contrast'))
             [v.updateHighContrastMode() for v in self.get_viewers()]
 
-            if getData('state,neutral_contrast'):
-                self.ngcl_background.setStyleSheet("""background: #808080; color: #f3f6fb; 
-                        border-radius: 0px; padding: 2px; margin: 0px; border-color: #339933;""")
-            else:
-                self.ngcl_background.setStyleSheet("""background: #222222; color: #f3f6fb; 
-                        border-radius: 0px; padding: 2px; margin: 0px; border-color: #339933;""")
+            # if getData('state,neutral_contrast'):
+            #     self.ngcl_background.setStyleSheet("""background: #808080; color: #f3f6fb;
+            #             border-radius: 3px; padding: 2px; margin: 0px; border-color: #339933;""")
+            # else:
+            #     self.ngcl_background.setStyleSheet("""background: #222222; color: #f3f6fb;
+            #             border-radius: 3px; padding: 2px; margin: 0px; border-color: #339933;""")
 
         self.ngcl_background.clicked.connect(fn)
         self.ngcl_background.setToolTip('Neuroglancer background setting')
@@ -1744,7 +1745,7 @@ class ProjectTab(QWidget):
         QToolBar {
             background-color: #222222;
             color: #f3f6fb;
-            font-size: 10px;
+            font-size: 9px;
         }
         QToolButton {
             background-color: #1b1e23;
@@ -1811,21 +1812,12 @@ class ProjectTab(QWidget):
                 cfg.refViewer.updateUIControls()
             else:
                 cfg.emViewer.updateUIControls()
-            if opt:
-                self.ngcl_uiControls.setStyleSheet("""background: #339933; color: #f3f6fb; 
-                    border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; border-color: #339933;""")
-            else:
-                self.ngcl_uiControls.setStyleSheet("""background: #222222; color: #f3f6fb;
-                    border-radius: 3px; padding: 0px; margin: 1px; border-color: #339933;""")
             QApplication.processEvents()
-        self.ngcl_uiControls = NgClickLabel(self)
+        # self.ngcl_uiControls = NgClickLabel(self)
+        self.ngcl_uiControls = QToolButton()
+        self.ngcl_uiControls.setCheckable(True)
         self.ngcl_uiControls.setText('NG Controls')
         self.ngcl_uiControls.clicked.connect(fn)
-        self.ngcl_uiControls.setStyleSheet(("""background: #222222; color: #f3f6fb;
-                    border-radius: 3px; padding: 0px; margin: 1px; border-color: #339933;""",
-                                            """background: #339933; color: #f3f6fb; 
-                    border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; border-color: #339933;""")
-                                           [getData('state,show_ng_controls')])
 
 
         def fn():
@@ -1837,20 +1829,11 @@ class ProjectTab(QWidget):
                 cfg.emViewer.updateDefaultAnnotations()
             if cfg.emViewer:
                 cfg.emViewer.updateUIControls()
-            if opt:
-                self.ngcl_bounds.setStyleSheet("""background: #339933; color: #f3f6fb; 
-                    border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; border-color: #339933;""")
-            else:
-                self.ngcl_bounds.setStyleSheet("""background: #222222; color: #f3f6fb;
-                    border-radius: 3px; padding: 0px; margin: 1px; border-color: #339933;""")
-        self.ngcl_bounds = NgClickLabel(self)
+        # self.ngcl_bounds = NgClickLabel(self)
+        self.ngcl_bounds = QToolButton()
+        self.ngcl_bounds.setCheckable(True)
         self.ngcl_bounds.setText('Bounds')
         self.ngcl_bounds.clicked.connect(fn)
-        self.ngcl_bounds.setStyleSheet(("""background: #222222; color: #f3f6fb;
-                    border-radius: 3px; padding: 0px; margin: 1px; border-color: #339933;""",
-                                            """background: #339933; color: #f3f6fb; 
-                    border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600;  border-color: #339933;""")
-                                           [getData('state,show_yellow_frame')])
 
 
         def fn():
@@ -1863,42 +1846,27 @@ class ProjectTab(QWidget):
             #     v.updateAxisLines()
             if cfg.emViewer:
                 cfg.emViewer.updateAxisLines()
-            if opt:
-                self.ngcl_axes.setStyleSheet("""background: #339933; color: #f3f6fb; 
-                    border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600;  border-color: #339933;""")
-            else:
-                self.ngcl_axes.setStyleSheet("""background: #222222; color: #f3f6fb;
-                    border-radius: 3px; padding: 0px; margin: 1px; border-color: #339933;""")
-        self.ngcl_axes = NgClickLabel(self)
+        # self.ngcl_axes = NgClickLabel(self)
+        self.ngcl_axes = QToolButton()
+        self.ngcl_axes.setCheckable(True)
         self.ngcl_axes.setText('Axes')
         self.ngcl_axes.clicked.connect(fn)
-        self.ngcl_axes.setStyleSheet(("""background: #222222; color: #f3f6fb;
-                    border-radius: 3px; padding: 0px; margin: 1px; border-color: #339933;""",
-                                            """background: #339933; color: #f3f6fb; 
-                    border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; border-color: #339933;""")
-                                           [getData('state,show_axis_lines')])
 
         def fn():
             logger.info('')
             QApplication.processEvents()
             logger.info(f'isClicked = {self.ngcl_snr.isClicked}')
             if self.ngcl_snr.isClicked:
-                self.ngcl_snr.setStyleSheet("""background: #339933; color: #f3f6fb; 
-                    border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; border-color: #339933;""")
                 self.detailsSNR.show()
             else:
-                self.ngcl_snr.setStyleSheet("""background: #222222; color: #f3f6fb;
-                    border-radius: 3px; padding: 0px; margin: 1px; border-color: #339933;""")
                 self.detailsSNR.hide()
             cfg.mw.dataUpdateWidgets()
         self.ngcl_snr = NgClickLabel(self)
         self.ngcl_snr.setText('SNR')
         self.ngcl_snr.clicked.connect(fn)
-        self.ngcl_snr.setStyleSheet("""background: #222222; color: #f3f6fb;
-                    border-radius: 3px; padding: 0px; margin: 1px; border-color: #339933;""")
 
         def fn():
-            if not self.ngcl_shader.isClicked:
+            if not self.ngcl_shader.isChecked():
                 self.shaderToolbar.hide()
                 self.ngcl_shader.setToolTip('Show Brightness & Contrast Shaders')
             else:
@@ -1909,18 +1877,13 @@ class ProjectTab(QWidget):
                 self.initNeuroglancer() #Critical #Cringe #guarantees sliders will work
                 self.shaderToolbar.show()
                 self.ngcl_shader.setToolTip('Hide Brightness & Contrast Shaders')
-            self.ngcl_shader.setStyleSheet(("""background: #222222; color: #f3f6fb;
-                        border-radius: 3px; padding: 0px; margin: 1px; border-color: #339933;""",
-                                          """background: #339933; color: #f3f6fb; 
-                  border-radius: 3px; padding: 0px; margin: 1px; font-weight: 600; border-color: #339933;""")
-                                         [self.ngcl_shader.isClicked])
             QApplication.processEvents()
 
-        self.ngcl_shader = NgClickLabel(self)
+        # self.ngcl_shader = NgClickLabel(self)
+        self.ngcl_shader = QToolButton()
+        self.ngcl_shader.setCheckable(True)
         self.ngcl_shader.setText('Shader')
         self.ngcl_shader.clicked.connect(fn)
-        self.ngcl_shader.setStyleSheet("""background: #222222; color: #f3f6fb;
-                    border-radius: 3px; padding: 0px; margin: 1px; border-color: #339933;""")
 
         self.blinkLab = QLabel(f"  Blink {hotkey('B')}: ")
         self.blinkLab.setStyleSheet("""color: #ede9e8; font-size: 10px; font-weight: 600;""")
