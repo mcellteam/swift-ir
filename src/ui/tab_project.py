@@ -2368,10 +2368,10 @@ class ProjectTab(QWidget):
         def update_mp_mode():
             logger.info('')
             b = self.cb_use_pool.isChecked()
-            cfg.USE_MULTIPROCESSING_POOL = int(b)
+            cfg.USE_POOL_FOR_SWIM = int(b)
             cfg.main_window.tell(f"Multiprocessing mode is now set to: "
                                  f"{('task queue', 'pool')[b]}")
-        self.cb_use_pool.setChecked(cfg.USE_MULTIPROCESSING_POOL)
+        self.cb_use_pool.setChecked(cfg.USE_POOL_FOR_SWIM)
         self.cb_use_pool.toggled.connect(update_mp_mode)
 
         self.w_tacc = QWidget()
