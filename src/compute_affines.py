@@ -223,7 +223,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             for sec in dm()[start:end]:
                 if not sec['skipped']:
                     # encoded_data = json.dumps(copy.deepcopy(sec))
-                    encoded_data = json.dumps(sec)
+                    encoded_data = json.dumps(sec['alignment'])
                     task_args = [sys.executable, align_job, encoded_data]
                     task_queue.add_task(task_args)
             logger.info('collecting results...')
