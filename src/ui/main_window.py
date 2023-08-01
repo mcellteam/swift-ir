@@ -498,6 +498,10 @@ class MainWindow(QMainWindow):
         self.curTabID = None
         self._lastTab = None
 
+        self._dock_snr = None
+        self._dock_matches = None
+        self._dock_thumbs = None
+
     def initStyle(self):
         logger.info('')
         self.apply_default_style()
@@ -3826,6 +3830,13 @@ class MainWindow(QMainWindow):
                 if self.globTabs.widget(i).__class__.__name__ == 'OpenProject':
                     self.globTabs.setCurrentIndex(i)
                     return
+
+            self._dock_thumbs = self.dw_thumbs.isVisible()
+            self._dock_matches = self.dw_matches.isVisible()
+            self._dock_snr = self.dw_snr.isVisible()
+            self.setdw_thumbs(False)
+            self.setdw_matches(False)
+            self.setdw_snr(False)
             self.globTabs.addTab(OpenProject(), 'Project Manager')
             self._switchtoOpenProjectTab()
 
