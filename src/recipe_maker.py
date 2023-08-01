@@ -38,15 +38,6 @@ class align_recipe:
         self.configure_logging()
         self.method = self.meta['method']
         self.index = self.meta['index']
-        self.siz = self.meta['image_src_size']
-        if self.method == 'grid-default':
-            self.wht = self.defaults['signal-whitening']
-            self.iters = self.defaults['swim-iterations']
-        else:
-            self.wht = self.data['swim_settings']['signal-whitening']
-            self.iters = self.data['swim_settings']['iterations']
-        if self.meta['isRefinement']:
-            self.iters = 3
         self.grid_regions  = self.data['swim_settings']['grid-custom-regions']
         self.ingredients = []
         self.initial_rotation = float(self.defaults['initial-rotation'])
@@ -54,10 +45,9 @@ class align_recipe:
         # Configure platform-specific path to executables for C SWiFT-IR
         slug = (('linux', 'darwin')[platform.system() == 'Darwin'], 'tacc')[
             'tacc.utexas' in platform.node()]
-        self.swim_c = f'{os.path.split(os.path.realpath(__file__))[0]}' \
-                      f'/lib/bin_{slug}/swim'
-        self.mir_c = f'{os.path.split(os.path.realpath(__file__))[0]}' \
-                     f'/lib/bin_{slug}/mir'
+        p = os.path.split(os.path.realpath(__file__))[0]
+        self.swim_c = '%s/lib/bin_%s/swim' % (p, slug)
+        self.mir_c = '%s/lib/bin_%s/mir' % (p, slug)
 
 
     def configure_logging(self):
@@ -91,8 +81,8 @@ class align_recipe:
 
         # Set up 1x1 point and window
         pa = np.zeros((2, 1))  # Point Array for one point
-        pa[0, 0] = int(self.siz[0] / 2.0)  # Window Center in x
-        pa[1, 0] = int(self.siz[1] / 2.0)  # Window Center in y
+        pa[0, 0] = int(self.meta['img_size'][0] / 2.0)  # Window Center x
+        pa[1, 0] = int(self.meta['img_size'][1] / 2.0)  # Window Center y
         psta_1 = pa
 
         # Example: psta_2x2 = [[256. 768. 256. 768.] [256. 256. 768. 768.]]
@@ -100,8 +90,8 @@ class align_recipe:
         if self.method == 'grid-default':
             nx, ny = 2, 2
             pa = np.zeros((2, nx * ny))  # Point Array (2x4) points
-            sx = int(self.siz[0] / 2.0)  # Initial Size of each window
-            sy = int(self.siz[1] / 2.0)  # Initial Size of each window
+            sx = int(self.meta['img_size'][0] / 2.0) #init window size
+            sy = int(self.meta['img_size'][1] / 2.0)
             for x in range(nx):
                 for y in range(ny):
                     pa[0, x + nx * y] = int(0.5 * sx + sx * x)  # Pt Array 2x4
@@ -160,10 +150,10 @@ class align_recipe:
         elif self.method == 'grid-custom':
             ww_1x1 = self.data['grid_custom_px_1x1']
             ww_2x2 = self.data['grid_custom_px_2x2']
-            x1 = ((self.siz[0] - ww_1x1[0]) / 2) + (ww_2x2[0] / 2)
-            x2 = self.siz[0] - x1
-            y1 = ((self.siz[1] - ww_1x1[1]) / 2) + (ww_2x2[1] / 2)
-            y2 = self.siz[1] - y1
+            x1 = ((self.meta['img_size'][0] - ww_1x1[0]) / 2) + (ww_2x2[0] / 2)
+            x2 = self.meta['img_size'][0] - x1
+            y1 = ((self.meta['img_size'][1] - ww_1x1[1]) / 2) + (ww_2x2[1] / 2)
+            y2 = self.meta['img_size'][1] - y1
             cps = [(x1, y1), (x2, y1), (x1, y2), (x2, y2)]
             nx, ny = 2, 2
             pa = np.zeros((2, nx * ny))  # Point Array (2x4) points
@@ -276,10 +266,9 @@ class align_recipe:
         mr['init_afm'] = self.meta['init_afm']
         mr['swim_pos'] = self.ingredients[-1].psta.tolist()
         mr['datetime'] = time
-        mr['wht'] = self.wht
-        mr['swim-iterations'] = self.iters
+        mr['wht'] = self.meta['whitening']
+        mr['iterations'] = self.meta['iterations']
         mr['method'] = self.method
-        mr['siz']= self.siz
         mr['memory_mb'] = self.megabytes()
         mr['memory_gb'] = self.gigabytes()
 
@@ -409,8 +398,8 @@ class align_ingredient:
         else:
             swim_output = self.run_swim()
             if swim_output == ['']:
-                print(f"[{self.recipe.index}] SWIM Out is empty string! Err:\n"
-                      f"{self.swim_err_lines}")
+                raise ValueError(f"[{self.recipe.index}] SWIM Out is empty "
+                                 f"string! Err:\n{self.swim_err_lines}")
                 self.snr = np.zeros(len(self.psta[0]))
                 self.snr_report = snr_report(self.snr)
                 return self.afm
@@ -420,58 +409,59 @@ class align_ingredient:
 
 
     def get_swim_args(self):
-        self.cx = int(self.recipe.siz[0] / 2.0)
-        self.cy = int(self.recipe.siz[1] / 2.0)
+        self.cx = int(self.recipe.meta['img_size'][0] / 2.0)
+        self.cy = int(self.recipe.meta['img_size'][1] / 2.0)
         basename = os.path.basename(self.recipe.meta['fn_transforming'])
         fn, extension = os.path.splitext(basename)
         multi_arg_str = ArgString(sep='\n')
         dir_scale = os.path.join(
             self.recipe.meta['destination_path'], self.recipe.meta['scale_key'])
         self.ms_names = []
+        m = self.recipe.method
+        iters = str(self.recipe.meta['iterations'])
+        whitening = str(self.recipe.meta['whitening'])
+        use_clobber = self.recipe.data['swim_settings']['clobber_fixed_noise']
+        clobber_px = self.recipe.data['swim_settings']['clobber_fixed_noise_px']
+        afm = '%.6f %.6f %.6f %.6f' % (
+                self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
         for i in range(len(self.psta[0])):
-            if self.recipe.method == 'grid-custom':
+            if m == 'grid-custom':
                 if self.ID != 'g1x1':
                     if not self.recipe.grid_regions[i]:
                         continue
             # correlation signals argument (output path)
             b_arg = os.path.join(dir_scale, 'signals', '%s_%s_%d%s' %
-                           (fn, self.recipe.method, i, extension))
+                           (fn, m, i, extension))
             self.ms_names.append(b_arg)
             args = ArgString(sep=' ')
             args.append("%dx%d" % (self.ww[0], self.ww[1]))
             if self.recipe.data['meta']['verbose_swim']:
                 args.append("-v")
-            if self.recipe.data['swim_settings']['clobber_fixed_noise']:
-                args.append(
-                    '-f%d' % self.recipe.data['swim_settings']
-                    ['clobber_fixed_noise_px'])
-            args.add_flag(flag='-i', arg=str(self.recipe.iters))
-            args.add_flag(flag='-w', arg=str(self.recipe.wht))
-            if self.recipe.method in ('grid-default', 'grid-custom'):
+            if use_clobber:
+                args.append('-f%d' % clobber_px)
+            args.add_flag(flag='-i', arg=iters)
+            args.add_flag(flag='-w', arg=whitening)
+            if m in ('grid-default', 'grid-custom'):
                 self.offx = int(self.psta[0][i] - self.cx)
                 self.offy = int(self.psta[1][i] - self.cy)
                 args.add_flag(flag='-x', arg='%d' % self.offx)
                 args.add_flag(flag='-y', arg='%d' % self.offy)
             args.add_flag(flag='-b', arg=b_arg)
             if self.last:
-                if self.recipe.data['karg']:
-                    k_arg_name = '%s_%s_k_%d%s' % (fn, self.recipe.method, i,
-                                                   extension)
-                    k_arg_path = os.path.join(dir_scale, 'tmp', k_arg_name)
-                    args.add_flag(flag='-k', arg=k_arg_path)
-                if self.recipe.data['targ']:
-                    t_arg_name = '%s_%s_t_%d%s' % (fn, self.recipe.method, i,
-                                                   extension)
-                    t_arg_path = os.path.join(dir_scale, 'tmp', t_arg_name)
-                    args.add_flag(flag='-t', arg=t_arg_path)
+                k_arg_name = '%s_%s_k_%d%s' % (fn, m, i, extension)
+                k_arg_path = os.path.join(dir_scale, 'tmp', k_arg_name)
+                args.add_flag(flag='-k', arg=k_arg_path)
+                t_arg_name = '%s_%s_t_%d%s' % (fn, m, i, extension)
+                t_arg_path = os.path.join(dir_scale, 'tmp', t_arg_name)
+                args.add_flag(flag='-t', arg=t_arg_path)
             args.append(self.recipe.data['swim_settings']['extra_kwargs'])
             args.append(self.recipe.meta['fn_reference'])
-            if self.recipe.method in ('manual-hint'):
+            if m in ('manual-hint'):
                 args.append('%s %s' % (self.psta[0][i], self.psta[1][i]))
             else:
                 args.append('%s %s' % (self.cx, self.cy))
             args.append(self.recipe.meta['fn_transforming'])
-            if self.recipe.method in ('manual-hint'):
+            if m in ('manual-hint'):
                 args.append('%s %s' % (self.pmov[0][i], self.pmov[1][i]))
             else:
                 self.adjust_x = '%.6f' % (self.cx + self.afm[0, 2])
@@ -480,8 +470,7 @@ class align_ingredient:
             r = self.recipe.initial_rotation
             if abs(r) > 0:
                 args.append(convert_rotation(r))
-            args.append('%.6f %.6f %.6f %.6f' % (
-                self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1]))
+            args.append(afm)
             args.append(self.recipe.data['swim_settings']['extra_args'])
             multi_arg_str.append(args())
         return multi_arg_str
@@ -609,14 +598,16 @@ class align_ingredient:
                              f'{self.pmov[0][i]} {self.pmov[1][i]}\n'
         mir_script_mp += 'R'
         self.mir_script = mir_script_mp
-        out, err = run_command(self.recipe.mir_c, cmd_input=mir_script_mp,
-            desc='MIR to compose affine (strict manual)',)
+        out, err = run_command(
+            self.recipe.mir_c,
+            cmd_input=mir_script_mp,
+            desc='MIR to compose affine (strict manual)',
+        )
         mir_mp_out_lines = out.strip().split('\n')
         mir_mp_err_lines = err.strip().split('\n')
         logging.getLogger('MAlogger').critical(
             f'\n==========\nMIR script:\n{mir_script_mp}\n'
-            f'stdout >>\n{mir_mp_out_lines}\n'
-            f'stderr >>\n{mir_mp_err_lines}')
+            f'stdout >>\n{mir_mp_out_lines}\nstderr >>\n{mir_mp_err_lines}')
         afm = np.eye(2, 3, dtype=np.float32)
         self.mir_out_lines = mir_mp_out_lines
         for line in mir_mp_out_lines:
@@ -684,13 +675,6 @@ def prefix_lines(i, s):
 def snr_report(arr) -> str:
     return 'SNR: %.1f (+-%.1f n:%d)  <%.1f  %.1f>' % (
         arr.mean(), arr.std(), len(arr), arr.min(), arr.max())
-
-
-def natural_sort(l):
-    '''Natural sort a list of strings regardless of zero padding'''
-    convert = lambda text: int(text) if text.isdigit() else text.lower()
-    alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
-    return sorted(l, key=alphanum_key)
 
 
 def convert_rotation(degrees):

@@ -118,7 +118,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                 sec['alignment']['meta']['isRefinement'] = dm['data']['scales'][scale]['isRefinement']
                 sec['alignment']['meta']['destination_path'] = dm['data']['destination_path']
                 sec['alignment']['meta']['defaults'] = dm['data']['defaults']
-                sec['alignment']['meta']['image_src_size'] = dm['data']['scales'][scale]['image_src_size']
+                sec['alignment']['meta']['img_size'] = dm['data']['scales'][scale]['image_src_size']
                 sec['alignment']['meta']['skipped'] = sec['skipped']
                 sec['alignment']['meta']['dev_mode'] = cfg.DEV_MODE
                 sec['alignment']['meta']['recipe_logging'] = cfg.RECIPE_LOGGING
@@ -126,6 +126,13 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                 sec['alignment']['meta']['fn_transforming'] = sec['filename']
                 sec['alignment']['meta']['fn_reference'] = sec['reference']
                 sec['alignment']['meta']['method'] = sec['current_method']
+
+                if sec['current_method'] == 'grid-default':
+                    sec['alignment']['meta']['whitening'] = cfg.data['data']['defaults']['signal-whitening']
+                    sec['alignment']['meta']['iterations'] = cfg.data['data']['defaults']['swim-iterations']
+                else:
+                    sec['alignment']['meta']['whitening'] = sec['alignment']['swim_settings']['signal-whitening']
+                    sec['alignment']['meta']['iterations'] = sec['alignment']['swim_settings']['iterations']
 
                 if dm['data']['scales'][scale]['isRefinement']:
                     scale_prev = dm.scales()[dm.scales().index(scale) + 1]
