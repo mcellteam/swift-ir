@@ -117,7 +117,7 @@ class TaskQueue(QObject):
         print(f"caller: {caller}")
 
     # def start(self, n_workers, retries=10) -> None:
-    def start(self, n_workers, retries=2) -> None:
+    def start(self, n_workers, retries=0) -> None:
 
         if cfg.CancelProcesses == True:
             cfg.main_window.warn('Canceling Tasks: %s' % self.pbar_text)
@@ -284,7 +284,7 @@ class TaskQueue(QObject):
 
         pbar = tqdm.tqdm(total=n_tasks, desc="Compute Affines", position=0, leave=True)
 
-        logger.info('Collecting Results...')
+        logger.info(f'Collecting results (num tasks:{len(self.task_dict)})...')
         try:
             while (retries_tot < self.retries + 1) and n_pending:
 
@@ -313,6 +313,9 @@ class TaskQueue(QObject):
                             # QApplication.processEvents()
                             sys.exit(1)
                     pbar.update(n_tasks - realtime)
+                    sys.stdout.flush()
+
+                    # print(f"n_pending = {n_pending}, n_tasks - realtime = {n_tasks - realtime}")
                     # logger.info(f"# tasks completed: {n_tasks - realtime}")
                     # if (not cfg.ignore_pbar) and self.use_gui:
                     #     try:
