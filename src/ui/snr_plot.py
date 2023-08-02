@@ -218,9 +218,10 @@ class SnrPlot(QWidget):
                 labelOpts={'position': .1, 'color': (255,250,250), 'fill': (255, 0, 0, 75), 'movable': True}
             )
             self._skip_lines.append(line)
-            label = pg.InfLineLabel(line, f'x', position=0.10, color='#ff0000', rotateAxis=(1, 0), anchor=(1, 1))
-            # ^^ position is vertical position of 'skip' label
-            self._skip_labels.append(label)
+            if not self.dock:
+                label = pg.InfLineLabel(line, f'Exclude', position=0.10, color='#ff0000', rotateAxis=(1, 0), anchor=(1, 1))
+                # ^^ position is vertical position of 'skip' label
+                self._skip_labels.append(label)
             line.setPos([layer[0] + offset, 1])
             self.plot.addItem(line)
 
