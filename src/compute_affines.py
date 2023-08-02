@@ -114,38 +114,43 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             # if not sec['skipped'] and (zpos != first_unskipped):
             if 1:
                 # logger.info(f'Adding task for {zpos}')
-                sec['alignment']['meta'] = {}
+                # sec['alignment']['meta'] = {}
                 zpos = dm().index(sec)
-                sec['alignment']['method_results'].pop('swim_args', None)
-                sec['alignment']['method_results'].pop('swim_out', None)
-                sec['alignment']['method_results'].pop('swim_err', None)
-                sec['alignment']['method_results'].pop('mir_toks', None)
-                sec['alignment']['method_results'].pop('mir_script', None)
-                sec['alignment']['method_results'].pop('mir_out', None)
-                sec['alignment']['method_results'].pop('mir_err', None)
-                sec['alignment']['meta']['index'] = zpos
-                sec['alignment']['meta']['scale_val'] = scale_val
-                sec['alignment']['meta']['scale_key'] = scale
-                sec['alignment']['meta']['isRefinement'] = dm['data']['scales'][scale]['isRefinement']
-                sec['alignment']['meta']['isCoarsest'] = dm.coarsest_scale_key() == cfg.data.scale
-                sec['alignment']['meta']['destination_path'] = dm['data']['destination_path']
-                sec['alignment']['meta']['defaults'] = dm['data']['defaults']
-                sec['alignment']['meta']['img_size'] = dm['data']['scales'][scale]['image_src_size']
-                sec['alignment']['meta']['skipped'] = sec['skipped']
-                sec['alignment']['meta']['dev_mode'] = cfg.DEV_MODE
-                sec['alignment']['meta']['recipe_logging'] = cfg.RECIPE_LOGGING
-                sec['alignment']['meta']['verbose_swim'] = cfg.VERBOSE_SWIM
-                sec['alignment']['meta']['fn_transforming'] = sec['filename']
-                sec['alignment']['meta']['fn_reference'] = sec['reference']
-                sec['alignment']['meta']['method'] = sec['current_method']
+
+                sec['alignment'].setdefault('method_results', {})
+                mr = sec['alignment']['method_results']
+                mr.pop('swim_args', None)
+                mr.pop('swim_out', None)
+                mr.pop('swim_err', None)
+                mr.pop('mir_toks', None)
+                mr.pop('mir_script', None)
+                mr.pop('mir_out', None)
+                mr.pop('mir_err', None)
+
+                ss = sec['alignment']['swim_settings']
+                ss['index'] = zpos
+                ss['scale_val'] = scale_val
+                ss['scale_key'] = scale
+                ss['isRefinement'] = dm['data']['scales'][scale]['isRefinement']
+                ss['isCoarsest'] = dm.coarsest_scale_key() == cfg.data.scale
+                ss['destination_path'] = dm['data']['destination_path']
+                ss['defaults'] = dm['data']['defaults']
+                ss['img_size'] = dm['data']['scales'][scale]['image_src_size']
+                # ss['include'] = not sec['skipped']
+                ss['dev_mode'] = cfg.DEV_MODE
+                ss['recipe_logging'] = cfg.RECIPE_LOGGING
+                ss['verbose_swim'] = cfg.VERBOSE_SWIM
+                ss['fn_transforming'] = sec['filename']
+                ss['fn_reference'] = sec['reference']
+                ss['method'] = sec['current_method']
 
 
                 if sec['current_method'] == 'grid-default':
-                    sec['alignment']['meta']['whitening'] = cfg.data['data']['defaults']['signal-whitening']
-                    sec['alignment']['meta']['iterations'] = cfg.data['data']['defaults']['swim-iterations']
+                    ss['_whitening'] = cfg.data['data']['defaults']['signal-whitening']
+                    ss['_iters'] = cfg.data['data']['defaults']['swim-iterations']
                 else:
-                    sec['alignment']['meta']['whitening'] = sec['alignment']['swim_settings']['signal-whitening']
-                    sec['alignment']['meta']['iterations'] = sec['alignment']['swim_settings']['iterations']
+                    ss['_whitening'] = ss['signal-whitening']
+                    ss['_iters'] = ss['iterations']
 
                 if dm['data']['scales'][scale]['isRefinement']:
                     scale_prev = dm.scales()[dm.scales().index(scale) + 1]
@@ -156,11 +161,11 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                     # prev_afm = copy.deepcopy(np.array(scale_prev_dict[zpos]['alignment_history'][prev_method]['affine_matrix']))
                     init_afm[0][2] *= upscale
                     init_afm[1][2] *= upscale
-                    sec['alignment']['meta']['init_afm'] = init_afm.tolist()
+                    ss['init_afm'] = init_afm.tolist()
                 else:
-                    sec['alignment']['meta']['init_afm'] = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
+                    ss['init_afm'] = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
 
-                if not sec['skipped'] and (zpos != first_unskipped):
+                if not ss['include'] and (zpos != first_unskipped):
                     tasks.append(copy.deepcopy(sec['alignment']))
             # else:
             #     logger.info(f"Dropping task for {zpos}")
@@ -201,8 +206,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                               position=0, leave=True))
             # # For use with ThreadPool ONLY
             for r in all_results:
-                index = r['meta']['index']
-                method = r['meta']['method']
+                index = r['swim_settings']['index']
+                method = r['swim_settings']['method']
                 dm['data']['scales'][scale]['stack'][index]['alignment'] = r
                 dm['data']['scales'][scale]['stack'][index]['alignment_history'][method] = r['method_results']
         else:
@@ -216,7 +221,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             logger.info('adding tasks to the queue...')
             for sec in dm()[start:end]:
                 zpos = dm().index(sec)
-                if not sec['skipped'] and (zpos != first_unskipped):
+                if sec['alignment']['swim_settings']['include'] and (zpos != first_unskipped):
                     # encoded_data = json.dumps(copy.deepcopy(sec))
                     encoded_data = json.dumps(sec['alignment'])
                     task_args = [sys.executable, align_job, encoded_data]
@@ -239,8 +244,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                         dm_text = p
                 if dm_text != None:
                     results_dict = json.loads(dm_text)
-                    index = results_dict['meta']['index']
-                    method = results_dict['meta']['method']
+                    index = results_dict['swim_settings']['index']
+                    method = results_dict['swim_settings']['method']
                     dm['data']['scales'][scale]['stack'][index]['alignment'] = results_dict
                     dm['data']['scales'][scale]['stack'][index]['alignment_history'][method] = results_dict['method_results']
 

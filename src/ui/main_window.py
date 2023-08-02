@@ -1126,6 +1126,8 @@ class MainWindow(QMainWindow):
         t0 = time.time()
         try:
             if self._isProjectTab():
+                if self.dw_snr.isVisible():
+                    cfg.project_tab.dSnr_plot.initSnrPlot()
                 self.setNoPbarMessage(False)
                 self.updateEnabledButtons()
                 self.updateCorrSignalsDrawer()
@@ -1271,6 +1273,10 @@ class MainWindow(QMainWindow):
             self.setTargKargPixmaps()
             self.updateEnabledButtons()
             self.enableAllTabs()
+            # if self._isProjectTab():
+            #     if self.dw_snr.isVisible():
+            #         cfg.project_tab.dSnr_plot.initSnrPlot()
+            self.dataUpdateWidgets()
         else:
             self.onAlignmentEnd(start=start, end=end)  # 0601+ why was this uncommented?
             cfg.project_tab.initNeuroglancer()
@@ -1279,32 +1285,33 @@ class MainWindow(QMainWindow):
         self.tell('SNR Before: %.3f  SNR After: %.3f' %
                   (cfg.data.snr_prev(l=start), cfg.data.snr(l=start)))
 
-    def alignGenerateOne(self):
-        cfg.ignore_pbar = True
-        logger.critical('Realigning Manually...')
-        self.tell('Re-aligning Section #%d (%s)...' %
-                  (cfg.data.zpos, cfg.data.scale_pretty()))
-        start = cfg.data.zpos
-        end = cfg.data.zpos + 1
-        cfg.nProcessDone = 0
-        cfg.nProcessSteps = 4
-        self.setPbarMax(4)
-        self.align(
-            scale=cfg.data.scale_key,
-            start=start,
-            end=end,
-            renew_od=False,
-            reallocate_zarr=False,
-            stageit=False,
-            align_one=True,
-            swim_only=False
-        )
-        self.onAlignmentEnd(start=start, end=end)
-        cfg.project_tab.initNeuroglancer()
-        self.tell('Section #%d Alignment Complete' % start)
-        self.tell('SNR Before: %.3f  SNR After: %.3f' %
-                  (cfg.data.snr_prev(l=start), cfg.data.snr(l=start)))
-        cfg.ignore_pbar = False
+    #0802-
+    # def alignGenerateOne(self):
+    #     cfg.ignore_pbar = True
+    #     logger.critical('Realigning Manually...')
+    #     self.tell('Re-aligning Section #%d (%s)...' %
+    #               (cfg.data.zpos, cfg.data.scale_pretty()))
+    #     start = cfg.data.zpos
+    #     end = cfg.data.zpos + 1
+    #     cfg.nProcessDone = 0
+    #     cfg.nProcessSteps = 4
+    #     self.setPbarMax(4)
+    #     self.align(
+    #         scale=cfg.data.scale_key,
+    #         start=start,
+    #         end=end,
+    #         renew_od=False,
+    #         reallocate_zarr=False,
+    #         stageit=False,
+    #         align_one=True,
+    #         swim_only=False
+    #     )
+    #     self.onAlignmentEnd(start=start, end=end)
+    #     cfg.project_tab.initNeuroglancer()
+    #     self.tell('Section #%d Alignment Complete' % start)
+    #     self.tell('SNR Before: %.3f  SNR After: %.3f' %
+    #               (cfg.data.snr_prev(l=start), cfg.data.snr(l=start)))
+    #     cfg.ignore_pbar = False
 
 
     def alignAll(self, set_pbar=True, force=False, ignore_bb=False, use_gui=True):
@@ -1530,16 +1537,6 @@ class MainWindow(QMainWindow):
     #     self._callbk_unsavedChanges()
     #     self.tell('Process Finished')
 
-    @Slot()
-    def clear_skips(self):
-        if cfg.data.anySkips():
-            msg = 'Verify reset the reject list.'
-            reply = QMessageBox.question(self, 'Verify Reset Reject List', msg, QMessageBox.Cancel | QMessageBox.Ok)
-            if reply == QMessageBox.Ok:
-                self.tell('Resetting Skips...')
-                cfg.data.clear_all_skips()
-        else:
-            self.warn('No Skips To Clear.')
 
     def enableAllButtons(self):
         self._btn_alignAll.setEnabled(True)
@@ -1556,7 +1553,6 @@ class MainWindow(QMainWindow):
         cfg.pt._toggleAutogenerate.setEnabled(True)
         cfg.pt._bbToggle.setEnabled(True)
         cfg.pt._polyBiasCombo.setEnabled(True)
-        self._btn_clear_skips.setEnabled(True)
         self.startRangeInput.setEnabled(True)
         self.endRangeInput.setEnabled(True)
         
@@ -1577,13 +1573,11 @@ class MainWindow(QMainWindow):
             # self.alignmentResults.setTitle('%s Data && Results' % cfg.data.scale_pretty())
             # self._btn_alignRange.setText('Regenerate\nAll %s' % cfg.data.scale_pretty())
             self._skipCheckbox.setEnabled(True)
-            self._btn_clear_skips.setEnabled(True)
 
             self._changeScaleCombo.setEnabled(True)
 
         else:
             self._skipCheckbox.setEnabled(False)
-            self._btn_clear_skips.setEnabled(False)
 
             # self._ctlpanel_applyAllButton.setEnabled(False)
 
@@ -1796,7 +1790,6 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             cfg.CancelProcesses = False #0720+ probably a necessary precaution until something better
 
-
             # if 'viewer_em' in str(self.sender()):
             #     if not silently:
             #         # if cfg.pt.ms_widget.isVisible():
@@ -1875,6 +1868,9 @@ class MainWindow(QMainWindow):
             #         except:
             #             print_exception()
 
+            if self.dw_snr.isVisible():
+                cfg.project_tab.dSnr_plot.initSnrPlot()
+
             if self.dw_thumbs.isVisible():
                 if cfg.data.skipped():
                     # cfg.project_tab._overlayRect.setStyleSheet('background-color: rgba(0, 0, 0, 0.5);')
@@ -1937,10 +1933,8 @@ class MainWindow(QMainWindow):
 
             if cfg.data['state']['current_tab'] == 1:
                 cfg.project_tab.dataUpdateMA()
-                if not cfg.data.cafm_hash_comports() and cfg.data.is_aligned_and_generated():
-                    cfg.pt.warning_cafm.show()
-                else:
-                    cfg.pt.warning_cafm.hide()
+                self.updateCafmComportsLabel()
+
 
             if self.notes.isVisible():
                 self.updateNotes()
@@ -2035,6 +2029,14 @@ class MainWindow(QMainWindow):
             self.dw_snr.setWidget(NullWidget())
 
         self.setFocus()
+
+
+    def updateCafmComportsLabel(self):
+        if not cfg.data.cafm_hash_comports() and cfg.data.is_aligned_and_generated():
+            cfg.pt.warning_cafm.show()
+        else:
+            cfg.pt.warning_cafm.hide()
+
 
 
     def updateNotes(self):
@@ -4336,7 +4338,8 @@ class MainWindow(QMainWindow):
         alignMenu.addAction(self.alignAllScalesAction)
 
         self.alignOneAction = QAction('Align Current Section', self)
-        self.alignOneAction.triggered.connect(self.alignGenerateOne)
+        # self.alignOneAction.triggered.connect(self.alignGenerateOne) #0802-
+        self.alignOneAction.triggered.connect(self.alignOne)
         alignMenu.addAction(self.alignOneAction)
 
         self.skipChangeAction = QAction('Toggle Include', self)
@@ -4881,14 +4884,6 @@ class MainWindow(QMainWindow):
         self._w_skipCheckbox = HWidget(self.labInclude, self._skipCheckbox)
         self._w_skipCheckbox.layout.setAlignment(Qt.AlignCenter)
 
-        self._btn_clear_skips = QPushButton('Reset')
-        self._btn_clear_skips.setEnabled(False)
-        self._btn_clear_skips.setStyleSheet("font-size: 10px;")
-        self._btn_clear_skips.setToolTip(tip)
-        self._btn_clear_skips.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._btn_clear_skips.clicked.connect(self.clear_skips)
-        self._btn_clear_skips.setFixedSize(button_size)
-
         tip = 'Go To Previous Section.'
         self._btn_prevSection = QPushButton()
         self._btn_prevSection.setObjectName('z-index-left-button')
@@ -5031,7 +5026,8 @@ class MainWindow(QMainWindow):
         self._btn_alignOne.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self._btn_alignOne.setEnabled(False)
         self._btn_alignOne.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._btn_alignOne.clicked.connect(self.alignGenerateOne)
+        # self._btn_alignOne.clicked.connect(self.alignGenerateOne) #0802
+        self._btn_alignOne.clicked.connect(self.alignOne)
 
         tip = """Align and generate current sections from the current through the end of the image stack"""
         self._btn_alignForward = QPushButton('Align Forward')

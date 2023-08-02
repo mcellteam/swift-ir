@@ -33,7 +33,8 @@ class align_recipe:
 
     def __init__(self, data):
         self.data = data
-        self.meta = self.data['meta']
+        # self.meta = self.data['meta']
+        self.meta = self.data['swim_settings']
         self.defaults = self.meta['defaults']
         self.configure_logging()
         self.method = self.meta['method']
@@ -266,8 +267,8 @@ class align_recipe:
         mr['init_afm'] = self.meta['init_afm']
         mr['swim_pos'] = self.ingredients[-1].psta.tolist()
         mr['datetime'] = time
-        mr['wht'] = self.meta['whitening']
-        mr['iterations'] = self.meta['iterations']
+        mr['_whitening'] = self.meta['_whitening']
+        mr['_ters'] = self.meta['_iters']
         mr['method'] = self.method
         mr['memory_mb'] = self.megabytes()
         mr['memory_gb'] = self.gigabytes()
@@ -418,8 +419,8 @@ class align_ingredient:
             self.recipe.meta['destination_path'], self.recipe.meta['scale_key'])
         self.ms_names = []
         m = self.recipe.method
-        iters = str(self.recipe.meta['iterations'])
-        whitening = str(self.recipe.meta['whitening'])
+        iters = str(self.recipe.meta['_iters'])
+        whitening = str(self.recipe.meta['_whitening'])
         use_clobber = self.recipe.data['swim_settings']['clobber_fixed_noise']
         clobber_px = self.recipe.data['swim_settings']['clobber_fixed_noise_px']
         afm = '%.6f %.6f %.6f %.6f' % (
@@ -435,7 +436,7 @@ class align_ingredient:
             self.ms_names.append(b_arg)
             args = ArgString(sep=' ')
             args.append("%dx%d" % (self.ww[0], self.ww[1]))
-            if self.recipe.data['meta']['verbose_swim']:
+            if self.recipe.meta['verbose_swim']:
                 args.append("-v")
             if use_clobber:
                 args.append('-f%d' % clobber_px)
@@ -558,7 +559,7 @@ class align_ingredient:
                     mir_toks = [toks[k] for k in [2, 3, 5, 6]]
                 except:
                     print_exception(
-                        extra=f"#{self.recipe.data['meta']['index']}\n"
+                        extra=f"#{self.recipe.meta['index']}\n"
                               f"mir toks are: {str(toks)}\n"
                               f"swim_output: {swim_output}"
                     )
