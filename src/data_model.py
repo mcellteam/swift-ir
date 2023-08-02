@@ -301,19 +301,19 @@ class DataModel:
 
     @property
     def grid_custom_regions(self):
-        return self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['swim_settings']['grid-custom-regions']
+        return self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['swim_settings']['grid_custom_regions']
 
     def get_grid_custom_regions(self, s=None, l=None):
         if s == None: s = self.scale
         if l == None: l = self.zpos
         return self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings'][
-            'grid-custom-regions']
+            'grid_custom_regions']
 
     @grid_custom_regions.setter
     def grid_custom_regions(self, lst):
         # for s in self.scales():
         for s in self.finer_scales():
-            self._data['data']['scales'][s]['stack'][self.zpos]['alignment']['swim_settings']['grid-custom-regions'] = lst
+            self._data['data']['scales'][s]['stack'][self.zpos]['alignment']['swim_settings']['grid_custom_regions'] = lst
 
     @property
     def karg(self):
@@ -973,7 +973,13 @@ class DataModel:
                 layer['alignment']['swim_settings'].setdefault('extra_args', '')
                 layer['alignment']['swim_settings'].setdefault('use_logging', True)
                 layer['alignment']['swim_settings'].setdefault('grid_default_regions', [1,1,1,1])
-                layer['alignment']['swim_settings'].setdefault('grid-custom-regions', [1,1,1,1])
+                layer['alignment']['swim_settings'].setdefault('grid_custom_regions', [1,1,1,1])
+                try:
+                    layer['alignment']['swim_settings']['swim_settings']['grid_custom_regions'] = layer[
+                        'alignment']['swim_settings'].pop('grid-custom-regions')
+                except:
+                    pass
+
                 layer['alignment']['swim_settings'].setdefault('iterations', cfg.DEFAULT_SWIM_ITERATIONS)
                 layer['alignment']['swim_settings'].setdefault('signal-whitening', cfg.DEFAULT_WHITENING)
                 layer['alignment']['swim_settings'].pop('karg', None)

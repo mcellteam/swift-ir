@@ -38,7 +38,7 @@ class align_recipe:
         self.configure_logging()
         self.method = self.meta['method']
         self.index = self.meta['index']
-        self.grid_regions  = self.data['swim_settings']['grid-custom-regions']
+        self.grid_regions  = self.data['swim_settings']['grid_custom_regions']
         self.ingredients = []
         self.initial_rotation = float(self.defaults['initial-rotation'])
         # self.afm = np.array([[1., 0., 0.], [0., 1., 0.]])
