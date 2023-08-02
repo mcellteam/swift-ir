@@ -620,7 +620,7 @@ class ProjectTab(QWidget):
         self.btnQuickSWIM.setFixedHeight(22)
         self.btnQuickSWIM.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnQuickSWIM.clicked.connect(lambda: cfg.main_window.alignOne(quick_swim=True))
-        self.btnQuickSWIM.clicked.connect(lambda: cfg.mw.setdw_matches(True))
+        # self.btnQuickSWIM.clicked.connect(lambda: cfg.mw.setdw_matches(True))
         hbl = HBL()
         hbl.setSpacing(0)
         hbl.setContentsMargins(2, 2, 2, 2)
