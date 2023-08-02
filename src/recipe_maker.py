@@ -224,7 +224,7 @@ class align_recipe:
 
         if (self.meta['fn_reference'] == self.meta['fn_transforming']) \
                 or (self.meta['fn_reference'] == ''):
-            print_exception(extra=f'Image Has No Reference!')
+            print_exception(extra=f'Image #{self.index} Has No Reference!')
             return
 
         for i, ingredient in enumerate(self.ingredients):
@@ -689,7 +689,7 @@ def print_exception(extra='None'):
     tstamp = datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S")
     exi = sys.exc_info()
     txt = f"  [{tstamp}] {exi[0]}\nError Value : {exi[1]}\n" \
-          f"{traceback.format_exc()}\nAdditional Details: {extra}"
+          f"{traceback.format_exc()}Additional Details: {extra}"
     logging.getLogger('exceptlogger').warning(txt)
 
 

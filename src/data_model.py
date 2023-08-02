@@ -276,6 +276,8 @@ class DataModel:
             self._data['data']['scales'][s]['stack'][self.zpos]['current_method'] = str
 
 
+
+
     def get_current_method(self, s=None, l=None):
         if s == None: s = self.scale
         if l == None: l = self.zpos
@@ -937,6 +939,11 @@ class DataModel:
                 layer['alignment_history']['grid-custom']['method_results'].setdefault('affine_matrix', init_afm)
                 layer['alignment_history']['manual-hint']['method_results'].setdefault('affine_matrix', init_afm)
                 layer['alignment_history']['manual-strict']['method_results'].setdefault('affine_matrix', init_afm)
+
+                layer['alignment_history']['grid-default']['method_results'].setdefault('cumulative_afm', init_afm)
+                layer['alignment_history']['grid-custom']['method_results'].setdefault('cumulative_afm', init_afm)
+                layer['alignment_history']['manual-hint']['method_results'].setdefault('cumulative_afm', init_afm)
+                layer['alignment_history']['manual-strict']['method_results'].setdefault('cumulative_afm', init_afm)
 
                 layer['alignment_history']['grid-default']['method_results'].setdefault('cafm_hash', None)
                 layer['alignment_history']['grid-custom']['method_results'].setdefault('cafm_hash', None)
@@ -1649,22 +1656,14 @@ class DataModel:
         except:
             print_exception(extra=f's={s}, l={l}')
 
-    def cafm_hashable(self, s=None, end=None):
-        if s == None: s = self.scale
-        if end == None: end = self.zpos
-        # return [tuple(map(tuple, x)) for x in self.cafm_list(s=s,end=end)]
-        # return hash(str(self.cafm_list(s=s,end=end)))
-        try:
-            return hash(str(self.cafm(s=s, l=end)))
-        except:
-            caller = inspect.stack()[1].function
-            print_exception(extra=f'end={end}, caller: {caller}')
 
     def cafm(self, s=None, l=None) -> list:
         if s == None: s = self.scale
         if l == None: l = self.zpos
         try:
-            return self._data['data']['scales'][s]['stack'][l]['alignment']['method_results']['cumulative_afm']
+            # return self._data['data']['scales'][s]['stack'][l]['alignment']['method_results']['cumulative_afm'] #0802-
+            return self._data['data']['scales'][s]['stack'][l]['alignment_history'][self.get_current_method(s=s, l=l)][
+                'method_results']['cumulative_afm']
             # return self._data['data']['scales'][s]['stack'][l]['alignment_history'][self.get_current_method(s=s, l=l)]['cumulative_afm']
         except:
             # caller = inspect.stack()[1].function
@@ -1678,6 +1677,7 @@ class DataModel:
         if s == None: s = self.scale
         lst = [self.afm(l=i) for i, l in enumerate(self.stack(s=s))]
         return lst
+
 
     def cafm_list(self, s=None, end=None) -> list:
         if s == None: s = self.scale
@@ -1694,6 +1694,18 @@ class DataModel:
         if l == None: l = self.zpos
         # return self._data['data']['scales'][s]['stack'][l]['alignment_history'][self.get_current_method(l=l)]['cafm_hash']
         return self._data['data']['scales'][s]['stack'][l]['cafm_alignment_hash']
+
+
+    def cafm_hashable(self, s=None, end=None):
+        if s == None: s = self.scale
+        if end == None: end = self.zpos
+        # return [tuple(map(tuple, x)) for x in self.cafm_list(s=s,end=end)]
+        # return hash(str(self.cafm_list(s=s,end=end)))
+        try:
+            return hash(str(self.cafm(s=s, l=end)))
+        except:
+            caller = inspect.stack()[1].function
+            print_exception(extra=f'end={end}, caller: {caller}')
 
 
     def cafm_current_hash(self, s=None, l=None):
