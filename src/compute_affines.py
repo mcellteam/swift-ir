@@ -142,7 +142,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                 ss['verbose_swim'] = cfg.VERBOSE_SWIM
                 ss['fn_transforming'] = sec['filename']
                 ss['fn_reference'] = sec['reference']
-                # ss['method'] = sec['current_method']
+                ss['method'] = sec['current_method']
 
 
                 if sec['current_method'] == 'grid-default':

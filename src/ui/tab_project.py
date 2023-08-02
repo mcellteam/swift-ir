@@ -2306,6 +2306,16 @@ class ProjectTab(QWidget):
         self.cb_recipe_logging.setChecked(cfg.LOG_RECIPE_TO_FILE)
         self.cb_recipe_logging.toggled.connect(update_recipe_logging)
 
+        self.cb_verbose_swim = QCheckBox()
+        self.cb_verbose_swim.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        def update_swim_verbosity():
+            logger.info('')
+            b = self.cb_verbose_swim.isChecked()
+            cfg.VERBOSE_SWIM = int(b)
+            cfg.main_window.tell(f"Recipe logging is now set to: {b}")
+        self.cb_verbose_swim.setChecked(cfg.VERBOSE_SWIM)
+        self.cb_verbose_swim.toggled.connect(update_swim_verbosity)
+
         self.cb_dev_mode = QCheckBox()
         self.cb_dev_mode.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         def update_dev_mode():
@@ -2336,6 +2346,7 @@ class ProjectTab(QWidget):
         self.fl_tacc.addRow(f"Use mp.Pool (vs task queue)", self.cb_use_pool)
         self.fl_tacc.addRow(f"QtWebengine # raster threads", self.le_qtwebengine_raster_threads)
         self.fl_tacc.addRow(f"Log recipe to file", self.cb_recipe_logging)
+        self.fl_tacc.addRow(f"Verbose SWIM (-v)", self.cb_verbose_swim)
         self.fl_tacc.addRow(f"DEV_MODE", self.cb_dev_mode)
 
         self.sideTabs = QTabWidget()
