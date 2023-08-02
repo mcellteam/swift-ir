@@ -271,7 +271,8 @@ def main():
     os.environ['LIBTIFF_STRILE_ARRAY_MAX_RESIZE_COUNT'] = '1000000000'
 
     # PYTHONHASHSEED must be "random" or an integer in range [0; 4294967295]
-    os.environ['PYTHONHASHSEED'] = '98247985'
+    # os.environ['PYTHONHASHSEED'] = '98247985'
+    # os.environ['PYTHONHASHSEED'] = '0'
 
 
     if qtpy.QT5:

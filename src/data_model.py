@@ -12,8 +12,10 @@ import copy
 import json
 import inspect
 import logging
+import hashlib
 import platform
 import statistics
+from typing import Dict, Any
 from glob import glob
 from copy import deepcopy
 from heapq import nsmallest
@@ -1702,7 +1704,8 @@ class DataModel:
         # return [tuple(map(tuple, x)) for x in self.cafm_list(s=s,end=end)]
         # return hash(str(self.cafm_list(s=s,end=end)))
         try:
-            return hash(str(self.cafm(s=s, l=end)))
+            # return hash(str(self.cafm(s=s, l=end)))
+            return hashstring(str(self.cafm(s=s, l=end)))
         except:
             caller = inspect.stack()[1].function
             print_exception(extra=f'end={end}, caller: {caller}')
@@ -2738,6 +2741,22 @@ class StripNullFields:
                 else:
                     result[k] = v
         return result
+
+
+def hashstring(text:str):
+  hash=0
+  for ch in text:
+    hash = ( hash*281  ^ ord(ch)*997) & 0xFFFFFFFF
+  return hash
+
+def dict_hash(dictionary: Dict[str, Any]) -> str:
+    """Returns an MD5 hash of a Python dictionary. source:
+    www.doc.ic.ac.uk/~nuric/coding/how-to-hash-a-dictionary-in-python.html"""
+    dhash = hashlib.md5()
+    encoded = json.dumps(dictionary, sort_keys=True).encode()
+    dhash.update(encoded)
+    return dhash.hexdigest()
+
 
 
 if __name__ == '__main__':
