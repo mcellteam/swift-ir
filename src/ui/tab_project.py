@@ -1708,66 +1708,7 @@ class ProjectTab(QWidget):
         self.comboNgLayout.activated.connect(self.onNgLayoutCombobox)
         self.comboNgLayout.setCurrentText(getData('state,ng_layout'))
 
-        # self.ngcl_background = NgClickLabel(self)
-        self.ngcl_background = QToolButton()
-        self.ngcl_background.setCheckable(True)
-        self.ngcl_background.setText('Background')
-        self.ngcl_background.setToolTip('Toggle Background')
 
-        # if getData('state,neutral_contrast'):
-        #     self.ngcl_background.setStyleSheet("""background: #808080; color: #f3f6fb;
-        #                 border-radius: 3px; padding: 2px; margin: 0px; border-color: #339933;""")
-        # else:
-        #     self.ngcl_background.setStyleSheet("""background: #222222; color: #f3f6fb;
-        #                 border-radius: 3px; padding: 2px; margin: 0px; border-color: #339933;""")
-
-        def fn():
-            setData('state,neutral_contrast', not getData('state,neutral_contrast'))
-            [v.updateHighContrastMode() for v in self.get_viewers()]
-
-            # if getData('state,neutral_contrast'):
-            #     self.ngcl_background.setStyleSheet("""background: #808080; color: #f3f6fb;
-            #             border-radius: 3px; padding: 2px; margin: 0px; border-color: #339933;""")
-            # else:
-            #     self.ngcl_background.setStyleSheet("""background: #222222; color: #f3f6fb;
-            #             border-radius: 3px; padding: 2px; margin: 0px; border-color: #339933;""")
-
-        self.ngcl_background.clicked.connect(fn)
-        self.ngcl_background.setToolTip('Neuroglancer background setting')
-
-        # self.toolbarLabelsWidget = HWidget()
-        # self.toolbarLabelsWidget.layout.setSpacing(2)
-        # self.toolbarLabelsWidget.addWidget(self.aligned_label)
-        # self.toolbarLabelsWidget.addWidget(self.unaligned_label)
-        # self.toolbarLabelsWidget.addWidget(self.generated_label)
-
-        toolbar_style = """
-        QToolBar {
-            background-color: #222222;
-            color: #f3f6fb;
-            font-size: 9px;
-        }
-        QToolButton {
-            background-color: #1b1e23;
-            color: #f3f6fb;
-            border-radius: 3px;
-            padding: 0px;
-            border: 1px solid #808080;
-            margin: 1px;
-            height: 9px;
-        }
-        QToolButton::checked {
-            background: #339933;
-            color: #f3f6fb;
-            border-radius: 3px;
-            padding: 0px;
-            margin: 1px;
-        }
-        QToolButton:hover {
-            border: 1px solid #339933;
-            color: #f3f6fb;
-        }
-        """
 
         self.lab_filename = QLabel('Filename')
         self.lab_filename.setStyleSheet("""background-color: #222222; color: #ede9e8; font-weight: 600; font-size: 10px;""")
@@ -1784,12 +1725,7 @@ class ProjectTab(QWidget):
 
         logger.info("Setting NG extended toolbar...")
 
-        self.w_ng_extended_toolbar = QToolBar()
-        self.w_ng_extended_toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        # self.w_ng_extended_toolbar.setIconSize(QSize(18, 18))
-        self.w_ng_extended_toolbar.setFixedHeight(24)
-        self.w_ng_extended_toolbar.setStyleSheet(toolbar_style)
-        self.w_ng_extended_toolbar.setAutoFillBackground(True)
+
 
         # self.labShowHide = QLabel('Display: ')
         # self.labShowHide.setStyleSheet("""color: #ede9e8; font-weight: 600; font-size: 10px;""")
@@ -1871,9 +1807,9 @@ class ProjectTab(QWidget):
                 self.ngcl_shader.setToolTip('Show Brightness & Contrast Shaders')
             else:
                 self.contrastSlider.setValue(int(cfg.data.contrast))
-                self.contrastLE.setText('%.2f' % cfg.data.contrast)
+                self.contrastLE.setText('%d' % cfg.data.contrast)
                 self.brightnessSlider.setValue(int(cfg.data.brightness))
-                self.brightnessLE.setText('%.2f' % cfg.data.brightness)
+                self.brightnessLE.setText('%d' % cfg.data.brightness)
                 self.initNeuroglancer() #Critical #Cringe #guarantees sliders will work
                 self.shaderToolbar.show()
                 self.ngcl_shader.setToolTip('Hide Brightness & Contrast Shaders')
@@ -1912,6 +1848,34 @@ class ProjectTab(QWidget):
 
         self.tbbBlinkToggle.clicked.connect(blink_main_fn)
 
+        # self.ngcl_background = NgClickLabel(self)
+        self.ngcl_background = QToolButton()
+        self.ngcl_background.setCheckable(True)
+        self.ngcl_background.setText('Background')
+        self.ngcl_background.setToolTip('Toggle Background')
+
+        # if getData('state,neutral_contrast'):
+        #     self.ngcl_background.setStyleSheet("""background: #808080; color: #f3f6fb;
+        #                 border-radius: 3px; padding: 2px; margin: 0px; border-color: #339933;""")
+        # else:
+        #     self.ngcl_background.setStyleSheet("""background: #222222; color: #f3f6fb;
+        #                 border-radius: 3px; padding: 2px; margin: 0px; border-color: #339933;""")
+
+        def fn():
+            setData('state,neutral_contrast', not getData('state,neutral_contrast'))
+            [v.updateHighContrastMode() for v in self.get_viewers()]
+
+            # if getData('state,neutral_contrast'):
+            #     self.ngcl_background.setStyleSheet("""background: #808080; color: #f3f6fb;
+            #             border-radius: 3px; padding: 2px; margin: 0px; border-color: #339933;""")
+            # else:
+            #     self.ngcl_background.setStyleSheet("""background: #222222; color: #f3f6fb;
+            #             border-radius: 3px; padding: 2px; margin: 0px; border-color: #339933;""")
+
+        self.ngcl_background.clicked.connect(fn)
+        self.ngcl_background.setToolTip('Neuroglancer background setting')
+
+
         # ----------------
         # widgets to gain insight into Neuroglancer state
 
@@ -1947,6 +1911,10 @@ class ProjectTab(QWidget):
 
         # ----------------
 
+        self.w_ng_extended_toolbar = QToolBar()
+        self.w_ng_extended_toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.w_ng_extended_toolbar.setFixedHeight(24)
+        self.w_ng_extended_toolbar.setAutoFillBackground(True)
 
         self.w_ng_extended_toolbar.addWidget(self.labNgLayout)
         self.w_ng_extended_toolbar.addWidget(self.comboNgLayout)
@@ -1966,6 +1934,60 @@ class ProjectTab(QWidget):
         self.w_ng_extended_toolbar.addWidget(self.ngcl_axes)
         # self.w_ng_extended_toolbar.addWidget(self.ngcl_snr)
         self.w_ng_extended_toolbar.addWidget(self.ngcl_background)
+
+        toolbar_style = """
+                       QToolBar {
+                           background-color: #222222;
+                           color: #f3f6fb;
+                           font-size: 9px;
+                       }
+                       QToolButton {
+                           background-color: #1b1e23;
+                           color: #f3f6fb;
+                           border-radius: 3px;
+                           padding: 0px;
+                           border: 1px solid #808080;
+                           margin: 1px;
+                           height: 9px;
+                       }
+                       QToolButton::checked {
+                           background: #339933;
+                           color: #f3f6fb;
+                           border-radius: 3px;
+                           padding: 0px;
+                           margin: 1px;
+                       }
+                       QToolButton:hover {
+                           border: 1px solid #339933;
+                           color: #f3f6fb;
+                       }
+                       """
+        toolbar_style2 = """
+                               QToolBar {
+                                   background-color: #222222;
+                                   color: #f3f6fb;
+                                   font-size: 10px;
+                               }
+                               QToolButton {
+                                   border-radius: 3px;
+                                   color: #f3f6fb;
+                                   height: 9px;
+                                   font-size: 10px;
+                                   margine: 1px;
+                                   padding: 1px;
+                               }
+                               QToolButton::checked {
+                                   border: 1px solid #339933;
+                                   color: #f3f6fb;
+                               }
+                               QToolButton:hover {
+                                   border: 1px solid #339933;
+                                   color: #f3f6fb;
+                               }
+                               """
+        self.w_ng_extended_toolbar.setStyleSheet(toolbar_style2)
+
+
 
         self.sideSliders = VWidget(self.ZdisplaySliderAndLabel, self.zoomSliderAndLabel)
         self.sideSliders.setFixedWidth(16)
@@ -3692,10 +3714,10 @@ class ProjectTab(QWidget):
         color: #141414;
         background: #dadada;
         }""")
-        self.brightnessLE.setText('0')
+        self.brightnessLE.setText('%d' % cfg.data.brightness)
         # self.brightnessLE.setValidator(QDoubleValidator(-1.0, 1.0, 2))
         self.brightnessLE.setValidator(QIntValidator(-100, 100))
-        self.brightnessLE.setFixedWidth(50)
+        self.brightnessLE.setFixedWidth(40)
         self.brightnessLE.setFixedHeight(16)
         # def fn():
         #     caller = inspect.stack()[1].function
@@ -3716,7 +3738,7 @@ class ProjectTab(QWidget):
         # self.brightnessSlider.setMaximum(100)
         # self.brightnessSlider.setRange(-1.0, 1.0)
         self.brightnessSlider.setRange(-100, 100)
-        self.brightnessSlider.setValue(0)
+        self.brightnessSlider.setValue(cfg.data.brightness)
         self.brightnessSlider.valueChanged.connect(self.fn_brightness_control)
         self.brightnessSlider.valueChanged.connect(cfg.main_window._callbk_unsavedChanges)
         # self.brightnessSlider.valueChanged.connect(
@@ -3731,10 +3753,10 @@ class ProjectTab(QWidget):
         color: #141414;
         background: #dadada;
         }""")
-        self.contrastLE.setText('0')
+        self.contrastLE.setText('%d' % cfg.data.contrast)
         # self.contrastLE.setValidator(QDoubleValidator(-1.0, 1.0, 2))
         self.contrastLE.setValidator(QIntValidator(-100, 100))
-        self.contrastLE.setFixedWidth(50)
+        self.contrastLE.setFixedWidth(40)
         self.contrastLE.setFixedHeight(16)
         self.contrastLE.textChanged.connect(
             lambda: self.contrastSlider.setValue(int(self.contrastLE.text())))
@@ -3752,7 +3774,7 @@ class ProjectTab(QWidget):
         # self.contrastSlider.setMaximum(100)
         # self.contrastSlider.setRange(-1.0, 1.0)
         self.contrastSlider.setRange(-100, 100)
-        self.contrastSlider.setValue(0)
+        self.contrastSlider.setValue(cfg.data.contrast)
         # self.contrastSlider.setSingleStep(.02)
         # self.contrastSlider.setSingleStep(0.01)
         self.contrastSlider.valueChanged.connect(self.fn_contrast_control)
@@ -3767,10 +3789,10 @@ class ProjectTab(QWidget):
         self.bcWidget = HWidget(self.brightnessWidget, QLabel('  '), self.contrastWidget)
 
         self.shaderToolbar = QToolBar()
-        self.shaderToolbar.setFixedHeight(24)
+        self.shaderToolbar.setFixedHeight(26)
 
         self.shaderToolbar.setStyleSheet("""background-color: #222222; color: #f3f6fb; font-size: 9px;""")
-        self.shaderToolbar.addWidget(ExpandingWidget(self))
+        # self.shaderToolbar.addWidget(ExpandingWidget(self))
         self.shaderToolbar.addWidget(self.bcWidget)
         self.shaderToolbar.addWidget(self.shaderSideButtons)
         self.shaderToolbar.addWidget(ExpandingWidget(self))
