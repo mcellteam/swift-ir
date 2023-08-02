@@ -855,6 +855,8 @@ class MainWindow(QMainWindow):
 
 
     def setdw_matches(self, state):
+        caller = inspect.stack()[1].function
+        logger.critical(f"[{caller}]")
         self.dw_matches.setVisible(state)
         self.dw_matches.setVisible(self.tbbMatches.isChecked())
         tip1 = '\n'.join(f"Show Matches and Signals Tool Window ({hotkey('M')})")
