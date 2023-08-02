@@ -167,6 +167,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
                 if ss['include'] and (zpos != first_unskipped):
                     tasks.append(copy.deepcopy(sec['alignment']))
+                else:
+                    logger.info(f"EXCLUDING section #{zpos}")
             # else:
             #     logger.info(f"Dropping task for {zpos}")
 

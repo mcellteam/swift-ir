@@ -441,9 +441,10 @@ def InitCafm(bias_funcs):
     return c_afm_init
 
 
-def SetSingleCafm(layer_dict, c_afm, bias_mat=None):
+def SetSingleCafm(layer_dict, c_afm, bias_mat=None, method='grid-default'):
     '''Calculate and set the value of the cafm (with optional bias) for a single layer_dict item'''
     atrm = layer_dict['alignment']
+    atrm_new = layer_dict['alignment_history'][method]
 
     try:
         if layer_dict['alignment']['swim_settings']['include']:
@@ -454,13 +455,14 @@ def SetSingleCafm(layer_dict, c_afm, bias_mat=None):
         logger.warning('SetSingleCafm triggered an exception Empty affine_matrix in base image, skipping: '
                        '%s' % (layer_dict['filename']))
         afm = identityAffine()
-        atrm['method_results']['affine_matrix'] = afm.tolist()
+        # atrm['method_results']['affine_matrix'] = afm.tolist() #0802-
     c_afm = np.array(c_afm)
     c_afm = composeAffine(afm, c_afm)
     # Apply bias_mat if given
     if type(bias_mat) != type(None):
         c_afm = composeAffine(bias_mat, c_afm)
     atrm['method_results']['cumulative_afm'] = c_afm.tolist()
+    atrm_new['method_results']['cumulative_afm'] = c_afm.tolist()
 
     # logger.info('Returning c_afm: %s' % format_cafm(c_afm))
 
@@ -491,7 +493,8 @@ def SetStackCafm(iterator, scale, poly_order=None):
         for i, layer in enumerate(cfg.data.get_iter(scale)):
             if use_poly:
                 bias_mat = BiasMat(i, bias_funcs)
-            c_afm = SetSingleCafm(layer, c_afm, bias_mat=bias_mat) # <class 'numpy.ndarray'>
+            c_afm = SetSingleCafm(layer, c_afm, bias_mat=bias_mat, method=layer['current_method']) # <class
+            # 'numpy.ndarray'>
 
         if bi < bias_iters - 1:
             bias_funcs = BiasFuncs(cfg.data.get_iter(scale), bias_funcs=bias_funcs, poly_order=poly_order)
