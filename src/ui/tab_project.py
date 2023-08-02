@@ -145,6 +145,8 @@ class ProjectTab(QWidget):
             self.updateDetailsPanel()
             self.updateTimingsWidget()
             self.update_MA_list_widgets() #0726+
+            self.set_reference() #0802+
+            self.set_transforming() #0802+
 
         elif index == 2:
             self.project_table.table.selectRow(cfg.data.zpos)
@@ -612,10 +614,10 @@ class ProjectTab(QWidget):
             self.updateAnnotations()
 
 
-        self.MA_settings_defaults_button = QPushButton('Use Defaults')
+        self.MA_settings_defaults_button = QPushButton('Reset to Defaults')
         self.MA_settings_defaults_button.setStyleSheet("font-size: 10px;")
         # self.MA_settings_defaults_button.setMaximumSize(QSize(100, 18))
-        self.MA_settings_defaults_button.setFixedSize(QSize(68, 16))
+        self.MA_settings_defaults_button.setFixedSize(QSize(90, 16))
         self.MA_settings_defaults_button.clicked.connect(fn)
 
         def fn():
@@ -953,7 +955,9 @@ class ProjectTab(QWidget):
                     self.tn_tra.update()
                 cfg.mw.updateCorrSignalsDrawer()
                 cfg.mw.setTargKargPixmaps()
-            cfg.main_window.statusBar.showMessage(f'Manual Alignment Option Set To: {cfg.data.current_method}')
+                if cfg.mw.dw_snr.isVisible():
+                    cfg.project_tab.dSnr_plot.initSnrPlot()
+                cfg.main_window.statusBar.showMessage(f'Manual Alignment Option Set To: {cfg.data.current_method}')
 
         # self.rb_MA_hint = QRadioButton('Hint')
         # self.rb_MA_strict = QRadioButton('Strict')
@@ -1342,6 +1346,8 @@ class ProjectTab(QWidget):
                 else:
                     cfg.data.current_method = 'manual-hint'
                     self.rb_MA_hint.setChecked(True)
+            if cfg.mw.dw_snr.isVisible():
+                cfg.project_tab.dSnr_plot.initSnrPlot()
             cfg.mw.setTargKargPixmaps()
             # elif cur_index == 4:
             #     self.MA_stackedWidget.setCurrentIndex(4)
@@ -2435,11 +2441,15 @@ class ProjectTab(QWidget):
 
 
     def set_reference(self):
+
         if cfg.data.skipped():
             cfg.mw.warning('This section does not have a reference because it is excluded.')
             self.set_transforming()
             return
         logger.info('')
+
+        self.setUpdatesEnabled(False)
+
         cfg.data['state']['tra_ref_toggle'] = 0
         self.cl_ref.setChecked(True)
         self.cl_tra.setChecked(False)
@@ -2449,9 +2459,15 @@ class ProjectTab(QWidget):
         self.sw_alignment_editor.setCurrentIndex(0)
         self.updateAnnotations()
 
+        self.setUpdatesEnabled(True)
+
 
     def set_transforming(self):
         logger.info('')
+
+
+        self.setUpdatesEnabled(False)
+
         cfg.data['state']['tra_ref_toggle'] = 1
         self.cl_tra.setChecked(True)
         self.cl_ref.setChecked(False)
@@ -2460,6 +2476,8 @@ class ProjectTab(QWidget):
         cfg.baseViewer.set_layer(cfg.data.zpos)
         self.sw_alignment_editor.setCurrentIndex(1)
         self.updateAnnotations()
+
+        self.setUpdatesEnabled(True)
 
     def fn_hwidgetChanged(self):
         # logger.critical('')
