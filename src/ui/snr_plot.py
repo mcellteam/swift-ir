@@ -148,35 +148,6 @@ class SnrPlot(QWidget):
 
 
 
-        # a = pg.AxisItem('bottom', pen=None, linkView=None, parent=None, maxTickLength=-5, showValues=True)
-        # labelStyle = {'color': '#FFF', 'font-size': '14pt'}
-        # a.setLabel('label text', units='V', **labelStyle)
-        # # pg.PlotWidget(axisItems={'bottom': FmtAxisItem(orientation='bottom')})
-        # # date_axis = pg.graphicsItems.DateAxisItem.DateAxisItem(orientation='bottom')
-        # # self.plot.setAxisItems(axisItems={'bottom': date_axis})
-        # # axisItems = {'left': FmtAxisItem(orientation='left')}
-        # # self.plot.setAxisItems(axisItems={'bottom': axisItems})
-        # plt = self.plot
-        # axes = plt.gca()
-        # axes.set_ylim([0, 30000])
-        # plt.ylabel('Average distance (m)', fontsize=8)
-        # plt.xlabel('GPS sample interval (s)', fontsize=8)
-        # plt.tick_params(axis='x', which='major', labelsize=8)
-        # plt.tick_params(axis='y', which='major', labelsize=8)
-        # plt.xticks(rotation=90)
-        # plt.suptitle('')
-        # my_xticks = [0.25, 0.5, 1, 2, 5, 10, 20, 30, 60, 120, 300, 600, 1200, 1800, 2400,
-        #              3000, 3600, 7200, 10800, 14400, 18000, 21600, 25200, 28800]
-        # x = np.array(np.arange(0, len(my_xticks), 1))
-        #
-        # plt.xticks(np.arange(x.min(), x.max(), 5))
-        # plt.xticks(x, my_ticks)
-
-
-        # self.plot.scene().sigMouseClicked.connect(self.mouse_clicked)
-
-
-
     def updateLayerLinePos(self):
         caller = inspect.stack()[1].function
         # logger.info(f'caller={caller}')
@@ -193,7 +164,6 @@ class SnrPlot(QWidget):
                 lab = 'SNR: %.2g' % cfg.data.snr()
             else:
                 lab = 'SNR: %.3g\n%s' % (cfg.data.snr(), cfg.data.scale_pretty())
-            # logger.info(f'lab = {lab}')
             self._snr_label.setText(lab)
 
             if not self.dock:
@@ -225,7 +195,8 @@ class SnrPlot(QWidget):
                 labelOpts={'position': .1, 'color': (255, 225, 53), 'fill': (200, 200, 200, 50), 'movable': True}
             )
             self._mp_lines.append(line)
-            label = pg.InfLineLabel(line, f'Manual Align', position=0.32, color='#32CD32',rotateAxis=(1, 0), anchor=(.8, 1))
+            label = pg.InfLineLabel(line, f'Manual', position=0.32, color='#32CD32',rotateAxis=(1, 0),
+                                    anchor=(.8, 1))
             self._mp_labels.append(label)
             line.setPos([layer[0] + offset, 1])
             self.plot.addItem(line)

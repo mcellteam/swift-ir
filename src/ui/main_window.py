@@ -305,6 +305,7 @@ class MainWindow(QMainWindow):
             cfg.data.zpos = z
 
             if not cfg.data['state']['tra_ref_toggle']:
+                cfg.pt.set_reference() #0802+
                 cfg.pt.set_transforming()
 
             #????????
@@ -386,6 +387,8 @@ class MainWindow(QMainWindow):
                 self.updateEnabledButtons()  # 0301+
                 # self.updateAllCpanelDetails()
                 self.setControlPanelData()
+                if self.dw_snr.isVisible():
+                    cfg.project_tab.dSnr_plot.initSnrPlot()
             elif self._isOpenProjTab():
                 # configure_project_paths()
                 self._getTabObject().user_projects.set_data()
@@ -394,6 +397,11 @@ class MainWindow(QMainWindow):
             elif self._getTabType() == 'QWebEngineView':
                 self.globTabs.currentWidget().reload()
             self.hud.done()
+
+            if not self._isProjectTab():
+                self.dw_thumbs.setWidget(NullWidget())
+                self.dw_matches.setWidget(NullWidget())
+                self.dw_snr.setWidget(NullWidget())
         else:
             self.warn('The application is busy')
             logger.warning('The application is busy')
@@ -1768,7 +1776,6 @@ class MainWindow(QMainWindow):
 
 
         '''Reads Project Data to Update MainWindow.'''
-        # logger.info('')
 
         # caller = inspect.stack()[1].function
         # if DEV:
@@ -1785,25 +1792,6 @@ class MainWindow(QMainWindow):
             return
 
         # cfg.project_tab._overlayLab.hide()
-        # logger.info('')
-
-        # logger.info(f">>>> dataUpdateWidgets [{caller}] zpos={cfg.data.zpos} requested={ng_layer} >>>>")
-        # self.count_calls.setdefault('dupw', {})
-        # self.count_calls[].setdefault(caller, {})
-        # self.count_calls['dupw'][caller].setdefault('total_count',0)
-        # self.count_calls['dupw'][caller].setdefault('same_count',0)
-        # self.count_calls['dupw'][caller].setdefault('diff_count',0)
-        # self.count_calls['dupw'][caller].setdefault('none_count',0)
-        # self.count_calls['dupw'][caller]['total_count'] += 1
-        # if ng_layer == None:
-        #     self.count_calls['dupw'][caller]['none_count'] += 1
-        # elif cfg.data.zpos == ng_layer:
-        #     self.count_calls['dupw'][caller]['same_count'] += 1
-        # elif cfg.data.zpos != ng_layer:
-        #     self.count_calls['dupw'][caller]['diff_count'] += 1
-
-
-        # timer.report() #0
 
         if self._isProjectTab():
             cfg.CancelProcesses = False #0720+ probably a necessary precaution until something better
@@ -2041,296 +2029,10 @@ class MainWindow(QMainWindow):
             self._btn_alignForward.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         # timer.stop() #7
         # logger.info(f'<<<< dataUpdateWidgets [{caller}] zpos={cfg.data.zpos} <<<<')
-
-        self.setFocus()
-
-
-    async def _dataUpdateWidgets(self):
-
-        '''Reads Project Data to Update MainWindow.'''
-        # logger.info('')
-
-        # caller = inspect.stack()[1].function
-        # if DEV:
-        #     logger.info(f'{caller_name()}')
-        # logger.critical(f'dataUpdateWidgets [caller: {caller}] [sender: {self.sender()}]...')
-        # if getData('state,blink'):
-        #     return
-
-        if self._working:
-            logger.warning("Busy working! Not going to update the interface rn.")
-
-        if not self._isProjectTab():
-            logger.warning('No Current Project Tab!')
-            return
-
-        # cfg.project_tab._overlayLab.hide()
-        # logger.info('')
-
-        # logger.info(f">>>> dataUpdateWidgets [{caller}] zpos={cfg.data.zpos} requested={ng_layer} >>>>")
-        # self.count_calls.setdefault('dupw', {})
-        # self.count_calls[].setdefault(caller, {})
-        # self.count_calls['dupw'][caller].setdefault('total_count',0)
-        # self.count_calls['dupw'][caller].setdefault('same_count',0)
-        # self.count_calls['dupw'][caller].setdefault('diff_count',0)
-        # self.count_calls['dupw'][caller].setdefault('none_count',0)
-        # self.count_calls['dupw'][caller]['total_count'] += 1
-        # if ng_layer == None:
-        #     self.count_calls['dupw'][caller]['none_count'] += 1
-        # elif cfg.data.zpos == ng_layer:
-        #     self.count_calls['dupw'][caller]['same_count'] += 1
-        # elif cfg.data.zpos != ng_layer:
-        #     self.count_calls['dupw'][caller]['diff_count'] += 1
-
-
-        # timer.report() #0
-
-        if self._isProjectTab():
-            cfg.CancelProcesses = False #0720+ probably a necessary precaution until something better
-
-
-            # if 'viewer_em' in str(self.sender()):
-            #     if not silently:
-            #         # if cfg.pt.ms_widget.isVisible():
-            #         #     self.updateCorrSignalsDrawer()
-            #         if self.uiUpdateTimer.isActive():
-            #             logger.info('Delaying UI Update...')
-            #             return
-            #         else:
-            #             logger.critical('Updating UI...')
-            #             self.uiUpdateTimer.start()
-            #             # QTimer.singleShot(300, lambda: logger.critical('\n\nsingleShot dataUpdateWidget...\n'))
-            #             # QTimer.singleShot(300, self.dataUpdateWidgets)
-
-            #CriticalMechanism
-            if 'viewer_em.WorkerSignals' in str(self.sender()):
-                timerActive = self.uiUpdateTimer.isActive()
-                # logger.critical(f"uiUpdateTimer active? {timerActive}")
-                if self.uiUpdateTimer.isActive():
-                    # logger.info('Delaying UI Update [viewer_em.WorkerSignals]...')
-                    return
-                else:
-                    self.uiUpdateTimer.start()
-                    logger.info('Updating UI on timeout...')
-
-            if cfg.data.skipped():
-                # cfg.project_tab._overlayRect.setStyleSheet('background-color: rgba(0, 0, 0, 0.5);')
-                txt = '\n'.join(textwrap.wrap('EXCLUDED: %s' % cfg.data.name_base(), width=35))
-                cfg.project_tab._overlayLab.setText(txt)
-                cfg.project_tab._overlayLab.show()
-            else:
-                cfg.project_tab._overlayLab.hide()
-
-            if cfg.data.skipped():
-                cfg.project_tab._overlayLab.show()
-                self.tell("Exclude: %s" % cfg.data.name_base())
-                if self.dw_thumbs.isVisible():
-                    cfg.project_tab.tn_ref.hide()
-                    cfg.project_tab.tn_ref_lab.hide()
-                    cfg.project_tab.tn_tra_overlay.show()
-            else:
-                cfg.project_tab._overlayLab.hide()
-                if self.dw_thumbs.isVisible():
-                    cfg.project_tab.tn_ref.show()
-                    cfg.project_tab.tn_ref_lab.show()
-                    cfg.project_tab.tn_tra_overlay.hide()
-
-
-            cur = cfg.data.zpos
-
-            try:    self._jumpToLineedit.setText(str(cur))
-            except: logger.warning('Current Layer Widget Failed to Update')
-            try:    self._sectionSlider.setValue(cur)
-            except: logger.warning('Section Slider Widget Failed to Update')
-            try:    self._skipCheckbox.setChecked(not cfg.data.skipped())
-            except: logger.warning('Skip Toggle Widget Failed to Update')
-            self._btn_prevSection.setEnabled(cur > 0)
-            self._btn_nextSection.setEnabled(cur < len(cfg.data) - 1)
-
-            # try:
-            #     delay_list = ('z-index-left-button', 'z-index-right-button', 'z-index-slider')
-            #     # if ('viewer_em' in str(self.sender()) or (self.sender().objectName() in delay_list)):
-            #     if ('viewer_em' in str(self.sender()) or (self.sender().objectName() in delay_list)):
-            #         if self.uiUpdateTimer.isActive():
-            #             logger.info('Delaying UI Update...')
-            #             self.uiUpdateTimer.start()
-            #             return
-            #         else:
-            #             logger.critical('Updating UI...')
-            #             self.uiUpdateTimer.start()
-            # except:
-            #     print_exception()
-
-
-            # if self._working == True:
-            #     logger.warning(f"Can't update GUI now - working (caller: {caller})...")
-            #     self.warn("Can't update GUI now - working...")
-            #     return
-
-            # if isinstance(ng_layer, int):
-            #     if type(ng_layer) != bool:
-            #         try:
-            #             if 0 <= ng_layer < len(cfg.data):
-            #                 logger.info(f'  Setting Z-index: {ng_layer} current Z-index:{cfg.data.zpos} [{caller}]')
-            #                 cfg.data.zpos = ng_layer
-            #                 # self._sectionSlider.setValue(ng_layer)
-            #         except:
-            #             print_exception()
-
-            if self.dw_thumbs.isVisible():
-                if cfg.data.skipped():
-                    # cfg.project_tab._overlayRect.setStyleSheet('background-color: rgba(0, 0, 0, 0.5);')
-                    cfg.project_tab.tn_tra_overlay.show()
-                    cfg.project_tab.tn_ref.hide()
-                    # cfg.project_tab._overlayRect.show()
-                else:
-                    cfg.project_tab.tn_ref.show()
-
-
-            if self.dw_matches.isVisible():
-                self.updateCorrSignalsDrawer()
-                self.setTargKargPixmaps()
-
-
-            if self.dw_thumbs.isVisible():
-                try:
-                    assert os.path.exists(cfg.data.thumbnail_ref())
-                    # cfg.pt.tn_ref.selectPixmap(path=cfg.data.thumbnail_ref())
-                    cfg.pt.tn_ref.set_data(path=cfg.data.thumbnail_ref())
-                    assert os.path.exists(cfg.data.thumbnail_tra())
-                    # cfg.pt.tn_tra.selectPixmap(path=cfg.data.thumbnail_tra())
-                    cfg.pt.tn_tra.set_data(path=cfg.data.thumbnail_tra())
-
-                except:
-                    cfg.pt.tn_ref.set_no_image()
-                    cfg.pt.tn_tra.set_no_image()
-                    print_exception()
-
-            cfg.pt.lab_filename.setText(f"[{cfg.data.zpos}] Name: {cfg.data.filename_basename()} - {cfg.data.scale_pretty()}")
-
-            if self.dw_thumbs.isVisible():
-                cfg.pt.tn_tra_lab.setText(f'Transforming Section (Thumbnail)\n'
-                                          f'[{cfg.data.zpos}] {cfg.data.filename_basename()}')
-                try:
-                    cfg.pt.tn_ref_lab.setText(f'Reference Section (Thumbnail)\n'
-                                              f'[{cfg.data.get_ref_index()}] {cfg.data.reference_basename()}')
-                except:
-                    cfg.pt.tn_ref_lab.setText(f'Reference Section (Thumbnail)')
-
-            if cfg.pt._tabs.currentIndex() == 1:
-                # cl_tra
-                cfg.pt.cl_tra.setText(f'[{cfg.data.zpos}] {cfg.data.filename_basename()} (Transforming)')
-                if cfg.data.skipped():
-                    cfg.pt.cl_tra.setText(f'[{cfg.data.zpos}] {cfg.data.filename_basename()} (Transforming)')
-                    cfg.pt.cl_ref.setText(f'--')
-                else:
-                    try:
-                        cfg.pt.cl_ref.setText(f'[{cfg.data.get_ref_index()}] {cfg.data.reference_basename()} (Reference)')
-                    except:
-                        cfg.pt.cl_ref.setText(f'Null (Reference)')
-
-
-
-
-            img_siz = cfg.data.image_size()
-            self.statusBar.showMessage(cfg.data.scale_pretty() + ', ' +
-                                       'x'.join(map(str, img_siz)) + ', ' +
-                                       cfg.data.name_base())
-
-            if cfg.data['state']['current_tab'] == 1:
-                cfg.project_tab.dataUpdateMA()
-                if not cfg.data.cafm_hash_comports() and cfg.data.is_aligned_and_generated():
-                    cfg.pt.warning_cafm.show()
-                else:
-                    cfg.pt.warning_cafm.hide()
-
-            if self.notes.isVisible():
-                self.updateNotes()
-
-            #Todo come back to how to make this work without it getting stuck in a loop
-            # if cfg.project_tab._tabs.currentIndex() == 2:
-            #     cfg.project_tab.project_table.table.selectRow(cur)
-
-            if cfg.project_tab._tabs.currentIndex() == 3:
-                cfg.project_tab.treeview_model.jumpToLayer()
-
-            if cfg.project_tab._tabs.currentIndex() == 4:
-                cfg.project_tab.snr_plot.updateLayerLinePos()
-
-            if self.dw_snr.isVisible():
-                cfg.project_tab.dSnr_plot.updateLayerLinePos()
-
-
-            br = '&nbsp;'
-            a = """<span style='color: #ffe135;'>"""
-            b = """</span>"""
-            nl = '<br>'
-
-            if cfg.pt.secDetails_w.isVisible():
-                cfg.pt.secName.setText(cfg.data.filename_basename())
-                ref = cfg.data.reference_basename()
-                if ref == '':
-                    ref = 'None'
-                cfg.pt.secReference.setText(ref)
-                cfg.pt.secAlignmentMethod.setText(cfg.data.method_pretty())
-                if cfg.data.snr() == 0:
-                    cfg.pt.secSNR.setText('--')
-                else:
-                    cfg.pt.secSNR.setText(
-                        '<span style="color: #a30000;"><b>%.2f</b></span><span>&nbsp;&nbsp;(%s)</span>' % (
-                        cfg.data.snr(), ",  ".join(["%.2f" % x for x in cfg.data.snr_components()])))
-
-            if cfg.pt._tabs.currentIndex() == 1:
-                cfg.pt.secAffine.setText(make_affine_widget_HTML(cfg.data.afm(), cfg.data.cafm()))
-
-            if cfg.project_tab.detailsSNR.isVisible():
-                if (cfg.data.zpos == 0) or cfg.data.skipped() or cfg.data.snr() == 0:
-                    cfg.project_tab.detailsSNR.setText(
-                        f"Avg. SNR{br * 2}: N/A{nl}"
-                        f"Prev.{br}SNR{br}: N/A{nl}"
-                        f"Components{nl}"
-                        f"Top,Left{br * 2}: N/A{nl}"
-                        f"Top,Right{br}: N/A{nl}"
-                        f"Btm,Left{br * 2}: N/A{nl}"
-                        f"Btm,Right{br}: N/A"
-                    )
-                else:
-                    try:
-                        components = cfg.data.snr_components()
-                        str0 = ('%.3f' % cfg.data.snr()).rjust(9)
-                        str1 = ('%.3f' % cfg.data.snr_prev()).rjust(9)
-                        if cfg.data.method() in ('grid-default', 'grid-custom'):
-                            q0 = ('%.3f' % components[0]).rjust(9)
-                            q1 = ('%.3f' % components[1]).rjust(9)
-                            q2 = ('%.3f' % components[2]).rjust(9)
-                            q3 = ('%.3f' % components[3]).rjust(9)
-                            cfg.project_tab.detailsSNR.setText(
-                                f"Avg. SNR{br * 2}:{a}{str0}{b}{nl}"
-                                f"Prev.{br}SNR{br}:{str1}{nl}"
-                                f"Components{nl}"
-                                f"Top,Left{br * 2}:{q0}{nl}"
-                                f"Top,Right{br}:{q1}{nl}"
-                                f"Btm,Left{br * 2}:{q2}{nl}"
-                                f"Btm,Right{br}:{q3}"
-                            )
-                        elif cfg.data.method() in ('manual-hint', 'manual-strict'):
-                            txt = f"Avg. SNR{br * 2}:{a}{str0}{b}{nl}" \
-                                  f"Prev. SNR{br}:{str1}{nl}" \
-                                  f"Components"
-                            for i in range(len(components)):
-                                txt += f'{nl}%d:{br * 10}%.3f' % (i, components[i])
-
-                            cfg.project_tab.detailsSNR.setText(txt)
-                    except:
-                        print_exception()
-
-            # self._btn_alignOne.setText('Re-Align Section #%d' %cfg.data.zpos)
-            tip = f"""Compute alignment and generate new image for section #{cfg.data.zpos} only"""
-            self._btn_alignOne.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-            tip = f"""Compute alignment and generate new images for sections in range #{cfg.data.zpos} to #{cfg.data.count}"""
-            self._btn_alignForward.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        # timer.stop() #7
-        # logger.info(f'<<<< dataUpdateWidgets [{caller}] zpos={cfg.data.zpos} <<<<')
+        else:
+            self.dw_thumbs.setWidget(NullWidget())
+            self.dw_matches.setWidget(NullWidget())
+            self.dw_snr.setWidget(NullWidget())
 
         self.setFocus()
 
