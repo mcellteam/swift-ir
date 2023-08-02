@@ -2301,9 +2301,9 @@ class ProjectTab(QWidget):
         def update_recipe_logging():
             logger.info('')
             b = self.cb_recipe_logging.isChecked()
-            cfg.RECIPE_LOGGING = int(b)
+            cfg.LOG_RECIPE_TO_FILE = int(b)
             cfg.main_window.tell(f"Recipe logging is now set to: {b}")
-        self.cb_recipe_logging.setChecked(cfg.RECIPE_LOGGING)
+        self.cb_recipe_logging.setChecked(cfg.LOG_RECIPE_TO_FILE)
         self.cb_recipe_logging.toggled.connect(update_recipe_logging)
 
         self.cb_dev_mode = QCheckBox()

@@ -138,7 +138,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                 ss['img_size'] = dm['data']['scales'][scale]['image_src_size']
                 # ss['include'] = not sec['skipped']
                 ss['dev_mode'] = cfg.DEV_MODE
-                ss['recipe_log_to_file'] = cfg.RECIPE_LOGGING
+                ss['log_recipe_to_file'] = cfg.LOG_RECIPE_TO_FILE
                 ss['verbose_swim'] = cfg.VERBOSE_SWIM
                 ss['fn_transforming'] = sec['filename']
                 ss['fn_reference'] = sec['reference']
