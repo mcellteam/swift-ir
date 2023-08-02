@@ -384,7 +384,8 @@ class DataModel:
         if l == None: l = self.zpos
         caller = inspect.stack()[1].function
         # logger.critical(f'caller: {caller}, l={l}')
-        if self.skipped(s=self.scale, l=l):
+        # if self.skipped(s=self.scale, l=l):
+        if not self.include(s=self.scale, l=l):
             return self.get_index(self._data['data']['scales'][self.scale]['stack'][l]['filename']) #Todo refactor this but not sure how
         reference = self._data['data']['scales'][self.scale]['stack'][l]['reference']
         if reference == '':
@@ -893,8 +894,7 @@ class DataModel:
             for i in range(len(self)):
                 layer = scale['stack'][i]
 
-                layer.setdefault('current_method', 'grid-default')
-                layer.setdefault('selected_method', 'grid-default')
+                layer.pop('selected_method', None)
                 layer.setdefault('data_comports', True)
                 layer.setdefault('needs_propagation', False)
                 layer.setdefault('alignment_hash', '')
@@ -955,13 +955,22 @@ class DataModel:
                 #         prev_method = scale_prev_dict[i]['current_method']
                 #         scale_prev_dict[i]['alignment_history'].setdefault[prev_method]['affine_matrix']
 
+
                 layer.setdefault('alignment', {})
-                # layer['alignment'].setdefault('meta', {})
-                layer['alignment']['meta'] = {} #<-- might be a good idea, to recreate this from scratch every time
-                # layer['alignment']['meta'].setdefault('index', i)
-                layer['alignment']['meta']['index'] = i
                 layer['alignment'].pop('dev_mode', None)
+                # layer['alignment'].setdefault('meta', {})
+                # layer['alignment']['meta'] = {} #<-- might be a good idea, to recreate this from scratch every time
+                # layer['alignment']['meta'].setdefault('index', i)
                 layer['alignment'].setdefault('swim_settings', {})
+
+                try:
+                    layer['alignment']['swim_settings']['grid_custom_regions'] = layer.pop('current_method')
+                except:
+                    pass
+
+                layer.setdefault('current_method', 'grid-default')
+
+                layer['alignment']['swim_settings']['index'] = i
                 # logger.critical(f"{os.path.join(self.dest(), s, 'tmp')}")
                 # layer['alignment']['swim_settings']['karg_path'] = os.path.join(self.dest(), s, 'tmp')
                 # layer['alignment']['swim_settings']['targ_path'] = os.path.join(self.dest(), s, 'tmp')
@@ -974,8 +983,15 @@ class DataModel:
                 layer['alignment']['swim_settings'].setdefault('use_logging', True)
                 layer['alignment']['swim_settings'].setdefault('grid_default_regions', [1,1,1,1])
                 layer['alignment']['swim_settings'].setdefault('grid_custom_regions', [1,1,1,1])
+                layer['alignment']['swim_settings'].setdefault('include', True)
                 try:
-                    layer['alignment']['swim_settings']['swim_settings']['grid_custom_regions'] = layer[
+                    layer['alignment']['swim_settings']['include'] = layer.pop('skipped')
+                except:
+                    pass
+
+
+                try:
+                    layer['alignment']['swim_settings']['grid_custom_regions'] = layer[
                         'alignment']['swim_settings'].pop('grid-custom-regions')
                 except:
                     pass
@@ -988,13 +1004,11 @@ class DataModel:
                 layer['alignment']['swim_settings'].setdefault('grid_custom_px_2x2', None)
                 layer['alignment'].pop('manual_swim_window_px', None)
                 try:
-                    layer['alignment']['swim_settings']['swim_settings']['grid_custom_px_1x1'] = layer['alignment'].pop(
-                        'grid_custom_px_1x1')
+                    layer['alignment']['swim_settings']['grid_custom_px_1x1'] = layer['alignment'].pop('grid_custom_px_1x1')
                 except:
                     pass
                 try:
-                    layer['alignment']['swim_settings']['swim_settings']['grid_custom_px_2x2'] = layer['alignment'].pop(
-                        'grid_custom_px_2x2')
+                    layer['alignment']['swim_settings']['grid_custom_px_2x2'] = layer['alignment'].pop('grid_custom_px_2x2')
                 except:
                     pass
 
@@ -1588,6 +1602,16 @@ class DataModel:
             print_exception()
             return [[[1, 0, 0], [0, 1, 0]]]
 
+    #0802+
+    def swim_settings_hashable(self, s=None, l=None):
+        if s == None: s = self.scale
+        if l == None: l = self.zpos
+        # return [tuple(map(tuple, x)) for x in self.cafm_list(s=s,end=end)]
+        # return hash(str(self.cafm_list(s=s,end=end)))
+        try:
+            return hash(str(self['data']['scales'][s]['stack'][l]['alignment']['swim_settings']))
+        except:
+            print_exception(extra=f's={s}, l={l}')
 
     def cafm_hashable(self, s=None, end=None):
         if s == None: s = self.scale
@@ -1656,6 +1680,14 @@ class DataModel:
         if s == None: s = self.scale
         if l == None: l = self.zpos
         return self.cafm_registered_hash(s=s, l=l) == self.cafm_current_hash(s=s, l=l)
+
+    def cafm_comports_indexes(self, s=None):
+        if s == None: s = self.scale
+        return np.array([cfg.data.cafm_hash_comports(s=s, l=l) for l in range(0, len(cfg.data))]).nonzero()[0].tolist()
+
+    def cafm_no_comports_indexes(self, s=None):
+        if s == None: s = self.scale
+        return np.array([not cfg.data.cafm_hash_comports(s=s, l=l) for l in range(0, len(cfg.data))]).nonzero()[0].tolist()
 
 
     def bias_data_path(self, s=None, l=None):
@@ -1754,21 +1786,37 @@ class DataModel:
         if s == None: s = self.scale
         if l == None: l = self.zpos
         try:
-            return bool(self._data['data']['scales'][s]['stack'][l]['skipped'])
+            # return bool(self._data['data']['scales'][s]['stack'][l]['skipped'])
+            return not bool(self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['include'])
         except IndexError:
             logger.warning(f'Index {l} is out of range.')
+        except KeyError:
+            # print_exception()
+            logger.warning('Returning False, but there was a KeyError')
+            return False
         except:
             print_exception()
-            logger.warning('Returning False, but there was a problem')
-            return False
+
+
+    def include(self, s=None, l=None) -> bool:
+        return bool(self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['include'])
+
+
+    def set_skip(self, b: bool, s=None, l=None) -> None:
+        if s == None: s = self.scale
+        if l == None: l = self.zpos
+        '''Sets the Bounding Rectangle On/Off State for the Current Scale.'''
+        self._data['data']['scales'][s]['stack'][l]['skipped'] = b
+        self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['include'] = not b
+
 
     def skips_list(self, s=None) -> list:
-        '''Returns the list of skipped images for a s'''
+        '''Returns the list of excluded images for a s'''
         if s == None: s = self.scale
         indexes, names = [], []
         try:
             for i,layer in enumerate(self.stack(s=s)):
-                if layer['skipped'] == True:
+                if not layer['alignment']['swim_settings']['include']:
                     indexes.append(i)
                     names.append(os.path.basename(layer['filename']))
             return list(zip(indexes, names))
@@ -1790,7 +1838,7 @@ class DataModel:
         lst = []
         try:
             for i in range(len(self)):
-                if self._data['data']['scales'][s]['stack'][i]['skipped'] == True:
+                if not self.include(s=s,l=i):
                     f = os.path.basename(self._data['data']['scales'][s]['stack'][i]['filename'])
                     lst.append(f)
             return lst
@@ -2183,12 +2231,6 @@ class DataModel:
     def set_destination(self, s):
         self._data['data']['destination_path'] = s
 
-    def set_skip(self, b: bool, s=None, l=None) -> None:
-        if s == None: s = self.scale
-        if l == None: l = self.zpos
-        '''Sets the Bounding Rectangle On/Off State for the Current Scale.'''
-        self._data['data']['scales'][s]['stack'][l]['skipped'] = b
-
 
     def has_bb(self, s=None) -> bool:
         '''Returns the Has Bounding Rectangle On/Off State for the Current Scale.'''
@@ -2349,20 +2391,11 @@ class DataModel:
             return [get_scale_key(x) for x in self.scale_vals() if x < self.scale_val(s=s)]
 
 
-    def clear_all_skips(self):
-        try:
-            # for scale_key in self.scales():
-            for scale in self.finer_scales():
-                scale_key = str(scale)
-                for layer in self._data['data']['scales'][scale_key]['stack']:
-                    layer['skipped'] = False
-        except:
-            print_exception()
-
     def append_image(self, file):
         scale = self.scale
         # logger.info("Adding Image: %s, role: base, scale_key: %s" % (file, scale_key))
         self._data['data']['scales'][scale]['stack'].append(copy.deepcopy(layer_template))
+        self._data['data']['scales'][scale]['stack'].append({})
         self._data['data']['scales'][scale]['stack'][len(self) - 1]['filename'] = file
         self._data['data']['scales'][scale]['stack'][len(self) - 1]['reference'] = ''
 
@@ -2370,30 +2403,10 @@ class DataModel:
         scale = self.scale
         for file in files:
             # logger.info("Adding Image: %s, role: base, scale_key: %s" % (file, scale_key))
-            self._data['data']['scales'][scale]['stack'].append(copy.deepcopy(layer_template))
+            # self._data['data']['scales'][scale]['stack'].append(copy.deepcopy(layer_template))
+            self._data['data']['scales'][scale]['stack'].append({})
             self._data['data']['scales'][scale]['stack'][len(self) - 1]['filename'] = file
             self._data['data']['scales'][scale]['stack'][len(self) - 1]['reference'] = ''
-
-    # def append_empty(self):
-    #     logger.critical('MainWindow.append_empty:')
-    #     scale_key = self.scale_key
-    #     used_for_this_role = ['base' in l['images'].keys() for l in self.stack(s=scale_key)]
-    #     layer_index = -1
-    #     if False in used_for_this_role:
-    #         layer_index = used_for_this_role.index(False)
-    #     else:
-    #         self._data['data']['scales'][scale_key]['stack'].append(copy.deepcopy(layer_template))
-    #         layer_index_for_new_role = len(self['data']['scales'][scale_key]['stack']) - 1
-    #     self._data['data']['scales'][scale_key]['stack'][layer_index]['filename'] = ''
-
-
-    # def add_img(self, scale_key, layer, role, filename=''):
-    #     logger.info(f'Adding Image ({scale_key}, {layer}, {role}): {filename}...')
-    #     self._data['data']['scales'][scale_key]['stack'][layer]['images'][role] = copy.deepcopy(image_template)
-    #     self._data['data']['scales'][scale_key]['stack'][layer]['images'][role]['filename'] = filename
-    #     self._data['data']['scales'][scale_key]['stack'][layer]['img'] = copy.deepcopy(image_template) # 0119+
-    #     self._data['data']['scales'][scale_key]['stack'][layer]['img'] = filename                      # 0119+
-
 
     def anySkips(self) -> bool:
         if len(self.skips_list()) > 0:
@@ -2450,15 +2463,11 @@ class DataModel:
     def first_unskipped(self, s=None):
         if s == None: s = self.scale
         for i,section in enumerate(self.get_iter(s=s)):
-            if not section['skipped']:
+            if self.include(s=s,l=i):
                 return i
 
 
     def link_reference_sections(self, s_list=None):
-        '''Called by the functions '_callbk_skipChanged' and 'import_multiple_images'
-        Link layers, taking into accounts skipped layers'''
-        # self.set_default_data()  # 0712 #0802 #original
-        # for s in self.scales():
         logger.info('')
         if s_list == None:
             s_list = self.finer_scales()
@@ -2483,56 +2492,6 @@ class DataModel:
                         base_layer['reference'] = ref
             # kludge - set reference of first_unskipped to itself
             self._data['data']['scales'][s]['stack'][first_unskipped]['reference'] = self._data['data']['scales'][s]['stack'][first_unskipped]['filename']
-
-
-    # def init_link_reference_sections(self):
-    #     '''Called by the functions '_callbk_skipChanged' and 'import_multiple_images'
-    #     Link layers, taking into accounts skipped layers'''
-    #     # self.set_default_data()  # 0712 #0802 #original
-    #     # for s in self.scales():
-    #     for s in self.finer_scales():
-    #         skip_list = self.skips_indices(s=s)
-    #         first_unskipped = self.first_unskipped()
-    #         logger.info(f'first_unskipped: {first_unskipped}')
-    #         for layer_index in range(len(self)):
-    #             base_layer = self._data['data']['scales'][s]['stack'][layer_index]
-    #             if layer_index in skip_list:
-    #                 self._data['data']['scales'][s]['stack'][layer_index]['reference'] = ''
-    #             # elif layer_index <= first_unskipped:
-    #             #     self._data['data']['scales'][s]['stack'][layer_index]['reference'] = self._data['data']['scales'][s]['stack'][layer_index]['filename']
-    #             else:
-    #                 j = layer_index - 1  # Find nearest previous non-skipped l
-    #                 while (j in skip_list) and (j >= 0):
-    #                     j -= 1
-    #                 if (j not in skip_list) and (j >= 0):
-    #                     ref = self._data['data']['scales'][s]['stack'][j]['filename']
-    #                     ref = os.path.join(self.dest(), s, 'img_src', ref)
-    #                     # base_layer['images']['ref']['filename'] = ref
-    #                     base_layer['reference'] = ref
-    #         self._data['data']['scales'][s]['stack'][first_unskipped]['reference'] = self._data['data']['scales'][s]['stack'][first_unskipped]['filename']
-
-
-    # def propagate_up_from(self, scale_from=None):
-    #     if scale_from == None: scale_from=self.scale_key
-    #
-    #         it = self.get_iter(s=scale_from)
-    #
-    #
-    #         for i, section in enumerate(it):
-    #
-    #             method = section['current_method']
-    #             for s in self.finer_scales(include_self=False):
-    #                 self._data['data']['scales'][s]['stack'][i]['current_method']
-    #
-    #
-    #
-    #             pass
-
-
-
-
-
-
 
 
     def upgrade_data_model(self):
@@ -2619,8 +2578,6 @@ class DataModel:
             if self._data['version'] == 0.30:
                 print("\n\nUpgrading datamodel previewmodel from " + str(self._data['version']) + " to " + str(0.31))
                 # Need to modify the datamodel previewmodel from 0.30 up to 0.31
-                # The "skipped(1)" annotation is currently unused (now hard-coded in alignem.py)
-                # Remove alll "skipped(1)" annotations since they can not otherwise be removed
                 for scale_key in self.scales():
                     scale = self._data['data']['scales'][scale_key]
                     stack = scale['stack']

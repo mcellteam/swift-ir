@@ -11,7 +11,7 @@ data_template = \
         "state": {
             "mode": "comparison",
             "manual_mode": False,
-            "ng_layout": 'xy',
+            "ng_layout": '4panel',
         },
         "rendering": {
             "normalize": [1,255],
@@ -44,16 +44,7 @@ layer_template = \
                 "snr_prev": [],
             }
         },
-        "images": {},
         "skipped": False,
         "notes": ""
     }
 
-image_template = \
-    {
-        "filename": None,
-        "metadata": {
-            "annotations": [],
-            "manpoints": []
-        }
-    }

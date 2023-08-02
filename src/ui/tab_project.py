@@ -238,55 +238,21 @@ class ProjectTab(QWidget):
             # self.MA_webengine_base.setUrl(QUrl("http://localhost:8888/"))
             self.refViewer = cfg.refViewer = MAViewer(role='ref', webengine=self.MA_webengine_ref)
             self.baseViewer = cfg.baseViewer = MAViewer(role='base', webengine=self.MA_webengine_base)
-
-            # cfg.main_window.swimWindowChanged.connect(cfg.refViewer.drawSWIMwindow)
-            # cfg.main_window.swimWindowChanged.connect(cfg.baseViewer.drawSWIMwindow)
-
             cfg.baseViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314
             cfg.refViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider) #0314
-
             cfg.refViewer.signals.ptsChanged.connect(self.update_MA_list_widgets)
             cfg.refViewer.signals.ptsChanged.connect(cfg.refViewer.drawSWIMwindow)
             cfg.refViewer.signals.ptsChanged.connect(lambda: print('\n\n Ref Viewer pts changed!\n\n'))
-
             cfg.baseViewer.signals.ptsChanged.connect(self.update_MA_list_widgets)
             cfg.baseViewer.signals.ptsChanged.connect(cfg.baseViewer.drawSWIMwindow)
             cfg.baseViewer.signals.ptsChanged.connect(lambda: print('\n\n Base Viewer pts changed!\n\n'))
-            # cfg.refViewer.signals.stateChangedAny.connect(self.update_MA_base_state)
-            # cfg.baseViewer.signals.stateChangedAny.connect(self.update_MA_ref_state)
-
-            # cfg.baseViewer.signals.stateChanged.connect(lambda l: cfg.main_window.dataUpdateWidgets(ng_layer=l))
-
-            # cfg.refViewer.signals.stateChanged.connect(cfg.baseViewer.set_layer)
-            # cfg.baseViewer.signals.stateChanged.connect(cfg.refViewer.set_layer)
-
-            # cfg.refViewer.signals.stateChangedAny.connect(lambda: self.rb_transforming.setChecked(True))
-
-            # cfg.refViewer.signals.stateChanged.connect(cfg.main_window.dataUpdateWidgets)
             cfg.baseViewer.signals.zposChanged.connect(cfg.main_window.dataUpdateWidgets)
             cfg.baseViewer.signals.zposChanged.connect(lambda: cfg.mw.setZpos(on_state_change=True))
-
             cfg.refViewer.signals.zposChanged.connect(self.set_transforming)
-
-            # cfg.baseViewer.signals.zposChanged.connect(cfg.baseViewer))
-
-            # cfg.mw.zposChanged.connect(cfg.refViewer.set_layer)
-            # cfg.mw.zposChanged.connect(cfg.baseViewer.set_layer)
-
-            # cfg.refViewer.signals.stateChanged.connect(lambda: logger.critical(f'Signal Emitted! {self.sender()}'))
-            # cfg.baseViewer.signals.stateChanged.connect(lambda: logger.critical(f'Signal Emitted! {self.sender()}'))
-
-            # cfg.baseViewer.shared_state.add_changed_callback(cfg.emViewer.set_zmag)
-            # cfg.baseViewer.signals.zoomChanged.connect(self.setZoomSlider) # Not responsible #WasOn
-            
             cfg.baseViewer.signals.swimAction.connect(cfg.main_window.alignOne)
             cfg.refViewer.signals.swimAction.connect(cfg.main_window.alignOne)
-
             self.update_MA_list_widgets()
             self.dataUpdateMA()
-
-            # self.MA_webengine_ref.reload()
-            # self.MA_webengine_base.reload()
 
         if cfg.data['state']['current_tab'] == 0 or init_all:
             self.viewer = cfg.emViewer = EMViewer(webengine=self.webengine)
@@ -294,12 +260,6 @@ class ProjectTab(QWidget):
             cfg.emViewer.signals.zposChanged.connect(cfg.main_window.dataUpdateWidgets)
             cfg.emViewer.signals.layoutChanged.connect(self.slot_layout_changed)
             cfg.emViewer.signals.zoomChanged.connect(self.slot_zoom_changed)
-            # cfg.emViewer.signals.zoomChanged.connect(self.setZoomSlider)
-
-            # self.zoomSlider.sliderMoved.connect(self.onZoomSlider)  # Original #0314
-            # self.zoomSlider.valueChanged.connect(self.onZoomSlider)
-            # self.webengine.reload()
-            # QTimer.singleShot(1000, self.webengine.reload)
 
         cfg.mw.set_status('')
         cfg.mw.hud.done()
@@ -956,7 +916,7 @@ class ProjectTab(QWidget):
                 cfg.mw.updateCorrSignalsDrawer()
                 cfg.mw.setTargKargPixmaps()
                 if cfg.mw.dw_snr.isVisible():
-                    cfg.project_tab.dSnr_plot.initSnrPlot()
+                    self.dSnr_plot.initSnrPlot()
                 cfg.main_window.statusBar.showMessage(f'Manual Alignment Option Set To: {cfg.data.current_method}')
 
         # self.rb_MA_hint = QRadioButton('Hint')
@@ -1347,7 +1307,7 @@ class ProjectTab(QWidget):
                     cfg.data.current_method = 'manual-hint'
                     self.rb_MA_hint.setChecked(True)
             if cfg.mw.dw_snr.isVisible():
-                cfg.project_tab.dSnr_plot.initSnrPlot()
+                self.dSnr_plot.initSnrPlot()
             cfg.mw.setTargKargPixmaps()
             # elif cur_index == 4:
             #     self.MA_stackedWidget.setCurrentIndex(4)
@@ -1847,7 +1807,7 @@ class ProjectTab(QWidget):
 
             if getData('state,blink'):
                 self.blinkTimer.timeout.connect(cfg.emViewer.blink)
-                cfg.project_tab.blinkTimer.start()
+                self.blinkTimer.start()
             else:
                 self.blinkTimer.stop()
                 cfg.emViewer._blinkState = 0
@@ -1979,7 +1939,7 @@ class ProjectTab(QWidget):
                                    color: #f3f6fb;
                                    height: 9px;
                                    font-size: 10px;
-                                   margine: 1px;
+                                   margin: 1px;
                                    padding: 1px;
                                }
                                QToolButton::checked {
@@ -3527,8 +3487,6 @@ class ProjectTab(QWidget):
                     #     keys.extend(['alignment', 'method_results', 'ingredient_2'])
                     elif opt == 'SWIM Settings':
                         keys.extend(['alignment', 'swim_settings'])
-                    elif opt == 'Meta':
-                        keys.extend(['alignment', 'meta'])
                     # elif opt == 'SWIM Out':
                     #     keys.extend(['alignment', 'method_results', 'ingredient_2', 'swim_out'])
                     # elif opt == 'SWIM Err':
@@ -3577,7 +3535,7 @@ class ProjectTab(QWidget):
         #          'Alignment History']
         # items = ['--', 'Results', 'Alignment History', 'Method Results', 'SWIM Settings', 'SWIM Out',
         #          'SWIM Err', 'SWIM Arguments', 'MIR Err', 'MIR Out']
-        items = ['--', 'Results', 'Alignment History', 'Method Results', 'SWIM Settings', 'Meta']
+        items = ['--', 'Results', 'Alignment History', 'Method Results', 'SWIM Settings']
         self.combo_data_tree.addItems(items)
 
         self.btn_tree_go = QPushButton('Go')
@@ -3694,16 +3652,6 @@ class ProjectTab(QWidget):
         self.setLayout(vbl)
 
     def initShader(self):
-
-        # def fn():
-        #     logger.info('')
-        #     cfg.data.brightness = float(self.brightnessLE.text())
-        #     cfg.data.contrast = float(self.contrastLE.text())
-        #     cfg.project_tab.initNeuroglancer()
-        #     cfg.main_window._callbk_unsavedChanges()
-        # self._btn_applyShader = QPushButton('Apply')
-        # self._btn_applyShader.setFixedSize(QSize(64,20))
-        # self._btn_applyShader.clicked.connect(fn)
 
         def resetBrightessAndContrast():
             reset_val = 0.0
@@ -3905,7 +3853,7 @@ class ProjectTab(QWidget):
             w.setContentsMargins(0, 0, 0, 0)
             w.setStyleSheet("""QLabel{color: #161c20; font-size: 8px;}""")
             w.setLayout(fl_l)
-            cfg.project_tab.sa_runtimes.setWidget(w)
+            self.sa_runtimes.setWidget(w)
 
         except:
             print_exception()

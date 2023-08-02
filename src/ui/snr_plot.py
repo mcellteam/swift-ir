@@ -127,6 +127,7 @@ class SnrPlot(QWidget):
         # self.plot.setAspectLocked()
 
         self.snr_points = {}
+        self.no_comport_points = {}
         self.snr_errors = {}
         self.selected_scale = None
 
@@ -217,7 +218,8 @@ class SnrPlot(QWidget):
                 labelOpts={'position': .1, 'color': (255,250,250), 'fill': (255, 0, 0, 75), 'movable': True}
             )
             self._skip_lines.append(line)
-            label = pg.InfLineLabel(line, f'Skip', position=0.08, color='#ff0000', rotateAxis=(1, 0), anchor=(1, 1))
+            label = pg.InfLineLabel(line, f'Excluded', position=0.10, color='#ff0000', rotateAxis=(1, 0), anchor=(1, 1))
+            # ^^ position is vertical position of 'skip' label
             self._skip_labels.append(label)
             line.setPos([layer[0] + offset, 1])
             self.plot.addItem(line)
@@ -284,20 +286,54 @@ class SnrPlot(QWidget):
 
 
     def get_axis_data(self, s=None) -> tuple:
-        if s == None: s = cfg.data.scale_key
+        if s == None: s = cfg.data.scale
         x_axis, y_axis = [], []
         # for layer, snr in enumerate(cfg.data.snr_list(s=s)):
         # for layer, snr in enumerate(cfg.data.snr_list(s=s)[1:]): #0601+ #Todo
         first_unskipped = cfg.data.first_unskipped(s=s)
-        for layer, snr in enumerate(cfg.data.snr_list(s=s)): #0601+
-            if layer == first_unskipped:
+        for i, snr in enumerate(cfg.data.snr_list(s=s)): #0601+
+            if i == first_unskipped:
                 continue
-            if cfg.data.skipped(s=s, l=layer):
-                x_axis.append(layer)
+            if cfg.data.skipped(s=s, l=i):
+                x_axis.append(i)
                 y_axis.append(0)
             else:
-                x_axis.append(layer)
+                x_axis.append(i)
                 y_axis.append(snr)
+        return x_axis, y_axis
+
+    def get_comport_axis_data(self, s=None) -> tuple:
+        if s == None: s = cfg.data.scale
+        x_axis, y_axis = [], []
+        # for layer, snr in enumerate(cfg.data.snr_list(s=s)):
+        # for layer, snr in enumerate(cfg.data.snr_list(s=s)[1:]): #0601+ #Todo
+        first_unskipped = cfg.data.first_unskipped(s=s)
+        for i in cfg.data.cafm_comports_indexes(s=s): #0601+
+            if i == first_unskipped:
+                continue
+            if cfg.data.skipped(s=s, l=i):
+                x_axis.append(i)
+                y_axis.append(0)
+            else:
+                x_axis.append(i)
+                y_axis.append(cfg.data.snr(s=s, l=i))
+        return x_axis, y_axis
+
+    def get_no_comport_axis_data(self, s=None) -> tuple:
+        if s == None: s = cfg.data.scale
+        x_axis, y_axis = [], []
+        # for layer, snr in enumerate(cfg.data.snr_list(s=s)):
+        # for layer, snr in enumerate(cfg.data.snr_list(s=s)[1:]): #0601+ #Todo
+        first_unskipped = cfg.data.first_unskipped(s=s)
+        for i in cfg.data.cafm_no_comports_indexes(s=s): #0601+
+            if i == first_unskipped:
+                continue
+            if cfg.data.skipped(s=s, l=i):
+                x_axis.append(i)
+                y_axis.append(0)
+            else:
+                x_axis.append(i)
+                y_axis.append(cfg.data.snr(s=s, l=i))
         return x_axis, y_axis
 
 
@@ -354,7 +390,8 @@ class SnrPlot(QWidget):
     def plotSingleScale(self, s=None):
         # logger.info(f'plotSingleScale (scale_key: {s}):')
         if s == None: scale = cfg.data.scale_key
-        x_axis, y_axis = self.get_axis_data(s=s)
+        # x_axis, y_axis = self.get_axis_data(s=s)
+        x_axis, y_axis = self.get_comport_axis_data(s=s)
         offset = self._getScaleOffset(s=s)
         if self.dock:
             pass
@@ -377,11 +414,31 @@ class SnrPlot(QWidget):
         )
         # self.snr_points[s].addPoints(x_axis[1:], y_axis[1:]) #Todo
         self.snr_points[s].addPoints(x_axis, y_axis)
+
         # logger.info('self.snr_points.toolTip() = %s' % self.snr_points.toolTip())
         # value = self.snr_points.setToolTip('Test')
         self.plot.addItem(self.snr_points[s])
         # self.snr_points[s].sigClicked.connect(lambda: self.onSnrClick2(s))
         self.snr_points[s].sigClicked.connect(self.onSnrClick)
+
+        self.no_comport_points[s] = pg.ScatterPlotItem(
+            size=(11,9)[self.dock],
+            # pen=pg.mkPen(None),
+            symbol='x',
+            pen=pg.mkPen('#ff0000', width=1),
+            brush=brush,
+            hoverable=True,
+            hoverSize=(14,11)[self.dock],
+            # hoverPen=pg.mkPen('#ff0000', width=3),
+            # hoverBrush=None,
+            # pxMode=False # points transform with zoom
+        )
+        x_axis, y_axis = self.get_no_comport_axis_data(s=s)
+        self.no_comport_points[s].addPoints(x_axis, y_axis)
+        self.plot.addItem(self.no_comport_points[s])
+
+        self.no_comport_points[s].sigClicked.connect(self.onSnrClick)
+
         self.updateErrBars(s=s)
 
 
@@ -463,12 +520,12 @@ class SnrPlot(QWidget):
         logger.info(f'onSnrClick')
         logger.info(f"self.pt_selected = {self.pt_selected}")
         if self.pt_selected:
-            try:
-                self.pt_selected.resetPen()
-                self.pt_selected.resetBrush()
-                self.pt_selected.setSymbol('o')
-            except:
-                print_exception()
+            try:    self.pt_selected.resetPen()
+            except: print_exception()
+            try:    self.pt_selected.resetBrush()
+            except: print_exception()
+            try:    self.pt_selected.setSymbol('o')
+            except: print_exception()
 
         index = int(points[0].pos()[0])
         logger.info(f'index = {index}')

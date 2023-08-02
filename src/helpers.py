@@ -80,6 +80,9 @@ def run_command(cmd, arg_list=None, cmd_input=None):
     cmd_stdout, cmd_stderr = cmd_proc.communicate(cmd_input)
     return ({'out': cmd_stdout, 'err': cmd_stderr, 'rc': cmd_proc.returncode})
 
+def update_meta():
+    pass
+
 
 def check_project_status():
     iter = cfg.data.get_iter()
