@@ -1029,6 +1029,8 @@ class DataModel:
 
                 layer['alignment'].pop('targ', None)
                 layer['alignment'].pop('karg', None)
+                layer['alignment'].pop('manual_settings', None)
+                layer['alignment'].pop('method_options', None)
                 # layer['alignment'].setdefault('targ', True)
                 # layer['alignment'].setdefault('karg', True)
         try:
