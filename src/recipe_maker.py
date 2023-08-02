@@ -59,7 +59,7 @@ class align_recipe:
         Exceptlogger.addHandler(
             logging.FileHandler(os.path.join(self.meta['destination_path'],
                                              'logs', 'exceptions.log')))
-        if self.meta['recipe_log_to_file']:
+        if self.meta['log_recipe_to_file']:
             MAlogger.addHandler(logging.FileHandler(os.path.join(
                 self.meta['destination_path'], 'logs', 'manual_align.log')))
             RMlogger.addHandler(logging.FileHandler(os.path.join(
