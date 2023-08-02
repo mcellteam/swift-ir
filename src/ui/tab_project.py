@@ -718,7 +718,7 @@ class ProjectTab(QWidget):
                 else:
                     cfg.baseViewer.drawSWIMwindow()
 
-                if cfg.mw.dw_thumbs.isVisible():
+                if self.tn_widget.isVisible():
                     self.tn_ref.update()
                     self.tn_tra.update()
                 cfg.main_window._callbk_unsavedChanges()
@@ -749,7 +749,7 @@ class ProjectTab(QWidget):
                 cfg.refViewer.drawSWIMwindow()
             else:
                 cfg.baseViewer.drawSWIMwindow()
-            if cfg.mw.dw_thumbs.isVisible():
+            if self.tn_widget.isVisible():
                 self.tn_ref.update()
                 self.tn_tra.update()
             self.slider_MA_SWIM_window.setValue(int(self.MA_SWIM_window_le.text()))
@@ -794,7 +794,7 @@ class ProjectTab(QWidget):
                 else:
                     cfg.baseViewer.drawSWIMwindow()
 
-                if cfg.mw.dw_thumbs.isVisible():
+                if self.tn_widget.isVisible():
                     self.tn_ref.update()
                     self.tn_tra.update()
                 cfg.main_window._callbk_unsavedChanges()
@@ -809,7 +809,7 @@ class ProjectTab(QWidget):
         def fn():
             cfg.data.set_swim_1x1_custom_px(int(self.AS_SWIM_window_le.text()))
             self.dataUpdateMA()
-            if cfg.mw.dw_thumbs.isVisible():
+            if self.tn_widget.isVisible():
                 self.tn_ref.update()
                 self.tn_tra.update()
 
@@ -910,7 +910,7 @@ class ProjectTab(QWidget):
                 else:
                     cfg.baseViewer.drawSWIMwindow()
                 cfg.main_window._callbk_unsavedChanges()
-                if cfg.mw.dw_thumbs.isVisible():
+                if self.tn_widget.isVisible():
                     self.tn_ref.update()
                     self.tn_tra.update()
                 cfg.mw.updateCorrSignalsDrawer()
@@ -1099,7 +1099,7 @@ class ProjectTab(QWidget):
                 if self._tabs.currentIndex() == 1:
                     cfg.baseViewer.drawSWIMwindow()
                     cfg.refViewer.drawSWIMwindow()
-                if cfg.mw.dw_thumbs.isVisible():
+                if self.tn_widget.isVisible():
                     self.tn_ref.update()
                     self.tn_tra.update()
                 cfg.mw.tell(f'SWIM Window set to: {str(val)}')
@@ -1514,7 +1514,7 @@ class ProjectTab(QWidget):
         self.MA_stackedWidget.addWidget(self.gb_MA_settings)
         self.MA_stackedWidget.addWidget(self.MA_points_tab)
 
-        # 0617
+        #0617 #0802
         self.sw_alignment_editor = QStackedWidget()
         self.sw_alignment_editor.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.sw_alignment_editor.setObjectName('stackwidget-neuroglancer')
@@ -2335,7 +2335,7 @@ class ProjectTab(QWidget):
         self.fl_tacc.addRow(f"Max # cores (scale 1)", self.le_tacc_num_scale1_cores)
         self.fl_tacc.addRow(f"Use mp.Pool (vs task queue)", self.cb_use_pool)
         self.fl_tacc.addRow(f"QtWebengine # raster threads", self.le_qtwebengine_raster_threads)
-        self.fl_tacc.addRow(f"RECIPE_LOGGING", self.cb_recipe_logging)
+        self.fl_tacc.addRow(f"Log recipe to file", self.cb_recipe_logging)
         self.fl_tacc.addRow(f"DEV_MODE", self.cb_dev_mode)
 
         self.sideTabs = QTabWidget()
@@ -2394,8 +2394,39 @@ class ProjectTab(QWidget):
         """)
 
         self.splitterEditAlignment = QSplitter(Qt.Orientation.Horizontal)
+
+
+        #0802 #Surgery
+
+        # self.splitterEditAlignment.addWidget(self.ng_widget_container)
+        # self.thumbnailEditor = QWidget()
+        # self.thumbnailEditor = QLabel("Test")
+
+
+        # lab = QLabel("Test")
+        # lab.setStyleSheet("background-color: #222222; color: #f3f6fb; font-size: 16px;")
+        # lab.setAlignment(Qt.AlignCenter)
+        # self.dummyWidget = VWidget()
+        # self.dummyWidget.setStyleSheet("background-color: #222222; color: #f3f6fb; font-size: 16px;")
+        # self.dummyWidget.setMinimumWidth(300)
+        # self.dummyWidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+
+        # self.splitterEditAlignment.addWidget(self.tn_widget)
+        # self.splitterEditAlignment.addWidget(self.dummyWidget)
+
+        # self.splitterEditAlignment.addWidget(self.side_controls)
+        # self.splitterEditAlignment.addWidget(self.ng_widget)
+
+
         self.splitterEditAlignment.addWidget(self.ng_widget_container)
         self.splitterEditAlignment.addWidget(self.side_controls)
+        self.splitterEditAlignment.setCollapsible(0,False)
+        self.splitterEditAlignment.setCollapsible(1,False)
+        self.splitterEditAlignment.setCollapsible(2,False)
+        self.splitterEditAlignment.setStretchFactor(0, 0)
+        self.splitterEditAlignment.setStretchFactor(1, 1)
+        self.splitterEditAlignment.setStretchFactor(2, 1)
 
         logger.info("<<<<")
 
@@ -2575,7 +2606,7 @@ class ProjectTab(QWidget):
             cfg.baseViewer.drawSWIMwindow()
         else:
             cfg.refViewer.drawSWIMwindow()
-        if cfg.mw.dw_thumbs.isVisible():
+        if self.tn_widget.isVisible():
             self.tn_ref.update()
             self.tn_tra.update()
 
@@ -2877,7 +2908,7 @@ class ProjectTab(QWidget):
         if self.te_logs.isVisible():
             self.refreshLogs()
 
-        if cfg.mw.dw_thumbs.isVisible():
+        if self.tn_widget.isVisible():
             self.tn_ref.update()
             self.tn_tra.update()
 
@@ -3639,7 +3670,7 @@ class ProjectTab(QWidget):
         # self._tabs.addTab(self.wEditAlignment, ' 3DEM ')
         self._tabs.addTab(self.table_container, ' Table ')
         self._tabs.addTab(self._wdg_treeview, ' Raw Data ')
-        self._tabs.addTab(self.w_snr_plot, ' SNR Plot ')
+        self._tabs.addTab(self.w_snr_plot, ' All SNR Plots ')
         self._tabs.setTabToolTip(0, 'Alignment Visualizer')
         self._tabs.setTabToolTip(1, 'Alignment Editor')
         self._tabs.setTabToolTip(2, 'Project Data Table View')
@@ -3757,7 +3788,7 @@ class ProjectTab(QWidget):
         self.shaderToolbar = QToolBar()
         self.shaderToolbar.setFixedHeight(26)
 
-        self.shaderToolbar.setStyleSheet("""background-color: #222222; color: #f3f6fb; font-size: 9px;""")
+        self.shaderToolbar.setStyleSheet("""background-color: #222222; color: #f3f6fb; font-size: 10px;""")
         # self.shaderToolbar.addWidget(ExpandingWidget(self))
         self.shaderToolbar.addWidget(self.bcWidget)
         self.shaderToolbar.addWidget(self.shaderSideButtons)

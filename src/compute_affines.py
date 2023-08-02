@@ -138,11 +138,11 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                 ss['img_size'] = dm['data']['scales'][scale]['image_src_size']
                 # ss['include'] = not sec['skipped']
                 ss['dev_mode'] = cfg.DEV_MODE
-                ss['recipe_logging'] = cfg.RECIPE_LOGGING
+                ss['recipe_log_to_file'] = cfg.RECIPE_LOGGING
                 ss['verbose_swim'] = cfg.VERBOSE_SWIM
                 ss['fn_transforming'] = sec['filename']
                 ss['fn_reference'] = sec['reference']
-                ss['method'] = sec['current_method']
+                # ss['method'] = sec['current_method']
 
 
                 if sec['current_method'] == 'grid-default':
@@ -165,7 +165,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                 else:
                     ss['init_afm'] = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
 
-                if not ss['include'] and (zpos != first_unskipped):
+                if ss['include'] and (zpos != first_unskipped):
                     tasks.append(copy.deepcopy(sec['alignment']))
             # else:
             #     logger.info(f"Dropping task for {zpos}")
@@ -205,11 +205,14 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                               total=len(tasks), desc="Compute Affines",
                               position=0, leave=True))
             # # For use with ThreadPool ONLY
+            cfg.all_results = all_results
             for r in all_results:
                 index = r['swim_settings']['index']
                 method = r['swim_settings']['method']
                 dm['data']['scales'][scale]['stack'][index]['alignment'] = r
-                dm['data']['scales'][scale]['stack'][index]['alignment_history'][method] = r['method_results']
+                dm['data']['scales'][scale]['stack'][index]['alignment_history'][method]['method_results'] = r['method_results']
+                dm['data']['scales'][scale]['stack'][index]['alignment_history'][method]['swim_settings'] = r['swim_settings']
+
         else:
 
             task_queue = TaskQueue(n_tasks=len(tasks), dest=dest, use_gui=use_gui)
@@ -247,7 +250,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                     index = results_dict['swim_settings']['index']
                     method = results_dict['swim_settings']['method']
                     dm['data']['scales'][scale]['stack'][index]['alignment'] = results_dict
-                    dm['data']['scales'][scale]['stack'][index]['alignment_history'][method] = results_dict['method_results']
+                    dm['data']['scales'][scale]['stack'][index]['alignment_history'][method]['method_results'] = results_dict['method_results']
+                    dm['data']['scales'][scale]['stack'][index]['alignment_history'][method]['swim_settings'] = results_dict['swim_settings']
 
         t_elapsed = time.time() - t0
         dm.t_align = t_elapsed
@@ -257,10 +261,11 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
         SetStackCafm(dm.get_iter(scale), scale=scale, poly_order=cfg.data.default_poly_order)
 
+        #Todo make this better
         for i, layer in enumerate(cfg.data.get_iter(scale)):
-            layer['alignment_history'][cfg.data.get_current_method(l=i)]['cumulative_afm'] = \
+            layer['alignment_history'][cfg.data.get_current_method(l=i)]['method_results']['cumulative_afm'] = \
                 cfg.data['data']['scales'][scale]['stack'][i]['alignment']['method_results']['cumulative_afm']
-            layer['alignment_history'][cfg.data.get_current_method(l=i)]['cafm_hash'] = \
+            layer['alignment_history'][cfg.data.get_current_method(l=i)]['method_results']['cafm_hash'] = \
                 cfg.data.cafm_current_hash(l=i)
 
         if cfg.mw._isProjectTab():

@@ -59,7 +59,7 @@ class align_recipe:
         Exceptlogger.addHandler(
             logging.FileHandler(os.path.join(self.meta['destination_path'],
                                              'logs', 'exceptions.log')))
-        if self.meta['recipe_logging']:
+        if self.meta['recipe_log_to_file']:
             MAlogger.addHandler(logging.FileHandler(os.path.join(
                 self.meta['destination_path'], 'logs', 'manual_align.log')))
             RMlogger.addHandler(logging.FileHandler(os.path.join(
@@ -262,7 +262,10 @@ class align_recipe:
         mr['snr'] = snr_list
         mr['snr_report'] = str(snr_report)
         mr['snr_average'] = sum(snr_list) / len(snr_list)
-        mr['affine_matrix'] = afm.tolist()
+        try:
+            mr['affine_matrix'] = afm.tolist()
+        except:
+            print_exception(f"\ntype(afm) = {afm}\nafm={afm}")
         mr['afm'] = afm.tolist()
         mr['init_afm'] = self.meta['init_afm']
         mr['swim_pos'] = self.ingredients[-1].psta.tolist()

@@ -17,19 +17,17 @@ DEBUG_MP = 0
 # DEBUG_MP = (False,True)[DEV_MODE]
 DEBUG_NEUROGLANCER = 0
 # DEBUG_NEUROGLANCER = (False,True)[DEV_MODE]
-# RECIPE_LOGGING = int(getpass.getuser() in ('joelyancey','joely'))
-RECIPE_LOGGING = 1
-DEV_MODE = 1
-# TACC_MAX_CPUS = 122 # 128 hardware cores/node on Lonestar6
-# TACC_MAX_CPUS = 80 # 128 hardware cores/node on Lonestar6
+DEV_MODE = 0
 VERBOSE_SWIM = 0
+LOG_RECIPE_TO_FILE = 0
+# LOG_RECIPE_TO_FILE = int(getpass.getuser() in ('joelyancey','joely'))
 TACC_MAX_CPUS = 104 # x3 is > 304
 # QTWEBENGINE_RASTER_THREADS = 1024
 QTWEBENGINE_RASTER_THREADS = 128
 TARGET_THUMBNAIL_SIZE = 256
 USE_EXTRA_THREADING = True
 UI_UPDATE_DELAY = 250 #ms
-USE_POOL_FOR_SWIM = False
+USE_POOL_FOR_SWIM = True
 if USE_POOL_FOR_SWIM:
     SCALE_1_CORES_LIMIT = 30
 else:

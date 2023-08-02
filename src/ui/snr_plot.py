@@ -218,7 +218,7 @@ class SnrPlot(QWidget):
                 labelOpts={'position': .1, 'color': (255,250,250), 'fill': (255, 0, 0, 75), 'movable': True}
             )
             self._skip_lines.append(line)
-            label = pg.InfLineLabel(line, f'Excluded', position=0.10, color='#ff0000', rotateAxis=(1, 0), anchor=(1, 1))
+            label = pg.InfLineLabel(line, f'x', position=0.10, color='#ff0000', rotateAxis=(1, 0), anchor=(1, 1))
             # ^^ position is vertical position of 'skip' label
             self._skip_labels.append(label)
             line.setPos([layer[0] + offset, 1])
@@ -403,11 +403,11 @@ class SnrPlot(QWidget):
             size=(11,7)[self.dock],
             # pen=pg.mkPen(None),
             symbol='o',
-            pen=pg.mkPen('#ffe135', width=1),
+            pen=pg.mkPen('#f3f6fb', width=1),
             brush=brush,
             hoverable=True,
-            hoverSymbol='s',
-            hoverSize=(14,10)[self.dock],
+            hoverSymbol='o',
+            hoverSize=(14,11)[self.dock],
             hoverPen=pg.mkPen('#f3f6fb', width=1),
             # hoverBrush=None,
             # pxMode=False # points transform with zoom
@@ -425,7 +425,7 @@ class SnrPlot(QWidget):
             size=(11,9)[self.dock],
             # pen=pg.mkPen(None),
             symbol='x',
-            pen=pg.mkPen('#ff0000', width=1),
+            pen=pg.mkPen('#f3f6fb', width=1),
             brush=brush,
             hoverable=True,
             hoverSize=(14,11)[self.dock],
@@ -519,13 +519,13 @@ class SnrPlot(QWidget):
     def onSnrClick(self, plot, points):
         logger.info(f'onSnrClick')
         logger.info(f"self.pt_selected = {self.pt_selected}")
-        if self.pt_selected:
-            try:    self.pt_selected.resetPen()
-            except: print_exception()
-            try:    self.pt_selected.resetBrush()
-            except: print_exception()
-            try:    self.pt_selected.setSymbol('o')
-            except: print_exception()
+        # if self.pt_selected:
+        #     try:    self.pt_selected.resetPen()
+        #     except: print_exception()
+        #     try:    self.pt_selected.resetBrush()
+        #     except: print_exception()
+        #     try:    self.pt_selected.setSymbol('o')
+        #     except: print_exception()
 
         index = int(points[0].pos()[0])
         logger.info(f'index = {index}')

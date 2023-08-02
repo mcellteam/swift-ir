@@ -770,7 +770,7 @@ class MainWindow(QMainWindow):
             cfg.data['state']['tool_windows']['python'] = self.dw_python.isVisible()
             cfg.data['state']['tool_windows']['hud'] = self.dw_hud.isVisible()
             cfg.data['state']['tool_windows']['notes'] = self.dw_notes.isVisible()
-            cfg.data['state']['tool_windows']['raw_thumbnails'] = self.dw_thumbs.isVisible()
+            # cfg.data['state']['tool_windows']['raw_thumbnails'] = self.dw_thumbs.isVisible()
             cfg.data['state']['tool_windows']['signals'] = self.dw_matches.isVisible()
             cfg.data['state']['tool_windows']['snr_plot'] = self.dw_snr.isVisible()
         self.tbbPython.setChecked(self.dw_python.isVisible())
@@ -784,10 +784,19 @@ class MainWindow(QMainWindow):
         w = self.globTabs.width()
         half_w = int(w / 2)
         third_w = int(w / 3)
+        fourth_w = int(w / 4)
+
         self.resizeDocks((self.dw_hud, self.dw_snr), (half_w, half_w), Qt.Horizontal)
         self.resizeDocks((self.dw_hud, self.dw_python), (half_w, half_w), Qt.Horizontal)
         self.resizeDocks((self.dw_snr, self.dw_python), (half_w, half_w), Qt.Horizontal)
+
+        self.resizeDocks((self.dw_python, self.dw_notes), (half_w, half_w), Qt.Horizontal)
+        self.resizeDocks((self.dw_hud, self.dw_notes), (half_w, half_w), Qt.Horizontal)
+        self.resizeDocks((self.dw_snr, self.dw_notes), (half_w, half_w), Qt.Horizontal)
+
         self.resizeDocks((self.dw_hud, self.dw_snr, self.dw_python), (third_w, third_w, third_w), Qt.Horizontal)
+        self.resizeDocks((self.dw_hud, self.dw_snr, self.dw_python, self.dw_notes), (fourth_w, fourth_w, fourth_w,
+                                                                                     fourth_w), Qt.Horizontal)
         self.setUpdatesEnabled(True)
 
 
@@ -1088,8 +1097,6 @@ class MainWindow(QMainWindow):
         cfg.project_tab.matches_tn2.set_no_image()
         cfg.project_tab.matches_tn3.set_no_image()
 
-
-
         # logger_log = os.path.join(cfg.data.dest(), 'logs', 'logger.log')
         # mp_log = os.path.join(cfg.data.dest(), 'logs', 'multiprocessing.log')
         # manual_log = os.path.join(cfg.data.dest(), 'logs', 'manual_align.log')
@@ -1148,7 +1155,7 @@ class MainWindow(QMainWindow):
                 cfg.event.clear()
             self._working = False
             self.setdw_snr(True)
-            self.setdw_matches(True)
+            # self.setdw_matches(True)
             self._changeScaleCombo.setEnabled(True)
             self.hidePbar()
             self.enableAllTabs()
@@ -1816,13 +1823,13 @@ class MainWindow(QMainWindow):
 
             if cfg.data.skipped():
                 cfg.project_tab._overlayLab.show()
-                if self.dw_thumbs.isVisible():
+                if cfg.pt.tn_widget.isVisible():
                     cfg.project_tab.tn_ref.hide()
                     cfg.project_tab.tn_ref_lab.hide()
                     cfg.project_tab.tn_tra_overlay.show()
             else:
                 cfg.project_tab._overlayLab.hide()
-                if self.dw_thumbs.isVisible():
+                if cfg.pt.tn_widget.isVisible():
                     cfg.project_tab.tn_ref.show()
                     cfg.project_tab.tn_ref_lab.show()
                     cfg.project_tab.tn_tra_overlay.hide()
@@ -1871,7 +1878,7 @@ class MainWindow(QMainWindow):
             if self.dw_snr.isVisible():
                 cfg.project_tab.dSnr_plot.initSnrPlot()
 
-            if self.dw_thumbs.isVisible():
+            if cfg.pt.tn_widget.isVisible():
                 if cfg.data.skipped():
                     # cfg.project_tab._overlayRect.setStyleSheet('background-color: rgba(0, 0, 0, 0.5);')
                     cfg.project_tab.tn_tra_overlay.show()
@@ -1886,7 +1893,7 @@ class MainWindow(QMainWindow):
                 self.setTargKargPixmaps()
 
 
-            if self.dw_thumbs.isVisible():
+            if cfg.pt.tn_widget.isVisible():
                 try:
                     assert os.path.exists(cfg.data.thumbnail_ref())
                     # cfg.pt.tn_ref.selectPixmap(path=cfg.data.thumbnail_ref())
@@ -1902,7 +1909,7 @@ class MainWindow(QMainWindow):
 
             cfg.pt.lab_filename.setText(f"[{cfg.data.zpos}] Name: {cfg.data.filename_basename()} - {cfg.data.scale_pretty()}")
 
-            if self.dw_thumbs.isVisible():
+            if cfg.pt.tn_widget.isVisible():
                 cfg.pt.tn_tra_lab.setText(f'Transforming Section (Thumbnail)\n'
                                           f'[{cfg.data.zpos}] {cfg.data.filename_basename()}')
                 try:
@@ -3077,13 +3084,13 @@ class MainWindow(QMainWindow):
 
                 if skip_state:
                     self.tell("Exclude: %s" % cfg.data.name_base())
-                    if self.dw_thumbs.isVisible():
+                    if cfg.pt.tn_widget.isVisible():
                         cfg.project_tab.tn_ref.hide()
                         cfg.project_tab.tn_ref_lab.hide()
                         cfg.project_tab.tn_tra_overlay.show()
                 else:
                     self.tell("Include: %s" % cfg.data.name_base())
-                    if self.dw_thumbs.isVisible():
+                    if cfg.pt.tn_widget.isVisible():
                         cfg.project_tab.tn_ref.show()
                         cfg.project_tab.tn_ref_lab.show()
                         cfg.project_tab.tn_tra_overlay.hide()
@@ -3575,14 +3582,13 @@ class MainWindow(QMainWindow):
             self.tbb3demdata,
             self.tbbMatches,
             self.tbbSnr,
-            self.tbbThumbnails,
             self.tbbHud,
             self.tbbNotes,
             self.tbbPython,
             self.tbbDetachNgButton
         ]
 
-        names = ['Menu', 'Projects', ' &Refresh','Getting\nStarted',' FAQ','Glossary','Issue\nTracker','3DEM\nData',' &Matches', 'SNR P&lot', 'Ref/Tra\n&Thumbs', '   &HUD', '  &Notes', '&Python\nConsole', '&Detach\nNG']
+        names = ['Menu', 'Projects', ' &Refresh','Getting\nStarted',' FAQ','Glossary','Issue\nTracker','3DEM\nData',' &Matches', 'SNR P&lot', '  &HUD', '  &Notes', '&Python\nConsole', '&Detach\nNG']
         for b,n in zip(toolbuttons,names):
             b.setText(n)
             b.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
@@ -3647,36 +3653,6 @@ class MainWindow(QMainWindow):
             h = self.dw_matches.height() - cfg.pt.mwTitle.height()
             self.dw_matches.setMaximumWidth(int(h / 2 + .5) - 4)
             # self.dw_matches.resize(QSize(int(h / 2 + .5) - 4, h))
-
-
-
-        # if self._isProjectTab():
-        #
-        #     if self.dw_matches.isVisible():
-        #         if cfg.data.is_aligned():
-        #             h = self.dw_matches.height() - cfg.pt.mwTitle.height()
-        #             # self.dw_matches.setMaximumWidth(int(h / 2 + .5))
-        #             cfg.pt.match_widget.resize(int(h / 2 + .5), h)
-        #
-        #     if self.dw_thumbs.isVisible():
-        #         h = cfg.pt.tn_widget.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
-        #         # self.dw_thumbs.setMaximumWidth(int(h / 2 + .5))
-        #         cfg.pt.tn_widget.resize(QSize(int(h / 2 + .5), cfg.pt.tn_widget.height()))
-
-        # if self.dw_thumbs.isVisible():
-        #     QApplication.processEvents()
-        #     h = self.dw_thumbs.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
-        #     self.dw_thumbs.setMaximumWidth(int(h / 2 + .5))
-        #     # cfg.pt.tn_widget.resize(QSize(int(h / 2 + .5), cfg.pt.tn_widget.height()))
-        # #
-        # if self.dw_matches.isVisible():
-        #     self.setUpdatesEnabled(True)
-        #     QApplication.processEvents()
-        #
-        #     if cfg.data.is_aligned():
-        #         h = self.dw_matches.height() - cfg.pt.mwTitle.height()
-        #         self.dw_matches.setMaximumWidth(int(h /2 + .5))
-        #         # cfg.pt.match_widget.resize(int(h / 2 + .5), h)
 
         self.setUpdatesEnabled(True)
 
@@ -3857,7 +3833,7 @@ class MainWindow(QMainWindow):
                 padding: 0px;
             """)
 
-            self.dw_thumbs.setWidget(NullWidget())
+            # self.dw_thumbs.setWidget(NullWidget())
             self.dw_matches.setWidget(NullWidget())
             self.dw_snr.setWidget(NullWidget())
 
@@ -4182,9 +4158,10 @@ class MainWindow(QMainWindow):
 
 
         def fn():
+            logger.info('')
             if self.globTabs.count() > 0:
-                if cfg.mw._getTabType() != 'OpenProject':
-                    self.globTabs.removeTab(self.globTabs.currentIndex())
+                # if cfg.mw._getTabType() != 'OpenProject':
+                self.globTabs.removeTab(self.globTabs.currentIndex())
             else:
                 self.exit_app()
 
@@ -5126,11 +5103,10 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.RightDockWidgetArea, self.dw_thumbs)
         self.dw_thumbs.hide()
 
+
         self.dw_matches = DockWidget('Matches & Match Signals', self)
         self.dw_matches.visibilityChanged.connect(self.callbackDwVisibilityChanged)
-        # self.dw_thumbs.setFeatures(self.dw_hud.DockWidgetClosable | self.dw_hud.DockWidgetVerticalTitleBar)
         self.dw_matches.setFeatures(QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetClosable)
-        # self.dw_thumbs.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea | Qt.TopDockWidgetArea | Qt.BottomDockWidgetArea)
         self.dw_matches.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea)
         self.dw_matches.setObjectName('Dock Widget Thumbnails')
         self.dw_matches.setStyleSheet("""
@@ -5391,7 +5367,7 @@ class MainWindow(QMainWindow):
                                     border-width: 0px;
                                 }""")
         self.dw_notes.setWidget(self.notes)
-        self.addDockWidget(Qt.RightDockWidgetArea, self.dw_notes)
+        self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_notes)
         self.dw_notes.hide()
 
         tip = 'Show/Hide Contrast and Brightness Shaders'
@@ -5709,7 +5685,7 @@ class MainWindow(QMainWindow):
         # self.dw_snr.dockLocationChanged.connect(fn_vert_dock_locations_changed)
         # self.dw_python.dockLocationChanged.connect(fn_vert_dock_locations_changed)
 
-        self.splitDockWidget(self.dw_matches, self.dw_thumbs, Qt.Horizontal)
+        # self.splitDockWidget(self.dw_matches, self.dw_thumbs, Qt.Horizontal)
 
 
 
