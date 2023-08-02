@@ -899,8 +899,8 @@ class OpenProject(QWidget):
                 # cfg.pt.updateLowest8widget()
                 # cfg.mw.setdw_hud(True)
                 # cfg.mw.setdw_thumbs(True)
-                cfg.mw.setdw_matches(True)
                 cfg.mw.setdw_snr(True)
+                cfg.mw.setdw_matches(True)
 
             QApplication.processEvents()
             cfg.pt.initNeuroglancer()

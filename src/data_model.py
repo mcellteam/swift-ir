@@ -890,8 +890,6 @@ class DataModel:
             else:
                 self._data['data']['scales'][s]['isRefinement'] = True
 
-
-
             for i in range(len(self)):
                 layer = scale['stack'][i]
 
@@ -962,7 +960,7 @@ class DataModel:
                 layer['alignment']['meta'] = {} #<-- might be a good idea, to recreate this from scratch every time
                 # layer['alignment']['meta'].setdefault('index', i)
                 layer['alignment']['meta']['index'] = i
-                layer['alignment'].setdefault('dev_mode', cfg.DEV_MODE)
+                layer['alignment'].pop('dev_mode', None)
                 layer['alignment'].setdefault('swim_settings', {})
                 # logger.critical(f"{os.path.join(self.dest(), s, 'tmp')}")
                 # layer['alignment']['swim_settings']['karg_path'] = os.path.join(self.dest(), s, 'tmp')
@@ -980,39 +978,57 @@ class DataModel:
                 layer['alignment']['swim_settings'].setdefault('signal-whitening', cfg.DEFAULT_WHITENING)
                 layer['alignment']['swim_settings'].pop('karg', None)
                 layer['alignment']['swim_settings'].pop('targ', None)
-                layer['alignment'].setdefault('grid_custom_px_1x1', None)
-                layer['alignment'].setdefault('grid_custom_px_2x2', None)
-                layer['alignment'].setdefault('manual_swim_window_px', cfg.DEFAULT_MANUAL_SWIM_WINDOW)
+                layer['alignment']['swim_settings'].setdefault('grid_custom_px_1x1', None)
+                layer['alignment']['swim_settings'].setdefault('grid_custom_px_2x2', None)
+                layer['alignment'].pop('manual_swim_window_px', None)
+                try:
+                    layer['alignment']['swim_settings']['swim_settings']['grid_custom_px_1x1'] = layer['alignment'].pop(
+                        'grid_custom_px_1x1')
+                except:
+                    pass
+                try:
+                    layer['alignment']['swim_settings']['swim_settings']['grid_custom_px_2x2'] = layer['alignment'].pop(
+                        'grid_custom_px_2x2')
+                except:
+                    pass
 
                 # layer['alignment']['swim_settings'].setdefault('signal-whitening', cfg.DEFAULT_WHITENING)
                 if 'manual_settings' in layer['alignment'].keys():
                     if 'manual_swim_window_px' in layer['alignment']['manual_settings'].keys():
-                        layer['alignment']['manual_swim_window_px'] = layer['alignment']['manual_settings']['manual_swim_window_px']
+                        layer['alignment']['swim_settings']['manual_swim_window_px'] = layer['alignment']['manual_settings'][
+                            'swim_settings']['manual_swim_window_px']
                         layer['alignment'].pop('manual_settings', None)
 
 
                 if 'grid-custom-px' in layer['alignment']['swim_settings'].keys():
-                    layer['alignment']['grid_custom_px_1x1'] = layer['alignment']['swim_settings']['grid-custom-px']
+                    layer['alignment']['swim_settings']['grid_custom_px_1x1'] = layer['alignment']['swim_settings'][
+                    'grid-custom-px']
                     layer['alignment']['swim_settings'].pop('grid-custom-px', None)
 
                 if 'grid-custom-2x2-px' in layer['alignment']['swim_settings'].keys():
-                    layer['alignment']['grid_custom_px_2x2'] = layer['alignment']['swim_settings']['grid-custom-2x2-px']
+                    layer['alignment']['swim_settings']['grid_custom_px_2x2'] = layer['alignment']['swim_settings'][
+'grid-custom-2x2-px']
                     layer['alignment']['swim_settings'].pop('grid-custom-2x2-px', None)
 
 
                 # layer['alignment']['manual_settings'].setdefault('swim_whitening', cfg.DEFAULT_MANUAL_WHITENING)
-                layer['alignment'].setdefault('manpoints', {})
-                layer['alignment']['manpoints'].setdefault('ref', [])
-                layer['alignment']['manpoints'].setdefault('base', [])
-                layer['alignment'].setdefault('manpoints_mir', {})
-                layer['alignment']['manpoints_mir'].setdefault('ref', [])
-                layer['alignment']['manpoints_mir'].setdefault('base', [])
-                if s == self.coarsest_scale_key():
-                    layer['alignment'].setdefault('targ', True)
-                    layer['alignment'].setdefault('karg', True)
-                else:
-                    layer['alignment'].setdefault('targ', False)
-                    layer['alignment'].setdefault('karg', False)
+                layer['alignment']['swim_settings'].setdefault('match_points', {})
+                layer['alignment']['swim_settings'].setdefault('match_points_mir', {})
+                layer['alignment']['swim_settings']['match_points'].setdefault('ref', [])
+                layer['alignment']['swim_settings']['match_points'].setdefault('base', [])
+                layer['alignment']['swim_settings']['match_points_mir'].setdefault('ref', [])
+                layer['alignment']['swim_settings']['match_points_mir'].setdefault('base', [])
+                try:
+                    layer['alignment']['swim_settings']['match_points'] = layer['alignment'].pop('manpoints')
+                except:
+                    pass
+                try:
+                    layer['alignment']['swim_settings']['match_points_mir'] = layer['alignment'].pop('manpoints_mir')
+                except:
+                    pass
+
+                layer['alignment'].pop('targ', None)
+                layer['alignment'].pop('karg', None)
                 # layer['alignment'].setdefault('targ', True)
                 # layer['alignment'].setdefault('karg', True)
         try:
@@ -1417,7 +1433,7 @@ class DataModel:
         '''Returns manual correspondence points in Neuroglancer format'''
         if s == None: s = self.scale
         if l == None: l = self.zpos
-        return self._data['data']['scales'][s]['stack'][l]['alignment']['manpoints']
+        return self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['match_points']
 
     def set_manpoints(self, role, matchpoints, l=None):
         '''Sets manual correspondence points for a single section at the current scale_key, and applies
@@ -1439,24 +1455,29 @@ class DataModel:
             for p in glob_coords:
                 coords.append((p[0] / fac, p[1] / fac))
             logger.info(f'Setting manual points for {s}: {coords}')
-            self._data['data']['scales'][s]['stack'][l]['alignment']['manpoints'][role] = coords
+            self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['match_points'][role] = coords
 
             # set manual points in MIR coordinate system
             img_width = self.image_size(s=s)[0]
             mir_coords = [[img_width - pt[1], pt[0]] for pt in coords]
-            self._data['data']['scales'][s]['stack'][l]['alignment']['manpoints_mir'][role] = mir_coords
+            self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['match_points'][role] = \
+                mir_coords
 
             # if role == 'base':
             #     if l+1 in range(0,len(self)):
-            #         self._data['data']['scales'][s]['stack'][l+1]['alignment']['manpoints']['ref'] = coords
-            #         self._data['data']['scales'][s]['stack'][l+1]['alignment']['manpoints_mir']['ref'] = mir_coords
+            #         self._data['data']['scales'][s]['stack'][l+1]['alignment']['swim_settings']['match_points'][
+            #         'ref'] =
+            #         coords
+            #         self._data['data']['scales'][s]['stack'][l+1]['alignment']['swim_settings']['match_points'][
+            #         'ref'] =
+            #         mir_coords
 
 
     def manpoints_mir(self, role, s=None, l=None):
         '''Returns manual correspondence points in MIR format'''
         if s == None: s = self.scale
         if l == None: l = self.zpos
-        return self._data['data']['scales'][s]['stack'][l]['alignment']['manpoints_mir'][role]
+        return self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['match_points'][role]
 
     def manpoints_pretty(self, s=None, l=None):
         if s == None: s = self.scale
@@ -1481,8 +1502,8 @@ class DataModel:
         indexes, names = [], []
         try:
             for i,layer in enumerate(self.stack()):
-                r = layer['alignment']['manpoints']['ref']
-                b = layer['alignment']['manpoints']['base']
+                r = layer['alignment']['swim_settings']['match_points']['ref']
+                b = layer['alignment']['swim_settings']['match_points']['base']
                 if (r != []) or (b != []):
                     indexes.append(i)
                     names.append(os.path.basename(layer['filename']))
@@ -1495,8 +1516,8 @@ class DataModel:
     def print_all_manpoints(self):
         logger.info('Match Points:')
         for i, sec in enumerate(self.stack()):
-            r = sec['alignment']['manpoints']['ref']
-            b = sec['alignment']['manpoints']['base']
+            r = sec['alignment']['swim_settings']['match_points']['ref']
+            b = sec['alignment']['swim_settings']['match_points']['base']
             if r != []:
                 logger.info(f'Index: {i}, Ref, Match Points: {str(r)}')
             if b != []:
@@ -1508,7 +1529,7 @@ class DataModel:
         if s == None: s = self.scale
         if l == None: l = self.zpos
         try:
-            mps = self._data['data']['scales'][s]['stack'][l]['alignment']['manpoints']
+            mps = self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['match_points']
             # ref = [(0.5, x[0], x[1]) for x in mps['ref']]
             # base = [(0.5, x[0], x[1]) for x in mps['base']]
             ref = [(l, x[0], x[1]) for x in mps['ref']]
@@ -1524,16 +1545,16 @@ class DataModel:
         # scales = [get_scale_key(x) for x in scale_vals]
         # for s in self.scales():
         for s in self.finer_scales():
-            self._data['data']['scales'][s]['stack'][l]['alignment']['manpoints']['ref'] = []
-            self._data['data']['scales'][s]['stack'][l]['alignment']['manpoints']['base'] = []
-            self._data['data']['scales'][s]['stack'][l]['alignment']['manpoints_mir']['ref'] = []
-            self._data['data']['scales'][s]['stack'][l]['alignment']['manpoints_mir']['base'] = []
+            self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['match_points']['ref'] = []
+            self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['match_points']['base'] = []
+            self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['match_points']['ref'] = []
+            self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['match_points']['base'] = []
 
 
     # def clearAllMps(self):
     #     for layer in self.stack():
-    #         layer['alignment']['manpoints']['ref'] = []
-    #         layer['alignment']['manpoints']['base'] = []
+    #         layer['alignment']['swim_settings']['match_points']['ref'] = []
+    #         layer['alignment']['swim_settings']['match_points']['base'] = []
 
     # def annotations(self, s=None, l=None):
     #     if s == None: s = self.scale_key
@@ -1813,7 +1834,7 @@ class DataModel:
         if s == None: s = self.scale
         if l == None: l = self.zpos
         # return self.stack()[self.zpos]['alignment']['swim_settings']['grid-custom-px']
-        return tuple(self._data['data']['scales'][s]['stack'][l]['alignment']['grid_custom_px_1x1'])
+        return tuple(self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['grid_custom_px_1x1'])
 
     def set_swim_1x1_custom_px(self, pixels=None):
         '''Sets the SWIM Window for the Current Section across all scales.'''
@@ -1826,9 +1847,15 @@ class DataModel:
         img_w, img_h = self.image_size(s=self.scale)
         pixels = pixels
         pixels_y = (pixels / img_w) * img_h
-        self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['grid_custom_px_1x1'] = [pixels, pixels_y]
+        self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['swim_settings'][
+            'grid_custom_px_1x1']\
+         = [
+            pixels,
+        pixels_y]
         if (self.swim_2x2_custom_px()[0] * 2) > pixels:
-            self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['grid_custom_px_2x2'] = \
+            self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['swim_settings'][
+            'grid_custom_px_2x2']\
+                = \
                 [int(pixels / 2  + 0.5), int(pixels_y / 2 + 0.5)]
 
 
@@ -1837,7 +1864,8 @@ class DataModel:
         '''Sets the SWIM Window for the Current Section across all scales.'''
         # img_w, img_h = self.image_size(s=self.scale_key)
         for l in range(start, end):
-            pixels = self._data['data']['scales'][self.scale]['stack'][l]['alignment']['grid_custom_px_1x1']
+            pixels = self._data['data']['scales'][self.scale]['stack'][l]['alignment']['swim_settings'][
+                'grid_custom_px_1x1']
             for s in self.finer_scales():
                 sf = self.scale_val() / get_scale_val(s)
                 self._data['data']['scales'][s]['stack'][l]['alignment'][
@@ -1848,7 +1876,7 @@ class DataModel:
         '''Returns the SWIM Window in pixels'''
         if s == None: s = self.scale
         if l == None: l = self.zpos
-        return tuple(self._data['data']['scales'][s]['stack'][l]['alignment']['grid_custom_px_2x2'])
+        return tuple(self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['grid_custom_px_2x2'])
 
     def set_swim_2x2_custom_px(self, pixels=None):
         '''Returns the SWIM Window in pixels'''
@@ -1867,23 +1895,33 @@ class DataModel:
         logger.critical(f"    {int(self.swim_1x1_custom_px()[1] / 2 + 0.5)}")
 
         if (2 * pixels) <= self.swim_1x1_custom_px()[0]:
-            self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['grid_custom_px_2x2'] = [pixels, pixels_y]
+            self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['swim_settings'][
+            'grid_custom_px_2x2']\
+             = [
+ pixels, pixels_y]
         else:
             force_pixels = [int(self.swim_1x1_custom_px()[0] / 2 + 0.5),int(self.swim_1x1_custom_px()[1] / 2 + 0.5)]
             if (force_pixels[0] % 2) == 1:
                 force_pixels[0] -= 1
                 force_pixels[1] -= 1
-            self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['grid_custom_px_2x2'] = force_pixels
+            self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['swim_settings'][
+            'grid_custom_px_2x2']\
+             = \
+                force_pixels
 
 
     def propagate_swim_2x2_custom_px(self, start, end):
         '''Returns the SWIM Window in pixels'''
         # img_w, img_h = self.image_size(s=self.scale_key)
         for l in range(start, end):
-            pixels = self._data['data']['scales'][self.scale]['stack'][l]['alignment']['grid_custom_px_2x2']
+            pixels = self._data['data']['scales'][self.scale]['stack'][l]['alignment']['swim_settings'][
+            'grid_custom_px_2x2']
             for s in self.finer_scales(include_self=False):
                 sf = self.scale_val() / get_scale_val(s)  # scale_key factor
-                self._data['data']['scales'][s]['stack'][l]['alignment']['grid_custom_px_2x2'] = [int(pixels[0] * sf + 0.5), int(pixels[1] * sf + 0.5)]
+                self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['grid_custom_px_2x2'] = [int(
+                pixels[0]
+                * sf
+                                                                                                        + 0.5), int(pixels[1] * sf + 0.5)]
 
 
 
@@ -1908,20 +1946,24 @@ class DataModel:
             # self._data['data']['defaults'].setdefault(s, {})
             # self._data['data']['defaults'][s]['swim-window-px'] = [man_ww_x, man_ww_y]
             if current_only:
-                self.stack(s)[self.zpos]['alignment']['grid_custom_px_1x1'] = [int(man_ww_x), int(man_ww_y)]
-                self.stack(s)[self.zpos]['alignment']['grid_custom_px_2x2'] = [int(man_ww_x / 2 + 0.5), int(man_ww_y / 2 + 0.5)]
+                self.stack(s)[self.zpos]['alignment']['swim_settings']['grid_custom_px_1x1'] = [int(man_ww_x),
+                int(man_ww_y)]
+                self.stack(s)[self.zpos]['alignment']['swim_settings']['grid_custom_px_2x2'] = [int(man_ww_x / 2 + 0.5),
+                                                                                                int(man_ww_y / 2 + 0.5)]
             else:
                 self._data['data']['defaults'].setdefault(s, {})
                 self._data['data']['defaults'][s]['swim-window-px'] = [man_ww_x, man_ww_y]
                 for i in range(len(self)):
-                    self.stack(s)[i]['alignment']['grid_custom_px_1x1'] = [int(man_ww_x), int(man_ww_y)]
-                    self.stack(s)[i]['alignment']['grid_custom_px_2x2'] = [int(man_ww_x / 2 + 0.5), int(man_ww_y / 2 + 0.5)]
+                    self.stack(s)[i]['alignment']['swim_settings']['grid_custom_px_1x1'] = [int(man_ww_x),
+                                                                                            int(man_ww_y)]
+                    self.stack(s)[i]['alignment']['swim_settings']['grid_custom_px_2x2'] = [int(man_ww_x / 2 + 0.5),
+                                                                                            int(man_ww_y/ 2 + 0.5)]
 
     def manual_swim_window_px(self, s=None, l=None) -> int:
         '''Returns the SWIM Window for the Current Layer.'''
         if s == None: s = self.scale
         if l == None: l = self.zpos
-        return int(self._data['data']['scales'][s]['stack'][l]['alignment']['manual_swim_window_px'])
+        return int(self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['manual_swim_window_px'])
 
     def set_manual_swim_window_px(self, pixels=None) -> None:
         '''Sets the SWIM Window for the Current Layer when using Manual Alignment.'''
@@ -1930,17 +1972,20 @@ class DataModel:
         if (pixels % 2) == 1:
             pixels -= 1
 
-        self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['manual_swim_window_px'] = pixels
+        self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['swim_settings'][
+            'manual_swim_window_px'] = pixels
 
 
     def propagate_manual_swim_window_px(self, start, end) -> None:
         '''Sets the SWIM Window for the Current Layer when using Manual Alignment.'''
         # logger.info('Propagating swim regions to finer scales...')
         for l in range(start, end):
-            pixels = self._data['data']['scales'][self.scale]['stack'][l]['alignment']['manual_swim_window_px']
+            pixels = self._data['data']['scales'][self.scale]['stack'][l]['alignment']['swim_settings'][
+                'manual_swim_window_px']
             for s in self.finer_scales():
                 sf = self.scale_val() / get_scale_val(s)  # scale_key factor
-                self._data['data']['scales'][s]['stack'][l]['alignment']['manual_swim_window_px'] = int(pixels * sf + 0.5)
+                self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['manual_swim_window_px'] = \
+                    int(pixels * sf + 0.5)
 
     def set_manual_swim_windows_to_default(self, s_list=None, current_only=False) -> None:
         # logger.info('')
@@ -1955,10 +2000,10 @@ class DataModel:
             man_ww = man_ww_full / self.scale_val(s)
             # logger.info(f'Manual SWIM window size for {s} to {man_ww}')
             if current_only:
-                self.stack(s)[self.zpos]['alignment']['manual_swim_window_px'] = man_ww
+                self.stack(s)[self.zpos]['alignment']['swim_settings']['manual_swim_window_px'] = man_ww
             else:
                 for i in range(len(self)):
-                    self.stack(s)[i]['alignment']['manual_swim_window_px'] = man_ww
+                    self.stack(s)[i]['alignment']['swim_settings']['manual_swim_window_px'] = man_ww
 
 
     #
@@ -1971,7 +2016,7 @@ class DataModel:
     #     # for s in self.scales():
     #     for s in self.finer_scales():
     #         self._data['data']['scales'][s]['stack'][self.zpos][
-    #             'alignment']['manual_swim_window_px'] = scale_1_ww / get_scale_val(s)
+    #             'alignment']['swim_settings']['manual_swim_window_px'] = scale_1_ww / get_scale_val(s)
 
 
     # def propagate_manual_regions(self, s=None):
@@ -1987,7 +2032,8 @@ class DataModel:
     #         for section in range(0,len(self)):
     #             ww = self.manual_swim_window_px(s=s)
     #             self._data['data']['scales'][scale_key]['stack'][section][
-    #                 'alignment']['manual_settings']['manual_swim_window_px'] = ww * (1 / get_scale_val(s))
+    #                 'alignment']['manual_settings']['swim_settings']['manual_swim_window_px'] = ww * (1 /
+    #                 get_scale_val(s))
 
 
     def bounding_rect(self, s=None):
