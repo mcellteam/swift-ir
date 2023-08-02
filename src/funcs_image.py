@@ -444,8 +444,12 @@ def InitCafm(bias_funcs):
 def SetSingleCafm(layer_dict, c_afm, bias_mat=None):
     '''Calculate and set the value of the cafm (with optional bias) for a single layer_dict item'''
     atrm = layer_dict['alignment']
+
     try:
-        afm = np.array(atrm['method_results']['affine_matrix'])
+        if layer_dict['alignment']['swim_settings']['include']:
+            afm = np.array(atrm['method_results']['affine_matrix'])
+        else:
+            afm = identityAffine()
     except:
         logger.warning('SetSingleCafm triggered an exception Empty affine_matrix in base image, skipping: '
                        '%s' % (layer_dict['filename']))

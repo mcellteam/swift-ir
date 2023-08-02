@@ -78,7 +78,7 @@ from src.ui.thumbnail import CorrSignalThumbnail, ThumbnailFast, SnrThumbnail
 from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter, YellowTextLabel, Button
 from src.ui.timer import Timer
 from src.autoscale import autoscale
-# from src.ui.flicker import Flicker
+from src.funcs_image import SetStackCafm
 
 # from src.ui.components import AutoResizingTextEdit
 from src.mendenhall_protocol import Mendenhall
@@ -3098,6 +3098,14 @@ class MainWindow(QMainWindow):
                         cfg.project_tab.tn_tra_overlay.hide()
                 cfg.data.link_reference_sections()
                 # if getData('state,blink'):
+
+                SetStackCafm(
+                    cfg.data.get_iter(s=cfg.data.scale),
+                    scale=cfg.data.scale,
+                    poly_order=cfg.data.default_poly_order
+                )
+                #Critical0802+
+
                 self.dataUpdateWidgets()
                 # if cfg.project_tab._tabs.currentIndex() == 1:
                     # cfg.project_tab.project_table.initTableData()

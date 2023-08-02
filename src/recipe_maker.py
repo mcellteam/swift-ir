@@ -265,8 +265,7 @@ class align_recipe:
         try:
             mr['affine_matrix'] = afm.tolist()
         except:
-            print_exception(f"\ntype(afm) = {afm}\nafm={afm}")
-        mr['afm'] = afm.tolist()
+            print_exception(f"\nindex = {self.index}\ntype(afm) = {afm}\nafm={afm}")
         mr['init_afm'] = self.meta['init_afm']
         mr['swim_pos'] = self.ingredients[-1].psta.tolist()
         mr['datetime'] = time
