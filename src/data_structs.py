@@ -39,12 +39,6 @@ data_template = \
 layer_template = \
     {
         "alignment": {
-            "manual_settings": {},
-            "method_options": {},
-            "manpoints": {
-                "ref": [],
-                'base': []
-            },
             "method_results": {
                 "snr": [],
                 "snr_prev": [],

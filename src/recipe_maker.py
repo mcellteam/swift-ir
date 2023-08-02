@@ -148,8 +148,8 @@ class align_recipe:
                         ID='g2x2-d',
                         last=True)])
         elif self.method == 'grid-custom':
-            ww_1x1 = self.data['grid_custom_px_1x1']
-            ww_2x2 = self.data['grid_custom_px_2x2']
+            ww_1x1 = self.data['swim_settings']['grid_custom_px_1x1']
+            ww_2x2 = self.data['swim_settings']['grid_custom_px_2x2']
             x1 = ((self.meta['img_size'][0] - ww_1x1[0]) / 2) + (ww_2x2[0] / 2)
             x2 = self.meta['img_size'][0] - x1
             y1 = ((self.meta['img_size'][1] - ww_1x1[1]) / 2) + (ww_2x2[1] / 2)
@@ -185,9 +185,9 @@ class align_recipe:
                     last=True),
             ])
         else:
-            ww = self.data['manual_swim_window_px']
-            man_pmov = np.array(self.data['manpoints_mir']['base']).transpose()
-            man_psta = np.array(self.data['manpoints_mir']['ref']).transpose()
+            ww = self.data['swim_settings']['manual_swim_window_px']
+            man_pmov = np.array(self.data['swim_settings']['match_points_mir']['base']).transpose()
+            man_psta = np.array(self.data['swim_settings']['match_points_mir']['ref']).transpose()
             if self.method == 'manual-hint':
                 self.add_ingredients([
                     align_ingredient(

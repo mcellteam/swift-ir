@@ -89,8 +89,8 @@ def check_project_status():
         local_problem_flag = 0
 
         if section['current_method'] in ('manual-hint'):
-            n_ref_pts = len(section['alignment']['manpoints']['ref'])
-            n_base_pts = len(section['alignment']['manpoints']['base'])
+            n_ref_pts = len(section['alignment']['swim_settings']['match_points']['ref'])
+            n_base_pts = len(section['alignment']['swim_settings']['match_points']['base'])
             if n_ref_pts < 3:
                 cfg.mw.warn(f'Fatal! # of match regions for Reference image {i} is fewer than three: [{n_ref_pts}]')
                 glob_problem_flag = 1
@@ -100,8 +100,8 @@ def check_project_status():
                 glob_problem_flag = 1
                 local_problem_flag = 1
         if section['current_method'] in ('manual-strict'):
-            n_ref_pts = len(section['alignment']['manpoints']['ref'])
-            n_base_pts = len(section['alignment']['manpoints']['base'])
+            n_ref_pts = len(section['alignment']['swim_settings']['match_points']['ref'])
+            n_base_pts = len(section['alignment']['swim_settings']['match_points']['base'])
             if n_ref_pts < 3:
                 cfg.mw.warn(f'Fatal! # of match points for Reference image {i} is fewer than three: [{n_ref_pts}]')
                 glob_problem_flag = 1

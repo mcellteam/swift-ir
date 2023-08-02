@@ -536,7 +536,6 @@ class ConfigProjectDialog(QDialog):
         try:
             cfg.main_window.hud('Applying Project Settings...')
             cfg.data.set_scales_from_string(self.scales_input.text())
-            cfg.data.set_method_options()
             cfg.data.set_use_bounding_rect(self.bounding_rectangle_checkbox.isChecked())
             cfg.data['data']['defaults']['initial-rotation'] = float(self.initial_rotation_input.text())
             # cfg.data['data']['defaults']['swim-iterations'] =
@@ -801,7 +800,6 @@ class NewConfigureProjectDialog(QDialog):
             cfg.data.set_clobber_px(self.sb_clobber_pixels.value(), glob=True)
 
             cfg.data.set_scales_from_string(self.scales_input.text())
-            cfg.data.set_method_options()
             cfg.data.set_use_bounding_rect(self.bounding_rectangle_checkbox.isChecked())
             cfg.data['data']['defaults']['initial-rotation'] = float(self.initial_rotation_input.text())
             cfg.data['data']['clevel'] = int(self.clevel_input.text())
@@ -834,7 +832,6 @@ class NewConfigureProjectDialog(QDialog):
             cfg.data.set_clobber_px(self.sb_clobber_pixels.value(), glob=True)
 
             cfg.data.set_scales_from_string(self.scales_input.text())
-            cfg.data.set_method_options()
             cfg.data.set_use_bounding_rect(self.bounding_rectangle_checkbox.isChecked())
             cfg.data['data']['defaults']['initial-rotation'] = float(self.initial_rotation_input.text())
             cfg.data['data']['clevel'] = int(self.clevel_input.text())
