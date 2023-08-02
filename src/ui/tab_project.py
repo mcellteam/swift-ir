@@ -3386,10 +3386,10 @@ class ProjectTab(QWidget):
 
     #0731
     def get_treeview_data(self, index=None):
-        logger.info(f'arg passed {index}')
+        # logger.info(f'arg passed {index}')
         if index == None:
             index = self.treeview.selectedIndexes()[0]
-        logger.info(f'index is {index}')
+        # logger.info(f'index is {index}')
         cur_key = index.data()
         par_key = index.parent().data()
         # print(f"cur_key = {cur_key}")

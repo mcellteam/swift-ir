@@ -1868,7 +1868,7 @@ class DataModel:
                 'grid_custom_px_1x1']
             for s in self.finer_scales():
                 sf = self.scale_val() / get_scale_val(s)
-                self._data['data']['scales'][s]['stack'][l]['alignment'][
+                self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings'][
                     'grid_custom_px_1x1'] = [int(pixels[0] * sf + 0.5), int(pixels[1] * sf + 0.5)]
 
 
