@@ -270,6 +270,10 @@ def main():
     # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
     os.environ['LIBTIFF_STRILE_ARRAY_MAX_RESIZE_COUNT'] = '1000000000'
 
+    # PYTHONHASHSEED must be "random" or an integer in range [0; 4294967295]
+    os.environ['PYTHONHASHSEED'] = '98247985'
+
+
     if qtpy.QT5:
         logger.info('Setting Qt.AA_EnableHighDpiScaling')
         QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)

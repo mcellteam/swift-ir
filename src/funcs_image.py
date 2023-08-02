@@ -448,7 +448,7 @@ def SetSingleCafm(layer_dict, c_afm, bias_mat=None, method='grid-default'):
 
     try:
         if layer_dict['alignment']['swim_settings']['include']:
-            afm = np.array(atrm['method_results']['affine_matrix'])
+            afm = np.array(atrm_new['method_results']['affine_matrix'])
         else:
             afm = identityAffine()
     except:
