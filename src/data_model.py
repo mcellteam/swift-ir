@@ -303,17 +303,17 @@ class DataModel:
     def grid_custom_regions(self):
         return self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['swim_settings']['grid_custom_regions']
 
-    def get_grid_custom_regions(self, s=None, l=None):
-        if s == None: s = self.scale
-        if l == None: l = self.zpos
-        return self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings'][
-            'grid_custom_regions']
-
     @grid_custom_regions.setter
     def grid_custom_regions(self, lst):
         # for s in self.scales():
         for s in self.finer_scales():
             self._data['data']['scales'][s]['stack'][self.zpos]['alignment']['swim_settings']['grid_custom_regions'] = lst
+
+    def get_grid_custom_regions(self, s=None, l=None):
+        if s == None: s = self.scale
+        if l == None: l = self.zpos
+        return self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings'][
+            'grid_custom_regions']
 
     @property
     def karg(self):
@@ -893,6 +893,7 @@ class DataModel:
 
             for i in range(len(self)):
                 layer = scale['stack'][i]
+                layer.setdefault('notes', '')
 
                 layer.pop('selected_method', None)
                 layer.setdefault('data_comports', True)
@@ -906,37 +907,70 @@ class DataModel:
                 layer['alignment_history'].setdefault('manual-hint', {})
                 layer['alignment_history'].setdefault('manual-strict', {})
 
-                if type(layer['alignment_history']['grid-default']) == list:
-                    layer['alignment_history']['grid-default'] = {}
-                if type(layer['alignment_history']['grid-custom']) == list:
-                    layer['alignment_history']['grid-custom'] = {}
-                if type(layer['alignment_history']['manual-hint']) == list:
-                    layer['alignment_history']['manual-hint'] = {}
-                if type(layer['alignment_history']['manual-strict']) == list:
-                    layer['alignment_history']['manual-strict'] = {}
+                layer['alignment_history']['grid-default'].setdefault('method_results', {})
+                layer['alignment_history']['grid-custom'].setdefault('method_results', {})
+                layer['alignment_history']['manual-hint'].setdefault('method_results', {})
+                layer['alignment_history']['manual-strict'].setdefault('method_results', {})
 
+                # if type(layer['alignment_history']['grid-default']) == list:
+                #     layer['alignment_history']['grid-default'] = {}
+                # if type(layer['alignment_history']['grid-custom']) == list:
+                #     layer['alignment_history']['grid-custom'] = {}
+                # if type(layer['alignment_history']['manual-hint']) == list:
+                #     layer['alignment_history']['manual-hint'] = {}
+                # if type(layer['alignment_history']['manual-strict']) == list:
+                #     layer['alignment_history']['manual-strict'] = {}
 
-                layer['alignment_history']['grid-default'].setdefault('snr', 0.0)
-                layer['alignment_history']['grid-custom'].setdefault('snr', 0.0)
-                layer['alignment_history']['manual-hint'].setdefault('snr', 0.0)
-                layer['alignment_history']['manual-strict'].setdefault('snr', 0.0)
+                layer['alignment_history']['grid-default']['method_results'].setdefault('snr', 0.0)
+                layer['alignment_history']['grid-custom']['method_results'].setdefault('snr', 0.0)
+                layer['alignment_history']['manual-hint']['method_results'].setdefault('snr', 0.0)
+                layer['alignment_history']['manual-strict']['method_results'].setdefault('snr', 0.0)
 
                 # report = 'SNR: 0.0 (+-0.0 n:1)  <0.0  0.0>'
-                layer['alignment_history']['grid-default'].setdefault('snr_report', 'SNR: --')
-                layer['alignment_history']['grid-custom'].setdefault('snr_report', 'SNR: --')
-                layer['alignment_history']['manual-hint'].setdefault('snr_report', 'SNR: --')
-                layer['alignment_history']['manual-strict'].setdefault('snr_report', 'SNR: --')
+                layer['alignment_history']['grid-default']['method_results'].setdefault('snr_report', 'SNR: --')
+                layer['alignment_history']['grid-custom']['method_results'].setdefault('snr_report', 'SNR: --')
+                layer['alignment_history']['manual-hint']['method_results'].setdefault('snr_report', 'SNR: --')
+                layer['alignment_history']['manual-strict']['method_results'].setdefault('snr_report', 'SNR: --')
 
                 init_afm = [[1., 0., 0.], [0., 1., 0.]]
-                layer['alignment_history']['grid-default'].setdefault('affine_matrix', init_afm)
-                layer['alignment_history']['grid-custom'].setdefault('affine_matrix', init_afm)
-                layer['alignment_history']['manual-hint'].setdefault('affine_matrix', init_afm)
-                layer['alignment_history']['manual-strict'].setdefault('affine_matrix', init_afm)
+                layer['alignment_history']['grid-default']['method_results'].setdefault('affine_matrix', init_afm)
+                layer['alignment_history']['grid-custom']['method_results'].setdefault('affine_matrix', init_afm)
+                layer['alignment_history']['manual-hint']['method_results'].setdefault('affine_matrix', init_afm)
+                layer['alignment_history']['manual-strict']['method_results'].setdefault('affine_matrix', init_afm)
 
-                layer['alignment_history']['grid-default'].setdefault('cafm_hash', None)
-                layer['alignment_history']['grid-custom'].setdefault('cafm_hash', None)
-                layer['alignment_history']['manual-hint'].setdefault('cafm_hash', None)
-                layer['alignment_history']['manual-strict'].setdefault('cafm_hash', None)
+                layer['alignment_history']['grid-default']['method_results'].setdefault('cafm_hash', None)
+                layer['alignment_history']['grid-custom']['method_results'].setdefault('cafm_hash', None)
+                layer['alignment_history']['manual-hint']['method_results'].setdefault('cafm_hash', None)
+                layer['alignment_history']['manual-strict']['method_results'].setdefault('cafm_hash', None)
+
+
+                try:    layer['alignment_history']['grid-default']['method_results']['snr'] = layer['alignment_history']['grid-default'].pop('snr')
+                except: pass
+                try:    layer['alignment_history']['grid-custom']['method_results']['snr'] = layer['alignment_history']['grid-custom'].pop('snr')
+                except: pass
+                try:    layer['alignment_history']['manual-hint']['method_results']['snr'] = layer['alignment_history']['manual-hint'].pop('snr')
+                except: pass
+                try:    layer['alignment_history']['manual-strict']['method_results']['snr'] = layer['alignment_history']['manual-strict'].pop('snr')
+                except: pass
+
+                try:    layer['alignment_history']['grid-default']['method_results']['snr_report'] = layer['alignment_history']['grid-default'].pop('snr_report')
+                except: pass
+                try:    layer['alignment_history']['grid-custom']['method_results']['snr_report'] = layer['alignment_history']['grid-custom'].pop('snr_report')
+                except: pass
+                try:    layer['alignment_history']['manual-hint']['method_results']['snr_report'] = layer['alignment_history']['manual-hint'].pop('snr_report')
+                except: pass
+                try:    layer['alignment_history']['manual-strict']['method_results']['snr_report'] = layer['alignment_history']['manual-strict'].pop('snr_report')
+                except: pass
+
+                try:    layer['alignment_history']['grid-default']['method_results']['affine_matrix'] = layer['alignment_history']['grid-default'].pop('affine_matrix')
+                except: pass
+                try:    layer['alignment_history']['grid-custom']['method_results']['affine_matrix'] = layer['alignment_history']['grid-custom'].pop('affine_matrix')
+                except: pass
+                try:    layer['alignment_history']['manual-hint']['method_results']['affine_matrix'] = layer['alignment_history']['manual-hint'].pop('affine_matrix')
+                except: pass
+                try:    layer['alignment_history']['manual-strict']['method_results']['affine_matrix'] = layer['alignment_history']['manual-strict'].pop('affine_matrix')
+                except: pass
+
 
                 # if not 'cumulative_afm' in layer['alignment_history'][cfg.data.get_current_method(l=i)]:
                 #     layer['alignment_history']['grid-default']['cumulative_afm'] =
@@ -963,8 +997,10 @@ class DataModel:
                 # layer['alignment']['meta'].setdefault('index', i)
                 layer['alignment'].setdefault('swim_settings', {})
 
+                layer['alignment']['swim_settings'].setdefault('method', 'grid-default')
+
                 try:
-                    layer['alignment']['swim_settings']['grid_custom_regions'] = layer.pop('current_method')
+                    layer['alignment']['swim_settings']['method'] = layer.pop('current_method')
                 except:
                     pass
 
@@ -1026,8 +1062,7 @@ class DataModel:
                     layer['alignment']['swim_settings'].pop('grid-custom-px', None)
 
                 if 'grid-custom-2x2-px' in layer['alignment']['swim_settings'].keys():
-                    layer['alignment']['swim_settings']['grid_custom_px_2x2'] = layer['alignment']['swim_settings'][
-'grid-custom-2x2-px']
+                    layer['alignment']['swim_settings']['grid_custom_px_2x2'] = layer['alignment']['swim_settings']['grid-custom-2x2-px']
                     layer['alignment']['swim_settings'].pop('grid-custom-2x2-px', None)
 
 
@@ -1217,10 +1252,10 @@ class DataModel:
             return {}
 
 
-    def get_method_data(self, method, s=None, l=None):
-        if s == None: s = self.scale
-        if l == None: l = self.zpos
-        return self._data['data']['scales'][s]['stack'][l]['alignment_history'][method]
+    # def get_method_data(self, method, s=None, l=None):
+    #     if s == None: s = self.scale
+    #     if l == None: l = self.zpos
+    #     return self._data['data']['scales'][s]['stack'][l]['alignment_history'][method]
 
 
     def snr(self, s=None, l=None, method=None) -> float:
@@ -1236,7 +1271,8 @@ class DataModel:
             #     method = self.current_method
             # components = self._data['data']['scales'][s]['stack'][l]['alignment_history'][method][-1]['snr']
             # components = self._data['data']['scales'][s]['stack'][l]['alignment']['method_results']['snr'] #prev
-            components = self._data['data']['scales'][s]['stack'][l]['alignment_history'][method]['snr']
+            components = self._data['data']['scales'][s]['stack'][l]['alignment_history'][method]['method_results']['snr']
+
             '''
             13:55:45 WARNING [helpers.print_exception:731]   [20230526_13:55:45]
             Error Type : <class 'TypeError'>
@@ -1311,7 +1347,7 @@ class DataModel:
             return []
         try:
             # return self._data['data']['scales'][s]['stack'][l]['alignment_history'][method][-1]['snr']
-            components = self._data['data']['scales'][s]['stack'][l]['alignment_history'][method]['snr']
+            components = self._data['data']['scales'][s]['stack'][l]['alignment_history'][method]['method_results']['snr']
             if type(components) == list:
                 return components
             else:
@@ -1343,7 +1379,7 @@ class DataModel:
         if s == None: s = self.scale
         if l == None: l = self.zpos
         try:
-            return self._data['data']['scales'][s]['stack'][l]['alignment_history'][self.get_current_method(s=s, l=l)]['snr_report']
+            return self._data['data']['scales'][s]['stack'][l]['alignment_history'][self.get_current_method(s=s, l=l)]['method_results']['snr_report']
         except:
             logger.warning('No SNR Report for Layer %d' % l)
             return ''
@@ -1597,7 +1633,7 @@ class DataModel:
         if l == None: l = self.zpos
         try:
             # return self._data['data']['scales'][s]['stack'][l]['alignment']['method_results']['affine_matrix']
-            return self._data['data']['scales'][s]['stack'][l]['alignment_history'][self.get_current_method(s=s,l=l)]['affine_matrix']
+            return self._data['data']['scales'][s]['stack'][l]['alignment_history'][self.get_current_method(s=s,l=l)]['method_results']['affine_matrix']
         except:
             print_exception()
             return [[[1, 0, 0], [0, 1, 0]]]
@@ -2462,9 +2498,9 @@ class DataModel:
 
     def first_unskipped(self, s=None):
         if s == None: s = self.scale
-        for i,section in enumerate(self.get_iter(s=s)):
-            if self.include(s=s,l=i):
-                return i
+        for section in self.get_iter(s=s):
+            if section['alignment']['swim_settings']['include']:
+                return section['alignment']['swim_settings']['index']
 
 
     def link_reference_sections(self, s_list=None):
