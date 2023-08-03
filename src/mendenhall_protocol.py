@@ -84,15 +84,15 @@ class Mendenhall(QObject):
         self.preallocate()
         cfg.project_tab.openViewZarr()
 
-    def add_image(self, img):
-        # cfg.main_window.hud.post(f"Adding Image\n'{os.path.basename(img)}'...")
-        cfg.data.append_image(img)
-        cfg.data.link_reference_sections()
-        self.img_to_zarr(ID=self._index, fn=img)
-        self._index += 1
-        # cfg.main_window.initNgServer()
-        # cfg.main_window.ng_workers['scale_1'].invalidateAllLayers()
-        cfg.project_tab.openViewZarr()
+    # def add_image(self, img):
+    #     # cfg.main_window.hud.post(f"Adding Image\n'{os.path.basename(img)}'...")
+    #     cfg.data.append_image(img)
+    #     cfg.data.link_reference_sections()
+    #     self.img_to_zarr(ID=self._index, fn=img)
+    #     self._index += 1
+    #     # cfg.main_window.initNgServer()
+    #     # cfg.main_window.ng_workers['scale_1'].invalidateAllLayers()
+    #     cfg.project_tab.openViewZarr()
 
     def img_to_zarr(self, ID, fn):
         # cfg.main_window.hud.post(f"Converting Image ID ({ID}) '{os.path.basename(fn)}' To Zarr...")

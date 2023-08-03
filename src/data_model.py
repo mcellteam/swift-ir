@@ -296,14 +296,6 @@ class DataModel:
         return convert[self.current_method]
 
     @property
-    def grid_default_regions(self):
-        return self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['swim_settings']['grid_default_regions']
-
-    @grid_default_regions.setter
-    def grid_default_regions(self, lst):
-        self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['swim_settings']['grid_default_regions'] = lst
-
-    @property
     def grid_custom_regions(self):
         return self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['swim_settings']['grid_custom_regions']
 
@@ -712,7 +704,8 @@ class DataModel:
                 self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['clobber_fixed_noise'] = b
 
     def clobber_px(self):
-        return self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['swim_settings']['clobber_fixed_noise_px']
+        return self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['swim_settings'][
+            'clobber_size']
 
     def set_clobber_px(self, x, l=None, glob=False):
         if l == None: l = self.zpos
@@ -720,9 +713,9 @@ class DataModel:
         for s in self.finer_scales():
             if glob:
                 for i in range(len(self)):
-                    self._data['data']['scales'][s]['stack'][i]['alignment']['swim_settings']['clobber_fixed_noise_px'] = x
+                    self._data['data']['scales'][s]['stack'][i]['alignment']['swim_settings']['clobber_size'] = x
             else:
-                self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['clobber_fixed_noise_px'] = x
+                self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['clobber_size'] = x
 
 
     def get_signals_filenames(self, s=None, l=None):
@@ -765,11 +758,7 @@ class DataModel:
                 return l
             # if not self._data['data']['scales'][self.scale_key]['stack'][l]['cafm_comports']:
             #     return l
-
-
         return None
-
-
 
 
     def set_defaults(self):
@@ -952,6 +941,11 @@ class DataModel:
                 layer['alignment_history']['manual-hint']['method_results'].setdefault('cafm_hash', None)
                 layer['alignment_history']['manual-strict']['method_results'].setdefault('cafm_hash', None)
 
+                layer['alignment_history']['grid-default'].setdefault('complete', False)
+                layer['alignment_history']['grid-custom'].setdefault('complete', False)
+                layer['alignment_history']['manual-hint'].setdefault('complete', False)
+                layer['alignment_history']['manual-strict'].setdefault('complete', False)
+
 
                 try:    layer['alignment_history']['grid-default']['method_results']['snr'] = layer['alignment_history']['grid-default'].pop('snr')
                 except: pass
@@ -1022,18 +1016,17 @@ class DataModel:
                 layer['alignment']['swim_settings'].pop('karg_path', None)
                 layer['alignment']['swim_settings'].pop('targ_path', None)
                 layer['alignment']['swim_settings'].setdefault('clobber_fixed_noise', False)
-                layer['alignment']['swim_settings'].setdefault('clobber_fixed_noise_px', cfg.DEFAULT_CLOBBER_PX)
+                layer['alignment']['swim_settings'].setdefault('clobber_size', cfg.DEFAULT_CLOBBER_PX)
                 layer['alignment']['swim_settings'].setdefault('extra_kwargs', '')
                 layer['alignment']['swim_settings'].setdefault('extra_args', '')
                 layer['alignment']['swim_settings'].setdefault('use_logging', True)
-                layer['alignment']['swim_settings'].setdefault('grid_default_regions', [1,1,1,1])
+                layer['alignment']['swim_settings'].pop('grid_default_regions', None)
                 layer['alignment']['swim_settings'].setdefault('grid_custom_regions', [1,1,1,1])
                 layer['alignment']['swim_settings'].setdefault('include', True)
                 try:
                     layer['alignment']['swim_settings']['include'] = layer.pop('skipped')
                 except:
                     pass
-
 
                 try:
                     layer['alignment']['swim_settings']['grid_custom_regions'] = layer[
@@ -1732,11 +1725,90 @@ class DataModel:
         if l == None: l = self.zpos
         return self.cafm_registered_hash(s=s, l=l) == self.cafm_current_hash(s=s, l=l)
 
+
+    def data_comports(self, s=None, l=None):
+        if s == None: s = self.scale
+        if l == None: l = self.zpos
+        problems = []
+        method = self.get_current_method(s=s, l=l)
+
+        if not self['data']['scales'][s]['stack'][l]['alignment_history'][method]['complete']:
+            problems.append((f"Alignment method '{method}' is incomplete", 1, 0))
+            return False, problems
+
+        cur = self['data']['scales'][s]['stack'][l]['alignment']['swim_settings']  # current
+        mem = self['data']['scales'][s]['stack'][l]['alignment_history'][method]['swim_settings'] # memory
+
+        if cur['fn_reference'] != mem['fn_reference']:
+            problems.append(('Reference images differ', cur['fn_reference'], mem['fn_reference']))
+
+        if cur['clobber_fixed_noise'] != mem['clobber_fixed_noise']:
+            problems.append(("Inconsistent data at clobber fixed pattern ON/OFF (key: clobber_fixed_noise)", cur['clobber_fixed_noise'],
+                             mem['clobber_fixed_noise']))
+        if cur['clobber_fixed_noise']:
+            if cur['clobber_size'] != mem['clobber_size']:
+                problems.append(("Inconsistent data at clobber size in pixels (key: clobber_size)",
+                                 cur['clobber_size'], mem['clobber_size']))
+        if cur['whiten'] != mem['whiten']:
+            problems.append(("Inconsistent data at signal whitening magnitude (key: whiten)",
+                             cur['whiten'], mem['whiten']))
+        if cur['swim_iters'] != mem['swim_iters']:
+            problems.append(("Inconsistent data at # SWIM iterations (key: swim_iters)",
+                             cur['swim_iters'], mem['swim_iters']))
+
+        if method == 'grid-default':
+            for key in cfg.data.defaults:
+                if key in mem['defaults']:
+                    if cfg.data.defaults[key] != mem['defaults'][key]:
+                        if type(mem['defaults'][key]) == dict and len(mem['defaults'][key]) == 1:
+                            breadcrumb = 'defaults > %s > %s' % (key, mem['defaults'][key])
+                        else:
+                            breadcrumb = 'defaults > %s' % key
+                        problems.append(('Inconsistent data (key: %s)' % breadcrumb, cfg.data.defaults[key],
+                                         mem['defaults'][key]))
+
+        elif method == 'grid-custom':
+            keys = ['grid_custom_px_1x1', 'grid_custom_px_2x2', 'grid_custom_regions']
+            for key in keys:
+                if cur[key] != mem[key]:
+                    problems.append((f"Inconsistent data (key: {key})", cur[key], mem[key]))
+
+        elif method in ('manual-hint', 'manual-strict'):
+            if cur['match_points_mir'] != mem['match_points_mir']:
+                problems.append((f"Inconsistent match points (key: match_points_mir)",
+                                 cur['match_points_mir'], mem['match_points_mir']))
+
+            if method == 'manual-hint':
+                if cur['manual_swim_window_px'] != mem['manual_swim_window_px']:
+                    problems.append((f"Inconsistent match region size (key: manual_swim_window_px)",
+                                     cur['manual_swim_window_px'], mem['manual_swim_window_px']))
+
+
+        # elif method == 'grid-custom':
+        #     return cur['defaults'] == mem['defaults']
+
+        return len(problems) == 0, problems
+        # return tuple(comports?, [(reason/key, val1, val2)])
+
+    def data_comports_indexes(self, s):
+        if s == None: s = self.scale
+        return np.array([self.data_comports(s=s, l=l)[0] for l in range(len(cfg.data))]).nonzero()[0].tolist()
+
+    def data_dn_comport_indexes(self, s):
+        if s == None: s = self.scale
+        return np.array([not self.data_comports(s=s, l=l)[0] for l in range(len(cfg.data))]).nonzero()[0].tolist()
+
+
+    def all_comports_indexes(self, s=None):
+        if s == None: s = self.scale
+        return list(set(range(len(self))) - set(self.cafm_dn_comport_indexes(s=s)) - set(self.data_dn_comport_indexes(s=s)))
+
+
     def cafm_comports_indexes(self, s=None):
         if s == None: s = self.scale
         return np.array([cfg.data.cafm_hash_comports(s=s, l=l) for l in range(0, len(cfg.data))]).nonzero()[0].tolist()
 
-    def cafm_no_comports_indexes(self, s=None):
+    def cafm_dn_comport_indexes(self, s=None):
         if s == None: s = self.scale
         return np.array([not cfg.data.cafm_hash_comports(s=s, l=l) for l in range(0, len(cfg.data))]).nonzero()[0].tolist()
 
@@ -2442,13 +2514,13 @@ class DataModel:
             return [get_scale_key(x) for x in self.scale_vals() if x < self.scale_val(s=s)]
 
 
-    def append_image(self, file):
-        scale = self.scale
-        # logger.info("Adding Image: %s, role: base, scale_key: %s" % (file, scale_key))
-        self._data['data']['scales'][scale]['stack'].append(copy.deepcopy(layer_template))
-        self._data['data']['scales'][scale]['stack'].append({})
-        self._data['data']['scales'][scale]['stack'][len(self) - 1]['filename'] = file
-        self._data['data']['scales'][scale]['stack'][len(self) - 1]['reference'] = ''
+    # def append_image(self, file):
+    #     scale = self.scale
+    #     # logger.info("Adding Image: %s, role: base, scale_key: %s" % (file, scale_key))
+    #     self._data['data']['scales'][scale]['stack'].append(copy.deepcopy(layer_template))
+    #     self._data['data']['scales'][scale]['stack'].append({})
+    #     self._data['data']['scales'][scale]['stack'][len(self) - 1]['filename'] = file
+    #     self._data['data']['scales'][scale]['stack'][len(self) - 1]['reference'] = ''
 
     def append_images(self, files):
         scale = self.scale
@@ -2456,8 +2528,15 @@ class DataModel:
             # logger.info("Adding Image: %s, role: base, scale_key: %s" % (file, scale_key))
             # self._data['data']['scales'][scale]['stack'].append(copy.deepcopy(layer_template))
             self._data['data']['scales'][scale]['stack'].append({})
-            self._data['data']['scales'][scale]['stack'][len(self) - 1]['filename'] = file
-            self._data['data']['scales'][scale]['stack'][len(self) - 1]['reference'] = ''
+            ind = len(self) - 1
+            self._data['data']['scales'][scale]['stack'][ind]['filename'] = file
+            self._data['data']['scales'][scale]['stack'][ind]['reference'] = ''
+
+            self._data['data']['scales'][scale]['stack'][ind]['alignment'] = {}
+            self._data['data']['scales'][scale]['stack'][ind]['alignment']['swim_settings'] = {}
+            self._data['data']['scales'][scale]['stack'][ind]['alignment']['swim_settings']['fn_transforming'] = file
+            self._data['data']['scales'][scale]['stack'][ind]['alignment']['swim_settings']['fn_reference'] = ''
+
 
     def anySkips(self) -> bool:
         if len(self.skips_list()) > 0:
@@ -2530,6 +2609,7 @@ class DataModel:
                 base_layer = self._data['data']['scales'][s]['stack'][layer_index]
                 if layer_index in skip_list:
                     self._data['data']['scales'][s]['stack'][layer_index]['reference'] = ''
+                    self._data['data']['scales'][s]['stack'][layer_index]['alignment']['swim_settings']['fn_reference'] = ''
                 # elif layer_index <= first_unskipped:
                 #     self._data['data']['scales'][s]['stack'][layer_index]['reference'] = self._data['data']['scales'][s]['stack'][layer_index]['filename']
                 else:
@@ -2541,6 +2621,7 @@ class DataModel:
                         ref = os.path.join(self.dest(), s, 'img_src', ref)
                         # base_layer['images']['ref']['filename'] = ref
                         base_layer['reference'] = ref
+                        base_layer['alignment']['swim_settings']['fn_reference'] = ref
             # kludge - set reference of first_unskipped to itself
             self._data['data']['scales'][s]['stack'][first_unskipped]['reference'] = self._data['data']['scales'][s]['stack'][first_unskipped]['filename']
 
