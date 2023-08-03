@@ -58,7 +58,7 @@ from src.data_model import DataModel
 from src.funcs_zarr import tiffs2MultiTiff
 from src.generate_aligned import GenerateAligned
 # from src.generate_scales import GenerateScales
-from src.helpers import run_checks, setOpt, getOpt, getData, setData, print_exception, get_scale_val, \
+from src.helpers import setOpt, getOpt, getData, setData, print_exception, get_scale_val, \
     natural_sort, tracemalloc_start, tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, \
     exist_aligned_zarr, configure_project_paths, isNeuroglancerRunning, \
     update_preferences_model, delete_recursive, is_mac, hotkey, make_affine_widget_HTML, \
@@ -202,6 +202,10 @@ class MainWindow(QMainWindow):
 
     def TO(self):
         return self._getTabObject()
+
+    def runUiChecks(self):
+        if not getData('state,manual_mode'):
+            assert (cfg.emViewer.state.layout.type == cfg.main_window.comboboxNgLayout.currentText())
 
 
     def memory(self):
@@ -717,7 +721,7 @@ class MainWindow(QMainWindow):
                     if method == 'grid-custom':
                         use = cfg.data.grid_custom_regions[i]
                     elif method == 'grid-default':
-                        use = cfg.data.grid_default_regions[i]
+                        use = [1,1,1,1]
 
                     # logger.info(f'file  : {files[i]}  exists? : {os.path.exists(files[i])}  use? : {use}')
                     path = os.path.join(cfg.data.dest(), cfg.data.scale_key, 'tmp', files[i])
@@ -837,6 +841,7 @@ class MainWindow(QMainWindow):
         logger.critical('')
         self.dw_thumbs.setVisible(state)
         self.dw_thumbs.setVisible(self.tbbThumbnails.isChecked())
+        self.a_thumbs.setText(('Show SWIM Region &Thumbnails', 'Hide SWIM Region &Thumbnails')[state])
         tip1 = '\n'.join(f"Show Raw Thumbnails Tool Window ({hotkey('T')})")
         tip2 = '\n'.join(f"Hide Raw Thumbnails Tool Window ({hotkey('T')})")
         self.tbbThumbnails.setToolTip((tip1, tip2)[state])
@@ -859,6 +864,7 @@ class MainWindow(QMainWindow):
         logger.critical(f"[{caller}]")
         self.dw_matches.setVisible(state)
         self.dw_matches.setVisible(self.tbbMatches.isChecked())
+        self.a_matches.setText(('Show &Match Signals', 'Hide &Match Signals')[state])
         tip1 = '\n'.join(f"Show Matches and Signals Tool Window ({hotkey('M')})")
         tip2 = '\n'.join(f"Hide Matches and Signals Tool Window ({hotkey('M')})")
         self.tbbMatches.setToolTip((tip1, tip2)[state])
@@ -1943,6 +1949,7 @@ class MainWindow(QMainWindow):
             if cfg.data['state']['current_tab'] == 1:
                 cfg.project_tab.dataUpdateMA()
                 self.updateCafmComportsLabel()
+                self.updateDataComportsLabel()
 
 
             if self.notes.isVisible():
@@ -2041,10 +2048,17 @@ class MainWindow(QMainWindow):
 
 
     def updateCafmComportsLabel(self):
-        if not cfg.data.cafm_hash_comports() and cfg.data.is_aligned_and_generated():
+        if cfg.data.is_aligned_and_generated() and not cfg.data.cafm_hash_comports():
             cfg.pt.warning_cafm.show()
         else:
             cfg.pt.warning_cafm.hide()
+
+    def updateDataComportsLabel(self):
+        # if cfg.data.is_aligned_and_generated() and not cfg.data.data_comports():
+        if cfg.data.is_aligned_and_generated() and not cfg.data.data_comports():
+            cfg.pt.warning_data.show()
+        else:
+            cfg.pt.warning_data.hide()
 
 
 
@@ -2272,6 +2286,7 @@ class MainWindow(QMainWindow):
                     # logger.info(f'[{caller}]')
                     requested_scale = cfg.data.scales()[self._changeScaleCombo.currentIndex()]
                     cfg.pt.warning_cafm.hide()
+                    cfg.pt.warning_data.hide()
                     cfg.pt.project_table.wTable.hide()
                     cfg.pt.project_table.btn_splash_load_table.show()
                     cfg.data.scale_key = requested_scale
@@ -3128,8 +3143,6 @@ class MainWindow(QMainWindow):
         if cfg.data:
             self._skipCheckbox.setChecked(not self._skipCheckbox.isChecked())
 
-    def runchecks(self):
-        run_checks()
 
     def onMAsyncTimer(self):
         logger.critical("")
@@ -4228,13 +4241,13 @@ class MainWindow(QMainWindow):
         # self.a_monitor.setShortcutContext(Qt.ApplicationShortcut)
         viewMenu.addAction(self.a_monitor)
 
-        self.a_thumbs = QAction('Show Raw &Thumbnails', self)
+        self.a_thumbs = QAction('Show SWIM Region &Thumbnails', self)
         self.a_thumbs.triggered.connect(lambda: self.setdw_thumbs(not self.tbbThumbnails.isChecked()))
         # self.a_thumbs.setShortcut('Ctrl+T')
         # self.a_thumbs.setShortcutContext(Qt.ApplicationShortcut)
         viewMenu.addAction(self.a_thumbs)
 
-        self.a_matches = QAction('Show Match S&ignals', self)
+        self.a_matches = QAction('Show &Match Signals', self)
         self.a_matches.triggered.connect(lambda: self.setdw_matches(not self.tbbMatches.isChecked()))
         viewMenu.addAction(self.a_matches)
 

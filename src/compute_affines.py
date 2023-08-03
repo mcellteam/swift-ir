@@ -129,10 +129,9 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
                 ss = sec['alignment']['swim_settings']
                 ss['index'] = zpos
-                ss['scale_val'] = scale_val
+                # ss['scale_val'] = scale_val
                 ss['scale_key'] = scale
                 ss['isRefinement'] = dm['data']['scales'][scale]['isRefinement']
-                ss['isCoarsest'] = dm.coarsest_scale_key() == cfg.data.scale
                 ss['destination_path'] = dm['data']['destination_path']
                 ss['defaults'] = dm['data']['defaults']
                 ss['img_size'] = dm['data']['scales'][scale]['image_src_size']
@@ -146,11 +145,11 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
 
                 if sec['current_method'] == 'grid-default':
-                    ss['_whitening'] = cfg.data['data']['defaults']['signal-whitening']
-                    ss['_iters'] = cfg.data['data']['defaults']['swim-iterations']
+                    ss['whiten'] = cfg.data['data']['defaults']['signal-whitening']
+                    ss['swim_iters'] = cfg.data['data']['defaults']['swim-iterations']
                 else:
-                    ss['_whitening'] = ss['signal-whitening']
-                    ss['_iters'] = ss['iterations']
+                    ss['whiten'] = ss['signal-whitening']
+                    ss['swim_iters'] = ss['iterations']
 
                 if dm['data']['scales'][scale]['isRefinement']:
                     scale_prev = dm.scales()[dm.scales().index(scale) + 1]
@@ -169,6 +168,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                     tasks.append(copy.deepcopy(sec['alignment']))
                 else:
                     logger.info(f"EXCLUDING section #{zpos}")
+                    cfg.main_window.tell(f"EXCLUDING section #{zpos}")
             # else:
             #     logger.info(f"Dropping task for {zpos}")
 
@@ -212,9 +212,16 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                 index = r['swim_settings']['index']
                 method = r['swim_settings']['method']
                 dm['data']['scales'][scale]['stack'][index]['alignment'] = r
-                dm['data']['scales'][scale]['stack'][index]['alignment_history'][method]['method_results'] = r['method_results']
-                dm['data']['scales'][scale]['stack'][index]['alignment_history'][method]['swim_settings'] = r['swim_settings']
-
+                dm['data']['scales'][scale]['stack'][index]['alignment_history'][method]['method_results'] = \
+                    copy.deepcopy(r['method_results'])
+                dm['data']['scales'][scale]['stack'][index]['alignment_history'][method]['swim_settings'] = \
+                    copy.deepcopy(r['swim_settings'])
+                try:
+                    assert np.array(dm['data']['scales'][scale]['stack'][index]['alignment_history'][method][
+                                        'method_results']['affine_matrix']).shape == (2, 3)
+                    dm['data']['scales'][scale]['stack'][index]['alignment_history'][method]['complete'] = True
+                except:
+                    logger.warning(f"Task failed at index: {index}")
         else:
 
             task_queue = TaskQueue(n_tasks=len(tasks), dest=dest, use_gui=use_gui)
@@ -252,8 +259,16 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                     index = results_dict['swim_settings']['index']
                     method = results_dict['swim_settings']['method']
                     dm['data']['scales'][scale]['stack'][index]['alignment'] = results_dict
-                    dm['data']['scales'][scale]['stack'][index]['alignment_history'][method]['method_results'] = results_dict['method_results']
-                    dm['data']['scales'][scale]['stack'][index]['alignment_history'][method]['swim_settings'] = results_dict['swim_settings']
+                    dm['data']['scales'][scale]['stack'][index]['alignment_history'][method][
+                        'method_results'] = copy.deepcopy(results_dict['method_results'])
+                    dm['data']['scales'][scale]['stack'][index]['alignment_history'][method][
+                        'swim_settings'] = copy.deepcopy(results_dict['swim_settings'])
+                    try:
+                        assert np.array(dm['data']['scales'][scale]['stack'][index]['alignment_history'][method][
+                            'method_results']['affine_matrix']).shape == (2,3)
+                        dm['data']['scales'][scale]['stack'][index]['alignment_history'][method]['complete'] = True
+                    except:
+                        logger.warning(f"Task failed at index: {index}")
 
         t_elapsed = time.time() - t0
         dm.t_align = t_elapsed

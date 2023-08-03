@@ -269,8 +269,8 @@ class align_recipe:
         mr['init_afm'] = self.meta['init_afm']
         mr['swim_pos'] = self.ingredients[-1].psta.tolist()
         mr['datetime'] = time
-        mr['_whitening'] = self.meta['_whitening']
-        mr['_ters'] = self.meta['_iters']
+        # mr['whiten'] = self.meta['whiten']
+        # mr['swim_iters'] = self.meta['swim_iters']
         mr['method'] = self.method
         mr['memory_mb'] = self.megabytes()
         mr['memory_gb'] = self.gigabytes()
@@ -421,10 +421,10 @@ class align_ingredient:
             self.recipe.meta['destination_path'], self.recipe.meta['scale_key'])
         self.ms_names = []
         m = self.recipe.method
-        iters = str(self.recipe.meta['_iters'])
-        whitening = str(self.recipe.meta['_whitening'])
+        iters = str(self.recipe.meta['swim_iters'])
+        whiten = str(self.recipe.meta['whiten'])
         use_clobber = self.recipe.data['swim_settings']['clobber_fixed_noise']
-        clobber_px = self.recipe.data['swim_settings']['clobber_fixed_noise_px']
+        clobber_px = self.recipe.data['swim_settings']['clobber_size']
         afm = '%.6f %.6f %.6f %.6f' % (
                 self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
         for i in range(len(self.psta[0])):
@@ -443,14 +443,14 @@ class align_ingredient:
             if use_clobber:
                 args.append('-f%d' % clobber_px)
             args.add_flag(flag='-i', arg=iters)
-            args.add_flag(flag='-w', arg=whitening)
+            args.add_flag(flag='-w', arg=whiten)
             if m in ('grid-default', 'grid-custom'):
                 self.offx = int(self.psta[0][i] - self.cx)
                 self.offy = int(self.psta[1][i] - self.cy)
                 args.add_flag(flag='-x', arg='%d' % self.offx)
                 args.add_flag(flag='-y', arg='%d' % self.offy)
             args.add_flag(flag='-b', arg=b_arg)
-            if self.last and self.recipe.meta['isCoarsest']:
+            if self.last and not self.recipe.meta['isRefinement']:
                 k_arg_name = '%s_%s_k_%d%s' % (fn, m, i, extension)
                 k_arg_path = os.path.join(dir_scale, 'tmp', k_arg_name)
                 args.add_flag(flag='-k', arg=k_arg_path)

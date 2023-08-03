@@ -45,7 +45,7 @@ try:
 except:
     from utils.treeview import Treeview
 
-__all__ = ['run_checks', 'is_tacc', 'is_linux', 'is_mac', 'create_paged_tiff', 'check_for_binaries', 'delete_recursive',
+__all__ = ['is_tacc', 'is_linux', 'is_mac', 'create_paged_tiff', 'check_for_binaries', 'delete_recursive',
            'do_scales_exist', 'make_relative', 'make_absolute', 'are_aligned_images_generated', 'get_img_filenames',
            'print_exception', 'get_scale_key', 'get_scale_val', 'makedirs_exist_ok', 'print_project_tree',
            'verify_image_file', 'exist_aligned_zarr', 'get_scales_with_generated_alignments', 'handleError',
@@ -64,10 +64,6 @@ def hotkey(letter: str):
 def get_n_tacc_cores(n_tasks):
     return max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, n_tasks),1)
 
-
-def run_checks():
-    if not getData('state,manual_mode'):
-        assert (cfg.emViewer.state.layout.type == cfg.main_window.comboboxNgLayout.currentText())
 
 
 def run_command(cmd, arg_list=None, cmd_input=None):

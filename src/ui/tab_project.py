@@ -1088,7 +1088,7 @@ class ProjectTab(QWidget):
                 logger.info(f"val = {val}")
                 if (val % 2) == 1:
                     new_val = val - 1
-                    self.tell(f'SWIM requires even values as input. Setting value to {new_val}')
+                    cfg.mw.tell(f'SWIM requires even values as input. Setting value to {new_val}')
                     self._swimWindowControl.setText(str(new_val))
                     return
                 logger.critical(f"val = {val}...........")
@@ -2234,12 +2234,18 @@ class ProjectTab(QWidget):
         self.warning_cafm.fixbutton.clicked.connect(cfg.mw.fix_cafm)
         self.warning_cafm.hide()
 
+        self.warning_data = WarningNotice(self, 'This alignment has been edited.',
+                                          fixbutton=True)
+        self.warning_data.hide()
+
+
 
         # self.gb_warnings = QGroupBox('Warnings')
         self.gb_warnings = QGroupBox("Warnings")
         self.gb_warnings.setFixedHeight(44)
         self.gb_warnings.setObjectName('gb_cpanel')
         self.vbl_wanrings = VBL()
+        self.vbl_wanrings.addWidget(self.warning_data, alignment=Qt.AlignBottom)
         self.vbl_wanrings.addWidget(self.warning_cafm, alignment=Qt.AlignBottom)
         self.gb_warnings.setLayout(self.vbl_wanrings)
 
@@ -2893,7 +2899,7 @@ class ProjectTab(QWidget):
             self.Q3.setActivated(grid[2])
             self.Q4.setActivated(grid[3])
         elif method == 'grid-default':
-            grid = cfg.data.grid_default_regions
+            grid = [1,1,1,1]
             self.Q1.setActivated(grid[0])
             self.Q2.setActivated(grid[1])
             self.Q3.setActivated(grid[2])

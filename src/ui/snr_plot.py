@@ -38,8 +38,7 @@ class SnrPlot(QWidget):
         # drafting_blue = '#004060'
         # self.view.setBackground(drafting_blue)
         pg.setConfigOption('foreground', '#f3f6fb')
-        if not self.dock:
-            pg.setConfigOptions(antialias=True)
+        pg.setConfigOptions(antialias=True)
 
         self.plot = self.view.addPlot()
 
@@ -58,7 +57,7 @@ class SnrPlot(QWidget):
         if self.dock:
             self._curLayerLine = pg.InfiniteLine(
                 # pen='w',
-                pen=pg.mkPen('#f3f6fb', width=1),
+                pen=pg.mkPen('#0096ff', width=1),
                 movable=False,
                 angle=90,
                 labelOpts={'position': .2, 'color': '#f3f6fb', 'fill': '#141414', 'movable': True})
@@ -93,7 +92,7 @@ class SnrPlot(QWidget):
         self.pt_selected = None
 
         # self.spw = pg.ScatterPlotWidget() #Todo switch to scatter plot widget for greater interactivity
-        # pg.setConfigOptions(antialias=True)
+
         self._plot_colors = ['#FEFE62', '#40B0A6', '#D41159',
                              '#E66100', '#1AFF1A', '#FFC20A',
                              '#66FF00', '#8c001a', '#08E8DE',
@@ -127,7 +126,8 @@ class SnrPlot(QWidget):
         # self.plot.setAspectLocked()
 
         self.snr_points = {}
-        self.no_comport_points = {}
+        self.no_comport_cafm_points = {}
+        self.no_comport_data_points = {}
         self.snr_errors = {}
         self.selected_scale = None
 
@@ -303,13 +303,13 @@ class SnrPlot(QWidget):
                 y_axis.append(snr)
         return x_axis, y_axis
 
-    def get_comport_axis_data(self, s=None) -> tuple:
+    def get_everything_comport_axis_data(self, s=None) -> tuple:
         if s == None: s = cfg.data.scale
         x_axis, y_axis = [], []
         # for layer, snr in enumerate(cfg.data.snr_list(s=s)):
         # for layer, snr in enumerate(cfg.data.snr_list(s=s)[1:]): #0601+ #Todo
         first_unskipped = cfg.data.first_unskipped(s=s)
-        for i in cfg.data.cafm_comports_indexes(s=s): #0601+
+        for i in cfg.data.all_comports_indexes(s=s): #0601+
             if i == first_unskipped:
                 continue
             if cfg.data.skipped(s=s, l=i):
@@ -320,13 +320,30 @@ class SnrPlot(QWidget):
                 y_axis.append(cfg.data.snr(s=s, l=i))
         return x_axis, y_axis
 
-    def get_no_comport_axis_data(self, s=None) -> tuple:
+    def get_cafm_no_comport_axis_data(self, s=None) -> tuple:
         if s == None: s = cfg.data.scale
         x_axis, y_axis = [], []
         # for layer, snr in enumerate(cfg.data.snr_list(s=s)):
         # for layer, snr in enumerate(cfg.data.snr_list(s=s)[1:]): #0601+ #Todo
         first_unskipped = cfg.data.first_unskipped(s=s)
-        for i in cfg.data.cafm_no_comports_indexes(s=s): #0601+
+        for i in cfg.data.cafm_dn_comport_indexes(s=s): #0601+
+            if i == first_unskipped:
+                continue
+            if cfg.data.skipped(s=s, l=i):
+                x_axis.append(i)
+                y_axis.append(0)
+            else:
+                x_axis.append(i)
+                y_axis.append(cfg.data.snr(s=s, l=i))
+        return x_axis, y_axis
+
+    def get_data_no_comport_axis_data(self, s=None) -> tuple:
+        if s == None: s = cfg.data.scale
+        x_axis, y_axis = [], []
+        # for layer, snr in enumerate(cfg.data.snr_list(s=s)):
+        # for layer, snr in enumerate(cfg.data.snr_list(s=s)[1:]): #0601+ #Todo
+        first_unskipped = cfg.data.first_unskipped(s=s)
+        for i in cfg.data.data_dn_comport_indexes(s=s): #0601+
             if i == first_unskipped:
                 continue
             if cfg.data.skipped(s=s, l=i):
@@ -392,7 +409,7 @@ class SnrPlot(QWidget):
         # logger.info(f'plotSingleScale (scale_key: {s}):')
         if s == None: scale = cfg.data.scale_key
         # x_axis, y_axis = self.get_axis_data(s=s)
-        x_axis, y_axis = self.get_comport_axis_data(s=s)
+        x_axis, y_axis = self.get_everything_comport_axis_data(s=s)
         offset = self._getScaleOffset(s=s)
         if self.dock:
             pass
@@ -401,15 +418,15 @@ class SnrPlot(QWidget):
             x_axis = [x+offset for x in x_axis]
         brush = self._plot_brushes[cfg.data.scales()[::-1].index(s)]
         self.snr_points[s] = pg.ScatterPlotItem(
-            size=(11,7)[self.dock],
+            size=(11,8)[self.dock],
             # pen=pg.mkPen(None),
             symbol='o',
-            pen=pg.mkPen('#f3f6fb', width=1),
-            brush=brush,
+            pen=(pg.mkPen('#f3f6fb', width=1), None)[self.dock],
+            brush=(brush, pg.mkBrush('#AAFF00'))[self.dock],
             hoverable=True,
             hoverSymbol='o',
-            hoverSize=(14,11)[self.dock],
-            hoverPen=pg.mkPen('#f3f6fb', width=1),
+            hoverSize=(14,10)[self.dock],
+            # hoverPen=pg.mkPen('#f3f6fb', width=1),
             # hoverBrush=None,
             # pxMode=False # points transform with zoom
         )
@@ -422,24 +439,46 @@ class SnrPlot(QWidget):
         # self.snr_points[s].sigClicked.connect(lambda: self.onSnrClick2(s))
         self.snr_points[s].sigClicked.connect(self.onSnrClick)
 
-        self.no_comport_points[s] = pg.ScatterPlotItem(
-            size=(11,9)[self.dock],
-            # pen=pg.mkPen(None),
-            symbol='x',
-            pen=pg.mkPen('#f3f6fb', width=1),
-            brush=brush,
-            hoverable=True,
-            hoverSize=(14,11)[self.dock],
-            # hoverPen=pg.mkPen('#ff0000', width=3),
-            # hoverBrush=None,
-            # pxMode=False # points transform with zoom
-        )
-        x_axis, y_axis = self.get_no_comport_axis_data(s=s)
-        self.no_comport_points[s].addPoints(x_axis, y_axis)
-        self.plot.addItem(self.no_comport_points[s])
+        if self.dock:
 
-        self.no_comport_points[s].sigClicked.connect(self.onSnrClick)
+            self.no_comport_cafm_points[s] = pg.ScatterPlotItem(
+                size=10,
+                # pen=pg.mkPen(None),
+                symbol='x',
+                # pen=pg.mkPen('#f3f6fb', width=1),
+                pen=pg.mkPen('#f3f6fb', width=0),
+                brush=pg.mkBrush('#f3f6fb'),
+                # brush=None,
+                hoverable=True,
+                hoverSize=12,
+                # hoverPen=pg.mkPen('#ff0000', width=3),
+                # hoverBrush=None,
+                # pxMode=False # points transform with zoom
+            )
+            x_axis, y_axis = self.get_cafm_no_comport_axis_data(s=s)
+            self.no_comport_cafm_points[s].addPoints(x_axis, y_axis)
+            self.plot.addItem(self.no_comport_cafm_points[s])
+            self.no_comport_cafm_points[s].sigClicked.connect(self.onSnrClick)
 
+
+            self.no_comport_data_points[s] = pg.ScatterPlotItem(
+                size=11,
+                # pen=pg.mkPen(None),
+                symbol='o',
+                pen=pg.mkPen('#f3f6fb', width=2),
+                brush=None,
+                hoverable=True,
+                hoverSize=13,
+                # hoverPen=pg.mkPen('#ff0000', width=3),
+                # hoverBrush=None,
+                # pxMode=False # points transform with zoom
+            )
+            x_axis, y_axis = self.get_data_no_comport_axis_data(s=s)
+            self.no_comport_data_points[s].addPoints(x_axis, y_axis)
+            self.plot.addItem(self.no_comport_data_points[s])
+            self.no_comport_data_points[s].sigClicked.connect(self.onSnrClick)
+
+        # if not self.dock:
         self.updateErrBars(s=s)
 
 
