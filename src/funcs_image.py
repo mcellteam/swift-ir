@@ -443,17 +443,14 @@ def InitCafm(bias_funcs):
 
 def SetSingleCafm(layer_dict, c_afm, bias_mat=None, method='grid-default'):
     '''Calculate and set the value of the cafm (with optional bias) for a single layer_dict item'''
-    atrm = layer_dict['alignment']
-    atrm_new = layer_dict['alignment_history'][method]
-
+    # atrm = layer_dict['alignment']
     try:
         if layer_dict['alignment']['swim_settings']['include']:
-            afm = np.array(atrm_new['method_results']['affine_matrix'])
+            afm = np.array(layer_dict['alignment_history'][method]['method_results']['affine_matrix'])
         else:
             afm = identityAffine()
     except:
-        logger.warning('SetSingleCafm triggered an exception Empty affine_matrix in base image, skipping: '
-                       '%s' % (layer_dict['filename']))
+        logger.warning('SetSingleCafm triggered an exception, skipping: %s' % (layer_dict['filename']))
         afm = identityAffine()
         # atrm['method_results']['affine_matrix'] = afm.tolist() #0802-
     c_afm = np.array(c_afm)
@@ -461,8 +458,7 @@ def SetSingleCafm(layer_dict, c_afm, bias_mat=None, method='grid-default'):
     # Apply bias_mat if given
     if type(bias_mat) != type(None):
         c_afm = composeAffine(bias_mat, c_afm)
-    atrm['method_results']['cumulative_afm'] = c_afm.tolist()
-    atrm_new['method_results']['cumulative_afm'] = c_afm.tolist()
+    layer_dict['alignment_history'][method]['method_results']['cumulative_afm'] = c_afm.tolist()
 
     # logger.info('Returning c_afm: %s' % format_cafm(c_afm))
 

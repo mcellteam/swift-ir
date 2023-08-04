@@ -205,7 +205,6 @@ class ProjectTab(QWidget):
             cfg.baseViewer.signals.ptsChanged.connect(self.update_MA_list_widgets)
             cfg.baseViewer.signals.ptsChanged.connect(cfg.baseViewer.drawSWIMwindow)
             cfg.baseViewer.signals.ptsChanged.connect(lambda: print('\n\n Base Viewer pts changed!\n\n'))
-            # cfg.baseViewer.signals.zposChanged.connect(cfg.main_window.dataUpdateWidgets)
             # cfg.baseViewer.signals.zposChanged.connect(lambda: cfg.mw.setZpos(on_state_change=True))
             # cfg.refViewer.signals.zposChanged.connect(self.set_transforming)
             cfg.baseViewer.signals.swimAction.connect(cfg.main_window.alignOne)
@@ -216,7 +215,6 @@ class ProjectTab(QWidget):
         if cfg.data['state']['current_tab'] == 0 or init_all:
             self.viewer = cfg.emViewer = EMViewer(webengine=self.webengine)
             self.viewer.initZoom(self.webengine.width(), self.webengine.height())
-            # cfg.emViewer.signals.zposChanged.connect(cfg.main_window.dataUpdateWidgets)
             cfg.emViewer.signals.layoutChanged.connect(self.slot_layout_changed)
             cfg.emViewer.signals.zoomChanged.connect(self.slot_zoom_changed)
 
@@ -2655,7 +2653,7 @@ class ProjectTab(QWidget):
                 realign_tip = 'SWIM alignment requires at least three regions to form an affine'
         elif method == 'grid-default':
             cfg.mw._btn_alignOne.setEnabled(True)
-            realign_tip = 'SWIM align section #%d using default grid regions'
+            realign_tip = 'SWIM align section #%d using default grid regions' % sec
         elif method in ('manual-hint', 'manual-strict'):
             if (len(cfg.data.manpoints()['ref']) >= 3) and (len(cfg.data.manpoints()['base']) >= 3):
                 cfg.mw._btn_alignOne.setEnabled(True)

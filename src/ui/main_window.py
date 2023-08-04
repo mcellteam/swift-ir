@@ -785,7 +785,6 @@ class MainWindow(QMainWindow):
             if state:
                 self.updateCorrSignalsDrawer()
                 self.setTargKargPixmaps()
-                cfg.mw.dataUpdateWidgets() #08
                 QApplication.processEvents()
 
                 h = self.dw_thumbs.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
@@ -1698,33 +1697,10 @@ class MainWindow(QMainWindow):
         await self._dataUpdateWidgets()
 
 
-    @Slot(name='my-zpos-signal-name')
-    def setZpos(self, z):
-
-        if self._isProjectTab():
-            caller = inspect.stack()[1].function
-            logger.critical(f'[{caller}] z-index requested: {z}')
-            cfg.data.zpos = z
-
-            if not cfg.data['state']['tra_ref_toggle']:
-                cfg.pt.set_reference() #0802+
-                cfg.pt.set_transforming()
-
-            #????????
-            if cfg.pt._tabs.currentIndex() == 0:
-                cfg.emViewer.set_layer(z)
-            elif cfg.pt._tabs.currentIndex() == 1:
-                cfg.baseViewer.set_layer(z)
-                cfg.refViewer.set_layer(cfg.data.get_ref_index())  # 0611+
-
-            if self.dw_snr.isVisible():
-                cfg.project_tab.dSnr_plot.updateLayerLinePos()
-
-            self.dataUpdateWidgets() #0803-
-
     @Slot()
     def _updateZposWidgets(self):
-        logger.critical('')
+        caller = inspect.stack()[1].function
+        logger.critical(f'caller: {caller}')
         if self._isProjectTab():
             cur = cfg.data.zpos
             self._jumpToLineedit.setText(str(cur))
@@ -1732,7 +1708,6 @@ class MainWindow(QMainWindow):
             self._skipCheckbox.setChecked(not cfg.data.skipped())
             self._btn_prevSection.setEnabled(cur > 0)
             self._btn_nextSection.setEnabled(cur < len(cfg.data) - 1)
-
 
             self.dataUpdateWidgets()  # 0803-
 
@@ -1810,8 +1785,9 @@ class MainWindow(QMainWindow):
                     cfg.project_tab._overlayLab.show()  # Todo find/fix cfg.project_tab._overlayLab
                 else:
                     cfg.project_tab._overlayLab.hide()
-                if floor(cfg.emViewer.state.voxel_coordinates[0]) != cfg.data.zpos:
-                    cfg.emViewer.set_layer(cfg.data.zpos)
+                if cfg.emViewer:
+                    if floor(cfg.emViewer.state.voxel_coordinates[0]) != cfg.data.zpos:
+                        cfg.emViewer.set_layer(cfg.data.zpos)
 
 
             elif cfg.pt._tabs.currentIndex() == 1:
@@ -2314,13 +2290,12 @@ class MainWindow(QMainWindow):
 
         # cfg.project_tab.updateTreeWidget()  #TimeConsuming dt = 0.001 -> dt = 0.535 ~1/2 second
         # cfg.project_tab.updateTreeWidget() #TimeConsuming!! dt = 0.58 - > dt = 1.10
-        self.dataUpdateWidgets()  # 0.5878 -> 0.5887 ~.001s
         self.spinbox_fps.setValue(float(cfg.DEFAULT_PLAYBACK_SPEED))
         self.reload_scales_combobox()  # fast
         self.updateEnabledButtons()
         # self.updateMenus()
+        # cfg.pt.initNeuroglancer()
         self.reload_zpos_slider_and_lineedit()  # fast
-        self._updateZposWidgets()
         self.setControlPanelData()  # Added 2023-04-23
         self.enableAllTabs()  # fast
         self.setCpanelVisibility(True)
@@ -2329,7 +2304,6 @@ class MainWindow(QMainWindow):
         cfg.project_tab.updateTimingsWidget()
         cfg.project_tab.updateMethodSelectWidget()
         cfg.project_tab.dataUpdateMA() #Important must come after initNeuroglancer
-        self.dataUpdateWidgets()
         check_project_status()
         QApplication.processEvents()
 
@@ -2987,7 +2961,6 @@ class MainWindow(QMainWindow):
                 )
                 #Critical0802+
 
-                self.dataUpdateWidgets()
                 # if cfg.project_tab._tabs.currentIndex() == 1:
                     # cfg.project_tab.project_table.initTableData()
                 cfg.pt.project_table.set_row_data(row=layer)
@@ -3020,7 +2993,6 @@ class MainWindow(QMainWindow):
         if cfg.project_tab:
             logger.info('Clearing Match Points...')
             cfg.data.clearMps()
-            self.dataUpdateWidgets()
 
     def print_all_matchpoints(self):
         if cfg.project_tab:
@@ -3040,7 +3012,6 @@ class MainWindow(QMainWindow):
                     self.tell(f'Layer: {i}, Base, Match Points: {str(b)}')
             if no_mps:
                 self.tell('This project has no match points.')
-            self.dataUpdateWidgets()
 
     def show_run_path(self) -> None:
         '''Prints the current working directory (os.getcwd), the 'running in' path, and sys.path.'''
@@ -3698,7 +3669,6 @@ class MainWindow(QMainWindow):
                 self.dSnr_plot.initSnrPlot()
             self.setCpanelVisibility(True)
 
-            self.dataUpdateWidgets()
             try:
                 self.setControlPanelData()
             except:

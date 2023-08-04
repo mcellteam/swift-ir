@@ -86,6 +86,7 @@ class DataModel:
         if not quietly:
             self._data['modified'] = time()
             self.signals = Signals()
+            self.signals.zposChanged.connect(cfg.mw._updateZposWidgets)
         if name:
             self._data['data']['destination_path'] = name
         self._data['data']['mendenhall'] = mendenhall
@@ -187,11 +188,12 @@ class DataModel:
 
     @zpos.setter
     def zpos(self, index):
-        # caller = inspect.stack()[1].function
-        # logger.info(f'caller: {caller}')
+        caller = inspect.stack()[1].function
+        logger.info(f'caller: {caller}')
         # self._data['data']['Current Section (Index)'] = index
         if int(index) in range(0, len(self)):
             if int(index) != self.zpos:
+                logger.info(f"Setting z position to: {index}...")
                 self['data']['z_position'] = int(index)
                 self.signals.zposChanged.emit()
                 QApplication.processEvents()
