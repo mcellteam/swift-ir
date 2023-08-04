@@ -450,12 +450,12 @@ class align_ingredient:
                 args.add_flag(flag='-x', arg='%d' % self.offx)
                 args.add_flag(flag='-y', arg='%d' % self.offy)
             args.add_flag(flag='-b', arg=b_arg)
-            if self.last and not self.recipe.meta['isRefinement']:
+            if self.last:
                 k_arg_name = '%s_%s_k_%d%s' % (fn, m, i, extension)
-                k_arg_path = os.path.join(dir_scale, 'tmp', k_arg_name)
+                k_arg_path = os.path.join(dir_scale, 'matches_raw', k_arg_name)
                 args.add_flag(flag='-k', arg=k_arg_path)
                 t_arg_name = '%s_%s_t_%d%s' % (fn, m, i, extension)
-                t_arg_path = os.path.join(dir_scale, 'tmp', t_arg_name)
+                t_arg_path = os.path.join(dir_scale, 'matches_raw', t_arg_name)
                 args.add_flag(flag='-t', arg=t_arg_path)
             args.append(self.recipe.data['swim_settings']['extra_kwargs'])
             args.append(self.recipe.meta['fn_reference'])

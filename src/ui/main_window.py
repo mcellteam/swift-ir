@@ -641,7 +641,7 @@ class MainWindow(QMainWindow):
             files = []
             for i in range(0, 4):
                 name = '%s_%s_%s_%d%s' % (filename, cfg.data.current_method, tkarg, i, extension)
-                files.append(os.path.join(cfg.data.dest(), cfg.data.scale_key, 'tmp', name))
+                files.append(os.path.join(cfg.data.dest(), cfg.data.scale_key, 'matches', name))
 
             method = cfg.data.current_method
 
@@ -657,7 +657,7 @@ class MainWindow(QMainWindow):
                         use = [1,1,1,1]
 
                     # logger.info(f'file  : {files[i]}  exists? : {os.path.exists(files[i])}  use? : {use}')
-                    path = os.path.join(cfg.data.dest(), cfg.data.scale_key, 'tmp', files[i])
+                    path = os.path.join(cfg.data.dest(), cfg.data.scale_key, 'matches', files[i])
                     if use and os.path.exists(path):
                         cfg.pt.match_thumbnails[i].path = path
                         try:
@@ -672,7 +672,7 @@ class MainWindow(QMainWindow):
                 n_ref = len(cfg.data.manpoints()['ref'])
                 n_base = len(cfg.data.manpoints()['base'])
                 for i in range(0, 4):
-                    path = os.path.join(cfg.data.dest(), cfg.data.scale_key, 'tmp', files[i])
+                    path = os.path.join(cfg.data.dest(), cfg.data.scale_key, 'matches', files[i])
                     # if DEV:
                     #     logger.info(f'path: {path}')
                     #     logger.info(f'i = {i}, n_ref = {n_ref}, n_base = {n_base}')
@@ -939,6 +939,7 @@ class MainWindow(QMainWindow):
             print_exception()
 
 
+
         try:
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(
@@ -949,18 +950,31 @@ class MainWindow(QMainWindow):
 
         except:
             print_exception()
-        finally:
-            self.setNoPbarMessage(False)
-            # self.updateAllCpanelDetails()
-            cfg.pt.updateDetailsPanel()
-            self.hidePbar()
-            cfg.project_tab.updateTimingsWidget()
-            cfg.project_tab.updateTreeWidget()
-            cfg.nProcessDone = 0
-            cfg.nProcessSteps = 0
-            cfg.project_tab.initNeuroglancer()
-            logger.info('<<<< regenerate')
-            self.tell('<span style="color: #FFFF66;"><b>**** Processes Complete ****</b></span>')
+
+        try:
+            if cfg.USE_EXTRA_THREADING:
+                self.worker = BackgroundWorker(
+                    fn=cfg.thumb.reduce_matches(start=start, end=end, dest=cfg.data.dest(), scale=scale))
+                self.threadpool.start(self.worker)
+            else:
+                cfg.thumb.reduce_matches(start=start, end=end, dest=cfg.data.dest(), scale=scale)
+
+        except:
+            print_exception()
+
+
+
+        self.setNoPbarMessage(False)
+        # self.updateAllCpanelDetails()
+        cfg.pt.updateDetailsPanel()
+        self.hidePbar()
+        cfg.project_tab.updateTimingsWidget()
+        cfg.project_tab.updateTreeWidget()
+        cfg.nProcessDone = 0
+        cfg.nProcessSteps = 0
+        cfg.project_tab.initNeuroglancer()
+        logger.info('<<<< regenerate')
+        self.tell('<span style="color: #FFFF66;"><b>**** Processes Complete ****</b></span>')
 
         logger.info('<<<< regenerate')
 
@@ -1347,6 +1361,19 @@ class MainWindow(QMainWindow):
 
 
 
+        try:
+            if cfg.USE_EXTRA_THREADING:
+                self.worker = BackgroundWorker(
+                    fn=cfg.thumb.reduce_matches(start=start, end=end, dest=cfg.data.dest(), scale=scale))
+                self.threadpool.start(self.worker)
+            else:
+                cfg.thumb.reduce_matches(start=start, end=end, dest=cfg.data.dest(), scale=scale)
+
+        except:
+            print_exception()
+
+
+
         # cfg.data.get_iter()
 
 
@@ -1708,7 +1735,6 @@ class MainWindow(QMainWindow):
             self._skipCheckbox.setChecked(not cfg.data.skipped())
             self._btn_prevSection.setEnabled(cur > 0)
             self._btn_nextSection.setEnabled(cur < len(cfg.data) - 1)
-
             self.dataUpdateWidgets()  # 0803-
 
 
@@ -2692,7 +2718,7 @@ class MainWindow(QMainWindow):
         self._isPlayingBack = 0
 
     def incrementZoomOut(self):
-        if ('QTextEdit' or 'QLineEdit') in str(cfg.mw.focusWidget()):
+        if ('QTextEdit' or 'QLineEdit') in str(self.focusWidget()):
             return
 
         # logger.info('')
@@ -2717,7 +2743,7 @@ class MainWindow(QMainWindow):
 
     def incrementZoomIn(self):
         # logger.info('')
-        if ('QTextEdit' or 'QLineEdit') in str(cfg.mw.focusWidget()):
+        if ('QTextEdit' or 'QLineEdit') in str(self.focusWidget()):
             return
 
         if self._isProjectTab():
@@ -3599,6 +3625,8 @@ class MainWindow(QMainWindow):
 
     def _onGlobTabChange(self):
 
+        #Todo check this for extraneous call upon new project and open project
+
         # if self._dontReinit == True:
         #     logger.critical('\n\n\n<<<<< DONT REINIT! >>>>>\n\n\n')
         #     return
@@ -3665,8 +3693,8 @@ class MainWindow(QMainWindow):
             self.dw_thumbs.setWidget(cfg.pt.tn_widget)
             self.dw_matches.setWidget(cfg.pt.match_widget)
             self.dw_snr.setWidget(cfg.pt.dSnr_plot)
-            if cfg.mw.dw_snr.isVisible():
-                self.dSnr_plot.initSnrPlot()
+            if self.dw_snr.isVisible():
+                cfg.pt.dSnr_plot.initSnrPlot()
             self.setCpanelVisibility(True)
 
             try:
@@ -3973,7 +4001,7 @@ class MainWindow(QMainWindow):
         def fn():
             logger.info('')
             if self.globTabs.count() > 0:
-                # if cfg.mw._getTabType() != 'OpenProject':
+                # if self._getTabType() != 'OpenProject':
                 self.globTabs.removeTab(self.globTabs.currentIndex())
             else:
                 self.exit_app()
@@ -5746,12 +5774,12 @@ class MainWindow(QMainWindow):
 
 
     def get_dw_monitor(self):
-        for i, dock in enumerate(cfg.mw.findChildren(QDockWidget)):
+        for i, dock in enumerate(self.findChildren(QDockWidget)):
             if dock.windowTitle() == 'Head-up Display':
                 return self.children()[i]
 
     def get_dw_notes(self):
-        for i, dock in enumerate(cfg.mw.findChildren(QDockWidget)):
+        for i, dock in enumerate(self.findChildren(QDockWidget)):
             if dock.windowTitle() == 'Notes':
                 return self.children()[i]
 

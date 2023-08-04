@@ -128,14 +128,72 @@ class Thumbnailer:
                              full_size=full_size
                              )
             cfg.data.t_thumbs_spot = dt
-            cfg.main_window.tell('Discarding Raw (Full Size) Correlation Signals...')
-            try:
-                shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale_key, 'signals_raw'), ignore_errors=True)
-                shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale_key, 'signals_raw'), ignore_errors=True)
-            except:
-                print_exception()
-            else:
-                cfg.main_window.hud.done()
+            cfg.main_window.hud.done()
+
+
+    def reduce_matches(self, start, end, dest, scale, use_gui=True):
+
+        print(f'\n\n######## Reducing: Correlation Signals ########\n')
+
+        pbar_text = 'Reducing %s Matches...' % cfg.data.scale_pretty()
+        if cfg.CancelProcesses:
+            cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
+        else:
+            src = os.path.join(dest, scale, 'matches_raw')
+            od = os.path.join(dest, scale, 'matches')
+
+            rmdir = False
+            if end == None:
+                end = cfg.data.count
+
+            if not rmdir:
+                logger.info(f'start: {start}, end: {end}')
+                #Special handling for corrspot files since they are variable in # and never 1:1 with project files
+                for i in range(start,end):
+                    basename = os.path.basename(cfg.data.base_image_name(s=cfg.data.scale_key, l=i))
+                    fn, ext = os.path.splitext(basename)
+                    method = cfg.data.section(l=i)['alignment']['swim_settings']['method']
+                    pattern = os.path.join(od, '%s_%s_[tk]_%d%s' % (fn, method, i, ext))
+
+                    originals = glob(pattern)
+                    # logger.critical(f'\n\n\nFound Files:\n{old_thumbnails}\n\n')
+                    logger.info(f"Removing {len(originals)} stale matches...")
+                    for tn in originals:
+                        logger.info(f'Removing {tn}...')
+                        try:
+                            os.remove(tn)
+                        except:
+                            logger.warning('An exception was triggered during removal of expired thumbnail: %s' % tn)
+
+            files = []
+            for name in cfg.data.basefilenames()[start:end]:
+                fn, ext = os.path.splitext(name)
+                search_path = os.path.join(src, '%s_*%s' % (fn, ext))
+                files.extend(glob(search_path))
+
+            # tnLogger.info('Reducing the following corr spot thumbnails:\n%s' %str(filenames))
+            tnLogger.info(f'Reducing {len(files)} total match images...')
+            logger.info(f'Reducing {len(files)} total match images...')
+
+            dt = self.reduce(src=src, od=od,
+                             rmdir=rmdir, prefix='',
+                             start=start, end=end,
+                             pbar_text=pbar_text,
+                             filenames=files,
+                             dest=dest,
+                             use_gui=use_gui,
+                             full_size=False
+                             )
+            cfg.data.t_thumbs_matches = dt
+
+            # cfg.main_window.tell('Discarding Raw (Full Size) Matches...')
+            # try:
+            #     shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale_key, 'matches_raw'), ignore_errors=True)
+            #     shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale_key, 'matches_raw'), ignore_errors=True)
+            # except:
+            #     print_exception()
+
+            cfg.main_window.hud.done()
 
 
     def reduce(self,

@@ -527,6 +527,14 @@ class DataModel:
     def t_thumbs_spot(self, dt):
         self._data['data']['benchmarks']['scales'][self.scale]['t_thumbs_spot'] = dt
 
+    @property
+    def t_thumbs_matches(self):
+        return self._data['data']['benchmarks']['scales'][self.scale]['t_thumbs_matches']
+
+    @t_thumbs_matches.setter
+    def t_thumbs_matches(self, dt):
+        self._data['data']['benchmarks']['scales'][self.scale]['t_thumbs_matches'] = dt
+
     def set_thumb_scaling_factor_source(self, factor:int):
         self._data['data']['thumb_scaling_factor_source'] = factor
 
@@ -1000,10 +1008,10 @@ class DataModel:
                 layer['alignment']['swim_settings'].pop('grid_default_regions', None)
                 layer['alignment']['swim_settings'].setdefault('grid_custom_regions', [1,1,1,1])
                 layer['alignment']['swim_settings'].setdefault('include', True)
-                try:
-                    layer['alignment']['swim_settings']['include'] = layer.pop('skipped')
-                except:
-                    pass
+                # try:
+                #     layer['alignment']['swim_settings']['include'] = not layer.pop('skipped')
+                # except:
+                #     pass
 
                 try:
                     layer['alignment']['swim_settings']['grid_custom_regions'] = layer[

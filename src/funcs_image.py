@@ -344,8 +344,8 @@ def BiasFuncs(layerator, poly_order=0, bias_funcs=None):
 
     # for align_idx in range(len(al_stack)):
     for i, layer in enumerate(layerator):
-
-        c_afm = np.array(layer['alignment']['method_results']['cumulative_afm'])
+        method = layer['alignment']['swim_settings']['method']
+        c_afm = np.array(layer['alignment_history'][method]['method_results']['cumulative_afm'])
 
         rot = np.arctan(c_afm[1, 0] / c_afm[0, 0])
         scale_x = np.sqrt(c_afm[0, 0] ** 2 + c_afm[1, 0] ** 2)
@@ -630,7 +630,8 @@ array([[   0,    0],
         model_bounds = [[0,0]] #Todo initialize this better
         siz = cfg.data.image_size(s=scale)
         for item in al_stack:
-            c_afm = np.array(item['alignment']['method_results']['cumulative_afm'])
+            method = item['alignment']['swim_settings']['method']
+            c_afm = np.array(item['alignment_history'][method]['method_results']['cumulative_afm'])
             model_bounds = np.append(model_bounds, modelBounds2(c_afm, siz), axis=0)
         border_width_x = max(0 - model_bounds[:, 0].min(), model_bounds[:, 0].max() - siz[0])
         border_width_y = max(0 - model_bounds[:, 1].min(), model_bounds[:, 1].max() - siz[1])
@@ -644,7 +645,8 @@ array([[   0,    0],
         model_bounds = None
         siz = cfg.data.image_size(s=scale)
         for item in al_stack:
-            c_afm = np.array(item['alignment']['method_results']['cumulative_afm'])
+            method = item['alignment']['swim_settings']['method']
+            c_afm = np.array(item['alignment_history'][method]['method_results']['cumulative_afm'])
             if type(model_bounds) == type(None):
                 model_bounds = modelBounds2(c_afm, siz)
             else:
