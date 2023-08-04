@@ -141,16 +141,7 @@ class ProjectTable(QWidget):
         logger.info(f'[{caller}]')
         if caller not in ('initTableData', 'updateTableData'):
             if cfg.project_tab._tabs.currentIndex() == 2:
-                row = self.table.currentIndex().row()
-                # cfg.main_window.tell('Section #%d' % row)
-                # cfg.data.zpos = row
-                cfg.mw.setZpos(row)
-        # selection = self.get_selection()
-        # if selection:
-        #     r_min = min(selection)
-        #     r_max = max(selection)
-        #     # cfg.main_window.sectionRangeSlider.setStart(r_min)
-        #     # cfg.main_window.sectionRangeSlider.setEnd(r_max)
+                cfg.data.zpos = self.table.currentIndex().row()
 
 
     def set_column_headers(self):
@@ -303,12 +294,12 @@ class ProjectTable(QWidget):
 
 
     def jump_to_edit(self, requested) -> None:
-        cfg.mw.setZpos(requested)
+        cfg.data.zpos = requested
         cfg.pt._tabs.setCurrentIndex(1)
 
 
     def jump_to_view(self, requested) -> None:
-        cfg.mw.setZpos(requested)
+        cfg.data.zpos = requested
         cfg.pt._tabs.setCurrentIndex(0)
 
     def request_refresh(self, requested) -> None:
@@ -526,7 +517,7 @@ class ProjectTable(QWidget):
     def alignHighlighted(self):
         logger.info('')
         for r in self.getSelectedRows():
-            cfg.mw.setZpos(r)
+            cfg.data.zpos = r
             cfg.main_window.alignOne()
             QApplication.processEvents()
             if cfg.pt._tabs.currentIndex() == 0:

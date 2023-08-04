@@ -1656,7 +1656,7 @@ class ProjectTab(QWidget):
         self.tbbNgHelp.setIcon(qta.icon("fa.question", color='#f3f6fb'))
 
         self.ngAccessoriesCombobox = CheckableComboBox()
-        self.ngAccessoriesCombobox.addItem("Neuroglancer...")
+        self.ngAccessoriesCombobox.addItem("Show/Hide...")
         self.ngAccessoriesCombobox.setFixedWidth(100)
         self.ngAccessoriesCombobox.addItem("Bounds", state=cfg.data['state']['show_bounds'])
         self.ngAccessoriesCombobox.addItem("Axes", state=cfg.data['state']['show_axes'])
@@ -3065,7 +3065,7 @@ class ProjectTab(QWidget):
         # print(f"par_key = {par_key}")
         if par_key == 'stack':
             logger.info(f"setting z-position to {cur_key}")
-            cfg.mw.setZpos(int(cur_key))
+            cfg.data.zpos = int(cur_key)
 
 
     def initUI_JSON(self):
@@ -3242,7 +3242,7 @@ class ProjectTab(QWidget):
             if self.dSnr_plot.isVisible():
                 logger.critical('')
                 self.dSnr_plot.updateLayerLinePos()
-        self.datamodel.signals.zposChanged.connect(update_dSnr_zpos)
+        # self.datamodel.signals.zposChanged.connect(update_dSnr_zpos)
         def reinit_dSnr():
             if self.dSnr_plot.isVisible():
                 logger.critical('Reinitializing SNR plot dock widget...')
@@ -3507,7 +3507,7 @@ class ProjectTab(QWidget):
     def jump_to_manual(self, requested) -> None:
         logger.info(f'requested: {requested}')
         if requested in range(len(cfg.data)):
-            cfg.mw.setZpos(requested)
+            cfg.data.zpos = requested
         else:
             logger.warning('Requested layer is not a valid layer')
 

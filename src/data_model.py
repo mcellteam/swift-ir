@@ -25,7 +25,9 @@ from dataclasses import dataclass
 from functools import cache, cached_property
 from functools import reduce
 import numpy as np
-from qtpy.QtCore import Signal, QObject
+from qtpy.QtCore import QObject, Signal, Slot
+from qtpy.QtWidgets import QApplication
+
 
 from src.data_structs import data_template, layer_template
 from src.helpers import print_exception, exist_aligned_zarr, get_scales_with_generated_alignments, getOpt, \
@@ -192,6 +194,7 @@ class DataModel:
             if int(index) != self.zpos:
                 self['data']['z_position'] = int(index)
                 self.signals.zposChanged.emit()
+                QApplication.processEvents()
         else:
             logger.warning(f'\n\nINDEX OUT OF RANGE: {index} [caller: {inspect.stack()[1].function}]\n')
 

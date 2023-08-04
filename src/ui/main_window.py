@@ -24,6 +24,7 @@ import time
 import psutil
 import resource
 import platform
+from math import floor
 import datetime
 import multiprocessing
 import subprocess
@@ -289,30 +290,6 @@ class MainWindow(QMainWindow):
                     name = mo.property(i).name()
                     settings.setValue("{}/{}".format(w.objectName(), name), w.property(name))
 
-
-    @Slot(name='my-zpos-signal-name')
-    def setZpos(self, z):
-
-        if self._isProjectTab():
-            caller = inspect.stack()[1].function
-            logger.critical(f'[{caller}] z-index requested: {z}')
-            cfg.data.zpos = z
-
-            if not cfg.data['state']['tra_ref_toggle']:
-                cfg.pt.set_reference() #0802+
-                cfg.pt.set_transforming()
-
-            #????????
-            if cfg.pt._tabs.currentIndex() == 0:
-                cfg.emViewer.set_layer(z)
-            elif cfg.pt._tabs.currentIndex() == 1:
-                cfg.baseViewer.set_layer(z)
-                cfg.refViewer.set_layer(cfg.data.get_ref_index())  # 0611+
-
-            if self.dw_snr.isVisible():
-                cfg.project_tab.dSnr_plot.updateLayerLinePos()
-
-            self.dataUpdateWidgets() #0803-
 
 
     def initSizeAndPos(self, width, height):
@@ -1626,13 +1603,13 @@ class MainWindow(QMainWindow):
             requested = cfg.data.zpos - 1
             logger.info(f'requested: {requested}')
             if requested >= 0:
-                cfg.mw.setZpos(requested)
+                cfg.data.zpos = requested
 
     def layer_right(self):
         if self._isProjectTab():
             requested = cfg.data.zpos + 1
             if requested < len(cfg.data):
-                cfg.mw.setZpos(requested)
+                cfg.data.zpos = requested
 
     def scale_down(self) -> None:
         '''Callback function for the Previous Scale button.'''
@@ -1721,6 +1698,31 @@ class MainWindow(QMainWindow):
         await self._dataUpdateWidgets()
 
 
+    @Slot(name='my-zpos-signal-name')
+    def setZpos(self, z):
+
+        if self._isProjectTab():
+            caller = inspect.stack()[1].function
+            logger.critical(f'[{caller}] z-index requested: {z}')
+            cfg.data.zpos = z
+
+            if not cfg.data['state']['tra_ref_toggle']:
+                cfg.pt.set_reference() #0802+
+                cfg.pt.set_transforming()
+
+            #????????
+            if cfg.pt._tabs.currentIndex() == 0:
+                cfg.emViewer.set_layer(z)
+            elif cfg.pt._tabs.currentIndex() == 1:
+                cfg.baseViewer.set_layer(z)
+                cfg.refViewer.set_layer(cfg.data.get_ref_index())  # 0611+
+
+            if self.dw_snr.isVisible():
+                cfg.project_tab.dSnr_plot.updateLayerLinePos()
+
+            self.dataUpdateWidgets() #0803-
+
+    @Slot()
     def _updateZposWidgets(self):
         logger.critical('')
         if self._isProjectTab():
@@ -1730,6 +1732,11 @@ class MainWindow(QMainWindow):
             self._skipCheckbox.setChecked(not cfg.data.skipped())
             self._btn_prevSection.setEnabled(cur > 0)
             self._btn_nextSection.setEnabled(cur < len(cfg.data) - 1)
+
+
+            self.dataUpdateWidgets()  # 0803-
+
+
 
 
     # def dataUpdateWidgets(self, ng_layer=None, silently=False) -> None:
@@ -1764,6 +1771,10 @@ class MainWindow(QMainWindow):
                     logger.info('Updating UI on timeout...')
 
 
+            if self.dw_snr.isVisible():
+                cfg.project_tab.dSnr_plot.updateLayerLinePos()
+
+
             if self.dw_thumbs.isVisible():
                 cfg.pt.tn_tra.set_data(path=cfg.data.thumbnail_tra())
                 cfg.pt.tn_tra_lab.setText(f'Transforming Section (Thumbnail)\n'
@@ -1779,6 +1790,7 @@ class MainWindow(QMainWindow):
                     cfg.pt.tn_ref.set_data(path=cfg.data.thumbnail_ref())
                     cfg.project_tab.tn_ref.show()
                     cfg.pt.tn_ref_lab.show()
+
 
             if self.dw_notes.isVisible():
                 self.updateNotes()
@@ -1798,8 +1810,16 @@ class MainWindow(QMainWindow):
                     cfg.project_tab._overlayLab.show()  # Todo find/fix cfg.project_tab._overlayLab
                 else:
                     cfg.project_tab._overlayLab.hide()
+                if floor(cfg.emViewer.state.voxel_coordinates[0]) != cfg.data.zpos:
+                    cfg.emViewer.set_layer(cfg.data.zpos)
+
 
             elif cfg.pt._tabs.currentIndex() == 1:
+
+                if not cfg.data['state']['tra_ref_toggle']:
+                    cfg.pt.set_reference()  # 0802+
+                    cfg.pt.set_transforming()
+
                 cfg.pt.lab_filename.setText(f"[{cfg.data.zpos}] Name: {cfg.data.filename_basename()} - {cfg.data.scale_pretty()}")
                 cfg.pt.cl_tra.setText(f'[{cfg.data.zpos}] {cfg.data.filename_basename()} (Transforming)')
                 if cfg.data.skipped():
@@ -3661,7 +3681,7 @@ class MainWindow(QMainWindow):
 
         elif self._getTabType() == 'ProjectTab':
             cfg.data = self.globTabs.currentWidget().datamodel
-            cfg.data.signals.zposChanged.connect(self._updateZposWidgets)
+            # cfg.data.signals.zposChanged.connect(self._updateZposWidgets)
             cfg.project_tab = cfg.pt = self.globTabs.currentWidget()
             cfg.pt.initNeuroglancer(init_all=True)
             # if self._is_initialized:
@@ -4727,9 +4747,9 @@ class MainWindow(QMainWindow):
             if cfg.data:
                 if cfg.project_tab:
                     if self._sectionSlider.value() < len(cfg.data) - 1:
-                        self.setZpos(cfg.data.zpos + 1)
+                        cfg.data.zpos += 1
                     else:
-                        self.setZpos(0)
+                        cfg.data.zpos = 0
                         self.automaticPlayTimer.stop()
                         self._isPlayingBack = 0
                         self._btn_automaticPlayTimer.setIcon(qta.icon('fa.play', color=cfg.ICON_COLOR))

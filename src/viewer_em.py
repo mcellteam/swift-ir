@@ -54,7 +54,7 @@ class WorkerSignals(QObject):
     result = Signal(str)
     stateChanged = Signal()
     layoutChanged = Signal()
-    zposChanged = Signal()
+    # zposChanged = Signal()
     zoomChanged = Signal(float)
     mpUpdate = Signal()
 
@@ -186,7 +186,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
                     # if DEV:
                     #     logger.info(f'[{caller}] (!) emitting get_loc: {request_layer} [cur_method={self.type}]')
                     # self.signals.zposChanged.emit(request_layer)
-                    self.signals.zposChanged.emit()
+                    # self.signals.zposChanged.emit()
         except:
             print_exception()
 

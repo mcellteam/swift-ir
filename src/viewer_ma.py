@@ -425,8 +425,9 @@ class MAViewer(neuroglancer.Viewer):
 
     @Slot()
     def on_state_changed(self):
-        # if 1:
-        #     return
+        logger.info('')
+        # logger.info(f"[{self.role}], tra_ref_toggle = {cfg.data['state']['tra_ref_toggle']}, _blockStateChanged = {self._blockStateChanged}")
+
 
         if self._blockStateChanged:
             return
@@ -439,43 +440,10 @@ class MAViewer(neuroglancer.Viewer):
             if cfg.data['state']['tra_ref_toggle'] != 0:
                 return
 
-        # logger.info('')
-        # logger.info(f"[{self.role}], tra_ref_toggle = {cfg.data['state']['tra_ref_toggle']}, _blockStateChanged = {self._blockStateChanged}")
 
         self._blockStateChanged = True
 
-        # logger.info('>>>> on_state_changed >>>>')
-
-        # self._blockStateChanged = True
-        # if not self.cs_scale:
-        #     if self.state.cross_section_scale:
-        #         if self.state.cross_section_scale > .0001:
-        #             logger.info('perfect cs_scale captured! - %.3f' % self.state.cross_section_scale)
-        #             self.cs_scale = self.state.cross_section_scale
-        #
-        # zoom = self.state.cross_section_scale
-        # if zoom:
-        #     if zoom != self._crossSectionScale:
-        #         logger.info(f' (!) emitting zoomChanged (state.cross_section_scale): {zoom:.3f}...')
-        #         self.signals.zoomChanged.emit(zoom)
-        #     self._crossSectionScale = zoom
-        #
-        # self._blockStateChanged = False
-
-        # request_layer = int(math.floor(self.state.voxel_coordinates[0]))
-        # request_layer = int(self.state.voxel_coordinates[0])
-
         request_layer = int(self.state.position[0])
-
-        # if DEV:
-        #     logger.critical(self.info())
-
-
-        # if self.role == 'ref':
-        #     # if int(math.floor(self.state.voxel_coordinates[0])) != self.index:
-        #     if request_layer != self.index:
-        #         cfg.pt.setRbTransforming()
-        #     return
 
         if self.role == 'ref':
             if request_layer == self.index:
@@ -491,66 +459,18 @@ class MAViewer(neuroglancer.Viewer):
             self._blockStateChanged = False
             return
 
-        # request_layer = int(self.state.position[0])
-        # request_layer = int(self.state.position[0])
-
-        # logger.critical(f"\n\n\n{self.role}\n  cfg.data.zpos={cfg.data.zpos}\n  request_layer={request_layer}\n  cfg.data.get_ref_index()={cfg.data.get_ref_index()}\n\n")
-
-        # if self.role == 'base':
-        #     if request_layer == cfg.data.zpos:
-        #         return
-        # elif self.role == 'ref':
-        #     if request_layer == cfg.data.get_ref_index():
-        #         return
-
         self.index = request_layer
-
-        # if self.role == 'ref':
-        #     if request_layer != cfg.data.get_ref_index():
-        #         with self.txn() as s:
-        #             # logger.info('Sorry!')
-        #             vc = s.voxel_coordinates
-        #             vc[0] = cfg.data.get_ref_index()
-        #     # if not cfg.pt.MA_webengine_ref.isVisible():
-        #     #     logger.warning('MA_webengine_ref is NOT visible... canceling state changed callback...')
-        #     return
-        # if self.role == 'base':
-        #     if not cfg.pt.MA_webengine_base.isVisible():
-        #         # logger.warning('MA_webengine_base is NOT visible... canceling state changed callback...')
-        #         return
 
         # self.drawSWIMwindow()
 
         cfg.data.zpos = self.index
-        # cfg.mw.setZpos(request_layer)
         logger.info(f'{self.role}: Emitting z-index changed!')
         # self.signals.zposChanged.emit(request_layer)
         self.signals.zposChanged.emit()
 
-        # logger.info('  > continuing past <lambda> check...')
-        # logger.info(f'self.state.position[0]          = {self.state.position[0]}')
-        # logger.info(f'self.state.voxel_coordinates[0] = {self.state.voxel_coordinates[0]}')
-
-        # if isinstance(self.state.position, np.ndarray):
-        #     # request_layer = int(self.state.position[0])
-        #     request_layer = int(self.state.position[0])
-        #     logger.critical(f'request_layer: {request_layer}')
-        #     logger.critical(f'self._layer: {self._layer}')
-        #     # ConfirmedOkay
-        #     # logger.info(f'  request_layer = {request_layer} // self._layer = {self._layer}')
-        #     if request_layer == self._layer:
-        #         logger.info(f'{self.type}:{self.role} state changed, but z-index did not change. '
-        #                     f'The callback to update UI was surpressed.')
-        #     else:
-        #         self._layer = request_layer
-        #         cfg.mw.setZpos(request_layer)
-        #         # self._inSync = 1 #Critical!
-
-                # self.signals.stateChanged.emit()
-
         self._blockStateChanged = False
 
-        logger.info('<<<< on_state_changed <<<<')
+        # logger.info('<<<< on_state_changed <<<<')
 
 
 
@@ -729,16 +649,12 @@ class MAViewer(neuroglancer.Viewer):
             return
 
 
-
         marker_size = 1
 
         # if self.role == 'ref':
         #     self.index = cfg.data.get_ref_index()
         # elif self.role == 'base':
         #     self.index = cfg.data.zpos  #
-
-        # if DEV:
-        #     logger.critical(f'[{self.role}] caller: {caller_name()} index: {self.index} cfg.data.zpos: {cfg.data.zpos}')
 
         # if cfg.data.current_method == 'manual-hint':
         #     self.draw_point_annotations()
@@ -800,7 +716,6 @@ class MAViewer(neuroglancer.Viewer):
 
             img_siz = cfg.data.image_size()
             img_w, img_h = img_siz[0], img_siz[1]
-            # ww_full = cfg.data.stack()[cfg.data.zpos]['alignment']['swim_settings']['default_auto_swim_window_px']
             ww_full = cfg.data['data']['defaults'][cfg.data.scale_key]['swim-window-px']
 
             offset_x1 = (img_w / 2) - (ww_full[0] * (1 / 4))
