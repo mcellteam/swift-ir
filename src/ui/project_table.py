@@ -321,7 +321,7 @@ class ProjectTable(QWidget):
 
         rowData = []
         dest = cfg.data.dest()
-        method = cfg.data['data']['scales'][s]['stack'][l]['current_method']
+        method = cfg.data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['method']
         index = ('%d'%l).zfill(5)
         basename = cfg.data.filename_basename(s=s, l=l)
         snr_avg = cfg.data.snr(s=s, l=l, method=method)
@@ -526,7 +526,7 @@ class ProjectTable(QWidget):
     def alignHighlighted(self):
         logger.info('')
         for r in self.getSelectedRows():
-            cfg.mw.setZpos(z=r)
+            cfg.mw.setZpos(r)
             cfg.main_window.alignOne()
             QApplication.processEvents()
             if cfg.pt._tabs.currentIndex() == 0:

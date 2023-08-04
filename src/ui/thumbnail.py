@@ -185,6 +185,7 @@ class ThumbnailFast(QLabel):
 
         except:
             print_exception(extra=f'WARNING path={self.path}')
+            self.set_no_image()
         finally:
             self.update()
 
@@ -612,6 +613,7 @@ class CorrSignalThumbnail(QLabel):
 
         except:
             print_exception()
+            self.set_no_image()
             logger.warning(f'WARNING path={self.path}, label={self.snr}')
         finally:
             self.update()

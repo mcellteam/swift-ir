@@ -93,7 +93,7 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
         base_name = layer['filename']
         _ , fn = os.path.split(base_name)
         al_name = os.path.join(dest, scale, 'img_aligned', fn)
-        method = layer['current_method'] #0802+
+        method = layer['alignment']['swim_settings']['method'] #0802+
         # cafm = layer['alignment']['method_results']['cumulative_afm'] #0802-
         cafm = layer['alignment_history'][method]['method_results']['cumulative_afm']
         tasks.append([base_name, al_name, rect, cafm, 128])
@@ -266,7 +266,7 @@ def makeTasksList(dm, iter, job_script, scale, rect, zarr_group):
         # layer['images']['aligned']['filename'] = al_name
 
         # cafm = layer['alignment']['method_results']['cumulative_afm'] #0802-
-        method = layer['current_method']  # 0802+
+        method = layer['alignment']['swim_settings']['method']  # 0802+
         cafm = layer['alignment_history'][method]['method_results']['cumulative_afm']
         args = [sys.executable, job_script, '-gray', '-rect',
                 str(rect[0]), str(rect[1]), str(rect[2]), str(rect[3]), '-afm', str(cafm[0][0]), str(cafm[0][1]),

@@ -90,7 +90,7 @@ class Thumbnailer:
                 for i in range(start,end):
                     basename = os.path.basename(cfg.data.base_image_name(s=cfg.data.scale_key, l=i))
                     filename, extension = os.path.splitext(basename)
-                    method = cfg.data.section(l=i)['current_method']
+                    method = cfg.data.section(l=i)['alignment']['swim_settings']['method']
                     # old_thumbnails = glob(os.path.join(od, '*' + '_' + method + '_' + baseFileNames[i]))
                     search_path = os.path.join(od, '%s_%s_*%s' % (filename, method, extension))
                     # logger.critical(f'\n\n\nSearch Path (Pre-Removal):\n{search_path}\n\n')

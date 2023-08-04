@@ -64,7 +64,7 @@ class SnrPlot(QWidget):
         else:
             self._curLayerLine = pg.InfiniteLine(
                 # pen='w',
-                pen=pg.mkPen('#f3f6fb', width=2),
+                pen=pg.mkPen('#0096ff', width=2),
                 movable=False,
                 angle=90,
                 label='Section #{value:.0f}',
@@ -72,6 +72,9 @@ class SnrPlot(QWidget):
                 labelOpts={'position': .8, 'color': '#f3f6fb', 'fill': '#141414', 'movable': True})
         # self._snr_label = pg.InfLineLabel(self._curLayerLine, '', position=0.95, rotateAxis=(1, 0),
         #                                  anchor=(1, 1))
+        self._curLayerLine.addMarker('v', position=1, size=(9,12)[self.dock])
+        self._curLayerLine.addMarker('^', position=0, size=(9,12)[self.dock])
+        self._curLayerLine.setZValue(0)
 
         if self.dock:
             self._snr_label = pg.InfLineLabel(self._curLayerLine, '', position=0.2, anchor=(0, 1), color='#f3f6fb')
@@ -161,11 +164,12 @@ class SnrPlot(QWidget):
             # logger.info(f'pos = {pos}')
             self._curLayerLine.setPos(pos)
             # snr = pg.InfLineLabel(self._curLayerLine, "region 1", position=0.95, rotateAxis=(1, 0), anchor=(1, 1))
-            if self.dock:
-                lab = 'SNR: %.2g' % cfg.data.snr()
-            else:
-                lab = 'SNR: %.3g\n%s' % (cfg.data.snr(), cfg.data.scale_pretty())
-            self._snr_label.setText(lab)
+            if not cfg.data.skipped():
+                if self.dock:
+                    lab = 'SNR: %.2g' % cfg.data.snr()
+                else:
+                    lab = 'SNR: %.3g\n%s' % (cfg.data.snr(), cfg.data.scale_pretty())
+                self._snr_label.setText(lab)
 
             if not self.dock:
                 styles = {'color': '#f3f6fb', 'font-size': '14px', 'font-weight': 'bold'}
@@ -418,10 +422,10 @@ class SnrPlot(QWidget):
             x_axis = [x+offset for x in x_axis]
         brush = self._plot_brushes[cfg.data.scales()[::-1].index(s)]
         self.snr_points[s] = pg.ScatterPlotItem(
-            size=(11,8)[self.dock],
+            size=(11,9)[self.dock],
             # pen=pg.mkPen(None),
             symbol='o',
-            pen=(pg.mkPen('#f3f6fb', width=1), None)[self.dock],
+            pen=pg.mkPen('#f3f6fb', width=2),
             brush=(brush, pg.mkBrush('#AAFF00'))[self.dock],
             hoverable=True,
             hoverSymbol='o',

@@ -523,7 +523,7 @@ class OpenProject(QWidget):
 
     '''New Project From TIFFs (2/3)'''
     def skipToConfig(self):
-        logger.critical('')
+        logger.info('')
         self.NEW_PROJECT_PATH = self.le_project_name.text()
         # self.USE_CAL_GRID = self.cbCalGrid.isChecked()
         self.new_project(skip_to_config=True)
@@ -739,7 +739,7 @@ class OpenProject(QWidget):
 
         # cfg.mw._disableGlobTabs()
 
-        logger.critical("Creating new project...")
+        logger.info("Creating new project...")
         cfg.mw.setNoPbarMessage(True)
 
         cfg.mw.set_status('')
@@ -787,7 +787,7 @@ class OpenProject(QWidget):
         QApplication.processEvents()
         cfg.pt.initNeuroglancer()
         cfg.mw.setNoPbarMessage(False)
-        logger.critical('<<<< new_project <<<<')
+        logger.info('<<<< new_project <<<<')
 
 
     def setSelectionPathText(self, path):
@@ -1139,7 +1139,6 @@ class UserProjects(QWidget):
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        # self.table.setSelectionMode(QAbstractItemView.SingleSelection) #0507-  !!!!!!!!!!!!
         self.table.verticalHeader().setVisible(False)
         # self.table.horizontalHeader().setDefaultAlignment(Qt.Alignment(Qt.TextWordWrap))
         self.table.horizontalHeader().setDefaultAlignment(Qt.AlignLeft)
@@ -1244,7 +1243,7 @@ class UserProjects(QWidget):
 
 
     def set_data(self):
-        logger.critical('')
+        logger.info('')
 
         configure_project_paths()
         # logger.info(">>>> set_data >>>>")

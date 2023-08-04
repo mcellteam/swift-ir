@@ -12,7 +12,6 @@ import logging
 import datetime
 import argparse
 import abc
-# from abc import ABC, abstractmethod
 import time
 import numpy as np
 import numcodecs
@@ -340,16 +339,18 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
     def updateScaleBar(self):
         with self.txn() as s:
-            s.show_scale_bar = False
+            s.show_scale_bar = cfg.data['state']['show_scalebar']
 
     def updateAxisLines(self):
         with self.txn() as s:
-            s.show_axis_lines = getData('state,show_axis_lines')
+            s.show_axis_lines = cfg.data['state']['show_bounds']
 
 
-    def updateDefaultAnnotations(self):
+    def updateDisplayAccessories(self):
         with self.txn() as s:
-            s.show_default_annotations = getData('state,show_yellow_frame')
+            s.show_default_annotations = cfg.data['state']['show_bounds']
+            s.show_axis_lines = cfg.data['state']['show_axes']
+            s.show_scale_bar = cfg.data['state']['show_scalebar']
 
 
     def updateUIControls(self):
@@ -456,7 +457,7 @@ class EMViewer(AbstractEMViewer):
     def initViewer(self, nglayout=None):
         caller = inspect.stack()[1].function
         if DEV:
-            logger.info(f'\n\n[DEV] [{caller}] Initializing Neuroglancer...\n\n')
+            logger.info(f'\n\n[DEV] [{caller}] Initializing Neuroglancer...\n')
         self._blockStateChanged = False
 
         if not nglayout:
@@ -492,14 +493,14 @@ class EMViewer(AbstractEMViewer):
             # s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
             if cfg.data.scale_val() < 6:
                 s.show_scale_bar = True
-            s.show_axis_lines = getData('state,show_axis_lines')
+            s.show_axis_lines = getData('state,show_axes')
             s.position=[cfg.data.zpos + 0.5, self.store.shape[1]/2, self.store.shape[2]/2]
             s.layers['layer'] = ng.ImageLayer( source=cfg.LV, shader=cfg.data['rendering']['shader'], )
             if getData('state,neutral_contrast'):
                 s.crossSectionBackgroundColor = '#808080'
             else:
                 s.crossSectionBackgroundColor = '#222222'
-            s.show_default_annotations = getData('state,show_yellow_frame')
+            s.show_default_annotations = getData('state,show_bounds')
             s.projectionScale = 1
 
 

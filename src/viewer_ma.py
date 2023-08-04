@@ -295,7 +295,7 @@ class MAViewer(neuroglancer.Viewer):
             s.system_memory_limit = -1
             s.show_scale_bar = False
             s.show_axis_lines = False
-            s.show_default_annotations = getData('state,show_yellow_frame')
+            s.show_default_annotations = getData('state,show_bounds')
             # s.position=[self.index, self.store.shape[1]/2, self.store.shape[2]/2]
             s.layers['layer'] = ng.ImageLayer(source=self.LV, shader=cfg.data['rendering']['shader'], )
             if getData('state,neutral_contrast'):
@@ -526,33 +526,6 @@ class MAViewer(neuroglancer.Viewer):
         logger.info(f'{self.role}: Emitting z-index changed!')
         # self.signals.zposChanged.emit(request_layer)
         self.signals.zposChanged.emit()
-
-        # if isinstance(self.state.position, np.ndarray):
-        #     request_layer = int(self.state.position[0])
-        #     # ConfirmedOkay
-        #     # logger.info(f'  request_layer = {request_layer} // self._layer = {self._layer}')
-        #     if request_layer == self._layer:
-        #         logger.debug(f'{self.type} state changed, but z-index did not change. '
-        #                      f'The callback to update UI was surpressed.')
-        #     else:
-        #         self._layer = request_layer
-        #         cfg.data.zpos = request_layer
-        #         # cfg.mw.setZpos(request_layer)
-        #         self.signals.stateChanged.emit(request_layer)
-
-        # try:
-        #     # print('requested layer: %s' % str(self.state.position[0]))
-        #     # get_loc = floor(self.state.position[0])
-        #     if isinstance(self.state.position, np.ndarray):
-        #         request_layer = int(self.state.position[0])
-        #         if cfg.data.zpos != request_layer:
-        #             logger.critical(f'  request_layer = {request_layer} // self._layer = {self._layer} // cfg.data.zpos = {cfg.data.zpos}')
-        #
-        #             # cfg.data.zpos = request_layer
-        #             cfg.mw.setZpos(request_layer)
-        #             self.signals.stateChanged.emit(request_layer)
-        # except:
-        #     print_exception()
 
         # logger.info('  > continuing past <lambda> check...')
         # logger.info(f'self.state.position[0]          = {self.state.position[0]}')

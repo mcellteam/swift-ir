@@ -87,7 +87,7 @@ def check_project_status():
     for i, section in enumerate(iter):
         local_problem_flag = 0
 
-        if section['current_method'] in ('manual-hint'):
+        if section['alignment']['swim_settings']['method'] in ('manual-hint'):
             n_ref_pts = len(section['alignment']['swim_settings']['match_points']['ref'])
             n_base_pts = len(section['alignment']['swim_settings']['match_points']['base'])
             if n_ref_pts < 3:
@@ -98,7 +98,7 @@ def check_project_status():
                 cfg.mw.warn(f'Fatal! # of match regions for Transforming image {i} is fewer than three: [{n_ref_pts}]')
                 glob_problem_flag = 1
                 local_problem_flag = 1
-        if section['current_method'] in ('manual-strict'):
+        if section['alignment']['swim_settings']['method'] in ('manual-strict'):
             n_ref_pts = len(section['alignment']['swim_settings']['match_points']['ref'])
             n_base_pts = len(section['alignment']['swim_settings']['match_points']['base'])
             if n_ref_pts < 3:
