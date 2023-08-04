@@ -493,7 +493,7 @@ def SetStackCafm(iterator, scale, poly_order=None):
         for i, layer in enumerate(cfg.data.get_iter(scale)):
             if use_poly:
                 bias_mat = BiasMat(i, bias_funcs)
-            c_afm = SetSingleCafm(layer, c_afm, bias_mat=bias_mat, method=layer['current_method']) # <class
+            c_afm = SetSingleCafm(layer, c_afm, bias_mat=bias_mat, method=layer['alignment']['swim_settings']['method']) # <class
             # 'numpy.ndarray'>
 
         if bi < bias_iters - 1:

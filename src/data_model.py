@@ -25,6 +25,7 @@ from dataclasses import dataclass
 from functools import cache, cached_property
 from functools import reduce
 import numpy as np
+from qtpy.QtCore import Signal, QObject
 
 from src.data_structs import data_template, layer_template
 from src.helpers import print_exception, exist_aligned_zarr, get_scales_with_generated_alignments, getOpt, \
@@ -62,6 +63,10 @@ class Scale:
 def time():
     return datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
+class Signals(QObject):
+    zposChanged = Signal()
+    warning2 = Signal()
+
 
 class DataModel:
 
@@ -78,10 +83,14 @@ class DataModel:
             self.set_system_info()
         if not quietly:
             self._data['modified'] = time()
+            self.signals = Signals()
         if name:
             self._data['data']['destination_path'] = name
         self._data['data']['mendenhall'] = mendenhall
         self._data['version'] = cfg.VERSION
+
+        self._data.setdefault('changelog', [])
+
 
         # self.zpos = self._data['data']['z_position']
         if not quietly:
@@ -98,6 +107,8 @@ class DataModel:
         self._data[key] = item
 
     def __getitem__(self, key):
+        # caller = inspect.stack()[1].function
+        # logger.critical(f"caller: {caller}, key: {key}")
         return self._data[key]
 
     def __repr__(self):
@@ -178,7 +189,9 @@ class DataModel:
         # logger.info(f'caller: {caller}')
         # self._data['data']['Current Section (Index)'] = index
         if int(index) in range(0, len(self)):
-            self['data']['z_position'] = int(index)
+            if int(index) != self.zpos:
+                self['data']['z_position'] = int(index)
+                self.signals.zposChanged.emit()
         else:
             logger.warning(f'\n\nINDEX OUT OF RANGE: {index} [caller: {inspect.stack()[1].function}]\n')
 
@@ -258,32 +271,27 @@ class DataModel:
     def scale(self, str):
         self._data['data']['current_scale'] = str
 
+
     @property
     def current_method(self):
         # caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
         # self._data['data']['scales'][self.scale_key]['stack'][self.zpos].setdefault('current_method', 'grid-default')
         try:
-            return self._data['data']['scales'][self.scale]['stack'][self.zpos]['current_method']
+            return self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['swim_settings']['method']
         except:
             print_exception()
-            self._data['data']['scales'][self.scale]['stack'][self.zpos]['current_method'] = 'grid-default'
-            return self._data['data']['scales'][self.scale]['stack'][self.zpos]['current_method']
+
 
     @current_method.setter
     def current_method(self, str):
         # self._data['data']['scales'][self.scale_key]['stack'][self.zpos]['current_method'] = str
         # for s in self.scales():
         for s in self.finer_scales():
-            self._data['data']['scales'][s]['stack'][self.zpos]['current_method'] = str
+            # self._data['data']['scales'][s]['stack'][self.zpos]['current_method'] = str
+            self._data['data']['scales'][s]['stack'][self.zpos]['alignment']['swim_settings']['method'] = str
+        self.signals.warning2.emit()
 
-
-
-
-    def get_current_method(self, s=None, l=None):
-        if s == None: s = self.scale
-        if l == None: l = self.zpos
-        return self._data['data']['scales'][s]['stack'][l]['current_method']
 
     @property
     def current_method_pretty(self):
@@ -304,6 +312,7 @@ class DataModel:
         # for s in self.scales():
         for s in self.finer_scales():
             self._data['data']['scales'][s]['stack'][self.zpos]['alignment']['swim_settings']['grid_custom_regions'] = lst
+        self.signals.warning2.emit()
 
     def get_grid_custom_regions(self, s=None, l=None):
         if s == None: s = self.scale
@@ -334,6 +343,7 @@ class DataModel:
     @default_poly_order.setter
     def default_poly_order(self, use):
         self._data['data']['defaults']['corrective-polynomial'] = use
+        self.signals.warning2.emit()
 
 
     @property
@@ -343,6 +353,7 @@ class DataModel:
     @default_whitening.setter
     def default_whitening(self, x):
         self._data['data']['defaults']['signal-whitening'] = x
+        self.signals.warning2.emit()
 
     @property
     def defaults(self):
@@ -662,7 +673,7 @@ class DataModel:
         names = []
         for i, img in enumerate(self.basefilenames()):
             filename, extension = os.path.splitext(img)
-            method = self._data['data']['scales'][self.scale]['stack'][i]['current_method']
+            method = self.method(s=self.scale, l=i)
             names.append(os.path.join(self.dest(), self.scale, 'signals' , '%s_%s_0%s'% (filename,method,extension)))
         return names
 
@@ -670,7 +681,7 @@ class DataModel:
         names = []
         for i, img in enumerate(self.basefilenames()):
             filename, extension = os.path.splitext(img)
-            method = self._data['data']['scales'][self.scale]['stack'][i]['current_method']
+            method = self.method(s=self.scale, l=i)
             names.append(os.path.join(self.dest(), self.scale, 'signals' , '%s_%s_1%s'% (filename,method,extension)))
         return names
 
@@ -678,7 +689,7 @@ class DataModel:
         names = []
         for i, img in enumerate(self.basefilenames()):
             filename, extension = os.path.splitext(img)
-            method = self._data['data']['scales'][self.scale]['stack'][i]['current_method']
+            method = self.method(s=self.scale, l=i)
             names.append(os.path.join(self.dest(), self.scale, 'signals' , '%s_%s_2%s'% (filename,method,extension)))
         return names
 
@@ -686,7 +697,7 @@ class DataModel:
         names = []
         for i, img in enumerate(self.basefilenames()):
             filename, extension = os.path.splitext(img)
-            method = self._data['data']['scales'][self.scale]['stack'][i]['current_method']
+            method = self.method(s=self.scale, l=i)
             names.append(os.path.join(self.dest(), self.scale, 'signals' , '%s_%s_3%s'% (filename,method,extension)))
         return names
 
@@ -785,34 +796,13 @@ class DataModel:
         self._data['state'].setdefault('tool_windows', {})
         # Set default to value from user preferences... Todo: all user preferences should work this way
 
-        # try:
-        #     self._data['state'].setdefault('neutral_contrast', getOpt('neuroglancer,NEUTRAL_CONTRAST_MODE'))
-        # except:
-        #     self._data['state'].setdefault('neutral_contrast', False)
-        #     print_exception()
-        self._data['state']['neutral_contrast'] = False
 
-        # try:
-        #     self._data['state'].setdefault('show_yellow_frame', getOpt('neuroglancer,SHOW_YELLOW_FRAME'))
-        # except:
-        #     self._data['state'].setdefault('show_yellow_frame', False)
-        #     print_exception()
-        self._data['state']['show_yellow_frame'] = False
+        self._data['state']['show_bounds'] = False
+        self._data['state']['show_axes'] = False
+        self._data['state']['show_scalebar'] = False
 
-        # try:
-        #     self._data['state'].setdefault('show_axis_lines', getOpt('neuroglancer,SHOW_AXIS_LINES'))
-        # except:
-        #     self._data['state'].setdefault('show_axis_lines', False)
-        #     print_exception()
-        self._data['state']['show_axis_lines'] = False
-
-        # try:
-        #     self._data['state'].setdefault('show_ng_controls', getOpt('neuroglancer,SHOW_UI_CONTROLS'))
-        # except:
-        #     self._data['state'].setdefault('show_ng_controls', False)
-        #     print_exception()
         self._data['state']['show_ng_controls'] = False
-
+        self._data['state']['neutral_contrast'] = False
 
         # self._data['state']['show_ng_controls'] = False
 
@@ -974,25 +964,6 @@ class DataModel:
                 try:    layer['alignment_history']['manual-strict']['method_results']['affine_matrix'] = layer['alignment_history']['manual-strict'].pop('affine_matrix')
                 except: pass
 
-
-                # if not 'cumulative_afm' in layer['alignment_history'][cfg.data.get_current_method(l=i)]:
-                #     layer['alignment_history']['grid-default']['cumulative_afm'] =
-
-                # init_afm = [[1., 0., 0.], [0., 1., 0.]]
-                # layer['alignment_history']['grid-default'].setdefault('affine_matrix', init_afm)
-                # layer['alignment_history']['grid-custom'].setdefault('affine_matrix', init_afm)
-                # layer['alignment_history']['manual-hint'].setdefault('affine_matrix', init_afm)
-                # layer['alignment_history']['manual-strict'].setdefault('affine_matrix', init_afm)
-
-                # if cfg.data.scale_key != cfg.data.coarsest_scale_key():
-                #     for i, section in range(0, len(cfg.data)):
-                #         scales = cfg.data.scales()
-                #         scale_prev = scales[scales.index(scale_key) + 1]
-                #         scale_prev_dict = cfg.data['data']['scales'][scale_prev]['stack']
-                #         prev_method = scale_prev_dict[i]['current_method']
-                #         scale_prev_dict[i]['alignment_history'].setdefault[prev_method]['affine_matrix']
-
-
                 layer.setdefault('alignment', {})
                 layer['alignment'].pop('dev_mode', None)
                 # layer['alignment'].setdefault('meta', {})
@@ -1007,7 +978,7 @@ class DataModel:
                 except:
                     pass
 
-                layer.setdefault('current_method', 'grid-default')
+                # layer.setdefault('current_method', 'grid-default')
 
                 layer['alignment']['swim_settings']['index'] = i
                 # logger.critical(f"{os.path.join(self.dest(), s, 'tmp')}")
@@ -1015,6 +986,7 @@ class DataModel:
                 # layer['alignment']['swim_settings']['targ_path'] = os.path.join(self.dest(), s, 'tmp')
                 layer['alignment']['swim_settings'].pop('karg_path', None)
                 layer['alignment']['swim_settings'].pop('targ_path', None)
+                layer['alignment']['swim_settings'].setdefault('method', 'grid-default')
                 layer['alignment']['swim_settings'].setdefault('clobber_fixed_noise', False)
                 layer['alignment']['swim_settings'].setdefault('clobber_size', cfg.DEFAULT_CLOBBER_PX)
                 layer['alignment']['swim_settings'].setdefault('extra_kwargs', '')
@@ -1269,8 +1241,6 @@ class DataModel:
         # if l == 0:
         #     return 0.0
         try:
-            # if method == None:
-            #     method = self.current_method
             # components = self._data['data']['scales'][s]['stack'][l]['alignment_history'][method][-1]['snr']
             # components = self._data['data']['scales'][s]['stack'][l]['alignment']['method_results']['snr'] #prev
             components = self._data['data']['scales'][s]['stack'][l]['alignment_history'][method]['method_results']['snr']
@@ -1381,7 +1351,8 @@ class DataModel:
         if s == None: s = self.scale
         if l == None: l = self.zpos
         try:
-            return self._data['data']['scales'][s]['stack'][l]['alignment_history'][self.get_current_method(s=s, l=l)]['method_results']['snr_report']
+            method = self.method(s=s, l=l)
+            return self._data['data']['scales'][s]['stack'][l]['alignment_history'][method]['method_results']['snr_report']
         except:
             logger.warning('No SNR Report for Layer %d' % l)
             return ''
@@ -1471,21 +1442,21 @@ class DataModel:
         '''
         if s == None: s = self.scale
         if l == None: l = self.zpos
-        return self._data['data']['scales'][s]['stack'][l]['current_method']
+        return self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['method']
 
     def method_pretty(self, s=None, l=None):
         if s == None: s = self.scale
         if l == None: l = self.zpos
         convert = {'grid-default': 'Grid Default', 'grid-custom': 'Grid Custom',
                    'manual-strict': 'Manual Strict', 'manual-hint': 'Manual Hint'}
-        return convert[self._data['data']['scales'][s]['stack'][l]['current_method']]
+        return convert[self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['method']]
 
 
     def set_all_methods_automatic(self):
         '''Sets the alignment method of all sections and all scales to Auto-SWIM.'''
         # for s in self.scales():
         for l in range(len(self)):
-            self._data['data']['scales'][self.scale]['stack'][l]['current_method'] = 'grid-default'
+            self._data['data']['scales'][self.scale]['stack'][l]['alignment']['swim_settings']['method'] = 'grid-default'
 
         self.set_manual_swim_windows_to_default()
 
@@ -1635,7 +1606,9 @@ class DataModel:
         if l == None: l = self.zpos
         try:
             # return self._data['data']['scales'][s]['stack'][l]['alignment']['method_results']['affine_matrix']
-            return self._data['data']['scales'][s]['stack'][l]['alignment_history'][self.get_current_method(s=s,l=l)]['method_results']['affine_matrix']
+            method = self.method(s=s,l=l)
+            return self._data['data']['scales'][s]['stack'][l]['alignment_history'][method]['method_results'][
+            'affine_matrix']
         except:
             print_exception()
             return [[[1, 0, 0], [0, 1, 0]]]
@@ -1657,9 +1630,9 @@ class DataModel:
         if l == None: l = self.zpos
         try:
             # return self._data['data']['scales'][s]['stack'][l]['alignment']['method_results']['cumulative_afm'] #0802-
-            return self._data['data']['scales'][s]['stack'][l]['alignment_history'][self.get_current_method(s=s, l=l)][
+            method = self.method(s=s, l=l)
+            return self._data['data']['scales'][s]['stack'][l]['alignment_history'][method][
                 'method_results']['cumulative_afm']
-            # return self._data['data']['scales'][s]['stack'][l]['alignment_history'][self.get_current_method(s=s, l=l)]['cumulative_afm']
         except:
             # caller = inspect.stack()[1].function
             # print_exception(extra=f'Layer {l}, caller: {caller}')
@@ -1687,7 +1660,6 @@ class DataModel:
     def cafm_registered_hash(self, s=None, l=None):
         if s == None: s = self.scale
         if l == None: l = self.zpos
-        # return self._data['data']['scales'][s]['stack'][l]['alignment_history'][self.get_current_method(l=l)]['cafm_hash']
         return self._data['data']['scales'][s]['stack'][l]['cafm_alignment_hash']
 
 
@@ -1715,8 +1687,6 @@ class DataModel:
         if s == None: s = self.scale
         # for i, layer in enumerate(self.get_iter(s)):
         for i in range(start, end):
-            # self._data['data']['scales'][s]['stack'][i]['alignment_history'][self.get_current_method(l=i)]['cafm_hash'] = \
-            #     self.cafm_current_hash(l=i)
             self._data['data']['scales'][s]['stack'][i]['cafm_alignment_hash'] = self.cafm_current_hash(l=i)
 
 
@@ -1730,7 +1700,7 @@ class DataModel:
         if s == None: s = self.scale
         if l == None: l = self.zpos
         problems = []
-        method = self.get_current_method(s=s, l=l)
+        method = self.method(s=s, l=l)
 
         if not self['data']['scales'][s]['stack'][l]['alignment_history'][method]['complete']:
             problems.append((f"Alignment method '{method}' is incomplete", 1, 0))
@@ -1796,7 +1766,8 @@ class DataModel:
 
     def data_dn_comport_indexes(self, s):
         if s == None: s = self.scale
-        return np.array([not self.data_comports(s=s, l=l)[0] for l in range(len(cfg.data))]).nonzero()[0].tolist()
+        return np.array([(not self.data_comports(s=s, l=l)[0]) and (not self.skipped(s=s, l=l)) for l in range(len(
+            cfg.data))]).nonzero()[0].tolist()
 
 
     def all_comports_indexes(self, s=None):
@@ -1810,7 +1781,14 @@ class DataModel:
 
     def cafm_dn_comport_indexes(self, s=None):
         if s == None: s = self.scale
-        return np.array([not cfg.data.cafm_hash_comports(s=s, l=l) for l in range(0, len(cfg.data))]).nonzero()[0].tolist()
+        indexes = []
+        for i in range(0, len(cfg.data)):
+            if not cfg.data.cafm_hash_comports(s=s, l=i) or not self.data_comports(s=s, l=i)[0]:
+                if not self.skipped(s=s, l=i):
+                    indexes.append(i)
+
+        return indexes
+
 
 
     def bias_data_path(self, s=None, l=None):
@@ -1979,6 +1957,7 @@ class DataModel:
         if s == None: s = self.scale
         if l == None: l = self.zpos
         self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['iterations'] = val
+        self.signals.warning2.emit()
 
 
     def swim_settings(self, s=None, l=None):
@@ -2002,6 +1981,7 @@ class DataModel:
         '''Sets the Whitening Factor for the Current Layer.'''
         # self._data['data']['scales'][self.scale_key]['stack'][self.zpos]['alignment']['method_data']['whitening_factor'] = f
         self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['swim_settings']['signal-whitening'] = f
+        self.signals.warning2.emit()
 
 
     def swim_window(self) -> float:
@@ -2036,6 +2016,8 @@ class DataModel:
             'grid_custom_px_2x2']\
                 = \
                 [int(pixels / 2  + 0.5), int(pixels_y / 2 + 0.5)]
+
+        self.signals.warning2.emit()
 
 
 
@@ -2087,6 +2069,7 @@ class DataModel:
             'grid_custom_px_2x2']\
              = \
                 force_pixels
+        self.signals.warning2.emit()
 
 
     def propagate_swim_2x2_custom_px(self, start, end):
@@ -2137,6 +2120,7 @@ class DataModel:
                                                                                             int(man_ww_y)]
                     self.stack(s)[i]['alignment']['swim_settings']['grid_custom_px_2x2'] = [int(man_ww_x / 2 + 0.5),
                                                                                             int(man_ww_y/ 2 + 0.5)]
+        self.signals.warning2.emit()
 
     def manual_swim_window_px(self, s=None, l=None) -> int:
         '''Returns the SWIM Window for the Current Layer.'''

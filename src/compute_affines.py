@@ -141,10 +141,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                 ss['verbose_swim'] = cfg.VERBOSE_SWIM
                 ss['fn_transforming'] = sec['filename']
                 ss['fn_reference'] = sec['reference']
-                ss['method'] = sec['current_method']
 
-
-                if sec['current_method'] == 'grid-default':
+                if ss['method'] == 'grid-default':
                     ss['whiten'] = cfg.data['data']['defaults']['signal-whitening']
                     ss['swim_iters'] = cfg.data['data']['defaults']['swim-iterations']
                 else:
@@ -280,9 +278,9 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
         #Todo make this better
         for i, layer in enumerate(cfg.data.get_iter(scale)):
-            layer['alignment_history'][cfg.data.get_current_method(l=i)]['method_results']['cumulative_afm'] = \
+            layer['alignment_history'][cfg.data.method(l=i)]['method_results']['cumulative_afm'] = \
                 cfg.data['data']['scales'][scale]['stack'][i]['alignment']['method_results']['cumulative_afm']
-            layer['alignment_history'][cfg.data.get_current_method(l=i)]['method_results']['cafm_hash'] = \
+            layer['alignment_history'][cfg.data.method(l=i)]['method_results']['cafm_hash'] = \
                 cfg.data.cafm_current_hash(l=i)
 
         if cfg.mw._isProjectTab():
@@ -290,7 +288,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             cfg.mw.setTargKargPixmaps()
 
 
-        save2file(dm=dm,name=dm.dest())
+        save2file(dm=dm._data,name=dm.dest())
 
         # logger.info('Sleeping for 1 seconds...')
         # time.sleep(1)
@@ -482,11 +480,11 @@ SWIM argument string: ww_416 -i 2 -w -0.68 -x -256 -y 256  /Users/joelyancey/gla
 def save2file(dm, name):
     data_cp = copy.deepcopy(dm)
     # data_cp.make_paths_relative(start=cfg.data.dest())
-    data_cp_json = data_cp.to_dict()
+    # data_cp_json = data_cp.to_dict()
+    name = data_cp['data']['destination_path']
 
     jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
-    proj_json = jde.encode(data_cp_json)
-    name = dm.dest()
+    proj_json = jde.encode(data_cp)
     logger.info(f'---- SAVING  ----\n{name}')
     if not name.endswith('.swiftir'):
         name += ".swiftir"
