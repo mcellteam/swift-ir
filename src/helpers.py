@@ -176,6 +176,8 @@ def delete_recursive(dir, keep_core_dirs=False):
             to_delete.append(os.path.join(dir, s, 'history'))
         if os.path.exists(os.path.join(dir, s, 'signals')):
             to_delete.append(os.path.join(dir, s, 'signals'))
+        if os.path.exists(os.path.join(dir, s, 'matches')):
+            to_delete.append(os.path.join(dir, s, 'matches'))
         if os.path.exists(os.path.join(dir, s, 'bias_data')):
             to_delete.append(os.path.join(dir, s, 'bias_data'))
         if os.path.exists(os.path.join(dir, s, 'img_aligned')):
@@ -904,6 +906,8 @@ def create_project_structure_directories(destination, scales, gui=True) -> None:
         bias_data_path = os.path.join(subdir_path, 'bias_data')
         history_path = os.path.join(subdir_path, 'history')
         tmp_path = os.path.join(subdir_path, 'tmp')
+        matches_path = os.path.join(subdir_path, 'signals')
+        matches_path = os.path.join(subdir_path, 'matches')
 
         try:
             os.makedirs(subdir_path, exist_ok=True)
@@ -912,6 +916,8 @@ def create_project_structure_directories(destination, scales, gui=True) -> None:
             os.makedirs(bias_data_path, exist_ok=True)
             os.makedirs(history_path, exist_ok=True)
             os.makedirs(tmp_path, exist_ok=True)
+            os.makedirs(matches_raw_path, exist_ok=True)
+            os.makedirs(matches_path, exist_ok=True)
         except:
             print_exception()
             logger.warning('Exception Raised While Creating Directory Structure')

@@ -90,9 +90,13 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
         # checkForTiffs(path)
 
-        signals_dir = os.path.join(dm.dest(), scale, 'signals')
-        if not os.path.exists(signals_dir):
-            os.mkdir(signals_dir)
+        # signals_dir = os.path.join(dm.dest(), scale, 'signals')
+        # if not os.path.exists(signals_dir):
+        #     os.mkdir(signals_dir)
+
+        matches_dir = os.path.join(dm.dest(), scale, 'matches_raw')
+        if not os.path.exists(matches_dir):
+            os.mkdir(matches_dir)
 
         # dm.clear_method_results(scale=scale, start=start, end=end) #0727-
         if rename_switch:
@@ -153,7 +157,9 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
                     scale_prev = dm.scales()[dm.scales().index(scale) + 1]
                     prev_scale_val = int(scale_prev[len('scale_'):])
                     upscale = (float(prev_scale_val) / float(scale_val))
-                    init_afm = np.array(copy.deepcopy(dm['data']['scales'][scale_prev]['stack'][zpos]['alignment']['method_results']['affine_matrix']))
+                    prev_method = dm['data']['scales'][scale_prev]['stack'][zpos]['alignment']['swim_settings']['method']
+                    init_afm = np.array(copy.deepcopy(dm['data']['scales'][scale_prev]['stack'][zpos][
+                                                          'alignment_history'][prev_method]['method_results']['affine_matrix']))
                     # prev_method = scale_prev_dict[zpos]['current_method']
                     # prev_afm = copy.deepcopy(np.array(scale_prev_dict[zpos]['alignment_history'][prev_method]['affine_matrix']))
                     init_afm[0][2] *= upscale
@@ -278,8 +284,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
         #Todo make this better
         for i, layer in enumerate(cfg.data.get_iter(scale)):
-            layer['alignment_history'][cfg.data.method(l=i)]['method_results']['cumulative_afm'] = \
-                cfg.data['data']['scales'][scale]['stack'][i]['alignment']['method_results']['cumulative_afm']
+            # layer['alignment_history'][cfg.data.method(l=i)]['method_results']['cumulative_afm'] = \
+            #     cfg.data['data']['scales'][scale]['stack'][i]['alignment']['method_results']['cumulative_afm']
             layer['alignment_history'][cfg.data.method(l=i)]['method_results']['cafm_hash'] = \
                 cfg.data.cafm_current_hash(l=i)
 

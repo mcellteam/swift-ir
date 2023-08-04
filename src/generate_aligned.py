@@ -94,7 +94,6 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
         _ , fn = os.path.split(base_name)
         al_name = os.path.join(dest, scale, 'img_aligned', fn)
         method = layer['alignment']['swim_settings']['method'] #0802+
-        # cafm = layer['alignment']['method_results']['cumulative_afm'] #0802-
         cafm = layer['alignment_history'][method]['method_results']['cumulative_afm']
         tasks.append([base_name, al_name, rect, cafm, 128])
 
