@@ -24,7 +24,7 @@ from qtpy.QtWebEngineWidgets import *
 import src.config as cfg
 from src.helpers import print_exception, getOpt, setOpt, getData, setData, get_scale_key, natural_sort, hotkey, \
     get_appdir, caller_name, is_tacc, is_joel, make_affine_widget_HTML
-from src.viewer_em import EMViewer, EMViewerSnr
+from src.viewer_em import EMViewer
 from src.viewer_ma import MAViewer
 from src.ui.snr_plot import SnrPlot
 from src.ui.widget_area import WidgetArea
@@ -71,7 +71,7 @@ class ProjectTab(QWidget):
         # self.webengine = QWebEngineView()
         self.webengine = WebEngine(ID='emViewer')
         self.webengine.setStyleSheet("background-color: #000000;")
-        self.webengine.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.webengine.setFocusPolicy(Qt.StrongFocus)
         self.webengine.loadFinished.connect(lambda: print('Web engine load finished!'))
         setWebengineProperties(self.webengine)
         # self.webengine.setStyleSheet('background-color: #222222;')
@@ -125,7 +125,7 @@ class ProjectTab(QWidget):
             self.updateDetailsPanel()
             self.updateTimingsWidget()
             self.update_MA_list_widgets() #0726+
-            self.set_reference() #0802+
+            # self.set_reference() #0802+
             self.set_transforming() #0802+
         elif index == 2:
             self.project_table.table.selectRow(cfg.data.zpos)
@@ -156,7 +156,7 @@ class ProjectTab(QWidget):
             self.updateDetailsPanel()
             self.updateTimingsWidget()
             self.update_MA_list_widgets()  # 0726+
-            self.set_reference()  # 0802+
+            # self.set_reference()  # 0802+
             self.set_transforming()  # 0802+
         elif index == 2:
             self.project_table.initTableData()
@@ -202,6 +202,8 @@ class ProjectTab(QWidget):
             cfg.refViewer.signals.ptsChanged.connect(self.update_MA_list_widgets)
             cfg.refViewer.signals.ptsChanged.connect(cfg.refViewer.drawSWIMwindow)
             cfg.refViewer.signals.ptsChanged.connect(lambda: print('\n\n Ref Viewer pts changed!\n\n'))
+            cfg.refViewer.signals.badStateChange.connect(self.set_transforming)
+
             cfg.baseViewer.signals.ptsChanged.connect(self.update_MA_list_widgets)
             cfg.baseViewer.signals.ptsChanged.connect(cfg.baseViewer.drawSWIMwindow)
             cfg.baseViewer.signals.ptsChanged.connect(lambda: print('\n\n Base Viewer pts changed!\n\n'))
@@ -347,10 +349,8 @@ class ProjectTab(QWidget):
         # self.MA_webengine_base.setMinimumWidth(100)
         self.MA_webengine_ref.setMouseTracking(True)
         self.MA_webengine_base.setMouseTracking(True)
-        # self.MA_webengine_ref.setFocusPolicy(Qt.FocusPolicy.NoFocus) #0726-
-        # self.MA_webengine_base.setFocusPolicy(Qt.FocusPolicy.NoFocus) #0726-
-        # self.MA_webengine_ref.setFocusPolicy(Qt.FocusPolicy.WheelFocus)
-        # self.MA_webengine_base.setFocusPolicy(Qt.FocusPolicy.WheelFocus)
+        self.MA_webengine_ref.setFocusPolicy(Qt.StrongFocus) #0726-
+        self.MA_webengine_base.setFocusPolicy(Qt.StrongFocus) #0726-
 
 
         '''Mouse move events will occur only when a mouse button is pressed down, 
@@ -1435,30 +1435,6 @@ class ProjectTab(QWidget):
         gl.addWidget(hw, 0,1,1,2)
         self.wSwitchRefTra.setLayout(gl)
 
-
-        def fn_radiobox():
-            newcur = (0, 1)[self.rb_transforming.isChecked()]
-            cfg.data['state']['tra_ref_toggle'] = newcur
-            active = (cfg.refViewer, cfg.baseViewer)[newcur]
-            active._blockStateChanged = True
-            inactive = (cfg.refViewer, cfg.baseViewer)[1 - newcur]
-            with active.txn() as s:
-                s.voxel_coordinates[1] = inactive.state.voxel_coordinates[1]
-                s.voxel_coordinates[2] = inactive.state.voxel_coordinates[2]
-                try:
-                    s.cross_section_scale = inactive.state.cross_section_scale
-                except:
-                    print_exception()
-
-            if cfg.data['state']['tra_ref_toggle'] == 0:
-                # cfg.refViewer.set_layer(cfg.data.get_ref_index())
-                cfg.refViewer.set_layer()
-
-            active._blockStateChanged = False
-            self.sw_alignment_editor.setCurrentIndex(newcur)
-            self.dataUpdateMA()  # 0613+ #attempt fix for 'MA_gl_overlay' not hiding after slash press followed by layer change
-            self.updateAnnotations()
-
         # https://codeloop.org/pyqt5-make-multi-document-interface-mdi-application/
 
 
@@ -1513,8 +1489,9 @@ class ProjectTab(QWidget):
         pal.setColor(QPalette.Text, QColor("#FFFF66"))
 
         self.comboNgLayout = QComboBox(self)
-        self.comboNgLayout.setStyleSheet("font-size: 10px;")
-        self.comboNgLayout.setFixedSize(70, 14)
+        self.comboNgLayout.setStyleSheet("font-size: 9px;")
+        self.comboNgLayout.setFixedWidth(84)
+        self.comboNgLayout.setFixedHeight(15)
         self.comboNgLayout.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         items = ['4panel', 'xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d']
         self.comboNgLayout.addItems(items)
@@ -1581,7 +1558,7 @@ class ProjectTab(QWidget):
         self.ngcl_shader.clicked.connect(fn)
 
         self.blinkLab = QLabel(f"  Blink {hotkey('B')}: ")
-        self.blinkLab.setStyleSheet("""color: #ede9e8; font-size: 10px; font-weight: 600;""")
+        self.blinkLab.setStyleSheet("""color: #161c20; font-size: 10px;""")
 
         self.tbbBlinkToggle = QPushButton()
         self.tbbBlinkToggle.setIconSize(QSize(24,24))
@@ -1625,37 +1602,41 @@ class ProjectTab(QWidget):
         # widgets to gain insight into Neuroglancer state
 
         self.le_zoom = QLineEdit()
-        self.le_zoom.setMaximumWidth(64)
+        self.le_zoom.setStyleSheet("font-size: 9px;")
+        self.le_zoom.setFixedWidth(54)
+        self.le_zoom.setFixedHeight(15)
         self.le_zoom.setValidator(QDoubleValidator())
         self.le_zoom.returnPressed.connect(lambda: setData('state,ng_zoom', float(self.le_zoom.text())))
         self.le_zoom.returnPressed.connect(lambda: self.viewer.set_zoom(float(self.le_zoom.text())))
 
         self.zoomLab = QLabel('Zoom:')
-        self.zoomLab.setStyleSheet("""color: #ede9e8; font-size: 10px; font-weight: 600;""")
+        self.zoomLab.setStyleSheet("""color: #161c20; font-size: 10px;""")
 
         self.w_zoom = HWidget(self.zoomLab, self.le_zoom)
-        self.w_zoom.setMaximumWidth(100)
+        self.w_zoom.setMaximumWidth(84)
         self.w_zoom.layout.setAlignment(Qt.AlignLeft)
 
 
-        self.tbbNgHelp = QToolButton()
-        def fn_ng_help():
-            logger.info('')
-            cfg.emViewer.setHelpMenu(not self.tbbNgHelp.isChecked())
-            # if self.tbbNgHelp.isChecked():
-            #     self.tbbNgHelp.setIcon(qta.icon("fa.question", color='#161c20'))
-            # else:
-            #     self.tbbNgHelp.setIcon(qta.icon("fa.question", color='#f3f6fb'))
-
-        self.tbbNgHelp.setToolTip("Neuroglancer Help")
-        self.tbbNgHelp.setCheckable(True)
-        self.tbbNgHelp.pressed.connect(fn_ng_help)
-        self.tbbNgHelp.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.tbbNgHelp.setIcon(qta.icon("fa.question", color='#f3f6fb'))
+        # self.tbbNgHelp = QToolButton()
+        # def fn_ng_help():
+        #     logger.info('')
+        #     cfg.emViewer.setHelpMenu(not self.tbbNgHelp.isChecked())
+        #     # if self.tbbNgHelp.isChecked():
+        #     #     self.tbbNgHelp.setIcon(qta.icon("fa.question", color='#161c20'))
+        #     # else:
+        #     #     self.tbbNgHelp.setIcon(qta.icon("fa.question", color='#f3f6fb'))
+        # 
+        # self.tbbNgHelp.setToolTip("Neuroglancer Help")
+        # self.tbbNgHelp.setCheckable(True)
+        # self.tbbNgHelp.pressed.connect(fn_ng_help)
+        # self.tbbNgHelp.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # self.tbbNgHelp.setIcon(qta.icon("fa.question", color='#f3f6fb'))
 
         self.ngAccessoriesCombobox = CheckableComboBox()
+        self.ngAccessoriesCombobox.setStyleSheet("font-size: 9px;")
+        self.ngAccessoriesCombobox.setFixedWidth(84)
+        self.ngAccessoriesCombobox.setFixedHeight(15)
         self.ngAccessoriesCombobox.addItem("Show/Hide...")
-        self.ngAccessoriesCombobox.setFixedWidth(100)
         self.ngAccessoriesCombobox.addItem("Bounds", state=cfg.data['state']['show_bounds'])
         self.ngAccessoriesCombobox.addItem("Axes", state=cfg.data['state']['show_axes'])
         self.ngAccessoriesCombobox.addItem("Scale Bar", state=cfg.data['state']['show_scalebar'])
@@ -1671,51 +1652,72 @@ class ProjectTab(QWidget):
         # ----------------
 
         self.w_ng_extended_toolbar = QToolBar()
+        self.w_ng_extended_toolbar.layout().setSpacing(4)
         self.w_ng_extended_toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        self.w_ng_extended_toolbar.setFixedHeight(24)
+        self.w_ng_extended_toolbar.setFixedHeight(23)
         self.w_ng_extended_toolbar.setAutoFillBackground(True)
 
-        self.w_ng_extended_toolbar.addWidget(self.labNgLayout)
+        # self.w_ng_extended_toolbar.addWidget(self.labNgLayout)
         self.w_ng_extended_toolbar.addWidget(self.comboNgLayout)
+        self.w_ng_extended_toolbar.addSeparator()
+        self.w_ng_extended_toolbar.addWidget(self.ngAccessoriesCombobox)
+        self.w_ng_extended_toolbar.addSeparator()
         self.w_ng_extended_toolbar.addWidget(self.blinkLab)
         self.w_ng_extended_toolbar.addWidget(self.tbbBlinkToggle)
+        self.w_ng_extended_toolbar.addSeparator()
         # ----------------
         # Add additional widgets to gain insight into Neuroglancer state
 
         self.w_ng_extended_toolbar.addWidget(self.w_zoom)
-        self.w_ng_extended_toolbar.addWidget(self.tbbNgHelp)
+        # self.w_ng_extended_toolbar.addWidget(self.tbbNgHelp)
 
         # ----------------
         self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
-        self.w_ng_extended_toolbar.addWidget(self.ngAccessoriesCombobox)
         self.w_ng_extended_toolbar.addWidget(self.ngcl_uiControls)
         self.w_ng_extended_toolbar.addWidget(self.ngcl_shader)
         self.w_ng_extended_toolbar.addWidget(self.ngcl_background)
 
         toolbar_style2 = """
-                               QToolBar {
-                                   background-color: #222222;
-                                   color: #f3f6fb;
-                                   font-size: 10px;
-                               }
-                               QToolButton {
-                                   border-radius: 3px;
-                                   color: #f3f6fb;
-                                   height: 9px;
-                                   font-size: 10px;
-                                   margin: 1px;
-                                   padding: 1px;
-                               }
-                               QToolButton::checked {
-                                   border: 1px solid #339933;
-                                   color: #f3f6fb;
-                               }
-                               QToolButton:hover {
-                                   border: 1px solid #339933;
-                                   color: #f3f6fb;
-                               }
-                               """
-        self.w_ng_extended_toolbar.setStyleSheet(toolbar_style2)
+           QToolBar {
+               background-color: #ede9e8;
+               color: #f3f6fb;
+               font-size: 10px;
+           }
+           QToolButton {
+               border-radius: 3px;
+               color: #f3f6fb;
+               height: 9px;
+               font-size: 10px;
+               margin: 1px;
+               padding: 1px;
+           }
+           QToolButton::checked {
+               border: 1px solid #339933;
+               color: #f3f6fb;
+           }
+           QToolButton:hover {
+               border: 1px solid #339933;
+               color: #f3f6fb;
+           }
+           QToolBar::separator {
+                background-color: #ede9e8; 
+                width: 2px; 
+                height: 10px;
+                margin-left: 10px;
+                margin-right: 10px;
+           }
+        """
+
+        toolbar_style3 = """
+            QToolBar {
+               background-color: #ede9e8;
+               color: #161c20;
+               font-size: 10px;
+           }
+           
+        """
+
+        self.w_ng_extended_toolbar.setStyleSheet(toolbar_style3)
 
         self.sideSliders = VWidget(self.ZdisplaySliderAndLabel, self.zoomSliderAndLabel)
         self.sideSliders.setFixedWidth(16)
@@ -2185,43 +2187,30 @@ class ProjectTab(QWidget):
 
 
     def set_reference(self):
+        # logger.critical('')
+        logger.info(f">>>> set_reference >>>>")
 
         if cfg.data.skipped():
             cfg.mw.warn('This section does not have a reference because it is excluded.')
-            self.set_transforming()
+            # self.set_transforming()
             return
-        logger.info('')
-
-        self.setUpdatesEnabled(False)
-
+        cfg.baseViewer.role = 'ref'
+        cfg.baseViewer.set_layer()
         cfg.data['state']['tra_ref_toggle'] = 0
         self.cl_ref.setChecked(True)
         self.cl_tra.setChecked(False)
-        self.cl_ref.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px; border: 1px solid #ede9e8; font-weight: 600;')
-        self.cl_tra.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px; border: 1px solid #ede9e8; font-weight: 600;')
-        cfg.refViewer.set_layer(cfg.data.get_ref_index())
-        self.sw_alignment_editor.setCurrentIndex(0)
-        self.updateAnnotations()
-
-        self.setUpdatesEnabled(True)
+        logger.info(f"<<<< set_reference <<<<")
 
 
     def set_transforming(self):
-        logger.info('')
-
-
+        logger.info(f">>>> set_transforming >>>>")
+        cfg.baseViewer.role = 'base'
+        cfg.baseViewer.set_layer()
         self.setUpdatesEnabled(False)
-
         cfg.data['state']['tra_ref_toggle'] = 1
         self.cl_tra.setChecked(True)
         self.cl_ref.setChecked(False)
-        self.cl_tra.setStyleSheet('background-color: #339933; color: #ede9e8; font-size: 10px; border: 1px solid #ede9e8; font-weight: 600;')
-        self.cl_ref.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px; border: 1px solid #ede9e8; font-weight: 600;')
-        cfg.baseViewer.set_layer(cfg.data.zpos)
-        self.sw_alignment_editor.setCurrentIndex(1)
-        self.updateAnnotations()
-
-        self.setUpdatesEnabled(True)
+        logger.info(f"<<<< set_transforming <<<<")
 
     def fn_hwidgetChanged(self):
         # logger.critical('')
@@ -2353,15 +2342,14 @@ class ProjectTab(QWidget):
 
     def updateAnnotations(self):
         if DEV:
-            logger.info(f'[{caller_name()}] Updating annotations...')
-
+            logger.info(f'[DEV] [{caller_name()}] [{cfg.data.zpos}] Updating annotations...')
         if cfg.data['state']['tra_ref_toggle'] == 1:
             cfg.baseViewer.drawSWIMwindow()
         else:
             cfg.refViewer.drawSWIMwindow()
-        if self.tn_widget.isVisible():
-            self.tn_ref.update()
-            self.tn_tra.update()
+        # if self.tn_widget.isVisible():
+        #     self.tn_ref.update()
+        #     self.tn_tra.update()
 
 
     def onTranslate(self):
@@ -3842,6 +3830,20 @@ class ClickLabel(QLabel):
 
     def setChecked(self, b):
         self.isClicked = b
+        if self.isClicked:
+            self.setStyleSheet(
+                """background-color: #339933; 
+                color: #ede9e8; 
+                font-size: 10px; 
+                border: 1px solid #ede9e8; 
+                font-weight: 600;""")
+        else:
+            self.cl_ref.setStyleSheet(
+                """background-color: #222222; 
+                color: #ede9e8; 
+                font-size: 10px; 
+                border: 1px solid #ede9e8; 
+                font-weight: 600;""")
 
     def isChecked(self):
         return self.isChecked

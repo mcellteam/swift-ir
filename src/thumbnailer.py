@@ -186,12 +186,12 @@ class Thumbnailer:
                              )
             cfg.data.t_thumbs_matches = dt
 
-            # cfg.main_window.tell('Discarding Raw (Full Size) Matches...')
-            # try:
-            #     shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale_key, 'matches_raw'), ignore_errors=True)
-            #     shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale_key, 'matches_raw'), ignore_errors=True)
-            # except:
-            #     print_exception()
+            cfg.main_window.tell('Discarding Raw (Full Size) Matches...')
+            try:
+                shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale_key, 'matches_raw'), ignore_errors=True)
+                shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale_key, 'matches_raw'), ignore_errors=True)
+            except:
+                print_exception()
 
             cfg.main_window.hud.done()
 

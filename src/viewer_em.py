@@ -402,6 +402,10 @@ class AbstractEMViewer(neuroglancer.Viewer):
         # cs_scale = scale_w
         return cs_scale
 
+
+    def reverse_zoom(self):
+        pass
+
     # 2048 image_pixels x 4 nm/image_pixel = # nanometers
     #
 
@@ -488,8 +492,8 @@ class EMViewer(AbstractEMViewer):
 
         with self.txn() as s:
             s.layout.type = nglayout
-            s.gpu_memory_limit = -1
-            s.system_memory_limit = -1
+            # s.gpu_memory_limit = -1
+            # s.system_memory_limit = -1
             # s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
             if cfg.data.scale_val() < 6:
                 s.show_scale_bar = True
@@ -509,6 +513,8 @@ class EMViewer(AbstractEMViewer):
             s.show_ui_controls = getData('state,show_ng_controls')
             s.show_panel_borders = False
             # s.viewer_size = [100,100]
+            s.show_help_button = True
+            s.show_layer_panel = False
 
 
         self._layer = math.floor(self.state.position[0])
@@ -606,107 +612,6 @@ class EMViewer(AbstractEMViewer):
 #
 
 
-
-class EMViewerSnr(AbstractEMViewer):
-
-    def __init__(self, **kwags):
-        super().__init__(**kwags)
-        self.shared_state.add_changed_callback(self.on_state_changed)
-        self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
-        # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
-        # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
-        self.type = 'EMViewerSnr'
-        self.initViewer()
-
-
-    def initViewer(self):
-        caller = inspect.stack()[1].function
-        logger.info(f'Initializing {self.type} [{caller}]...')
-
-        self.coordinate_space = self.getCoordinateSpace()
-        try:
-            self.get_tensors()
-        except:
-            print_exception()
-            return
-
-        cfg.refLV = ng.LocalVolume(
-            volume_type='image',
-            data=cfg.unal_tensor[0:len(cfg.data) - 1, :, :],
-            dimensions=self.coordinate_space,
-            voxel_offset=[1, 0, 0]
-        )
-        cfg.baseLV = cfg.LV = ng.LocalVolume(
-            volume_type='image',
-            data=cfg.unal_tensor[:, :, :],
-            dimensions=self.coordinate_space,
-            voxel_offset=[0, 0, 0],
-        )
-        if cfg.data.is_aligned_and_generated():
-            cfg.alLV = cfg.LV = ng.LocalVolume(
-                volume_type='image',
-                data=cfg.al_tensor[:, :, :],
-                dimensions=self.coordinate_space,
-                voxel_offset=[0, ] * 3,
-            )
-
-        _, tensor_y, tensor_x = cfg.tensor.shape
-        # h = cfg.project_tab.snrPlotSplitter.geometry().height() / 3
-        # w = cfg.project_tab.snrPlotSplitter.sizes()[1]
-        # self.initZoom(h=h, w=w, adjust=1.20)
-        sf = cfg.data.scale_val(s=cfg.data.scale_key)
-        self.ref_l, self.base_l, self.aligned_l = 'ref_%d' % sf, 'base_%d' % sf, 'aligned_%d' % sf
-
-        with self.txn() as s:
-            '''other settings: 
-            s.displayDimensions = ["z", "y", "x"]
-            s.perspective_orientation
-            s.concurrent_downloads = 512'''
-            s.gpu_memory_limit = -1
-            s.system_memory_limit = -1
-            # s.displayDimensions = ["z", "y"]
-
-            if getData('state,neutral_contrast'):
-                s.crossSectionBackgroundColor = '#808080'
-            else:
-                s.crossSectionBackgroundColor = '#222222'
-            s.show_scale_bar = False
-            s.show_default_annotations = True
-            s.show_axis_lines = True
-
-            self.grps = []
-            self.grps.append(ng.LayerGroupViewer(layers=[self.ref_l], layout='yz'))
-            self.grps.append(ng.LayerGroupViewer(layers=[self.base_l], layout='yz'))
-            s.layers[self.ref_l] = ng.ImageLayer(source=cfg.refLV, shader=cfg.data['rendering']['shader'], )
-            s.layers[self.base_l] = ng.ImageLayer(source=cfg.baseLV, shader=cfg.data['rendering']['shader'], )
-            if cfg.data.is_aligned_and_generated():
-                self.grps.append(ng.LayerGroupViewer(layers=[self.aligned_l], layout='yz'))
-                s.layers[self.aligned_l] = ng.ImageLayer(source=cfg.alLV, shader=cfg.data['rendering']['shader'], )
-
-            s.layout = ng.column_layout(self.grps)  # col
-            # s.showSlices = False
-            s.position = [cfg.data.zpos, tensor_y / 2, tensor_x / 2]
-
-            # s.relativeDisplayScales = {"z": 10}
-
-        with self.config_state.txn() as s:
-            s.show_ui_controls = False
-            # s.show_panel_borders = False
-            s.show_panel_borders = False
-
-        # self._layer = math.floor(self.state.position[0])
-        self.initial_cs_scale = self.state.cross_section_scale
-
-        self.set_brightness()
-        self.set_contrast()
-        # self.set_zmag()
-        self.webengine.setUrl(QUrl(self.get_viewer_url()))
-
-        # h = cfg.project_tab.snrPlotSplitter.geometry().height() / 3
-        # w = cfg.project_tab.snrPlotSplitter.sizes()[1]
-        # self.initZoom(h=h, w=w, adjust=1.20)
-
-        # self.set_zmag()
 
 
 class EMViewerMendenhall(AbstractEMViewer):

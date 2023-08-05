@@ -189,12 +189,11 @@ class DataModel:
     @zpos.setter
     def zpos(self, index):
         caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
         # self._data['data']['Current Section (Index)'] = index
         if int(index) in range(0, len(self)):
             if int(index) != self.zpos:
-                logger.info(f"Setting z position to: {index}...")
                 self['data']['z_position'] = int(index)
+                logger.critical(f"[{index}] Z-position Set")
                 self.signals.zposChanged.emit()
                 QApplication.processEvents()
         else:
@@ -2532,7 +2531,7 @@ class DataModel:
             self._data['data']['scales'][scale]['stack'][ind]['alignment'] = {}
             self._data['data']['scales'][scale]['stack'][ind]['alignment']['swim_settings'] = {}
             self._data['data']['scales'][scale]['stack'][ind]['alignment']['swim_settings']['fn_transforming'] = file
-            self._data['data']['scales'][scale]['stack'][ind]['alignment']['swim_settings']['fn_reference'] = ''
+            self._data['data']['scales'][scale]['stack'][ind]['alignment']['swim_settings']['fn_reference'] = 'Null'
 
 
     def anySkips(self) -> bool:
@@ -2604,23 +2603,27 @@ class DataModel:
             first_unskipped = self.first_unskipped(s=s)
             for layer_index in range(len(self)):
                 base_layer = self._data['data']['scales'][s]['stack'][layer_index]
-                if layer_index in skip_list:
-                    self._data['data']['scales'][s]['stack'][layer_index]['reference'] = ''
-                    self._data['data']['scales'][s]['stack'][layer_index]['alignment']['swim_settings']['fn_reference'] = ''
-                # elif layer_index <= first_unskipped:
-                #     self._data['data']['scales'][s]['stack'][layer_index]['reference'] = self._data['data']['scales'][s]['stack'][layer_index]['filename']
-                else:
-                    j = layer_index - 1  # Find nearest previous non-skipped l
-                    while (j in skip_list) and (j >= 0):
-                        j -= 1
-                    if (j not in skip_list) and (j >= 0):
-                        ref = self._data['data']['scales'][s]['stack'][j]['filename']
-                        ref = os.path.join(self.dest(), s, 'img_src', ref)
-                        # base_layer['images']['ref']['filename'] = ref
-                        base_layer['reference'] = ref
-                        base_layer['alignment']['swim_settings']['fn_reference'] = ref
+
+
+                #0804- #UnsureReprecussions
+                # if layer_index in skip_list:
+                #     self._data['data']['scales'][s]['stack'][layer_index]['reference'] = ''
+                #     self._data['data']['scales'][s]['stack'][layer_index]['alignment']['swim_settings']['fn_reference'] = ''
+                # else:
+                j = layer_index - 1  # Find nearest previous non-skipped l
+                while (j in skip_list) and (j >= 0):
+                    j -= 1
+                if (j not in skip_list) and (j >= 0):
+                    ref = self._data['data']['scales'][s]['stack'][j]['filename']
+                    ref = os.path.join(self.dest(), s, 'img_src', ref)
+                    # base_layer['images']['ref']['filename'] = ref
+                    base_layer['reference'] = ref
+                    base_layer['alignment']['swim_settings']['fn_reference'] = ref
+
+
             # kludge - set reference of first_unskipped to itself
-            self._data['data']['scales'][s]['stack'][first_unskipped]['reference'] = self._data['data']['scales'][s]['stack'][first_unskipped]['filename']
+            # self._data['data']['scales'][s]['stack'][first_unskipped]['reference'] = self._data['data']['scales'][s]['stack'][first_unskipped]['filename']
+            self._data['data']['scales'][s]['stack'][first_unskipped]['reference'] = '' #0804
 
 
     def upgrade_data_model(self):

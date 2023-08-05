@@ -202,7 +202,7 @@ class MainWindow(QMainWindow):
 
     def runUiChecks(self):
         if not getData('state,manual_mode'):
-            assert (cfg.emViewer.state.layout.type == cfg.main_window.comboboxNgLayout.currentText())
+            assert (cfg.emViewer.state.layout.type == self.comboboxNgLayout.currentText())
 
 
     def memory(self):
@@ -1089,7 +1089,6 @@ class MainWindow(QMainWindow):
         t0 = time.time()
         try:
             if self._isProjectTab():
-                cfg.project_tab.dSnr_plot.initSnrPlot() #Always do b/c no longer reinitializing in dataUpdateWidgets
                 self.setNoPbarMessage(False)
                 self.updateEnabledButtons()
                 self.present_snr_results(start=start, end=end)
@@ -1108,15 +1107,14 @@ class MainWindow(QMainWindow):
                 cfg.event.clear()
             self._working = False
             self.setdw_snr(True)
-            # self.setdw_matches(True)
             self._changeScaleCombo.setEnabled(True)
             self.hidePbar()
             self.enableAllTabs()
             if self._isProjectTab():
-                if cfg.project_tab._tabs.currentIndex() == 4:
-                    cfg.project_tab.snr_plot.initSnrPlot()
+                if cfg.pt._tabs.currentIndex() == 4:
+                    cfg.pt.snr_plot.initSnrPlot()
                 if self.dw_snr.isVisible():
-                    cfg.project_tab.dSnr_plot.initSnrPlot()
+                    cfg.pt.dSnr_plot.initSnrPlot()
 
             t9 = time.time()
             dt = t9 - t0
@@ -1626,6 +1624,11 @@ class MainWindow(QMainWindow):
 
     def layer_left(self):
         if self._isProjectTab():
+            if cfg.pt._tabs.currentIndex() == 1:
+                if cfg.data['state']['tra_ref_toggle'] == 0:
+                    cfg.pt.set_transforming()
+                    return
+
             requested = cfg.data.zpos - 1
             logger.info(f'requested: {requested}')
             if requested >= 0:
@@ -1633,6 +1636,11 @@ class MainWindow(QMainWindow):
 
     def layer_right(self):
         if self._isProjectTab():
+            if cfg.pt._tabs.currentIndex() == 1:
+                if cfg.data['state']['tra_ref_toggle'] == 0:
+                    cfg.pt.set_transforming()
+                    return
+
             requested = cfg.data.zpos + 1
             if requested < len(cfg.data):
                 cfg.data.zpos = requested
@@ -1735,7 +1743,7 @@ class MainWindow(QMainWindow):
             self._skipCheckbox.setChecked(not cfg.data.skipped())
             self._btn_prevSection.setEnabled(cur > 0)
             self._btn_nextSection.setEnabled(cur < len(cfg.data) - 1)
-            self.dataUpdateWidgets()  # 0803-
+            self.dataUpdateWidgets()
 
 
 
@@ -1747,7 +1755,7 @@ class MainWindow(QMainWindow):
         # await self._dataUpdateWidgets()
         '''Reads Project Data to Update MainWindow.'''
         caller = inspect.stack()[1].function
-        logger.critical(f'caller: {caller}')
+        logger.info(f'[{caller}] [{cfg.data.zpos}] Updating Widgets...')
 
         if self._working:
             logger.warning("Busy working! Not going to update the interface rn.")
@@ -1818,9 +1826,13 @@ class MainWindow(QMainWindow):
 
             elif cfg.pt._tabs.currentIndex() == 1:
 
-                if not cfg.data['state']['tra_ref_toggle']:
-                    cfg.pt.set_reference()  # 0802+
-                    cfg.pt.set_transforming()
+                cfg.pt.set_transforming()
+                # cfg.refViewer.set_layer()
+
+                # if cfg.data['state']['tra_ref_toggle']:
+                #     cfg.pt.set_transforming()
+                # else:
+                #     cfg.pt.set_reference()
 
                 cfg.pt.lab_filename.setText(f"[{cfg.data.zpos}] Name: {cfg.data.filename_basename()} - {cfg.data.scale_pretty()}")
                 cfg.pt.cl_tra.setText(f'[{cfg.data.zpos}] {cfg.data.filename_basename()} (Transforming)')
@@ -2297,8 +2309,6 @@ class MainWindow(QMainWindow):
             if not ng.server.is_server_running():
                 self.warn('Neuroglancer is not running.')
 
-    # def set_nglayout_combo_text(self, layout:str):
-    #     self.comboboxNgLayout.setCurrentText(layout)
 
     def onStartProject(self, mendenhall=False):
         '''Functions that only need to be run once per project
@@ -2954,7 +2964,6 @@ class MainWindow(QMainWindow):
         logger.critical(f'caller: {caller}')
         if self._isProjectTab():
             if caller != 'dataUpdateWidgets':
-                # logger.critical('')
                 skip_state = not self._skipCheckbox.isChecked()
                 layer = cfg.data.zpos
                 for s in cfg.data.finer_scales():
@@ -2964,31 +2973,20 @@ class MainWindow(QMainWindow):
                         logger.warning(f'Request layer is out of range ({layer}) - Returning')
                         return
 
-
                 if skip_state:
                     self.tell("Exclude: %s" % cfg.data.name_base())
-                    if cfg.pt.tn_widget.isVisible():
-                        cfg.project_tab.tn_ref.hide()
-                        cfg.project_tab.tn_ref_lab.hide()
-                        cfg.project_tab.tn_tra_overlay.show()
                 else:
                     self.tell("Include: %s" % cfg.data.name_base())
-                    if cfg.pt.tn_widget.isVisible():
-                        cfg.project_tab.tn_ref.show()
-                        cfg.project_tab.tn_ref_lab.show()
-                        cfg.project_tab.tn_tra_overlay.hide()
                 cfg.data.link_reference_sections()
+
                 # if getData('state,blink'):
 
-                SetStackCafm(
+                SetStackCafm( #Critical0802+
                     cfg.data.get_iter(s=cfg.data.scale),
                     scale=cfg.data.scale,
                     poly_order=cfg.data.default_poly_order
                 )
-                #Critical0802+
 
-                # if cfg.project_tab._tabs.currentIndex() == 1:
-                    # cfg.project_tab.project_table.initTableData()
                 cfg.pt.project_table.set_row_data(row=layer)
 
                 #Todo Fix this. This is just a kluge to make the table reflect correct data for now.
@@ -3001,6 +2999,8 @@ class MainWindow(QMainWindow):
 
             if self.dw_snr.isVisible():
                 cfg.project_tab.dSnr_plot.initSnrPlot()
+
+            cfg.mw.dataUpdateWidgets()
 
 
     def skip_change_shortcut(self):
@@ -5357,11 +5357,6 @@ class MainWindow(QMainWindow):
                             border-width: 0px;
                         }""")
         self.dw_python.setWidget(self.pythonConsole)
-        # def fn():
-        #     width = int(cfg.main_window.width() / 2)
-        #     self.pythonConsole.resize(QSize(width, 90))
-        #     self.pythonConsole.update()
-        # self.dw_python.visibilityChanged.connect(fn)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_python)
         self.dw_python.hide()
 
@@ -5916,15 +5911,17 @@ class MainWindow(QMainWindow):
                     self.incrementZoomOut()
 
         elif event.key() == Qt.Key_Slash:
-            self.setUpdatesEnabled(False)
-            if self._isProjectTab():      
+            if self._isProjectTab():
+                # self.setUpdatesEnabled(False)
                 if cfg.pt._tabs.currentIndex() == 1:
-                    logger.info(f"Qt.Key_Slash was pressed, tra_ref_toggle={cfg.data['state']['tra_ref_toggle']}")
+                    logger.critical(f"Slash pressed [sw {cfg.pt.sw_alignment_editor.currentIndex()}] tra_ref_toggle=["
+                                    f"{cfg.data['state']['tra_ref_toggle']}]")
+                    # logger.info(f"Qt.Key_Slash was pressed, tra_ref_toggle={cfg.data['state']['tra_ref_toggle']}")
                     if cfg.data['state']['tra_ref_toggle'] == 1:
                         cfg.pt.set_reference()
                     else:
                         cfg.pt.set_transforming()
-            self.setUpdatesEnabled(True)
+                # self.setUpdatesEnabled(True)
 
         elif event.key() == Qt.Key_Delete:
             if self._isOpenProjTab():

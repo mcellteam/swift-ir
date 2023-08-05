@@ -90,9 +90,9 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
         # checkForTiffs(path)
 
-        # signals_dir = os.path.join(dm.dest(), scale, 'signals')
-        # if not os.path.exists(signals_dir):
-        #     os.mkdir(signals_dir)
+        signals_dir = os.path.join(dm.dest(), scale, 'signals')
+        if not os.path.exists(signals_dir):
+            os.mkdir(signals_dir)
 
         matches_dir = os.path.join(dm.dest(), scale, 'matches_raw')
         if not os.path.exists(matches_dir):
