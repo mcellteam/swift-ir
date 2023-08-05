@@ -906,7 +906,7 @@ def create_project_structure_directories(destination, scales, gui=True) -> None:
         bias_data_path = os.path.join(subdir_path, 'bias_data')
         history_path = os.path.join(subdir_path, 'history')
         tmp_path = os.path.join(subdir_path, 'tmp')
-        matches_path = os.path.join(subdir_path, 'signals')
+        signals_path = os.path.join(subdir_path, 'signals')
         matches_path = os.path.join(subdir_path, 'matches')
 
         try:
@@ -916,7 +916,7 @@ def create_project_structure_directories(destination, scales, gui=True) -> None:
             os.makedirs(bias_data_path, exist_ok=True)
             os.makedirs(history_path, exist_ok=True)
             os.makedirs(tmp_path, exist_ok=True)
-            os.makedirs(matches_raw_path, exist_ok=True)
+            os.makedirs(signals_path, exist_ok=True)
             os.makedirs(matches_path, exist_ok=True)
         except:
             print_exception()

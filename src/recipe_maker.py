@@ -415,7 +415,7 @@ class align_ingredient:
         self.cx = int(self.recipe.meta['img_size'][0] / 2.0)
         self.cy = int(self.recipe.meta['img_size'][1] / 2.0)
         basename = os.path.basename(self.recipe.meta['fn_transforming'])
-        fn, extension = os.path.splitext(basename)
+        fn, ext = os.path.splitext(basename)
         multi_arg_str = ArgString(sep='\n')
         dir_scale = os.path.join(
             self.recipe.meta['destination_path'], self.recipe.meta['scale_key'])
@@ -434,7 +434,7 @@ class align_ingredient:
                         continue
             # correlation signals argument (output path)
             b_arg = os.path.join(dir_scale, 'signals', '%s_%s_%d%s' %
-                           (fn, m, i, extension))
+                           (fn, m, i, ext))
             self.ms_names.append(b_arg)
             args = ArgString(sep=' ')
             args.append("%dx%d" % (self.ww[0], self.ww[1]))
@@ -451,10 +451,10 @@ class align_ingredient:
                 args.add_flag(flag='-y', arg='%d' % self.offy)
             args.add_flag(flag='-b', arg=b_arg)
             if self.last:
-                k_arg_name = '%s_%s_k_%d%s' % (fn, m, i, extension)
+                k_arg_name = '%s_%s_k_%d%s' % (fn, m, i, ext)
                 k_arg_path = os.path.join(dir_scale, 'matches_raw', k_arg_name)
                 args.add_flag(flag='-k', arg=k_arg_path)
-                t_arg_name = '%s_%s_t_%d%s' % (fn, m, i, extension)
+                t_arg_name = '%s_%s_t_%d%s' % (fn, m, i, ext)
                 t_arg_path = os.path.join(dir_scale, 'matches_raw', t_arg_name)
                 args.add_flag(flag='-t', arg=t_arg_path)
             args.append(self.recipe.data['swim_settings']['extra_kwargs'])
@@ -498,19 +498,18 @@ class align_ingredient:
 
 
     def crop_match_signals(self):
-
         px_keep = 128
         if self.recipe.method in ('grid-default', 'grid-custom'):
-            w = str(int(self.ww[0] / 2.0))
-            h = str(int(self.ww[1] / 2.0))
-            x1 = str(int((self.ww[0] - px_keep) / 2.0))
-            y1 = str(int((self.ww[1] - px_keep) / 2.0))
-            x2 = str(int((.50 * self.ww[0]) + (px_keep / 2.0)))
-            y2 = str(int((.50 * self.ww[1]) + (px_keep / 2.0)))
+            w = str(int(self.ww[0] / 2.0 + 1))
+            h = str(int(self.ww[1] / 2.0 + 1))
+            x1 = str(int((self.ww[0] - px_keep) / 2.0 + 1))
+            y1 = str(int((self.ww[1] - px_keep) / 2.0 + 1))
+            x2 = str(int((.50 * self.ww[0]) + (px_keep / 2.0) + 1))
+            y2 = str(int((.50 * self.ww[1]) + (px_keep / 2.0) + 1))
         else:
             w = h = str(int(self.ww))
-            x1 = y1 = str(int((self.ww - px_keep) / 2.0))
-            x2 = y2 = str(int((.50 * self.ww) + (px_keep / 2.0)))
+            x1 = y1 = str(int((self.ww - px_keep) / 2.0) + 1)
+            x2 = y2 = str(int((.50 * self.ww) + (px_keep / 2.0) + 1))
         for name in self.ms_names:
             self.crop_str_args = [
                 'B', w, h, '1',
@@ -639,7 +638,8 @@ def run_command(cmd, arg_list=(), cmd_input=None, desc=''):
         stdout=sp.PIPE,
         stderr=sp.PIPE,
         universal_newlines=True,
-        env=os.environ.copy()) as cmd_proc:
+        ) as cmd_proc:
+        # env=os.environ.copy()) as cmd_proc:
         cmd_stdout, cmd_stderr = cmd_proc.communicate(cmd_input)
     logging.getLogger('recipemaker').critical(
         f"\n======== Run Command [PID: {cmd_proc.pid}] ========\n"

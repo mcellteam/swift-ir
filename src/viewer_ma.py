@@ -20,6 +20,7 @@ import functools
 import time
 from collections import OrderedDict
 from functools import cache
+from math import floor
 import numpy as np
 import numcodecs
 import zarr
@@ -50,11 +51,11 @@ DEV = is_joel()
 class WorkerSignals(QObject):
     result = Signal(str)
     stateChanged = Signal()
-    zposChanged = Signal()
     zoomChanged = Signal(float)
     mpUpdate = Signal()
     ptsChanged = Signal()
     swimAction = Signal()
+    badStateChange = Signal()
 
 
 
@@ -77,10 +78,7 @@ class MAViewer(neuroglancer.Viewer):
         self._zmag_set = 0
         # self.shared_state.add_changed_callback(self.on_state_changed)
         self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
-        # self.shared_state.add_changed_callback(self.on_state_changed_any)
-        self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
-        # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
-        # self.signals.ptsChanged.connect(self.drawSWIMwindow)
+        # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
         self.type = 'MAViewer'
         self._inSync = 0
         self._blockStateChanged = False
@@ -158,19 +156,13 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def set_zoom(self, val):
-
-
-
         caller = inspect.stack()[1].function
         logger.info(f'Setting zoom to {caller}')
         self._blockStateChanged = True
-        # state = copy.deepcopy(self.state)
-        # state.crossSectionScale = val
-        # self.set_state(state)
         with self.txn() as s:
             s.crossSectionScale = val
-
         self._blockStateChanged = False
+
 
 
     # def set_layer(self, index=None):
@@ -178,15 +170,6 @@ class MAViewer(neuroglancer.Viewer):
         #NotCulpableForFlickerGlitch
         # if self.type != 'EMViewerStage':
         self._blockStateChanged = True
-        # if DEV:
-        #     logger.critical(f'[{self.role}] [{caller_name()}]\n'
-        #                     f'Setting layer:\n'
-        #                     f'zpos={zpos},\n'
-        #                     f'self.index before={self.index},\n'
-        #                     f'voxel coords before={self.state.voxel_coordinates}\n'
-        #                     f'...')
-
-        prev_index = self.index
 
         if self.role == 'ref':
             if zpos:
@@ -199,41 +182,15 @@ class MAViewer(neuroglancer.Viewer):
             else:
                 self.index=cfg.data.zpos
 
-
-
-
-        # if index == None:
-        # if self.role == 'ref':
-        #     if self.index != cfg.data.get_ref_index():
-        #         with self.txn() as s:
-        #             vc = s.voxel_coordinates
-        #             vc[0] = self.index
-        #         self.drawSWIMwindow()
-
-        # if self.index != cfg.data.zpos:
         with self.txn() as s:
             vc = s.voxel_coordinates
             vc[0] = self.index + 0.5
 
-        # if DEV:
-        #     logger.info(f'{self.type}:{self.role}  self.index {prev_index} -> {self.index}')
-
-        # state = copy.deepcopy(self.state)
-        # state.position[0] = self.index
-        # self.set_state(state)
         self.restoreManAlignPts() #Todo study this. Temp fix.
-
         self.drawSWIMwindow()
 
         self._blockStateChanged = False
 
-        # else:
-        #     self.index = index
-
-        # logger.info('')
-        # state = copy.deepcopy(self.state)
-        # state.position[0] = index
-        # self.set_state(state)
 
 
 
@@ -249,7 +206,8 @@ class MAViewer(neuroglancer.Viewer):
     # async def initViewer(self, obey_zpos=True):
     def initViewer(self, obey_zpos=True):
         # caller = inspect.stack()[1].function
-        self._blockStateChanged = False
+        self._blockStateChanged = True #Critical #Always
+
         if DEV:
             logger.critical(f'Initializing [{self.type}] [role: {self.role}] [caller: {caller_name()}]...')
         # if cfg.data.skipped():
@@ -319,6 +277,8 @@ class MAViewer(neuroglancer.Viewer):
             s.show_ui_controls = False
             # s.show_ui_controls = True
             s.show_panel_borders = False
+            s.show_help_button = True
+            s.show_layer_panel = False
 
 
         self.drawSWIMwindow()
@@ -335,6 +295,8 @@ class MAViewer(neuroglancer.Viewer):
 
         self.initZoom()
 
+        self._blockStateChanged = False
+
     # def blickCallback(self):
     #     logger.info('')
     #     pass
@@ -345,132 +307,100 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def info(self):
-        if DEV:
-            n_layers = None
-            txt = '\n\n'
-            try:    txt += f'  caller             = {caller_name()}\n'
-            except: txt += f'  caller             =\n'
-            txt +=         f'  type/role          = {self.type}/{self.role}\n'
-            txt +=         f'  current method     = {cfg.data.current_method}\n'
-            try:    txt += f'  _blockStateChanged = {self._blockStateChanged}\n'
-            except: txt += f'  _blockStateChanged =\n'
-            try:    txt += f'  cfg.data.zpos      = {cfg.data.zpos}\n'
-            except: txt += f'  cfg.data.zpos      =\n'
-            try:    txt += f'  index              = {self.index}\n'
-            except: txt += f'  index              =\n'
-            try:    txt += f'  request_layer      = {int(self.state.position[0])}\n'
-            except: txt += f'  request_layer      =\n'
-            try:    txt += f'  new request_layer  = {int(self.state.voxel_coordinates[0])}\n'
-            except: txt += f'  new request_layer  =\n'
-            try:    txt += f'  state.voxel_coords = {self.state.voxel_coordinates}\n'
-            except: txt += f'  state.voxel_coords =\n'
-            try:    txt += f'  state.position     = {self.state.position}\n'
-            except: txt += f'  state.position     =\n'
-            txt += '\n'
-            try:
-                n_layers = len(cfg.baseViewer.state.to_json()['layers'])
-                txt += f"  {n_layers} Layers\n"
-            except:
-                txt += f'   0 Layers\n'
-            if n_layers:
-                for i in range(n_layers):
-                    txt += f"  Layer {i}:\n"
-                    name = cfg.baseViewer.state.to_json()['layers'][i]['name']
-                    txt += f"    Name: {name}\n"
-                    type = cfg.baseViewer.state.to_json()['layers'][i]['type']
-                    txt += f"    Type: {type}\n"
-                    if type == 'annotation':
-                        n_ann = len(cfg.baseViewer.state.to_json()['layers'][i]['annotations'])
-                        txt += f"    # annotations: {n_ann}\n"
-                        ids = [cfg.baseViewer.state.to_json()['layers'][i]['annotations'][x]['id'] for x in range(n_ann)]
-                        txt += '    ids : '
-                        txt += ', '.join(ids)
-                        txt += '\n'
-                        try:
-                            txt += '    Example: ' + str(cfg.baseViewer.state.to_json()['layers'][i]['annotations'][0]) + '\n'
-                        except:
-                            pass
+        n_layers = None
+        txt = '\n\n'
+        try:    txt += f'  caller             = {caller_name()}\n'
+        except: txt += f'  caller             =\n'
+        txt +=         f'  type/role          = {self.type}/{self.role}\n'
+        txt +=         f'  current method     = {cfg.data.current_method}\n'
+        try:    txt += f'  _blockStateChanged = {self._blockStateChanged}\n'
+        except: txt += f'  _blockStateChanged =\n'
+        try:    txt += f'  cfg.data.zpos      = {cfg.data.zpos}\n'
+        except: txt += f'  cfg.data.zpos      =\n'
+        try:    txt += f'  index              = {self.index}\n'
+        except: txt += f'  index              =\n'
+        try:    txt += f'  request_layer      = {int(self.state.position[0])}\n'
+        except: txt += f'  request_layer      =\n'
+        try:    txt += f'  new request_layer  = {int(self.state.voxel_coordinates[0])}\n'
+        except: txt += f'  new request_layer  =\n'
+        try:    txt += f'  state.voxel_coords = {self.state.voxel_coordinates}\n'
+        except: txt += f'  state.voxel_coords =\n'
+        try:    txt += f'  state.position     = {self.state.position}\n'
+        except: txt += f'  state.position     =\n'
+        txt += '\n'
+        try:
+            n_layers = len(cfg.baseViewer.state.to_json()['layers'])
+            txt += f"  {n_layers} Layers\n"
+        except:
+            txt += f'   0 Layers\n'
+        if n_layers:
+            for i in range(n_layers):
+                txt += f"  Layer {i}:\n"
+                name = cfg.baseViewer.state.to_json()['layers'][i]['name']
+                txt += f"    Name: {name}\n"
+                type = cfg.baseViewer.state.to_json()['layers'][i]['type']
+                txt += f"    Type: {type}\n"
+                if type == 'annotation':
+                    n_ann = len(cfg.baseViewer.state.to_json()['layers'][i]['annotations'])
+                    txt += f"    # annotations: {n_ann}\n"
+                    ids = [cfg.baseViewer.state.to_json()['layers'][i]['annotations'][x]['id'] for x in range(n_ann)]
+                    txt += '    ids : '
+                    txt += ', '.join(ids)
+                    txt += '\n'
+                    try:
+                        txt += '    Example: ' + str(cfg.baseViewer.state.to_json()['layers'][i]['annotations'][0]) + '\n'
+                    except:
+                        pass
 
         return txt
 
+
+
     @Slot()
-    def on_state_changed_any(self):
+    def on_state_changed(self):
+        # logger.info(f'[{self.role}]')
+        # logger.info(f"[{self.role}], tra_ref_toggle = {cfg.data['state']['tra_ref_toggle']}, _blockStateChanged = {self._blockStateChanged}")
+
+        # if 1: #weirddddddddddd. still despite this...
+        #     return
 
 
-
-        # self.post_message(f"Voxel Coordinates: {str(self.state.voxel_coordinates)}")
         if self._blockStateChanged:
             return
+
+        # if self.role == 'base':
+        #     if cfg.data['state']['tra_ref_toggle'] != 1:
+        #         logger.warning(f"[{self.role}] The state was changed of an inactive viewer! - {self.role}")
+        #         self._blockStateChanged = False #Ugh
+        #         return
+        #
+        # elif self.role == 'ref':
+        #     if cfg.data['state']['tra_ref_toggle'] != 0:
+        #         logger.warning(f"[{self.role}] The state was changed of an inactive viewer! - {self.role}")
+        #         self._blockStateChanged = False #Ugh
+        #         return
+
+        logger.critical(f"[{self.role}] [{self.index}] [{self.state.position[0]}] [sw {cfg.pt.sw_alignment_editor.currentIndex()}]...")
+        self._blockStateChanged = True
+
+        if self.role == 'ref':
+            if floor(self.state.position[0]) != self.index:
+                logger.critical(f"[{self.role}] Illegal state change")
+                self.signals.badStateChange.emit() #New
+                return
+
+        elif self.role == 'base':
+            if floor(self.state.position[0]) != self.index:
+                self.index = floor(self.state.position[0])
+                self.drawSWIMwindow(z=self.index) #NeedThis #0803
+                cfg.data.zpos = self.index
 
         if cfg.data.scale_val() > 2:
             if self.state.relative_display_scales == None:
                 self.set_zmag()
 
-
-
-        caller = inspect.stack()[1].function
-        # logger.info(f'on_state_changed_any [{self.type}] [i={self._zmag_set}] >>>>')
-        # logger.info(f'{self.type}:{self.role} self.cs_scale = {self.cs_scale}, self.state.cross_section_scale = {self.state.cross_section_scale}')
-
-        # if not self.cs_scale:
-        #     if self.state.cross_section_scale < .001:
-        #         self.cs_scale = self.state.cross_section_scale
-
-        # if self.state.relativeDisplayScales == None:
-        #     logger.info("setting Zmag!")
-        #     self._set_zmag()
-
-        self.signals.stateChanged.emit()
-
-
-    @Slot()
-    def on_state_changed(self):
-        logger.info('')
-        # logger.info(f"[{self.role}], tra_ref_toggle = {cfg.data['state']['tra_ref_toggle']}, _blockStateChanged = {self._blockStateChanged}")
-
-
-        if self._blockStateChanged:
-            return
-
-        if self.role == 'base':
-            if cfg.data['state']['tra_ref_toggle'] != 1:
-                return
-
-        elif self.role == 'ref':
-            if cfg.data['state']['tra_ref_toggle'] != 0:
-                return
-
-
-        self._blockStateChanged = True
-
-        request_layer = int(self.state.position[0])
-
-        if self.role == 'ref':
-            if request_layer == self.index:
-                self._blockStateChanged = False
-                return
-            else:
-                self.signals.zposChanged.emit()
-                self._blockStateChanged = False
-                return
-
-
-        if self.index == request_layer:
-            self._blockStateChanged = False
-            return
-
-        self.index = request_layer
-
-        # self.drawSWIMwindow()
-
-        cfg.data.zpos = self.index
-        logger.info(f'{self.role}: Emitting z-index changed!')
-        # self.signals.zposChanged.emit(request_layer)
-        self.signals.zposChanged.emit()
-
         self._blockStateChanged = False
 
-        # logger.info('<<<< on_state_changed <<<<')
 
 
 
@@ -570,49 +500,29 @@ class MAViewer(neuroglancer.Viewer):
         logger.info(f'dict = {cfg.data.manpoints_pretty()}')
 
 
-
-
     def applyMps(self):
         '''Copy local manual points into project dictionary'''
-        # self._blockStateChanged = True
         logger.info(f'Storing Manual Points for {self.role}...')
         cfg.main_window.statusBar.showMessage('Manual Correspondence Points Stored!', 3000)
         pts = []
-        # for key in self.pts.keys():
-        #     p = self.pts[key]
-        #     _, x, y = p.point.tolist()
-        #     pts.append((x, y))
         for p in self.pts:
             _, x, y = p.point.tolist()
             pts.append((x, y))
         cfg.data.set_manpoints(self.role, pts)
-        # cfg.data.set_manual_points_color(self.role, pts)
-        # cfg.data.print_all_manpoints()
-        # self._blockStateChanged = False
 
 
     def draw_point_annotations(self):
         logger.info('Drawing point annotations...')
-        # logger.info(self.pts.values())
         try:
-            # anns = list(self.pts.values())
             anns = self.pts
             if anns:
                 with self.txn() as s:
                     s.layers['ann_points'].annotations = anns
         except:
-            # print_exception()
             logger.warning('Unable to draw donut annotations or none to draw')
-        # pass
-
 
 
     def undrawSWIMwindows(self):
-        # caller = inspect.stack()[1].function
-        # logger.info(f"[{self.role}] caller: {caller_name()}] Undrawing SWIM windows...")
-
-        # with cfg.refViewer.txn() as s:
-        #     print(s.layers['SWIM'].annotations)
         try:
             with self.txn() as s:
                 if s.layers['SWIM']:
@@ -625,7 +535,9 @@ class MAViewer(neuroglancer.Viewer):
 
 
     # @functools.cache
-    def drawSWIMwindow(self):
+    def drawSWIMwindow(self, z=None):
+        if z == None:
+            z = cfg.data.zpos
 
         if self._dontDraw:
             logger.info('_dontDraw is blocking drawSWIMwindow')
@@ -640,13 +552,13 @@ class MAViewer(neuroglancer.Viewer):
 
 
 
-        self._blockStateChanged = True
+
         # caller = inspect.stack()[1].function
 
-        # self.undrawSWIMwindows() #todo try without this! #todo try doing this closer to redraw
-
-        if cfg.data.zpos == cfg.data.first_unskipped():
+        if z == cfg.data.first_unskipped():
             return
+
+        self._blockStateChanged = True
 
 
         marker_size = 1
@@ -792,7 +704,7 @@ class MAViewer(neuroglancer.Viewer):
                     )
                 )
 
-        # self.undrawSWIMwindows()
+        self.undrawSWIMwindows()
         with self.txn() as s:
             # for i,ann in enumerate(annotations):
             s.layers['SWIM'] = ng.LocalAnnotationLayer(
@@ -871,9 +783,6 @@ class MAViewer(neuroglancer.Viewer):
 
     def set_zmag(self, val=10):
         self._blockStateChanged = True
-        # logger.info(f'zpos={cfg.data.zpos} Setting Z-mag on {self.type} to {val} [{self.role}]')
-        # caller = inspect.stack()[1].function
-        # logger.info(f'caller: {caller}')
         try:
             state = copy.deepcopy(self.state)
             state.relativeDisplayScales = {'z': 2}
@@ -885,15 +794,12 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def _set_zmag(self):
-        # self._blockStateChanged = True
-        # if self._zmag_set < 8:
-        #     self._zmag_set += 1
         try:
             with self.txn() as s:
                 s.relativeDisplayScales = {"z": 10}
         except:
             print_exception()
-        # self._blockStateChanged = False
+
 
     def initZoom(self):
         logger.info(f'[{caller_name()}] [{self.role}] Calling initZoom...')

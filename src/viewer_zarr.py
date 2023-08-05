@@ -115,7 +115,7 @@ class ZarrViewer(neuroglancer.Viewer):
 
         with self.config_state.txn() as s:
             s.show_ui_controls = getOpt('neuroglancer,SHOW_UI_CONTROLS')
-            s.show_panel_borders = False
+            s.show_panel_borders = True
             # s.viewer_size = [100,100]
 
         self._layer = self.get_loc()
