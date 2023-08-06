@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 '''This file is for initializing global config and 'data' the dictionary datamodel state in memory.'''
-
+import math
 import platform
 import getpass
+from math import inf
 # from src import shaders
 
 __all__ = ['data']
@@ -13,8 +14,10 @@ VERSION = '0.5.49'
 LOOP = None
 
 
-max_downsampling=1024 #default=64
-max_downsampled_size=2048 #default=128
+# max_downsampling=1024 #default=64
+# max_downsampled_size=2048 #default=128
+max_downsampling=float('inf')
+max_downsampled_size=float('inf')
 # max_downsampling_scales=1
 """
 DEFAULT_MAX_DOWNSAMPLING = 64
