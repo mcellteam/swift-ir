@@ -508,10 +508,6 @@ class ProjectTab(QWidget):
         hbl.setContentsMargins(2, 2, 2, 2)
         hbl.addWidget(self.btnQuickSWIM)
 
-        self.MA_controls = QWidget()
-        self.MA_controls.setStyleSheet('font-size: 10px;')
-        self.MA_controls.setLayout(hbl)
-
         self.lw_gb_l = QGroupBox()
         vbl = VBL()
         vbl.setSpacing(1)
@@ -1164,20 +1160,20 @@ class ProjectTab(QWidget):
         self.radioboxes_method = HWidget(self.rb_method0, self.rb_method1, self.rb_method2)
         self.radioboxes_method.setMaximumHeight(20)
 
-        # self.lab_region_selection = QLabel("⇧ + Click - Select 3 corresponding regions\n")
-        self.lab_region_selection = QLabel("")
+        self.lab_region_selection = QLabel("Double Click to select 3 matching regions")
+        # self.lab_region_selection = QLabel("")
         self.lab_region_selection.setStyleSheet("font-size: 10px; font-weight: 600; color: #161c20; padding: 1px;")
 
-        # self.lab_region_selection2 = QLabel("Note: Match signals can be generated from any # of match selections.\n"
-        #                                     "At least three matching regions are necessary to form an alignment affine.")
-        self.lab_region_selection2 = QLabel("")
-        self.lab_region_selection2.setStyleSheet("font-size: 9px; color: #161c20; padding: 1px;")
+        # self.lab_region_selection2 = QLabel("Note: At least 3 are necessary to for affine.")
+        # self.lab_region_selection2 = QLabel("")
+        # self.lab_region_selection2.setStyleSheet("font-size: 9px; color: #161c20; padding: 1px;")
         self.MA_points_tab = VWidget(
             self.MA_sbw,
             self.lab_region_selection,
-            self.lab_region_selection2,
+            # self.lab_region_selection2,
             self.gb_MA_manual_controls,
         )
+        self.MA_points_tab.setMaximumHeight(200)
         self.MA_points_tab.layout.setSpacing(1)
 
 
@@ -2119,8 +2115,7 @@ class ProjectTab(QWidget):
                                      self.MA_stackedWidget,
                                      self.gb_sideTabs,
                                      self.gb_outputSettings,
-                                     self.gb_warnings,
-                                     self.MA_controls)
+                                     self.gb_warnings)
         self.side_controls.setMaximumWidth(340)
         self.side_controls.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.side_controls.setStyleSheet("""
@@ -2200,6 +2195,7 @@ class ProjectTab(QWidget):
         self.cl_tra.setChecked(False)
         self.lw_gb_r.setEnabled(True)
         self.lw_gb_l.setEnabled(False)
+        self.lw_gb_r.setAutoFillBackground(True)
         self.lw_gb_r.setStyleSheet("""border-width: 3px; border-color: #339933; background-color: #f3f6fb;""")
         self.lw_gb_l.setStyleSheet("""""")
         logger.info(f"<<<< set_reference <<<<")
@@ -2215,6 +2211,7 @@ class ProjectTab(QWidget):
         self.cl_ref.setChecked(False)
         self.lw_gb_l.setEnabled(True)
         self.lw_gb_r.setEnabled(False)
+        self.lw_gb_l.setAutoFillBackground(True)
         self.lw_gb_l.setStyleSheet("""border-width: 3px; border-color: #339933; background-color: #f3f6fb;""")
         self.lw_gb_r.setStyleSheet("""""")
         logger.info(f"<<<< set_transforming <<<<")
