@@ -421,14 +421,14 @@ class SnrPlot(QWidget):
             x_axis = [x+offset for x in x_axis]
         brush = self._plot_brushes[cfg.data.scales()[::-1].index(s)]
         self.snr_points[s] = pg.ScatterPlotItem(
-            size=(11,9)[self.dock],
+            size=(11,8)[self.dock],
             # pen=pg.mkPen(None),
             symbol='o',
             pen=pg.mkPen('#f3f6fb', width=2),
             brush=(brush, pg.mkBrush('#AAFF00'))[self.dock],
             hoverable=True,
             hoverSymbol='o',
-            hoverSize=(14,10)[self.dock],
+            hoverSize=(13,10)[self.dock],
             # hoverPen=pg.mkPen('#f3f6fb', width=1),
             # hoverBrush=None,
             # pxMode=False # points transform with zoom
@@ -445,7 +445,7 @@ class SnrPlot(QWidget):
         if self.dock:
 
             self.no_comport_cafm_points[s] = pg.ScatterPlotItem(
-                size=10,
+                size=8,
                 # pen=pg.mkPen(None),
                 symbol='x',
                 # pen=pg.mkPen('#f3f6fb', width=1),
@@ -453,7 +453,7 @@ class SnrPlot(QWidget):
                 brush=pg.mkBrush('#f3f6fb'),
                 # brush=None,
                 hoverable=True,
-                hoverSize=12,
+                hoverSize=10,
                 # hoverPen=pg.mkPen('#ff0000', width=3),
                 # hoverBrush=None,
                 # pxMode=False # points transform with zoom
@@ -465,13 +465,13 @@ class SnrPlot(QWidget):
 
 
             self.no_comport_data_points[s] = pg.ScatterPlotItem(
-                size=11,
+                size=9,
                 # pen=pg.mkPen(None),
                 symbol='o',
                 pen=pg.mkPen('#f3f6fb', width=2),
                 brush=None,
                 hoverable=True,
-                hoverSize=13,
+                hoverSize=11,
                 # hoverPen=pg.mkPen('#ff0000', width=3),
                 # hoverBrush=None,
                 # pxMode=False # points transform with zoom

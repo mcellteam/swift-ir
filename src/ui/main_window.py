@@ -1737,7 +1737,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def _updateZposWidgets(self):
         caller = inspect.stack()[1].function
-        logger.critical(f'caller: {caller}')
+        # logger.info(f'[{caller}]')
         if self._isProjectTab():
             cur = cfg.data.zpos
             self._jumpToLineedit.setText(str(cur))
