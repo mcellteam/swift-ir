@@ -47,8 +47,14 @@ class Thumbnailer:
             return dt
 
 
-    def reduce_aligned(self, start, end, dest, scale, use_gui=True):
+    def reduce_aligned(self, indexes, dest, scale, use_gui=True):
         print(f'\n\n######## Reducing: Aligned Images ########\n')
+
+        files = []
+        baseFileNames = cfg.data.basefilenames()
+        for name in [baseFileNames[i] for i in indexes]:
+            files.append(name)
+
 
         pbar_text = 'Generating %s Aligned Image Thumbnails...' % cfg.data.scale_pretty()
         if cfg.CancelProcesses:
@@ -57,7 +63,8 @@ class Thumbnailer:
             src = os.path.join(dest, scale, 'img_aligned')
             od = os.path.join(dest, scale, 'thumbnails_aligned')
             dt = self.reduce(
-                src=src, od=od, rmdir=False, prefix='', start=start, end=end, pbar_text=pbar_text, dest=dest, use_gui=use_gui)
+                src=src, od=od, rmdir=False, prefix='', filenames=files, pbar_text=pbar_text, dest=dest,
+                use_gui=use_gui)
             try:
                 cfg.data.t_thumbs_aligned = dt
             except:
@@ -68,7 +75,7 @@ class Thumbnailer:
             #     end = len(cfg.data)
             # cfg.mw.hud.done()
 
-    def reduce_signals(self, start, end, dest, scale, use_gui=True):
+    def reduce_signals(self, indexes, dest, scale, use_gui=True):
 
         print(f'\n\n######## Reducing: Correlation Signals ########\n')
 
@@ -80,14 +87,11 @@ class Thumbnailer:
             od = os.path.join(dest, scale, 'signals')
 
             rmdir = False
-            if end == None:
-                end = cfg.data.count
 
-            baseFileNames = cfg.data.basefilenames()
+
             if not rmdir:
-                logger.info(f'start: {start}, end: {end}')
                 #Special handling for corrspot files since they are variable in # and never 1:1 with project files
-                for i in range(start,end):
+                for i in indexes:
                     basename = os.path.basename(cfg.data.base_image_name(s=cfg.data.scale_key, l=i))
                     filename, extension = os.path.splitext(basename)
                     method = cfg.data.section(l=i)['alignment']['swim_settings']['method']
@@ -103,15 +107,16 @@ class Thumbnailer:
                         except:
                             logger.warning('An exception was triggered during removal of expired thumbnail: %s' % tn)
 
-            filenames = []
-            for name in baseFileNames[start:end]:
+            files = []
+            baseFileNames = cfg.data.basefilenames()
+            for name in [baseFileNames[i] for i in indexes]:
                 filename, extension = os.path.splitext(name)
                 search_path = os.path.join(src, '%s_*%s' % (filename, extension))
                 # logger.info(f'Search Path: {search_path}')
-                filenames.extend(glob(search_path))
+                files.extend(glob(search_path))
 
             # tnLogger.info('Reducing the following corr spot thumbnails:\n%s' %str(filenames))
-            tnLogger.info(f'Reducing {len(filenames)} corr spot thumbnails...')
+            tnLogger.info(f'Reducing {len(files)} corr spot thumbnails...')
 
             if scale == list(cfg.data.scales())[-1]:
                 full_size = True
@@ -120,9 +125,8 @@ class Thumbnailer:
 
             dt = self.reduce(src=src, od=od,
                              rmdir=rmdir, prefix='',
-                             start=start, end=end,
                              pbar_text=pbar_text,
-                             filenames=filenames,
+                             filenames=files,
                              dest=dest,
                              use_gui=use_gui,
                              full_size=full_size
@@ -131,7 +135,7 @@ class Thumbnailer:
             cfg.main_window.hud.done()
 
 
-    def reduce_matches(self, start, end, dest, scale, use_gui=True):
+    def reduce_matches(self, indexes, dest, scale, use_gui=True):
 
         print(f'\n\n######## Reducing: Correlation Signals ########\n')
 
@@ -143,13 +147,10 @@ class Thumbnailer:
             od = os.path.join(dest, scale, 'matches')
 
             rmdir = False
-            if end == None:
-                end = cfg.data.count
 
             if not rmdir:
-                logger.info(f'start: {start}, end: {end}')
                 #Special handling for corrspot files since they are variable in # and never 1:1 with project files
-                for i in range(start,end):
+                for i in indexes:
                     basename = os.path.basename(cfg.data.base_image_name(s=cfg.data.scale_key, l=i))
                     fn, ext = os.path.splitext(basename)
                     method = cfg.data.section(l=i)['alignment']['swim_settings']['method']
@@ -166,7 +167,8 @@ class Thumbnailer:
                             logger.warning('An exception was triggered during removal of expired thumbnail: %s' % tn)
 
             files = []
-            for name in cfg.data.basefilenames()[start:end]:
+            baseFileNames = cfg.data.basefilenames()
+            for name in [baseFileNames[i] for i in indexes]:
                 fn, ext = os.path.splitext(name)
                 search_path = os.path.join(src, '%s_*%s' % (fn, ext))
                 files.extend(glob(search_path))
@@ -177,7 +179,6 @@ class Thumbnailer:
 
             dt = self.reduce(src=src, od=od,
                              rmdir=rmdir, prefix='',
-                             start=start, end=end,
                              pbar_text=pbar_text,
                              filenames=files,
                              dest=dest,
@@ -258,15 +259,13 @@ class Thumbnailer:
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S")
         tnLogger.info(f'\n==== {timestamp} ====\n'
                       f'Generating Thumbnails...\n'
-                      f'src       : {src}\n'
-                      f'od        : {od}\n'
-                      f'rmdir     : {rmdir}\n'
-                      f'prefix    : {prefix}\n'
-                      f'start     : {start}\n'
-                      f'end       : {end}\n'
-                      f'pbar      : {pbar_text}\n'
-                      f'cpus      : {cpus}\n'
-                      f'# files   : {len(filenames)}'
+                      f'src        : {src}\n'
+                      f'od         : {od}\n'
+                      f'rmdir      : {rmdir}\n'
+                      f'prefix     : {prefix}\n'
+                      f'pbar       : {pbar_text}\n'
+                      f'cpus       : {cpus}\n'
+                      f'# files    : {len(filenames)}'
                       )
         tnLogger.info('filenames : \n' + '\n'.join(filenames))
         # logger.info('Removing up to %d files...' %len(filenames))

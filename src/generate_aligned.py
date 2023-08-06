@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 mp.set_start_method('forkserver', force=True)
 
-def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zarr=False, stageit=False, use_gui=True):
+def GenerateAligned(dm, scale, indexes, renew_od=False, reallocate_zarr=False, stageit=False, use_gui=True):
     logger.info('>>>> GenerateAligned >>>>')
 
     scale_val = get_scale_val(scale)
@@ -52,9 +52,9 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
 
     SetStackCafm(dm.get_iter(scale), scale=scale, poly_order=cfg.data.default_poly_order)
 
-    cfg.data.propagate_swim_1x1_custom_px(start=start, end=end)
-    cfg.data.propagate_swim_2x2_custom_px(start=start, end=end)
-    cfg.data.propagate_manual_swim_window_px(start=start, end=end)
+    cfg.data.propagate_swim_1x1_custom_px(indexes=indexes)
+    cfg.data.propagate_swim_2x2_custom_px(indexes=indexes)
+    cfg.data.propagate_manual_swim_window_px(indexes=indexes)
 
     od = os.path.join(dm.dest(), scale, 'img_aligned')
     if renew_od:
@@ -81,20 +81,18 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
     logger.info(f'Aligned Size      : {rect[2:]}')
     logger.info(f'Offsets           : {rect[0]}, {rect[1]}')
     # args_list = makeTasksList(dm, iter(stack[start:end]), job_script, scale_key, rect) #0129-
-    if end:
-        cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(range(start,end))),1)
-    else:
-        cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(range(start, len(dm)))),1)
+    cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(indexes)),1)
+
     dest = dm['data']['destination_path']
     print(f'\n\n######## Generating Aligned Images ########\n')
 
     tasks = []
-    for layer in iter(dm()[start:end]):
-        base_name = layer['filename']
+    for sec in [dm()[i] for i in indexes]:
+        base_name = sec['alignment']['swim_settings']['fn_transforming']
         _ , fn = os.path.split(base_name)
         al_name = os.path.join(dest, scale, 'img_aligned', fn)
-        method = layer['alignment']['swim_settings']['method'] #0802+
-        cafm = layer['alignment_history'][method]['method_results']['cumulative_afm']
+        method = sec['alignment']['swim_settings']['method'] #0802+
+        cafm = sec['alignment_history'][method]['method_results']['cumulative_afm']
         tasks.append([base_name, al_name, rect, cafm, 128])
 
     cfg.mw.set_status('Generating aligned images. No progress bar available. Awaiting multiprocessing pool...')
@@ -157,7 +155,7 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
 
     # time.sleep(1)
 
-    dm.register_cafm_hashes(s=scale, start=start, end=end)
+    dm.register_cafm_hashes(s=scale, indexes=indexes)
     dm.set_image_aligned_size()
 
     pbar_text = 'Copy-converting Scale %d Alignment To Zarr (%d Cores)...' % (scale_val, cpus)
@@ -185,8 +183,8 @@ def GenerateAligned(dm, scale, start=0, end=None, renew_od=False, reallocate_zar
     print(f'\n\n######## Copy-convert Alignment To Zarr ########\n')
 
     tasks = []
-    for i in range(start,end):
-        _ , fn = os.path.split(dm()[i]['filename'])
+    for i in indexes:
+        _ , fn = os.path.split(dm()[i]['alignment']['swim_settings']['fn_transforming'])
         al_name = os.path.join(dm.dest(), scale, 'img_aligned', fn)
         zarr_group = os.path.join(dm.dest(), 'img_aligned.zarr', 's%d' % scale_val)
         task = [i, al_name, zarr_group]
@@ -258,7 +256,7 @@ def makeTasksList(dm, iter, job_script, scale, rect, zarr_group):
         # if ID in [0,1,2]:
         #     logger.info('afm = %s\n' % ' '.join(map(str, datamodel.afm(l=ID))))
         #     logger.info('cafm = %s\n' % ' '.join(map(str, datamodel.cafm(l=ID))))
-        base_name = layer['filename']
+        base_name = layer['alignment']['swim_settings']['fn_transforming']
         _ , fn = os.path.split(base_name)
         al_name = os.path.join(dest, scale, 'img_aligned', fn)
         # layer['images']['aligned'] = {}

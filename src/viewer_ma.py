@@ -71,7 +71,9 @@ class MAViewer(neuroglancer.Viewer):
         # self._layer = cfg.data.zpos
         self.cs_scale = None
         # self.pts = OrderedDict()
-        self.pts = {'ref':[], 'base': []}
+        self.pts = {'ref':[None,None,None], 'base': [None,None,None]}
+        self._selected_index = {'ref': 0, 'base': 0}
+        # self._selected_index = 0
         self.colors = cfg.glob_colors
         self._crossSectionScale = 1
         self._mpCount = 0
@@ -222,6 +224,7 @@ class MAViewer(neuroglancer.Viewer):
 
 
         self.clear_layers()
+
         self.restoreManAlignPts()
 
         sf = cfg.data.scale_val(s=cfg.data.scale_key)
@@ -436,12 +439,19 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def getNextUnusedColor(self, role):
-        return self.colors[len(self.pts[role])]
-        # for c in self.colors:
-        #     if c in self.pts:
-        #         continue
-        #     else:
-        #         return c
+        # return self.colors[len(self.pts[role])]
+        return self.colors[self.getNextPoint(role)]
+
+    def getNextPoint(self, role):
+        # return self.colors[len(self.pts[role])]
+        return next((i for i, v in enumerate(self.pts[role]) if not v), 0)
+
+    def numPts(self, role):
+        n = 0
+        for pt in self.pts[role]:
+            if pt:
+                n += 1
+        return n
 
 
     def url(self):
@@ -463,7 +473,7 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def add_matchpoint(self, s):
-        logger.info('')
+        logger.critical('\n\nadd_matchpoint\n')
         if cfg.data.method() not in ('manual-strict', 'manual-hint'):
             logger.warning('add_matchpoint: User may not select points while aligning with grid.')
             return
@@ -471,10 +481,9 @@ class MAViewer(neuroglancer.Viewer):
         # if not cfg.project_tab.isManualReady():
         #     return
 
-        if len(cfg.data.manpoints()[self.role]) >= 3:
-            cfg.mw.warn('Three points have already been selected for the reference section!')
-            return
-
+        # if self.numPts(self.role) >= 3:
+        #     cfg.mw.warn('Three points have already been selected for the reference section!')
+        #     return
 
         logger.info('Adding Manual Points to Buffer...')
 
@@ -486,15 +495,20 @@ class MAViewer(neuroglancer.Viewer):
         _, y, x = s.mouse_voxel_coordinates
         # z = 0.1
         # z = 0.5
-        z = self.index
+        pt_index = self._selected_index[self.role]
 
-        props = [self.colors[len(self.pts[self.role])],
+        logger.critical(f'pt_index = {pt_index}')
+
+
+        props = [self.colors[pt_index],
                  getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'),
                  getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'), ]
         # self.pts[self.getNextUnusedColor()] = ng.PointAnnotation(id=repr((z,y,x)), point=(z,y,x), props=props)
-        ann = ng.PointAnnotation(id=repr((z,y,x)), point=(z,y,x), props=props)
+        ann = ng.PointAnnotation(id=repr((self.index + 0.5,y,x)), point=(self.index + 0.5,y,x), props=props)
         logger.critical(ann.to_json())
-        self.pts[self.role].append(ann)
+        self.pts[self.role][pt_index] = ann
+
+        self._selected_index[self.role] = self.getNextPoint(self.role)
 
         self.setMpData()
         self.signals.ptsChanged.emit()
@@ -507,10 +521,11 @@ class MAViewer(neuroglancer.Viewer):
         '''Copy local manual points into project dictionary'''
         logger.info(f'Storing Manual Points for {self.role}...')
         cfg.main_window.statusBar.showMessage('Manual Correspondence Points Stored!', 3000)
-        pts = []
-        for p in self.pts[self.role]:
-            _, x, y = p.point.tolist()
-            pts.append((x, y))
+        pts = [None,None,None]
+        for i,p in enumerate(self.pts[self.role]):
+            if p:
+                _, x, y = p.point.tolist()
+                pts[i] = (x, y)
         cfg.data.set_manpoints(self.role, pts)
         # for p in self.pts['ref']:
         #     _, x, y = p.point.tolist()
@@ -693,17 +708,18 @@ class MAViewer(neuroglancer.Viewer):
                 ww_x = ww_y = cfg.data.manual_swim_window_px()
 
             for i, pt in enumerate(self.pts[self.role]):
-                annotations.extend(
-                    self.makeRect(
-                        prefix=str(i),
-                        z_index=self.index,
-                        coords=(pt.point[2], pt.point[1]),
-                        ww_x=ww_x,
-                        ww_y=ww_y,
-                        color=cfg.glob_colors[i],
-                        marker_size=marker_size
+                if pt:
+                    annotations.extend(
+                        self.makeRect(
+                            prefix=str(i),
+                            z_index=self.index,
+                            coords=(pt.point[2], pt.point[1]),
+                            ww_x=ww_x,
+                            ww_y=ww_y,
+                            color=cfg.glob_colors[i],
+                            marker_size=marker_size
+                        )
                     )
-                )
 
         # self.undrawSWIMwindows()
         with self.txn() as s:
@@ -747,16 +763,19 @@ class MAViewer(neuroglancer.Viewer):
     def restoreManAlignPts(self):
 
         # self.pts = OrderedDict()
-        self.pts[self.role] = []
+        self.pts[self.role] = [None,None,None]
         pts_data = cfg.data.getmpFlat(l=cfg.data.zpos)[self.role]
-        if pts_data:
-            logger.info(f'[{self.role}] Restoring manual point/region selections...')
-            for i, p in enumerate(pts_data):
+        logger.info(f'[{self.role}] Restoring manual point/region selections...')
+        for i, p in enumerate(pts_data):
+            logger.critical(f"i={i}, p={p}")
+
+            if p:
+                logger.critical(f"Adding {p}...")
                 props = [self.colors[i],
                          getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'),
                          getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'), ]
                 # self.pts[self.getNextUnusedColor()] = ng.PointAnnotation(id=str(p), point=p, props=props)
-                self.pts[self.role].append(ng.PointAnnotation(id=str(p), point=p, props=props))
+                self.pts[self.role][i] = ng.PointAnnotation(id=str(p), point=p, props=props)
 
 
             # logger.critical(f'pts:\n{self.pts}')

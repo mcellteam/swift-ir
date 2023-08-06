@@ -45,7 +45,8 @@ __all__ = ['ComputeAffines']
 
 logger = logging.getLogger(__name__)
 
-def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False, reallocate_zarr=False, stageit=False, swim_only=False, bounding_box=False, dm=None):
+def ComputeAffines(scale, path, indexes, use_gui=True, renew_od=False, reallocate_zarr=False, stageit=False,
+                   swim_only=False, bounding_box=False, dm=None):
     '''Compute the python_swiftir transformation matrices for the current s stack of images according to Recipe1.'''
     # caller = inspect.stack()[1].function
 
@@ -86,7 +87,7 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         alignment_dict = dm['data']['scales'][scale]['stack']
 
         # alignment_option = dm['data']['scales'][scale_key]['method_data']['alignment_option']
-        logger.info('Start Layer: %s /End layer: %s' % (str(start), str(end)))
+        logger.info(f"indexes: {indexes}")
 
         # checkForTiffs(path)
 
@@ -98,7 +99,6 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
         if not os.path.exists(matches_dir):
             os.mkdir(matches_dir)
 
-        # dm.clear_method_results(scale=scale, start=start, end=end) #0727-
         if rename_switch:
             rename_layers(use_scale=scale, al_dict=alignment_dict)
 
@@ -111,10 +111,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
         scale_val = get_scale_val(scale)
         tasks = []
-        for sec in dm()[start:end]:
+        for zpos, sec in [(i, dm()[i]) for i in indexes]:
             # zpos = sec['alignment']['meta']['index']
-            zpos = dm().index(sec)
-
             # if not sec['skipped'] and (zpos != first_unskipped):
             if 1:
                 # logger.info(f'Adding task for {zpos}')
@@ -177,13 +175,8 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             #     logger.info(f"Dropping task for {zpos}")
 
 
-        delete_correlation_signals(dm=dm, scale=scale, start=start, end=end)
+        delete_correlation_signals(dm=dm, scale=scale, indexes=indexes)
         dest = dm['data']['destination_path']
-
-        if cfg.CancelProcesses:
-            logger.warning('Canceling Processes!')
-            return
-
 
         cpus = get_n_tacc_cores(n_tasks=len(tasks))
         if is_tacc() and (scale == 'scale_1'):
@@ -192,16 +185,9 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
         t0 = time.time()
 
-
-
         logger.info(f"# cores: {cpus}")
 
         # f_recipe_maker = f'{os.path.split(os.path.realpath(__file__))[0]}/src/recipe_maker.py'
-
-        # pbar = tqdm.tqdm(total=len(tasks), desc="Compute Affines", position=0, leave=True)
-        # def update_pbar(*a):
-        #     pbar.update()
-
 
         if cfg.USE_POOL_FOR_SWIM:
             ctx = mp.get_context('forkserver')
@@ -230,13 +216,12 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
 
             task_queue = TaskQueue(n_tasks=len(tasks), dest=dest, use_gui=use_gui)
             task_queue.taskPrefix = 'Computing Alignment for '
-            task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in cfg.data()[start:end]]
-            task_queue.taskNameList = [os.path.basename(layer['filename']) for layer in dm['data']['scales'][scale]['stack'][start:end]]
+            task_queue.taskNameList = [os.path.basename(layer['alignment']['swim_settings']['fn_transforming']) for
+                                       layer in [dm()[i] for i in indexes]]
             task_queue.start(cpus)
             align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'recipe_maker.py')
             logger.info('adding tasks to the queue...')
-            for sec in dm()[start:end]:
-                zpos = dm().index(sec)
+            for zpos, sec in [(i, dm()[i]) for i in indexes]:
                 if sec['alignment']['swim_settings']['include'] and (zpos != first_unskipped):
                     # encoded_data = json.dumps(copy.deepcopy(sec))
                     encoded_data = json.dumps(sec['alignment'])
@@ -309,10 +294,12 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             try:
                 if cfg.USE_EXTRA_THREADING and use_gui:
                     cfg.mw.worker = BackgroundWorker(fn=GenerateAligned(
-                        dm, scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=use_gui))
+                        dm, scale, indexes, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit,
+                        use_gui=use_gui))
                     cfg.mw.threadpool.start(cfg.mw.worker)
                 else:
-                    GenerateAligned(dm, scale, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=use_gui)
+                    GenerateAligned(dm, scale, indexes, renew_od=renew_od, reallocate_zarr=reallocate_zarr,
+                                    stageit=stageit, use_gui=use_gui)
 
             except:
                 print_exception()
@@ -325,10 +312,11 @@ def ComputeAffines(scale, path, start=0, end=None, use_gui=True, renew_od=False,
             thumbnailer = Thumbnailer()
             try:
                 if cfg.USE_EXTRA_THREADING and use_gui:
-                    cfg.mw.worker = BackgroundWorker(fn=cfg.thumb.reduce_aligned(start=start, end=end, dest=dest, scale=scale, use_gui=use_gui))
+                    cfg.mw.worker = BackgroundWorker(fn=cfg.thumb.reduce_aligned(indexes, dest=dest, scale=scale,
+                                                                                 use_gui=use_gui))
                     cfg.mw.threadpool.start(cfg.mw.worker)
                 else:
-                    thumbnailer.reduce_aligned(start=start, end=end, dest=dest, scale=scale, use_gui=use_gui)
+                    thumbnailer.reduce_aligned(indexes, dest=dest, scale=scale, use_gui=use_gui)
             except:
                 print_exception()
             finally:
@@ -365,9 +353,9 @@ def run_subprocess(task):
         print("error: %s run(*%r)" % (e, task))
 
 
-def delete_correlation_signals(dm, scale, start, end):
+def delete_correlation_signals(dm, scale, indexes):
     logger.info('')
-    for i in range(start, end):
+    for i in indexes:
         sigs = dm.get_signals_filenames(s=scale, l=i)
         # logger.info(f'Deleting:\n{sigs}')
         for f in sigs:

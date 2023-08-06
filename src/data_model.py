@@ -1055,10 +1055,10 @@ class DataModel:
                 # layer['alignment']['manual_settings'].setdefault('swim_whitening', cfg.DEFAULT_MANUAL_WHITENING)
                 layer['alignment']['swim_settings'].setdefault('match_points', {})
                 layer['alignment']['swim_settings'].setdefault('match_points_mir', {})
-                layer['alignment']['swim_settings']['match_points'].setdefault('ref', [])
-                layer['alignment']['swim_settings']['match_points'].setdefault('base', [])
-                layer['alignment']['swim_settings']['match_points_mir'].setdefault('ref', [])
-                layer['alignment']['swim_settings']['match_points_mir'].setdefault('base', [])
+                layer['alignment']['swim_settings']['match_points'].setdefault('ref', [None,None,None])
+                layer['alignment']['swim_settings']['match_points'].setdefault('base', [None,None,None])
+                layer['alignment']['swim_settings']['match_points_mir'].setdefault('ref', [None,None,None])
+                layer['alignment']['swim_settings']['match_points_mir'].setdefault('base', [None,None,None])
                 try:
                     layer['alignment']['swim_settings']['match_points'] = layer['alignment'].pop('manpoints')
                 except:
@@ -1485,24 +1485,29 @@ class DataModel:
         logger.info(f"Writing manual points to project dictionary for section #{l}: {matchpoints}")
         # scale_vals  = [x for x in self.scale_vals() if x <= self.scale_val()]
         # scales      = [get_scale_key(x) for x in scale_vals]
-        glob_coords = []
+        glob_coords = [None,None,None]
         fac = self.scale_val()
-        for p in matchpoints:
-            glob_coords.append((p[0] * fac, p[1] * fac))
+        for i,p in enumerate(matchpoints):
+            if p:
+                glob_coords[i] = (p[0] * fac, p[1] * fac)
 
         # for s in self.scales():
         for s in self.finer_scales():
             # set manual points in Neuroglancer coordinate system
             fac = get_scale_val(s)
-            coords = []
-            for p in glob_coords:
-                coords.append((p[0] / fac, p[1] / fac))
+            coords = [None,None,None]
+            for i,p in enumerate(glob_coords):
+                if p:
+                    coords[i] = (p[0] / fac, p[1] / fac)
             logger.info(f'Setting manual points for {s}: {coords}')
             self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['match_points'][role] = coords
 
             # set manual points in MIR coordinate system
             img_width = self.image_size(s=s)[0]
-            mir_coords = [[img_width - pt[1], pt[0]] for pt in coords]
+            mir_coords = [None,None,None]
+            for i,p in enumerate(coords):
+                if p:
+                    mir_coords[i] = [img_width - p[1], p[0]]
             self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['match_points_mir'][role] = \
                 mir_coords
 
@@ -1525,18 +1530,18 @@ class DataModel:
     def manpoints_pretty(self, s=None, l=None):
         if s == None: s = self.scale
         if l == None: l = self.zpos
-        ref = self.manpoints()['ref']
-        base = self.manpoints()['base']
+        ref = [x for x in self.manpoints()['ref'] if x is not None]
+        base = [x for x in self.manpoints()['base'] if x is not None]
         return (['(%d, %d)' % (round(x1), round(y1)) for x1, y1 in ref],
                 ['(%d, %d)' % (round(x1), round(y1)) for x1, y1 in base])
 
-    def manpoints_rounded(self, s=None, l=None):
-        if s == None: s = self.scale
-        if l == None: l = self.zpos
-        ref = self.manpoints()['ref']
-        base = self.manpoints()['base']
-        return zip([(round(x1), round(y1)) for x1, y1 in ref],
-                [(round(x1), round(y1)) for x1, y1 in base])
+    # def manpoints_rounded(self, s=None, l=None):
+    #     if s == None: s = self.scale
+    #     if l == None: l = self.zpos
+    #     ref = self.manpoints()['ref']
+    #     base = self.manpoints()['base']
+    #     return zip([(round(x1), round(y1)) for x1, y1 in ref],
+    #             [(round(x1), round(y1)) for x1, y1 in base])
 
 
     def find_layers_with_manpoints(self, s=None) -> list:
@@ -1575,9 +1580,17 @@ class DataModel:
             mps = self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['match_points']
             # ref = [(0.5, x[0], x[1]) for x in mps['ref']]
             # base = [(0.5, x[0], x[1]) for x in mps['base']]
-            ref = [(l, x[0], x[1]) for x in mps['ref']]
-            base = [(l, x[0], x[1]) for x in mps['base']]
-            return {'ref': ref, 'base': base}
+
+            d = {'ref': [None,None,None], 'base': [None,None,None]}
+            for i in range(0,3):
+                if mps['ref'][i]:
+                    d['ref'][i] = (l, mps['ref'][i][0], mps['ref'][i][1])
+                if mps['base'][i]:
+                    d['base'][i] = (l, mps['base'][i][0], mps['base'][i][1])
+
+            # ref = [(l, x[0], x[1]) for x in mps['ref']]
+            # base = [(l, x[0], x[1]) for x in mps['base']]
+            return d
         except:
             print_exception()
             return {'ref': [], 'base': []}
@@ -1588,10 +1601,18 @@ class DataModel:
         # scales = [get_scale_key(x) for x in scale_vals]
         # for s in self.scales():
         for s in self.finer_scales():
-            self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['match_points']['ref'] = []
-            self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['match_points']['base'] = []
-            self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['match_points']['ref'] = []
-            self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['match_points']['base'] = []
+            self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['match_points']['ref'] = [None,
+                                                                                                                None,
+                                                                                                                None]
+            self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['match_points']['base'] = [None,
+                                                                                                                None,
+                                                                                                                None]
+            self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['match_points_mir']['ref'] = [None,
+                                                                                                                None,
+                                                                                                                None]
+            self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['match_points_mir']['base'] = [None,
+                                                                                                                None,
+                                                                                                                None]
 
 
     # def clearAllMps(self):
@@ -1694,11 +1715,10 @@ class DataModel:
         # return hash(str(self.cafm_list(s=s, end=l)))
         return self.cafm_hashable(s=s, end=l)
 
-    def register_cafm_hashes(self, start, end, s=None):
+    def register_cafm_hashes(self, indexes, s=None):
         logger.info('Registering cafm hashes...')
         if s == None: s = self.scale
-        # for i, layer in enumerate(self.get_iter(s)):
-        for i in range(start, end):
+        for i in indexes:
             self._data['data']['scales'][s]['stack'][i]['cafm_alignment_hash'] = self.cafm_current_hash(l=i)
 
 
@@ -2033,10 +2053,10 @@ class DataModel:
 
 
 
-    def propagate_swim_1x1_custom_px(self, start, end):
+    def propagate_swim_1x1_custom_px(self, indexes:list):
         '''Sets the SWIM Window for the Current Section across all scales.'''
         # img_w, img_h = self.image_size(s=self.scale_key)
-        for l in range(start, end):
+        for l in indexes:
             pixels = self._data['data']['scales'][self.scale]['stack'][l]['alignment']['swim_settings'][
                 'grid_custom_px_1x1']
             for s in self.finer_scales():
@@ -2084,10 +2104,10 @@ class DataModel:
         self.signals.warning2.emit()
 
 
-    def propagate_swim_2x2_custom_px(self, start, end):
+    def propagate_swim_2x2_custom_px(self, indexes:list):
         '''Returns the SWIM Window in pixels'''
         # img_w, img_h = self.image_size(s=self.scale_key)
-        for l in range(start, end):
+        for l in indexes:
             pixels = self._data['data']['scales'][self.scale]['stack'][l]['alignment']['swim_settings'][
             'grid_custom_px_2x2']
             for s in self.finer_scales(include_self=False):
@@ -2151,10 +2171,10 @@ class DataModel:
             'manual_swim_window_px'] = pixels
 
 
-    def propagate_manual_swim_window_px(self, start, end) -> None:
+    def propagate_manual_swim_window_px(self, indexes) -> None:
         '''Sets the SWIM Window for the Current Layer when using Manual Alignment.'''
         # logger.info('Propagating swim regions to finer scales...')
-        for l in range(start, end):
+        for l in indexes:
             pixels = self._data['data']['scales'][self.scale]['stack'][l]['alignment']['swim_settings'][
                 'manual_swim_window_px']
             for s in self.finer_scales():
