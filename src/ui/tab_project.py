@@ -333,7 +333,7 @@ class ProjectTab(QWidget):
         setWebengineProperties(self.MA_webengine_base)
         # self.MA_webengine_base.focusInEvent.connect(self.focusedViewerChanged)
         self.MA_webengine_base.setMouseTracking(True)
-        self.MA_webengine_base.setFocusPolicy(Qt.StrongFocus) #0726-
+        # self.MA_webengine_base.setFocusPolicy(Qt.StrongFocus) #0726-
 
 
         '''Mouse move events will occur only when a mouse button is pressed down, 
