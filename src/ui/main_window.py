@@ -940,15 +940,15 @@ class MainWindow(QMainWindow):
         except:
             print_exception()
 
-
+        indexes = list(range(start,end))
 
         try:
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(
-                    fn=cfg.thumb.reduce_aligned(start=start, end=end, dest=cfg.data.dest(), scale=scale))
+                    fn=cfg.thumb.reduce_aligned(indexes=indexes, dest=cfg.data.dest(), scale=scale))
                 self.threadpool.start(self.worker)
             else:
-                cfg.thumb.reduce_aligned(start=start, end=end, dest=cfg.data.dest(), scale=scale)
+                cfg.thumb.reduce_aligned(indexes=indexes, dest=cfg.data.dest(), scale=scale)
 
         except:
             print_exception()
@@ -956,10 +956,10 @@ class MainWindow(QMainWindow):
         try:
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(
-                    fn=cfg.thumb.reduce_matches(start=start, end=end, dest=cfg.data.dest(), scale=scale))
+                    fn=cfg.thumb.reduce_matches(indexes=indexes, dest=cfg.data.dest(), scale=scale))
                 self.threadpool.start(self.worker)
             else:
-                cfg.thumb.reduce_matches(start=start, end=end, dest=cfg.data.dest(), scale=scale)
+                cfg.thumb.reduce_matches(indexes=indexes, dest=cfg.data.dest(), scale=scale)
 
         except:
             print_exception()
@@ -1002,7 +1002,7 @@ class MainWindow(QMainWindow):
     #     self.updateEnabledButtons()
     #     self.sw_pbar.hide()
 
-    def present_snr_results(self, start=0, end=None):
+    def present_snr_results(self, indexes):
         try:
             if cfg.data.is_aligned():
                 logger.info('Alignment seems successful')
@@ -1010,7 +1010,8 @@ class MainWindow(QMainWindow):
                 self.warn('Something Went Wrong')
             logger.info('Calculating SNR Diff Values...')
             diff_avg = cfg.data.snr_average() - cfg.data.snr_prev_average()
-            delta_list = cfg.data.delta_snr_list()[start:end]
+            delta_snr_list = cfg.data.delta_snr_list()
+            delta_list = [delta_snr_list[i] for i in indexes]
             no_chg = [i for i, x in enumerate(delta_list) if x == 0]
             pos = [i for i, x in enumerate(delta_list) if x > 0]
             neg = [i for i, x in enumerate(delta_list) if x < 0]
@@ -1085,7 +1086,7 @@ class MainWindow(QMainWindow):
 
 
 
-    def onAlignmentEnd(self, start, end):
+    def onAlignmentEnd(self, indexes):
         logger.info('Running Post-Alignment Tasks...')
         # self.alignmentFinished.emit()
         t0 = time.time()
@@ -1093,7 +1094,7 @@ class MainWindow(QMainWindow):
             if self._isProjectTab():
                 self.setNoPbarMessage(False)
                 self.updateEnabledButtons()
-                self.present_snr_results(start=start, end=end)
+                self.present_snr_results(indexes)
                 self.dataUpdateWidgets()
                 self._showSNRcheck()
                 cfg.project_tab.updateTimingsWidget()
@@ -1144,104 +1145,97 @@ class MainWindow(QMainWindow):
                 self.dataUpdateWidgets()
                 self.alignAll(set_pbar=False)
 
-            self.onAlignmentEnd()
+            self.onAlignmentEnd(indexes=range(0,len(cfg.data)))
 
-    def alignRange(self, start=None, end=None):
-        cfg.ignore_pbar = False
-        if start == None:
-            start = int(self.startRangeInput.text())
-        if end == None:
-            end = int(self.endRangeInput.text()) + 1
-        if cfg.pt._toggleAutogenerate.isChecked():
-            self.showZeroedPbar(set_n_processes=4)
-        else:
-            self.showZeroedPbar(set_n_processes=2)
-        self.hidePbar()
-        cfg.nProcessDone = 0
-        cfg.CancelProcesses = False
-        # cfg.event = multiprocessing.Event()
-        self.tell('Re-aligning Sections #%d through #%d (%s)...' %
-                  (start, end, cfg.data.scale_pretty()))
-        self.align(
-            scale=cfg.data.scale_key,
-            start=start,
-            end=end,
-            renew_od=False,
-            reallocate_zarr=False,
-            # stageit=False,
-            stageit=False,
-        )
+    # def alignRange(self, start=None, end=None):
+    #     cfg.ignore_pbar = False
+    #     if start == None:
+    #         start = int(self.startRangeInput.text())
+    #     if end == None:
+    #         end = int(self.endRangeInput.text()) + 1
+    #     if cfg.pt._toggleAutogenerate.isChecked():
+    #         self.showZeroedPbar(set_n_processes=4)
+    #     else:
+    #         self.showZeroedPbar(set_n_processes=2)
+    #     self.hidePbar()
+    #     cfg.nProcessDone = 0
+    #     cfg.CancelProcesses = False
+    #     # cfg.event = multiprocessing.Event()
+    #     self.tell('Re-aligning Sections #%d through #%d (%s)...' %
+    #               (start, end, cfg.data.scale_pretty()))
+    #     self.align(
+    #         scale=cfg.data.scale_key,
+    #         start=start,
+    #         end=end,
+    #         renew_od=False,
+    #         reallocate_zarr=False,
+    #         # stageit=False,
+    #         stageit=False,
+    #     )
+    #
+    #     self.onAlignmentEnd(start=start, end=end)
+    #     cfg.project_tab.initNeuroglancer()
 
-        self.onAlignmentEnd(start=start, end=end)
-        cfg.project_tab.initNeuroglancer()
-
-    def alignForward(self):
-        cfg.ignore_pbar = False
-        start = cfg.data.zpos
-        end = cfg.data.count
-        if cfg.pt._toggleAutogenerate.isChecked():
-            self.showZeroedPbar(set_n_processes=4)
-        else:
-            self.showZeroedPbar(set_n_processes=2)
-        self.hidePbar()
-        cfg.nProcessDone = 0
-        cfg.CancelProcesses = False
-        # cfg.event = multiprocessing.Event()
-        self.tell('Re-aligning Sections #%d through #%d (%s)...' %
-                  (start, end, cfg.data.scale_pretty()))
-        self.align(
-            scale=cfg.data.scale_key,
-            start=start,
-            end=end,
-            renew_od=False,
-            reallocate_zarr=False,
-            # stageit=False,
-            stageit=False,
-        )
-        self.onAlignmentEnd(start=start, end=end)
-        cfg.project_tab.initNeuroglancer()
+    # def alignForward(self):
+    #     cfg.ignore_pbar = False
+    #     start = cfg.data.zpos
+    #     end = cfg.data.count
+    #     if cfg.pt._toggleAutogenerate.isChecked():
+    #         self.showZeroedPbar(set_n_processes=4)
+    #     else:
+    #         self.showZeroedPbar(set_n_processes=2)
+    #     self.hidePbar()
+    #     cfg.nProcessDone = 0
+    #     cfg.CancelProcesses = False
+    #     # cfg.event = multiprocessing.Event()
+    #     self.tell('Re-aligning Sections #%d through #%d (%s)...' %
+    #               (start, end, cfg.data.scale_pretty()))
+    #     self.align(
+    #         scale=cfg.data.scale_key,
+    #         start=start,
+    #         end=end,
+    #         renew_od=False,
+    #         reallocate_zarr=False,
+    #         # stageit=False,
+    #         stageit=False,
+    #     )
+    #     self.onAlignmentEnd(start=start, end=end)
+    #     cfg.project_tab.initNeuroglancer()
 
     # def alignOne(self, stageit=False):
-    def alignOne(self, quick_swim=False):
+    def alignOne(self, index=None, quick_swim=False):
         logger.critical('Aligning One...')
         self.tell('Re-aligning Section #%d (%s)...' %
                   (cfg.data.zpos, cfg.data.scale_pretty()))
-        start = cfg.data.zpos
-        end = cfg.data.zpos + 1
+        if index == None:
+            index = cfg.data.zpos
         cfg.nProcessDone = 0
         cfg.nProcessSteps = 1
         if quick_swim:
             cfg.ignore_pbar = True
         self.align(
             scale=cfg.data.scale_key,
-            start=start,
-            end=end,
+            indexes=[index],
             renew_od=False,
             reallocate_zarr=False,
-            # stageit=stageit,
-            stageit=False,
             align_one=True,
             swim_only=True,
         )
         self._working = False
-
 
         # 0614-
         if quick_swim:
             cfg.ignore_pbar = False
             self.updateEnabledButtons()
             self.enableAllTabs()
-            # if self._isProjectTab():
-            #     if self.dw_snr.isVisible():
-            #         cfg.project_tab.dSnr_plot.initSnrPlot()
             self.dataUpdateWidgets()
         else:
-            self.onAlignmentEnd(start=start, end=end)  # 0601+ why was this uncommented?
+            self.onAlignmentEnd([index])
             cfg.project_tab.initNeuroglancer()
 
-        self.tell('Section #%d Alignment Complete' % start)
+        self.tell('Section #%d Alignment Complete' % index)
         self.tell('SNR Before: %.3f  SNR After: %.3f' %
-                  (cfg.data.snr_prev(l=start), cfg.data.snr(l=start)))
+                  (cfg.data.snr_prev(l=index), cfg.data.snr(l=index)))
 
     #0802-
     # def alignGenerateOne(self):
@@ -1296,29 +1290,29 @@ class MainWindow(QMainWindow):
         #         self.showZeroedPbar(set_n_processes=2)
         #     self.hidePbar()
 
+        indexes = list(range(0,len(cfg.data)))
+
         cfg.CancelProcesses = False
         # cfg.event = multiprocessing.Event()
         cfg.data.set_has_bb(cfg.data.use_bb())  # Critical, also see regenerate
         self.align(
             scale=cfg.data.scale_key,
-            start=0,
-            end=None,
+            indexes=indexes,
             renew_od=True,
             reallocate_zarr=True,
-            # stageit=stageit,
-            stageit=False,
             ignore_bb=ignore_bb,
             use_gui=use_gui
         )
         # if not cfg.CancelProcesses:
         #     self.present_snr_results()
 
-        self.onAlignmentEnd(start=0, end=None)
+        self.onAlignmentEnd(indexes)
         cfg.project_tab.initNeuroglancer()
 
 
 
-    def align(self, scale, start, end, renew_od, reallocate_zarr, stageit, align_one=False, swim_only=False, ignore_bb=False, show_pbar=True, use_gui=True):
+    def align(self, scale, indexes, renew_od, reallocate_zarr, stageit, align_one=False, swim_only=False,
+              ignore_bb=False, show_pbar=True, use_gui=True):
         # Todo change printout based upon alignment scope, i.e. for single layer
         # caller = inspect.stack()[1].function
         # if caller in ('alignGenerateOne','alignOne'):
@@ -1326,16 +1320,9 @@ class MainWindow(QMainWindow):
         self.onAlignmentStart(scale=scale)
         self.tell("%s Affines (%s)..." % (('Initializing', 'Refining')[cfg.data.isRefinement()], cfg.data.scale_pretty(s=scale)))
 
-
-        logger.info(f'Aligning start:{start} -> end: {end}, {cfg.data.scale_pretty(scale)}...')
-        self.tell(f'Alignment start:{start} -> end: {end}, {cfg.data.scale_pretty(scale)}...')
+        logger.info(f'Aligning indexes:{indexes}, {cfg.data.scale_pretty(scale)}...')
 
         # self.shutdownNeuroglancer()
-
-        # cafms_before = cfg.data.cafm_list()
-
-        if end == None:
-            end = len(cfg.data)
 
         # self.onAlignmentStart(scale=scale)
         # self.tell("%s Affines (%s)..." % (('Initializing', 'Refining')[cfg.data.isRefinement()], cfg.data.scale_pretty(s=scale)))
@@ -1350,11 +1337,11 @@ class MainWindow(QMainWindow):
         try:
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(
-                    fn=ComputeAffines(scale, path=None, start=start, end=end, swim_only=swim_only, renew_od=renew_od,
+                    fn=ComputeAffines(scale, path=None, indexes=indexes, swim_only=swim_only, renew_od=renew_od,
                                       reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=use_gui, dm=cfg.data))
                 self.threadpool.start(self.worker)
             else:
-                ComputeAffines(scale, path=None, start=start, end=end, swim_only=swim_only, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=use_gui, dm=cfg.data)
+                ComputeAffines(scale, path=None, indexes=indexes, swim_only=swim_only, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=use_gui, dm=cfg.data)
         except:
             print_exception()
             self.err('An Exception Was Raised During Alignment.')
@@ -1364,10 +1351,10 @@ class MainWindow(QMainWindow):
         try:
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(
-                    fn=cfg.thumb.reduce_matches(start=start, end=end, dest=cfg.data.dest(), scale=scale))
+                    fn=cfg.thumb.reduce_matches(indexes=indexes, dest=cfg.data.dest(), scale=scale))
                 self.threadpool.start(self.worker)
             else:
-                cfg.thumb.reduce_matches(start=start, end=end, dest=cfg.data.dest(), scale=scale)
+                cfg.thumb.reduce_matches(indexes=indexes, dest=cfg.data.dest(), scale=scale)
 
         except:
             print_exception()
@@ -3677,8 +3664,10 @@ class MainWindow(QMainWindow):
             cfg.pt.initNeuroglancer(init_all=True)
             # if self._is_initialized:
             try:
-                cfg.emViewer = cfg.project_tab.viewer
-                cfg.baseViewer = cfg.project_tab.baseViewer
+                if cfg.emViewer:
+                    cfg.emViewer = cfg.project_tab.viewer
+                if cfg.baseViewer:
+                    cfg.baseViewer = cfg.project_tab.baseViewer
             except:
                 print_exception()
             self.dw_thumbs.setWidget(cfg.pt.tn_widget)
@@ -4819,7 +4808,7 @@ class MainWindow(QMainWindow):
         self._btn_alignForward.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self._btn_alignForward.setEnabled(False)
         self._btn_alignForward.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._btn_alignForward.clicked.connect(self.alignForward)
+        # self._btn_alignForward.clicked.connect(self.alignForward)
 
         self.startRangeInput = QLineEdit()
         self.startRangeInput.setMaximumWidth(64)
@@ -4845,7 +4834,7 @@ class MainWindow(QMainWindow):
         self._btn_alignRange.setEnabled(False)
         self._btn_alignRange.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._btn_alignRange.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        self._btn_alignRange.clicked.connect(self.alignRange)
+        # self._btn_alignRange.clicked.connect(self.alignRange)
 
         tip = """Do NOT align, only generate new output images for all sections based on the cumulative affine and output settings"""
         self._btn_regenerate = QPushButton('Regenerate All')
