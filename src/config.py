@@ -14,8 +14,8 @@ LOOP = None
 
 
 max_downsampling=2048 #default=64
-max_downsampled_size=2048 #default=128
-max_downsampling_scales=1
+max_downsampled_size=8192 #default=128
+# max_downsampling_scales=1
 """
 DEFAULT_MAX_DOWNSAMPLING = 64
 DEFAULT_MAX_DOWNSAMPLED_SIZE = 128
