@@ -13,7 +13,7 @@ VERSION = '0.5.49'
 LOOP = None
 
 
-max_downsampling=1
+max_downsampling=1024
 max_downsampled_size=1
 max_downsampling_scales=1
 LOG_LEVEL = 1

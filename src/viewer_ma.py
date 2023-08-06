@@ -396,9 +396,9 @@ class MAViewer(neuroglancer.Viewer):
                 self.drawSWIMwindow(z=self.index) #NeedThis #0803
                 cfg.data.zpos = self.index
 
-        if cfg.data.scale_val() > 2:
-            if self.state.relative_display_scales == None:
-                self.set_zmag()
+        # if cfg.data.scale_val() > 2:
+        #     if self.state.relative_display_scales == None:
+        #         self.set_zmag()
 
         self._blockStateChanged = False
 
