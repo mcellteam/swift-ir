@@ -92,16 +92,15 @@ class SnrPlot(QWidget):
         self._skip_lines = []
         self._skip_labels = []
         self._error_bars = {}
-        self.pt_selected = None
+        # self.pt_selected = None
 
         # self.spw = pg.ScatterPlotWidget() #Todo switch to scatter plot widget for greater interactivity
 
-        self._plot_colors = ['#FEFE62', '#40B0A6', '#D41159',
-                             '#E66100', '#1AFF1A', '#FFC20A',
-                             '#66FF00', '#8c001a', '#08E8DE',
-                             '#56768e', '#2CBFF7', '#c7b286',
+        self._plot_colors = ['#2CBFF7', '#FEFE62', '#c9cbd0',
+                             '#ff9a00', '#fbd771', '#1AFF1A',
+                             '#56768e', '#8c001a', '#08E8DE',
                              '#FF007F', '#376d58', '#f46c60',
-                             '#c9cbd0', '#fbd771', '#ff9a00'
+                             '#D41159', '#66FF00', '#E66100'
                              ]
 
         self._plot_brushes = [pg.mkBrush(c) for c in self._plot_colors]
@@ -553,43 +552,15 @@ class SnrPlot(QWidget):
             except:
                 print_exception()
 
+
+    def onSnrClick(self, _, points):
+        cfg.data.zpos = int(points[0].pos()[0])
+
+
     def onSnrClick2(self, scale):
         # logger.info(f'onSnrClick2 ({scale_key}):')
         self.selected_scale = scale
         cfg.main_window._changeScaleCombo.setCurrentText(scale)
-
-
-    # def onSnrClick(self, plot, points, scale_key):
-    def onSnrClick(self, plot, points):
-        logger.info(f'onSnrClick')
-        logger.info(f"self.pt_selected = {self.pt_selected}")
-        # if self.pt_selected:
-        #     try:    self.pt_selected.resetPen()
-        #     except: print_exception()
-        #     try:    self.pt_selected.resetBrush()
-        #     except: print_exception()
-        #     try:    self.pt_selected.setSymbol('o')
-        #     except: print_exception()
-
-        index = int(points[0].pos()[0])
-        logger.info(f'index = {index}')
-        index = int(index)
-        if index in range(len(cfg.data)):
-            snr = float(points[0].pos()[1])
-            self.pt_selected = points[0] # just allow one point clicked
-            cfg.main_window.hud.post('Jumping to Section #%d (SNR: %.3f)' % (index, snr))
-            clickedPen = pg.mkPen({'background-color': "#FF0000", 'width': 1})
-
-            self.pt_selected.setBrush(pg.mkBrush('#f3f6fb'))
-            self.pt_selected.setPen(clickedPen)
-            self.pt_selected.setSymbol('s')
-
-            cfg.data.zpos = index
-            self.updateLayerLinePos()
-
-        else:
-            logger.warning('Invalid Index: %d' %index)
-
 
 
     def sizeHint(self):

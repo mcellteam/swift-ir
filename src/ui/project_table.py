@@ -15,7 +15,6 @@ from qtpy.QtCore import Qt, QRect, QAbstractTableModel, Signal, QEvent, QRunnabl
 from qtpy.QtGui import QPainter, QPixmap, QImage
 from src.ui.thumbnail import ThumbnailFast, CorrSignalThumbnail
 from src.ui.layouts import VBL, HBL, VWidget, HWidget
-from src.ui.timer import Timer
 from src.helpers import print_exception
 import qtawesome as qta
 
@@ -162,8 +161,6 @@ class ProjectTable(QWidget):
 
         self.wTable.hide()
         t = time.time()
-        timer = Timer()
-        timer.start()
         caller = inspect.stack()[1].function
         logger.info(f'')
         # cfg.main_window.tell('Updating Table Data...')
@@ -188,8 +185,6 @@ class ProjectTable(QWidget):
         except:
             print_exception()
         finally:
-            timer.report()
-
             self.btn_splash_load_table.setText("Load Table")
 
             self.updateTableTitle()
@@ -207,7 +202,6 @@ class ProjectTable(QWidget):
             # cur_selection = self.table.currentIndex().row()
 
             self.table.update()
-            timer.report()
             self.wTable.show()
 
             logger.info('Data table finished loading.')
@@ -524,7 +518,6 @@ class ProjectTable(QWidget):
                 cfg.emViewer.set_layer(cfg.data.zpos)
             elif cfg.pt._tabs.currentIndex() == 1:
                 cfg.baseViewer.set_layer(cfg.data.zpos)
-                cfg.refViewer.set_layer(cfg.data.get_ref_index(l=cfg.data.zpos))
 
     # btn.clicked.connect(lambda state, x=zpos: self.jump_to_manual(x))
 

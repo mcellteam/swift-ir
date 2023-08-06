@@ -485,8 +485,10 @@ class EMViewer(AbstractEMViewer):
             volume_type='image',
             data=self.store[:, :, :],
             dimensions=self.coordinate_space,
-            # voxel_offset=[0, ] * 3,
-            # voxel_offset=[.5, ] * 3,
+            # max_voxels_per_chunk_log2=1024
+            # max_downsampling=1,
+            # max_downsampled_size=1,
+            # max_downsampling_scales=1 #Goes a LOT slower when set to 1
         )
 
 

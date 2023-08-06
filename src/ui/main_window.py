@@ -347,6 +347,7 @@ class MainWindow(QMainWindow):
                 self._getTabObject().browser.page().triggerAction(QWebEnginePage.Reload)
             elif self._getTabType() == 'QWebEngineView':
                 self.globTabs.currentWidget().reload()
+            self.updateEnabledButtons()
             self.hud.done()
         else:
             self.warn('The application is busy')
@@ -422,7 +423,8 @@ class MainWindow(QMainWindow):
                     if 'tab_project.WebEngine' in str(self.focusWidget().parent()):
                         self.setFocus()
                 except:
-                    pass
+                    print_exception()
+                    # pass
         self.printFocusTimer.timeout.connect(fn)
         self.printFocusTimer.start()
 
@@ -1558,47 +1560,47 @@ class MainWindow(QMainWindow):
                 # self._btn_alignAll.setText('Align All')
                 self._btn_alignAll.setEnabled(True)
                 self._btn_alignOne.setEnabled(True)
-                self._btn_alignForward.setEnabled(True)
-                self._btn_alignRange.setEnabled(True)
-                self._btn_regenerate.setEnabled(True)
-                self.startRangeInput.setEnabled(True)
-                self.endRangeInput.setEnabled(True)
+                # self._btn_alignForward.setEnabled(True)
+                # self._btn_alignRange.setEnabled(True)
+                # self._btn_regenerate.setEnabled(True)
+                # self.startRangeInput.setEnabled(True)
+                # self.endRangeInput.setEnabled(True)
 
             elif cfg.data.is_alignable():
                 self._btn_alignAll.setEnabled(True)
                 self._btn_alignOne.setEnabled(False)
-                self._btn_alignForward.setEnabled(False)
-                self._btn_alignRange.setEnabled(False)
-                self._btn_regenerate.setEnabled(False)
-                self.startRangeInput.setEnabled(False)
-                self.endRangeInput.setEnabled(False)
+                # self._btn_alignForward.setEnabled(False)
+                # self._btn_alignRange.setEnabled(False)
+                # self._btn_regenerate.setEnabled(False)
+                # self.startRangeInput.setEnabled(False)
+                # self.endRangeInput.setEnabled(False)
             else:
                 self._btn_alignAll.setEnabled(False)
                 self._btn_alignOne.setEnabled(False)
-                self._btn_alignForward.setEnabled(False)
-                self._btn_alignRange.setEnabled(False)
-                self._btn_regenerate.setEnabled(False)
-                self.startRangeInput.setEnabled(False)
-                self.endRangeInput.setEnabled(False)
+                # self._btn_alignForward.setEnabled(False)
+                # self._btn_alignRange.setEnabled(False)
+                # self._btn_regenerate.setEnabled(False)
+                # self.startRangeInput.setEnabled(False)
+                # self.endRangeInput.setEnabled(False)
             if len(cfg.data.scales()) == 1:
                 self._scaleUpButton.setEnabled(False)
                 self._scaleDownButton.setEnabled(False)
                 if cfg.data.is_aligned():
                     self._btn_alignAll.setEnabled(True)
                     self._btn_alignOne.setEnabled(True)
-                    self._btn_alignForward.setEnabled(True)
-                    self._btn_alignRange.setEnabled(True)
-                    self._btn_regenerate.setEnabled(True)
-                    self.startRangeInput.setEnabled(True)
-                    self.endRangeInput.setEnabled(True)
+                    # self._btn_alignForward.setEnabled(True)
+                    # self._btn_alignRange.setEnabled(True)
+                    # self._btn_regenerate.setEnabled(True)
+                    # self.startRangeInput.setEnabled(True)
+                    # self.endRangeInput.setEnabled(True)
                 else:
                     self._btn_alignAll.setEnabled(True)
                     self._btn_alignOne.setEnabled(False)
-                    self._btn_alignForward.setEnabled(False)
-                    self._btn_alignRange.setEnabled(False)
-                    self._btn_regenerate.setEnabled(False)
-                    self.startRangeInput.setEnabled(False)
-                    self.endRangeInput.setEnabled(False)
+                    # self._btn_alignForward.setEnabled(False)
+                    # self._btn_alignRange.setEnabled(False)
+                    # self._btn_regenerate.setEnabled(False)
+                    # self.startRangeInput.setEnabled(False)
+                    # self.endRangeInput.setEnabled(False)
             else:
                 cur_index = self._changeScaleCombo.currentIndex()
                 if cur_index == 0:
@@ -1615,11 +1617,11 @@ class MainWindow(QMainWindow):
             self._scaleDownButton.setEnabled(False)
             self._btn_alignAll.setEnabled(False)
             self._btn_alignOne.setEnabled(False)
-            self._btn_alignForward.setEnabled(False)
-            self._btn_alignRange.setEnabled(False)
-            self._btn_regenerate.setEnabled(False)
-            self.startRangeInput.setEnabled(False)
-            self.endRangeInput.setEnabled(False)
+            # self._btn_alignForward.setEnabled(False)
+            # self._btn_alignRange.setEnabled(False)
+            # self._btn_regenerate.setEnabled(False)
+            # self.startRangeInput.setEnabled(False)
+            # self.endRangeInput.setEnabled(False)
 
 
     def layer_left(self):
@@ -1827,7 +1829,6 @@ class MainWindow(QMainWindow):
             elif cfg.pt._tabs.currentIndex() == 1:
 
                 cfg.pt.set_transforming()
-                # cfg.refViewer.set_layer()
 
                 # if cfg.data['state']['tra_ref_toggle']:
                 #     cfg.pt.set_transforming()
@@ -1845,6 +1846,8 @@ class MainWindow(QMainWindow):
                     except:
                         cfg.pt.cl_ref.setText(f'Null (Reference)')
                 cfg.project_tab.dataUpdateMA()
+                if cfg.data.method() in ('manual-hint','manual-strict'):
+                    cfg.pt.update_MA_list_widgets()
                 self.updateCafmComportsLabel()
                 self.updateDataComportsLabel()
 
@@ -2401,6 +2404,8 @@ class MainWindow(QMainWindow):
                 self._unsaved_changes = False
             except:
                 self.warn('Unable To Save')
+                print_exception()
+
             else:
                 self.hud.done()
 
@@ -2734,16 +2739,9 @@ class MainWindow(QMainWindow):
         # logger.info('')
         if self._isProjectTab():
             if cfg.data['state']['current_tab'] == 1:
-                if cfg.data['state']['tra_ref_toggle']:
-                    new_cs_scale = cfg.baseViewer.zoom() * 1.1
-                    logger.info(f'new_cs_scale: {new_cs_scale}')
-                    cfg.baseViewer.set_zoom(new_cs_scale)
-                    cfg.refViewer.set_zoom(new_cs_scale)
-                else:
-                    new_cs_scale = cfg.refViewer.zoom() * 1.1
-                    logger.info(f'new_cs_scale: {new_cs_scale}')
-                    cfg.refViewer.set_zoom(new_cs_scale)
-                    cfg.baseViewer.set_zoom(new_cs_scale)
+                new_cs_scale = cfg.baseViewer.zoom() * 1.1
+                logger.info(f'new_cs_scale: {new_cs_scale}')
+                cfg.baseViewer.set_zoom(new_cs_scale)
                 cfg.project_tab.zoomSlider.setValue(1 / new_cs_scale)
             elif cfg.data['state']['current_tab'] == 0:
                 new_cs_scale = cfg.emViewer.zoom() * 1.1
@@ -2758,14 +2756,9 @@ class MainWindow(QMainWindow):
 
         if self._isProjectTab():
             if cfg.data['state']['current_tab'] == 1:
-                if cfg.data['state']['tra_ref_toggle']:
-                    new_cs_scale = cfg.baseViewer.zoom() * 0.9
-                    logger.info(f'new_cs_scale: {new_cs_scale}')
-                    cfg.baseViewer.set_zoom(new_cs_scale)
-                else:
-                    new_cs_scale = cfg.refViewer.zoom() * 0.9
-                    logger.info(f'new_cs_scale: {new_cs_scale}')
-                    cfg.refViewer.set_zoom(new_cs_scale)
+                new_cs_scale = cfg.baseViewer.zoom() * 0.9
+                logger.info(f'new_cs_scale: {new_cs_scale}')
+                cfg.baseViewer.set_zoom(new_cs_scale)
                 cfg.project_tab.zoomSlider.setValue(1 / new_cs_scale)
             elif cfg.data['state']['current_tab'] == 0:
                 new_cs_scale = cfg.emViewer.zoom() * 0.9
@@ -3012,7 +3005,6 @@ class MainWindow(QMainWindow):
     def onMAsyncTimer(self):
         logger.critical("")
         logger.critical(f"cfg.data.zpos         = {cfg.data.zpos}")
-        logger.critical(f"cfg.refViewer.index   = {cfg.refViewer.index}")
         logger.critical(f"cfg.baseViewer.index  = {cfg.baseViewer.index}")
 
     def clear_match_points(self):
@@ -3686,10 +3678,9 @@ class MainWindow(QMainWindow):
             # if self._is_initialized:
             try:
                 cfg.emViewer = cfg.project_tab.viewer
-                cfg.refViewer = cfg.project_tab.refViewer
                 cfg.baseViewer = cfg.project_tab.baseViewer
             except:
-                pass
+                print_exception()
             self.dw_thumbs.setWidget(cfg.pt.tn_widget)
             self.dw_matches.setWidget(cfg.pt.match_widget)
             self.dw_snr.setWidget(cfg.pt.dSnr_plot)
@@ -4341,6 +4332,7 @@ class MainWindow(QMainWindow):
             try:
                 log = json.dumps(cfg.webdriver.get_log(), indent=2)
             except:
+                print_exception()
                 log = 'Webdriver is offline.'
             self.menuTextWebdriverLog.setText(log)
 
@@ -4358,6 +4350,7 @@ class MainWindow(QMainWindow):
             try:
                 log = json.dumps(cfg.webdriver.get_log(), indent=2)
             except:
+                print_exception()
                 log = 'Webdriver is offline.'
             self.menuTextWebdriverLog.setText(log)
 
@@ -4870,13 +4863,7 @@ class MainWindow(QMainWindow):
         self.w_range.layout.setAlignment(Qt.AlignHCenter)
         self.w_range.layout.setSpacing(2)
 
-        self.newActionsWidget = HWidget(
-                                        self._btn_alignOne,
-                                        # self._btn_alignForward,
-                                        # self.w_range,
-                                        self._btn_alignAll,
-                                        # self._btn_regenerate
-                                        )
+        self.newActionsWidget = HWidget(self._btn_alignAll, self._btn_alignOne)
         self.newActionsWidget.layout.setSpacing(4)
         self.newActionsWidget.setStyleSheet("font-size: 10px; font-weight: 600;")
 
@@ -5914,9 +5901,7 @@ class MainWindow(QMainWindow):
             if self._isProjectTab():
                 # self.setUpdatesEnabled(False)
                 if cfg.pt._tabs.currentIndex() == 1:
-                    logger.critical(f"Slash pressed [sw {cfg.pt.sw_alignment_editor.currentIndex()}] tra_ref_toggle=["
-                                    f"{cfg.data['state']['tra_ref_toggle']}]")
-                    # logger.info(f"Qt.Key_Slash was pressed, tra_ref_toggle={cfg.data['state']['tra_ref_toggle']}")
+                    logger.critical(f"Slash pressed tra_ref_toggle=[{cfg.data['state']['tra_ref_toggle']}]")
                     if cfg.data['state']['tra_ref_toggle'] == 1:
                         cfg.pt.set_reference()
                     else:

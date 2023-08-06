@@ -1503,7 +1503,7 @@ class DataModel:
             # set manual points in MIR coordinate system
             img_width = self.image_size(s=s)[0]
             mir_coords = [[img_width - pt[1], pt[0]] for pt in coords]
-            self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['match_points'][role] = \
+            self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['match_points_mir'][role] = \
                 mir_coords
 
             # if role == 'base':
@@ -1520,7 +1520,7 @@ class DataModel:
         '''Returns manual correspondence points in MIR format'''
         if s == None: s = self.scale
         if l == None: l = self.zpos
-        return self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['match_points'][role]
+        return self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['match_points_mir'][role]
 
     def manpoints_pretty(self, s=None, l=None):
         if s == None: s = self.scale
