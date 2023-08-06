@@ -247,7 +247,9 @@ class MAViewer(neuroglancer.Viewer):
             data=self.store[:, :, :],
             dimensions=self.coordinate_space,
             voxel_offset=[0, 0, 0],
-            # downsampling
+            max_downsampling=cfg.max_downsampling,
+            max_downsampled_size=cfg.max_downsampled_size,
+            max_downsampling_scales=cfg.max_downsampling_scales  # Goes a LOT slower when set to 1
         )
 
 
