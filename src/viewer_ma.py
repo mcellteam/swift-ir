@@ -247,9 +247,10 @@ class MAViewer(neuroglancer.Viewer):
             data=self.store[:, :, :],
             dimensions=self.coordinate_space,
             voxel_offset=[0, 0, 0],
-            max_downsampling=cfg.max_downsampling,
-            max_downsampled_size=cfg.max_downsampled_size,
-            max_downsampling_scales=cfg.max_downsampling_scales  # Goes a LOT slower when set to 1
+
+            # max_downsampling=cfg.max_downsampling,
+            # max_downsampled_size=cfg.max_downsampled_size,
+            # max_downsampling_scales=cfg.max_downsampling_scales  # Goes a LOT slower when set to 1
         )
 
 
@@ -257,7 +258,8 @@ class MAViewer(neuroglancer.Viewer):
             s.layout.type = 'yz'
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
-            s.show_scale_bar = False
+            # s.show_scale_bar = False
+            s.show_scale_bar = True
             s.show_axis_lines = False
             s.show_default_annotations = getData('state,show_bounds')
             s.projectionScale = 1

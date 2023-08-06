@@ -498,9 +498,10 @@ class EMViewer(AbstractEMViewer):
             # max_voxels_per_chunk_log2=1024
             downsampling=None, # '3d' to use isotropic downsampling, '2d' to downsample separately in XY, XZ, and YZ,
             # None to use no downsampling.
-            max_downsampling=cfg.max_downsampling,
-            max_downsampled_size=cfg.max_downsampled_size,
-            max_downsampling_scales=cfg.max_downsampling_scales #Goes a LOT slower when set to 1
+
+            # max_downsampling=cfg.max_downsampling,
+            # max_downsampled_size=cfg.max_downsampled_size,
+            # max_downsampling_scales=cfg.max_downsampling_scales #Goes a LOT slower when set to 1
         )
 
 
@@ -509,8 +510,9 @@ class EMViewer(AbstractEMViewer):
             # s.gpu_memory_limit = -1
             # s.system_memory_limit = -1
             # s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
-            if cfg.data.scale_val() < 6:
-                s.show_scale_bar = True
+            # if cfg.data.scale_val() < 6:
+            #     s.show_scale_bar = True
+            s.show_scale_bar = True
             s.show_axis_lines = getData('state,show_axes')
             s.position=[cfg.data.zpos + 0.5, self.store.shape[1]/2, self.store.shape[2]/2]
             s.layers['layer'] = ng.ImageLayer( source=cfg.LV, shader=cfg.data['rendering']['shader'], )
