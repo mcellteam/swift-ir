@@ -277,7 +277,10 @@ class MAViewer(neuroglancer.Viewer):
         # self.actions.add('swim', self.blinkCallback)
 
         with self.config_state.txn() as s:
-            s.input_event_bindings.slice_view['shift+click0'] = 'add_manpoint'
+            # s.input_event_bindings.slice_view['shift+click0'] = 'add_manpoint'
+            # s.input_event_bindings.slice_view['mousedown0'] = 'add_manpoint' #this works
+            # s.input_event_bindings.slice_view['at:control+mousedown0'] = 'add_manpoint'
+            s.input_event_bindings.slice_view['dblclick0'] = 'add_manpoint'
             s.input_event_bindings.viewer['keys'] = 'swim'
             s.show_ui_controls = False
             # s.show_ui_controls = True
