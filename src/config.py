@@ -13,9 +13,14 @@ VERSION = '0.5.49'
 LOOP = None
 
 
-max_downsampling=1024
-max_downsampled_size=1
+max_downsampling=512 #default=64
+max_downsampled_size=1024 #default=128
 max_downsampling_scales=1
+"""
+DEFAULT_MAX_DOWNSAMPLING = 64
+DEFAULT_MAX_DOWNSAMPLED_SIZE = 128
+DEFAULT_MAX_DOWNSAMPLING_SCALES = float('inf')        
+"""
 LOG_LEVEL = 1
 DEBUG_MP = 0
 # DEBUG_MP = (False,True)[DEV_MODE]

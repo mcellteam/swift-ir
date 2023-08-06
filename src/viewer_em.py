@@ -491,6 +491,12 @@ class EMViewer(AbstractEMViewer):
             downsampling – '3d' to use isotropic downsampling, '2d' to downsample separately in XY, XZ, and YZ, None to use no downsampling.
             max_downsampling – Maximum amount by which on-the-fly downsampling may reduce the volume of a chunk. For example, 4x4x4 downsampling reduces the volume by 64"""
 
+
+        """
+        DEFAULT_MAX_DOWNSAMPLING = 64
+        DEFAULT_MAX_DOWNSAMPLED_SIZE = 128
+        DEFAULT_MAX_DOWNSAMPLING_SCALES = float('inf')        
+        """
         cfg.LV = ng.LocalVolume(
             volume_type='image',
             data=self.store[:, :, :],
@@ -499,8 +505,8 @@ class EMViewer(AbstractEMViewer):
             downsampling=None, # '3d' to use isotropic downsampling, '2d' to downsample separately in XY, XZ, and YZ,
             # None to use no downsampling.
 
-            # max_downsampling=cfg.max_downsampling,
-            # max_downsampled_size=cfg.max_downsampled_size,
+            max_downsampling=cfg.max_downsampling,
+            max_downsampled_size=cfg.max_downsampled_size,
             # max_downsampling_scales=cfg.max_downsampling_scales #Goes a LOT slower when set to 1
         )
 
