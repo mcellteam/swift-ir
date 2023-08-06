@@ -2637,7 +2637,7 @@ class MainWindow(QMainWindow):
 
         # webengine = QWebEngineView()
         webengine = WebEngine(ID=ID)
-        webengine.setFocusPolicy(Qt.StrongFocus)
+        # webengine.setFocusPolicy(Qt.StrongFocus)
         webengine.setHtml(html, baseUrl=QUrl.fromLocalFile(os.getcwd() + os.path.sep))
         webengine.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
         webengine.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
