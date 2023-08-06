@@ -486,9 +486,9 @@ class EMViewer(AbstractEMViewer):
             data=self.store[:, :, :],
             dimensions=self.coordinate_space,
             # max_voxels_per_chunk_log2=1024
-            max_downsampling=1,
-            # max_downsampled_size=1,
-            # max_downsampling_scales=1 #Goes a LOT slower when set to 1
+            max_downsampling=cfg.max_downsampling,
+            max_downsampled_size=cfg.max_downsampled_size,
+            max_downsampling_scales=cfg.max_downsampling_scales #Goes a LOT slower when set to 1
         )
 
 

@@ -12,6 +12,10 @@ VERSION = '0.5.49'
 
 LOOP = None
 
+
+max_downsampling=0
+max_downsampled_size=0
+max_downsampling_scales=0
 LOG_LEVEL = 1
 DEBUG_MP = 0
 # DEBUG_MP = (False,True)[DEV_MODE]
