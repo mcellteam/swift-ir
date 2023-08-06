@@ -481,11 +481,23 @@ class EMViewer(AbstractEMViewer):
 
         self.coordinate_space = self.getCoordinateSpace()
 
+        """ @param max_downsampling: Maximum amount by which on-the-fly downsampling may reduce the
+            volume of a chunk.  For example, 4x4x4 downsampling reduces the volume by 64.
+            
+            
+            data – Source data.
+            volume_type – either 'image' or 'segmentation'. If not specified, guessed from the data type.
+            mesh_options – A dict with the following keys specifying options for mesh simplification for 'segmentation' volumes:
+            downsampling – '3d' to use isotropic downsampling, '2d' to downsample separately in XY, XZ, and YZ, None to use no downsampling.
+            max_downsampling – Maximum amount by which on-the-fly downsampling may reduce the volume of a chunk. For example, 4x4x4 downsampling reduces the volume by 64"""
+
         cfg.LV = ng.LocalVolume(
             volume_type='image',
             data=self.store[:, :, :],
             dimensions=self.coordinate_space,
             # max_voxels_per_chunk_log2=1024
+            downsampling=None, # '3d' to use isotropic downsampling, '2d' to downsample separately in XY, XZ, and YZ,
+            # None to use no downsampling.
             max_downsampling=cfg.max_downsampling,
             max_downsampled_size=cfg.max_downsampled_size,
             max_downsampling_scales=cfg.max_downsampling_scales #Goes a LOT slower when set to 1
