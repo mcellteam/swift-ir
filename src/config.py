@@ -16,7 +16,7 @@ LOOP = None
 
 # max_downsampling=1024 #default=64
 # max_downsampled_size=2048 #default=128
-max_downsampling=float('inf')
+max_downsampling=512
 max_downsampled_size=float('inf')
 # max_downsampling_scales=1
 """
