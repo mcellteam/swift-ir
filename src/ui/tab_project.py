@@ -2196,7 +2196,7 @@ class ProjectTab(QWidget):
         self.lw_gb_r.setEnabled(True)
         self.lw_gb_l.setEnabled(False)
         self.lw_gb_r.setAutoFillBackground(True)
-        self.lw_gb_r.setStyleSheet("""border-width: 3px; border-color: #339933; background-color: #f3f6fb;""")
+        self.lw_gb_r.setStyleSheet("""border-width: 3px; border-color: #339933;""")
         self.lw_gb_l.setStyleSheet("""""")
         logger.info(f"<<<< set_reference <<<<")
 
@@ -2212,7 +2212,7 @@ class ProjectTab(QWidget):
         self.lw_gb_l.setEnabled(True)
         self.lw_gb_r.setEnabled(False)
         self.lw_gb_l.setAutoFillBackground(True)
-        self.lw_gb_l.setStyleSheet("""border-width: 3px; border-color: #339933; background-color: #f3f6fb;""")
+        self.lw_gb_l.setStyleSheet("""border-width: 3px; border-color: #339933;""")
         self.lw_gb_r.setStyleSheet("""""")
         logger.info(f"<<<< set_transforming <<<<")
 
