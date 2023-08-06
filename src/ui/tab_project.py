@@ -118,15 +118,14 @@ class ProjectTab(QWidget):
         if index == 0:
             pass
         elif index == 1:
-            self.initNeuroglancer() #Todo necessary for now
-            cfg.baseViewer.set_layer(cfg.data.zpos)
-            cfg.refViewer.set_layer(cfg.data.get_ref_index())
             self.updateLowest8widget()
             self.updateDetailsPanel()
             self.updateTimingsWidget()
-            self.update_MA_list_widgets() #0726+
             # self.set_reference() #0802+
+            self.initNeuroglancer() #Todo necessary for now
+            self.baseViewer.set_layer()
             self.set_transforming() #0802+
+            self.update_MA_list_widgets() #0726+
         elif index == 2:
             self.project_table.table.selectRow(cfg.data.zpos)
         elif index == 3:
@@ -134,7 +133,8 @@ class ProjectTab(QWidget):
             self.treeview_model.jumpToLayer()
         elif index == 4:
             self.snr_plot.initSnrPlot()
-        cfg.mw.dataUpdateWidgets()
+        # cfg.mw.dataUpdateWidgets() #0805-
+
 
     # def refreshTab(self, index=None):
     def refreshTab(self):
@@ -195,33 +195,26 @@ class ProjectTab(QWidget):
         if cfg.data['state']['current_tab'] == 1 or init_all:
             # self.MA_webengine_ref.setUrl(QUrl("http://localhost:8888/"))
             # self.MA_webengine_base.setUrl(QUrl("http://localhost:8888/"))
-            self.refViewer = cfg.refViewer = MAViewer(role='ref', webengine=self.MA_webengine_ref)
-            self.baseViewer = cfg.baseViewer = MAViewer(role='base', webengine=self.MA_webengine_base)
-            cfg.baseViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314
-            cfg.refViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider) #0314
-            cfg.refViewer.signals.ptsChanged.connect(self.update_MA_list_widgets)
-            cfg.refViewer.signals.ptsChanged.connect(cfg.refViewer.drawSWIMwindow)
-            cfg.refViewer.signals.ptsChanged.connect(lambda: print('\n\n Ref Viewer pts changed!\n\n'))
-            cfg.refViewer.signals.badStateChange.connect(self.set_transforming)
 
-            cfg.baseViewer.signals.ptsChanged.connect(self.update_MA_list_widgets)
-            cfg.baseViewer.signals.ptsChanged.connect(cfg.baseViewer.drawSWIMwindow)
-            cfg.baseViewer.signals.ptsChanged.connect(lambda: print('\n\n Base Viewer pts changed!\n\n'))
-            # cfg.baseViewer.signals.zposChanged.connect(lambda: cfg.mw.setZpos(on_state_change=True))
-            # cfg.refViewer.signals.zposChanged.connect(self.set_transforming)
-            cfg.baseViewer.signals.swimAction.connect(cfg.main_window.alignOne)
-            cfg.refViewer.signals.swimAction.connect(cfg.main_window.alignOne)
+            self.baseViewer = cfg.baseViewer = MAViewer(role='base', webengine=self.MA_webengine_base)
+            self.baseViewer.signals.badStateChange.connect(self.set_transforming)
+            self.baseViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314
+            self.baseViewer.signals.ptsChanged.connect(self.update_MA_list_widgets)
+            # self.baseViewer.signals.swimAction.connect(cfg.main_window.alignOne)
             self.update_MA_list_widgets()
             self.dataUpdateMA()
+            logger.critical(f"Local Volume:\n{cfg.baseViewer.LV.info()}")
 
         if cfg.data['state']['current_tab'] == 0 or init_all:
             self.viewer = cfg.emViewer = EMViewer(webengine=self.webengine)
             self.viewer.initZoom(self.webengine.width(), self.webengine.height())
             cfg.emViewer.signals.layoutChanged.connect(self.slot_layout_changed)
             cfg.emViewer.signals.zoomChanged.connect(self.slot_zoom_changed)
+            logger.critical(f"Local Volume:\n{cfg.LV.info()}")
 
         cfg.mw.set_status('')
         cfg.mw.hud.done()
+
         # self.setZmag(10)
         QApplication.processEvents()
 
@@ -332,24 +325,14 @@ class ProjectTab(QWidget):
         vlab.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif;')
         self.ZdisplaySliderAndLabel.addWidget(vlab)
 
-        self.MA_webengine_ref = WebEngine(ID='ref')
-        self.MA_webengine_ref.setStyleSheet("background-color: #000000;")
-        self.MA_webengine_ref.page().setBackgroundColor(Qt.transparent) #0726+
-        self.MA_webengine_ref.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.MA_webengine_base = WebEngine(ID='base')
         self.MA_webengine_base.setStyleSheet("background-color: #000000;")
         self.MA_webengine_base.page().setBackgroundColor(Qt.transparent) #0726+
         self.MA_webengine_base.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        setWebengineProperties(self.MA_webengine_ref)
         setWebengineProperties(self.MA_webengine_base)
-        # self.MA_webengine_ref.focusInEvent.connect(self.focusedViewerChanged)
         # self.MA_webengine_base.focusInEvent.connect(self.focusedViewerChanged)
-        # self.MA_webengine_ref.setMinimumWidth(100)
-        # self.MA_webengine_base.setMinimumWidth(100)
-        self.MA_webengine_ref.setMouseTracking(True)
         self.MA_webengine_base.setMouseTracking(True)
-        self.MA_webengine_ref.setFocusPolicy(Qt.StrongFocus) #0726-
         self.MA_webengine_base.setFocusPolicy(Qt.StrongFocus) #0726-
 
 
@@ -357,10 +340,7 @@ class ProjectTab(QWidget):
         unless mouse tracking has been enabled with setMouseTracking() .'''
 
         # NO CHANGE----------------------
-        # cfg.refViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
-        # cfg.refViewer.signals.ptsChanged.connect(self.update_MA_list_ref)
         # cfg.baseViewer.signals.ptsChanged.connect(self.update_MA_list_base)
-        # cfg.refViewer.shared_state.add_changed_callback(self.update_MA_base_state)
         # cfg.baseViewer.shared_state.add_changed_callback(self.update_MA_ref_state)
         # NO CHANGE----------------------
 
@@ -374,33 +354,40 @@ class ProjectTab(QWidget):
         self.MA_baseViewerTitle.setStyleSheet('font-size: 10px; background-color: #ede9e8; color: #161c20;')
         self.MA_baseViewerTitle.setMaximumHeight(14)
 
-        self.MA_ptsListWidget_ref = QListWidget()
-        self.MA_ptsListWidget_ref.setMaximumHeight(64)
-        self.MA_ptsListWidget_ref.setStyleSheet('font-size: 10px; background-color: #ede9e8; color: #161c20;')
-        self.MA_ptsListWidget_ref.setSelectionMode(QListWidget.MultiSelection)
-        self.MA_ptsListWidget_ref.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.MA_ptsListWidget_ref.installEventFilter(self)
+        self.lw_ref = ListWidget()
+        self.lw_ref.setFixedHeight(58)
+        # self.lw_ref.setFixedHeight(48)
+        # self.lw_ref.setMaximumHeight(64)
+        self.lw_ref.setStyleSheet("""font-size: 10px; background-color: #ede9e8; color: #161c20; border: none;""")
+        self.lw_ref.setSelectionMode(QListWidget.MultiSelection)
+        self.lw_ref.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.lw_ref.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.lw_ref.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.lw_ref.installEventFilter(self)
 
-        self.MA_refNextColorTxt = QLabel('Next Color:   ')
-        self.MA_refNextColorTxt.setStyleSheet('font-size: 10px; background-color: #ede9e8; color: #161c20;')
-        self.MA_refNextColorLab = QLabel()
-        self.MA_refNextColorLab.setFixedSize(14, 14)
+        self.lab_ref = QLabel('Next Color:   ')
+        self.lab_ref.setStyleSheet('font-size: 10px; background-color: #ede9e8; color: #161c20;')
+        self.lab_nextcolor1 = QLabel()
+        self.lab_nextcolor1.setFixedSize(14, 14)
 
-        self.MA_ptsListWidget_base = QListWidget()
-        self.MA_ptsListWidget_base.setMaximumHeight(64)
-        # self.MA_ptsListWidget_base.setStyleSheet('background-color: #dadada; font-size: 10px;')
-        self.MA_ptsListWidget_base.setStyleSheet('font-size: 10px; background-color: #ede9e8; color: #161c20;')
-        self.MA_ptsListWidget_base.setSelectionMode(QListWidget.MultiSelection)
-        self.MA_ptsListWidget_base.setSelectionMode(QListWidget.ExtendedSelection)
-        self.MA_ptsListWidget_base.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.MA_ptsListWidget_base.installEventFilter(self)
-        self.MA_baseNextColorTxt = QLabel('Next Color:   ')
-        self.MA_baseNextColorTxt.setStyleSheet('font-size: 10px; background-color: #ede9e8; color: #161c20;')
-        self.MA_baseNextColorLab = QLabel()
-        self.MA_baseNextColorLab.setFixedSize(14, 14)
+        self.lw_tra = ListWidget()
+        self.lw_tra.setFixedHeight(58)
+        # self.lw_tra.setFixedHeight(48)
+        # self.lw_tra.setMaximumHeight(64)
+        self.lw_tra.setStyleSheet("""font-size: 10px; background-color: #ede9e8; color: #161c20; border: none;""")
+        self.lw_tra.setSelectionMode(QListWidget.MultiSelection)
+        self.lw_tra.setSelectionMode(QListWidget.ExtendedSelection)
+        self.lw_tra.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.lw_tra.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.lw_tra.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.lw_tra.installEventFilter(self)
+        self.lab_tra = QLabel('Next Color:   ')
+        self.lab_tra.setStyleSheet('font-size: 10px; background-color: #ede9e8; color: #161c20;')
+        self.lab_nextcolor0 = QLabel()
+        self.lab_nextcolor0.setFixedSize(14, 14)
 
-        self.MA_ptsListWidget_ref.itemSelectionChanged.connect(self.MA_ptsListWidget_base.selectionModel().clear)
-        self.MA_ptsListWidget_base.itemSelectionChanged.connect(self.MA_ptsListWidget_ref.selectionModel().clear)
+        self.lw_ref.itemSelectionChanged.connect(self.lw_tra.selectionModel().clear)
+        self.lw_tra.itemSelectionChanged.connect(self.lw_ref.selectionModel().clear)
 
         self.btn_undoRefPts = QPushButton()
         self.btn_undoRefPts.setFixedSize(QSize(14, 14))
@@ -408,12 +395,11 @@ class ProjectTab(QWidget):
         self.btn_undoRefPts.setToolTip('Undo Last Selection')
         self.btn_undoRefPts.setIcon(qta.icon('fa.undo', color='#161c20'))
         def fn():
-            if len(cfg.refViewer.pts):
-                cfg.refViewer.pts = cfg.refViewer.pts[:-1]
-                cfg.refViewer.applyMps()
-                cfg.refViewer.drawSWIMwindow()
+            if len(self.baseViewer.pts['ref']):
+                self.baseViewer.pts['ref'] = self.baseViewer.pts['ref'][:-1]
+                self.baseViewer.setMpData()
+                self.baseViewer.drawSWIMwindow()
                 self.update_MA_list_widgets()
-                self.updateEnabledButtonsMA()
         self.btn_undoRefPts.clicked.connect(fn)
 
         self.btn_clrRefPts = QPushButton('Clear')
@@ -428,12 +414,11 @@ class ProjectTab(QWidget):
         self.btn_undoBasePts.setToolTip('Undo Last Selection')
         self.btn_undoBasePts.setIcon(qta.icon('fa.undo', color='#161c20'))
         def fn():
-            if len(cfg.baseViewer.pts):
-                cfg.baseViewer.pts = cfg.baseViewer.pts[:-1]
-                cfg.baseViewer.applyMps()
-                cfg.baseViewer.drawSWIMwindow()
+            if len(self.baseViewer.pts['base']):
+                self.baseViewer.pts['base'] = self.baseViewer.pts['base'][:-1]
+                self.baseViewer.setMpData()
+                self.baseViewer.drawSWIMwindow()
                 self.update_MA_list_widgets()
-                self.updateEnabledButtonsMA()
         self.btn_undoBasePts.clicked.connect(fn)
 
         self.btn_clrBasePts = QPushButton('Clear')
@@ -442,10 +427,10 @@ class ProjectTab(QWidget):
         self.btn_clrBasePts.setFixedSize(QSize(36, 14))
         self.btn_clrBasePts.clicked.connect(self.deleteAllMpBase)
 
-        self.baseNextColorWidget = HWidget(self.MA_baseNextColorTxt, self.MA_baseNextColorLab,
+        self.baseNextColorWidget = HWidget(self.lab_tra, self.lab_nextcolor0,
                                            ExpandingWidget(self), self.btn_undoBasePts, self.btn_clrBasePts)
         self.baseNextColorWidget.setFixedHeight(16)
-        self.refNextColorWidget = HWidget(self.MA_refNextColorTxt, self.MA_refNextColorLab,
+        self.refNextColorWidget = HWidget(self.lab_ref, self.lab_nextcolor1,
                                           ExpandingWidget(self), self.btn_undoRefPts, self.btn_clrRefPts)
         self.refNextColorWidget.setFixedHeight(16)
 
@@ -501,23 +486,13 @@ class ProjectTab(QWidget):
             self.spinbox_whitening.setValue(float(cfg.data['data']['defaults']['signal-whitening']))
             self.spinbox_swim_iters.setValue(int(cfg.data['data']['defaults']['swim-iterations']))
 
-            self.updateAnnotations()
+            self.baseViewer.drawSWIMwindow()
 
 
         self.MA_settings_defaults_button = QPushButton('Reset to Defaults')
         self.MA_settings_defaults_button.setStyleSheet("font-size: 10px;")
         self.MA_settings_defaults_button.setFixedSize(QSize(90, 16))
         self.MA_settings_defaults_button.clicked.connect(fn)
-
-        def fn():
-            # logs_path = os.path.join(cfg.data.dest(), 'logs', 'recipemaker.log')
-            # with open(logs_path, 'r') as f:
-            #     # lines = f.readlines()
-            #     text = f.read()
-            # self.te_logs.setText(text)
-            # self.te_logs.verticalScrollBar().setValue(self.te_logs.verticalScrollBar().maximum())
-            self.refreshLogs()
-            self.MA_stackedWidget.setCurrentIndex(4)
 
         tip = "Perform a quick SWIM alignment to show match signals and SNR values, " \
               "but do not generate any new images"
@@ -537,23 +512,24 @@ class ProjectTab(QWidget):
         self.MA_controls.setStyleSheet('font-size: 10px;')
         self.MA_controls.setLayout(hbl)
 
-        gb1 = QGroupBox()
+        self.lw_gb_l = QGroupBox()
         vbl = VBL()
         vbl.setSpacing(1)
         vbl.addWidget(self.MA_baseViewerTitle)
-        vbl.addWidget(self.MA_ptsListWidget_base)
+        vbl.addWidget(self.lw_tra)
         vbl.addWidget(self.baseNextColorWidget)
-        gb1.setLayout(vbl)
+        self.lw_gb_l.setLayout(vbl)
 
-        gb2 = QGroupBox()
+        self.lw_gb_r = QGroupBox()
         vbl = VBL()
         vbl.setSpacing(1)
         vbl.addWidget(self.MA_refViewerTitle)
-        vbl.addWidget(self.MA_ptsListWidget_ref)
+        vbl.addWidget(self.lw_ref)
         vbl.addWidget(self.refNextColorWidget)
-        gb2.setLayout(vbl)
-
-        self.MA_sbw = HWidget(gb1, gb2)
+        self.lw_gb_r.setLayout(vbl)
+        self.labSlash = QLabel('← / →')
+        self.labSlash.setStyleSheet("""font-size: 12px; font-weight: 600;""")
+        self.MA_sbw = HWidget(self.lw_gb_l, self.labSlash, self.lw_gb_r)
         self.MA_sbw.layout.setSpacing(0)
         # self.msg_MAinstruct = YellowTextLabel("⇧ + Click - Select 3 corresponding points")
         # self.msg_MAinstruct.setFixedSize(266, 20)
@@ -611,10 +587,7 @@ class ProjectTab(QWidget):
 
                 cfg.data.set_manual_swim_window_px(val)
                 self.MA_SWIM_window_le.setText(str(cfg.data.manual_swim_window_px()))
-                if cfg.data['state']['tra_ref_toggle'] == 0:
-                    cfg.refViewer.drawSWIMwindow()
-                else:
-                    cfg.baseViewer.drawSWIMwindow()
+                self.baseViewer.drawSWIMwindow()
 
                 if self.tn_widget.isVisible():
                     self.tn_ref.update()
@@ -643,10 +616,7 @@ class ProjectTab(QWidget):
             #
             cfg.data.set_manual_swim_window_px(val)
             self.dataUpdateMA()
-            if cfg.data['state']['tra_ref_toggle'] == 0:
-                cfg.refViewer.drawSWIMwindow()
-            else:
-                cfg.baseViewer.drawSWIMwindow()
+            self.baseViewer.drawSWIMwindow()
             if self.tn_widget.isVisible():
                 self.tn_ref.update()
                 self.tn_tra.update()
@@ -661,7 +631,6 @@ class ProjectTab(QWidget):
         #         cfg.data.set_manual_swim_window_px(val)
         #         self.slider_MA_SWIM_window.setValue(cfg.data.manual_swim_window_px())
         #         self.MA_SWIM_window_le.setText(str(cfg.data.manual_swim_window_px()))
-        #         cfg.refViewer.drawSWIMwindow()
         #         cfg.baseViewer.drawSWIMwindow()
         # self.spinbox_MA_swim_window.valueChanged.connect(fn)
         # self.spinbox_MA_swim_window.setSuffix('px')
@@ -687,15 +656,12 @@ class ProjectTab(QWidget):
                 # self.slider_AS_2x2_SWIM_window.setMaximum(int(val / 2 + 0.5))2
                 self.slider_AS_2x2_SWIM_window.setValue(int(cfg.data.swim_2x2_custom_px()[0]))
 
-                if cfg.data['state']['tra_ref_toggle'] == 0:
-                    cfg.refViewer.drawSWIMwindow()
-                else:
-                    cfg.baseViewer.drawSWIMwindow()
+                self.baseViewer.drawSWIMwindow()
 
                 if self.tn_widget.isVisible():
                     self.tn_ref.update()
                     self.tn_tra.update()
-                cfg.main_window._callbk_unsavedChanges()
+                self.main_window._callbk_unsavedChanges()
 
         self.slider_AS_SWIM_window = QSlider(Qt.Orientation.Horizontal, self)
         self.slider_AS_SWIM_window.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -727,7 +693,7 @@ class ProjectTab(QWidget):
                 self.AS_2x2_SWIM_window_le.setText(str(cfg.data.swim_2x2_custom_px()[0]))
                 self.slider_AS_2x2_SWIM_window.setValue(int(cfg.data.swim_2x2_custom_px()[0]))
                 cfg.main_window._callbk_unsavedChanges()
-                self.updateAnnotations()
+                self.baseViewer.drawSWIMwindow()
 
         self.slider_AS_2x2_SWIM_window = QSlider(Qt.Orientation.Horizontal, self)
         self.slider_AS_2x2_SWIM_window.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -792,10 +758,7 @@ class ProjectTab(QWidget):
                     cfg.data.current_method = 'manual-hint'
                 elif self.rb_MA_strict.isChecked():
                     cfg.data.current_method = 'manual-strict'
-                if cfg.data['state']['tra_ref_toggle'] == 0:
-                    cfg.refViewer.drawSWIMwindow()
-                else:
-                    cfg.baseViewer.drawSWIMwindow()
+                self.baseViewer.drawSWIMwindow()
                 cfg.main_window._callbk_unsavedChanges()
                 if self.tn_widget.isVisible():
                     self.tn_ref.update()
@@ -962,6 +925,7 @@ class ProjectTab(QWidget):
                     val = int(self._swimWindowControl.text())
                 except:
                     self._swimWindowControl.setText(str(cfg.data['data']['defaults'][cfg.data.scale_key]['swim-window-px'][0]))
+                    print_exception()
                     return
                 logger.info(f"val = {val}")
                 if (val % 2) == 1:
@@ -975,8 +939,7 @@ class ProjectTab(QWidget):
                 # self.swimWindowChanged.emit()
 
                 if self._tabs.currentIndex() == 1:
-                    cfg.baseViewer.drawSWIMwindow()
-                    cfg.refViewer.drawSWIMwindow()
+                    self.baseViewer.drawSWIMwindow()
                 if self.tn_widget.isVisible():
                     self.tn_ref.update()
                     self.tn_tra.update()
@@ -1194,24 +1157,26 @@ class ProjectTab(QWidget):
             if cfg.mw.dw_snr.isVisible():
                 self.dSnr_plot.initSnrPlot()
 
-            self.updateAnnotations()
+            self.baseViewer.drawSWIMwindow()
 
         self.bg_method.buttonClicked.connect(method_bg_fn)
 
         self.radioboxes_method = HWidget(self.rb_method0, self.rb_method1, self.rb_method2)
         self.radioboxes_method.setMaximumHeight(20)
 
-        self.lab_region_selection = QLabel("⇧ + Click - Select 3 corresponding regions\n")
+        # self.lab_region_selection = QLabel("⇧ + Click - Select 3 corresponding regions\n")
+        self.lab_region_selection = QLabel("")
         self.lab_region_selection.setStyleSheet("font-size: 10px; font-weight: 600; color: #161c20; padding: 1px;")
 
-        self.lab_region_selection2 = QLabel("Note: Match signals can be generated from any # of match selections.\n"
-                                            "At least three matching regions are necessary to form an alignment affine.")
+        # self.lab_region_selection2 = QLabel("Note: Match signals can be generated from any # of match selections.\n"
+        #                                     "At least three matching regions are necessary to form an alignment affine.")
+        self.lab_region_selection2 = QLabel("")
         self.lab_region_selection2.setStyleSheet("font-size: 9px; color: #161c20; padding: 1px;")
         self.MA_points_tab = VWidget(
             self.MA_sbw,
-            self.gb_MA_manual_controls,
             self.lab_region_selection,
             self.lab_region_selection2,
+            self.gb_MA_manual_controls,
         )
         self.MA_points_tab.layout.setSpacing(1)
 
@@ -1244,6 +1209,7 @@ class ProjectTab(QWidget):
                     elif os.path.isdir(file_path):
                         shutil.rmtree(file_path)
                 except Exception as e:
+                    print_exception()
                     print('Failed to delete %s. Reason: %s' % (file_path, e))
 
             self.te_logs.setText('No Log To Show.')
@@ -1385,12 +1351,6 @@ class ProjectTab(QWidget):
         self.MA_stackedWidget.addWidget(self.MA_points_tab)
 
         #0617 #0802
-        self.sw_alignment_editor = QStackedWidget()
-        self.sw_alignment_editor.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.sw_alignment_editor.setObjectName('stackwidget-neuroglancer')
-        self.sw_alignment_editor.addWidget(self.MA_webengine_ref)
-        self.sw_alignment_editor.addWidget(self.MA_webengine_base)
-        self.sw_alignment_editor.setCurrentIndex(cfg.data['state']['tra_ref_toggle'])
 
         self.cl_tra = ClickLabel(' Transforming ')
         self.cl_tra.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -1421,7 +1381,8 @@ class ProjectTab(QWidget):
         self.labAlignTo.setToolTip("'/' (slash) key to toggle")
         self.labAlignTo.setFixedWidth(80)
         self.labAlignTo.setAlignment(Qt.AlignHCenter)
-        self.labAlignTo.setStyleSheet('background-color: #ede9e8; color: #161c20; font-size: 11px; font-weight: 600; border-radius: 8px; padding-left: 1px; padding-right: 1px;')
+        # self.labAlignTo.setStyleSheet('background-color: #ede9e8; color: #161c20; font-size: 11px; font-weight: 600; border-radius: 8px; padding-left: 1px; padding-right: 1px;')
+        self.labAlignTo.setStyleSheet('background-color: #ede9e8; color: #161c20; font-size: 11px; font-weight: 600;padding-left: 1px; padding-right: 1px;')
         gl = QGridLayout()
         gl.setContentsMargins(0,0,0,0)
         gl.setSpacing(0)
@@ -1468,7 +1429,7 @@ class ProjectTab(QWidget):
         self.gl_sw_main = QGridLayout()
         self.gl_sw_main.setSpacing(0)
         self.gl_sw_main.setContentsMargins(0, 0, 0, 0)
-        self.gl_sw_main.addWidget(self.sw_alignment_editor, 0, 0, 3, 3)
+        self.gl_sw_main.addWidget(self.MA_webengine_base, 0, 0, 3, 3)
         self.gl_sw_main.addWidget(self._overlayLab, 0, 0, 3, 3)
 
         self._ng_widget = QWidget()
@@ -1526,8 +1487,7 @@ class ProjectTab(QWidget):
             # self.spreadW.setVisible(opt)
             # self.updateUISpacing()
             if cfg.data['state']['current_tab'] == 1:
-                cfg.baseViewer.updateUIControls()
-                cfg.refViewer.updateUIControls()
+                self.baseViewer.updateUIControls()
             else:
                 cfg.emViewer.updateUIControls()
             QApplication.processEvents()
@@ -1566,7 +1526,7 @@ class ProjectTab(QWidget):
         self.tbbBlinkToggle.setCheckable(True)
 
         self.tbbBlinkToggle.setIcon(qta.icon('mdi.toggle-switch-off-outline', color='#f3f6fb'))
-        
+
         def blink_main_fn():
             setData('state,blink', self.tbbBlinkToggle.isChecked())
             logger.info(f"blink toggle: {getData('state,blink')}")
@@ -1625,7 +1585,7 @@ class ProjectTab(QWidget):
         #     #     self.tbbNgHelp.setIcon(qta.icon("fa.question", color='#161c20'))
         #     # else:
         #     #     self.tbbNgHelp.setIcon(qta.icon("fa.question", color='#f3f6fb'))
-        # 
+        #
         # self.tbbNgHelp.setToolTip("Neuroglancer Help")
         # self.tbbNgHelp.setCheckable(True)
         # self.tbbNgHelp.pressed.connect(fn_ng_help)
@@ -2189,27 +2149,35 @@ class ProjectTab(QWidget):
     def set_reference(self):
         # logger.critical('')
         logger.info(f">>>> set_reference >>>>")
-
+        cfg.data['state']['tra_ref_toggle'] = 0
         if cfg.data.skipped():
             cfg.mw.warn('This section does not have a reference because it is excluded.')
             # self.set_transforming()
             return
-        cfg.baseViewer.role = 'ref'
-        cfg.baseViewer.set_layer()
-        cfg.data['state']['tra_ref_toggle'] = 0
+        self.baseViewer.role = 'ref'
+        self.baseViewer.set_layer()
+        self.baseViewer.restoreManAlignPts()  # 0805+
         self.cl_ref.setChecked(True)
         self.cl_tra.setChecked(False)
+        self.lw_gb_r.setEnabled(True)
+        self.lw_gb_l.setEnabled(False)
+        self.lw_gb_r.setStyleSheet("""border-width: 3px; border-color: #339933; background-color: #f3f6fb;""")
+        self.lw_gb_l.setStyleSheet("""""")
         logger.info(f"<<<< set_reference <<<<")
 
 
     def set_transforming(self):
         logger.info(f">>>> set_transforming >>>>")
-        cfg.baseViewer.role = 'base'
-        cfg.baseViewer.set_layer()
-        self.setUpdatesEnabled(False)
         cfg.data['state']['tra_ref_toggle'] = 1
+        self.baseViewer.role = 'base'
+        self.baseViewer.set_layer()
+        self.baseViewer.restoreManAlignPts()  # 0805+
         self.cl_tra.setChecked(True)
         self.cl_ref.setChecked(False)
+        self.lw_gb_l.setEnabled(True)
+        self.lw_gb_r.setEnabled(False)
+        self.lw_gb_l.setStyleSheet("""border-width: 3px; border-color: #339933; background-color: #f3f6fb;""")
+        self.lw_gb_r.setStyleSheet("""""")
         logger.info(f"<<<< set_transforming <<<<")
 
     def fn_hwidgetChanged(self):
@@ -2268,42 +2236,11 @@ class ProjectTab(QWidget):
         self.cl_ref.setStyleSheet('background-color: #222222; color: #ede9e8; font-size: 10px; border: 1px solid #ede9e8; font-weight: 600;')
 
 
-    # def onBlinkTimer(self):
-    #     if getData('state,blink'):
-    #         if cfg.emViewer:
-    #             cfg.emViewer.blink()
-
-                # self.blinkCur = 1 - self.blinkCur
-                # if self.blinkCur:
-                #     ref_index = cfg.data.get_index(cfg.data.fn_reference())
-                #     logger.info(f'ref_index = {ref_index}')
-                #     cfg.emViewer.set_layer(ref_index)
-                # else:
-                #     cfg.emViewer.set_layer(cfg.data.zpos)
-
-    # def stopBlinkTimer(self):
-    #     setData('state,blink', False)
-    #     self.blinkTimer.stop()
-    #
-    #
-    # def blinkChanged(self):
-    #     setData('state,blink', self.blinkToggle.isChecked())
-    #     if getData('state,blink'):
-    #         self.blinkTimer.start()
-    #     else:
-    #         self.blinkTimer.stop()
-
-    # def uiUpdateToggleChanged(self):
-    #     setData('state,auto_update_ui', self.uiUpdateToggle.isChecked())
-
-
-
     def refreshLogs(self):
         logger.info('')
         logs_path = os.path.join(cfg.data.dest(), 'logs', 'recipemaker.log')
         if os.path.exists(logs_path):
             with open(logs_path, 'r') as f:
-                # lines = f.readlines()
                 text = f.read()
         else:
             text = 'No Log To Show.'
@@ -2314,14 +2251,12 @@ class ProjectTab(QWidget):
         logger.info('')
         if cfg.data.current_method == 'grid-custom':
             cfg.data.grid_custom_regions = [self.Q1.isClicked, self.Q2.isClicked, self.Q3.isClicked, self.Q4.isClicked]
-        self.updateAnnotations()
+        self.baseViewer.drawSWIMwindow()
 
     def updateMethodSelectWidget(self, soft=False):
         caller = inspect.stack()[1].function
         cur_index = self.MA_stackedWidget.currentIndex()
         logger.info(f'caller={caller}, soft={soft}, cur_index={cur_index}')
-        # logger.critical(f'cfg.data.current_method = {cfg.data.current_method}')
-
         if cfg.data.current_method == 'grid-default':
             self.rb_method0.setChecked(True)
             self.MA_stackedWidget.setCurrentIndex(0)
@@ -2343,35 +2278,26 @@ class ProjectTab(QWidget):
     def updateAnnotations(self):
         if DEV:
             logger.info(f'[DEV] [{caller_name()}] [{cfg.data.zpos}] Updating annotations...')
-        if cfg.data['state']['tra_ref_toggle'] == 1:
-            cfg.baseViewer.drawSWIMwindow()
-        else:
-            cfg.refViewer.drawSWIMwindow()
-        # if self.tn_widget.isVisible():
-        #     self.tn_ref.update()
-        #     self.tn_tra.update()
+        self.baseViewer.drawSWIMwindow()
 
 
     def onTranslate(self):
-        if (self.MA_ptsListWidget_base.selectedIndexes() == []) and (self.MA_ptsListWidget_ref.selectedIndexes() == []):
+        if (self.lw_tra.selectedIndexes() == []) and (self.lw_ref.selectedIndexes() == []):
             cfg.main_window.warn('No points are selected in the list')
             return
 
         selections = []
-        if len(self.MA_ptsListWidget_ref.selectedIndexes()) > 0:
+        if len(self.lw_ref.selectedIndexes()) > 0:
             role = 'ref'
-            for sel in self.MA_ptsListWidget_ref.selectedIndexes():
+            for sel in self.lw_ref.selectedIndexes():
                 selections.append(int(sel.data()[0]))
         else:
             role = 'base'
-            for sel in self.MA_ptsListWidget_base.selectedIndexes():
+            for sel in self.lw_tra.selectedIndexes():
                 selections.append(int(sel.data()[0]))
 
         pts_old = cfg.data.manpoints()[role]
         pts_new = pts_old
-
-        d = {'ref': cfg.refViewer, 'base': cfg.baseViewer}
-        viewer = d[role]
 
         for sel in selections:
             new_x = pts_old[sel][1] - int(self.le_x_translate.text())
@@ -2379,30 +2305,28 @@ class ProjectTab(QWidget):
             pts_new[sel] = (new_y, new_x)
 
         cfg.data.set_manpoints(role=role, matchpoints=pts_new)
-        viewer.restoreManAlignPts()
-        viewer.drawSWIMwindow()
+        # self.baseViewer.restoreManAlignPts()
+        self.baseViewer.drawSWIMwindow()
         cfg.main_window._callbk_unsavedChanges()
 
     def onTranslate_x(self):
-        if (self.MA_ptsListWidget_base.selectedIndexes() == []) and (self.MA_ptsListWidget_ref.selectedIndexes() == []):
+        if (self.lw_tra.selectedIndexes() == []) and (self.lw_ref.selectedIndexes() == []):
             cfg.main_window.warn('No points are selected in the list')
             return
 
         selections = []
-        if len(self.MA_ptsListWidget_ref.selectedIndexes()) > 0:
+        if len(self.lw_ref.selectedIndexes()) > 0:
             role = 'ref'
-            for sel in self.MA_ptsListWidget_ref.selectedIndexes():
+            for sel in self.lw_ref.selectedIndexes():
                 selections.append(int(sel.data()[0]))
         else:
             role = 'base'
-            for sel in self.MA_ptsListWidget_base.selectedIndexes():
+            for sel in self.lw_tra.selectedIndexes():
                 selections.append(int(sel.data()[0]))
 
         pts_old = cfg.data.manpoints()[role]
         pts_new = pts_old
 
-        d = {'ref': cfg.refViewer, 'base': cfg.baseViewer}
-        viewer = d[role]
 
         for sel in selections:
             new_x = pts_old[sel][1] - int(self.le_x_translate.text())
@@ -2410,30 +2334,27 @@ class ProjectTab(QWidget):
             pts_new[sel] = (new_y, new_x)
 
         cfg.data.set_manpoints(role=role, matchpoints=pts_new)
-        viewer.restoreManAlignPts()
-        viewer.drawSWIMwindow()
+        # self.baseViewer.restoreManAlignPts()
+        self.baseViewer.drawSWIMwindow()
         cfg.main_window._callbk_unsavedChanges()
 
     def onTranslate_y(self):
-        if (self.MA_ptsListWidget_base.selectedIndexes() == []) and (self.MA_ptsListWidget_ref.selectedIndexes() == []):
+        if (self.lw_tra.selectedIndexes() == []) and (self.lw_ref.selectedIndexes() == []):
             cfg.main_window.warn('No points are selected in the list')
             return
 
         selections = []
-        if len(self.MA_ptsListWidget_ref.selectedIndexes()) > 0:
+        if len(self.lw_ref.selectedIndexes()) > 0:
             role = 'ref'
-            for sel in self.MA_ptsListWidget_ref.selectedIndexes():
+            for sel in self.lw_ref.selectedIndexes():
                 selections.append(int(sel.data()[0]))
         else:
             role = 'base'
-            for sel in self.MA_ptsListWidget_base.selectedIndexes():
+            for sel in self.lw_tra.selectedIndexes():
                 selections.append(int(sel.data()[0]))
 
         pts_old = cfg.data.manpoints()[role]
         pts_new = pts_old
-
-        d = {'ref': cfg.refViewer, 'base': cfg.baseViewer}
-        viewer = d[role]
 
         for sel in selections:
             new_x = pts_old[sel][1]
@@ -2441,8 +2362,8 @@ class ProjectTab(QWidget):
             pts_new[sel] = (new_y, new_x)
 
         cfg.data.set_manpoints(role=role, matchpoints=pts_new)
-        viewer.restoreManAlignPts()
-        viewer.drawSWIMwindow()
+        # self.baseViewer.restoreManAlignPts()
+        self.baseViewer.drawSWIMwindow()
         cfg.main_window._callbk_unsavedChanges()
 
     def onNgLayoutCombobox(self) -> None:
@@ -2521,18 +2442,19 @@ class ProjectTab(QWidget):
             cfg.data.set_all_methods_automatic()
 
     # def refListItemClicked(self, qmodelindex):
-    #     item = self.MA_ptsListWidget_ref.currentItem()
+    #     item = self.lw_ref.currentItem()
     #     logger.info(f"Selected {item.text()}")
     #
     #
     # def baseListItemClicked(self, qmodelindex):
-    #     item = self.MA_ptsListWidget_base.currentItem()
+    #     item = self.lw_tra.currentItem()
     #     logger.info(f"Selected {item.text()}")
 
     def validate_MA_points(self):
         # if len(cfg.refViewer.pts.keys()) >= 3:
-        if cfg.refViewer.pts.keys() == cfg.baseViewer.pts.keys():
-            return True
+        if len(self.baseViewer.pts['ref']) == len(self.baseViewer.pts['base']):
+            if len(self.baseViewer.pts['base']) == 3:
+                return True
         return False
 
 
@@ -2601,7 +2523,6 @@ class ProjectTab(QWidget):
             self.Q3.setActivated(grid[2])
             self.Q4.setActivated(grid[3])
 
-        self.updateEnabledButtonsMA()
         self.update_MA_list_widgets()
         self.cb_clobber.setChecked(cfg.data.clobber())
         self.sb_clobber_pixels.setValue(int(cfg.data.clobber_px()))
@@ -2612,270 +2533,167 @@ class ProjectTab(QWidget):
         except:
             print_exception()
 
-        # if self.match_widget.isVisible():
-        if cfg.mw.dw_matches.isVisible():
-            cfg.mw.setTargKargPixmaps()
-            cfg.mw.updateCorrSignalsDrawer()
-
         if self.te_logs.isVisible():
             self.refreshLogs()
-
-        if self.tn_widget.isVisible():
-            self.tn_ref.update()
-            self.tn_tra.update()
 
         # logger.critical('<<<< dataUpdateMA <<<<')
 
 
-    def updateEnabledButtonsMA(self):
-        method = cfg.data.current_method
-        sec = cfg.data.zpos
-        realign_tip = 'SWIM align section #%d and generate an image' % sec
-        if method == 'grid-custom':
-            cfg.mw._btn_alignOne.setEnabled(True)
-            if sum(cfg.data.grid_custom_regions) >= 3:
-                cfg.mw._btn_alignOne.setEnabled(True)
-                realign_tip = 'SWIM align section #%d using custom grid method' % sec
-            else:
-                cfg.mw._btn_alignOne.setEnabled(False)
-                realign_tip = 'SWIM alignment requires at least three regions to form an affine'
-        elif method == 'grid-default':
-            cfg.mw._btn_alignOne.setEnabled(True)
-            realign_tip = 'SWIM align section #%d using default grid regions' % sec
-        elif method in ('manual-hint', 'manual-strict'):
-            if (len(cfg.data.manpoints()['ref']) >= 3) and (len(cfg.data.manpoints()['base']) >= 3):
-                cfg.mw._btn_alignOne.setEnabled(True)
-                realign_tip = 'SWIM align section #%d using manual correspondence regions method ' \
-                              'and generate an image' % sec
-            else:
-                cfg.mw._btn_alignOne.setEnabled(False)
-                realign_tip = 'SWIM alignment requires at least three regions to form an affine'
-
-        cfg.mw._btn_alignOne.setToolTip('\n'.join(textwrap.wrap(realign_tip, width=35)))
+    # def updateEnabledButtonsMA(self):
+    #     method = cfg.data.current_method
+    #     sec = cfg.data.zpos
+    #     realign_tip = 'SWIM align section #%d and generate an image' % sec
+    #     if method == 'grid-custom':
+    #         cfg.mw._btn_alignOne.setEnabled(True)
+    #         if sum(cfg.data.grid_custom_regions) >= 3:
+    #             cfg.mw._btn_alignOne.setEnabled(True)
+    #             realign_tip = 'SWIM align section #%d using custom grid method' % sec
+    #         else:
+    #             cfg.mw._btn_alignOne.setEnabled(False)
+    #             realign_tip = 'SWIM alignment requires at least three regions to form an affine'
+    #     elif method == 'grid-default':
+    #         cfg.mw._btn_alignOne.setEnabled(True)
+    #         realign_tip = 'SWIM align section #%d using default grid regions' % sec
+    #     elif method in ('manual-hint', 'manual-strict'):
+    #         if (len(cfg.data.manpoints()['ref']) >= 3) and (len(cfg.data.manpoints()['base']) >= 3):
+    #             cfg.mw._btn_alignOne.setEnabled(True)
+    #             realign_tip = 'SWIM align section #%d using manual correspondence regions method ' \
+    #                           'and generate an image' % sec
+    #         else:
+    #             cfg.mw._btn_alignOne.setEnabled(False)
+    #             realign_tip = 'SWIM alignment requires at least three regions to form an affine'
+    #
+    #     cfg.mw._btn_alignOne.setToolTip('\n'.join(textwrap.wrap(realign_tip, width=35)))
 
     def update_MA_list_widgets(self):
+        #Innocent
         if self._tabs.currentIndex() == 1:
             # if cfg.data.current_method in ('manual-hint', 'manual-strict'):
             if self.rb_method2.isChecked():
                 logger.info('')
                 # self.setUpdatesEnabled(False)
-                self.updateEnabledButtonsMA() #0610+
-                self.update_MA_list_base()
-                self.update_MA_list_ref()
-                self.update_MA_list_count_labels()
+
+                font = QFont()
+                font.setBold(True)
+
+                self.lw_tra.clear()
+                self.lw_tra.update()
+                # for i, p in enumerate(self.baseViewer.tra_pts):
+                for i, p in enumerate(cfg.data.manpoints_mir('base')):
+                    # _, x, y = p.point.tolist()
+                    x, y = p[0], p[1]
+                    item = self.item = QListWidgetItem('%d: x=%.1f, y=%.1f' % (i, x, y))
+                    item.setSizeHint(QSize(0,16))
+                    item.setBackground(QColor(cfg.glob_colors[i]))
+                    item.setForeground(QColor('#141414'))
+                    item.setFont(font)
+                    # item.setCheckState(2)
+                    self.lw_tra.addItem(item)
+
+                self.lw_ref.clear()
+                self.lw_ref.update()
+                # for i, p in enumerate(self.baseViewer.ref_pts):
+                for i, p in enumerate(cfg.data.manpoints_mir('ref')):
+                    # _, y, x = p.point.tolist()
+                    x, y = p[0], p[1]
+                    item = QListWidgetItem('%d: x=%.1f, y=%.1f' % (i, x, y))
+                    item.setSizeHint(QSize(0, 16))
+                    item.setBackground(QColor(cfg.glob_colors[i]))
+                    item.setForeground(QColor('#141414'))
+                    item.setFont(font)
+                    # item.setCheckState(2)
+                    self.lw_ref.addItem(item)
+
+                if len(cfg.data.manpoints()['base']) < 3:
+                    self.lab_tra.setText('Next Color:   ')
+                    self.lab_nextcolor0.setStyleSheet(
+                        f'''background-color: {self.baseViewer.getNextUnusedColor(role='base')}''')
+                    self.lab_nextcolor0.show()
+                else:
+                    self.lab_tra.setText('Complete!')
+                    self.lab_nextcolor0.hide()
+
+                if len(cfg.data.manpoints()['ref']) < 3:
+                    self.lab_ref.setText('Next Color:   ')
+                    self.lab_nextcolor1.setStyleSheet(
+                        f'''background-color: {self.baseViewer.getNextUnusedColor(role='ref')}''')
+                    self.lab_nextcolor1.show()
+                else:
+                    self.lab_ref.setText('Complete!')
+                    self.lab_nextcolor1.hide()
                 # self.setUpdatesEnabled(True)
 
-    def update_MA_list_ref(self):
-        logger.info('')
-        # cfg.refViewer.pts = {}
-        self.MA_ptsListWidget_ref.clear()
-        self.MA_ptsListWidget_ref.update()
-        n = 0
-        for i, p in enumerate(cfg.refViewer.pts):
-            _, y, x = p.point.tolist()
-            item = QListWidgetItem('%d: x=%.1f, y=%.1f' % (i, x, y))
-            item.setBackground(QColor(cfg.glob_colors[i]))
-            item.setForeground(QColor('#141414'))
-            font = QFont()
-            font.setBold(True)
-            item.setFont(font)
-            self.MA_ptsListWidget_ref.addItem(item)
-            n += 1
-
-    def update_MA_list_base(self):
-        logger.info('')
-        self.MA_ptsListWidget_base.clear()
-        self.MA_ptsListWidget_base.update()
-        n = 0
-        for i, p in enumerate(cfg.baseViewer.pts):
-            _, x, y = p.point.tolist()
-            item = QListWidgetItem('%d: x=%.1f, y=%.1f' % (i, x, y))
-            item.setBackground(QColor(cfg.glob_colors[i]))
-            item.setForeground(QColor('#141414'))
-            font = QFont()
-            font.setBold(True)
-            item.setFont(font)
-            self.MA_ptsListWidget_base.addItem(item)
-            n += 1
-
-    def update_MA_list_count_labels(self):
-        if len(cfg.data.manpoints()['base']) < 3:
-            self.MA_baseNextColorTxt.setText('Next Color:   ')
-            self.MA_baseNextColorLab.setStyleSheet(f'''background-color: {cfg.baseViewer.getNextUnusedColor()}''')
-            self.MA_baseNextColorLab.show()
-        else:
-            self.MA_baseNextColorTxt.setText('Complete!')
-            self.MA_baseNextColorLab.hide()
-        if len(cfg.data.manpoints()['ref']) < 3:
-            self.MA_refNextColorTxt.setText('Next Color:   ')
-            self.MA_refNextColorLab.setStyleSheet(f'''background-color: {cfg.refViewer.getNextUnusedColor()}''')
-            self.MA_refNextColorLab.show()
-        else:
-            self.MA_refNextColorTxt.setText('Complete!')
-            self.MA_refNextColorLab.hide()
-
-
-    # def update_MA_ref_state(self):
-    #     caller = inspect.stack()[1].function
-    #     # curframe = inspect.currentframe()
-    #     # calframe = inspect.getouterframes(curframe, 2)
-    #     # calname = str(calframe[1][3])
-    #     # logger.info('Caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
-    #     if caller != 'on_state_change':
-    #         if self.MA_webengine_ref.isVisible():
-    #             if cfg.baseViewer.state.cross_section_scale:
-    #                 # if cfg.baseViewer.state.cross_section_scale < 10_000:
-    #                 #     if cfg.baseViewer.state.cross_section_scale != 1.0:
-    #                 pos = cfg.baseViewer.state.position
-    #                 zoom = cfg.baseViewer.state.cross_section_scale
-    #                 if isinstance(pos, np.ndarray) or isinstance(zoom, np.ndarray):
-    #                     state = copy.deepcopy(cfg.refViewer.state)
-    #                     if isinstance(pos, np.ndarray):
-    #                         state.position = cfg.baseViewer.state.position
-    #                     if isinstance(zoom, float):
-    #                         # if cfg.baseViewer.state.cross_section_scale < 10_000:
-    #                         if cfg.baseViewer.state.cross_section_scale < 100:
-    #                             # if cfg.baseViewer.state.cross_section_scale < cfg.refViewer.cs_scale:
-    #                             # if cfg.baseViewer.state.cross_section_scale < 1: # solves runaway zoom effect
-    #                             if cfg.baseViewer.state.cross_section_scale != 1.0:
-    #                                 logger.info(f'Updating ref viewer state. OLD cs_scale: {state.cross_section_scale}')
-    #                                 logger.info(
-    #                                     f'Updating ref viewer state. NEW cs_scale: {cfg.baseViewer.state.cross_section_scale}')
-    #                                 state.cross_section_scale = cfg.baseViewer.state.cross_section_scale
-    #                     cfg.refViewer.set_state(state)
-
-    # def update_MA_base_state(self):
-    #     caller = inspect.stack()[1].function
-    #     # curframe = inspect.currentframe()
-    #     # calframe = inspect.getouterframes(curframe, 2)
-    #     # calname = str(calframe[1][3])
-    #     # logger.info('Caller: %s, calname: %s, sender: %s' % (caller, calname, self.sender()))
-    #     if caller != 'on_state_change':
-    #         if self.MA_webengine_base.isVisible():
-    #             if cfg.refViewer.state.cross_section_scale:
-    #                 # if cfg.refViewer.state.cross_section_scale < 10_000:
-    #                 #     if cfg.refViewer.state.cross_section_scale != 1.0:
-    #                 pos = cfg.refViewer.state.position
-    #                 zoom = cfg.refViewer.state.cross_section_scale
     #
-    #                 if isinstance(pos, np.ndarray) or isinstance(zoom, np.ndarray):
-    #                     state = copy.deepcopy(cfg.baseViewer.state)
-    #                     if isinstance(pos, np.ndarray):
-    #                         state.position = cfg.refViewer.state.position
-    #                     if isinstance(zoom, float):
-    #                         # if cfg.refViewer.state.cross_section_scale < 10_000:
-    #                         if cfg.refViewer.state.cross_section_scale < 100:
-    #                             # if cfg.refViewer.state.cross_section_scale < cfg.refViewer.cs_scale:
-    #                             # if cfg.refViewer.state.cross_section_scale < 1: # solves runaway zoom effect
-    #                             if cfg.refViewer.state.cross_section_scale != 1.0:
-    #                                 logger.info(
-    #                                     f'Updating base viewer state. OLD cs_scale: {state.cross_section_scale}')
-    #                                 logger.info(
-    #                                     f'Updating base viewer state. NEW cs_scale: {cfg.refViewer.state.cross_section_scale}')
-    #                                 state.cross_section_scale = cfg.refViewer.state.cross_section_scale
-    #                     cfg.baseViewer.set_state(state)
+    # def deleteMpRef(self):
+    #     # todo .currentItem().background().color().name() is no longer viable
+    #
+    #     logger.info('Deleting A Reference Image Manual Correspondence Point from Buffer...')
+    #     cfg.main_window.hud.post('Deleting A Reference Image Manual Correspondence Point from Buffer...')
+    #     # for item in self.lw_ref.selectedItems():
+    #     #     logger.critical(f'item:\n{item}')
+    #     #     logger.critical(f'item.text():\n{item.text()}')
+    #     #     self.lw_ref.takeItem(self.lw_ref.row(item))
+    #     if self.lw_ref.currentItem():
+    #         del_key = self.lw_ref.currentItem().foreground().color().name()
+    #         logger.critical('del_key is %s' % del_key)
+    #         self.baseViewer.ref_pts.pop(del_key)
+    #     self.baseViewer.drawSWIMwindow()
+    #     self.update_MA_list_widgets()
+    #
+    #
+    # def deleteMpBase(self):
+    #     # todo .currentItem().background().color().name() is no longer viable
+    #
+    #     logger.info('Deleting A Base Image Manual Correspondence Point from Buffer...')
+    #     cfg.main_window.hud.post('Deleting A Base Image Manual Correspondence Point from Buffer...')
+    #     # for item in self.lw_tra.selectedItems():
+    #     #     self.lw_tra.takeItem(self.lw_tra.row(item))
+    #     if self.lw_tra.currentItem():
+    #         del_key = self.lw_tra.currentItem().foreground().color().name()
+    #         logger.critical('del_key is %s' % del_key)
+    #         self.baseViewer.tra_pts.pop(del_key)
+    #         # if del_key in cfg.refViewer.pts.keys():
+    #         #     cfg.refViewer.pts.pop(del_key)
+    #     self.baseViewer.setMpData()
+    #     self.baseViewer.drawSWIMwindow()
+    #     self.update_MA_list_widgets()
 
-
-    def completeDeleteMp(self):
-        logger.info('')
-        try:
-            self.deleteAllMp()
-            self.update_MA_list_widgets()
-            self.updateAnnotations()
-            cfg.mw.setTargKargPixmaps()
-            cfg.mw.updateCorrSignalsDrawer()
-        except:
-            print_exception()
-
-
-    def deleteMpRef(self):
-        # todo .currentItem().background().color().name() is no longer viable
-
-        logger.info('Deleting A Reference Image Manual Correspondence Point from Buffer...')
-        cfg.main_window.hud.post('Deleting A Reference Image Manual Correspondence Point from Buffer...')
-        # for item in self.MA_ptsListWidget_ref.selectedItems():
-        #     logger.critical(f'item:\n{item}')
-        #     logger.critical(f'item.text():\n{item.text()}')
-        #     self.MA_ptsListWidget_ref.takeItem(self.MA_ptsListWidget_ref.row(item))
-        if self.MA_ptsListWidget_ref.currentItem():
-            del_key = self.MA_ptsListWidget_ref.currentItem().foreground().color().name()
-            logger.critical('del_key is %s' % del_key)
-            cfg.refViewer.pts.pop(del_key)
-            # if del_key in cfg.baseViewer.pts.keys():
-            #     cfg.baseViewer.pts.pop(del_key)
-        cfg.refViewer.applyMps()
-        self.updateAnnotations()
-        self.updateEnabledButtonsMA()
-        self.update_MA_list_widgets()
-        cfg.mw.setTargKargPixmaps()
-        cfg.mw.updateCorrSignalsDrawer()
-
-    def deleteMpBase(self):
-        # todo .currentItem().background().color().name() is no longer viable
-
-        logger.info('Deleting A Base Image Manual Correspondence Point from Buffer...')
-        cfg.main_window.hud.post('Deleting A Base Image Manual Correspondence Point from Buffer...')
-        # for item in self.MA_ptsListWidget_base.selectedItems():
-        #     self.MA_ptsListWidget_base.takeItem(self.MA_ptsListWidget_base.row(item))
-        if self.MA_ptsListWidget_base.currentItem():
-            del_key = self.MA_ptsListWidget_base.currentItem().foreground().color().name()
-            logger.critical('del_key is %s' % del_key)
-            cfg.baseViewer.pts.pop(del_key)
-            # if del_key in cfg.refViewer.pts.keys():
-            #     cfg.refViewer.pts.pop(del_key)
-        cfg.baseViewer.applyMps()
-        self.updateAnnotations()
-        self.updateEnabledButtonsMA()
-        self.update_MA_list_widgets()
-        cfg.mw.setTargKargPixmaps()
-        cfg.mw.updateCorrSignalsDrawer()
 
     def deleteAllMpRef(self):
         logger.info('Deleting All Reference Image Manual Correspondence Points from Buffer...')
         cfg.main_window.hud.post('Deleting All Reference Image Manual Correspondence Points from Buffer...')
-        cfg.refViewer.pts.clear()
-        self.MA_ptsListWidget_ref.clear()
-        cfg.refViewer.applyMps()
-        self.updateAnnotations()
-        self.updateEnabledButtonsMA()
+        self.baseViewer.pts['ref'].clear()
+        self.baseViewer.setMpData()
+        self.baseViewer.drawSWIMwindow()
         self.update_MA_list_widgets()
-        cfg.mw.setTargKargPixmaps()
-        cfg.mw.updateCorrSignalsDrawer()
+
 
     def deleteAllMpBase(self):
         logger.info('Deleting All Base Image Manual Correspondence Points from Buffer...')
         cfg.main_window.hud.post('Deleting All Base Image Manual Correspondence Points from Buffer...')
-        cfg.baseViewer.pts.clear()
-        self.MA_ptsListWidget_base.clear()
-        cfg.baseViewer.applyMps()
-        self.updateAnnotations()
-        self.updateEnabledButtonsMA()
+        self.baseViewer.pts['base'].clear()
+        self.baseViewer.setMpData()
+        self.baseViewer.drawSWIMwindow()
         self.update_MA_list_widgets()
-        cfg.mw.setTargKargPixmaps()
-        cfg.mw.updateCorrSignalsDrawer()
+
 
     def deleteAllMp(self):
         logger.info('deleteAllMp >>>>')
         logger.info('Deleting All Base + Reference Image Manual Correspondence Points from Buffer...')
         cfg.main_window.hud.post('Deleting All Base + Reference Image Manual Correspondence Points from Buffer...')
         cfg.data.clearMps()
-        cfg.refViewer.pts.clear()
-        cfg.baseViewer.pts.clear()
-        self.MA_ptsListWidget_ref.clear()
-        self.MA_ptsListWidget_base.clear()
-        cfg.refViewer.applyMps()
-        cfg.baseViewer.applyMps()
-        self.updateAnnotations()
-        self.updateEnabledButtonsMA()
+        self.baseViewer.pts['ref'].clear()
+        self.baseViewer.pts['base'].clear()
+        self.lw_ref.clear()
+        self.lw_tra.clear()
+        self.baseViewer.setMpData()
+        self.baseViewer.drawSWIMwindow()
         self.update_MA_list_widgets()
-        cfg.mw.setTargKargPixmaps()
-        cfg.mw.updateCorrSignalsDrawer()
-
         logger.info('<<<< deleteAllMp')
 
 
     def eventFilter(self, source, event):
-        if event.type() == QEvent.ContextMenu and source is self.MA_ptsListWidget_ref:
+        if event.type() == QEvent.ContextMenu and source is self.lw_ref:
             menu = QMenu()
             # self.deleteMpRefAction = QAction('Delete')
             # # self.deleteMpRefAction.setStatusTip('Delete this manual correspondence point')
@@ -2892,7 +2710,7 @@ class ProjectTab(QWidget):
             if menu.exec_(event.globalPos()):
                 item = source.itemAt(event.pos())
             return True
-        elif event.type() == QEvent.ContextMenu and source is self.MA_ptsListWidget_base:
+        elif event.type() == QEvent.ContextMenu and source is self.lw_tra:
             menu = QMenu()
             # self.deleteMpBaseAction = QAction('Delete')
             # # self.deleteMpBaseAction.setStatusTip('Delete this manual correspondence point')
@@ -2926,7 +2744,7 @@ class ProjectTab(QWidget):
             if self._allow_zoom_change:
                 # caller = inspect.stack()[1].function
                 if cfg.data['state']['current_tab'] == 1:
-                    zoom = cfg.baseViewer.zoom()
+                    zoom = self.baseViewer.zoom()
                 else:
                     zoom = cfg.emViewer.zoom()
 
@@ -2948,9 +2766,8 @@ class ProjectTab(QWidget):
         if caller not in ('slotUpdateZoomSlider', 'setValue'):  # Original #0314
             val = 1 / self.zoomSlider.value()
             if cfg.data['state']['current_tab'] == 1:
-                if abs(cfg.baseViewer.state.cross_section_scale - val) > .0001:
-                    cfg.refViewer.set_zoom(val)
-                    cfg.baseViewer.set_zoom(val)
+                if abs(self.baseViewer.state.cross_section_scale - val) > .0001:
+                    self.baseViewer.set_zoom(val)
             else:
                 try:
                     if abs(cfg.emViewer.state.cross_section_scale - val) > .0001:
@@ -2965,7 +2782,7 @@ class ProjectTab(QWidget):
         # logger.info(f'caller: {caller}')
         try:
             if cfg.data['state']['current_tab'] == 1:
-                val = cfg.baseViewer.state.cross_section_scale
+                val = self.baseViewer.state.cross_section_scale
             else:
                 val = cfg.emViewer.state.cross_section_scale
             if val:
@@ -2986,12 +2803,9 @@ class ProjectTab(QWidget):
             # for viewer in cfg.main_window.get_viewers():
             val = self.ZdisplaySlider.value()
             if cfg.data['state']['current_tab'] == 1:
-                state = copy.deepcopy(cfg.refViewer.state)
+                state = copy.deepcopy(self.baseViewer.state)
                 state.relative_display_scales = {'z': val}
-                cfg.refViewer.set_state(state)
-                state = copy.deepcopy(cfg.baseViewer.state)
-                state.relative_display_scales = {'z': val}
-                cfg.baseViewer.set_state(state)
+                self.baseViewer.set_state(state)
                 # state = copy.deepcopy(cfg.stageViewer.state)
                 # state.relative_display_scales = {'z': val}
                 # cfg.baseViewer.set_state(state)
@@ -3415,10 +3229,8 @@ class ProjectTab(QWidget):
         viewers = []
         if cfg.emViewer:
             viewers.append(cfg.emViewer)
-        if cfg.baseViewer:
-            viewers.append(cfg.baseViewer)
-        if cfg.refViewer:
-            viewers.append(cfg.refViewer)
+        if self.baseViewer:
+            viewers.append(self.baseViewer)
         return viewers
 
     def paintEvent(self, pe):
@@ -3586,7 +3398,7 @@ class ScaledPixmapLabel(QLabel):
                     qp.drawPixmap(rect, pm)
                     return
             except ZeroDivisionError:
-                pass
+                print_exception()
         super().paintEvent(event)
 
 
@@ -3838,7 +3650,7 @@ class ClickLabel(QLabel):
                 border: 1px solid #ede9e8; 
                 font-weight: 600;""")
         else:
-            self.cl_ref.setStyleSheet(
+            self.setStyleSheet(
                 """background-color: #222222; 
                 color: #ede9e8; 
                 font-size: 10px; 
@@ -3863,6 +3675,13 @@ class NgClickLabel(QLabel):
         self.isClicked = not self.isClicked
         self.clicked.emit()
 
+
+class ListWidget(QListWidget):
+  def sizeHint(self):
+    s = QSize()
+    s.setHeight(super(ListWidget,self).sizeHint().height())
+    s.setWidth(self.sizeHintForColumn(0))
+    return s
 
 class BoldLabel(QLabel):
     def __init__(self, parent):

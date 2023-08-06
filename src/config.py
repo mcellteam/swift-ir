@@ -45,7 +45,6 @@ pt = None
 zarr_tab = None
 thumb = None
 emViewer = None
-refViewer = None
 baseViewer = None
 stageViewer = None
 snrViewer = None

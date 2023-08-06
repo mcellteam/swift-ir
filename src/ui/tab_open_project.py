@@ -632,8 +632,9 @@ class OpenProject(QWidget):
 
         makedirs_exist_ok(path, exist_ok=True)
 
+
         cfg.data = dm = DataModel(name=self.NEW_PROJECT_PATH)
-        # cfg.data.set_defaults()
+        initLogFiles(dm)
 
         if skip_to_config:
             cfg.data['data']['has_cal_grid'] = self.cbCalGrid.isChecked()
@@ -732,7 +733,6 @@ class OpenProject(QWidget):
         logger.info(f'New Tab ID: {ID}')
         cfg.dataById[id(cfg.project_tab)] = dm
         dm.set_defaults()
-        initLogFiles(dm)
         cfg.project_tab = cfg.pt = ProjectTab(self, path=path, datamodel=dm)
 
         cfg.mw._closeOpenProjectTab()
@@ -874,6 +874,8 @@ class OpenProject(QWidget):
                 return
             else:
                 logger.info(f'Project Opened!')
+
+            initLogFiles(cfg.data) #0805+
             append_project_path(filename)
             cfg.data.set_paths_absolute(filename=filename)
             # cfg.project_tab = ProjectTab(self, path=cfg.data.dest() + '.swiftir', datamodel=cfg.data)
@@ -1315,9 +1317,7 @@ class UserProjects(QWidget):
     def get_data(self):
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
-        # timer = Timer()
         # logger.info('>>>> get_data >>>>')
-
         # logger.info(f'caller: {caller}')
         self.project_paths = get_project_list()
         projects, thumbnail_first, thumbnail_last, created, modified, \
@@ -1335,22 +1335,16 @@ class UserProjects(QWidget):
                 # print_exception()
                 logger.error('Unable to locate or load data model: %s' % p)
 
-            # timer.report()
             try:    created.append(dm.created)
             except: created.append('Unknown')
-            # timer.report(extra='modified...')
             try:    modified.append(dm.modified)
             except: modified.append('Unknown')
-            # timer.report(extra='n_sections...')
             try:    n_sections.append(len(dm))
             except: n_sections.append('Unknown')
-            # timer.report(extra='img_dimensions...')
             try:    img_dimensions.append(dm.full_scale_size())
             except: img_dimensions.append('Unknown')
-            # timer.report(extra='basename...')
             try:    projects.append(os.path.basename(p))
             except: projects.append('Unknown')
-            # timer.report(extra='sizes...')
             project_dir = os.path.splitext(p)[0]
             try:
                 if getOpt(lookup='ui,FETCH_PROJECT_SIZES'):
@@ -1364,18 +1358,14 @@ class UserProjects(QWidget):
             except:
                 bytes.append('Unknown')
                 gigabytes.append('Unknown')
-            # timer.report(extra='thumbnail first...')
             thumb_path = os.path.join(project_dir, 'thumbnails')
             absolute_content_paths = list_paths_absolute(thumb_path)
             try:    thumbnail_first.append(absolute_content_paths[0])
             except: thumbnail_first.append('No Thumbnail')
-            # timer.report(extra='thumbnail last...')
             try:    thumbnail_last.append(absolute_content_paths[-1])
             except: thumbnail_last.append('No Thumbnail')
-            # timer.report(extra='location...')
             try:    location.append(p)
             except: location.append('Unknown')
-            # timer.report(extra='extra (cal grid)...')
             extra_toplevel_paths = glob(f'{project_dir}/*.tif')
             # logger.critical(f"extra_toplevel_paths = {extra_toplevel_paths}")
             #Todo refactor this
@@ -1384,7 +1374,6 @@ class UserProjects(QWidget):
             else:
                 extra.append('No Thumbnail')
             # extra.append(os.path.join(get_appdir(), 'resources', 'no-image.png'))
-            # timer.report()
 
         # logger.info('<<<< get_data <<<<')
         # return zip(projects, location, thumbnail_first, thumbnail_last, created, modified,

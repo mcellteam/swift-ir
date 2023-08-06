@@ -44,7 +44,6 @@ class Flicker(QLabel):
         # self.setSizePolicy(policy)
 
 
-
     def set(self):
         # logger.critical('Setting pixmap...')
         self.setPixmap(QPixmap(self.series[self.cur]))

@@ -198,7 +198,8 @@ class align_recipe:
                         pmov=man_pmov),
                     align_ingredient(
                         mode='SWIM-Manual',
-                        ww=[ww,ww], psta=man_psta,
+                        ww=[ww,ww],
+                        psta=man_psta,
                         pmov=man_pmov,
                         ID='Manual-a'),
                     align_ingredient(
@@ -499,17 +500,19 @@ class align_ingredient:
 
     def crop_match_signals(self):
         px_keep = 128
-        if self.recipe.method in ('grid-default', 'grid-custom'):
-            w = str(int(self.ww[0] / 2.0 + 1))
-            h = str(int(self.ww[1] / 2.0 + 1))
-            x1 = str(int((self.ww[0] - px_keep) / 2.0 + 1))
-            y1 = str(int((self.ww[1] - px_keep) / 2.0 + 1))
-            x2 = str(int((.50 * self.ww[0]) + (px_keep / 2.0) + 1))
-            y2 = str(int((.50 * self.ww[1]) + (px_keep / 2.0) + 1))
-        else:
-            w = h = str(int(self.ww))
-            x1 = y1 = str(int((self.ww - px_keep) / 2.0) + 1)
-            x2 = y2 = str(int((.50 * self.ww) + (px_keep / 2.0) + 1))
+        # if self.recipe.method in ('grid-default', 'grid-custom'):
+        #     w = str(int(self.ww[0] / 2.0 + 0.5))
+        #     h = str(int(self.ww[1] / 2.0 + 0.5))
+        #     x1 = str(int((self.ww[0] - px_keep) / 2.0 + 0.5))
+        #     y1 = str(int((self.ww[1] - px_keep) / 2.0 + 0.5))
+        #     x2 = '%d' % int((.50 * self.ww[0]) + (px_keep / 2.0) + 0.5)
+        #     y2 = '%d' % int((.50 * self.ww[1]) + (px_keep / 2.0) + 0.5)
+        # else:
+        w, h = '%d' % self.ww[0], '%d' % self.ww[1]
+        x1 = '%d' % int((self.ww[0] - px_keep) / 2.0 + 0.5)
+        y1 = '%d' % int((self.ww[1] - px_keep) / 2.0 + 0.5)
+        x2 = '%d' % int((self.ww[0] / 2) + (px_keep / 2.0) + 0.5)
+        y2 = '%d' % int((self.ww[1] / 2) + (px_keep / 2.0) + 0.5)
         for name in self.ms_names:
             self.crop_str_args = [
                 'B', w, h, '1',
