@@ -508,7 +508,8 @@ class MAViewer(neuroglancer.Viewer):
         logger.critical(ann.to_json())
         self.pts[self.role][pt_index] = ann
 
-        self._selected_index[self.role] = self.getNextPoint(self.role)
+        # self._selected_index[self.role] = self.getNextPoint(self.role)
+        self._selected_index[self.role] = (self._selected_index[self.role] + 1) % 3
 
         self.setMpData()
         self.signals.ptsChanged.emit()

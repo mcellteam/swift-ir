@@ -933,10 +933,10 @@ class MainWindow(QMainWindow):
         try:
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(fn=GenerateAligned(
-                    cfg.data, scale, start, end, stageit=STAGEIT, reallocate_zarr=reallocate_zarr, use_gui=True))
+                    cfg.data, scale, start, end, reallocate_zarr=reallocate_zarr, use_gui=True))
                 self.threadpool.start(self.worker)
             else:
-                GenerateAligned(cfg.data, scale, start, end, stageit=STAGEIT, reallocate_zarr=reallocate_zarr, use_gui=True)
+                GenerateAligned(cfg.data, scale, start, end, reallocate_zarr=reallocate_zarr, use_gui=True)
         except:
             print_exception()
 
@@ -1311,7 +1311,7 @@ class MainWindow(QMainWindow):
 
 
 
-    def align(self, scale, indexes, renew_od, reallocate_zarr, stageit, align_one=False, swim_only=False,
+    def align(self, scale, indexes, renew_od, reallocate_zarr, align_one=False, swim_only=False,
               ignore_bb=False, show_pbar=True, use_gui=True):
         # Todo change printout based upon alignment scope, i.e. for single layer
         # caller = inspect.stack()[1].function
@@ -1338,10 +1338,10 @@ class MainWindow(QMainWindow):
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(
                     fn=ComputeAffines(scale, path=None, indexes=indexes, swim_only=swim_only, renew_od=renew_od,
-                                      reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=use_gui, dm=cfg.data))
+                                      reallocate_zarr=reallocate_zarr, use_gui=use_gui, dm=cfg.data))
                 self.threadpool.start(self.worker)
             else:
-                ComputeAffines(scale, path=None, indexes=indexes, swim_only=swim_only, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit, use_gui=use_gui, dm=cfg.data)
+                ComputeAffines(scale, path=None, indexes=indexes, swim_only=swim_only, renew_od=renew_od, reallocate_zarr=reallocate_zarr, use_gui=use_gui, dm=cfg.data)
         except:
             print_exception()
             self.err('An Exception Was Raised During Alignment.')

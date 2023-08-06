@@ -45,7 +45,7 @@ __all__ = ['ComputeAffines']
 
 logger = logging.getLogger(__name__)
 
-def ComputeAffines(scale, path, indexes, use_gui=True, renew_od=False, reallocate_zarr=False, stageit=False,
+def ComputeAffines(scale, path, indexes, use_gui=True, renew_od=False, reallocate_zarr=False,
                    swim_only=False, bounding_box=False, dm=None):
     '''Compute the python_swiftir transformation matrices for the current s stack of images according to Recipe1.'''
     # caller = inspect.stack()[1].function
@@ -294,12 +294,11 @@ def ComputeAffines(scale, path, indexes, use_gui=True, renew_od=False, reallocat
             try:
                 if cfg.USE_EXTRA_THREADING and use_gui:
                     cfg.mw.worker = BackgroundWorker(fn=GenerateAligned(
-                        dm, scale, indexes, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit,
-                        use_gui=use_gui))
+                        dm, scale, indexes, renew_od=renew_od, reallocate_zarr=reallocate_zarr, use_gui=use_gui))
                     cfg.mw.threadpool.start(cfg.mw.worker)
                 else:
                     GenerateAligned(dm, scale, indexes, renew_od=renew_od, reallocate_zarr=reallocate_zarr,
-                                    stageit=stageit, use_gui=use_gui)
+                                    use_gui=use_gui)
 
             except:
                 print_exception()

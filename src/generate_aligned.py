@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 mp.set_start_method('forkserver', force=True)
 
-def GenerateAligned(dm, scale, indexes, renew_od=False, reallocate_zarr=False, stageit=False, use_gui=True):
+def GenerateAligned(dm, scale, indexes, renew_od=False, reallocate_zarr=False, use_gui=True):
     logger.info('>>>> GenerateAligned >>>>')
 
     scale_val = get_scale_val(scale)
