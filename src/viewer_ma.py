@@ -540,14 +540,14 @@ class MAViewer(neuroglancer.Viewer):
         l = [None,None,None]
         logger.critical(f"self.pts[self.role] = {self.pts[self.role]}")
         for i,p in enumerate(self.pts[self.role]):
-            logger.critical(f"p = {p}")
+            logger.info(f"p = {p}")
             if p:
                 _, x, y = p.point.tolist()
                 logger.critical(f"x = {x}, y = {y}")
                 l[i] = (x, y)
 
-        logger.critical(f"\n\nSetting manpoints: {l}\n"
-                        f"pts: {self.pts}\n\n\n")
+        logger.critical(f"Setting manpoints: {l}\n"
+                        f"pts: {self.pts}\n")
         cfg.data.set_manpoints(self.role, l)
         # for p in self.pts['ref']:
         #     _, x, y = p.point.tolist()
