@@ -818,7 +818,7 @@ class DataModel:
         # self._data['state'].setdefault('manual_mode', {})
         # self._data['state']['manual_mode'].setdefault('select_by', 'cycle')  #or zigzag, sticky
         self._data['state'].setdefault('region_selection', {})  #or zigzag, sticky
-        self._data['state']['region_selection'].setdefault('select_by', 'cycle')  #or zigzag, sticky
+        self._data['state']['region_selection'].setdefault('select_by', 'zigzag')  #or zigzag, sticky
         # self._data['state']['region_selection'].setdefault('select_by', 'zigzag')  #or zigzag, sticky
 
         # self._data['state']['show_ng_controls'] = False
