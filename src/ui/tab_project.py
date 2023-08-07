@@ -2344,7 +2344,7 @@ class ProjectTab(QWidget):
         self.lw_gb_l.setStyleSheet("""border-color: #666666;""")
         self.baseViewer.drawSWIMwindow() #redundant
         for i in list(range(0,3)):
-            self.lw_tra.item(i).setForeground(QColor('#666666'))
+            self.lw_tra.item(i).setForeground(QColor('#444444'))
             self.lw_ref.item(i).setForeground(QColor('#141414'))
         logger.info(f"<<<< set_reference <<<<")
 
@@ -2375,7 +2375,7 @@ class ProjectTab(QWidget):
         self.baseViewer.drawSWIMwindow() #redundant
         for i in list(range(0,3)):
             self.lw_tra.item(i).setForeground(QColor('#141414'))
-            self.lw_ref.item(i).setForeground(QColor('#666666'))
+            self.lw_ref.item(i).setForeground(QColor('#444444'))
         logger.info(f"<<<< set_transforming <<<<")
 
     def fn_hwidgetChanged(self):

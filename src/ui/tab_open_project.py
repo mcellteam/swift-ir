@@ -376,42 +376,7 @@ class OpenProject(QWidget):
         self._actions_widget.setFixedHeight(26)
         self._actions_widget.setLayout(hbl)
 
-
-        # self._actions_widget.setStyleSheet("""
-        # QPushButton {
-        #     font-size: 12px;
-        #     font-weight: 600;
-        #     font-family: Tahoma, sans-serif;
-        #     color: #339933;
-        #     background-color: #ede9e8;
-        #     border-width: 1px;
-        #     border-color: #339933;
-        #     border-style: solid;
-        #     padding: 1px;
-        #     border-radius: 4px;
-        #     outline: none;w
-        # }
-        #
-        # QPushButton:disabled {
-        #     border-width: 1px;
-        #     border-color: #dadada;
-        #     border-style: solid;
-        #     background-color: #ede9e8;
-        #     padding: 1px;
-        #     border-radius: 4px;
-        #     color: #dadada;
-        # }
-        # """)
-
-        # self._actions_widget.setStyleSheet(style)
-
-        # with open('src/style/buttonstyle.qss', 'r') as f:
-        #     button_gradient_style = f.read()
-        # self._actions_widget.setStyleSheet(button_gradient_style)
-
-
         self._splitter = QSplitter()
-
         self._splitter.addWidget(self.userProjectsWidget)
         self._splitter.addWidget(self.userFilesWidget)
         self._splitter.setSizes([700, 300])
@@ -421,15 +386,6 @@ class OpenProject(QWidget):
         self.vbl_main.addWidget(self._actions_widget)
         self.vbl_main.addWidget(self.le_project_name_w)
         self.vbl_main.addWidget(self.new_project_header)
-        # self.vbl_main.addWidget(<temp widgets>)
-
-        # self.layout = QVBoxLayout()
-        # self.layout.setContentsMargins(4, 0, 4, 0)
-        # self.layout.addWidget(self._splitter)
-        # # self.layout.addWidget(self.embed)
-        # self.layout.addWidget(self._actions_widget)
-        # # self.layout.addWidget(self.new_project_header)
-        # self.setLayout(self.layout)
 
         self.setLayout(self.vbl_main)
 
