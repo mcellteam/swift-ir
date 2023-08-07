@@ -27,7 +27,7 @@ import zarr
 import neuroglancer
 import neuroglancer as ng
 # from neuroglancer import ScreenshotSaver
-from qtpy.QtCore import QObject, Signal, Slot, QUrl, QTimer
+from qtpy.QtCore import QObject, Signal, Slot, QUrl
 from qtpy.QtWidgets import QApplication
 from qtpy.QtWebEngineWidgets import *
 from src.funcs_zarr import get_zarr_tensor

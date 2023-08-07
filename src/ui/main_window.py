@@ -405,29 +405,6 @@ class MainWindow(QMainWindow):
     def initPrivateMembers(self):
         logger.info('')
 
-        # if DEV:
-        self.printFocusTimer = QTimer()
-        self.printFocusTimer.setSingleShot(False)
-        self.printFocusTimer.setInterval(500)
-        def fn():
-            if self._isProjectTab():
-                # if DEV:
-                #     print(f'focus widget  : {self.focusWidget()}')
-                #     print(f'object name   : {self.focusWidget().objectName()}')
-                #     print(f'object type   : {type(self.focusWidget())}')
-                #     print(f'object id     : {id(self.focusWidget())}')
-                #     print(f'object parent : {self.focusWidget().parent()}')
-
-                #CriticalMechanism
-                try:
-                    if 'tab_project.WebEngine' in str(self.focusWidget().parent()):
-                        self.setFocus()
-                except:
-                    print_exception()
-                    # pass
-        self.printFocusTimer.timeout.connect(fn)
-        self.printFocusTimer.start()
-
         self.uiUpdateTimer = QTimer()
         self.uiUpdateTimer.setSingleShot(True)
         self.uiUpdateTimer.timeout.connect(self.dataUpdateWidgets)
@@ -2234,10 +2211,6 @@ class MainWindow(QMainWindow):
         # QTimer.singleShot(1000, lambda: self.initNeuroglancer(init_all=True))
 
         self.hud.done()
-
-
-    # def delayInitNeuroglancer(self, ms=1000):
-    #     QTimer.singleShot(ms, self.initNeuroglancer)
 
     def saveUserPreferences(self):
         logger.info('Saving User Preferences...')
