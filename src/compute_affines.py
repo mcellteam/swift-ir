@@ -45,8 +45,7 @@ __all__ = ['ComputeAffines']
 
 logger = logging.getLogger(__name__)
 
-def ComputeAffines(scale, path, indexes, use_gui=True, renew_od=False, reallocate_zarr=False,
-                   swim_only=False, bounding_box=False, dm=None):
+def ComputeAffines(scale, path, indexes, renew_od=False, reallocate_zarr=False, swim_only=False, dm=None):
     '''Compute the python_swiftir transformation matrices for the current s stack of images according to Recipe1.'''
     # caller = inspect.stack()[1].function
 
@@ -512,7 +511,7 @@ if __name__ == '__main__':
         scale = 'scale_4'
     start = args.start
     end = args.end
-    dm = ComputeAffines(scale=scale, path=path, start=start, end=end, use_gui=False, bounding_box=args.bounding_box)
+    dm = ComputeAffines(scale=scale, path=path, indexes=list(range(start,end)))
     save2file(dm=dm, name=dm.dest())
 
 

@@ -762,15 +762,8 @@ class OpenProject(QWidget):
             QApplication.processEvents()
             cfg.data = dm
             cfg.mw._autosave(silently=True)
-            cfg.mw.addGlobTab(cfg.project_tab, os.path.basename(path))
-            # cfg.mw.setUpdatesEnabled(False)
-            try:
-                cfg.mw.onStartProject()
-            except:
-                print_exception()
-            finally:
-                cfg.mw.enableAllTabs()
-                # cfg.mw.setUpdatesEnabled(True)
+            name, ext = os.path.splitext(os.path.basename(path))
+            cfg.mw.addGlobTab(cfg.project_tab, name)
 
         QApplication.processEvents()
 
@@ -785,8 +778,11 @@ class OpenProject(QWidget):
         self.user_projects.set_data()
         cfg.mw._is_initialized = 1
         QApplication.processEvents()
-        cfg.pt.initNeuroglancer()
         cfg.mw.setNoPbarMessage(False)
+        cfg.mw.enableAllTabs()
+        cfg.pt.initNeuroglancer()
+        cfg.mw.onStartProject()
+
         logger.info('<<<< new_project <<<<')
 
 
@@ -881,25 +877,15 @@ class OpenProject(QWidget):
             # cfg.project_tab = ProjectTab(self, path=cfg.data.dest() + '.swiftir', datamodel=cfg.data)
             cfg.project_tab = ProjectTab(self, path=cfg.data.dest(), datamodel=cfg.data)
             cfg.dataById[id(cfg.project_tab)] = cfg.data
-            cfg.mw.setUpdatesEnabled(False)
-            try:
-                cfg.mw.onStartProject()
-            except:
-                print_exception()
-            finally:
-                cfg.mw.setUpdatesEnabled(True)
+
             # cfg.mw.addGlobTab(cfg.project_tab, os.path.basename(cfg.data.dest()) + '.swiftir')
             cfg.mw._closeOpenProjectTab()
             cfg.mw.addGlobTab(cfg.project_tab, os.path.basename(cfg.data.dest()))
             cfg.mw._setLastTab()
-            # cfg.mw.hud.done()
             cfg.mw._is_initialized = 1
-
             QApplication.processEvents()
             cfg.pt.initNeuroglancer()
-
-            if cfg.data.is_aligned():
-                cfg.mw.setdw_snr(True)
+            cfg.mw.onStartProject()
 
         else:
             cfg.mw.warn("Invalid Path")

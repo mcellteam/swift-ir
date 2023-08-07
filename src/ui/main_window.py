@@ -193,8 +193,8 @@ class MainWindow(QMainWindow):
         # self.setCorner(Qt.BottomLeftCorner, Qt.LeftToolBarArea )
         # self.setCorner(Qt.TopLeftCorner, Qt.LeftDockWidgetArea )
         # self.setCorner(Qt.BottomRightCorner, Qt.RightDockWidgetArea )
-        # self.setCorner(Qt.BottomRightCorner, Qt.BottomDockWidgetArea )
-        self.setCorner(Qt.BottomRightCorner, Qt.RightDockWidgetArea )
+        self.setCorner(Qt.BottomRightCorner, Qt.BottomDockWidgetArea )
+        # self.setCorner(Qt.BottomRightCorner, Qt.RightDockWidgetArea )
         self.setDockNestingEnabled(True)
 
     def TO(self):
@@ -773,7 +773,8 @@ class MainWindow(QMainWindow):
 
 
     def setdw_thumbs(self, state):
-        logger.critical('')
+        caller = inspect.stack()[1].function
+        logger.critical(f"[{caller}]")
         self.dw_thumbs.setVisible(state)
         self.dw_thumbs.setVisible(self.tbbThumbnails.isChecked())
         self.a_thumbs.setText(('Show SWIM Region &Thumbnails', 'Hide SWIM Region &Thumbnails')[state])
@@ -781,17 +782,23 @@ class MainWindow(QMainWindow):
         tip2 = '\n'.join(f"Hide Raw Thumbnails Tool Window ({hotkey('T')})")
         self.tbbThumbnails.setToolTip((tip1, tip2)[state])
 
+        logger.critical(f"self._isProjectTab()? {self._isProjectTab()}")
+
         if self._isProjectTab():
             cfg.data['state']['tool_windows']['raw_thumbnails'] = state
 
-            if state:
-                self.updateCorrSignalsDrawer()
-                self.setTargKargPixmaps()
-                QApplication.processEvents()
+        if state:
+            self.updateCorrSignalsDrawer()
+            self.setTargKargPixmaps()
+            QApplication.processEvents()
+            h = self.dw_thumbs.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
+            w = int(h / 2 + .5) - 10
+            logger.critical(f"setting mac width to {w}")
+            self.dw_thumbs.setMaximumWidth(w)
+            cfg.pt.tn_widget.resize(QSize(w-6, cfg.pt.tn_widget.height()))
 
-                h = self.dw_thumbs.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
-                self.dw_thumbs.setMaximumWidth(int(h / 2 + .5) - 4)
-                # cfg.pt.tn_widget.resize(QSize(int(h / 2 + .5), cfg.pt.tn_widget.height()))
+            cfg.pt.tn_ref.resize(w,w)
+            cfg.pt.tn_tra_lab.resize(w,w)
 
 
 
@@ -813,16 +820,16 @@ class MainWindow(QMainWindow):
             cfg.pt.tbbBlinkToggle.setIcon(qta.icon('mdi.toggle-switch-off-outline', color='#f3f6fb'))
             cfg.pt.tbbBlinkToggle.setChecked(False)
 
-            if state:
-                # cfg.pt.match_widget.adjustSize() #MUCH BETTER OFF
-                # self.setUpdatesEnabled(True)
-                self.updateCorrSignalsDrawer()
-                self.setTargKargPixmaps()
-                QApplication.processEvents()
+        if state:
+            # cfg.pt.match_widget.adjustSize() #MUCH BETTER OFF
+            # self.setUpdatesEnabled(True)
+            self.updateCorrSignalsDrawer()
+            self.setTargKargPixmaps()
+            QApplication.processEvents()
 
-                h = self.dw_matches.height() - cfg.pt.mwTitle.height()
-                self.dw_matches.setMaximumWidth(int(h /2 + .5) - 4)
-                # cfg.pt.match_widget.resize(QSize(int(h /2 + .5) - 4, h))
+            h = self.dw_matches.height() - cfg.pt.mwTitle.height()
+            self.dw_matches.setMaximumWidth(int(h /2 + .5) - 4)
+            # cfg.pt.match_widget.resize(QSize(int(h /2 + .5) - 4, h))
 
 
 
@@ -1086,7 +1093,7 @@ class MainWindow(QMainWindow):
 
 
 
-    def onAlignmentEnd(self, indexes):
+    def onAlignmentEnd(self):
         logger.info('Running Post-Alignment Tasks...')
         # self.alignmentFinished.emit()
         t0 = time.time()
@@ -1094,7 +1101,6 @@ class MainWindow(QMainWindow):
             if self._isProjectTab():
                 self.setNoPbarMessage(False)
                 self.updateEnabledButtons()
-                self.present_snr_results(indexes)
                 self.dataUpdateWidgets()
                 self._showSNRcheck()
                 cfg.project_tab.updateTimingsWidget()
@@ -1144,8 +1150,6 @@ class MainWindow(QMainWindow):
                 cfg.project_tab.refreshTab()
                 self.dataUpdateWidgets()
                 self.alignAll(set_pbar=False)
-
-            self.onAlignmentEnd(indexes=range(0,len(cfg.data)))
 
     # def alignRange(self, start=None, end=None):
     #     cfg.ignore_pbar = False
@@ -1203,35 +1207,19 @@ class MainWindow(QMainWindow):
     #     cfg.project_tab.initNeuroglancer()
 
     # def alignOne(self, stageit=False):
-    def alignOne(self, index=None, quick_swim=False):
+    def alignOne(self, index=None, swim_only=False):
         logger.critical('Aligning One...')
-        self.tell('Re-aligning Section #%d (%s)...' %
-                  (cfg.data.zpos, cfg.data.scale_pretty()))
+        self.tell('Re-aligning Section #%d (%s)...' % (cfg.data.zpos, cfg.data.scale_pretty()))
         if index == None:
             index = cfg.data.zpos
-        cfg.nProcessDone = 0
-        cfg.nProcessSteps = 1
-        if quick_swim:
-            cfg.ignore_pbar = True
-        self.align(
-            scale=cfg.data.scale_key,
-            indexes=[index],
-            renew_od=False,
-            reallocate_zarr=False,
-            align_one=True,
-            swim_only=True,
-        )
+        self.align(swim_only=swim_only)
         self._working = False
 
-        # 0614-
-        if quick_swim:
-            cfg.ignore_pbar = False
-            self.updateEnabledButtons()
-            self.enableAllTabs()
-            self.dataUpdateWidgets()
-        else:
-            self.onAlignmentEnd([index])
-            cfg.project_tab.initNeuroglancer()
+        # if quick_swim:
+        #     cfg.ignore_pbar = False
+        #     self.updateEnabledButtons()
+        #     self.enableAllTabs()
+        #     self.dataUpdateWidgets()
 
         self.tell('Section #%d Alignment Complete' % index)
         self.tell('SNR Before: %.3f  SNR After: %.3f' %
@@ -1266,7 +1254,7 @@ class MainWindow(QMainWindow):
     #     cfg.ignore_pbar = False
 
 
-    def alignAll(self, set_pbar=True, force=False, ignore_bb=False, use_gui=True):
+    def alignAll(self, set_pbar=True, force=False, ignore_bb=False):
         caller = inspect.stack()[1].function
         if caller == 'main':
             set_pbar = True
@@ -1279,16 +1267,6 @@ class MainWindow(QMainWindow):
             self.warn('%s is not a valid target for alignment!' % cfg.data.scale_pretty(scale))
             return
         self.tell('Aligning All Sections (%s)...' % cfg.data.scale_pretty())
-        # if set_pbar:
-        #     logger.critical('set_pbar >>>>')
-        #     cfg.ignore_pbar = False
-        #     if cfg.pt._toggleAutogenerate.isChecked():
-        #         # cfg.nProcessSteps = 5
-        #         self.showZeroedPbar(set_n_processes=4)
-        #     else:
-        #         # cfg.nProcessSteps = 3
-        #         self.showZeroedPbar(set_n_processes=2)
-        #     self.hidePbar()
 
         indexes = list(range(0,len(cfg.data)))
 
@@ -1301,52 +1279,36 @@ class MainWindow(QMainWindow):
             renew_od=True,
             reallocate_zarr=True,
             ignore_bb=ignore_bb,
-            use_gui=use_gui
         )
         # if not cfg.CancelProcesses:
         #     self.present_snr_results()
 
-        self.onAlignmentEnd(indexes)
-        cfg.project_tab.initNeuroglancer()
 
 
 
-    def align(self, scale, indexes, renew_od, reallocate_zarr, align_one=False, swim_only=False,
-              ignore_bb=False, show_pbar=True, use_gui=True):
-        # Todo change printout based upon alignment scope, i.e. for single layer
-        # caller = inspect.stack()[1].function
-        # if caller in ('alignGenerateOne','alignOne'):
-        #     ALIGN_ONE = True
+    def align(self, scale=None, indexes=None, renew_od=False, reallocate_zarr=False, swim_only=False, ignore_bb=False):
+        if scale == None:
+            scale = cfg.data.scale
+        if indexes == None:
+            indexes = [cfg.data.zpos]
         self.onAlignmentStart(scale=scale)
         self.tell("%s Affines (%s)..." % (('Initializing', 'Refining')[cfg.data.isRefinement()], cfg.data.scale_pretty(s=scale)))
-
         logger.info(f'Aligning indexes:{indexes}, {cfg.data.scale_pretty(scale)}...')
-
-        # self.shutdownNeuroglancer()
-
-        # self.onAlignmentStart(scale=scale)
-        # self.tell("%s Affines (%s)..." % (('Initializing', 'Refining')[cfg.data.isRefinement()], cfg.data.scale_pretty(s=scale)))
 
         if not ignore_bb:
             cfg.data.set_use_bounding_rect(cfg.pt._bbToggle.isChecked())
 
-        # if cfg.ignore_pbar:
-        #     self.showZeroedPbar(set_n_processes=False)
-        #     self.setPbarText('Computing Affine...')
-        #     self.hidePbar()
         try:
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(
                     fn=ComputeAffines(scale, path=None, indexes=indexes, swim_only=swim_only, renew_od=renew_od,
-                                      reallocate_zarr=reallocate_zarr, use_gui=use_gui, dm=cfg.data))
+                                      reallocate_zarr=reallocate_zarr, dm=cfg.data))
                 self.threadpool.start(self.worker)
             else:
-                ComputeAffines(scale, path=None, indexes=indexes, swim_only=swim_only, renew_od=renew_od, reallocate_zarr=reallocate_zarr, use_gui=use_gui, dm=cfg.data)
+                ComputeAffines(scale, path=None, indexes=indexes, swim_only=swim_only, renew_od=renew_od, reallocate_zarr=reallocate_zarr, dm=cfg.data)
         except:
             print_exception()
             self.err('An Exception Was Raised During Alignment.')
-
-
 
         try:
             if cfg.USE_EXTRA_THREADING:
@@ -1359,83 +1321,10 @@ class MainWindow(QMainWindow):
         except:
             print_exception()
 
+        self.onAlignmentEnd()
+        self.present_snr_results(indexes)
+        cfg.project_tab.initNeuroglancer()
 
-
-        # cfg.data.get_iter()
-
-
-
-        # cafms_after = cfg.data.cafm_list()
-        # indexes = []
-        # for i,(b,a) in enumerate(zip(cafms_before, cafms_after)):
-        #     if b != a :
-        #         indexes.append(i)
-        # if len(indexes) > 0:
-        #     # self.tell(f"<span style='color: #FFFF66;'><b>New Cumulative for Sections: {', '.join(map(str, indexes))}</b></span>")
-        #     self.tell(f"New Cumulative for Sections: {', '.join(map(str, indexes))}")
-
-        self.tell('<span style="color: #FFFF66;"><b>**** Process Group Complete ****</b></span><br>')
-
-        # else:     logger.info('Affine Computation Finished')
-
-        # if cfg.ignore_pbar:
-        #     cfg.nProcessDone +=1
-        #     self.updatePbar()
-        #     self.setPbarText('Scaling Correlation Signal Thumbnails...')
-        # try:
-        #     if cfg.USE_EXTRA_THREADING:
-        #         self.worker = BackgroundWorker(fn=cfg.thumb.reduce_signals(start=start, end=end))
-        #         self.threadpool.start(self.worker)
-        #     else: cfg.thumb.reduce_signals(start=start, end=end)
-        # except: print_exception(); self.warn('There Was a Problem Generating Corr Spot Thumbnails')
-        # # else:   logger.info('Correlation Signal Thumbnail Generation Finished')
-
-        # if cfg.project_tab._tabs.currentIndex() == 1:
-        #     cfg.project_tab.project_table.initTableData()
-        #
-        # if not swim_only:
-        #     if cfg.pt._toggleAutogenerate.isChecked():
-        #
-        #         if cfg.ignore_pbar:
-        #             cfg.nProcessDone += 1
-        #             self.updatePbar()
-        #             self.setPbarText('Generating Alignment...')
-        #
-        #         try:
-        #             if cfg.USE_EXTRA_THREADING:
-        #                 self.worker = BackgroundWorker(fn=GenerateAligned(
-        #                     scale_key, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit))
-        #                 self.threadpool.start(self.worker)
-        #             else: GenerateAligned(scale_key, start, end, renew_od=renew_od, reallocate_zarr=reallocate_zarr, stageit=stageit)
-        #         except:
-        #             print_exception()
-        #         finally:
-        #             logger.info('Generate Alignment Finished')
-        #
-        #         if cfg.ignore_pbar:
-        #             cfg.nProcessDone += 1
-        #             self.updatePbar()
-        #             self.setPbarText('Generating Aligned Thumbnail...')
-        #
-        #         try:
-        #             if cfg.USE_EXTRA_THREADING:
-        #                 self.worker = BackgroundWorker(fn=cfg.thumb.reduce_aligned(start=start, end=end))
-        #                 self.threadpool.start(self.worker)
-        #             else: cfg.thumb.reduce_aligned(start=start, end=end)
-        #         except:
-        #             print_exception()
-        #         finally:
-        #             logger.info('Generate Aligned Thumbnails Finished')
-        #
-        #         if cfg.ignore_pbar:
-        #             cfg.nProcessDone += 1
-        #             self.updatePbar()
-        #             self.setPbarText('Aligning')
-
-        self.pbarLabel.setText('')
-        self.hidePbar()
-        cfg.nProcessDone = 0
-        cfg.nProcessSteps = 0
 
     def rescale(self):
         if self._isProjectTab():
@@ -1461,7 +1350,7 @@ class MainWindow(QMainWindow):
                     try:
                         # self.pbarLabel.setText('')
                         # self.autoscale_(make_thumbnails=False)
-                        autoscale(dm=cfg.data, make_thumbnails=False)
+                        autoscale(dm=cfg.data)
                     except:
                         print_exception()
                     else:
@@ -1777,13 +1666,15 @@ class MainWindow(QMainWindow):
                 cfg.pt.tn_tra.set_data(path=cfg.data.thumbnail_tra())
                 cfg.pt.tn_tra_lab.setText(f'Transforming Section (Thumbnail)\n'
                                           f'[{cfg.data.zpos}] {cfg.data.filename_basename()}')
-                cfg.pt.tn_tra_lab.setText(f'Transforming Section (Thumbnail)\n'
-                                          f'[{cfg.data.zpos}] {cfg.data.filename_basename()}')
+
                 if cfg.data.skipped():
+                    cfg.pt.tn_ref_lab.setText(f'--')
                     cfg.project_tab.tn_tra_overlay.show()
                     cfg.project_tab.tn_ref.hide()
                     cfg.pt.tn_ref_lab.hide()
                 else:
+                    cfg.pt.tn_ref_lab.setText(f'Reference Section (Thumbnail)\n'
+                          f'[{cfg.data.zpos}] {cfg.data.reference_basename()}')
                     cfg.project_tab.tn_tra_overlay.hide()
                     cfg.pt.tn_ref.set_data(path=cfg.data.thumbnail_ref())
                     cfg.project_tab.tn_ref.show()
@@ -2164,10 +2055,9 @@ class MainWindow(QMainWindow):
                             cfg.pt.updateDetailsPanel()
                     self._showSNRcheck()
                     cfg.project_tab.refreshTab()
-                    if cfg.data.is_aligned():
-                        self.setdw_snr(True)
-                    else:
-                        self.setdw_snr(False)
+                    if cfg.pt._tabs.currentIndex() == 0:
+                        self.setdw_thumbs(cfg.data.is_aligned())
+
             else:
                 logger.warning(f"[{caller}] scale change disallowed")
 
@@ -2332,6 +2222,10 @@ class MainWindow(QMainWindow):
         cfg.project_tab.dataUpdateMA() #Important must come after initNeuroglancer
         check_project_status()
         QApplication.processEvents()
+
+        cfg.mw.setdw_snr(True)
+        cfg.mw.setdw_thumbs(True)
+        self.dataUpdateWidgets()
 
         # QTimer.singleShot(1000, lambda: self.initNeuroglancer(init_all=True))
 
@@ -3458,7 +3352,7 @@ class MainWindow(QMainWindow):
 
         if self.dw_thumbs.isVisible():
             h = self.dw_thumbs.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
-            self.dw_thumbs.setMaximumWidth(int(h / 2 + .5) - 4)
+            self.dw_thumbs.setMaximumWidth(int(h / 2 + .5) - 10)
 
         if self.dw_matches.isVisible():
             h = self.dw_matches.height() - cfg.pt.mwTitle.height()
@@ -5115,7 +5009,7 @@ class MainWindow(QMainWindow):
             self.setUpdatesEnabled(False)
             if self.dw_thumbs.isVisible():
                 h = self.dw_thumbs.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
-                self.dw_thumbs.setMaximumWidth(int(h / 2 + .5) - 4)
+                self.dw_thumbs.setMaximumWidth(int(h / 2 + .5) - 10)
             if self.dw_matches.isVisible():
                 h = self.dw_matches.height() - cfg.pt.mwTitle.height()
                 self.dw_matches.setMaximumWidth(int(h / 2 + .5) - 4)

@@ -509,7 +509,13 @@ class MAViewer(neuroglancer.Viewer):
         self.pts[self.role][pt_index] = ann
 
         # self._selected_index[self.role] = self.getNextPoint(self.role)
-        self._selected_index[self.role] = (self._selected_index[self.role] + 1) % 3
+        select_by = cfg.data['state']['region_selection']['select_by']
+        logger.info(f"select by: {select_by}")
+
+        if select_by == 'sticky':
+            pass
+        elif select_by == 'cycle':
+            self._selected_index[self.role] = (self._selected_index[self.role] + 1) % 3
 
         self.setMpData()
         self.signals.ptsChanged.emit()
@@ -722,7 +728,7 @@ class MAViewer(neuroglancer.Viewer):
                         )
                     )
 
-        # self.undrawSWIMwindows()
+        self.undrawSWIMwindows()
         with self.txn() as s:
             # for i,ann in enumerate(annotations):
             s.layers['SWIM'] = ng.LocalAnnotationLayer(
@@ -766,14 +772,11 @@ class MAViewer(neuroglancer.Viewer):
         # self.pts = OrderedDict()
         self.pts[self.role] = [None,None,None]
         pts_data = cfg.data.getmpFlat(l=cfg.data.zpos)[self.role]
-        logger.info(f'[{self.role}] Restoring manual point/region selections...')
+        # logger.info(f'[{self.role}] Restoring manual point/region selections...')
         for i, p in enumerate(pts_data):
-            logger.critical(f"i={i}, p={p}")
-
             if p:
                 logger.critical(f"Adding {p}...")
-                props = [self.colors[i],
-                         getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'),
+                props = [self.colors[i], getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'),
                          getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'), ]
                 # self.pts[self.getNextUnusedColor()] = ng.PointAnnotation(id=str(p), point=p, props=props)
                 self.pts[self.role][i] = ng.PointAnnotation(id=str(p), point=p, props=props)
