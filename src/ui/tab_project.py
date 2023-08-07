@@ -1291,7 +1291,7 @@ class ProjectTab(QWidget):
         bg.addButton(self.rb_zigzag)
         bg.addButton(self.rb_sticky)
 
-        self.w_rbs_selection = HWidget(ExpandingWidget(self), self.rb_cycle, self.rb_zigzag, self.rb_sticky,
+        self.w_rbs_selection = HWidget(ExpandingWidget(self), self.rb_zigzag, self.rb_cycle, self.rb_sticky,
                                        self.btn_clrAllPts)
 
 
