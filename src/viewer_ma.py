@@ -508,16 +508,25 @@ class MAViewer(neuroglancer.Viewer):
         logger.critical(ann.to_json())
         self.pts[self.role][pt_index] = ann
 
+        self.setMpData()
+
         # self._selected_index[self.role] = self.getNextPoint(self.role)
         select_by = cfg.data['state']['region_selection']['select_by']
         logger.info(f"select by: {select_by}")
+
 
         if select_by == 'sticky':
             pass
         elif select_by == 'cycle':
             self._selected_index[self.role] = (self._selected_index[self.role] + 1) % 3
+        elif select_by == 'zigzag':
+            if cfg.data['state']['tra_ref_toggle'] == 1:
+                self._selected_index['ref'] = (self._selected_index[self.role] + 1) % 3
+                cfg.pt.set_reference()
+            else:
+                self._selected_index['base'] = (self._selected_index[self.role] + 1) % 3
+                cfg.pt.set_transforming()
 
-        self.setMpData()
         self.signals.ptsChanged.emit()
         logger.info('%s Match Point Added: %s' % (self.role, str(coords)))
         # self.drawSWIMwindow()
@@ -526,14 +535,20 @@ class MAViewer(neuroglancer.Viewer):
 
     def setMpData(self):
         '''Copy local manual points into project dictionary'''
-        logger.info(f'Storing Manual Points for {self.role}...')
+        logger.critical(f'Storing Manual Points for {self.role}...')
         cfg.main_window.statusBar.showMessage('Manual Correspondence Points Stored!', 3000)
-        pts = [None,None,None]
+        l = [None,None,None]
+        logger.critical(f"self.pts[self.role] = {self.pts[self.role]}")
         for i,p in enumerate(self.pts[self.role]):
+            logger.critical(f"p = {p}")
             if p:
                 _, x, y = p.point.tolist()
-                pts[i] = (x, y)
-        cfg.data.set_manpoints(self.role, pts)
+                logger.critical(f"x = {x}, y = {y}")
+                l[i] = (x, y)
+
+        logger.critical(f"\n\nSetting manpoints: {l}\n"
+                        f"pts: {self.pts}\n\n\n")
+        cfg.data.set_manpoints(self.role, l)
         # for p in self.pts['ref']:
         #     _, x, y = p.point.tolist()
         #     pts.append((x, y))

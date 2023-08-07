@@ -818,7 +818,7 @@ class DataModel:
         # self._data['state'].setdefault('manual_mode', {})
         # self._data['state']['manual_mode'].setdefault('select_by', 'cycle')  #or zigzag, sticky
         self._data['state'].setdefault('region_selection', {})  #or zigzag, sticky
-        self._data['state']['region_selection']['select_by'] = 'cycle'  #or zigzag, sticky
+        self._data['state']['region_selection'].setdefault('select_by', 'cycle')  #or zigzag, sticky
         # self._data['state']['region_selection'].setdefault('select_by', 'zigzag')  #or zigzag, sticky
 
         # self._data['state']['show_ng_controls'] = False
@@ -1487,7 +1487,7 @@ class DataModel:
         '''Sets manual correspondence points for a single section at the current scale_key, and applies
          scaling factor then sets the same points for all scale_key levels above the current scale_key.'''
         if l == None: l = self.zpos
-        logger.info(f"Writing manual points to project dictionary for section #{l}: {matchpoints}")
+        logger.critical(f"Writing manual points to project dictionary for section #{l}: {matchpoints}")
         # scale_vals  = [x for x in self.scale_vals() if x <= self.scale_val()]
         # scales      = [get_scale_key(x) for x in scale_vals]
         glob_coords = [None,None,None]

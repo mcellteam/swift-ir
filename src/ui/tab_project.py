@@ -128,7 +128,7 @@ class ProjectTab(QWidget):
             self.set_transforming() #0802+
             self.update_MA_list_widgets() #0726+
             cfg.mw.setdw_thumbs(False)
-            cfg.mw.setdw_matches(False)
+            cfg.mw.setdw_matches(True)
         elif index == 2:
             self.project_table.table.selectRow(cfg.data.zpos)
         elif index == 3:
@@ -507,6 +507,12 @@ class ProjectTab(QWidget):
         self.btn_clrBasePts.setStyleSheet("""font-size: 9px;""")
         self.btn_clrBasePts.setFixedSize(QSize(36, 14))
         self.btn_clrBasePts.clicked.connect(self.deleteAllMpBase)
+
+        self.btn_clrAllPts = QPushButton('Clear All')
+        self.btn_clrAllPts.setToolTip('Clear All Selections')
+        self.btn_clrAllPts.setStyleSheet("""font-size: 9px; margin-right: 2px;""")
+        self.btn_clrAllPts.setFixedSize(QSize(48, 14))
+        self.btn_clrAllPts.clicked.connect(self.deleteAllMp)
 
         self.baseNextColorWidget = HWidget(self.lab_tra, self.lab_nextcolor0,
                                            ExpandingWidget(self), self.btn_undoBasePts, self.btn_clrBasePts)
@@ -1269,7 +1275,9 @@ class ProjectTab(QWidget):
         self.rb_sticky.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.rb_sticky.setStyleSheet("font-size: 9px;")
 
-        d = {'cycle': self.rb_cycle, 'zigzag': self.rb_zigzag, 'sticky:': self.rb_sticky}
+        d = {'cycle': self.rb_cycle,
+             'zigzag': self.rb_zigzag,
+             'sticky': self.rb_sticky}
         d[cfg.data['state']['region_selection']['select_by']].setChecked(True)
 
         bg = QButtonGroup(self)
@@ -1283,7 +1291,8 @@ class ProjectTab(QWidget):
         bg.addButton(self.rb_zigzag)
         bg.addButton(self.rb_sticky)
 
-        self.w_rbs_selection = HWidget(ExpandingWidget(self), self.rb_cycle, self.rb_sticky, self.rb_zigzag)
+        self.w_rbs_selection = HWidget(ExpandingWidget(self), self.rb_cycle, self.rb_zigzag, self.rb_sticky,
+                                       self.btn_clrAllPts)
 
 
         # self.lab_region_selection2 = QLabel("Note: At least 3 are necessary to for affine.")
@@ -2332,10 +2341,10 @@ class ProjectTab(QWidget):
         self.lab_ref.setStyleSheet("color: #161c20;")
         self.lab_ref_title.setStyleSheet("color: #161c20;")
         self.lw_gb_r.setStyleSheet("""border-width: 3px; border-color: #339933;""")
-        self.lw_gb_l.setStyleSheet("""""")
+        self.lw_gb_l.setStyleSheet("""border-color: #666666;""")
         self.baseViewer.drawSWIMwindow() #redundant
         for i in list(range(0,3)):
-            self.lw_tra.item(i).setForeground(QColor('#333333'))
+            self.lw_tra.item(i).setForeground(QColor('#666666'))
             self.lw_ref.item(i).setForeground(QColor('#141414'))
         logger.info(f"<<<< set_reference <<<<")
 
@@ -2362,11 +2371,11 @@ class ProjectTab(QWidget):
         self.lab_tra.setStyleSheet("color: #161c20;")
         self.lab_tra_title.setStyleSheet("color: #161c20;")
         self.lw_gb_l.setStyleSheet("""border-width: 3px; border-color: #339933;""")
-        self.lw_gb_r.setStyleSheet("""""")
+        self.lw_gb_r.setStyleSheet("""border-color: #666666;""")
         self.baseViewer.drawSWIMwindow() #redundant
         for i in list(range(0,3)):
             self.lw_tra.item(i).setForeground(QColor('#141414'))
-            self.lw_ref.item(i).setForeground(QColor('#333333'))
+            self.lw_ref.item(i).setForeground(QColor('#666666'))
         logger.info(f"<<<< set_transforming <<<<")
 
     def fn_hwidgetChanged(self):
@@ -2826,7 +2835,6 @@ class ProjectTab(QWidget):
                     self.lab_nextcolor1.hide()
                 self.lw_ref.item(index).setSelected(True)
                 self.lw_ref.item(index).setIcon(qta.icon('fa.arrow-left', color='#161c20'))
-
 
 
     #
