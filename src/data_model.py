@@ -815,6 +815,11 @@ class DataModel:
 
         self._data['state']['show_ng_controls'] = False
         self._data['state']['neutral_contrast'] = False
+        # self._data['state'].setdefault('manual_mode', {})
+        # self._data['state']['manual_mode'].setdefault('select_by', 'cycle')  #or zigzag, sticky
+        self._data['state'].setdefault('region_selection', {})  #or zigzag, sticky
+        self._data['state']['region_selection']['select_by'] = 'cycle'  #or zigzag, sticky
+        # self._data['state']['region_selection'].setdefault('select_by', 'zigzag')  #or zigzag, sticky
 
         # self._data['state']['show_ng_controls'] = False
 
@@ -1550,11 +1555,15 @@ class DataModel:
         indexes, names = [], []
         try:
             for i,layer in enumerate(self.stack()):
-                r = layer['alignment']['swim_settings']['match_points']['ref']
-                b = layer['alignment']['swim_settings']['match_points']['base']
-                if (r != []) or (b != []):
+                if layer['alignment']['swim_settings']['method'] in ('manual-hint','manual-strict'):
                     indexes.append(i)
                     names.append(os.path.basename(layer['filename']))
+
+                # r = layer['alignment']['swim_settings']['match_points']['ref']
+                # b = layer['alignment']['swim_settings']['match_points']['base']
+                # if (r != []) or (b != []):
+                #     indexes.append(i)
+                #     names.append(os.path.basename(layer['filename']))
             return list(zip(indexes, names))
         except:
             print_exception()
@@ -1576,24 +1585,26 @@ class DataModel:
         # logger.critical('')
         if s == None: s = self.scale
         if l == None: l = self.zpos
-        try:
-            mps = self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['match_points']
-            # ref = [(0.5, x[0], x[1]) for x in mps['ref']]
-            # base = [(0.5, x[0], x[1]) for x in mps['base']]
+        mps = self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['match_points']
+        # ref = [(0.5, x[0], x[1]) for x in mps['ref']]
+        # base = [(0.5, x[0], x[1]) for x in mps['base']]
 
-            d = {'ref': [None,None,None], 'base': [None,None,None]}
-            for i in range(0,3):
+        d = {'ref': [None,None,None], 'base': [None,None,None]}
+        for i in range(0,3):
+            try:
                 if mps['ref'][i]:
                     d['ref'][i] = (l, mps['ref'][i][0], mps['ref'][i][1])
+            except:
+                print_exception()
+            try:
                 if mps['base'][i]:
                     d['base'][i] = (l, mps['base'][i][0], mps['base'][i][1])
+            except:
+                print_exception()
 
-            # ref = [(l, x[0], x[1]) for x in mps['ref']]
-            # base = [(l, x[0], x[1]) for x in mps['base']]
-            return d
-        except:
-            print_exception()
-            return {'ref': [], 'base': []}
+        # ref = [(l, x[0], x[1]) for x in mps['ref']]
+        # base = [(l, x[0], x[1]) for x in mps['base']]
+        return d
 
     def clearMps(self, l=None):
         if l == None: l = self.zpos

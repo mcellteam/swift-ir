@@ -116,6 +116,8 @@ class ProjectTab(QWidget):
         index = self._tabs.currentIndex()
         cfg.data['state']['current_tab'] = index
         if index == 0:
+            cfg.mw.setdw_thumbs(True)
+            cfg.mw.setdw_matches(False)
             pass
         elif index == 1:
             self.updateLowest8widget()
@@ -125,6 +127,8 @@ class ProjectTab(QWidget):
             self.baseViewer.set_layer()
             self.set_transforming() #0802+
             self.update_MA_list_widgets() #0726+
+            cfg.mw.setdw_thumbs(False)
+            cfg.mw.setdw_matches(False)
         elif index == 2:
             self.project_table.table.selectRow(cfg.data.zpos)
         elif index == 3:
@@ -132,7 +136,7 @@ class ProjectTab(QWidget):
             self.treeview_model.jumpToLayer()
         elif index == 4:
             self.snr_plot.initSnrPlot()
-        # cfg.mw.dataUpdateWidgets() #0805-
+        cfg.mw.dataUpdateWidgets() #0805-
 
 
     # def refreshTab(self, index=None):
@@ -344,13 +348,13 @@ class ProjectTab(QWidget):
 
         # MA Stage Buffer Widget
 
-        self.MA_refViewerTitle = QLabel('Reference Section')
-        self.MA_refViewerTitle.setStyleSheet('font-size: 10px; background-color: #ede9e8; color: #161c20;')
-        self.MA_refViewerTitle.setMaximumHeight(14)
+        self.lab_ref_title = QLabel('Reference Section')
+        self.lab_ref_title.setStyleSheet('font-size: 10px; background-color: #ede9e8; color: #161c20;')
+        self.lab_ref_title.setMaximumHeight(14)
 
-        self.MA_baseViewerTitle = QLabel('Transforming Section')
-        self.MA_baseViewerTitle.setStyleSheet('font-size: 10px; background-color: #ede9e8; color: #161c20;')
-        self.MA_baseViewerTitle.setMaximumHeight(14)
+        self.lab_tra_title = QLabel('Transforming Section')
+        self.lab_tra_title.setStyleSheet('font-size: 10px; background-color: #ede9e8; color: #161c20;')
+        self.lab_tra_title.setMaximumHeight(14)
 
         self.lw_ref = ListWidget()
         # self.lw_ref.setFocusPolicy(Qt.NoFocus)
@@ -459,9 +463,6 @@ class ProjectTab(QWidget):
             item.setFont(font)
             # item.setCheckState(2)
             self.lw_ref.addItem(item)
-
-
-
 
 
         self.lw_ref.itemSelectionChanged.connect(self.lw_tra.selectionModel().clear)
@@ -581,7 +582,7 @@ class ProjectTab(QWidget):
         self.btnQuickSWIM.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.btnQuickSWIM.setFixedHeight(22)
         self.btnQuickSWIM.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.btnQuickSWIM.clicked.connect(lambda: cfg.main_window.alignOne(quick_swim=True))
+        self.btnQuickSWIM.clicked.connect(lambda: cfg.main_window.alignOne(swim_only=True))
         # self.btnQuickSWIM.clicked.connect(lambda: cfg.mw.setdw_matches(True))
 
         # self.lw_gb_l = GroupBox("Transforming")
@@ -593,7 +594,7 @@ class ProjectTab(QWidget):
         self.lw_gb_l.clicked.connect(fn)
         vbl = VBL()
         vbl.setSpacing(1)
-        vbl.addWidget(self.MA_baseViewerTitle)
+        vbl.addWidget(self.lab_tra_title)
         vbl.addWidget(self.lw_tra)
         vbl.addWidget(self.baseNextColorWidget)
         self.lw_gb_l.setLayout(vbl)
@@ -607,7 +608,7 @@ class ProjectTab(QWidget):
         self.lw_gb_r.clicked.connect(fn)
         vbl = VBL()
         vbl.setSpacing(1)
-        vbl.addWidget(self.MA_refViewerTitle)
+        vbl.addWidget(self.lab_ref_title)
         vbl.addWidget(self.lw_ref)
         vbl.addWidget(self.refNextColorWidget)
         self.lw_gb_r.setLayout(vbl)
@@ -1252,11 +1253,45 @@ class ProjectTab(QWidget):
         # self.lab_region_selection = QLabel("")
         self.lab_region_selection.setStyleSheet("font-size: 10px; font-weight: 600; color: #161c20; padding: 1px;")
 
+
+        self.rb_cycle = QRadioButton('cycle')
+        self.rb_cycle.setObjectName('cycle')
+        self.rb_cycle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.rb_cycle.setStyleSheet("font-size: 9px;")
+
+        self.rb_zigzag = QRadioButton('zigzag')
+        self.rb_zigzag.setObjectName('zigzag')
+        self.rb_zigzag.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.rb_zigzag.setStyleSheet("font-size: 9px;")
+
+        self.rb_sticky = QRadioButton('sticky')
+        self.rb_sticky.setObjectName('sticky')
+        self.rb_sticky.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.rb_sticky.setStyleSheet("font-size: 9px;")
+
+        d = {'cycle': self.rb_cycle, 'zigzag': self.rb_zigzag, 'sticky:': self.rb_sticky}
+        d[cfg.data['state']['region_selection']['select_by']].setChecked(True)
+
+        bg = QButtonGroup(self)
+        bg.setExclusive(True)
+        def fn():
+            for b in bg.buttons():
+                if b.isChecked():
+                    cfg.data['state']['region_selection']['select_by'] = b.objectName()
+        bg.buttonClicked.connect(fn)
+        bg.addButton(self.rb_cycle)
+        bg.addButton(self.rb_zigzag)
+        bg.addButton(self.rb_sticky)
+
+        self.w_rbs_selection = HWidget(ExpandingWidget(self), self.rb_cycle, self.rb_sticky, self.rb_zigzag)
+
+
         # self.lab_region_selection2 = QLabel("Note: At least 3 are necessary to for affine.")
         # self.lab_region_selection2 = QLabel("")
         # self.lab_region_selection2.setStyleSheet("font-size: 9px; color: #161c20; padding: 1px;")
         self.MA_points_tab = VWidget(
             self.MA_sbw,
+            self.w_rbs_selection,
             self.lab_region_selection,
             # self.lab_region_selection2,
             self.gb_MA_manual_controls,
@@ -2292,8 +2327,16 @@ class ProjectTab(QWidget):
         self.btn_clrRefPts.setEnabled(True)
         self.btn_undoRefPts.setEnabled(True)
         self.lw_gb_r.setAutoFillBackground(True)
+        self.lab_tra.setStyleSheet("color: #4d4d4d;")
+        self.lab_tra_title.setStyleSheet("color: #4d4d4d;")
+        self.lab_ref.setStyleSheet("color: #161c20;")
+        self.lab_ref_title.setStyleSheet("color: #161c20;")
         self.lw_gb_r.setStyleSheet("""border-width: 3px; border-color: #339933;""")
         self.lw_gb_l.setStyleSheet("""""")
+        self.baseViewer.drawSWIMwindow() #redundant
+        for i in list(range(0,3)):
+            self.lw_tra.item(i).setForeground(QColor('#333333'))
+            self.lw_ref.item(i).setForeground(QColor('#141414'))
         logger.info(f"<<<< set_reference <<<<")
 
 
@@ -2314,8 +2357,16 @@ class ProjectTab(QWidget):
         self.btn_clrRefPts.setEnabled(False)
         self.btn_undoRefPts.setEnabled(False)
         self.lw_gb_l.setAutoFillBackground(True)
+        self.lab_ref.setStyleSheet("color: #4d4d4d;")
+        self.lab_ref_title.setStyleSheet("color: #4d4d4d;")
+        self.lab_tra.setStyleSheet("color: #161c20;")
+        self.lab_tra_title.setStyleSheet("color: #161c20;")
         self.lw_gb_l.setStyleSheet("""border-width: 3px; border-color: #339933;""")
         self.lw_gb_r.setStyleSheet("""""")
+        self.baseViewer.drawSWIMwindow() #redundant
+        for i in list(range(0,3)):
+            self.lw_tra.item(i).setForeground(QColor('#141414'))
+            self.lw_ref.item(i).setForeground(QColor('#333333'))
         logger.info(f"<<<< set_transforming <<<<")
 
     def fn_hwidgetChanged(self):
@@ -2742,7 +2793,6 @@ class ProjectTab(QWidget):
                     if p:
                         x, y = p[0], p[1]
                         msg = '%d: x=%.1f, y=%.1f' % (i, x, y)
-                        logger.critical(msg)
                         self.lw_ref.item(i).setText(msg)
                     else:
                         self.lw_ref.item(i).setText('')
@@ -2750,10 +2800,8 @@ class ProjectTab(QWidget):
                 self.lw_ref.update()
 
                 # if cfg.data['state']['tra_ref_toggle'] == 1:
-                logger.critical('Setting Current Selection for transforming...')
                 color = cfg.glob_colors[self.baseViewer._selected_index['base']]
                 index = self.baseViewer._selected_index['base']
-                logger.critical(f"selected index: {index}")
 
                 if self.baseViewer.numPts('base') < 3:
                     self.lab_tra.setText('Next Color:   ')
@@ -2766,10 +2814,8 @@ class ProjectTab(QWidget):
                 self.lw_tra.item(index).setIcon(qta.icon('fa.arrow-left', color='#161c20'))
 
                 # elif cfg.data['state']['tra_ref_toggle'] == 0:
-                logger.critical('Setting Current Selection for reference...')
                 color = cfg.glob_colors[self.baseViewer._selected_index['ref']]
                 index = self.baseViewer._selected_index['ref']
-                logger.critical(f"selected index: {index}")
                 if self.baseViewer.numPts('ref') < 3:
                     self.lab_ref.setText('Next Color:   ')
                     self.lab_nextcolor1.setStyleSheet(f'''background-color: {color};''')
@@ -3394,13 +3440,13 @@ class ProjectTab(QWidget):
             viewers.append(self.baseViewer)
         return viewers
 
-    def paintEvent(self, pe):
-        '''Enables widget to be style-ized'''
-        opt = QStyleOption()
-        opt.initFrom(self)
-        p = QPainter(self)
-        s = self.style()
-        s.drawPrimitive(QStyle.PE_Widget, opt, p, self)
+    # def paintEvent(self, pe):
+    #     '''Enables widget to be style-ized'''
+    #     opt = QStyleOption()
+    #     opt.initFrom(self)
+    #     p = QPainter(self)
+    #     s = self.style()
+    #     s.drawPrimitive(QStyle.PE_Widget, opt, p, self)
 
     def updateTimingsWidget(self):
         logger.info('')
