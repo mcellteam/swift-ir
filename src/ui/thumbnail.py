@@ -348,11 +348,12 @@ class ThumbnailFast(QLabel):
                             else:
                                 pts = cfg.data.manpoints_mir('base')
                         for i,pt in enumerate(pts):
-                            qp.setPen(QPen(QColor(cfg.glob_colors[i]), 2, Qt.DotLine))
-                            x = int(pt[0])
-                            y = int(pt[1])
-                            r = get_rect(sf, x, y, ww, self.r.getCoords())
-                            qp.drawRect(r)
+                            if pt:
+                                qp.setPen(QPen(QColor(cfg.glob_colors[i]), 2, Qt.DotLine))
+                                x = int(pt[0])
+                                y = int(pt[1])
+                                r = get_rect(sf, x, y, ww, self.r.getCoords())
+                                qp.drawRect(r)
 
 
                 if self.extra:

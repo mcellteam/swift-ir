@@ -1124,6 +1124,8 @@ class MainWindow(QMainWindow):
                     cfg.pt.snr_plot.initSnrPlot()
                 if self.dw_snr.isVisible():
                     cfg.pt.dSnr_plot.initSnrPlot()
+                # if cfg.pt._tabs.currentIndex() == 1:
+                self.setdw_matches(True)
 
             t9 = time.time()
             dt = t9 - t0
@@ -2058,6 +2060,7 @@ class MainWindow(QMainWindow):
                     if cfg.pt._tabs.currentIndex() == 0:
                         self.setdw_thumbs(cfg.data.is_aligned())
 
+
             else:
                 logger.warning(f"[{caller}] scale change disallowed")
 
@@ -2225,6 +2228,7 @@ class MainWindow(QMainWindow):
 
         cfg.mw.setdw_snr(True)
         cfg.mw.setdw_thumbs(True)
+        cfg.mw.setdw_matches(False)
         self.dataUpdateWidgets()
 
         # QTimer.singleShot(1000, lambda: self.initNeuroglancer(init_all=True))
