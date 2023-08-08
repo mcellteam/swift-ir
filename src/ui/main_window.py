@@ -1142,7 +1142,7 @@ class MainWindow(QMainWindow):
                 if self.dw_snr.isVisible():
                     cfg.pt.dSnr_plot.initSnrPlot()
                 # if cfg.pt._tabs.currentIndex() == 1:
-                self.setdw_matches(True)
+                #     self.setdw_matches(True)
 
             t9 = time.time()
             dt = t9 - t0

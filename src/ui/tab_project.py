@@ -2896,6 +2896,7 @@ class ProjectTab(QWidget):
         self.baseViewer._selected_index['base'] = 0
         # self.baseViewer.restoreManAlignPts()
         self.baseViewer.drawSWIMwindow()
+        # delete_matches(cfg.data,cfg.data.scale,[cfg.data.zpos])
         self.update_MA_list_widgets()
         logger.info('<<<< deleteAllMp')
 
@@ -3927,6 +3928,25 @@ def setWebengineProperties(webengine):
     webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
     webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
+
+def delete_correlation_signals(dm, scale, indexes):
+    logger.info('')
+    for i in indexes:
+        sigs = dm.get_signals_filenames(s=scale, l=i)
+        # logger.info(f'Deleting:\n{sigs}')
+        for f in sigs:
+            if os.path.isfile(f):  # this makes the code more robust
+                os.remove(f)
+
+def delete_matches(dm, scale, indexes):
+    logger.info('')
+    for i in indexes:
+        sigs = dm.get_matches_filenames(s=scale, l=i)
+        # logger.info(f'Deleting:\n{sigs}')
+        for f in sigs:
+            if os.path.isfile(f):  # this makes the code more robust
+                logger.critical(f"Removing {f}...")
+                os.remove(f)
 
 if __name__ == '__main__':
     app = QApplication([])

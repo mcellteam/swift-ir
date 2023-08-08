@@ -67,7 +67,7 @@ class align_recipe:
         else:
             MAlogger.disabled = True
             RMlogger.disabled = True
-            # logger.disabled = True
+            logger.disabled = True
 
 
     def megabytes(self):
@@ -435,8 +435,6 @@ class align_ingredient:
         afm = '%.6f %.6f %.6f %.6f' % (
                 self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
 
-        logger.critical(f"self.psta[0] = {self.psta[0]}")
-        logger.critical(f"len(self.psta[0]) = {len(self.psta[0])}")
         for i in range(len(self.psta[0])):
             if m == 'grid-custom':
                 if self.ID != 'g1x1':
