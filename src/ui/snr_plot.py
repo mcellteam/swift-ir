@@ -407,8 +407,9 @@ class SnrPlot(QWidget):
             # ticks = np.arange(0, cfg.data.count)
             # ax = self.plot.getAxis("bottom")
             # ax.setTicks([[(v, str(v)) for v in ticks ]])
+            if not self.dock:
+                self.updateSpecialLayerLines()
 
-            self.updateSpecialLayerLines()
             if self.dock:
                 self.plot.autoRange() # !!! #0601-
 

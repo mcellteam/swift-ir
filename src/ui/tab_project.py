@@ -159,6 +159,7 @@ class ProjectTab(QWidget):
             self.updateTimingsWidget()
             self.update_MA_list_widgets()  # 0726+
             self.set_transforming()  # 0802+
+            self.dSnr_plot.initSnrPlot()
         elif index == 2:
             self.project_table.initTableData()
         elif index == 3:
@@ -2670,6 +2671,11 @@ class ProjectTab(QWidget):
             if len(self.baseViewer.pts['base']) == 3:
                 return True
         return False
+
+
+    def updateWarnings(self):
+        self.updateCafmComportsLabel()
+        self.updateDataComportsLabel()
 
 
     def updateCafmComportsLabel(self):
