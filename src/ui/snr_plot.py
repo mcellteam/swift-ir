@@ -453,9 +453,9 @@ class SnrPlot(QWidget):
             # hoverBrush=None,
             # pxMode=False # points transform with zoom
         )
-        logger.critical(f"Adding to plot, x_axis: {x_axis}")
-        logger.critical(f"Adding to plot, y_axis: {y_axis}")
-        logger.critical(f"Adding to plot: {self.ghost_points[s]}")
+        # logger.critical(f"Adding to plot, x_axis: {x_axis}")
+        # logger.critical(f"Adding to plot, y_axis: {y_axis}")
+        # logger.critical(f"Adding to plot: {self.ghost_points[s]}")
         self.ghost_points[s].addPoints(x_axis, y_axis)
         self.ghost_points[s].setZValue(0)
         self.plot.addItem(self.ghost_points[s])
