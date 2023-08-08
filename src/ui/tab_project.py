@@ -206,7 +206,7 @@ class ProjectTab(QWidget):
             # self.baseViewer.signals.swimAction.connect(cfg.main_window.alignOne)
             self.update_MA_list_widgets()
             self.dataUpdateMA()
-            logger.critical(f"Local Volume:\n{cfg.baseViewer.LV.info()}")
+            logger.info(f"Local Volume:\n{cfg.baseViewer.LV.info()}")
 
         if cfg.data['state']['current_tab'] == 0 or init_all:
             self.viewer = cfg.emViewer = EMViewer(webengine=self.webengine)
