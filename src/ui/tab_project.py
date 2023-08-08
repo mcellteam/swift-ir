@@ -71,7 +71,7 @@ class ProjectTab(QWidget):
         # self.webengine = QWebEngineView()
         self.webengine = WebEngine(ID='emViewer')
         self.webengine.setStyleSheet("background-color: #000000;")
-        self.webengine.setFocusPolicy(Qt.NoFocus)
+        # self.webengine.setFocusPolicy(Qt.NoFocus)
         self.webengine.loadFinished.connect(lambda: print('Web engine load finished!'))
         setWebengineProperties(self.webengine)
         # self.webengine.setStyleSheet('background-color: #222222;')
@@ -99,6 +99,7 @@ class ProjectTab(QWidget):
         # self.blinkTimer.timeout.connect(cfg.emViewer.blink)
         self.blinkCur = 0
         self.initNeuroglancer(init_all=True)
+        self.datamodel.signals.warning2.connect(self.updateDataComportsLabel)
 
 
     def load_data_from_treeview(self):
@@ -141,9 +142,7 @@ class ProjectTab(QWidget):
 
     # def refreshTab(self, index=None):
     def refreshTab(self):
-        logger.critical('')
-        if DEV:
-            logger.critical(f'[{caller_name()}]')
+        logger.info('')
         index = self._tabs.currentIndex()
         self.datamodel['state']['blink'] = False
         self.blinkTimer.stop()
@@ -206,14 +205,14 @@ class ProjectTab(QWidget):
             # self.baseViewer.signals.swimAction.connect(cfg.main_window.alignOne)
             self.update_MA_list_widgets()
             self.dataUpdateMA()
-            logger.info(f"Local Volume:\n{cfg.baseViewer.LV.info()}")
+            logger.info(f"Local Volume:\n{self.baseViewer.LV.info()}")
 
         if cfg.data['state']['current_tab'] == 0 or init_all:
             self.viewer = cfg.emViewer = EMViewer(webengine=self.webengine)
             self.viewer.initZoom(self.webengine.width(), self.webengine.height())
             cfg.emViewer.signals.layoutChanged.connect(self.slot_layout_changed)
             cfg.emViewer.signals.zoomChanged.connect(self.slot_zoom_changed)
-            logger.critical(f"Local Volume:\n{cfg.LV.info()}")
+            logger.info(f"Local Volume:\n{cfg.LV.info()}")
 
         cfg.mw.set_status('')
         cfg.mw.hud.done()
@@ -227,7 +226,7 @@ class ProjectTab(QWidget):
                    'xz-3d':'xz-3d', '4panel': '4panel', '3d': '3d'}
         requested = rev_mapping[self.viewer.state.layout.type]
         if DEV:
-            logger.critical(f"Layout changed! requested: {requested}")
+            logger.info(f"Layout changed! requested: {requested}")
         setData('state,ng_layout', requested)
         self.comboNgLayout.setCurrentText(requested)
         # if getData('state,ng_layout') == 'xy':
@@ -337,7 +336,7 @@ class ProjectTab(QWidget):
         setWebengineProperties(self.MA_webengine_base)
         # self.MA_webengine_base.focusInEvent.connect(self.focusedViewerChanged)
         self.MA_webengine_base.setMouseTracking(True)
-        # self.MA_webengine_base.setFocusPolicy(Qt.StrongFocus) #0726-
+        # self.MA_webengine_base.setFocusPolicy(Qt.NoFocus) #0726-
 
 
         '''Mouse move events will occur only when a mouse button is pressed down, 
@@ -517,10 +516,10 @@ class ProjectTab(QWidget):
         self.btn_clrAllPts.clicked.connect(self.deleteAllMp)
 
         self.baseNextColorWidget = HWidget(self.lab_tra, self.lab_nextcolor0,
-                                           ExpandingWidget(self), self.btn_undoBasePts, self.btn_clrBasePts)
+                                           ExpandingWidget(self), self.btn_clrBasePts)
         self.baseNextColorWidget.setFixedHeight(16)
         self.refNextColorWidget = HWidget(self.lab_ref, self.lab_nextcolor1,
-                                          ExpandingWidget(self), self.btn_undoRefPts, self.btn_clrRefPts)
+                                          ExpandingWidget(self), self.btn_clrRefPts)
         self.refNextColorWidget.setFixedHeight(16)
 
         self.automatic_label = QLabel()
@@ -535,7 +534,6 @@ class ProjectTab(QWidget):
             cfg.data.set_all_methods_automatic()
             # Todo include all of this functionality somewhere
             # cfg.data.set_auto_swim_windows_to_default()
-            cfg.main_window.setControlPanelData()
             self.dataUpdateMA()
             #     layer['alignment']['swim_settings'].setdefault('iterations', cfg.DEFAULT_SWIM_ITERATIONS)
 
@@ -780,8 +778,6 @@ class ProjectTab(QWidget):
             caller = inspect.stack()[1].function
             if caller == 'main':
                 val = int(self.slider_AS_2x2_SWIM_window.value())
-                if DEV:
-                    logger.critical(f"value: {val}")
                 cfg.data.set_swim_2x2_custom_px(val)
                 self.AS_2x2_SWIM_window_le.setText(str(cfg.data.swim_2x2_custom_px()[0]))
                 self.slider_AS_2x2_SWIM_window.setValue(int(cfg.data.swim_2x2_custom_px()[0]))
@@ -1026,7 +1022,6 @@ class ProjectTab(QWidget):
                     cfg.mw.tell(f'SWIM requires even values as input. Setting value to {new_val}')
                     self._swimWindowControl.setText(str(new_val))
                     return
-                logger.critical(f"val = {val}...........")
                 # cfg.data.set_auto_swim_windows_to_default(factor=float(self._swimWindowControl.text()) / cfg.data.image_size()[0])
                 cfg.data.set_auto_swim_windows_to_default(factor=val / cfg.data.image_size()[0])
                 # self.swimWindowChanged.emit()
@@ -2078,19 +2073,46 @@ class ProjectTab(QWidget):
         self.ng_widget_container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         self.warning_cafm = WarningNotice(self, 'The cumulative affine for this section no \n'
-                                                'longer comports with the displayed alignment.',
-                                          fixbutton=True)
-        self.warning_cafm.fixbutton.clicked.connect(cfg.mw.fix_cafm)
+                                                'longer comports with the displayed alignment.', fixbutton=True)
+
+        def fn_fix_cafm():
+            first_cafm_false = cfg.data.first_cafm_false()
+            to_align = cfg.data.data_dn_comport_indexes()
+            cfg.mw.align(scale=cfg.data.scale, indexes=to_align, ignore_bb=True)
+            to_regenerate = cfg.data.cafm_dn_comport_indexes()
+            cfg.mw.regenerate(scale=cfg.data.scale_key, indexes=to_regenerate, reallocate_zarr=False)
+            cfg.mw.dataUpdateWidgets()
+            self.dSnr_plot.initSnrPlot()
+        self.warning_cafm.fixbutton.clicked.connect(fn_fix_cafm)
         self.warning_cafm.hide()
 
-        self.warning_data = WarningNotice(self, 'This alignment has been edited.',
-                                          fixbutton=True)
+        self.warning_data = WarningNotice(self, 'This alignment has been edited.', fixbutton=True)
+        def fn_revert_data():
+            #Todo the way previous defaults is being stored is a temp hack to be fixed later
+            logger.info('')
+            method = cfg.data.method()
+            if method == 'grid-default':
+                sec = cfg.data['data']['scales'][cfg.data.scale]['stack'][cfg.data.zpos]
+                cfg.data.defaults = copy.deepcopy(sec['alignment']['swim_settings']['defaults'])
+            else:
+                sec = cfg.data['data']['scales'][cfg.data.scale]['stack'][cfg.data.zpos]
+                sec['alignment']['swim_settings'] = copy.deepcopy(sec['alignment_history'][method]['swim_settings'])
+
+            self.dataUpdateMA()
+            cfg.mw.dataUpdateWidgets()
+            # cfg.mw.updateDataComportsLabel()
+            self.baseViewer.drawSWIMwindow()
+            self.dSnr_plot.initSnrPlot()
+
+        self.warning_data.fixbutton.clicked.connect(fn_revert_data)
+        self.warning_data.fixbutton.setText('Revert')
         self.warning_data.hide()
 
         self.gb_warnings = QGroupBox("Warnings")
         # self.gb_warnings.setFixedHeight(44)
         self.gb_warnings.setObjectName('gb_cpanel')
         self.vbl_wanrings = VBL()
+        self.vbl_wanrings.setAlignment(Qt.AlignBottom)
         self.vbl_wanrings.addWidget(self.warning_data, alignment=Qt.AlignBottom)
         self.vbl_wanrings.addWidget(self.warning_cafm, alignment=Qt.AlignBottom)
         self.gb_warnings.setLayout(self.vbl_wanrings)
@@ -2650,6 +2672,23 @@ class ProjectTab(QWidget):
         return False
 
 
+    def updateCafmComportsLabel(self):
+        if cfg.data.is_aligned_and_generated() and cfg.data.cafm_hash_comports():
+            self.warning_cafm.hide()
+        else:
+            self.warning_cafm.show()
+
+
+    def updateDataComportsLabel(self):
+        # if cfg.data.is_aligned_and_generated() and not cfg.data.data_comports():
+        if cfg.data.is_aligned_and_generated() and cfg.data.data_comports()[0]:
+            self.warning_data.hide()
+        else:
+            self.warning_data.show()
+
+
+
+
     @Slot()
     def dataUpdateMA(self):
         # if DEV:
@@ -2673,6 +2712,32 @@ class ProjectTab(QWidget):
 
 
         # self.msg_MAinstruct.setVisible(cfg.data.current_method not in ('grid-default', 'grid-custom'))
+
+        #### previously in cfg.mw.setControlPanelData ####
+        self._swimWindowControl.setText(str(getData(f'data,defaults,{cfg.data.scale_key},swim-window-px')[0]))
+        self._swimWindowControl.setValidator(QIntValidator(0, cfg.data.image_size()[0]))
+        self.sb_whiteningControl.setValue(float(getData('data,defaults,signal-whitening')))
+        self.sb_SWIMiterations.setValue(int(getData('data,defaults,swim-iterations')))
+
+        poly = getData('data,defaults,corrective-polynomial')
+        if (poly == None) or (poly == 'None'):
+            self._polyBiasCombo.setCurrentText('None')
+        else:
+            # cfg.pt._polyBiasCombo.setCurrentText(str(poly))
+            self._polyBiasCombo.setCurrentIndex(int(poly) + 1)
+
+        self._bbToggle.setChecked(bool(getData(f'data,defaults,bounding-box')))
+
+        try:
+            self._bbToggle.setChecked(cfg.data.use_bb())
+        except:
+            logger.warning('Bounding Box Toggle Failed to Update')
+
+        self.updateDetailsPanel()
+        ############################################
+
+
+
 
         self.spinbox_whitening.setValue(float(cfg.data.whitening()))
 
@@ -2727,6 +2792,9 @@ class ProjectTab(QWidget):
 
         if self.te_logs.isVisible():
             self.refreshLogs()
+
+        self.updateCafmComportsLabel()
+        self.updateDataComportsLabel()
 
         # logger.critical('<<<< dataUpdateMA <<<<')
 
@@ -2873,7 +2941,11 @@ class ProjectTab(QWidget):
         self.baseViewer._selected_index['ref'] = 0
         # self.baseViewer.restoreManAlignPts()
         self.baseViewer.drawSWIMwindow()
+        delete_matches()
+        delete_correlation_signals()
+        cfg.mw.dataUpdateWidgets()
         self.update_MA_list_widgets()
+
 
 
     def deleteAllMpBase(self):
@@ -2883,6 +2955,9 @@ class ProjectTab(QWidget):
         self.baseViewer._selected_index['base'] = 0
         # self.baseViewer.restoreManAlignPts()
         self.baseViewer.drawSWIMwindow()
+        delete_matches()
+        delete_correlation_signals()
+        cfg.mw.dataUpdateWidgets()
         self.update_MA_list_widgets()
 
 
@@ -2896,7 +2971,9 @@ class ProjectTab(QWidget):
         self.baseViewer._selected_index['base'] = 0
         # self.baseViewer.restoreManAlignPts()
         self.baseViewer.drawSWIMwindow()
-        # delete_matches(cfg.data,cfg.data.scale,[cfg.data.zpos])
+        delete_matches()
+        delete_correlation_signals()
+        cfg.mw.dataUpdateWidgets()
         self.update_MA_list_widgets()
         logger.info('<<<< deleteAllMp')
 
@@ -3254,7 +3331,7 @@ class ProjectTab(QWidget):
         # self.datamodel.signals.zposChanged.connect(update_dSnr_zpos)
         def reinit_dSnr():
             if self.dSnr_plot.isVisible():
-                logger.critical('Reinitializing SNR plot dock widget...')
+                logger.info('Signal received! Reinitializing SNR plot dock widget...')
                 self.dSnr_plot.initSnrPlot()
         self.datamodel.signals.warning2.connect(reinit_dSnr)
         self.dSnr_plot.setStyleSheet('background-color: #222222; font-weight: 600; font-size: 12px; color: #ede9e8;')
@@ -3804,6 +3881,7 @@ class WarningNotice(QWidget):
         # self.setFixedHeight(16)
         self.layout = QHBoxLayout()
         self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setAlignment(Qt.AlignBottom)
 
 
 
@@ -3929,24 +4007,22 @@ def setWebengineProperties(webengine):
     webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
 
-def delete_correlation_signals(dm, scale, indexes):
+def delete_correlation_signals():
     logger.info('')
-    for i in indexes:
-        sigs = dm.get_signals_filenames(s=scale, l=i)
-        # logger.info(f'Deleting:\n{sigs}')
-        for f in sigs:
-            if os.path.isfile(f):  # this makes the code more robust
-                os.remove(f)
+    files = cfg.data.get_signals_filenames(s=cfg.data.scale, l=cfg.data.zpos)
+    # logger.info(f'Deleting:\n{sigs}')
+    for f in files:
+        if os.path.isfile(f):  # this makes the code more robust
+            os.remove(f)
 
-def delete_matches(dm, scale, indexes):
+def delete_matches():
     logger.info('')
-    for i in indexes:
-        sigs = dm.get_matches_filenames(s=scale, l=i)
-        # logger.info(f'Deleting:\n{sigs}')
-        for f in sigs:
-            if os.path.isfile(f):  # this makes the code more robust
-                logger.critical(f"Removing {f}...")
-                os.remove(f)
+    files = cfg.data.get_matches_filenames(s=cfg.data.scale, l=cfg.data.zpos)
+    # logger.info(f'Deleting:\n{sigs}')
+    for f in files:
+        if os.path.isfile(f):  # this makes the code more robust
+            # logger.info(f"Removing {f}...")
+            os.remove(f)
 
 if __name__ == '__main__':
     app = QApplication([])

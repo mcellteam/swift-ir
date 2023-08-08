@@ -48,7 +48,7 @@ from qtpy.QtWidgets import QApplication, qApp, QMainWindow, QWidget, QLabel, QHB
     QFormLayout, QGroupBox, QScrollArea, QToolButton, QWidgetAction, QSpacerItem, QButtonGroup, QAbstractButton, \
     QApplication, QPlainTextEdit, QTableWidget, QTableWidgetItem, QDockWidget, QDialog, QDialogButtonBox, QFrame, \
     QSizeGrip, QTabBar, QAbstractItemView, QStyledItemDelegate, QMdiArea, QMdiSubWindow
-
+import pyqtgraph.examples
 import src.config as cfg
 import src.shaders
 from src.thumbnailer import Thumbnailer
@@ -182,7 +182,7 @@ class MainWindow(QMainWindow):
         font = QFont("Tahoma")
         QApplication.setFont(font)
 
-        # self.setFocusPolicy(Qt.StrongFocus)
+        self.setFocusPolicy(Qt.StrongFocus)
 
         # QApplication.processEvents()
         # self.resizeThings()
@@ -196,6 +196,9 @@ class MainWindow(QMainWindow):
         self.setCorner(Qt.BottomRightCorner, Qt.BottomDockWidgetArea )
         # self.setCorner(Qt.BottomRightCorner, Qt.RightDockWidgetArea )
         self.setDockNestingEnabled(True)
+
+    def pyqtgraph_examples(self):
+        pyqtgraph.examples.run()
 
     def TO(self):
         return self._getTabObject()
@@ -911,26 +914,19 @@ class MainWindow(QMainWindow):
 
         # range(10, 0, -1)
 
-    def fix_cafm(self):
-        first_cafm_false = cfg.data.first_cafm_false()
-        self.regenerate(scale=cfg.data.scale_key, start=first_cafm_false, end=len(cfg.data), reallocate_zarr=False)
-
-        self.dataUpdateWidgets()
-
 
     def regenerateOne(self):
-        start = cfg.data.zpos
-        end = cfg.data.zpos + 1
-        self.regenerate(scale=cfg.data.scale_key, start=start, end=end)
+        self.regenerate(scale=cfg.data.scale_key, indexes=[cfg.data.zpos])
 
 
-    def regenerate(self, scale, start=0, end=None, reallocate_zarr=True) -> None:
+    def regenerate(self, scale=None, indexes=None, reallocate_zarr=True) -> None:
         '''Note: For now this will always reallocate Zarr, i.e. expects arguments for full stack'''
         logger.info('regenerate >>>>')
         self.setNoPbarMessage(True)
-
-        STAGEIT = False
-
+        if scale == None:
+            scale = cfg.data.scale
+        if indexes == None:
+            indexes = [cfg.data.zpos]
         if cfg.event.is_set():
             cfg.event.clear()
         if not self._isProjectTab():
@@ -946,21 +942,18 @@ class MainWindow(QMainWindow):
         cfg.CancelProcesses = False
         self.pbarLabel.setText('Task (0/%d)...' % cfg.nProcessSteps)
         self.showZeroedPbar(set_n_processes=3)
-        if end == None:
-            end = len(cfg.data)
+
         cfg.data.set_has_bb(cfg.data.use_bb())  # Critical, also see regenerate
-        self.tell('Regenerating %s aligned images for sections #%d to #%d...' % (cfg.data.scale_pretty(s=scale), start, end))
+        self.tell(f'Regenerating {cfg.data.scale_pretty(s=scale)} aligned images for indexes {indexes}...')
         try:
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(fn=GenerateAligned(
-                    cfg.data, scale, start, end, reallocate_zarr=reallocate_zarr, use_gui=True))
+                    cfg.data, scale, indexes=indexes, reallocate_zarr=reallocate_zarr, use_gui=True))
                 self.threadpool.start(self.worker)
             else:
-                GenerateAligned(cfg.data, scale, start, end, reallocate_zarr=reallocate_zarr, use_gui=True)
+                GenerateAligned(cfg.data, scale, indexes=indexes, reallocate_zarr=reallocate_zarr, use_gui=True)
         except:
             print_exception()
-
-        indexes = list(range(start,end))
 
         try:
             if cfg.USE_EXTRA_THREADING:
@@ -985,7 +978,6 @@ class MainWindow(QMainWindow):
             print_exception()
 
 
-
         self.setNoPbarMessage(False)
         # self.updateAllCpanelDetails()
         cfg.pt.updateDetailsPanel()
@@ -995,6 +987,7 @@ class MainWindow(QMainWindow):
         cfg.nProcessDone = 0
         cfg.nProcessSteps = 0
         cfg.project_tab.initNeuroglancer()
+        self.setFocus()
         logger.info('<<<< regenerate')
         self.tell('<span style="color: #FFFF66;"><b>**** Processes Complete ****</b></span>')
 
@@ -1144,6 +1137,7 @@ class MainWindow(QMainWindow):
             dt = t9 - t0
             logger.info(f'  Elapsed Time         : {dt:.2f}s')
             self.tell(f'  Elapsed Time         : {dt:.2f}s')
+            self.setFocus()
 
 
     def alignAllScales(self):
@@ -1745,10 +1739,7 @@ class MainWindow(QMainWindow):
                     except:
                         cfg.pt.cl_ref.setText(f'Null (Reference)')
                 cfg.project_tab.dataUpdateMA()
-                if cfg.data.method() in ('manual-hint','manual-strict'):
-                    cfg.pt.update_MA_list_widgets()
-                self.updateCafmComportsLabel()
-                self.updateDataComportsLabel()
+
 
                 if cfg.pt.secDetails_w.isVisible():
                     cfg.pt.secName.setText(cfg.data.filename_basename())
@@ -1822,20 +1813,6 @@ class MainWindow(QMainWindow):
     #                 cfg.project_tab.detailsSNR.setText(txt)
     #         except:
     #             print_exception()
-
-
-    def updateCafmComportsLabel(self):
-        if cfg.data.is_aligned_and_generated() and not cfg.data.cafm_hash_comports():
-            cfg.pt.warning_cafm.show()
-        else:
-            cfg.pt.warning_cafm.hide()
-
-    def updateDataComportsLabel(self):
-        # if cfg.data.is_aligned_and_generated() and not cfg.data.data_comports():
-        if cfg.data.is_aligned_and_generated() and not cfg.data.data_comports():
-            cfg.pt.warning_data.show()
-        else:
-            cfg.pt.warning_data.hide()
 
 
 
@@ -2070,7 +2047,7 @@ class MainWindow(QMainWindow):
                     cfg.data.scale_key = requested_scale
                     self.updateEnabledButtons()
                     self.dataUpdateWidgets()
-                    self.setControlPanelData()
+                    cfg.pt.dataUpdateMA()
                     if self.globTabs.currentIndex() == 1:
                         if cfg.pt.secDetails_w.isVisible():
                             cfg.pt.updateDetailsPanel()
@@ -2234,13 +2211,10 @@ class MainWindow(QMainWindow):
         # self.updateMenus()
         # cfg.pt.initNeuroglancer()
         self.reload_zpos_slider_and_lineedit()  # fast
-        self.setControlPanelData()  # Added 2023-04-23
         self.enableAllTabs()  # fast
         self.setCpanelVisibility(True)
         # cfg.project_tab.initNeuroglancer(init_all=True)
-        cfg.project_tab.updateDetailsPanel()
         cfg.project_tab.updateTimingsWidget()
-        cfg.project_tab.updateMethodSelectWidget()
         cfg.project_tab.dataUpdateMA() #Important must come after initNeuroglancer
         check_project_status()
         QApplication.processEvents()
@@ -2249,6 +2223,8 @@ class MainWindow(QMainWindow):
         cfg.mw.setdw_thumbs(True)
         cfg.mw.setdw_matches(False)
         self.dataUpdateWidgets()
+
+        self.setFocus()
 
         # QTimer.singleShot(1000, lambda: self.initNeuroglancer(init_all=True))
 
@@ -3583,6 +3559,8 @@ class MainWindow(QMainWindow):
                     cfg.baseViewer = cfg.project_tab.baseViewer
             except:
                 print_exception()
+
+            cfg.pt.dataUpdateMA()
             self.dw_thumbs.setWidget(cfg.pt.tn_widget)
             self.dw_matches.setWidget(cfg.pt.match_widget)
             self.dw_snr.setWidget(cfg.pt.dSnr_plot)
@@ -3590,10 +3568,6 @@ class MainWindow(QMainWindow):
                 cfg.pt.dSnr_plot.initSnrPlot()
             self.setCpanelVisibility(True)
 
-            try:
-                self.setControlPanelData()
-            except:
-                print_exception()
 
 
 
@@ -3810,12 +3784,12 @@ class MainWindow(QMainWindow):
         # self.exitAction.setToolTip("Exit AlignEM-SWiFT")
         # self.exitAction.setIcon(qta.icon('mdi.close', color='#ede9e8'))
         # self.exitAction.triggered.connect(self.exit_app)
-        # 
+        #
         # self.minimizeAction = QAction()
         # self.minimizeAction.setToolTip("Minimize")
         # self.minimizeAction.setIcon(qta.icon('mdi.minus-thick', color='#ede9e8'))
         # self.minimizeAction.triggered.connect(self.showMinimized)
-        # 
+        #
         # def fullscreen_callback():
         #     logger.info('')
         #     (self.showMaximized, self.showNormal)[self.isMaximized() or self.isFullScreen()]()
@@ -3823,7 +3797,7 @@ class MainWindow(QMainWindow):
         # self.fullScreenAction.setToolTip("Full Screen")
         # self.fullScreenAction.setIcon(qta.icon('mdi.fullscreen', color='#ede9e8'))
         # self.fullScreenAction.triggered.connect(fullscreen_callback)
-        # 
+        #
         # self.menu.addAction(self.exitAction)
         # self.menu.addAction(self.minimizeAction)
         # self.menu.addAction(self.fullScreenAction)
@@ -4226,6 +4200,12 @@ class MainWindow(QMainWindow):
         self.debugGpuAction.triggered.connect(self.gpu_config)
         debugMenu.addAction(self.debugGpuAction)
 
+        self.printfocusAction = QAction('Print Focus Widget', self)
+        self.printfocusAction.triggered.connect(lambda: print(cfg.main_window.focusWidget()))
+        debugMenu.addAction(self.printfocusAction)
+
+
+
         self.chromiumDebugAction = QAction('Troubleshoot Chromium', self)
         self.chromiumDebugAction.triggered.connect(self.chromium_debug)
         debugMenu.addAction(self.chromiumDebugAction)
@@ -4238,23 +4218,23 @@ class MainWindow(QMainWindow):
                 log = 'Webdriver is offline.'
             self.menuTextWebdriverLog.setText(log)
 
-        menu = debugMenu.addMenu('Webdriver Log')
-        self.menuTextWebdriverLog = QTextEdit(self)
-        self.menuTextWebdriverLog.setReadOnly(True)
-        self.menuTextWebdriverLog.setText('Webdriver is offline.')
-        action = QWidgetAction(self)
-        action.setDefaultWidget(self.menuTextWebdriverLog)
-        menu.hovered.connect(fn)
-        debugMenu.hovered.connect(fn)
-        menu.addAction(action)
-
-        def fn():
-            try:
-                log = json.dumps(cfg.webdriver.get_log(), indent=2)
-            except:
-                print_exception()
-                log = 'Webdriver is offline.'
-            self.menuTextWebdriverLog.setText(log)
+        # menu = debugMenu.addMenu('Webdriver Log')
+        # self.menuTextWebdriverLog = QTextEdit(self)
+        # self.menuTextWebdriverLog.setReadOnly(True)
+        # self.menuTextWebdriverLog.setText('Webdriver is offline.')
+        # action = QWidgetAction(self)
+        # action.setDefaultWidget(self.menuTextWebdriverLog)
+        # menu.hovered.connect(fn)
+        # debugMenu.hovered.connect(fn)
+        # menu.addAction(action)
+        #
+        # def fn():
+        #     try:
+        #         log = json.dumps(cfg.webdriver.get_log(), indent=2)
+        #     except:
+        #         print_exception()
+        #         log = 'Webdriver is offline.'
+        #     self.menuTextWebdriverLog.setText(log)
 
         menu = debugMenu.addMenu('Debug Dump')
         self.menuTextWebdriverLog = QTextEdit(self)
@@ -4402,6 +4382,10 @@ class MainWindow(QMainWindow):
         # self.googleAction = QAction('Google', self)
         # self.googleAction.triggered.connect(self.tab_google)
         # helpMenu.addAction(self.googleAction)
+
+        action = QAction('PyQtGraph Examples', self)
+        action.triggered.connect(self.pyqtgraph_examples)
+        helpMenu.addAction(action)
 
         action = QAction('Google', self)
         action.triggered.connect(self.tab_google)

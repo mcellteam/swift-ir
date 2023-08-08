@@ -223,10 +223,13 @@ class Thumbnailer:
         # if cpus == None:
         #     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
 
+        if not os.path.isdir(src):
+            logger.error(f"The directory '{src}' does not exist, nothing to thumbnail...")
+            return
+
+
         if os.listdir(src) == []:
             logger.error(f"The directory '{src}' is empty, nothing to thumbnail...")
-            if use_gui:
-                logger.error(f"Something went wrong. The directory '{src}' is empty, nothing to thumbnail...")
             return
 
         try:

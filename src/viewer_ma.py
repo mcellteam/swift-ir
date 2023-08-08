@@ -587,8 +587,6 @@ class MAViewer(neuroglancer.Viewer):
         if z == None:
             z = cfg.data.zpos
 
-        logger.critical(f'{caller_name()}')
-
         # caller = inspect.stack()[1].function
 
         if z == cfg.data.first_unskipped():
@@ -603,7 +601,7 @@ class MAViewer(neuroglancer.Viewer):
 
         marker_size = 1
 
-        logger.critical('Drawing SWIM windows...')
+        logger.info(f'{caller_name()} Drawing SWIM windows...')
 
         # if self.role == 'ref':
         #     self.index = cfg.data.get_ref_index()
@@ -789,7 +787,7 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def restoreManAlignPts(self):
-        logger.critical("Restoring manual alignment points... ")
+        logger.info(">>>> restoreManAlignPts >>>>")
         # self.pts = OrderedDict()
         self.pts[self.role] = [None,None,None]
         pts_data = cfg.data.getmpFlat(l=cfg.data.zpos)[self.role]
@@ -801,6 +799,9 @@ class MAViewer(neuroglancer.Viewer):
                          getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'), ]
                 # self.pts[self.getNextUnusedColor()] = ng.PointAnnotation(id=str(p), point=p, props=props)
                 self.pts[self.role][i] = ng.PointAnnotation(id=str(p), point=p, props=props)
+        logger.info("<<<< restoreManAlignPts <<<<")
+
+
 
 
             # logger.critical(f'pts:\n{self.pts}')

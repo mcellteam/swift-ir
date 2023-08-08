@@ -86,7 +86,7 @@ def ComputeAffines(scale, path, indexes, renew_od=False, reallocate_zarr=False, 
         alignment_dict = dm['data']['scales'][scale]['stack']
 
         # alignment_option = dm['data']['scales'][scale_key]['method_data']['alignment_option']
-        logger.info(f"indexes: {indexes}")
+        logger.critical(f"indexes: {indexes}")
 
         # checkForTiffs(path)
 
@@ -355,20 +355,20 @@ def run_subprocess(task):
 def delete_correlation_signals(dm, scale, indexes):
     logger.info('')
     for i in indexes:
-        sigs = dm.get_signals_filenames(s=scale, l=i)
+        files = dm.get_signals_filenames(s=scale, l=i)
         # logger.info(f'Deleting:\n{sigs}')
-        for f in sigs:
+        for f in files:
             if os.path.isfile(f):  # this makes the code more robust
                 os.remove(f)
 
 def delete_matches(dm, scale, indexes):
     logger.info('')
     for i in indexes:
-        sigs = dm.get_matches_filenames(s=scale, l=i)
+        files = dm.get_matches_filenames(s=scale, l=i)
         # logger.info(f'Deleting:\n{sigs}')
-        for f in sigs:
+        for f in files:
             if os.path.isfile(f):  # this makes the code more robust
-                logger.critical(f"Removing {f}...")
+                # logger.info(f"Removing {f}...")
                 os.remove(f)
 
 # def delete_correlation_signals(dm, scale_key, start, end, dest):
