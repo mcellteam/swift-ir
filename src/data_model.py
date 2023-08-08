@@ -1826,12 +1826,14 @@ class DataModel:
 
     def data_comports_indexes(self, s=None):
         if s == None: s = self.scale
-        return np.array([self.data_comports(s=s, l=l)[0] for l in range(self.first_unskipped(), len(cfg.data))]).nonzero()[0].tolist()
+        return np.array([self.data_comports(s=s, l=l)[0] for l in range(self.first_unskipped() + 1,
+                                                                        len(cfg.data))]).nonzero()[0].tolist()
 
 
     def data_dn_comport_indexes(self, s=None):
         if s == None: s = self.scale
-        return np.array([(not self.data_comports(s=s, l=l)[0]) and (not self.skipped(s=s, l=l)) for l in range(self.first_unskipped(), len(cfg.data))]).nonzero()[0].tolist()
+        return np.array([(not self.data_comports(s=s, l=l)[0]) and (not self.skipped(s=s, l=l)) for l in range(
+            self.first_unskipped() + 1, len(cfg.data))]).nonzero()[0].tolist()
 
 
     def all_comports_indexes(self, s=None):
@@ -1841,13 +1843,14 @@ class DataModel:
 
     def cafm_comports_indexes(self, s=None):
         if s == None: s = self.scale
-        return np.array([cfg.data.cafm_hash_comports(s=s, l=l) for l in range(self.first_unskipped(), len(cfg.data))]).nonzero()[0].tolist()
+        return np.array([cfg.data.cafm_hash_comports(s=s, l=l) for l in range(self.first_unskipped() + 1,
+                                                                              len(cfg.data))]).nonzero()[0].tolist()
 
 
     def cafm_dn_comport_indexes(self, s=None):
         if s == None: s = self.scale
         indexes = []
-        for i in range(0, len(cfg.data)):
+        for i in range(self.first_unskipped() + 1, len(cfg.data)):
             if not cfg.data.cafm_hash_comports(s=s, l=i) or not self.data_comports(s=s, l=i)[0]:
                 if not self.skipped(s=s, l=i):
                     indexes.append(i)

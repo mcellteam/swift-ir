@@ -84,7 +84,7 @@ def GenerateAligned(dm, scale, indexes, renew_od=False, reallocate_zarr=False, u
     cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(indexes)),1)
 
     dest = dm['data']['destination_path']
-    print(f'\n\n######## Generating Aligned Images ########\n')
+    print(f'\n\n######## Generating Aligned Images for {indexes} ########\n')
 
     tasks = []
     for sec in [dm()[i] for i in indexes]:
@@ -180,7 +180,7 @@ def GenerateAligned(dm, scale, indexes, renew_od=False, reallocate_zarr=False, u
     #         logger.info('creating group: %s' %str(i))
     #         root.create_group(str(i))
 
-    print(f'\n\n######## Copy-convert Alignment To Zarr ########\n')
+    print(f'\n\n######## Copy-convert Alignment To Zarr for {indexes} ########\n')
 
     tasks = []
     for i in indexes:
