@@ -100,6 +100,7 @@ class ProjectTab(QWidget):
         self.blinkCur = 0
         self.initNeuroglancer(init_all=True)
         self.datamodel.signals.warning2.connect(self.updateDataComportsLabel)
+        self.datamodel.signals.warning2.connect(cfg.main_window._callbk_unsavedChanges)
 
 
     def load_data_from_treeview(self):
@@ -685,7 +686,6 @@ class ProjectTab(QWidget):
                 if self.tn_widget.isVisible():
                     self.tn_ref.update()
                     self.tn_tra.update()
-                cfg.main_window._callbk_unsavedChanges()
 
         # self.slider_MA_SWIM_window = DoubleSlider(Qt.Orientation.Horizontal, self)
         self.slider_MA_SWIM_window = QSlider(Qt.Orientation.Horizontal, self)
@@ -754,7 +754,6 @@ class ProjectTab(QWidget):
                 if self.tn_widget.isVisible():
                     self.tn_ref.update()
                     self.tn_tra.update()
-                self.main_window._callbk_unsavedChanges()
 
         self.slider_AS_SWIM_window = QSlider(Qt.Orientation.Horizontal, self)
         self.slider_AS_SWIM_window.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -783,7 +782,6 @@ class ProjectTab(QWidget):
                 cfg.data.set_swim_2x2_custom_px(val)
                 self.AS_2x2_SWIM_window_le.setText(str(cfg.data.swim_2x2_custom_px()[0]))
                 self.slider_AS_2x2_SWIM_window.setValue(int(cfg.data.swim_2x2_custom_px()[0]))
-                cfg.main_window._callbk_unsavedChanges()
                 self.baseViewer.drawSWIMwindow()
 
         self.slider_AS_2x2_SWIM_window = QSlider(Qt.Orientation.Horizontal, self)
@@ -816,7 +814,6 @@ class ProjectTab(QWidget):
         # self.spinbox_whitening.setFixedHeight(26)
         # self.sb_whiteningControl.setValue(cfg.DEFAULT_WHITENING)
         self.spinbox_whitening.valueChanged.connect(fn)
-        self.spinbox_whitening.valueChanged.connect(cfg.main_window._callbk_unsavedChanges)
         # self.spinbox_whitening.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.spinbox_whitening.setDecimals(2)
         self.spinbox_whitening.setSingleStep(.01)
@@ -837,7 +834,6 @@ class ProjectTab(QWidget):
         # self.spinbox_swim_iters.setFixedWidth(80)
         self.spinbox_swim_iters.setFixedSize(QSize(60,18))
         self.spinbox_swim_iters.valueChanged.connect(fn)
-        self.spinbox_swim_iters.valueChanged.connect(cfg.main_window._callbk_unsavedChanges)
         # self.spinbox_swim_iters.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.spinbox_swim_iters.setMinimum(1)
         self.spinbox_swim_iters.setMaximum(9)
@@ -850,7 +846,6 @@ class ProjectTab(QWidget):
                 elif self.rb_MA_strict.isChecked():
                     cfg.data.current_method = 'manual-strict'
                 self.baseViewer.drawSWIMwindow()
-                cfg.main_window._callbk_unsavedChanges()
                 if self.tn_widget.isVisible():
                     self.tn_ref.update()
                     self.tn_tra.update()
@@ -981,7 +976,6 @@ class ProjectTab(QWidget):
         self.sb_whiteningControl.setSingleStep(.01)
         self.sb_whiteningControl.setMinimum(-2)
         self.sb_whiteningControl.setMaximum(2)
-        self.sb_whiteningControl.valueChanged.connect(cfg.mw._callbk_unsavedChanges)
         self.sb_whiteningControl.valueChanged.connect(cfg.mw._valueChangedWhitening)
 
         tip = """The number of sequential SWIM refinements to alignment. In general, greater iterations results in a more refined alignment up to some limit, except for in cases of local maxima or complete misalignment (default=3)."""
@@ -991,12 +985,11 @@ class ProjectTab(QWidget):
         def fn_swim_iters():
             caller = inspect.stack()[1].function
             if caller == 'main':
-                setData('data,defaults,swim-iterations', self.sb_SWIMiterations.value())
+                cfg.data.set_default_swim_iterations(self.sb_SWIMiterations.value())
                 self.updateDetailsPanel()
         self.sb_SWIMiterations.setMinimum(1)
         self.sb_SWIMiterations.setMaximum(9)
         self.sb_SWIMiterations.valueChanged.connect(fn_swim_iters)
-        self.sb_SWIMiterations.valueChanged.connect(cfg.mw._callbk_unsavedChanges)
 
         tip = f"""The full width in pixels of an imaginary, centered grid which SWIM 
         aligns against (default={cfg.DEFAULT_AUTO_SWIM_WINDOW_PERC * 100}% of image width)."""
@@ -1036,8 +1029,6 @@ class ProjectTab(QWidget):
                 cfg.mw.tell(f'SWIM Window set to: {str(val)}')
         self._swimWindowControl.selectionChanged.connect(fn)
         self._swimWindowControl.returnPressed.connect(fn)
-        self._swimWindowControl.selectionChanged.connect(cfg.mw._callbk_unsavedChanges)
-        self._swimWindowControl.returnPressed.connect(cfg.mw._callbk_unsavedChanges)
 
         self.fl_swimSettings = QFormLayout()
         self.fl_swimSettings.setContentsMargins(2, 2, 2, 2)
@@ -1060,7 +1051,6 @@ class ProjectTab(QWidget):
         tip = """Whether to auto-generate aligned images following alignment."""
         self._toggleAutogenerate = ToggleSwitch()
         self._toggleAutogenerate.stateChanged.connect(cfg.mw._toggledAutogenerate)
-        self._toggleAutogenerate.stateChanged.connect(cfg.mw._callbk_unsavedChanges)
         self._toggleAutogenerate.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self._toggleAutogenerate.setChecked(True)
 
@@ -1069,7 +1059,6 @@ class ProjectTab(QWidget):
         self._bbToggle = ToggleSwitch()
         self._bbToggle.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self._bbToggle.toggled.connect(cfg.mw._callbk_bnding_box)
-        self._bbToggle.toggled.connect(cfg.mw._callbk_unsavedChanges)
         self._bbToggle.toggled.connect(self.updateDetailsPanel)
 
         tip = 'Polynomial bias correction (defaults to None), alters the generated images including their width and height.'
@@ -1079,7 +1068,6 @@ class ProjectTab(QWidget):
         self._polyBiasCombo.addItems(['None', 'poly 0°', 'poly 1°', 'poly 2°', 'poly 3°', 'poly 4°'])
         # self._polyBiasCombo.setCurrentText(str(cfg.DEFAULT_CORRECTIVE_POLYNOMIAL))
         self._polyBiasCombo.currentIndexChanged.connect(cfg.mw._valueChangedPolyOrder)
-        self._polyBiasCombo.currentIndexChanged.connect(cfg.mw._callbk_unsavedChanges)
         self._polyBiasCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._polyBiasCombo.setFixedSize(QSize(70, 16))
         self._polyBiasCombo.lineEdit()
@@ -2528,7 +2516,6 @@ class ProjectTab(QWidget):
         cfg.data.set_manpoints(role=role, matchpoints=pts_new)
         # self.baseViewer.restoreManAlignPts()
         self.baseViewer.drawSWIMwindow()
-        cfg.main_window._callbk_unsavedChanges()
 
     def onTranslate_x(self):
         if (self.lw_tra.selectedIndexes() == []) and (self.lw_ref.selectedIndexes() == []):
@@ -2557,7 +2544,6 @@ class ProjectTab(QWidget):
         cfg.data.set_manpoints(role=role, matchpoints=pts_new)
         # self.baseViewer.restoreManAlignPts()
         self.baseViewer.drawSWIMwindow()
-        cfg.main_window._callbk_unsavedChanges()
 
     def onTranslate_y(self):
         if (self.lw_tra.selectedIndexes() == []) and (self.lw_ref.selectedIndexes() == []):
@@ -2585,7 +2571,7 @@ class ProjectTab(QWidget):
         cfg.data.set_manpoints(role=role, matchpoints=pts_new)
         # self.baseViewer.restoreManAlignPts()
         self.baseViewer.drawSWIMwindow()
-        cfg.main_window._callbk_unsavedChanges()
+
 
     def onNgLayoutCombobox(self) -> None:
         caller = inspect.stack()[1].function
@@ -3352,6 +3338,7 @@ class ProjectTab(QWidget):
                 logger.info('Signal received! Reinitializing SNR plot dock widget...')
                 self.dSnr_plot.initSnrPlot()
         self.datamodel.signals.warning2.connect(reinit_dSnr)
+        self.datamodel.signals.warning2.connect(cfg.main_window._callbk_unsavedChanges)
         self.dSnr_plot.setStyleSheet('background-color: #222222; font-weight: 600; font-size: 12px; color: #ede9e8;')
         cfg.mw.dw_snr.setWidget(self.dSnr_plot)
 
@@ -3443,7 +3430,6 @@ class ProjectTab(QWidget):
         self.brightnessSlider.setRange(-100, 100)
         self.brightnessSlider.setValue(cfg.data.brightness)
         self.brightnessSlider.valueChanged.connect(self.fn_brightness_control)
-        self.brightnessSlider.valueChanged.connect(cfg.main_window._callbk_unsavedChanges)
         # self.brightnessSlider.valueChanged.connect(
         #     lambda: self.brightnessLE.setText('%.2f' % self.brightnessSlider.value()))
         self.brightnessSlider.valueChanged.connect(
@@ -3470,7 +3456,6 @@ class ProjectTab(QWidget):
         self.contrastSlider.setRange(-100, 100)
         self.contrastSlider.setValue(cfg.data.contrast)
         self.contrastSlider.valueChanged.connect(self.fn_contrast_control)
-        self.contrastSlider.valueChanged.connect(cfg.main_window._callbk_unsavedChanges)
         self.contrastSlider.valueChanged.connect(
             lambda: self.contrastLE.setText('%d' % self.contrastSlider.value()))
 

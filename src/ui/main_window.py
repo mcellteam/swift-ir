@@ -1283,12 +1283,17 @@ class MainWindow(QMainWindow):
         # cfg.event = multiprocessing.Event()
         cfg.data.set_has_bb(cfg.data.use_bb())  # Critical, also see regenerate
         self.align(
-            scale=cfg.data.scale_key,
+            scale=cfg.data.scale,
             indexes=indexes,
             renew_od=True,
             reallocate_zarr=True,
             ignore_bb=ignore_bb,
         )
+
+        if not cfg.data['data']['scales'][cfg.data.scale]['aligned']:
+            cfg.data['data']['scales'][cfg.data.scale]['initial_snr'] = cfg.data.snr_list()
+
+        cfg.data['data']['scales'][cfg.data.scale]['aligned'] = True
         # if not cfg.CancelProcesses:
         #     self.present_snr_results()
 
@@ -4547,7 +4552,6 @@ class MainWindow(QMainWindow):
         self._skipCheckbox.setEnabled(False)
         self._skipCheckbox.stateChanged.connect(self._callbk_skipChanged)
         self._skipCheckbox.stateChanged.connect(lambda: cfg.pt.updateDetailsPanel())
-        self._skipCheckbox.stateChanged.connect(self._callbk_unsavedChanges)
 
         self.labInclude = QLabel('Include\nSection:')
         self.labInclude.setStyleSheet('font-size: 8px; font-weight: 600;')

@@ -49,19 +49,23 @@ class Thumbnailer:
 
     def reduce_aligned(self, indexes, dest, scale, use_gui=True):
         print(f'\n\n######## Reducing: Aligned Images ########\n')
+        src = os.path.join(dest, scale, 'img_aligned')
+        od = os.path.join(dest, scale, 'thumbnails_aligned')
+
 
         files = []
         baseFileNames = cfg.data.basefilenames()
         for name in [baseFileNames[i] for i in indexes]:
-            files.append(name)
+            files.append(os.path.join(src,name))
+
+
 
 
         pbar_text = 'Generating %s Aligned Image Thumbnails...' % cfg.data.scale_pretty()
         if cfg.CancelProcesses:
             cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
         else:
-            src = os.path.join(dest, scale, 'img_aligned')
-            od = os.path.join(dest, scale, 'thumbnails_aligned')
+
             dt = self.reduce(
                 src=src, od=od, rmdir=False, prefix='', filenames=files, pbar_text=pbar_text, dest=dest,
                 use_gui=use_gui)
@@ -213,7 +217,7 @@ class Thumbnailer:
                ):
 
         logpath = os.path.join(dest, 'logs', 'thumbnails.log')
-        file = open(logpath, 'w+')
+        file = open(logpath, 'a+')
         file.close()
         fh = logging.FileHandler(logpath)
         fh.setLevel(logging.DEBUG)

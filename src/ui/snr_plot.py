@@ -129,6 +129,7 @@ class SnrPlot(QWidget):
         # self.plot.setAspectLocked()
 
         self.snr_points = {}
+        self.ghost_points = {}
         self.no_comport_cafm_points = {}
         self.no_comport_data_points = {}
         self.snr_errors = {}
@@ -294,6 +295,7 @@ class SnrPlot(QWidget):
             self.updateLayerLinePos()
         except:
             print_exception()
+
         try:
             self.plotData()
         except:
@@ -374,9 +376,13 @@ class SnrPlot(QWidget):
         # caller = inspect.stack()[1].function
         if cfg.data:
             self.plot.clear()
+
+
             self.plot.addItem(self._curLayerLine)
             if self.dock:
-                self.plotSingleScale(s=cfg.data.scale_key)
+                self.plotGhostScaleData()
+                self.plotSingleScale()
+
             else:
                 for s in cfg.data.scales()[::-1]:
                     if cfg.data.is_aligned(s=s):
@@ -420,9 +426,46 @@ class SnrPlot(QWidget):
         return cfg.data.scales().index(s) * (.5/len(cfg.data.scales()))
 
 
+    def plotGhostScaleData(self, s=None):
+        logger.info('')
+        if s == None: s = cfg.data.scale
+        x_axis, y_axis = [], []
+        # for layer, snr in enumerate(cfg.data.snr_list(s=s)):
+        # for layer, snr in enumerate(cfg.data.snr_list(s=s)[1:]): #0601+ #Todo
+        first_unskipped = cfg.data.first_unskipped(s=s)
+        data = cfg.data['data']['scales'][s]['initial_snr']
+        for i in range(0, len(cfg.data)): #0601+
+            if i != first_unskipped:
+                x_axis.append(i)
+                y_axis.append(data[i])
+
+        self.ghost_points[s] = pg.ScatterPlotItem(
+            size=(11,8)[self.dock],
+            # pen=pg.mkPen(None),
+            symbol='o',
+            pen=pg.mkPen('#666666', width=1),
+            brush=pg.mkBrush('#444444'),
+            hoverable=True,
+            tip='Initial results:\nSection #: {x:.3g}\nSNR: {y:.3g}'.format,
+            hoverSymbol='o',
+            hoverSize=(13,10)[self.dock],
+            # hoverPen=pg.mkPen('#f3f6fb', width=1),
+            # hoverBrush=None,
+            # pxMode=False # points transform with zoom
+        )
+        logger.critical(f"Adding to plot, x_axis: {x_axis}")
+        logger.critical(f"Adding to plot, y_axis: {y_axis}")
+        logger.critical(f"Adding to plot: {self.ghost_points[s]}")
+        self.ghost_points[s].addPoints(x_axis, y_axis)
+        self.ghost_points[s].setZValue(0)
+        self.plot.addItem(self.ghost_points[s])
+
+
+
+
     def plotSingleScale(self, s=None):
         # logger.info(f'plotSingleScale (scale_key: {s}):')
-        if s == None: scale = cfg.data.scale_key
+        if s == None: s = cfg.data.scale
         # x_axis, y_axis = self.get_axis_data(s=s)
         x_axis, y_axis = self.get_everything_comport_axis_data(s=s)
         offset = self._getScaleOffset(s=s)
@@ -462,6 +505,7 @@ class SnrPlot(QWidget):
 
         # self.snr_points[s].addPoints(x_axis[1:], y_axis[1:]) #Todo
         self.snr_points[s].addPoints(x_axis, y_axis)
+        self.snr_points[s].setZValue(1)
 
         # def hoverEvent(event):
         #     """Show the position, pixel, and value under the mouse cursor.
