@@ -31,7 +31,7 @@ from qtpy.QtCore import QObject, Signal, Slot, QUrl
 from qtpy.QtWidgets import QApplication
 from qtpy.QtWebEngineWidgets import *
 from src.funcs_zarr import get_zarr_tensor
-from src.helpers import getOpt, getData, setData, print_exception, is_joel, caller_name
+from src.helpers import getOpt, getData, setData, print_exception, is_joel, is_tacc, caller_name
 from src.shaders import ann_shader
 from src.ui.timer import Timer
 import src.config as cfg
@@ -243,17 +243,29 @@ class MAViewer(neuroglancer.Viewer):
 
         # logger.critical('Creating Local Volume for %d' %self.index)
 
-        self.LV = ng.LocalVolume(
-            volume_type='image',
-            # data=self.store[self.index:self.index + 1, :, :],
-            data=self.store[:, :, :],
-            dimensions=self.coordinate_space,
-            voxel_offset=[0, 0, 0],
 
-            max_downsampling=cfg.max_downsampling,
-            max_downsampled_size=cfg.max_downsampled_size,
-            # max_downsampling_scales=cfg.max_downsampling_scales  # Goes a LOT slower when set to 1
-        )
+        if is_tacc():
+            self.LV = ng.LocalVolume(
+                volume_type='image',
+                # data=self.store[self.index:self.index + 1, :, :],
+                data=self.store[:, :, :],
+                dimensions=self.coordinate_space,
+                voxel_offset=[0, 0, 0],
+                max_downsampling=cfg.max_downsampling,
+                max_downsampled_size = cfg.max_downsampled_size
+                # max_downsampling_scales=cfg.max_downsampling_scales  # Goes a LOT slower when set to 1
+            )
+        else:
+            self.LV = ng.LocalVolume(
+                volume_type='image',
+                # data=self.store[self.index:self.index + 1, :, :],
+                data=self.store[:, :, :],
+                dimensions=self.coordinate_space,
+                voxel_offset=[0, 0, 0],
+                # max_downsampling_scales=cfg.max_downsampling_scales  # Goes a LOT slower when set to 1
+            )
+
+
 
 
         with self.txn() as s:

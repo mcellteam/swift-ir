@@ -741,8 +741,14 @@ class DataModel:
             if glob:
                 for i in range(len(self)):
                     self._data['data']['scales'][s]['stack'][i]['alignment']['swim_settings']['clobber_size'] = x
+                self.signals.warning2.emit()
+
             else:
+                cur = self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['clobber_size']
                 self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['clobber_size'] = x
+                if cur != x:
+                    self.signals.warning2.emit()
+
 
 
     def get_signals_filenames(self, s=None, l=None):
@@ -825,25 +831,14 @@ class DataModel:
         # Set default to value from user preferences... Todo: all user preferences should work this way
 
 
-        self._data['state']['show_bounds'] = False
-        self._data['state']['show_axes'] = False
-        self._data['state']['show_scalebar'] = False
+        self._data['state'].setdefault('show_bounds', False)
+        self._data['state'].setdefault('show_axes', True)
+        self._data['state'].setdefault('show_scalebar', True)
 
         self._data['state']['show_ng_controls'] = False
         self._data['state']['neutral_contrast'] = False
-        # self._data['state'].setdefault('manual_mode', {})
-        # self._data['state']['manual_mode'].setdefault('select_by', 'cycle')  #or zigzag, sticky
-        self._data['state'].setdefault('region_selection', {})  #or zigzag, sticky
-        self._data['state']['region_selection'].setdefault('select_by', 'zigzag')  #or zigzag, sticky
-        # self._data['state']['region_selection'].setdefault('select_by', 'zigzag')  #or zigzag, sticky
-
-        # self._data['state']['show_ng_controls'] = False
-
-        # logger.critical(str(self._data['state']))
-
-        # self._data['state'].setdefault('auto_update_ui', True)
-        # self._data['state'].setdefault('MA_focus', None) #0 = L, 1 = R
-        # self._data['state'].setdefault('focus_widget', None)
+        self._data['state'].setdefault('region_selection', {})
+        self._data['state']['region_selection'].setdefault('select_by', 'zigzag')  # zigzag, cycle, or sticky
         self._data['state']['tra_ref_toggle'] = 1 #Force
         self._data['state']['targ_karg_toggle'] = 1 #Force
         self._data['state']['tool_windows'].setdefault('python',False)
@@ -1484,7 +1479,10 @@ class DataModel:
         # logger.critical(f'caller: {caller}, s={s}, l={l}')
         if s == None: s = self.scale
         if l == None: l = self.zpos
-        return self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['method']
+        try:
+            return self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['method']
+        except:
+            print_exception(extra=f"Section #{l}")
 
     def method_pretty(self, s=None, l=None):
         if s == None: s = self.scale
