@@ -3435,7 +3435,7 @@ class ProjectTab(QWidget):
         self.brightnessSlider.setMouseTracking(False)
         self.brightnessSlider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.brightnessSlider.setRange(-100, 100)
-        self.brightnessSlider.setValue(cfg.data.brightness)
+        # self.brightnessSlider.setValue(cfg.data.brightness)
         self.brightnessSlider.valueChanged.connect(self.fn_brightness_control)
         # self.brightnessSlider.valueChanged.connect(
         #     lambda: self.brightnessLE.setText('%.2f' % self.brightnessSlider.value()))
@@ -3461,7 +3461,7 @@ class ProjectTab(QWidget):
         self.contrastSlider.setMouseTracking(False)
         self.contrastSlider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.contrastSlider.setRange(-100, 100)
-        self.contrastSlider.setValue(cfg.data.contrast)
+        # self.contrastSlider.setValue(cfg.data.contrast)
         self.contrastSlider.valueChanged.connect(self.fn_contrast_control)
         self.contrastSlider.valueChanged.connect(
             lambda: self.contrastLE.setText('%d' % self.contrastSlider.value()))
