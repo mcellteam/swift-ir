@@ -175,6 +175,7 @@ class SnrPlot(QWidget):
                 self.plot.setLabel('top', cfg.data.base_image_name(), **styles)
         else:
             logger.warning(f'Cant update layer line caller={caller}')
+        self.update()
 
 
 

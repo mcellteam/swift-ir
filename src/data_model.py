@@ -752,6 +752,20 @@ class DataModel:
         # logger.info(f'Search Path: {paths}\nReturning: {names}')
         return natural_sort(names)
 
+    def get_matches_filenames(self, s=None, l=None):
+        if s == None: s = self.scale
+        if l == None: l = self.zpos
+        dir = os.path.join(self.dest(), s, 'matches')
+        basename = os.path.basename(self.base_image_name(s=s, l=l))
+        filename, extension = os.path.splitext(basename)
+        paths_t = glob(os.path.join(dir, '%s_%s_t_[012]%s' % (filename, self.current_method, extension)))
+        paths_k = glob(os.path.join(dir, '%s_%s_k_[012]%s' % (filename, self.current_method, extension)))
+        names = paths_t + paths_k
+        # logger.critical(f"{os.path.join(dir, '%s_%s_t_[012]%s' % (filename, self.current_method, extension))}")
+        # logger.critical(f"{os.path.join(dir, '%s_%s_k_[012]%s' % (filename, self.current_method, extension))}")
+        logger.critical(f'Returning: {names}')
+        return natural_sort(names)
+
     def get_grid_custom_filenames(self, s=None, l=None):
         if s == None: s = self.scale
         if l == None: l = self.zpos

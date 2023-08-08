@@ -71,7 +71,7 @@ class ProjectTab(QWidget):
         # self.webengine = QWebEngineView()
         self.webengine = WebEngine(ID='emViewer')
         self.webengine.setStyleSheet("background-color: #000000;")
-        self.webengine.setFocusPolicy(Qt.StrongFocus)
+        self.webengine.setFocusPolicy(Qt.NoFocus)
         self.webengine.loadFinished.connect(lambda: print('Web engine load finished!'))
         setWebengineProperties(self.webengine)
         # self.webengine.setStyleSheet('background-color: #222222;')
@@ -123,12 +123,12 @@ class ProjectTab(QWidget):
             self.updateLowest8widget()
             self.updateDetailsPanel()
             self.updateTimingsWidget()
+            cfg.mw.setdw_thumbs(False) #BEFORE init neuroglancer
+            cfg.mw.setdw_matches(True) #BEFORE init neuroglancer
             self.initNeuroglancer() #Todo necessary for now
             self.baseViewer.set_layer()
             self.set_transforming() #0802+
             self.update_MA_list_widgets() #0726+
-            cfg.mw.setdw_thumbs(False)
-            cfg.mw.setdw_matches(True)
         elif index == 2:
             self.project_table.table.selectRow(cfg.data.zpos)
         elif index == 3:
@@ -202,6 +202,7 @@ class ProjectTab(QWidget):
             self.baseViewer.signals.badStateChange.connect(self.set_transforming)
             self.baseViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314
             self.baseViewer.signals.ptsChanged.connect(self.update_MA_list_widgets)
+            self.baseViewer.signals.zVoxelCoordChanged.connect(lambda zpos: setattr(cfg.data, 'zpos', zpos))
             # self.baseViewer.signals.swimAction.connect(cfg.main_window.alignOne)
             self.update_MA_list_widgets()
             self.dataUpdateMA()
@@ -328,6 +329,7 @@ class ProjectTab(QWidget):
         self.ZdisplaySliderAndLabel.addWidget(vlab)
 
         self.MA_webengine_base = WebEngine(ID='base')
+        self.MA_webengine_base.setFocusPolicy(Qt.NoFocus)
         self.MA_webengine_base.setStyleSheet("background-color: #000000;")
         self.MA_webengine_base.page().setBackgroundColor(Qt.transparent) #0726+
         self.MA_webengine_base.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -360,7 +362,7 @@ class ProjectTab(QWidget):
         # self.lw_ref.setFocusPolicy(Qt.NoFocus)
         delegate = ListItemDelegate()
         self.lw_ref.setItemDelegate(delegate)
-        self.lw_ref.setFixedHeight(58)
+        self.lw_ref.setFixedHeight(50)
         # self.lw_ref.setFixedHeight(48)
         # self.lw_ref.setMaximumHeight(64)
         self.lw_ref.setIconSize(QSize(12,12))
@@ -373,7 +375,7 @@ class ProjectTab(QWidget):
             border: none;
         }
         QListView::item:selected {
-            border: 1px solid #6a6ea9;
+            border: 1px solid #ffe135;
         }""")
         # palette = QPalette()
         # palette.setColor(QPalette.Highlight, self.lw_ref.palette().color(QPalette.Base))
@@ -403,7 +405,7 @@ class ProjectTab(QWidget):
         # self.lw_tra.setFocusPolicy(Qt.NoFocus)
         delegate = ListItemDelegate()
         self.lw_tra.setItemDelegate(delegate)
-        self.lw_tra.setFixedHeight(58)
+        self.lw_tra.setFixedHeight(50)
         # self.lw_tra.setFixedHeight(48)
         # self.lw_tra.setMaximumHeight(64)
         self.lw_tra.setIconSize(QSize(12, 12))
@@ -476,7 +478,7 @@ class ProjectTab(QWidget):
         def fn():
             self.baseViewer.pts['ref'][self.baseViewer._selected_index['ref']] = None
             self.baseViewer._selected_index['ref'] = self.baseViewer.getNextPoint('ref')
-            self.baseViewer.restoreManAlignPts()
+            # self.baseViewer.restoreManAlignPts()
             # self.baseViewer.setMpData()
             self.baseViewer.drawSWIMwindow()
             self.update_MA_list_widgets()
@@ -496,7 +498,7 @@ class ProjectTab(QWidget):
         def fn():
             self.baseViewer.pts['base'][self.baseViewer._selected_index['base']] = None
             self.baseViewer._selected_index['base'] = self.baseViewer.getNextPoint('base')
-            self.baseViewer.restoreManAlignPts()
+            # self.baseViewer.restoreManAlignPts()
             # self.baseViewer.setMpData()
             self.baseViewer.drawSWIMwindow()
             self.update_MA_list_widgets()
@@ -1169,7 +1171,8 @@ class ProjectTab(QWidget):
 
         # self.secDetails_fl.addWidget(self.gb_affine)
         self.secDetails_w.setLayout(self.secDetails_fl)
-        self.sa_details.setWidget(VWidget(self.secDetails_w, self.gb_affine))
+        # self.sa_details.setWidget(VWidget(self.secDetails_w, self.gb_affine))
+        self.sa_details.setWidget(self.secDetails_w)
         self.sa_details.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.sa_details.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
@@ -1299,9 +1302,11 @@ class ProjectTab(QWidget):
         # self.lab_region_selection2 = QLabel("")
         # self.lab_region_selection2.setStyleSheet("font-size: 9px; color: #161c20; padding: 1px;")
         self.MA_points_tab = VWidget(
-            self.MA_sbw,
-            self.w_rbs_selection,
             self.lab_region_selection,
+            self.MA_sbw,
+
+            self.w_rbs_selection,
+
             # self.lab_region_selection2,
             self.gb_MA_manual_controls,
         )
@@ -2095,7 +2100,9 @@ class ProjectTab(QWidget):
         self.gb_method_selection.setContentsMargins(0,0,0,0)
         self.gb_method_selection.setObjectName('gb_cpanel')
         self.gb_method_selection.setFixedHeight(36)
-        self.gb_method_selection.setLayout(VBL(self.radioboxes_method))
+        vbl = VBL(self.radioboxes_method)
+        vbl.setAlignment(Qt.AlignBottom)
+        self.gb_method_selection.setLayout(vbl)
         self.gb_method_selection.setStyleSheet('font-size: 11px; padding: 2px;')
 
         self.le_tacc_num_cores = QLineEdit()
@@ -2229,6 +2236,12 @@ class ProjectTab(QWidget):
         self.fl_tacc.addRow(f"Verbose SWIM (-v)", self.cb_verbose_swim)
         self.fl_tacc.addRow(f"DEV_MODE", self.cb_dev_mode)
 
+        self.sa_w_tacc = QScrollArea()
+        self.sa_w_tacc.setWidget(self.w_tacc)
+        self.sa_w_tacc.setWidgetResizable(True)
+        self.sa_w_tacc.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.sa_w_tacc.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+
         self.sideTabs = QTabWidget()
         # self.sideTabs.addTab(self.MA_stackedWidget, 'Configure')
         self.sideTabs.addTab(self.sa_lowest8, 'Worst 8 SNR')
@@ -2236,7 +2249,7 @@ class ProjectTab(QWidget):
         self.sideTabs.addTab(self.sa_runtimes, 'Timings')
         self.sideTabs.addTab(self.logs_widget, 'Logs')
         if is_tacc() or is_joel():
-            self.sideTabs.addTab(self.w_tacc, 'Other')
+            self.sideTabs.addTab(self.sa_w_tacc, 'Other')
 
         self.sideTabs.currentChanged.connect(self.onSideTabChange)
 
@@ -2324,8 +2337,8 @@ class ProjectTab(QWidget):
         # self._tra_pt_selected = None
         self.baseViewer.role = 'ref'
         self.baseViewer.set_layer()
-        self.baseViewer._selected_index['ref'] = self.baseViewer.getNextPoint('ref')
-        self.baseViewer.restoreManAlignPts()
+        # self.baseViewer._selected_index['ref'] = self.baseViewer.getNextPoint('ref')
+        # self.baseViewer.restoreManAlignPts()
         self.update_MA_list_widgets()
         self.cl_ref.setChecked(True)
         self.cl_tra.setChecked(False)
@@ -2354,8 +2367,8 @@ class ProjectTab(QWidget):
         cfg.data['state']['tra_ref_toggle'] = 1
         self.baseViewer.role = 'base'
         self.baseViewer.set_layer()
-        self.baseViewer._selected_index['base'] = self.baseViewer.getNextPoint('base')
-        self.baseViewer.restoreManAlignPts()
+        # self.baseViewer._selected_index['base'] = self.baseViewer.getNextPoint('base')
+        # self.baseViewer.restoreManAlignPts()
         self.update_MA_list_widgets()
         self.cl_tra.setChecked(True)
         self.cl_ref.setChecked(False)
@@ -2377,25 +2390,6 @@ class ProjectTab(QWidget):
             self.lw_tra.item(i).setForeground(QColor('#141414'))
             self.lw_ref.item(i).setForeground(QColor('#444444'))
         logger.info(f"<<<< set_transforming <<<<")
-
-    def fn_hwidgetChanged(self):
-        # logger.critical('')
-        #
-        # # self.tn_widget.setFixedWidth(self.tn_tra.height() + 8)
-        # max_w = max(self.tn_ms0.height(), self.tn_ms1.height(), self.tn_ms2.height(), self.tn_ms3.height())
-        # # logger.info(f'max_w = {max_w}')
-        # self.ms_widget.setMaximumWidth(max_w * 2 + 20)
-        # logger.info('Resizing things, isProjectTab...')
-        # h = self.wEditAlignment.height()
-        # # cfg.pt.sideTabs.setFixedWidth(int(.26 * self.width()))
-        # ms_w = int(h/4 + 0.5)
-        # tn_w = int((h - self.tn_ref_lab.height() - self.tn_ref_lab.height()) / 2 + 0.5)
-        # self.ms_widget.setFixedWidth(ms_w)
-        # self.match_widget.setFixedWidth(ms_w)
-        # self.tn_widget.setFixedWidth(tn_w)
-        # # self.initNeuroglancer()
-        # # pass
-        pass
 
 
     def onSideTabChange(self):
@@ -2787,7 +2781,6 @@ class ProjectTab(QWidget):
                     if p:
                         x, y = p[0], p[1]
                         msg = '%d: x=%.1f, y=%.1f' % (i, x, y)
-                        logger.critical(msg)
                         self.lw_tra.item(i).setText(msg)
                     else:
                         self.lw_tra.item(i).setText('')
@@ -2878,7 +2871,7 @@ class ProjectTab(QWidget):
         cfg.main_window.hud.post('Deleting All Reference Image Manual Correspondence Points from Buffer...')
         cfg.data.set_manpoints('ref', [None, None, None])
         self.baseViewer._selected_index['ref'] = 0
-        self.baseViewer.restoreManAlignPts()
+        # self.baseViewer.restoreManAlignPts()
         self.baseViewer.drawSWIMwindow()
         self.update_MA_list_widgets()
 
@@ -2888,7 +2881,7 @@ class ProjectTab(QWidget):
         cfg.main_window.hud.post('Deleting All Base Image Manual Correspondence Points from Buffer...')
         cfg.data.set_manpoints('base', [None, None, None])
         self.baseViewer._selected_index['base'] = 0
-        self.baseViewer.restoreManAlignPts()
+        # self.baseViewer.restoreManAlignPts()
         self.baseViewer.drawSWIMwindow()
         self.update_MA_list_widgets()
 
@@ -2901,7 +2894,7 @@ class ProjectTab(QWidget):
         cfg.data.set_manpoints('base', [None, None, None])
         self.baseViewer._selected_index['ref'] = 0
         self.baseViewer._selected_index['base'] = 0
-        self.baseViewer.restoreManAlignPts()
+        # self.baseViewer.restoreManAlignPts()
         self.baseViewer.drawSWIMwindow()
         self.update_MA_list_widgets()
         logger.info('<<<< deleteAllMp')
@@ -3892,6 +3885,10 @@ class NgClickLabel(QLabel):
 
 
 class ListWidget(QListWidget):
+    def __init__(self,):
+        super(QListWidget, self).__init__()
+        self.setFocusPolicy(Qt.NoFocus)
+
     def sizeHint(self):
         s = QSize()
         s.setHeight(super(ListWidget,self).sizeHint().height())
