@@ -1229,23 +1229,23 @@ class DataModel:
         # timings.append(('Generate Source Image Thumbnails', t2 + ' / ' + t2m))
 
         timings.append(('Generate Scales', t0 + ' / ' + t0m + " (total)"))
-        for s in cfg.data.scales()[1:]:
-            timings.append(('  ' + cfg.data.scale_pretty(s), '%s / %s' % (t7[s], t7m[s])))
+        for s in self.scales()[1:]:
+            timings.append(('  ' + self.scale_pretty(s), '%s / %s' % (t7[s], t7m[s])))
         timings.append(('Convert Scales to Zarr', t1 + ' / ' + t1m + " (total)"))
-        for s in cfg.data.scales():
-            timings.append(('  ' + cfg.data.scale_pretty(s), '%s / %s' % (t8[s], t8m[s])))
+        for s in self.scales():
+            timings.append(('  ' + self.scale_pretty(s), '%s / %s' % (t8[s], t8m[s])))
         timings.append(('Compute Affines', ''))
-        for s in cfg.data.scales():
-            timings.append(('  ' + cfg.data.scale_pretty(s), '%s / %s' % (t3[s], t3m[s])))
+        for s in self.scales():
+            timings.append(('  ' + self.scale_pretty(s), '%s / %s' % (t3[s], t3m[s])))
         timings.append(('Generate Aligned TIFFs', ''))
-        for s in cfg.data.scales():
-            timings.append(('  ' + cfg.data.scale_pretty(s), '%s / %s' % (t4[s], t4m[s])))
+        for s in self.scales():
+            timings.append(('  ' + self.scale_pretty(s), '%s / %s' % (t4[s], t4m[s])))
         timings.append(('Convert Aligned TIFFs to Zarr', ''))
-        for s in cfg.data.scales():
-            timings.append(('  ' + cfg.data.scale_pretty(s), '%s / %s' % (t5[s], t5m[s])))
+        for s in self.scales():
+            timings.append(('  ' + self.scale_pretty(s), '%s / %s' % (t5[s], t5m[s])))
         timings.append(('Generate Aligned TIFF Thumbnails', ''))
-        for s in cfg.data.scales():
-            timings.append(('  ' + cfg.data.scale_pretty(s), '%s / %s' % (t6[s], t6m[s])))
+        for s in self.scales():
+            timings.append(('  ' + self.scale_pretty(s), '%s / %s' % (t6[s], t6m[s])))
         return timings
 
 
@@ -1790,14 +1790,14 @@ class DataModel:
                              cur['swim_iters'], mem['swim_iters']))
 
         if method == 'grid-default':
-            for key in cfg.data.defaults:
+            for key in self.defaults:
                 if key in mem['defaults']:
-                    if cfg.data.defaults[key] != mem['defaults'][key]:
+                    if self.defaults[key] != mem['defaults'][key]:
                         if type(mem['defaults'][key]) == dict and len(mem['defaults'][key]) == 1:
                             breadcrumb = 'defaults > %s > %s' % (key, mem['defaults'][key])
                         else:
                             breadcrumb = 'defaults > %s' % key
-                        problems.append(('Inconsistent data (key: %s)' % breadcrumb, cfg.data.defaults[key],
+                        problems.append(('Inconsistent data (key: %s)' % breadcrumb, self.defaults[key],
                                          mem['defaults'][key]))
 
         elif method == 'grid-custom':
@@ -1826,14 +1826,12 @@ class DataModel:
 
     def data_comports_indexes(self, s=None):
         if s == None: s = self.scale
-        return np.array([self.data_comports(s=s, l=l)[0] for l in range(self.first_unskipped() + 1,
-                                                                        len(cfg.data))]).nonzero()[0].tolist()
+        return np.array([self.data_comports(s=s, l=l)[0] for l in range(0, len(self))]).nonzero()[0].tolist()
 
 
     def data_dn_comport_indexes(self, s=None):
         if s == None: s = self.scale
-        return np.array([(not self.data_comports(s=s, l=l)[0]) and (not self.skipped(s=s, l=l)) for l in range(
-            self.first_unskipped() + 1, len(cfg.data))]).nonzero()[0].tolist()
+        return np.array([(not self.data_comports(s=s, l=l)[0]) and (not self.skipped(s=s, l=l)) for l in range(0, len(self))]).nonzero()[0].tolist()
 
 
     def all_comports_indexes(self, s=None):
@@ -1843,15 +1841,14 @@ class DataModel:
 
     def cafm_comports_indexes(self, s=None):
         if s == None: s = self.scale
-        return np.array([cfg.data.cafm_hash_comports(s=s, l=l) for l in range(self.first_unskipped() + 1,
-                                                                              len(cfg.data))]).nonzero()[0].tolist()
+        return np.array([self.cafm_hash_comports(s=s, l=l) for l in range(0, len(self))]).nonzero()[0].tolist()
 
 
     def cafm_dn_comport_indexes(self, s=None):
         if s == None: s = self.scale
         indexes = []
-        for i in range(self.first_unskipped() + 1, len(cfg.data)):
-            if not cfg.data.cafm_hash_comports(s=s, l=i) or not self.data_comports(s=s, l=i)[0]:
+        for i in range(0, len(self)):
+            if not self.cafm_hash_comports(s=s, l=i) or not self.data_comports(s=s, l=i)[0]:
                 if not self.skipped(s=s, l=i):
                     indexes.append(i)
 
