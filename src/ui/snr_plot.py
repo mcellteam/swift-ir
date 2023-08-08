@@ -189,30 +189,32 @@ class SnrPlot(QWidget):
 
     def updateSpecialLayerLines(self):
         logger.info('')
+
         if self.dock:
             offset = 0
         else:
             offset = self._getScaleOffset(s=cfg.data.scale_key)
-        layers_mp = cfg.data.find_layers_with_manpoints()
-        for line in self._mp_lines:   self.plot.removeItem(line)
-        for label in self._mp_labels: self.plot.removeItem(label)
-        self._mp_lines = []
-        self._mp_labels = []
-        for layer in layers_mp:
-            line = pg.InfiniteLine(
-                movable=False,
-                angle=90,
-                pen='#32CD32',
-                # snr='Match Point #{value:.0f}',
-                # # snr=self.label_value,
-                labelOpts={'position': .1, 'color': (255, 225, 53), 'fill': (200, 200, 200, 50), 'movable': True}
-            )
-            self._mp_lines.append(line)
-            label = pg.InfLineLabel(line, f'Manual', position=0.32, color='#32CD32',rotateAxis=(1, 0),
-                                    anchor=(.8, 1))
-            self._mp_labels.append(label)
-            line.setPos([layer[0] + offset, 1])
-            self.plot.addItem(line)
+
+        # layers_mp = cfg.data.find_layers_with_manpoints()
+        # for line in self._mp_lines:   self.plot.removeItem(line)
+        # for label in self._mp_labels: self.plot.removeItem(label)
+        # self._mp_lines = []
+        # self._mp_labels = []
+        # for layer in layers_mp:
+        #     line = pg.InfiniteLine(
+        #         movable=False,
+        #         angle=90,
+        #         pen='#32CD32',
+        #         # snr='Match Point #{value:.0f}',
+        #         # # snr=self.label_value,
+        #         labelOpts={'position': .1, 'color': (255, 225, 53), 'fill': (200, 200, 200, 50), 'movable': True}
+        #     )
+        #     self._mp_lines.append(line)
+        #     label = pg.InfLineLabel(line, f'Manual', position=0.32, color='#32CD32',rotateAxis=(1, 0),
+        #                             anchor=(.8, 1))
+        #     self._mp_labels.append(label)
+        #     line.setPos([layer[0] + offset, 1])
+        #     self.plot.addItem(line)
 
         for line in self._skip_lines:   self.plot.removeItem(line)
         for label in self._skip_labels: self.plot.removeItem(label)
@@ -407,8 +409,8 @@ class SnrPlot(QWidget):
             # ticks = np.arange(0, cfg.data.count)
             # ax = self.plot.getAxis("bottom")
             # ax.setTicks([[(v, str(v)) for v in ticks ]])
-            if not self.dock:
-                self.updateSpecialLayerLines()
+            # if not self.dock:
+            self.updateSpecialLayerLines()
 
             if self.dock:
                 self.plot.autoRange() # !!! #0601-

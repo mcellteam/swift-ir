@@ -61,9 +61,9 @@ def ComputeAffines(scale, path, indexes, renew_od=False, reallocate_zarr=False, 
         cfg.mw.warn('Canceling Compute Affine Tasks')
     else:
         if scale == dm.coarsest_scale_key():
-            print(f'\n\n######## Initializing Alignment ########\n')
+            print(f'\n\n######## Initializing Alignment for {indexes} ########\n')
         else:
-            print(f'\n\n######## Refining Alignment ########\n')
+            print(f'\n\n######## Refining Alignment for {indexes} ########\n')
 
         cfg.mw._autosave()
         # if path:
@@ -263,7 +263,7 @@ def ComputeAffines(scale, path, indexes, renew_od=False, reallocate_zarr=False, 
         dm.t_align = t_elapsed
         cfg.main_window.set_elapsed(t_elapsed, f"Compute affines {scale}")
 
-        logger.info("Compute Affines Finished")
+        logger.info(f"Compute Affines Finished for {indexes}")
 
         SetStackCafm(dm.get_iter(scale), scale=scale, poly_order=cfg.data.default_poly_order)
 
