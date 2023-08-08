@@ -23,7 +23,7 @@ from qtpy.QtCore import QObject, Signal, Slot, QUrl, QTimer
 from qtpy.QtWidgets import QApplication, QSizePolicy
 from qtpy.QtWebEngineWidgets import *
 from src.funcs_zarr import get_zarr_tensor
-from src.helpers import getOpt, getData, setData, obj_to_string, print_exception, is_joel, caller_name
+from src.helpers import getOpt, getData, setData, obj_to_string, print_exception, is_joel, is_tacc, caller_name
 from src.shaders import ann_shader
 import src.config as cfg
 
@@ -497,18 +497,32 @@ class EMViewer(AbstractEMViewer):
         DEFAULT_MAX_DOWNSAMPLED_SIZE = 128
         DEFAULT_MAX_DOWNSAMPLING_SCALES = float('inf')        
         """
-        cfg.LV = ng.LocalVolume(
-            volume_type='image',
-            data=self.store[:, :, :],
-            dimensions=self.coordinate_space,
-            # max_voxels_per_chunk_log2=1024
-            downsampling=None, # '3d' to use isotropic downsampling, '2d' to downsample separately in XY, XZ, and YZ,
-            # None to use no downsampling.
 
-            max_downsampling=cfg.max_downsampling,
-            max_downsampled_size=cfg.max_downsampled_size,
-            # max_downsampling_scales=cfg.max_downsampling_scales #Goes a LOT slower when set to 1
-        )
+        if is_tacc():
+            cfg.LV = ng.LocalVolume(
+                volume_type='image',
+                data=self.store[:, :, :],
+                dimensions=self.coordinate_space,
+                # max_voxels_per_chunk_log2=1024
+                # downsampling=None, # '3d' to use isotropic downsampling, '2d' to downsample separately in XY, XZ, and YZ,
+                # None to use no downsampling.
+                max_downsampling=cfg.max_downsampling,
+                max_downsampled_size=cfg.max_downsampled_size,
+                # max_downsampling_scales=cfg.max_downsampling_scales #Goes a LOT slower when set to 1
+            )
+        else:
+            cfg.LV = ng.LocalVolume(
+                volume_type='image',
+                data=self.store[:, :, :],
+                dimensions=self.coordinate_space,
+                # max_voxels_per_chunk_log2=1024
+                # downsampling=None, # '3d' to use isotropic downsampling, '2d' to downsample separately in XY, XZ, and YZ,
+                # None to use no downsampling.
+                max_downsampling=cfg.max_downsampling,
+                max_downsampled_size=cfg.max_downsampled_size,
+                # max_downsampling_scales=cfg.max_downsampling_scales #Goes a LOT slower when set to 1
+            )
+
 
 
         with self.txn() as s:

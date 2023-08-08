@@ -296,10 +296,13 @@ class SnrPlot(QWidget):
         except:
             print_exception()
 
+        self.plotGhostScaleData()
+
         try:
             self.plotData()
         except:
             print_exception()
+
 
 
     def get_axis_data(self, s=None) -> tuple:
@@ -380,7 +383,7 @@ class SnrPlot(QWidget):
 
             self.plot.addItem(self._curLayerLine)
             if self.dock:
-                self.plotGhostScaleData()
+                # self.plotGhostScaleData()
                 self.plotSingleScale()
 
             else:
@@ -552,7 +555,7 @@ class SnrPlot(QWidget):
             self.no_comport_cafm_points[s].sigClicked.connect(self.onSnrClick)
 
             def hoverSlot0(points, ev):
-                if len(ev):
+                if len(ev) == 1:
                     if self._memHover0 != ev:
                         hoverIndex = int(ev.item().pos()[0])
                         print(f"hovered index: {hoverIndex}")

@@ -1066,6 +1066,7 @@ class UserProjects(QWidget):
         # self.setFocusPolicy(Qt.StrongFocus)
 
         self.table = QTableWidget()
+        self.table.setFocusPolicy(Qt.NoFocus)
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         # self.table.setAlternatingRowColors(True)
         # self.table = TableWidget(self)

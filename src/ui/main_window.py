@@ -197,6 +197,53 @@ class MainWindow(QMainWindow):
         # self.setCorner(Qt.BottomRightCorner, Qt.RightDockWidgetArea )
         self.setDockNestingEnabled(True)
 
+
+        self._layer_left_action = QAction()
+        self._layer_left_action.triggered.connect(self.layer_left)
+
+        self._layer_right_action = QAction()
+        self._layer_right_action.triggered.connect(self.layer_right)
+
+
+        self._shortcutArrowLeft = QShortcut(QKeySequence(Qt.Key_Left), self)
+        self._shortcutArrowLeft.activated.connect(self.layer_left)
+        self._shortcutArrowLeft.activated.connect(lambda: print("Shortcut Left Arrow..."))
+        # self._shortcutArrowLeft.setKey(QKeySequence(Qt.Key_Left))
+        self._shortcutArrowLeft.setContext(Qt.WidgetShortcut)
+        self._shortcutArrowRight = QShortcut(QKeySequence(Qt.Key_Right), self)
+        self._shortcutArrowRight.activated.connect(self.layer_right)
+        self._shortcutArrowRight.activated.connect(lambda: print("Shortcut Right Arrow..."))
+        # self._shortcutArrowRight.setKey(QKeySequence(Qt.Key_Right))
+        self._shortcutArrowRight.setContext(Qt.WidgetShortcut)
+
+        # def fn_main_window_lost_focus():
+        #     logger.warning(f"\n\nMain Window lost its focus to: {self.focusWidget()}!\n")
+        # 
+        # self.focusOutEvent.(fn_main_window_lost_focus)
+
+    def focusOutEvent(self, event):
+        reasons = {0:'MouseFocusReason', 1:'TabFocusReason', 2: 'BacktabFocusReason', 3: 'ActiveWindowFocusReason', 4:
+                   'PopupFocusReason', 5: 'ShortcutFocusReason', 6: 'MenuBarFocusReason', 7: 'OtherFocusReason'}
+        logger.warning(f"\n\n"
+                       f"Event               : {event}\n"
+                       f"Got focus           : {event.gotFocus()}\n"
+                       f"Lost focus          : {event.lostFocus()}\n"
+                       f"Reason              : {event.reason()} / {reasons[event.reason()]}\n"
+                       f"Current focus       : {self.focusWidget()}\n")
+        if type(cfg.mw.focusWidget()) != QTextEdit:
+            self.focusW = self.focusWidget()
+
+        self.setFocus()
+
+    def focusInEvent(self, event):
+        reasons = {0:'MouseFocusReason', 1:'TabFocusReason', 2: 'BacktabFocusReason', 3: 'ActiveWindowFocusReason', 4:
+                   'PopupFocusReason', 5: 'ShortcutFocusReason', 6: 'MenuBarFocusReason', 7: 'OtherFocusReason'}
+        logger.warning(f"Focusing in on MainWindow..."
+                       f"Got focus           : {event.gotFocus()}\n"
+                       f"Lost focus          : {event.lostFocus()}\n"
+                       f"Reason              : {event.reason()} / {reasons[event.reason()]}\n"
+                       f"Current focus       : {self.focusWidget()}\n")
+
     def pyqtgraph_examples(self):
         pyqtgraph.examples.run()
 
@@ -1307,7 +1354,7 @@ class MainWindow(QMainWindow):
             indexes = [cfg.data.zpos]
         self.onAlignmentStart(scale=scale)
         self.tell("%s Affines (%s)..." % (('Initializing', 'Refining')[cfg.data.isRefinement()], cfg.data.scale_pretty(s=scale)))
-        logger.info(f'Aligning indexes:{indexes}, {cfg.data.scale_pretty(scale)}...')
+        # logger.info(f'Aligning indexes:{indexes}, {cfg.data.scale_pretty(scale)}...')
 
         if not ignore_bb:
             cfg.data.set_use_bounding_rect(cfg.pt._bbToggle.isChecked())
@@ -1524,8 +1571,8 @@ class MainWindow(QMainWindow):
             logger.info(f'requested: {requested}')
             if requested >= 0:
                 cfg.data.zpos = requested
-            if cfg.pt._tabs.currentIndex() == 1:
-                cfg.baseViewer.set_layer()
+            # if cfg.pt._tabs.currentIndex() == 1:
+            #     cfg.baseViewer.set_layer()
 
     def layer_right(self):
         if self._isProjectTab():
@@ -1540,8 +1587,8 @@ class MainWindow(QMainWindow):
             requested = cfg.data.zpos + 1
             if requested < len(cfg.data):
                 cfg.data.zpos = requested
-            if cfg.pt._tabs.currentIndex() == 1:
-                cfg.baseViewer.set_layer()
+            # if cfg.pt._tabs.currentIndex() == 1:
+            #     cfg.baseViewer.set_layer()
 
     def scale_down(self) -> None:
         '''Callback function for the Previous Scale button.'''
@@ -1641,7 +1688,12 @@ class MainWindow(QMainWindow):
             self._skipCheckbox.setChecked(not cfg.data.skipped())
             self._btn_prevSection.setEnabled(cur > 0)
             self._btn_nextSection.setEnabled(cur < len(cfg.data) - 1)
+            if self.dw_snr.isVisible():
+                cfg.project_tab.dSnr_plot.updateLayerLinePos()
+            if cfg.emViewer:
+                cfg.emViewer.set_layer(cfg.data.zpos)
             self.dataUpdateWidgets()
+
 
 
 
@@ -1652,34 +1704,30 @@ class MainWindow(QMainWindow):
         # self.dataUpdateAsync(self)
         # await self._dataUpdateWidgets()
         '''Reads Project Data to Update MainWindow.'''
-        caller = inspect.stack()[1].function
-        logger.info(f'[{caller}] [{cfg.data.zpos}] Updating Widgets...')
+        # caller = inspect.stack()[1].function
+        # logger.info(f'[{caller}] [{cfg.data.zpos}] Updating Widgets...')
+        # logger.critical(f"self.sender() = {self.sender()}")
 
         if self._working:
             logger.warning("Busy working! Not going to update the interface rn.")
-
-        if not self._isProjectTab():
-            logger.warning('No Current Project Tab!')
             return
 
 
         if self._isProjectTab():
-            cfg.CancelProcesses = False #0720+ probably a necessary precaution until something better
 
             #CriticalMechanism
-            if 'viewer_em.WorkerSignals' in str(self.sender()):
-                timerActive = self.uiUpdateTimer.isActive()
+            if 'src.data_model.Signals' in str(self.sender()):
+                # <src.data_model.Signals object at 0x13b8b3e20>
+                # timerActive = self.uiUpdateTimer.isActive()
                 # logger.critical(f"uiUpdateTimer active? {timerActive}")
                 if self.uiUpdateTimer.isActive():
-                    # logger.info('Delaying UI Update [viewer_em.WorkerSignals]...')
+                    # logger.warning('Delaying UI Update [viewer_em.WorkerSignals]...')
                     return
                 else:
                     self.uiUpdateTimer.start()
                     logger.info('Updating UI on timeout...')
 
-
-            if self.dw_snr.isVisible():
-                cfg.project_tab.dSnr_plot.updateLayerLinePos()
+            cfg.CancelProcesses = False  # 0720+ probably a necessary precaution until something better
 
 
             if self.dw_thumbs.isVisible():
@@ -1689,16 +1737,16 @@ class MainWindow(QMainWindow):
 
                 if cfg.data.skipped():
                     cfg.pt.tn_ref_lab.setText(f'--')
-                    cfg.project_tab.tn_tra_overlay.show()
+                    if not cfg.project_tab.tn_tra_overlay.isVisible():
+                        cfg.project_tab.tn_tra_overlay.show()
                     cfg.project_tab.tn_ref.hide()
-                    cfg.pt.tn_ref_lab.hide()
                 else:
                     cfg.pt.tn_ref_lab.setText(f'Reference Section (Thumbnail)\n'
                           f'[{cfg.data.zpos}] {cfg.data.reference_basename()}')
-                    cfg.project_tab.tn_tra_overlay.hide()
+                    if cfg.project_tab.tn_tra_overlay.isVisible():
+                     cfg.project_tab.tn_tra_overlay.hide()
                     cfg.pt.tn_ref.set_data(path=cfg.data.thumbnail_ref())
                     cfg.project_tab.tn_ref.show()
-                    cfg.pt.tn_ref_lab.show()
 
 
             if self.dw_notes.isVisible():
@@ -1725,6 +1773,8 @@ class MainWindow(QMainWindow):
 
 
             elif cfg.pt._tabs.currentIndex() == 1:
+
+                cfg.baseViewer.set_layer()
 
                 # cfg.pt.set_transforming()
 
@@ -1984,6 +2034,7 @@ class MainWindow(QMainWindow):
         '''Connected to _jumpToLineedit. Calls jump_to_slider directly.'''
         # logger.info('')
         if self._isProjectTab():
+            logger.info('')
             requested = int(self._jumpToLineedit.text())
             cfg.data.zpos = requested
 
@@ -1996,6 +2047,7 @@ class MainWindow(QMainWindow):
     def jump_to_slider(self):
         if self._isProjectTab():
             if inspect.stack()[1].function == 'main':
+                logger.info('')
                 cfg.data.zpos = self._sectionSlider.value()
             # caller = inspect.stack()[1].function
             # if caller == 'main':
@@ -3761,12 +3813,6 @@ class MainWindow(QMainWindow):
         action.setDefaultWidget(textedit)
         menu.addAction(action)
 
-    def initAllViewers(self):
-        if self._isProjectTab():
-            for v in cfg.project_tab.get_viewers():
-                v.initViewer()
-
-
 
 
     def initMenu(self):
@@ -4759,6 +4805,7 @@ class MainWindow(QMainWindow):
         self.newActionsWidget.setStyleSheet("font-size: 10px; font-weight: 600;")
 
         self.toolbar_cpanel = QToolBar()
+        self.toolbar_cpanel.setObjectName("Main Toolbar")
         self.toolbar_cpanel.setAllowedAreas(Qt.TopToolBarArea | Qt.BottomToolBarArea)
         # self.toolbar_cpanel.setMovable(False)
         self.toolbar_cpanel.setFixedHeight(38)
@@ -5679,122 +5726,32 @@ class MainWindow(QMainWindow):
 
     def keyPressEvent(self, event):
         super(MainWindow, self).keyPressEvent(event)
+
+        t0 = time.time()
+
+        key = event.key()
         # if DEV:
         #     logger.info(f'caller: {caller_name()}')
-        logger.info(f'{event.key()} ({event.text()} / {event.nativeVirtualKey()} / modifiers: {event.nativeModifiers()}) was pressed!')
-        # if ((event.key() == 77) and (event.nativeModifiers() == 1048840)) \
-        #         or ((event.key() == 16777249) and (event.nativeModifiers() == 264)):
+        logger.info(f'{key} ({event.text()} / {event.nativeVirtualKey()} / modifiers: {event.nativeModifiers()}) was pressed!')
+        # if ((key == 77) and (event.nativeModifiers() == 1048840)) \
+        #         or ((key == 16777249) and (event.nativeModifiers() == 264)):
         #     self.enterExitManAlignMode()
         #     return
         #Prev...
-        # if (event.key() == 77) and (event.nativeModifiers() == 1048840):
+        # if (key == 77) and (event.nativeModifiers() == 1048840):
         #     self.enterExitManAlignMode()
         #     return
-        # if (event.key() == 16777249) and (event.nativeModifiers() == 264):
+        # if (key == 16777249) and (event.nativeModifiers() == 264):
         #     self.enterExitManAlignMode()
         #     return
-        # M Key: event.key(): 77 <class 'int'>
+        # M Key: key: 77 <class 'int'>
         # Command key modifier: event.nativeModifiers(): 1048840 <class 'int'>
 
-        ek = event.key()
-        envk = event.nativeVirtualKey()
-        if ek == 35 and envk == 20:
-            logger.info("Shift + 3 was pressed")
 
 
 
 
-
-        if event.key() == Qt.Key_Escape:
-            if self.isMaximized():
-                self.showNormal()
-
-        # Shift key workaround
-        # elif event.key() == 16777248:
-        #     logger.info('16777248 was pressed!')
-        #     if self._isProjectTab():
-        #         cur = cfg.pt._tabs.currentIndex()
-        #         cfg.pt._tabs.setCurrentIndex((cur + 1) % 5)
-        # elif event.key() == Qt.Key_Shift:
-        #     logger.info(f"{Qt.Key_Shift} was pressed")
-        #     if self._isProjectTab():
-        #         cur = cfg.pt._tabs.currentIndex()
-        #         cfg.pt._tabs.setCurrentIndex((cur + 1) % 5)
-
-        elif event.key() == Qt.Key_F11:
-            if self.isMaximized():
-                self.showNormal()
-            else:
-                self.showMaximized()
-
-        elif event.key() == Qt.Key_R:
-            self.refreshTab()
-
-        elif event.key() == Qt.Key_Space:
-            if self._isProjectTab():
-                cfg.pt._tabs.setCurrentIndex(0)
-
-
-        # elif event.key() == Qt.Key_M:
-        #     self.enterExitManAlignMode()
-        # r = 82
-        # m = 77
-        # k = 75
-        # p = 80
-        elif event.key() == Qt.Key_K:
-            if self._isProjectTab():
-                self.skip_change_shortcut()
-
-        elif event.key() == Qt.Key_P:
-            self.a_python.trigger()
-            # self.setdw_python(not self.tbbPython.isChecked())
-
-        elif event.key() == Qt.Key_H:
-            self.a_monitor.trigger()
-            # self.setdw_hud(not self.tbbHud.isChecked())
-
-        elif event.key() == Qt.Key_N:
-            self.a_notes.trigger()
-            # self.setdw_notes(not self.tbbNotes.isChecked())
-
-        elif event.key() == Qt.Key_T:
-            self.a_thumbs.trigger()
-            # self.setdw_thumbs(not self.tbbThumbnails.isChecked())
-
-        elif event.key() == Qt.Key_M:
-            self.a_matches.trigger()
-            # self.setdw_matches(not self.tbbMatches.isChecked())
-
-        elif event.key() == Qt.Key_S:
-            # self.save()
-            self._autosave()
-
-        elif event.key() == Qt.Key_D:
-            if self._isProjectTab():
-                self.detachNeuroglancer()
-
-        # elif event.key() == Qt.Key_A:
-        #     self.alignAll()
-
-        elif event.key() == Qt.Key_B:
-            if self._isProjectTab():
-                cfg.pt.blink_main_fn()
-
-
-        # elif event.key() == Qt.Key_V:
-        #     self.enterExitManAlignMode()
-
-        elif event.key() == Qt.Key_Up:
-            if self._isProjectTab():
-                if cfg.pt._tabs.currentIndex() in (0,1):
-                    self.incrementZoomIn()
-
-        elif event.key() == Qt.Key_Down:
-            if self._isProjectTab():
-                if cfg.pt._tabs.currentIndex() in (0, 1):
-                    self.incrementZoomOut()
-
-        elif event.key() == Qt.Key_Slash:
+        if key == Qt.Key_Slash:
             if self._isProjectTab():
                 # self.setUpdatesEnabled(False)
                 if cfg.pt._tabs.currentIndex() == 1:
@@ -5804,13 +5761,120 @@ class MainWindow(QMainWindow):
                     else:
                         cfg.pt.set_transforming()
                 # self.setUpdatesEnabled(True)
+                return
 
-        elif event.key() == Qt.Key_Delete:
+        # left arrow key = 16777234
+        elif key == 16777234:
+            self.layer_left()
+            return
+
+        # right arrow key = 16777236
+        elif key == 16777236:
+            self.layer_right()
+            return
+
+
+        elif key == 35 and event.nativeVirtualKey() == 20:
+            logger.info("Shift + 3 was pressed")
+
+
+        if key == Qt.Key_Escape:
+            if self.isMaximized():
+                self.showNormal()
+
+        # Shift key workaround
+        # elif key == 16777248:
+        #     logger.info('16777248 was pressed!')
+        #     if self._isProjectTab():
+        #         cur = cfg.pt._tabs.currentIndex()
+        #         cfg.pt._tabs.setCurrentIndex((cur + 1) % 5)
+        # elif key == Qt.Key_Shift:
+        #     logger.info(f"{Qt.Key_Shift} was pressed")
+        #     if self._isProjectTab():
+        #         cur = cfg.pt._tabs.currentIndex()
+        #         cfg.pt._tabs.setCurrentIndex((cur + 1) % 5)
+
+        elif key == Qt.Key_F11:
+            if self.isMaximized():
+                self.showNormal()
+            else:
+                self.showMaximized()
+
+        elif key == Qt.Key_R:
+            self.refreshTab()
+
+        elif key == Qt.Key_Space:
+            if self._isProjectTab():
+                cfg.pt._tabs.setCurrentIndex(0)
+
+
+        # elif key == Qt.Key_M:
+        #     self.enterExitManAlignMode()
+        # r = 82
+        # m = 77
+        # k = 75
+        # p = 80
+        elif key == Qt.Key_K:
+            if self._isProjectTab():
+                self.skip_change_shortcut()
+
+        elif key == Qt.Key_P:
+            self.a_python.trigger()
+            # self.setdw_python(not self.tbbPython.isChecked())
+
+        elif key == Qt.Key_H:
+            self.a_monitor.trigger()
+            # self.setdw_hud(not self.tbbHud.isChecked())
+
+        elif key == Qt.Key_N:
+            self.a_notes.trigger()
+            # self.setdw_notes(not self.tbbNotes.isChecked())
+
+        elif key == Qt.Key_T:
+            self.a_thumbs.trigger()
+            # self.setdw_thumbs(not self.tbbThumbnails.isChecked())
+
+        elif key == Qt.Key_M:
+            self.a_matches.trigger()
+            # self.setdw_matches(not self.tbbMatches.isChecked())
+
+        elif key == Qt.Key_S:
+            # self.save()
+            self._autosave()
+
+        elif key == Qt.Key_D:
+            if self._isProjectTab():
+                self.detachNeuroglancer()
+
+        # elif key == Qt.Key_A:
+        #     self.alignAll()
+
+        elif key == Qt.Key_B:
+            if self._isProjectTab():
+                cfg.pt.blink_main_fn()
+
+
+        # elif key == Qt.Key_V:
+        #     self.enterExitManAlignMode()
+
+        elif key == Qt.Key_Up:
+            if self._isProjectTab():
+                if cfg.pt._tabs.currentIndex() in (0,1):
+                    self.incrementZoomIn()
+
+        elif key == Qt.Key_Down:
+            if self._isProjectTab():
+                if cfg.pt._tabs.currentIndex() in (0, 1):
+                    self.incrementZoomOut()
+
+
+
+        elif key == Qt.Key_Delete:
             if self._isOpenProjTab():
                 self._getTabObject().delete_projects()
 
-        # elif event.key() == Qt.Key_Shift:
-        # elif event.key() == Qt.Key_M:
+        # elif key == Qt.Key_Shift:
+        # elif key == Qt.Key_M:
         #     # logger.info('Shift Key Pressed!')
         #     if self._isProjectTab():
         #         if getData('state,viewer_mode') == 'series_as_stack':
@@ -5825,47 +5889,28 @@ class MainWindow(QMainWindow):
                 #      cfg.project_tab.cl_ref.setChecked)[
                 #         cfg.project_tab.cl_tra.isChecked](True)
 
-        # elif event.key() == Qt.Key_Tab:
+        # elif key == Qt.Key_Tab:
         #     logger.info('')
         #     if self._isProjectTab():
         #         new_index = (cfg.project_tab._tabs.currentIndex()+1)%4
         #         logger.info(f'new index: {new_index}')
         #         cfg.project_tab._tabs.setCurrentIndex(new_index)
 
-
-
+        dt = time.time() - t0
+        logger.info(f"keyPressEvent time elapsed = {dt}") # time elapsed = 0.20649194717407227
 
 
         # # left arrow key = 16777234
-        # elif event.key() == 16777234:
+        # elif key == 16777234:
         #     self.layer_left()
         #
         # # right arrow key = 16777236
-        # elif event.key() == 16777236:
+        # elif key == 16777236:
         #     self.layer_right()
-
-
-        # left arrow key = 16777234
-        elif event.key() == 16777234:
-            self.layer_left()
-
-        # right arrow key = 16777236
-        elif event.key() == 16777236:
-            self.layer_right()
 
         # self.keyPressed.emit(event)
 
 
-
-
-    #
-    # def on_key(self, event):
-    #     print('event received @ MainWindow')
-    #     if event.key() == Qt.Key_Space:
-    #         logger.info('Space key was pressed')
-
-        # if event.key() == Qt.Key_M:
-        #     logger.info('M key was pressed')
 
 class DockWidget(QDockWidget):
     hasFocus = Signal([QDockWidget])

@@ -71,7 +71,7 @@ class ProjectTab(QWidget):
         # self.webengine = QWebEngineView()
         self.webengine = WebEngine(ID='emViewer')
         self.webengine.setStyleSheet("background-color: #000000;")
-        # self.webengine.setFocusPolicy(Qt.NoFocus)
+        self.webengine.setFocusPolicy(Qt.NoFocus)
         self.webengine.loadFinished.connect(lambda: print('Web engine load finished!'))
         setWebengineProperties(self.webengine)
         # self.webengine.setStyleSheet('background-color: #222222;')
@@ -540,9 +540,9 @@ class ProjectTab(QWidget):
             self.dataUpdateMA()
             #     layer['alignment']['swim_settings'].setdefault('iterations', cfg.DEFAULT_SWIM_ITERATIONS)
 
-        self.btnResetAllMA = QPushButton('Set All To Default Grid')
+        self.btnResetAllMA = QPushButton('Set All Methods To Default Grid')
         self.btnResetAllMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.btnResetAllMA.setFixedSize(QSize(140, 18))
+        self.btnResetAllMA.setFixedSize(QSize(150, 18))
         self.btnResetAllMA.clicked.connect(fn)
         self.btnResetAllMA.setStyleSheet('font-size: 10px;')
 
@@ -921,25 +921,6 @@ class ProjectTab(QWidget):
         self.gl_Q.addWidget(self.Q4, 1, 1, 1, 1, alignment=Qt.AlignLeft | Qt.AlignTop)
         self.Q_widget.setLayout(self.gl_Q)
 
-        self.cb_clobber = QCheckBox()
-        self.cb_clobber.toggled.connect(lambda: cfg.data.set_clobber(b=self.cb_clobber.isChecked()))
-        self.sb_clobber_pixels = QSpinBox()
-        self.sb_clobber_pixels.setMaximumWidth(64)
-        self.sb_clobber_pixels.setFixedHeight(16)
-        self.sb_clobber_pixels.setMinimum(1)
-        self.sb_clobber_pixels.setMaximum(16)
-
-        self.btn_settings_apply_everywhere = QPushButton('Apply Clobber to All')
-
-        def fn():
-            cfg.data.set_clobber(self.cb_clobber.isChecked(), glob=True)
-            cfg.data.set_clobber_px(self.sb_clobber_pixels.value(), glob=True)
-            cfg.main_window.tell('Settings Applied!')
-            logger.info('Settings applied to entire project.')
-
-        self.btn_settings_apply_everywhere.clicked.connect(fn)
-        self.btn_settings_apply_everywhere.setFixedHeight(16)
-
         self.gb_MA_settings = QGroupBox('These settings apply to the current section only.')
         self.gb_MA_settings.setObjectName('gb_cpanel')
         self.fl_MA_settings = QFormLayout()
@@ -952,8 +933,6 @@ class ProjectTab(QWidget):
         self.fl_MA_settings.addRow("Signal Whitening", self.spinbox_whitening)
         self.fl_MA_settings.addRow("SWIM Iterations", self.spinbox_swim_iters)
         self.fl_MA_settings.addRow("Select Match Regions\n(minimum=3)", self.Q_widget)
-        self.fl_MA_settings.addRow('Clobber Fixed Pattern', self.cb_clobber)
-        self.fl_MA_settings.addRow('Clobber Amount (px)', self.sb_clobber_pixels)
         # self.fl_MA_settings.addWidget(self.btn_settings_apply_everywhere) #Todo !!!
         # self.fl_MA_settings.addWidget(self.Q_widget)
         self.fl_MA_settings.addWidget(self.MA_settings_defaults_button)
@@ -1030,13 +1009,27 @@ class ProjectTab(QWidget):
         self._swimWindowControl.selectionChanged.connect(fn)
         self._swimWindowControl.returnPressed.connect(fn)
 
+
+        self.cb_clobber_default = QCheckBox()
+        self.cb_clobber_default.toggled.connect(lambda: cfg.data.set_clobber(b=self.cb_clobber_default.isChecked(),
+                                                                             glob=True))
+        self.sb_clobber_pixels_default = QSpinBox()
+        self.sb_clobber_pixels_default.valueChanged.connect(lambda: cfg.data.set_clobber_px(
+            self.sb_clobber_pixels_default.value(), glob=True))
+        self.sb_clobber_pixels_default.setFixedSize(QSize(50, 18))
+        self.sb_clobber_pixels_default.setMinimum(1)
+        self.sb_clobber_pixels_default.setMaximum(16)
+
+
         self.fl_swimSettings = QFormLayout()
         self.fl_swimSettings.setContentsMargins(2, 2, 2, 2)
         # self.fl_swimSettings.setFormAlignment(Qt.AlignVCenter)
         self.fl_swimSettings.setVerticalSpacing(4)
         self.fl_swimSettings.addRow('Window Width (px):', self._swimWindowControl)
         self.fl_swimSettings.addRow('Signal Whitening:', self.sb_whiteningControl)
-        self.fl_swimSettings.addRow('Iterations:', self.sb_SWIMiterations)
+        self.fl_swimSettings.addRow('SWIM Iterations:', self.sb_SWIMiterations)
+        self.fl_swimSettings.addRow('Clobber Fixed Pattern', self.cb_clobber_default)
+        self.fl_swimSettings.addRow('Clobber Amount (px)', self.sb_clobber_pixels_default)
         self.fl_swimSettings.addWidget(self.btnResetAllMA)
         # self.fl_swimSettings.setAlignment(Qt.AlignCenter)
         self.fl_swimSettings.setFormAlignment(Qt.AlignVCenter)
@@ -1077,11 +1070,11 @@ class ProjectTab(QWidget):
         self.flSettings.setContentsMargins(2, 2, 2, 2)
         self.flSettings.setVerticalSpacing(2)
         self.flSettings.setHorizontalSpacing(0)
-        self.flSettings.addRow('Generate TIFFs: ', HWidget(ExpandingWidget(self), self._toggleAutogenerate))
+        self.flSettings.addRow('Generate TIFFs && Zarr: ', HWidget(ExpandingWidget(self), self._toggleAutogenerate))
         self.flSettings.addRow('Bounding Box: ', HWidget(ExpandingWidget(self), self._bbToggle))
         self.flSettings.addRow('Corrective Bias: ', HWidget(ExpandingWidget(self), self._polyBiasCombo))
 
-        self.gb_outputSettings = QGroupBox("Output Settings")
+        self.gb_outputSettings = QGroupBox("Global Output Settings")
         self.gb_outputSettings.setObjectName('gb_cpanel')
         self.gb_outputSettings.setLayout(self.flSettings)
 
@@ -1205,6 +1198,7 @@ class ProjectTab(QWidget):
         self.bg_method.addButton(self.rb_method2)
 
         def method_bg_fn():
+            logger.critical(f"Before:\n{cfg.data.swim_settings()}")
             if DEV:
                 logger.critical(caller_name())
             # logger.critical(f'\n\n\n\n\n BEFORE:{cfg.data.current_method} \n\n\n\n\n')
@@ -1230,6 +1224,8 @@ class ProjectTab(QWidget):
             # elif cur_index == 4:
             #     self.MA_stackedWidget.setCurrentIndex(4)
             cfg.mw.updateCorrSignalsDrawer()
+
+            logger.critical(f"AFTER:\n{cfg.data.swim_settings()}")
 
             SetStackCafm(cfg.data.get_iter(cfg.data.scale), scale=cfg.data.scale,
                          poly_order=cfg.data.default_poly_order)
@@ -1670,7 +1666,10 @@ class ProjectTab(QWidget):
 
         def fn():
             setData('state,neutral_contrast', not getData('state,neutral_contrast'))
-            [v.updateHighContrastMode() for v in self.get_viewers()]
+            if self._tabs.currentIndex() == 0:
+                cfg.emViewer.updateHighContrastMode()
+            elif self._tabs.currentIndex() == 1:
+                self.baseViewer.updateHighContrastMode()
 
         self.ngcl_background.clicked.connect(fn)
         self.ngcl_background.setToolTip('Neuroglancer background setting')
@@ -2086,10 +2085,15 @@ class ProjectTab(QWidget):
                 cfg.data.defaults = copy.deepcopy(sec['alignment']['swim_settings']['defaults'])
             else:
                 sec = cfg.data['data']['scales'][cfg.data.scale]['stack'][cfg.data.zpos]
+
+                if not sec['alignment_history'][method]['complete']:
+                    sec['alignment']['swim_settings']['method'] = 'grid-default'
+                    method = 'grid-default'
                 try:
                     sec['alignment']['swim_settings'] = copy.deepcopy(sec['alignment_history'][method]['swim_settings'])
                 except:
-                    sec['alignment']['swim_settings']['method'] = copy.deepcopy(sec['alignment']['method_previous'])
+                    print_exception()
+
             # cfg.main_window.alignOne(swim_only=True)
             SetStackCafm(cfg.data.get_iter(cfg.data.scale), scale=cfg.data.scale,
                          poly_order=cfg.data.default_poly_order)
@@ -2717,6 +2721,9 @@ class ProjectTab(QWidget):
         self.sb_whiteningControl.setValue(float(getData('data,defaults,signal-whitening')))
         self.sb_SWIMiterations.setValue(int(getData('data,defaults,swim-iterations')))
 
+        self.cb_clobber_default.setChecked(cfg.data.clobber())
+        self.sb_clobber_pixels_default.setValue(cfg.data.clobber_px())
+
         poly = getData('data,defaults,corrective-polynomial')
         if (poly == None) or (poly == 'None'):
             self._polyBiasCombo.setCurrentText('None')
@@ -2779,8 +2786,6 @@ class ProjectTab(QWidget):
             self.Q4.setActivated(grid[3])
 
         self.update_MA_list_widgets()
-        self.cb_clobber.setChecked(cfg.data.clobber())
-        self.sb_clobber_pixels.setValue(int(cfg.data.clobber_px()))
 
         # self.cb_keep_swim_templates.setChecked((cfg.data.targ == True) or (cfg.data.karg == True))
         try:
@@ -3090,7 +3095,6 @@ class ProjectTab(QWidget):
         caller = inspect.stack()[1].function
         logger.info('caller: %s' % caller)
         try:
-            # for viewer in cfg.main_window.get_viewers():
             val = self.ZdisplaySlider.value()
             if cfg.data['state']['current_tab'] == 1:
                 state = copy.deepcopy(self.baseViewer.state)
@@ -3395,9 +3399,12 @@ class ProjectTab(QWidget):
             cfg.data.contrast = reset_val
             self.brightnessSlider.setValue(int(cfg.data.brightness))
             self.contrastSlider.setValue(int(cfg.data.contrast))
-            for viewer in self.get_viewers():
-                viewer.set_brightness()
-                viewer.set_contrast()
+            if self._tabs.currentIndex() == 0:
+                cfg.emViewer.set_brightness()
+                cfg.emViewer.set_contrast()
+            elif self._tabs.currentIndex() == 1:
+                self.baseViewer.set_brightness()
+                self.baseViewer.set_contrast()
 
         self._btn_resetBrightnessAndContrast = QPushButton('Reset')
         self._btn_resetBrightnessAndContrast.setStyleSheet('font-size: 10px;')
@@ -3476,15 +3483,19 @@ class ProjectTab(QWidget):
         caller = inspect.stack()[1].function
         if caller == 'main':
             cfg.data.brightness = self.brightnessSlider.value() / 100
-            for viewer in self.get_viewers():
-                viewer.set_brightness()
+            if self._tabs.currentIndex() == 0:
+                cfg.emViewer.set_brightness()
+            elif self._tabs.currentIndex() == 1:
+                self.baseViewer.set_brightness()
 
     def fn_contrast_control(self):
         caller = inspect.stack()[1].function
         if caller == 'main':
             cfg.data.contrast = self.contrastSlider.value() / 100
-            for viewer in self.get_viewers():
-                viewer.set_contrast()
+            if self._tabs.currentIndex() == 0:
+                cfg.emViewer.set_contrast()
+            elif self._tabs.currentIndex() == 1:
+                self.baseViewer.set_contrast()
 
     # def fn_shader_control(self):
     #     logger.info('')
@@ -3512,15 +3523,6 @@ class ProjectTab(QWidget):
             logger.critical('base viewer is now in focus!')
             pass
 
-    def get_viewers(self):
-        caller = inspect.stack()[1].function
-        logger.info(f'[{caller}]')
-        viewers = []
-        if cfg.emViewer:
-            viewers.append(cfg.emViewer)
-        if self.baseViewer:
-            viewers.append(self.baseViewer)
-        return viewers
 
     # def paintEvent(self, pe):
     #     '''Enables widget to be style-ized'''
@@ -3529,6 +3531,7 @@ class ProjectTab(QWidget):
     #     p = QPainter(self)
     #     s = self.style()
     #     s.drawPrimitive(QStyle.PE_Widget, opt, p, self)
+
 
     def updateTimingsWidget(self):
         logger.info('')
@@ -3549,9 +3552,10 @@ class ProjectTab(QWidget):
 
 
     def updateDetailsPanel(self):
-        logger.info('')
 
         if self._tabs.currentIndex() == 1:
+            logger.info('')
+
             caller = inspect.stack()[1].function
             logger.info(f'[{caller}] Updating details panel...')
             self.secName.setText(cfg.data.filename_basename())
@@ -3590,6 +3594,8 @@ class ProjectTab(QWidget):
                 self.secAlignedImageSize.setText('--')
                 self.secSNR.setText('--')
             self.secDefaults.setText(cfg.data.defaults_pretty)
+
+
 
     def jump_to_manual(self, requested) -> None:
         logger.info(f'requested: {requested}')
