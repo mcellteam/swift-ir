@@ -2952,6 +2952,8 @@ class ProjectTab(QWidget):
         delete_correlation_signals()
         cfg.mw.dataUpdateWidgets()
         self.update_MA_list_widgets()
+        if cfg.mw.dw_snr.isVisible():
+            self.dSnr_plot.initSnrPlot()
 
 
 
@@ -2966,6 +2968,8 @@ class ProjectTab(QWidget):
         delete_correlation_signals()
         cfg.mw.dataUpdateWidgets()
         self.update_MA_list_widgets()
+        if cfg.mw.dw_snr.isVisible():
+            self.dSnr_plot.initSnrPlot()
 
 
     def deleteAllMp(self):
@@ -2982,6 +2986,8 @@ class ProjectTab(QWidget):
         delete_correlation_signals()
         cfg.mw.dataUpdateWidgets()
         self.update_MA_list_widgets()
+        if cfg.mw.dw_snr.isVisible():
+            self.dSnr_plot.initSnrPlot()
         logger.info('<<<< deleteAllMp')
 
 
