@@ -301,6 +301,11 @@ class MAViewer(neuroglancer.Viewer):
             s.show_panel_borders = False
             s.show_help_button = True
             s.show_layer_panel = False
+            s.scale_bar_options.padding_in_pixels = 0  # default = 8
+            s.scale_bar_options.left_pixel_offset = 10  # default = 10
+            s.scale_bar_options.bottom_pixel_offset = 10  # default = 10
+            s.scale_bar_options.bar_top_margin_in_pixels = 4  # default = 5
+            s.scale_bar_options.font_name = 'Tahoma'
 
         self.drawSWIMwindow()
 

@@ -162,7 +162,7 @@ class Thumbnailer:
 
                     originals = glob(pattern)
                     # logger.critical(f'\n\n\nFound Files:\n{old_thumbnails}\n\n')
-                    logger.info(f"Removing {len(originals)} stale matches...")
+                    # logger.info(f"Removing {len(originals)} stale matches...")
                     for tn in originals:
                         logger.info(f'Removing {tn}...')
                         try:
