@@ -1636,7 +1636,7 @@ class ProjectTab(QWidget):
         self.ngcl_shader.clicked.connect(fn)
 
         self.blinkLab = QLabel(f"  Blink {hotkey('B')}: ")
-        self.blinkLab.setStyleSheet("""color: #161c20; font-size: 10px;""")
+        self.blinkLab.setStyleSheet("""color: #f3f6fb; font-size: 10px;""")
 
         self.tbbBlinkToggle = QPushButton()
         self.tbbBlinkToggle.setIconSize(QSize(24,24))
@@ -1688,7 +1688,7 @@ class ProjectTab(QWidget):
         self.le_zoom.returnPressed.connect(lambda: self.viewer.set_zoom(float(self.le_zoom.text())))
 
         self.zoomLab = QLabel('Zoom:')
-        self.zoomLab.setStyleSheet("""color: #161c20; font-size: 10px;""")
+        self.zoomLab.setStyleSheet("""color: #f3f6fb; font-size: 10px;""")
 
         self.w_zoom = HWidget(self.zoomLab, self.le_zoom)
         self.w_zoom.setMaximumWidth(84)
@@ -1757,7 +1757,7 @@ class ProjectTab(QWidget):
 
         toolbar_style2 = """
            QToolBar {
-               background-color: #ede9e8;
+               background-color: #222222;
                color: #f3f6fb;
                font-size: 10px;
            }
