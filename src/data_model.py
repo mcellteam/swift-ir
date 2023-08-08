@@ -363,6 +363,10 @@ class DataModel:
     def defaults(self):
         return self._data['data']['defaults']
 
+    @defaults.setter
+    def defaults(self, d):
+        self._data['data']['defaults'] = d
+
     @property
     def defaults_pretty(self):
         d = self._data['data']['defaults']
@@ -761,9 +765,7 @@ class DataModel:
         paths_t = glob(os.path.join(dir, '%s_%s_t_[012]%s' % (filename, self.current_method, extension)))
         paths_k = glob(os.path.join(dir, '%s_%s_k_[012]%s' % (filename, self.current_method, extension)))
         names = paths_t + paths_k
-        # logger.critical(f"{os.path.join(dir, '%s_%s_t_[012]%s' % (filename, self.current_method, extension))}")
-        # logger.critical(f"{os.path.join(dir, '%s_%s_k_[012]%s' % (filename, self.current_method, extension))}")
-        logger.critical(f'Returning: {names}')
+        # logger.info(f'Returning: {names}')
         return natural_sort(names)
 
     def get_grid_custom_filenames(self, s=None, l=None):
@@ -1267,14 +1269,14 @@ class DataModel:
         if s == None: s = self.scale
         if l == None: l = self.zpos
         if method == None:
-            method = self.method(s=s,l=l)
+            method = self['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['method']
         # logger.critical('')
         # if l == 0:
         #     return 0.0
         try:
             # components = self._data['data']['scales'][s]['stack'][l]['alignment_history'][method][-1]['snr']
             # components = self._data['data']['scales'][s]['stack'][l]['alignment']['method_results']['snr'] #prev
-            components = self._data['data']['scales'][s]['stack'][l]['alignment_history'][method]['method_results']['snr']
+            components = self['data']['scales'][s]['stack'][l]['alignment_history'][method]['method_results']['snr']
 
             '''
             13:55:45 WARNING [helpers.print_exception:731]   [20230526_13:55:45]
@@ -1471,6 +1473,8 @@ class DataModel:
         Returns:
             str: the alignment method for a single section
         '''
+        # caller = inspect.stack()[1].function
+        # logger.critical(f'caller: {caller}, s={s}, l={l}')
         if s == None: s = self.scale
         if l == None: l = self.zpos
         return self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['method']
@@ -1756,6 +1760,8 @@ class DataModel:
     def data_comports(self, s=None, l=None):
         if s == None: s = self.scale
         if l == None: l = self.zpos
+        # caller = inspect.stack()[1].function
+        # logger.critical(f"caller: {caller}, s={s}, l={l}")
         problems = []
         method = self.method(s=s, l=l)
 
@@ -1817,14 +1823,15 @@ class DataModel:
         return len(problems) == 0, problems
         # return tuple(comports?, [(reason/key, val1, val2)])
 
-    def data_comports_indexes(self, s):
-        if s == None: s = self.scale
-        return np.array([self.data_comports(s=s, l=l)[0] for l in range(len(cfg.data))]).nonzero()[0].tolist()
 
-    def data_dn_comport_indexes(self, s):
+    def data_comports_indexes(self, s=None):
         if s == None: s = self.scale
-        return np.array([(not self.data_comports(s=s, l=l)[0]) and (not self.skipped(s=s, l=l)) for l in range(len(
-            cfg.data))]).nonzero()[0].tolist()
+        return np.array([self.data_comports(s=s, l=l)[0] for l in range(self.first_unskipped(), len(cfg.data))]).nonzero()[0].tolist()
+
+
+    def data_dn_comport_indexes(self, s=None):
+        if s == None: s = self.scale
+        return np.array([(not self.data_comports(s=s, l=l)[0]) and (not self.skipped(s=s, l=l)) for l in range(self.first_unskipped(), len(cfg.data))]).nonzero()[0].tolist()
 
 
     def all_comports_indexes(self, s=None):
@@ -1834,7 +1841,8 @@ class DataModel:
 
     def cafm_comports_indexes(self, s=None):
         if s == None: s = self.scale
-        return np.array([cfg.data.cafm_hash_comports(s=s, l=l) for l in range(0, len(cfg.data))]).nonzero()[0].tolist()
+        return np.array([cfg.data.cafm_hash_comports(s=s, l=l) for l in range(self.first_unskipped(), len(cfg.data))]).nonzero()[0].tolist()
+
 
     def cafm_dn_comport_indexes(self, s=None):
         if s == None: s = self.scale
@@ -1845,7 +1853,6 @@ class DataModel:
                     indexes.append(i)
 
         return indexes
-
 
 
     def bias_data_path(self, s=None, l=None):
@@ -2109,8 +2116,8 @@ class DataModel:
         pixels_y = (pixels / img_w) * img_h
         # for s in self.scales():
 
-        logger.critical(f'[{caller}] pixels: {pixels}, pixels_y: {pixels_y}')
-        logger.critical(f"    {int(self.swim_1x1_custom_px()[1] / 2 + 0.5)}")
+        # logger.critical(f'[{caller}] pixels: {pixels}, pixels_y: {pixels_y}')
+        # logger.critical(f"    {int(self.swim_1x1_custom_px()[1] / 2 + 0.5)}")
 
         if (2 * pixels) <= self.swim_1x1_custom_px()[0]:
             self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['swim_settings'][
@@ -2194,6 +2201,7 @@ class DataModel:
 
         self._data['data']['scales'][self.scale]['stack'][self.zpos]['alignment']['swim_settings'][
             'manual_swim_window_px'] = pixels
+        self.signals.warning2.emit()
 
 
     def propagate_manual_swim_window_px(self, indexes) -> None:
@@ -2224,6 +2232,7 @@ class DataModel:
             else:
                 for i in range(len(self)):
                     self.stack(s)[i]['alignment']['swim_settings']['manual_swim_window_px'] = man_ww
+        self.signals.warning2.emit()
 
 
     #

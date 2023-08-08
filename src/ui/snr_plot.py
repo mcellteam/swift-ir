@@ -7,6 +7,7 @@ https://pyqtgraph.readthedocs.io/en/latest/_modules/pyqtgraph/graphicsItems/Scat
 '''
 import os
 import sys
+import copy
 from math import ceil
 import inspect
 import logging
@@ -148,6 +149,13 @@ class SnrPlot(QWidget):
         self.layout.setRowStretch(0,0)
         self.layout.setRowStretch(1,1)
         self.setLayout(self.layout)
+
+
+        self.points = []
+        self.ev = []
+
+        self._memHover0 = None
+        self._memHover1 = None
 
 
 
@@ -428,14 +436,44 @@ class SnrPlot(QWidget):
             pen=pg.mkPen('#f3f6fb', width=2),
             brush=(brush, pg.mkBrush('#AAFF00'))[self.dock],
             hoverable=True,
+            tip='Bla bla bla\nSection #: {x:.3g}\nSNR: {y:.3g}'.format,
             hoverSymbol='o',
             hoverSize=(13,10)[self.dock],
             # hoverPen=pg.mkPen('#f3f6fb', width=1),
             # hoverBrush=None,
             # pxMode=False # points transform with zoom
         )
+        #         *tip*                  A string-valued function of a spot's (x, y, data) values. Set to None to prevent a tool tip
+        #                                from being shown.
+
+        # def hoverSlot(points, ev):
+        #
+        #     print(f"points: {points}")
+        #     print(f"ev: {ev}")
+        #     self.points = points
+        #     if len(ev):
+        #         print(f"hovered: {int(cfg.pt.dSnr_plot.ev.item().pos()[0])}")
+        #         self.ev = ev
+        #
+        # self.snr_points[s].sigHovered.connect(hoverSlot)
+
         # self.snr_points[s].addPoints(x_axis[1:], y_axis[1:]) #Todo
         self.snr_points[s].addPoints(x_axis, y_axis)
+
+        # def hoverEvent(event):
+        #     """Show the position, pixel, and value under the mouse cursor.
+        #     """
+        #     data = np.array(cfg.pt.dSnr_plot.get_everything_comport_axis_data())
+        #     pos = event.pos()
+        #     i, j = pos.y(), pos.x()
+        #     i = int(np.clip(i, 0, data.shape[0] - 1))
+        #     j = int(np.clip(j, 0, data.shape[1] - 1))
+        #     val = data[i, j]
+        #     ppos = self.mapToParent(pos)
+        #     x, y = ppos.x(), ppos.y()
+        #     self.plot.setTitle("pos: (%0.1f, %0.1f)" % (i,j))
+        #
+        # self.snr_points[s].hoverEvent.connect(hoverEvent)
 
         # logger.info('self.snr_points.toolTip() = %s' % self.snr_points.toolTip())
         # value = self.snr_points.setToolTip('Test')
@@ -454,6 +492,8 @@ class SnrPlot(QWidget):
                 brush=pg.mkBrush('#f3f6fb'),
                 # brush=None,
                 hoverable=True,
+                tip='Bla bla bla\nSection #: {x:.3g}\nSNR: {y:.3g}'.format,
+                # tip='cafm_no_comport\nx: {x:.3g}\ny: {y:.3g}\nWarnings:\n{cfg.data.cafm_hash_comports(x)}'.format,
                 hoverSize=10,
                 # hoverPen=pg.mkPen('#ff0000', width=3),
                 # hoverBrush=None,
@@ -464,6 +504,18 @@ class SnrPlot(QWidget):
             self.plot.addItem(self.no_comport_cafm_points[s])
             self.no_comport_cafm_points[s].sigClicked.connect(self.onSnrClick)
 
+            def hoverSlot0(points, ev):
+                if len(ev):
+                    if self._memHover0 != ev:
+                        hoverIndex = int(ev.item().pos()[0])
+                        print(f"hovered index: {hoverIndex}")
+                        comport_data = cfg.data.cafm_hash_comports(l=hoverIndex)
+                        if comport_data:
+                            logger.info(f'CAFM does not comport for section #{hoverIndex}')
+                    self._memHover0 = ev
+
+            self.no_comport_cafm_points[s].sigHovered.connect(hoverSlot0)
+
 
             self.no_comport_data_points[s] = pg.ScatterPlotItem(
                 size=9,
@@ -472,6 +524,9 @@ class SnrPlot(QWidget):
                 pen=pg.mkPen('#f3f6fb', width=2),
                 brush=None,
                 hoverable=True,
+                tip='Bla bla bla\nSection #: {x:.3g}\nSNR: {y:.3g}'.format,
+                # data=[cfg.data.data_comports(s=cfg.data.scale, l=l) for l in self.get_data_no_comport_axis_data()[0]],
+                # tip='data_no_comport\nx: {x:.3g}\ny: {y:.3g}\nWarnings:\n{cfg.data.data_comports(x)}'.format,
                 hoverSize=11,
                 # hoverPen=pg.mkPen('#ff0000', width=3),
                 # hoverBrush=None,
@@ -481,6 +536,19 @@ class SnrPlot(QWidget):
             self.no_comport_data_points[s].addPoints(x_axis, y_axis)
             self.plot.addItem(self.no_comport_data_points[s])
             self.no_comport_data_points[s].sigClicked.connect(self.onSnrClick)
+
+        def hoverSlot1(points, ev):
+            if len(ev):
+                if self._memHover1 != ev:
+                    hoverIndex = int(ev.item().pos()[0])
+                    print(f"hovered index: {hoverIndex}")
+                    comport_data = cfg.data.data_comports(l=hoverIndex)
+                    if comport_data[0]:
+                        logger.info(comport_data)
+                self._memHover1 = ev
+
+        self.no_comport_data_points[s].sigHovered.connect(hoverSlot1)
+
 
         # if not self.dock:
         self.updateErrBars(s=s)
