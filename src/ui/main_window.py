@@ -230,10 +230,10 @@ class MainWindow(QMainWindow):
                        f"Lost focus          : {event.lostFocus()}\n"
                        f"Reason              : {event.reason()} / {reasons[event.reason()]}\n"
                        f"Current focus       : {self.focusWidget()}\n")
-        if type(cfg.mw.focusWidget()) != QTextEdit:
-            self.focusW = self.focusWidget()
-
-        self.setFocus()
+        # if type(cfg.mw.focusWidget()) != QTextEdit:
+        #     self.focusW = self.focusWidget()
+        #
+        # self.setFocus()
 
     def focusInEvent(self, event):
         reasons = {0:'MouseFocusReason', 1:'TabFocusReason', 2: 'BacktabFocusReason', 3: 'ActiveWindowFocusReason', 4:
