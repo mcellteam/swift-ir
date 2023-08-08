@@ -202,6 +202,7 @@ class ProjectTab(QWidget):
             self.baseViewer.signals.badStateChange.connect(self.set_transforming)
             self.baseViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314
             self.baseViewer.signals.ptsChanged.connect(self.update_MA_list_widgets)
+            self.baseViewer.signals.ptsChanged.connect(self.updateWarnings)
             self.baseViewer.signals.zVoxelCoordChanged.connect(lambda zpos: setattr(cfg.data, 'zpos', zpos))
             # self.baseViewer.signals.swimAction.connect(cfg.main_window.alignOne)
             self.update_MA_list_widgets()
