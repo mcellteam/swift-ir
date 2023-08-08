@@ -3775,6 +3775,7 @@ class MainWindow(QMainWindow):
 
         # self.menu = self.menuBar()
         self.menu.setStyleSheet("""font-size: 11px; font-weight: 600;""")
+        self.menu.setFocusPolicy(Qt.NoFocus)
 
         # Fix for non-native menu on macOS
         # self.menu.setNativeMenuBar(False)
