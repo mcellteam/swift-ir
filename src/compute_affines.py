@@ -119,6 +119,7 @@ def ComputeAffines(scale, path, indexes, renew_od=False, reallocate_zarr=False, 
                 zpos = dm().index(sec)
 
                 sec['alignment'].setdefault('method_results', {})
+                sec['alignment']['method_previous'] = copy.deepcopy(sec['alignment']['swim_settings']['method'])
                 mr = sec['alignment']['method_results']
                 mr.pop('swim_args', None)
                 mr.pop('swim_out', None)

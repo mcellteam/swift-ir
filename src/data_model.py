@@ -1772,6 +1772,13 @@ class DataModel:
         cur = self['data']['scales'][s]['stack'][l]['alignment']['swim_settings']  # current
         mem = self['data']['scales'][s]['stack'][l]['alignment_history'][method]['swim_settings'] # memory
 
+        try:
+            prev_method = self['data']['scales'][s]['stack'][l]['alignment']['recent_method']
+            if prev_method != cur['method']:
+                problems.append(('Method changed', prev_method, cur['method']))
+        except:
+            pass
+
         if cur['fn_reference'] != mem['fn_reference']:
             problems.append(('Reference images differ', cur['fn_reference'], mem['fn_reference']))
 
