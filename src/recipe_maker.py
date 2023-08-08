@@ -67,7 +67,7 @@ class align_recipe:
         else:
             MAlogger.disabled = True
             RMlogger.disabled = True
-            logger.disabled = True
+            # logger.disabled = True
 
 
     def megabytes(self):
@@ -187,8 +187,12 @@ class align_recipe:
             ])
         else:
             ww = self.data['swim_settings']['manual_swim_window_px']
-            man_pmov = np.array(self.data['swim_settings']['match_points_mir']['base']).transpose()
-            man_psta = np.array(self.data['swim_settings']['match_points_mir']['ref']).transpose()
+            #sanitize lists of None elements
+            pts = self.data['swim_settings']['match_points_mir']['base']
+            man_pmov = np.array([p for p in pts if p]).transpose()
+            pts = self.data['swim_settings']['match_points_mir']['ref']
+            man_psta = np.array([p for p in pts if p]).transpose()
+            self.clr_indexes = [i for i,p in enumerate(pts) if p]
             if self.method == 'manual-hint':
                 self.add_ingredients([
                     align_ingredient(
@@ -397,6 +401,8 @@ class align_ingredient:
 
     def execute_ingredient(self):
         # Returns an affine matrix
+        if self.recipe.method in ('manual-hint','manual-strict'):
+            self.clr_indexes = copy.deepcopy(self.recipe.clr_indexes)
         if self.mode == 'MIR':
             self.afm = self.run_manual_mir()
         else:
@@ -428,14 +434,21 @@ class align_ingredient:
         clobber_px = self.recipe.data['swim_settings']['clobber_size']
         afm = '%.6f %.6f %.6f %.6f' % (
                 self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
+
+        logger.critical(f"self.psta[0] = {self.psta[0]}")
+        logger.critical(f"len(self.psta[0]) = {len(self.psta[0])}")
         for i in range(len(self.psta[0])):
             if m == 'grid-custom':
                 if self.ID != 'g1x1':
                     if not self.recipe.grid_regions[i]:
                         continue
+            if m == 'manual-hint':
+                ind = self.clr_indexes.pop(0)
+            else:
+                ind = i
             # correlation signals argument (output path)
             b_arg = os.path.join(dir_scale, 'signals', '%s_%s_%d%s' %
-                           (fn, m, i, ext))
+                           (fn, m, ind, ext))
             self.ms_names.append(b_arg)
             args = ArgString(sep=' ')
             args.append("%dx%d" % (self.ww[0], self.ww[1]))
@@ -452,10 +465,10 @@ class align_ingredient:
                 args.add_flag(flag='-y', arg='%d' % self.offy)
             args.add_flag(flag='-b', arg=b_arg)
             if self.last:
-                k_arg_name = '%s_%s_k_%d%s' % (fn, m, i, ext)
+                k_arg_name = '%s_%s_k_%d%s' % (fn, m, ind, ext)
                 k_arg_path = os.path.join(dir_scale, 'matches_raw', k_arg_name)
                 args.add_flag(flag='-k', arg=k_arg_path)
-                t_arg_name = '%s_%s_t_%d%s' % (fn, m, i, ext)
+                t_arg_name = '%s_%s_t_%d%s' % (fn, m, ind, ext)
                 t_arg_path = os.path.join(dir_scale, 'matches_raw', t_arg_name)
                 args.add_flag(flag='-t', arg=t_arg_path)
             args.append(self.recipe.data['swim_settings']['extra_kwargs'])
@@ -500,14 +513,6 @@ class align_ingredient:
 
     def crop_match_signals(self):
         px_keep = 128
-        # if self.recipe.method in ('grid-default', 'grid-custom'):
-        #     w = str(int(self.ww[0] / 2.0 + 0.5))
-        #     h = str(int(self.ww[1] / 2.0 + 0.5))
-        #     x1 = str(int((self.ww[0] - px_keep) / 2.0 + 0.5))
-        #     y1 = str(int((self.ww[1] - px_keep) / 2.0 + 0.5))
-        #     x2 = '%d' % int((.50 * self.ww[0]) + (px_keep / 2.0) + 0.5)
-        #     y2 = '%d' % int((.50 * self.ww[1]) + (px_keep / 2.0) + 0.5)
-        # else:
         w, h = '%d' % self.ww[0], '%d' % self.ww[1]
         x1 = '%d' % int((self.ww[0] - px_keep) / 2.0 + 0.5)
         y1 = '%d' % int((self.ww[1] - px_keep) / 2.0 + 0.5)
@@ -599,8 +604,10 @@ class align_ingredient:
     def run_manual_mir(self):
         mir_script_mp = ''
         for i in range(len(self.psta[0])):
-            mir_script_mp += f'{self.psta[0][i]} {self.psta[1][i]} ' \
-                             f'{self.pmov[0][i]} {self.pmov[1][i]}\n'
+            if self.psta[0][i] and self.psta[1][i]:
+                mir_script_mp += f'{self.psta[0][i]} {self.psta[1][i]} ' \
+                                 f'{self.pmov[0][i]} {self.pmov[1][i]}\n'
+        print(f"mir_script_mp:\n{mir_script_mp}")
         mir_script_mp += 'R'
         self.mir_script = mir_script_mp
         out, err = run_command(

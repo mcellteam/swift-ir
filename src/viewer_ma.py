@@ -51,6 +51,7 @@ DEV = is_joel()
 class WorkerSignals(QObject):
     result = Signal(str)
     stateChanged = Signal()
+    zVoxelCoordChanged = Signal(int)
     zoomChanged = Signal(float)
     mpUpdate = Signal()
     ptsChanged = Signal()
@@ -92,8 +93,6 @@ class MAViewer(neuroglancer.Viewer):
             units=['nm', 'nm', 'nm'],
             scales=list(cfg.data.resolution(s=cfg.data.scale_key)), )
             # scales=[1,1,1] )
-
-        self._dontDraw = 0
 
         # QApplication.processEvents()
         self.initViewer()
@@ -188,8 +187,8 @@ class MAViewer(neuroglancer.Viewer):
             vc = s.voxel_coordinates
             vc[0] = self.index + 0.5
 
-        if cfg.data.method in ('manual-hint', 'manual-strict'):
-            self.restoreManAlignPts() #Todo study this. Temp fix. #0805-
+        # if cfg.data.method in ('manual-hint', 'manual-strict'):
+        #     self.restoreManAlignPts() #Todo study this. Temp fix. #0805-
 
         self.drawSWIMwindow()
 
@@ -225,7 +224,7 @@ class MAViewer(neuroglancer.Viewer):
 
         self.clear_layers()
 
-        self.restoreManAlignPts()
+        # self.restoreManAlignPts()
 
         sf = cfg.data.scale_val(s=cfg.data.scale_key)
         path = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(sf))
@@ -402,7 +401,10 @@ class MAViewer(neuroglancer.Viewer):
             if floor(self.state.position[0]) != self.index:
                 self.index = floor(self.state.position[0])
                 self.drawSWIMwindow(z=self.index) #NeedThis #0803
-                cfg.data.zpos = self.index
+                # cfg.data.zpos = self.index
+                # self._blockStateChanged = False
+                self.signals.zVoxelCoordChanged.emit(self.index)
+
 
         # if cfg.data.scale_val() > 2:
         #     if self.state.relative_display_scales == None:
@@ -521,7 +523,8 @@ class MAViewer(neuroglancer.Viewer):
             self._selected_index[self.role] = (self._selected_index[self.role] + 1) % 3
         elif select_by == 'zigzag':
             if cfg.data['state']['tra_ref_toggle'] == 1:
-                self._selected_index['ref'] = (self._selected_index[self.role] + 1) % 3
+                # self._selected_index['ref'] = (self._selected_index[self.role] + 1) % 3
+                self._selected_index['ref'] = self._selected_index[self.role]
                 cfg.pt.set_reference()
             else:
                 self._selected_index['base'] = (self._selected_index[self.role] + 1) % 3
@@ -584,9 +587,7 @@ class MAViewer(neuroglancer.Viewer):
         if z == None:
             z = cfg.data.zpos
 
-        if self._dontDraw:
-            logger.info('_dontDraw is blocking drawSWIMwindow')
-            return
+        logger.critical(f'{caller_name()}')
 
         # caller = inspect.stack()[1].function
 
@@ -599,6 +600,8 @@ class MAViewer(neuroglancer.Viewer):
 
 
         marker_size = 1
+
+        logger.critical('Drawing SWIM windows...')
 
         # if self.role == 'ref':
         #     self.index = cfg.data.get_ref_index()
@@ -716,6 +719,7 @@ class MAViewer(neuroglancer.Viewer):
 
         else:
             logger.info('Type: Match Region...')
+            self.restoreManAlignPts()
             # pts = list(self.pts.items())
             try:
                 assert len(self.pts[self.role]) == len(cfg.data.manpoints()[self.role])
@@ -783,14 +787,14 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def restoreManAlignPts(self):
-
+        logger.critical("Restoring manual alignment points... ")
         # self.pts = OrderedDict()
         self.pts[self.role] = [None,None,None]
         pts_data = cfg.data.getmpFlat(l=cfg.data.zpos)[self.role]
         # logger.info(f'[{self.role}] Restoring manual point/region selections...')
         for i, p in enumerate(pts_data):
             if p:
-                logger.critical(f"Adding {p}...")
+                # logger.critical(f"Adding {p}...")
                 props = [self.colors[i], getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'),
                          getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'), ]
                 # self.pts[self.getNextUnusedColor()] = ng.PointAnnotation(id=str(p), point=p, props=props)

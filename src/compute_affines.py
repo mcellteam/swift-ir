@@ -175,6 +175,7 @@ def ComputeAffines(scale, path, indexes, renew_od=False, reallocate_zarr=False, 
 
 
         delete_correlation_signals(dm=dm, scale=scale, indexes=indexes)
+        delete_matches(dm=dm, scale=scale, indexes=indexes)
         dest = dm['data']['destination_path']
 
         cpus = get_n_tacc_cores(n_tasks=len(tasks))
@@ -358,6 +359,16 @@ def delete_correlation_signals(dm, scale, indexes):
         # logger.info(f'Deleting:\n{sigs}')
         for f in sigs:
             if os.path.isfile(f):  # this makes the code more robust
+                os.remove(f)
+
+def delete_matches(dm, scale, indexes):
+    logger.info('')
+    for i in indexes:
+        sigs = dm.get_matches_filenames(s=scale, l=i)
+        # logger.info(f'Deleting:\n{sigs}')
+        for f in sigs:
+            if os.path.isfile(f):  # this makes the code more robust
+                logger.critical(f"Removing {f}...")
                 os.remove(f)
 
 # def delete_correlation_signals(dm, scale_key, start, end, dest):

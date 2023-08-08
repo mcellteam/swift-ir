@@ -501,7 +501,7 @@ class MainWindow(QMainWindow):
 
             thumbs = cfg.data.get_signals_filenames(l=z)
             n = len(thumbs)
-            snr_vals = cfg.data.snr_components(l=z)
+            snr_vals = copy.deepcopy(cfg.data.snr_components(l=z))
             # logger.info(f'snr_vals = {snr_vals}')
             colors = cfg.glob_colors
             count = 0
@@ -555,7 +555,7 @@ class MainWindow(QMainWindow):
                     if not cfg.pt.msList[i]._noImage:
                         cfg.pt.msList[i].set_no_image()
                         # cfg.pt.msList[i].update()
-            else:
+            elif method == 'grid-default':
                 for i in range(4):
                     if i < n:
                         # logger.info('i = %d ; name = %s' %(i, str(thumbs[i])))
@@ -584,6 +584,48 @@ class MainWindow(QMainWindow):
                     else:
                         cfg.pt.msList[i].set_no_image()
                         # cfg.pt.msList[i].update()
+
+            elif method == 'manual-hint':
+                indexes = []
+                for n in thumbs:
+                    fn, _ = os.path.splitext(n)
+                    indexes.append(int(fn[-1]))
+
+                logger.critical(f"indexes: {indexes}")
+                logger.critical(f"snr_vals: {snr_vals}")
+                logger.critical(f"thumbs: {thumbs}")
+
+                for i in range(0,4):
+
+                    if i in indexes:
+                        logger.critical(f'i = {i}')
+                        try:
+                            try:
+                                snr = snr_vals.pop(0)
+                                assert snr > 0.0
+                            except:
+                                # logger.info(f'no SNR data for corr signal index {i}')
+                                cfg.pt.msList[i].set_no_image()
+                                print_exception()
+                                continue
+
+                            # cfg.pt.msList[i].set_data(path=thumbs[i], snr=float(snr))
+                            cfg.pt.msList[i].set_data(path=thumbs.pop(0), snr=float(snr))
+                        except:
+                            print_exception()
+                            cfg.pt.msList[i].set_no_image()
+                            logger.warning(f'There was a problem with index {i}, {thumbs[i]}')
+                        # finally:
+                        #     cfg.pt.msList[i].update()
+                    else:
+                        cfg.pt.msList[i].set_no_image()
+                        # cfg.pt.msList[i].update()
+
+            # if method == 'manual-hint':
+            #     cfg.pt.msList[3].hide()
+            # else:
+            #     cfg.pt.msList[3].show()
+
 
             # logger.info('<<<< updateCorrSignalsDrawer <<<<')
 
@@ -617,12 +659,14 @@ class MainWindow(QMainWindow):
                 tkarg = 'k'
             else:
                 tkarg = 't'
-            files = []
-            for i in range(0, 4):
-                name = '%s_%s_%s_%d%s' % (filename, cfg.data.current_method, tkarg, i, extension)
-                files.append(os.path.join(cfg.data.dest(), cfg.data.scale_key, 'matches', name))
 
             method = cfg.data.current_method
+            files = []
+            for i in range(0, 4):
+                name = '%s_%s_%s_%d%s' % (filename, method, tkarg, i, extension)
+                files.append((i, os.path.join(cfg.data.dest(), cfg.data.scale_key, 'matches', name)))
+
+
 
             # logger.info(f'Files:\n{files}')
 
@@ -636,7 +680,7 @@ class MainWindow(QMainWindow):
                         use = [1,1,1,1]
 
                     # logger.info(f'file  : {files[i]}  exists? : {os.path.exists(files[i])}  use? : {use}')
-                    path = os.path.join(cfg.data.dest(), cfg.data.scale_key, 'matches', files[i])
+                    path = os.path.join(cfg.data.dest(), cfg.data.scale_key, 'matches', files[i][1])
                     if use and os.path.exists(path):
                         cfg.pt.match_thumbnails[i].path = path
                         try:
@@ -646,36 +690,36 @@ class MainWindow(QMainWindow):
                             cfg.pt.match_thumbnails[i].set_no_image()
                     else:
                         cfg.pt.match_thumbnails[i].set_no_image()
+                    cfg.pt.match_thumbnails[i].show()
 
             if cfg.data.current_method == 'manual-hint':
-                n_ref = len(cfg.data.manpoints()['ref'])
-                n_base = len(cfg.data.manpoints()['base'])
-                for i in range(0, 4):
-                    path = os.path.join(cfg.data.dest(), cfg.data.scale_key, 'matches', files[i])
-                    # if DEV:
-                    #     logger.info(f'path: {path}')
-                    #     logger.info(f'i = {i}, n_ref = {n_ref}, n_base = {n_base}')
-
-                    try:
-                        # if DEV:
-                        #     logger.info(f'path: {path}')
-                        assert os.path.exists(path)
-                        #Todo add handler... generate a warning or something...
-                        assert n_ref > i
-                        assert n_base > i
-                    except:
-                        # print_exception(extra=f"path = {path}")
-                        # logger.critical('Handling Exception...')
-                        cfg.pt.match_thumbnails[i].set_no_image()
-
-                        continue
-                    try:
+                # cfg.pt.match_thumbnails[3].hide()
+                for i in range(0, 3):
+                    path = os.path.join(cfg.data.dest(), cfg.data.scale_key, 'matches', files[i][1])
+                    if os.path.exists(path):
                         cfg.pt.match_thumbnails[i].path = path
-                        # cfg.pt.match_thumbnails[i].showPixmap()
                         cfg.pt.match_thumbnails[i].set_data(path)
-                    except:
+                    else:
                         cfg.pt.match_thumbnails[i].set_no_image()
-                        print_exception()
+
+
+
+                    # try:
+                    #     # if DEV:
+                    #     #     logger.info(f'path: {path}')
+                    #     assert os.path.exists(path)
+                    # except:
+                    #     # print_exception(extra=f"path = {path}")
+                    #     # logger.critical('Handling Exception...')
+                    #     cfg.pt.match_thumbnails[i].set_no_image()
+                    #     continue
+                    # try:
+                    #     cfg.pt.match_thumbnails[i].path = path
+                    #     # cfg.pt.match_thumbnails[i].showPixmap()
+                    #     cfg.pt.match_thumbnails[i].set_data(path)
+                    # except:
+                    #     cfg.pt.match_thumbnails[i].set_no_image()
+                    #     print_exception()
 
             # logger.info('<<<< setTargKargPixmaps')
 
@@ -728,12 +772,6 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             cfg.data['state']['tool_windows']['python'] = state
 
-        # if self.dw_python.isVisible():
-        #     if self.dw_hud.isVisible():
-        #         # self.splitDockWidget(self.dw_hud,self.dw_python,Qt.Horizontal)
-        #         w = int(self.width() / 2)
-        #         self.resizeDocks((self.dw_hud, self.dw_python), (w, w), Qt.Horizontal)
-
         self.setUpdatesEnabled(True)
 
 
@@ -771,11 +809,13 @@ class MainWindow(QMainWindow):
             h = self.dw_thumbs.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
             w = int(h / 2 + .5) - 10
             logger.critical(f"setting mac width to {w}")
-            self.dw_thumbs.setMaximumWidth(w)
-            cfg.pt.tn_widget.resize(QSize(w-6, cfg.pt.tn_widget.height()))
+            # self.dw_thumbs.setMaximumWidth(w)
+            cfg.pt.tn_widget.setMaximumWidth(w)
+            # cfg.pt.tn_widget.resize(w, h)
+            # cfg.pt.tn_widget.resize(QSize(w-6, cfg.pt.tn_widget.height()))
 
-            cfg.pt.tn_ref.resize(w,w)
-            cfg.pt.tn_tra_lab.resize(w,w)
+            # cfg.pt.tn_ref.resize(w,w)
+            # cfg.pt.tn_tra_lab.resize(w,w)
 
 
 
@@ -805,8 +845,8 @@ class MainWindow(QMainWindow):
             QApplication.processEvents()
 
             h = self.dw_matches.height() - cfg.pt.mwTitle.height()
-            self.dw_matches.setMaximumWidth(int(h /2 + .5) - 4)
-            # cfg.pt.match_widget.resize(QSize(int(h /2 + .5) - 4, h))
+            # self.dw_matches.setMaximumWidth(int(h /2 + .5) - 4)
+            cfg.pt.match_widget.setMaximumWidth(int(h /2 + .5) - 4)
 
 
 
@@ -1483,24 +1523,30 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             if cfg.pt._tabs.currentIndex() == 1:
                 if cfg.data['state']['tra_ref_toggle'] == 0:
-                    cfg.pt.set_transforming()
-                    return
+                    self.set_transforming()
 
             requested = cfg.data.zpos - 1
             logger.info(f'requested: {requested}')
             if requested >= 0:
                 cfg.data.zpos = requested
+            if cfg.pt._tabs.currentIndex() == 1:
+                cfg.baseViewer.set_layer()
 
     def layer_right(self):
         if self._isProjectTab():
+            # if cfg.pt._tabs.currentIndex() == 1:
+            #     if cfg.data['state']['tra_ref_toggle'] == 0:
+            #         cfg.pt.set_transforming()
+            #         return
             if cfg.pt._tabs.currentIndex() == 1:
                 if cfg.data['state']['tra_ref_toggle'] == 0:
-                    cfg.pt.set_transforming()
-                    return
+                    self.set_transforming()
 
             requested = cfg.data.zpos + 1
             if requested < len(cfg.data):
                 cfg.data.zpos = requested
+            if cfg.pt._tabs.currentIndex() == 1:
+                cfg.baseViewer.set_layer()
 
     def scale_down(self) -> None:
         '''Callback function for the Previous Scale button.'''
@@ -1685,7 +1731,7 @@ class MainWindow(QMainWindow):
 
             elif cfg.pt._tabs.currentIndex() == 1:
 
-                cfg.pt.set_transforming()
+                # cfg.pt.set_transforming()
 
                 # if cfg.data['state']['tra_ref_toggle']:
                 #     cfg.pt.set_transforming()
@@ -3230,7 +3276,8 @@ class MainWindow(QMainWindow):
             self.setdw_thumbs(False)
             self.setdw_matches(False)
             self.setdw_snr(False)
-            self.globTabs.addTab(OpenProject(), 'Project Manager')
+            # self.globTabs.addTab(OpenProject(), 'Project Manager')
+            self.globTabs.insertTab(0, OpenProject(), 'Project Manager')
             self._switchtoOpenProjectTab()
 
 
@@ -3329,12 +3376,14 @@ class MainWindow(QMainWindow):
 
         if self.dw_thumbs.isVisible():
             h = self.dw_thumbs.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
-            self.dw_thumbs.setMaximumWidth(int(h / 2 + .5) - 10)
+            # self.dw_thumbs.setMaximumWidth(int(h / 2 + .5) - 10)
+            cfg.pt.tn_widget.setMaximumWidth(int(h / 2 + .5) - 10)
+            # cfg.pt.tn_widget.resize(int(h / 2 + .5) - 10, h) #Bad!
 
         if self.dw_matches.isVisible():
             h = self.dw_matches.height() - cfg.pt.mwTitle.height()
-            self.dw_matches.setMaximumWidth(int(h / 2 + .5) - 4)
-            # self.dw_matches.resize(QSize(int(h / 2 + .5) - 4, h))
+            # self.dw_matches.setMaximumWidth(int(h / 2 + .5) - 4)
+            cfg.pt.match_widget.setMaximumWidth(int(h / 2 + .5) - 4)
 
         self.setUpdatesEnabled(True)
 
@@ -3353,10 +3402,7 @@ class MainWindow(QMainWindow):
                 logger.info("(!) window maximized")
                 self.fullScreenAction.setIcon(qta.icon('mdi.fullscreen-exit', color='#ede9e8'))
             if self._isProjectTab():
-                if cfg.pt._tabs.currentIndex() == 1:
-                    cfg.pt.fn_hwidgetChanged()
                 if cfg.pt._tabs.currentIndex() in (0, 1):
-                    # QApplication.processEvents()
                     cfg.project_tab.initNeuroglancer()
 
 
@@ -4786,6 +4832,9 @@ class MainWindow(QMainWindow):
         self.dw_matches.hide()
 
 
+        self.splitDockWidget(self.dw_thumbs, self.dw_matches, Qt.Horizontal)
+
+
 
         self.dw_hud = DockWidget('HUD', self)
         def fn_dw_monitor_visChanged():
@@ -4986,10 +5035,13 @@ class MainWindow(QMainWindow):
             self.setUpdatesEnabled(False)
             if self.dw_thumbs.isVisible():
                 h = self.dw_thumbs.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
-                self.dw_thumbs.setMaximumWidth(int(h / 2 + .5) - 10)
+                # self.dw_thumbs.setMaximumWidth(int(h / 2 + .5) - 10)
+                cfg.pt.tn_widget.setMaximumWidth(int(h / 2 + .5) - 10)
+                # cfg.pt.tn_widget.resize(int(h / 2 + .5) - 10, h) #Bad!
             if self.dw_matches.isVisible():
                 h = self.dw_matches.height() - cfg.pt.mwTitle.height()
-                self.dw_matches.setMaximumWidth(int(h / 2 + .5) - 4)
+                # self.dw_matches.setMaximumWidth(int(h / 2 + .5) - 4)
+                cfg.pt.match_widget.setMaximumWidth(int(h / 2 + .5) - 4)
             self.setUpdatesEnabled(True)
         self.dw_notes.visibilityChanged.connect(fn)
         self.dw_notes.setStyleSheet("""
