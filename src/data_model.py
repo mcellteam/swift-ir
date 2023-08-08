@@ -13,6 +13,7 @@ import json
 import inspect
 import logging
 import hashlib
+import time
 import platform
 import statistics
 from typing import Dict, Any
@@ -62,7 +63,7 @@ class ScaleIterator:
 class Scale:
     pass
 
-def time():
+def date_time():
     return datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
 class Signals(QObject):
@@ -81,10 +82,10 @@ class DataModel:
             self._data = data  # Load project data from file
         else:
             self._data = copy.deepcopy(data_template)  # Initialize new project data
-            self._data['created'] = time()
+            self._data['created'] = date_time()
             self.set_system_info()
         if not quietly:
-            self._data['modified'] = time()
+            self._data['modified'] = date_time()
             self.signals = Signals()
             self.signals.zposChanged.connect(cfg.mw._updateZposWidgets)
         if name:
@@ -147,7 +148,7 @@ class DataModel:
     #     return self._data['data']['scales'][self.scale_key]['stack']
 
     def to_file(self):
-        path = os.path.join(self.dest(), 'state_' + time() + '.swiftir')
+        path = os.path.join(self.dest(), 'state_' + date_time() + '.swiftir')
         with open(path, 'w') as f:
             f.write(str(self.to_json()))
 
@@ -413,13 +414,14 @@ class DataModel:
         caller = inspect.stack()[1].function
         # logger.critical(f' is_aligned caller: {caller} >>>> ')
         if s == None: s = self.scale
-        snr_list = self.snr_list(s=s)
-        if sum(snr_list) < 1:
-            # logger.info(f'is_aligned [{s}] is returning False (sum of SNR list is < 1)')
-            return False
-        else:
-            # logger.info(f'is_aligned [{s}] is returning True (sum of SNR list > 1)')
-            return True
+        return self['data']['scales'][s]['aligned'] #0808+
+        # snr_list = self.snr_list(s=s)
+        # if sum(snr_list) < 1:
+        #     # logger.info(f'is_aligned [{s}] is returning False (sum of SNR list is < 1)')
+        #     return False
+        # else:
+        #     # logger.info(f'is_aligned [{s}] is returning True (sum of SNR list > 1)')
+        #     return True
 
     def is_alignable(self) -> bool:
         '''Checks if the current scale is able to be aligned'''
@@ -1251,14 +1253,6 @@ class DataModel:
         return timings
 
 
-    def previous_method_results(self, s=None, l=None):
-        if s == None: s = self.scale
-        if l == None: l = self.zpos
-        try:
-            return self._data['data']['scales'][s]['stack'][l][
-                'alignment']['previous_method_results']
-        except:
-            return {}
 
 
     # def get_method_data(self, method, s=None, l=None):
@@ -1309,18 +1303,6 @@ class DataModel:
             logger.warning(f"{txt}\n[{l}] Unable to return SNR. Returning 0.0")
             return 0.0
 
-    def snr_prev(self, s=None, l=None) -> float:
-        if s == None: s = self.scale
-        if l == None: l = self.zpos
-        if l == 0:
-            return 0.0
-        try:
-            value = self.previous_method_results(s=s, l=l)['snr']
-            return statistics.fmean(map(float, value))
-        except:
-            # print_exception()
-            return 0.0
-
 
     def snr_list(self, s=None) -> list[float]:
         try:
@@ -1331,17 +1313,9 @@ class DataModel:
             return [0] * len(self)
 
 
-    def snr_prev_list(self, s=None, l=None):
-        # logger.info('caller: %s' % inspect.stack()[1].function)
-        if s == None: s = self.scale
-        try:
-            return [self.snr_prev(s=s, l=i) for i in range(len(self))]
-        except:
-            return []
 
-
-    def delta_snr_list(self):
-        return [a_i - b_i for a_i, b_i in zip(self.snr_prev_list(), self.snr_list())]
+    def delta_snr_list(self, before, after):
+        return [a_i - b_i for a_i, b_i in zip(before, after)]
 
 
     def snr_components(self, s=None, l=None, method=None) -> list[float]:
@@ -1459,16 +1433,6 @@ class DataModel:
             logger.warning('No SNR data found - returning 0.0...')
             return 0.0
 
-
-    def snr_prev_average(self, scale=None) -> float:
-        # logger.info('caller: %s...' % inspect.stack()[1].function)
-        if scale == None: scale = self.scale
-        # NOTE: skip the first layer which does not have an SNR value s may be equal to zero
-        try:
-            return statistics.fmean(self.snr_prev_list(s=scale)[1:])
-        except:
-            logger.warning('No previous SNR data found - returning 0.0...')
-            return 0.0
 
     def method(self, s=None, l=None):
         '''Gets the alignment method
@@ -1851,12 +1815,20 @@ class DataModel:
 
     def data_dn_comport_indexes(self, s=None):
         if s == None: s = self.scale
-        return np.array([(not self.data_comports(s=s, l=l)[0]) and (not self.skipped(s=s, l=l)) for l in range(0, len(self))]).nonzero()[0].tolist()
+        t0 = time.time()
+        lst = [(not self.data_comports(s=s, l=l)[0]) and (not self.skipped(s=s, l=l)) for l in range(0, len(self))]
+        t1 = time.time()
+        indexes = np.array(lst).nonzero()[0].tolist()
+        logger.critical(f"data_dn_comport_indexes dt = {time.time() - t0:.3g} ({t1 - t0:.3g}/{time.time() - t1:.3g})")
+        return indexes
 
 
     def all_comports_indexes(self, s=None):
         if s == None: s = self.scale
-        return list(set(range(len(self))) - set(self.cafm_dn_comport_indexes(s=s)) - set(self.data_dn_comport_indexes(s=s)))
+        t0 = time.time()
+        indexes = list(set(range(len(self))) - set(self.cafm_dn_comport_indexes(s=s)) - set(self.data_dn_comport_indexes(s=s)))
+        logger.critical(f"all_comports_indexes dt = {time.time() - t0:.3g}")
+        return indexes
 
 
     def cafm_comports_indexes(self, s=None):
@@ -1866,12 +1838,14 @@ class DataModel:
 
     def cafm_dn_comport_indexes(self, s=None):
         if s == None: s = self.scale
+        t0 = time.time()
         indexes = []
         for i in range(0, len(self)):
             if not self.cafm_hash_comports(s=s, l=i) or not self.data_comports(s=s, l=i)[0]:
                 if not self.skipped(s=s, l=i):
                     indexes.append(i)
 
+        logger.critical(f"cafm_dn_comport_indexes dt = {time.time() - t0:.3g}")
         return indexes
 
 

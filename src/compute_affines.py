@@ -61,9 +61,9 @@ def ComputeAffines(scale, path, indexes, renew_od=False, reallocate_zarr=False, 
         cfg.mw.warn('Canceling Compute Affine Tasks')
     else:
         if scale == dm.coarsest_scale_key():
-            print(f'\n\n######## Initializing Alignment for {indexes} ########\n')
+            print(f'\n\nInitializing Alignment for {indexes}\n')
         else:
-            print(f'\n\n######## Refining Alignment for {indexes} ########\n')
+            print(f'\n\nRefining Alignment for {indexes}\n')
 
         cfg.mw._autosave()
         # if path:
@@ -309,8 +309,8 @@ def ComputeAffines(scale, path, indexes, renew_od=False, reallocate_zarr=False, 
             finally:
                 logger.info('Generate Alignment Finished')
 
-            logger.info('Sleeping for 1 seconds...')
-            time.sleep(1)
+            # logger.info('Sleeping for 1 seconds...')
+            # time.sleep(1)
 
             thumbnailer = Thumbnailer()
             try:

@@ -1062,15 +1062,18 @@ class MainWindow(QMainWindow):
     #     self.updateEnabledButtons()
     #     self.sw_pbar.hide()
 
-    def present_snr_results(self, indexes):
+    def present_snr_results(self, indexes, snr_before, snr_after):
         try:
+            import statistics
             if cfg.data.is_aligned():
                 logger.info('Alignment seems successful')
             else:
                 self.warn('Something Went Wrong')
             logger.info('Calculating SNR Diff Values...')
-            diff_avg = cfg.data.snr_average() - cfg.data.snr_prev_average()
-            delta_snr_list = cfg.data.delta_snr_list()
+            mean_before = statistics.fmean(snr_before)
+            mean_after = statistics.fmean(snr_after)
+            diff_avg = mean_after - mean_before
+            delta_snr_list = cfg.data.delta_snr_list(snr_before, snr_after)
             delta_list = [delta_snr_list[i] for i in indexes]
             no_chg = [i for i, x in enumerate(delta_list) if x == 0]
             pos = [i for i, x in enumerate(delta_list) if x > 0]
@@ -1079,13 +1082,16 @@ class MainWindow(QMainWindow):
             self.tell('  # Better     (SNR ↑) : %s' % ' '.join(map(str, pos)))
             self.tell('  # Worse      (SNR ↓) : %s' % ' '.join(map(str, neg)))
             self.tell('  # No Change  (SNR =) : %s' % ' '.join(map(str, no_chg)))
-            self.tell('  Total Avg. SNR       : %.3f (Prev.: %.3f)' % (cfg.data.snr_average(), cfg.data.snr_prev_average()))
+            self.tell('  Total Avg. SNR       : %.3f' % (cfg.data.snr_average()))
             if abs(diff_avg) < .001:
-                self.tell('  Δ AVG. SNR           : <span style="color: #66FF00;"><b>0.000 (NO CHANGE)</b></span>')
+                self.tell('  Δ AVG. SNR           : <span style="color: #66FF00;"><b>%.3g (NO CHANGE)</b></span>' %
+                          diff_avg)
             elif diff_avg < 0:
-                self.tell('  Δ AVG. SNR           : <span style="color: #a30000;"><b>%.3f (WORSE)</b></span>' % diff_avg)
+                self.tell('  Δ AVG. SNR           : <span style="color: #a30000;"><b>%.3g (WORSE)</b></span>' %
+                          diff_avg)
             else:
-                self.tell('  Δ AVG. SNR           : <span style="color: #66FF00;"><b>%.3f (BETTER)</b></span>' % diff_avg)
+                self.tell('  Δ AVG. SNR           : <span style="color: #66FF00;"><b>%.3g (BETTER)</b></span>' %
+                          diff_avg)
 
         except:
             logger.warning('Unable To Present SNR Results')
@@ -1168,15 +1174,14 @@ class MainWindow(QMainWindow):
             if cfg.event.is_set():
                 cfg.event.clear()
             self._working = False
-            self.setdw_snr(True)
             self._changeScaleCombo.setEnabled(True)
             self.hidePbar()
             self.enableAllTabs()
             if self._isProjectTab():
+                self.setdw_snr(True)  # Also initializes
                 if cfg.pt._tabs.currentIndex() == 4:
                     cfg.pt.snr_plot.initSnrPlot()
-                if self.dw_snr.isVisible():
-                    cfg.pt.dSnr_plot.initSnrPlot()
+
                 # if cfg.pt._tabs.currentIndex() == 1:
                 #     self.setdw_matches(True)
 
@@ -1355,6 +1360,7 @@ class MainWindow(QMainWindow):
         self.onAlignmentStart(scale=scale)
         self.tell("%s Affines (%s)..." % (('Initializing', 'Refining')[cfg.data.isRefinement()], cfg.data.scale_pretty(s=scale)))
         # logger.info(f'Aligning indexes:{indexes}, {cfg.data.scale_pretty(scale)}...')
+        snr_before = cfg.data.snr_list()
 
         if not ignore_bb:
             cfg.data.set_use_bounding_rect(cfg.pt._bbToggle.isChecked())
@@ -1383,7 +1389,9 @@ class MainWindow(QMainWindow):
             print_exception()
 
         self.onAlignmentEnd()
-        self.present_snr_results(indexes)
+
+        snr_after = cfg.data.snr_list()
+        self.present_snr_results(indexes, snr_before, snr_after)
         cfg.project_tab.initNeuroglancer()
 
 
@@ -2112,6 +2120,8 @@ class MainWindow(QMainWindow):
                     cfg.project_tab.refreshTab()
                     if cfg.pt._tabs.currentIndex() == 0:
                         self.setdw_thumbs(cfg.data.is_aligned())
+                    if self.dw_snr.isVisible():
+                        cfg.pt.dSnr_plot.initSnrPlot()
 
 
             else:
@@ -5561,9 +5571,10 @@ class MainWindow(QMainWindow):
         self.widgetPbar.layout.setSpacing(4)
 
         self.w_pbarUnavailable = QLabel('GUI Progress Bar Unavailable. See Progress in Terminal...')
-        self.w_pbarUnavailable.setFixedHeight(18)
+        self.w_pbarUnavailable.setFixedHeight(22)
         self.w_pbarUnavailable.setAlignment(Qt.AlignCenter)
-        self.w_pbarUnavailable.setStyleSheet("""font-size: 12px; font-weight: 600; background-color: #161c20; color: #f3f6fb;""")
+        self.w_pbarUnavailable.setStyleSheet("""font-size: 11px; font-weight: 600; background-color: #339933; color: 
+        #f3f6fb; border-width: 2px; border-color: #f3f6fb; """)
 
         self.sw_pbar.addWidget(self.widgetPbar)
         self.sw_pbar.addWidget(self.w_pbarUnavailable)

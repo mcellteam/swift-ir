@@ -84,7 +84,7 @@ def GenerateAligned(dm, scale, indexes, renew_od=False, reallocate_zarr=False, u
     cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(indexes)),1)
 
     dest = dm['data']['destination_path']
-    print(f'\n\n######## Generating Aligned Images for {indexes} ########\n')
+    print(f'\n\nGenerating Aligned Images for {indexes}\n')
 
     tasks = []
     for sec in [dm()[i] for i in indexes]:
@@ -153,6 +153,7 @@ def GenerateAligned(dm, scale, indexes, renew_od=False, reallocate_zarr=False, u
     dm.t_generate = t_elapsed
     cfg.main_window.set_elapsed(t_elapsed, f'Generate alignment')
 
+    # Sleeping for 1 second...
     # time.sleep(1)
 
     dm.register_cafm_hashes(s=scale, indexes=indexes)
@@ -180,7 +181,7 @@ def GenerateAligned(dm, scale, indexes, renew_od=False, reallocate_zarr=False, u
     #         logger.info('creating group: %s' %str(i))
     #         root.create_group(str(i))
 
-    print(f'\n\n######## Copy-convert Alignment To Zarr for {indexes} ########\n')
+    print(f'\n\nCopy-convert Alignment To Zarr for {indexes}\n')
 
     tasks = []
     for i in indexes:
@@ -214,7 +215,7 @@ def GenerateAligned(dm, scale, indexes, renew_od=False, reallocate_zarr=False, u
     t_elapsed = time.time() - t0
     dm.t_convert_zarr = t_elapsed
     cfg.main_window.set_elapsed(t_elapsed, f'Copy-convert alignment to Zarr')
-    time.sleep(1)
+    # time.sleep(1)
 
     cfg.main_window._autosave(silently=True) #0722+
 

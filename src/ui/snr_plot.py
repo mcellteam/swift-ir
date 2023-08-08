@@ -4,11 +4,26 @@
 SNR Plot Class. Depends on 'pyqtgraph' Python module.
 https://github.com/robertsj/poropy/blob/master/pyqtgraph/graphicsItems/ScatterPlotItem.py
 https://pyqtgraph.readthedocs.io/en/latest/_modules/pyqtgraph/graphicsItems/ScatterPlotItem.html
+
+
+15:19:13 [data_model.cafm_dn_comport_indexes:1883] cafm_dn_comport_indexes dt = 0.0665
+15:19:13 [data_model.data_dn_comport_indexes:1857] data_dn_comport_indexes dt = 0.18
+15:19:13 [data_model.all_comports_indexes:1865] all_comports_indexes dt = 0.247
+15:19:13 [data_model.cafm_dn_comport_indexes:1883] cafm_dn_comport_indexes dt = 0.0611
+15:19:13 [data_model.data_dn_comport_indexes:1857] data_dn_comport_indexes dt = 0.175
+
+15:19:13 [snr_plot.get_everything_comport_axis_data:338] get_everything_comport_axis_data dt=0.248
+15:19:13 [snr_plot.get_cafm_no_comport_axis_data:356] get_cafm_no_comport_axis_data dt=0.0622
+15:19:13 [snr_plot.get_data_no_comport_axis_data:374] get_data_no_comport_axis_data dt=0.175
+15:19:13 [snr_plot.plotData:414] plotData dt=0.502
+15:19:13 [snr_plot.initSnrPlot:303] initSnrPlot dt=0.511
+
 '''
 import os
 import sys
 import copy
 from math import ceil
+from time import time
 import inspect
 import logging
 from functools import partial
@@ -250,19 +265,20 @@ class SnrPlot(QWidget):
     def initSnrPlot(self, s=None):
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
+        t0 = time()
         try:
             if caller != 'initUI_plot':
                 self.wipePlot()
 
-            n_aligned = 0
-            for s in cfg.data.scales():
-                if cfg.data.is_aligned(s=s):
-                    n_aligned += 1
-            if n_aligned == 0:
-                logger.info('0 scales are aligned, Nothing to Plot - Returning')
-                return
-
             if not self.dock:
+                n_aligned = 0
+                for s in cfg.data.scales():
+                    if cfg.data.is_aligned(s=s):
+                        n_aligned += 1
+                if n_aligned == 0:
+                    logger.info('0 scales are aligned, Nothing to Plot - Returning')
+                    return
+
                 self._snr_checkboxes = dict()
                 for i in reversed(range(self.checkboxes_hlayout.count())):
                     self.checkboxes_hlayout.itemAt(i).widget().setParent(None)
@@ -291,17 +307,15 @@ class SnrPlot(QWidget):
                     #     self._snr_checkboxes[s].hide()
 
                 # self.checkboxes_hlayout.addStretch()
-
-            self.updateLayerLinePos()
         except:
             print_exception()
 
-        self.plotGhostScaleData()
+        if cfg.data.is_aligned():
+            self.plotGhostScaleData()
+        self.plotData()
+        self.updateLayerLinePos()
 
-        try:
-            self.plotData()
-        except:
-            print_exception()
+        logger.critical(f"initSnrPlot dt={time() - t0:.3g}")
 
 
 
@@ -312,117 +326,112 @@ class SnrPlot(QWidget):
         # for layer, snr in enumerate(cfg.data.snr_list(s=s)[1:]): #0601+ #Todo
         first_unskipped = cfg.data.first_unskipped(s=s)
         for i, snr in enumerate(cfg.data.snr_list(s=s)): #0601+
-            if i == first_unskipped:
-                continue
-            if cfg.data.skipped(s=s, l=i):
-                x_axis.append(i)
-                y_axis.append(0)
-            else:
-                x_axis.append(i)
-                y_axis.append(snr)
+            if i != first_unskipped:
+                if cfg.data.skipped(s=s, l=i):
+                    x_axis.append(i)
+                    y_axis.append(0)
+                else:
+                    x_axis.append(i)
+                    y_axis.append(snr)
         return x_axis, y_axis
 
     def get_everything_comport_axis_data(self, s=None) -> tuple:
         if s == None: s = cfg.data.scale
+        t0 = time()
         x_axis, y_axis = [], []
         # for layer, snr in enumerate(cfg.data.snr_list(s=s)):
         # for layer, snr in enumerate(cfg.data.snr_list(s=s)[1:]): #0601+ #Todo
         first_unskipped = cfg.data.first_unskipped(s=s)
         for i in cfg.data.all_comports_indexes(s=s): #0601+
-            if i == first_unskipped:
-                continue
-            if cfg.data.skipped(s=s, l=i):
-                x_axis.append(i)
-                y_axis.append(0)
-            else:
-                x_axis.append(i)
-                y_axis.append(cfg.data.snr(s=s, l=i))
+            if i != first_unskipped:
+                if cfg.data.skipped(s=s, l=i):
+                    x_axis.append(i)
+                    y_axis.append(0)
+                else:
+                    x_axis.append(i)
+                    y_axis.append(cfg.data.snr(s=s, l=i))
+        logger.critical(f"get_everything_comport_axis_data dt={time() - t0:.3g}")
         return x_axis, y_axis
 
     def get_cafm_no_comport_axis_data(self, s=None) -> tuple:
         if s == None: s = cfg.data.scale
+        t0 = time()
         x_axis, y_axis = [], []
         # for layer, snr in enumerate(cfg.data.snr_list(s=s)):
         # for layer, snr in enumerate(cfg.data.snr_list(s=s)[1:]): #0601+ #Todo
         first_unskipped = cfg.data.first_unskipped(s=s)
         for i in cfg.data.cafm_dn_comport_indexes(s=s): #0601+
-            if i == first_unskipped:
-                continue
-            if cfg.data.skipped(s=s, l=i):
-                x_axis.append(i)
-                y_axis.append(0)
-            else:
-                x_axis.append(i)
-                y_axis.append(cfg.data.snr(s=s, l=i))
+            if i != first_unskipped:
+                if cfg.data.skipped(s=s, l=i):
+                    x_axis.append(i)
+                    y_axis.append(0)
+                else:
+                    x_axis.append(i)
+                    y_axis.append(cfg.data.snr(s=s, l=i))
+        logger.critical(f"get_cafm_no_comport_axis_data dt={time() - t0:.3g}")
         return x_axis, y_axis
 
     def get_data_no_comport_axis_data(self, s=None) -> tuple:
+        t0 = time()
         if s == None: s = cfg.data.scale
         x_axis, y_axis = [], []
         # for layer, snr in enumerate(cfg.data.snr_list(s=s)):
         # for layer, snr in enumerate(cfg.data.snr_list(s=s)[1:]): #0601+ #Todo
         first_unskipped = cfg.data.first_unskipped(s=s)
         for i in cfg.data.data_dn_comport_indexes(s=s): #0601+
-            if i == first_unskipped:
-                continue
-            if cfg.data.skipped(s=s, l=i):
-                x_axis.append(i)
-                y_axis.append(0)
-            else:
-                x_axis.append(i)
-                y_axis.append(cfg.data.snr(s=s, l=i))
+            if i != first_unskipped:
+                if cfg.data.skipped(s=s, l=i):
+                    x_axis.append(i)
+                    y_axis.append(0)
+                else:
+                    x_axis.append(i)
+                    y_axis.append(cfg.data.snr(s=s, l=i))
+        logger.critical(f"get_data_no_comport_axis_data dt={time()-t0:.3g}")
         return x_axis, y_axis
 
 
     def plotData(self):
         '''Update SNR plot widget based on checked/unchecked state of checkboxes'''
         # caller = inspect.stack()[1].function
+        t0 = time()
         if cfg.data:
-            self.plot.clear()
+            # self.plot.clear() #0808-
+            # self.plot.addItem(self._curLayerLine) #0808-
 
-
-            self.plot.addItem(self._curLayerLine)
             if self.dock:
                 # self.plotGhostScaleData()
                 self.plotSingleScale()
+                self.plot.autoRange()  # !!! #0601-
+                xMin = 0
+                xMax = len(cfg.data) + 1
+                yMin = 0
+                yMax = max(cfg.data.snr_list()) + 1
+                self.plot.setLimits(xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax)
 
             else:
                 for s in cfg.data.scales()[::-1]:
                     if cfg.data.is_aligned(s=s):
                         if self._snr_checkboxes[s].isChecked():
                             self.plotSingleScale(s=s)
-            max_snr = cfg.data.snr_max_all_scales() #FixThis #Temporary
-            if not max_snr:
-                logger.warning('No max SNR, Nothing to plot - Returning')
-                return
-            xmax = len(cfg.data) + 1
-            ymax = ceil(max_snr) + 5
-            self.plot.setLimits(
-                minXRange=1,
-                xMin=0,
-                xMax=xmax,
-                maxXRange=xmax,
-                yMin=0,
-                yMax=ymax,
-                minYRange=20,
-                maxYRange=ymax,
-            )
-            # ax = self.plot.getAxis('bottom')  # This is the trick
-            # dx = [(value, str(value)) for value in list((range(0, xmax - 1)))]
-            # ax.setTicks([dx, []])
-            #
-            # xticks = np.arange(0, cfg.data.count, 10)
-            # ax = self.plot.getAxis("bottom")
-            # ax.setTicks([[(v, str(v)) for v in xticks ]])
+                self.updateSpecialLayerLines()
+                xMin=0
+                xMax = len(cfg.data) + 1
+                yMin = 0
+                yMax = ceil(cfg.data.snr_max_all_scales()) + 5
+                self.plot.setLimits(
+                    minXRange=1,
+                    xMin=xMin,
+                    xMax=xMax,
+                    maxXRange=xMax,
+                    yMin=yMin,
+                    yMax=yMax,
+                    minYRange=20,
+                    maxYRange=yMax,
+                )
 
-            # ticks = np.arange(0, cfg.data.count)
-            # ax = self.plot.getAxis("bottom")
-            # ax.setTicks([[(v, str(v)) for v in ticks ]])
-            # if not self.dock:
-            self.updateSpecialLayerLines()
+        logger.critical(f"plotData dt={time() - t0:.3g}")
 
-            if self.dock:
-                self.plot.autoRange() # !!! #0601-
+
 
     def _getScaleOffset(self, s):
         # return cfg.data.scales()[::-1].index(s) * (.5/len(cfg.data.scales()))
@@ -587,17 +596,17 @@ class SnrPlot(QWidget):
             self.plot.addItem(self.no_comport_data_points[s])
             self.no_comport_data_points[s].sigClicked.connect(self.onSnrClick)
 
-        def hoverSlot1(points, ev):
-            if len(ev):
-                if self._memHover1 != ev:
-                    hoverIndex = int(ev.item().pos()[0])
-                    print(f"hovered index: {hoverIndex}")
-                    comport_data = cfg.data.data_comports(l=hoverIndex)
-                    if comport_data[0]:
-                        logger.info(comport_data)
-                self._memHover1 = ev
+            def hoverSlot1(points, ev):
+                if len(ev):
+                    if self._memHover1 != ev:
+                        hoverIndex = int(ev.item().pos()[0])
+                        print(f"hovered index: {hoverIndex}")
+                        comport_data = cfg.data.data_comports(l=hoverIndex)
+                        if comport_data[0]:
+                            logger.info(comport_data)
+                    self._memHover1 = ev
 
-        self.no_comport_data_points[s].sigHovered.connect(hoverSlot1)
+            self.no_comport_data_points[s].sigHovered.connect(hoverSlot1)
 
 
         # if not self.dock:
@@ -647,6 +656,7 @@ class SnrPlot(QWidget):
 
 
     def wipePlot(self):
+        logger.critical('')
         try:
             for i in reversed(range(self.checkboxes_hlayout.count())):
                 self.checkboxes_hlayout.removeItem(self.checkboxes_hlayout.itemAt(i))
