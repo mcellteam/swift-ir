@@ -591,14 +591,13 @@ class MainWindow(QMainWindow):
                     fn, _ = os.path.splitext(n)
                     indexes.append(int(fn[-1]))
 
-                logger.critical(f"indexes: {indexes}")
-                logger.critical(f"snr_vals: {snr_vals}")
-                logger.critical(f"thumbs: {thumbs}")
+                # logger.critical(f"indexes: {indexes}")
+                # logger.critical(f"snr_vals: {snr_vals}")
+                # logger.critical(f"thumbs: {thumbs}")
 
                 for i in range(0,4):
 
                     if i in indexes:
-                        logger.critical(f'i = {i}')
                         try:
                             try:
                                 snr = snr_vals.pop(0)
@@ -762,7 +761,7 @@ class MainWindow(QMainWindow):
 
     def setdw_python(self, state):
         caller = inspect.stack()[1].function
-        logger.info(f'[{caller}], state={state}')
+        # logger.info(f'[{caller}], state={state}')
         self.setUpdatesEnabled(False)
 
         self.dw_python.setVisible(state)
@@ -788,16 +787,14 @@ class MainWindow(QMainWindow):
 
 
     def setdw_thumbs(self, state):
-        caller = inspect.stack()[1].function
-        logger.critical(f"[{caller}]")
+        # caller = inspect.stack()[1].function
+        # logger.info(f"[{caller}]")
         self.dw_thumbs.setVisible(state)
         self.dw_thumbs.setVisible(self.tbbThumbnails.isChecked())
         self.a_thumbs.setText(('Show SWIM Region &Thumbnails', 'Hide SWIM Region &Thumbnails')[state])
         tip1 = '\n'.join(f"Show Raw Thumbnails Tool Window ({hotkey('T')})")
         tip2 = '\n'.join(f"Hide Raw Thumbnails Tool Window ({hotkey('T')})")
         self.tbbThumbnails.setToolTip((tip1, tip2)[state])
-
-        logger.critical(f"self._isProjectTab()? {self._isProjectTab()}")
 
         if self._isProjectTab():
             cfg.data['state']['tool_windows']['raw_thumbnails'] = state
@@ -808,7 +805,6 @@ class MainWindow(QMainWindow):
             QApplication.processEvents()
             h = self.dw_thumbs.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
             w = int(h / 2 + .5) - 10
-            logger.critical(f"setting mac width to {w}")
             # self.dw_thumbs.setMaximumWidth(w)
             cfg.pt.tn_widget.setMaximumWidth(w)
             # cfg.pt.tn_widget.resize(w, h)
@@ -821,7 +817,7 @@ class MainWindow(QMainWindow):
 
     def setdw_matches(self, state):
         caller = inspect.stack()[1].function
-        logger.critical(f"[{caller}]")
+        # logger.info(f"[{caller}]")
         self.dw_matches.setVisible(state)
         self.dw_matches.setVisible(self.tbbMatches.isChecked())
         self.a_matches.setText(('Show &Match Signals', 'Hide &Match Signals')[state])
