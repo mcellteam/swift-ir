@@ -2102,7 +2102,9 @@ class ProjectTab(QWidget):
                     sec['alignment']['swim_settings'] = copy.deepcopy(sec['alignment_history'][method]['swim_settings'])
                 except:
                     sec['alignment']['swim_settings']['method'] = copy.deepcopy(sec['alignment']['method_previous'])
-            cfg.main_window.alignOne(swim_only=True)
+            # cfg.main_window.alignOne(swim_only=True)
+            SetStackCafm(cfg.data.get_iter(cfg.data.scale), scale=cfg.data.scale,
+                         poly_order=cfg.data.default_poly_order)
             self.dataUpdateMA()
             cfg.mw.dataUpdateWidgets()
             # cfg.mw.updateDataComportsLabel()
