@@ -169,7 +169,7 @@ def ComputeAffines(scale, path, indexes, renew_od=False, reallocate_zarr=False, 
                 if ss['include'] and (zpos != first_unskipped):
                     tasks.append(copy.deepcopy(sec['alignment']))
                 else:
-                    logger.info(f"EXCLUDING section #{zpos}")
+                    logger.critical(f"EXCLUDING section #{zpos}")
                     cfg.main_window.tell(f"EXCLUDING section #{zpos}")
             # else:
             #     logger.info(f"Dropping task for {zpos}")
@@ -210,7 +210,7 @@ def ComputeAffines(scale, path, indexes, renew_od=False, reallocate_zarr=False, 
                 try:
                     assert np.array(dm['data']['scales'][scale]['stack'][index]['alignment_history'][method][
                                         'method_results']['affine_matrix']).shape == (2, 3)
-                    dm['data']['scales'][scale]['stack'][index]['alignment_history'][method]['complete'] = True
+                    # dm['data']['scales'][scale]['stack'][index]['alignment_history'][method]['complete'] = True
                 except:
                     logger.warning(f"Task failed at index: {index}")
         else:
@@ -263,6 +263,9 @@ def ComputeAffines(scale, path, indexes, renew_od=False, reallocate_zarr=False, 
         t_elapsed = time.time() - t0
         dm.t_align = t_elapsed
         cfg.main_window.set_elapsed(t_elapsed, f"Compute affines {scale}")
+        for zpos, sec in [(i, dm()[i]) for i in indexes]:
+            method = sec['alignment']['swim_settings']['method']
+            sec['alignment_history'][method]['complete'] = True
 
         logger.info(f"Compute Affines Finished for {indexes}")
 

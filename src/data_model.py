@@ -889,6 +889,8 @@ class DataModel:
             logger.info('Setting defaults for %s' % self.scale_pretty(s=s))
             scale = self._data['data']['scales'][s]
             scale.setdefault('stack', []) #0725+
+            scale.setdefault('aligned', False) #0808+
+            scale.setdefault('initial_snr', None) #0808+
             scale.setdefault('use_bounding_rect', cfg.DEFAULT_BOUNDING_BOX)
             scale.setdefault('has_bounding_rect', cfg.DEFAULT_BOUNDING_BOX) #0512+
             scale.setdefault('resolution', (cfg.DEFAULT_RESZ, cfg.DEFAULT_RESY, cfg.DEFAULT_RESX))
@@ -927,6 +929,11 @@ class DataModel:
                 layer['alignment_history']['grid-custom'].setdefault('method_results', {})
                 layer['alignment_history']['manual-hint'].setdefault('method_results', {})
                 layer['alignment_history']['manual-strict'].setdefault('method_results', {})
+
+                layer['alignment_history']['grid-default'].setdefault('swim_settings', {})
+                layer['alignment_history']['grid-custom'].setdefault('swim_settings', {})
+                layer['alignment_history']['manual-hint'].setdefault('swim_settings', {})
+                layer['alignment_history']['manual-strict'].setdefault('swim_settings', {})
 
                 # if type(layer['alignment_history']['grid-default']) == list:
                 #     layer['alignment_history']['grid-default'] = {}
@@ -1760,10 +1767,14 @@ class DataModel:
     def data_comports(self, s=None, l=None):
         if s == None: s = self.scale
         if l == None: l = self.zpos
-        # caller = inspect.stack()[1].function
+        caller = inspect.stack()[1].function
         # logger.critical(f"caller: {caller}, s={s}, l={l}")
         problems = []
         method = self.method(s=s, l=l)
+
+        #Temporary
+        if l == self.first_unskipped():
+            return True, []
 
         if not self['data']['scales'][s]['stack'][l]['alignment_history'][method]['complete']:
             problems.append((f"Alignment method '{method}' is incomplete", 1, 0))
@@ -1789,12 +1800,7 @@ class DataModel:
             if cur['clobber_size'] != mem['clobber_size']:
                 problems.append(("Inconsistent data at clobber size in pixels (key: clobber_size)",
                                  cur['clobber_size'], mem['clobber_size']))
-        if cur['whiten'] != mem['whiten']:
-            problems.append(("Inconsistent data at signal whitening magnitude (key: whiten)",
-                             cur['whiten'], mem['whiten']))
-        if cur['swim_iters'] != mem['swim_iters']:
-            problems.append(("Inconsistent data at # SWIM iterations (key: swim_iters)",
-                             cur['swim_iters'], mem['swim_iters']))
+
 
         if method == 'grid-default':
             for key in self.defaults:
@@ -1807,13 +1813,22 @@ class DataModel:
                         problems.append(('Inconsistent data (key: %s)' % breadcrumb, self.defaults[key],
                                          mem['defaults'][key]))
 
-        elif method == 'grid-custom':
+        else:
+            if cur['whiten'] != mem['whiten']:
+                problems.append(("Inconsistent data at signal whitening magnitude (key: whiten)",
+                                 cur['whiten'], mem['whiten']))
+            if cur['swim_iters'] != mem['swim_iters']:
+                problems.append(("Inconsistent data at # SWIM iterations (key: swim_iters)",
+                                 cur['swim_iters'], mem['swim_iters']))
+
+
+        if method == 'grid-custom':
             keys = ['grid_custom_px_1x1', 'grid_custom_px_2x2', 'grid_custom_regions']
             for key in keys:
                 if cur[key] != mem[key]:
                     problems.append((f"Inconsistent data (key: {key})", cur[key], mem[key]))
 
-        elif method in ('manual-hint', 'manual-strict'):
+        if method in ('manual-hint', 'manual-strict'):
             if cur['match_points_mir'] != mem['match_points_mir']:
                 problems.append((f"Inconsistent match points (key: match_points_mir)",
                                  cur['match_points_mir'], mem['match_points_mir']))
@@ -2024,10 +2039,18 @@ class DataModel:
         if l == None: l = self.zpos
         return self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['iterations']
 
+
     def set_swim_iterations(self, val, s=None, l=None):
         if s == None: s = self.scale
         if l == None: l = self.zpos
         self._data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['iterations'] = val
+        self.signals.warning2.emit()
+        
+        
+    def set_default_swim_iterations(self, val, s=None, l=None):
+        if s == None: s = self.scale
+        if l == None: l = self.zpos
+        self._data['data']['defaults']['swim-iterations'] = val
         self.signals.warning2.emit()
 
 
