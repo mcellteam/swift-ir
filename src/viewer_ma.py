@@ -521,6 +521,14 @@ class MAViewer(neuroglancer.Viewer):
             pass
         elif select_by == 'cycle':
             self._selected_index[self.role] = (self._selected_index[self.role] + 1) % 3
+            if self.numPts(self.role) == 3:
+                if cfg.data['state']['tra_ref_toggle'] == 1:
+                    # self._selected_index['ref'] = 0
+                    cfg.pt.set_reference()
+                else:
+                    # self._selected_index['base'] = 0
+                    cfg.pt.set_transforming()
+
         elif select_by == 'zigzag':
             if cfg.data['state']['tra_ref_toggle'] == 1:
                 # self._selected_index['ref'] = (self._selected_index[self.role] + 1) % 3
