@@ -598,6 +598,8 @@ class MAViewer(neuroglancer.Viewer):
 
         # self.setMpData() #0805+
 
+        self.undrawSWIMwindows()
+
 
         marker_size = 1
 
@@ -747,7 +749,7 @@ class MAViewer(neuroglancer.Viewer):
                         )
                     )
 
-        self.undrawSWIMwindows()
+
         with self.txn() as s:
             # for i,ann in enumerate(annotations):
             s.layers['SWIM'] = ng.LocalAnnotationLayer(
