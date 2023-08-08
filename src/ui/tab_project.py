@@ -1807,7 +1807,7 @@ class ProjectTab(QWidget):
            
         """
 
-        self.w_ng_extended_toolbar.setStyleSheet(toolbar_style3)
+        self.w_ng_extended_toolbar.setStyleSheet(toolbar_style2)
 
         self.sideSliders = VWidget(self.ZdisplaySliderAndLabel, self.zoomSliderAndLabel)
         self.sideSliders.setFixedWidth(16)

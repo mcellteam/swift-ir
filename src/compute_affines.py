@@ -306,26 +306,26 @@ def ComputeAffines(scale, path, indexes, renew_od=False, reallocate_zarr=False, 
             finally:
                 logger.info('Generate Alignment Finished')
 
-            # logger.info('Sleeping for 1 seconds...')
-            # time.sleep(1)
+            logger.info('Sleeping for 1 seconds...')
+            time.sleep(1)
 
-            # thumbnailer = Thumbnailer()
-            # try:
-            #     if cfg.USE_EXTRA_THREADING and use_gui:
-            #         cfg.mw.worker = BackgroundWorker(fn=cfg.thumb.reduce_aligned(indexes, dest=dest, scale=scale,
-            #                                                                      use_gui=use_gui))
-            #         cfg.mw.threadpool.start(cfg.mw.worker)
-            #     else:
-            #         thumbnailer.reduce_aligned(indexes, dest=dest, scale=scale, use_gui=use_gui)
-            # except:
-            #     print_exception()
-            # finally:
-            #     logger.info('Generate Aligned Thumbnails Finished')
-            #
-            # if cfg.ignore_pbar:
-            #     cfg.nProcessDone += 1
-            #     cfg.mw.updatePbar()
-            #     cfg.mw.setPbarText('Aligning')
+            thumbnailer = Thumbnailer()
+            try:
+                if cfg.USE_EXTRA_THREADING and use_gui:
+                    cfg.mw.worker = BackgroundWorker(fn=cfg.thumb.reduce_aligned(indexes, dest=dest, scale=scale,
+                                                                                 use_gui=use_gui))
+                    cfg.mw.threadpool.start(cfg.mw.worker)
+                else:
+                    thumbnailer.reduce_aligned(indexes, dest=dest, scale=scale, use_gui=use_gui)
+            except:
+                print_exception()
+            finally:
+                logger.info('Generate Aligned Thumbnails Finished')
+
+            if cfg.ignore_pbar:
+                cfg.nProcessDone += 1
+                cfg.mw.updatePbar()
+                cfg.mw.setPbarText('Aligning')
 
         return dm
 
