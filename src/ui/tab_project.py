@@ -2098,7 +2098,10 @@ class ProjectTab(QWidget):
                 cfg.data.defaults = copy.deepcopy(sec['alignment']['swim_settings']['defaults'])
             else:
                 sec = cfg.data['data']['scales'][cfg.data.scale]['stack'][cfg.data.zpos]
-                sec['alignment']['swim_settings'] = copy.deepcopy(sec['alignment_history'][method]['swim_settings'])
+                try:
+                    sec['alignment']['swim_settings'] = copy.deepcopy(sec['alignment_history'][method]['swim_settings'])
+                except:
+                    sec['alignment']['swim_settings']['method'] = copy.deppcopy(sec['alignment']['previous_method'])
 
             self.dataUpdateMA()
             cfg.mw.dataUpdateWidgets()
