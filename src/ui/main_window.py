@@ -1278,10 +1278,12 @@ class MainWindow(QMainWindow):
         #     self.updateEnabledButtons()
         #     self.enableAllTabs()
         #     self.dataUpdateWidgets()
-
-        self.tell('Section #%d Alignment Complete' % index)
-        self.tell('SNR Before: %.3f  SNR After: %.3f' %
-                  (cfg.data.snr_prev(l=index), cfg.data.snr(l=index)))
+        try:
+            self.tell('Section #%d Alignment Complete' % index)
+            self.tell('SNR Before: %.3f  SNR After: %.3f' %
+                      (cfg.data.snr_prev(l=index), cfg.data.snr(l=index)))
+        except:
+            print_exception()
 
     #0802-
     # def alignGenerateOne(self):
