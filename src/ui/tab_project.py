@@ -543,9 +543,9 @@ class ProjectTab(QWidget):
 
         self.btnResetAllMA = QPushButton('Set All Methods To Default Grid')
         self.btnResetAllMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.btnResetAllMA.setFixedSize(QSize(150, 18))
+        self.btnResetAllMA.setFixedSize(QSize(160, 18))
         self.btnResetAllMA.clicked.connect(fn)
-        self.btnResetAllMA.setStyleSheet('font-size: 10px;')
+        self.btnResetAllMA.setStyleSheet('font-size: 9px;')
 
         self.combo_MA_actions = QComboBox(self)
         self.combo_MA_actions.setStyleSheet('font-size: 11px')
