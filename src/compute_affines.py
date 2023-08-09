@@ -45,7 +45,8 @@ __all__ = ['ComputeAffines']
 
 logger = logging.getLogger(__name__)
 
-def ComputeAffines(scale, path, indexes, renew_od=False, reallocate_zarr=False, swim_only=False, dm=None):
+def ComputeAffines(scale, path, indexes, renew_od=False, reallocate_zarr=False, swim_only=False,
+                   dm=None):
     '''Compute the python_swiftir transformation matrices for the current s stack of images according to Recipe1.'''
     # caller = inspect.stack()[1].function
 
@@ -179,10 +180,13 @@ def ComputeAffines(scale, path, indexes, renew_od=False, reallocate_zarr=False, 
         delete_matches(dm=dm, scale=scale, indexes=indexes)
         dest = dm['data']['destination_path']
 
-        cpus = get_n_tacc_cores(n_tasks=len(tasks))
-        if is_tacc() and (scale == 'scale_1'):
-            # cpus = 34
-            cpus = cfg.SCALE_1_CORES_LIMIT
+        if is_tacc():
+            cpus = get_n_tacc_cores(n_tasks=len(tasks))
+            if is_tacc() and (scale == 'scale_1'):
+                # cpus = 34
+                cpus = cfg.SCALE_1_CORES_LIMIT
+        else:
+            cpus = psutil.cpu_count(logical=False) - 2
 
         t0 = time.time()
 
@@ -288,6 +292,9 @@ def ComputeAffines(scale, path, indexes, renew_od=False, reallocate_zarr=False, 
         # logger.info('Sleeping for 1 seconds...')
         # time.sleep(1)
 
+        thumbnailer = Thumbnailer()
+        thumbnailer.reduce_matches(indexes=indexes, dest=cfg.data.dest(), scale=scale)
+
 
         if not swim_only:
             if use_gui:
@@ -296,12 +303,12 @@ def ComputeAffines(scale, path, indexes, renew_od=False, reallocate_zarr=False, 
                         logger.info('Toggle auto-generate is OFF. Returning...')
                         return
             try:
-                if cfg.USE_EXTRA_THREADING and use_gui:
-                    cfg.mw.worker = BackgroundWorker(fn=GenerateAligned(
-                        dm, scale, indexes, renew_od=renew_od, reallocate_zarr=reallocate_zarr, use_gui=use_gui))
-                    cfg.mw.threadpool.start(cfg.mw.worker)
-                else:
-                    GenerateAligned(dm, scale, indexes, renew_od=renew_od, reallocate_zarr=reallocate_zarr,
+                # if cfg.USE_EXTRA_THREADING and use_gui:
+                #     cfg.mw.worker = BackgroundWorker(fn=GenerateAligned(
+                #         dm, scale, indexes, renew_od=renew_od, reallocate_zarr=reallocate_zarr, use_gui=use_gui))
+                #     cfg.mw.threadpool.start(cfg.mw.worker)
+                # else:
+                GenerateAligned(dm, scale, indexes, renew_od=renew_od, reallocate_zarr=reallocate_zarr,
                                     use_gui=use_gui)
 
             except:
@@ -312,23 +319,8 @@ def ComputeAffines(scale, path, indexes, renew_od=False, reallocate_zarr=False, 
             # logger.info('Sleeping for 1 seconds...')
             # time.sleep(1)
 
-            thumbnailer = Thumbnailer()
-            try:
-                if cfg.USE_EXTRA_THREADING and use_gui:
-                    cfg.mw.worker = BackgroundWorker(fn=cfg.thumb.reduce_aligned(indexes, dest=dest, scale=scale,
-                                                                                 use_gui=use_gui))
-                    cfg.mw.threadpool.start(cfg.mw.worker)
-                else:
-                    thumbnailer.reduce_aligned(indexes, dest=dest, scale=scale, use_gui=use_gui)
-            except:
-                print_exception()
-            finally:
-                logger.info('Generate Aligned Thumbnails Finished')
 
-            if cfg.ignore_pbar:
-                cfg.nProcessDone += 1
-                cfg.mw.updatePbar()
-                cfg.mw.setPbarText('Aligning')
+            thumbnailer.reduce_aligned(indexes, dest=dest, scale=scale, use_gui=use_gui)
 
         return dm
 

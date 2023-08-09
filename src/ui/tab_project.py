@@ -16,7 +16,8 @@ from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayo
     QListWidget, QListWidgetItem, QMenu, QMenuBar, QAction, QFormLayout, QGroupBox, QRadioButton, QButtonGroup, QComboBox, \
     QCheckBox, QToolBar, QListView, QDockWidget, QLineEdit, QPlainTextEdit, QDoubleSpinBox, QSpinBox, QButtonGroup, \
     QStackedWidget, QHeaderView, QWidgetAction, QTableWidget, QTableWidgetItem, QAbstractItemView, QSpacerItem, \
-    QShortcut, QScrollArea, QMdiSubWindow, QMdiArea, QToolButton, QStyleOptionViewItem, QStyledItemDelegate
+    QShortcut, QScrollArea, QMdiSubWindow, QMdiArea, QToolButton, QStyleOptionViewItem, QStyledItemDelegate, \
+    QColorDialog, QFontDialog
 from qtpy.QtCore import Qt, QSize, QRect, QUrl, Signal, Slot, QEvent, QThread, QTimer, QEventLoop, QPoint, QObject
 from qtpy.QtGui import QPainter, QBrush, QFont, QPixmap, QColor, QCursor, QPalette, QStandardItemModel, \
     QDoubleValidator, QIntValidator, QKeySequence, QIcon
@@ -1468,6 +1469,7 @@ class ProjectTab(QWidget):
 
         self.cl_tra = ClickLabel(' Transforming ')
         self.cl_tra.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.cl_tra.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.cl_tra.setMinimumWidth(128)
         # self.cl_tra.setAlignment(Qt.AlignCenter)
         self.cl_tra.setAlignment(Qt.AlignLeft)
@@ -1477,6 +1479,7 @@ class ProjectTab(QWidget):
 
         self.cl_ref = ClickLabel(' Reference ')
         self.cl_ref.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.cl_ref.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.cl_ref.setMinimumWidth(128)
         # self.cl_ref.setAlignment(Qt.AlignCenter)
         self.cl_ref.setAlignment(Qt.AlignRight)
@@ -2062,7 +2065,8 @@ class ProjectTab(QWidget):
         self.ng_widget_container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         self.warning_cafm = WarningNotice(self, 'The cumulative affine for this section no \n'
-                                                'longer comports with the displayed alignment.', fixbutton=True)
+                                                'longer comports with the displayed alignment.', fixbutton=True,
+                                          symbol='○')
 
         def fn_fix_cafm():
             first_cafm_false = cfg.data.first_cafm_false()
@@ -2075,7 +2079,7 @@ class ProjectTab(QWidget):
         self.warning_cafm.fixbutton.clicked.connect(fn_fix_cafm)
         self.warning_cafm.hide()
 
-        self.warning_data = WarningNotice(self, 'This alignment has been edited.', fixbutton=True)
+        self.warning_data = WarningNotice(self, 'This alignment has been modified.', fixbutton=True, symbol='×')
         def fn_revert_data():
             #Todo the way previous defaults is being stored is a temp hack to be fixed later
             logger.info('')
@@ -2108,13 +2112,15 @@ class ProjectTab(QWidget):
         self.warning_data.hide()
 
         self.gb_warnings = QGroupBox("Warnings")
+        self.gb_warnings.setStyleSheet("padding: 2px;")
         # self.gb_warnings.setFixedHeight(44)
         self.gb_warnings.setObjectName('gb_cpanel')
-        self.vbl_wanrings = VBL()
-        self.vbl_wanrings.setAlignment(Qt.AlignBottom)
-        self.vbl_wanrings.addWidget(self.warning_data, alignment=Qt.AlignBottom)
-        self.vbl_wanrings.addWidget(self.warning_cafm, alignment=Qt.AlignBottom)
-        self.gb_warnings.setLayout(self.vbl_wanrings)
+        self.vbl_warnings = VBL()
+        self.vbl_warnings.setSpacing(0)
+        self.vbl_warnings.setAlignment(Qt.AlignBottom)
+        self.vbl_warnings.addWidget(self.warning_data, alignment=Qt.AlignBottom)
+        self.vbl_warnings.addWidget(self.warning_cafm, alignment=Qt.AlignBottom)
+        self.gb_warnings.setLayout(self.vbl_warnings)
 
         self.gb_method_selection = QGroupBox("Alignment Method")
         self.gb_method_selection.setAlignment(Qt.AlignBottom)
@@ -3880,47 +3886,62 @@ class CheckableComboBox(QComboBox):
 
 class WarningNotice(QWidget):
 
-    def __init__(self, parent, msg, fixbutton=False, **kwargs):
+    def __init__(self, parent, msg, fixbutton=False, symbol=None, **kwargs):
         super().__init__(parent)
         self.msg = msg
         self.label = QLabel(self.msg)
-        self.label.setStyleSheet("QLabel {background: none; font-size: 9px; color: #a30000;"
-                           "font-weight: 600; border-radius: 4px; font-family: Tahoma, sans-serif; padding: 4px;} ")
-
+        self.label.setStyleSheet("QLabel { background: none; font-size: 9px; color: #a30000; font-weight: 600;"
+                                 "border-radius: 4px; font-family: Tahoma, sans-serif; padding: 4px; } ")
         # self.setFixedHeight(16)
         self.layout = QHBoxLayout()
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setAlignment(Qt.AlignBottom)
 
+        self.setAutoFillBackground(True)
+        self.setAttribute(Qt.WA_StyledBackground, True)
+
+        # p = self.palette()
+        # p.setColor(self.backgroundRole(), QColor('#f3f6fb'))
+        # self.setPalette(p)
+        self.setStyleSheet(
+            """QWidget{border-color: #161c20; background-color: #dadada; font-size: 11px; border-radius: 4px;}""")
 
 
         # font = QFont()
         # font.setBold(True)
         # self.setFont(font)
 
+        if symbol:
+            self.symbol = QLabel(symbol)
+            self.symbol.setStyleSheet("""color: #f3f6fb; font-size: 16px; background-color: #ff0000; border-radius: 
+            6px; font-weight: 600; padding: 2px;""")
+            self.symbol.setFixedSize(QSize(16,16))
+            self.symbol.setAlignment(Qt.AlignCenter)
+            self.layout.addWidget(self.symbol)
+
+        self.layout.addWidget(self.label)
+
+
         if fixbutton:
             self.fixbutton = QPushButton('Fix All')
             self.fixbutton.setStyleSheet("font-size: 10px;")
             self.fixbutton.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
-            # self.fixbutton.setStyleSheet("""
-            # QPushButton{
-            #     background-color: #ede9e8;
-            #     border-style: solid;
-            #     border-width: 1px;
-            #     border-radius: 4px;
-            #     border-color: #f3f6fb;
-            #     color: #161c20;
-            #     font-size: 9px;
-            #     font-weight: 600;
-            # }
-            # """)
+            self.fixbutton.setStyleSheet("""
+            QPushButton{
+                background-color: #ede9e8;
+                border-style: solid;
+                border-width: 1px;
+                border-radius: 4px;
+                border-color: #f3f6fb;
+                color: #161c20;
+                font-size: 9px;
+                font-weight: 600;
+            }
+            """)
             self.fixbutton.setFixedSize(QSize(40,15))
             # self.fixbutton.setFixedHeight(16)
             self.layout.addWidget(self.fixbutton)
 
-        self.layout.addWidget(self.label)
-
-        # self.setAutoFillBackground(True)
         self.setLayout(self.layout)
 
 

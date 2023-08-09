@@ -24,7 +24,8 @@ libtiff.libtiff_ctypes.suppress_warnings()
 
 import src.config as cfg
 from src.save_bias_analysis import save_bias_analysis
-from src.helpers import get_scale_val, print_exception, reorder_tasks, renew_directory, file_hash, pretty_elapsed
+from src.helpers import get_scale_val, print_exception, reorder_tasks, renew_directory, file_hash, pretty_elapsed, \
+    is_tacc
 from src.mp_queue import TaskQueue
 from src.funcs_image import SetStackCafm
 from src.funcs_zarr import preallocate_zarr
@@ -81,7 +82,10 @@ def GenerateAligned(dm, scale, indexes, renew_od=False, reallocate_zarr=False, u
     logger.info(f'Aligned Size      : {rect[2:]}')
     logger.info(f'Offsets           : {rect[0]}, {rect[1]}')
     # args_list = makeTasksList(dm, iter(stack[start:end]), job_script, scale_key, rect) #0129-
-    cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(indexes)),1)
+    if is_tacc():
+        cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(indexes)),1)
+    else:
+        cpus = psutil.cpu_count(logical=False)
 
     dest = dm['data']['destination_path']
     print(f'\n\nGenerating Aligned Images for {indexes}\n')

@@ -17,7 +17,7 @@ import subprocess as sp
 import tqdm
 import src.config as cfg
 from src.funcs_image import ImageSize, ImageIOSize
-from src.helpers import print_exception, get_appdir, get_bindir, natural_sort, absFilePaths
+from src.helpers import print_exception, get_appdir, get_bindir, natural_sort, absFilePaths, is_tacc
 
 __all__ = ['Thumbnailer']
 
@@ -141,7 +141,7 @@ class Thumbnailer:
 
     def reduce_matches(self, indexes, dest, scale, use_gui=True):
 
-        print(f'\n\n######## Reducing: Correlation Signals ########\n')
+        print(f'\n\n######## Reducing: Matches ########\n')
 
         pbar_text = 'Reducing %s Matches...' % cfg.data.scale_pretty()
         if cfg.CancelProcesses:
@@ -261,7 +261,11 @@ class Thumbnailer:
         if filenames == None:
             filenames = natural_sort(glob(os.path.join(src, '*.tif')))[start:end]
 
-        cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(filenames)),1)
+        if is_tacc():
+            cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(filenames)),1)
+        else:
+            cpus = psutil.cpu_count(logical=False) - 2
+
 
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S")
         tnLogger.info(f'\n==== {timestamp} ====\n'

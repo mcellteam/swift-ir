@@ -5,6 +5,7 @@ import sys
 import traceback
 
 import src.config as cfg
+from src.helpers import print_exception
 
 from qtpy.QtCore import Slot, Signal, QObject, QRunnable
 
@@ -64,53 +65,58 @@ class BackgroundWorker(QRunnable):
     Note that QThreadPool is a low-level class for managing threads, see the src Concurrent module
     for higher level alternatives.
 
+
+    #0808
+    "reserveThread" and/or "releaseThread"
+    These methods are used to interoperate the thread pool with threads that you manually manage.
+    The thread pool keeps a count of active threads and aims for it not to exceed the maximum number
+    of threads that make sense on given hardware. The reserveThread and releaseThread change the number
+    of active threads that the pool is aware of. It doesn't directly add nor remove any threads from
+    the pool. It's not an error that these methods don't return a QThread.
+    https://stackoverflow.com/questions/38959277/qthreadpool-reservethread-example
+
     '''
 
-    def __init__(self, fn, label='', *args, **kwargs):
+    def __init__(self, fn, *args, **kwargs):
         super(BackgroundWorker, self).__init__()
+        logger.critical("")
         # Store constructor arguments (re-used for processing)
         self.fn = fn
-        self.label = label
         self.args = args
         self.kwargs = kwargs
         self.signals = WorkerSignals()
         self.signals.progress.__hash__()
         self.signals.progress.__str__()
-        '''If 'progress_callback' is provided as a parameter of the function passed into BackgroundWorker, it will be assigned
-        the value -> self.signals.progress'''
-        self.kwargs['progress_callback'] = self.signals.progress
+        # '''If 'progress_callback' is provided as a parameter of the function passed into BackgroundWorker, it will be assigned
+        # the value -> self.signals.progress'''
+        # self.kwargs['progress_callback'] = self.signals.progress
 
     @Slot()
     def run(self):
-        logger.info("Running background worker [%s]..." % self.label)
+        logger.critical(f"\n\nRunning background worker [{self.fn}]...\n")
         # if self.status != None:
         #     self.parent.set_status(self.status)
         #     # QApplication.processEvents()
         # else:
         #     logger.critical('self.status equals None')
-        try:
-            cfg.main_window._working = True
-        except:
-            pass
         # cfg.main_window.pbar.show()
 
         try:
             result = self.fn(*self.args, **self.kwargs)
         except:
             #Todo look into why this exception gets triggered
+            print_exception()
 
             # logger.info('BackgroundWorker.run traceback:')
             # traceback.print_exc()
             exctype, value = sys.exc_info()[:2]
             self.signals.error.emit((exctype, value, traceback.format_exc()))
         else:
+            logger.critical(f"Emitting result...")
+            # logger.critical(f"Emitting result: {result}")
             self.signals.result.emit(result)  # Return the result of the processing
         finally:
-            try:
-                cfg.main_window._working = False
-            except:
-                pass
-
+            logger.critical(f"Wrapping Up Background Worker...")
             self.signals.finished.emit()
 
             # cfg.main_window.pbar.hide()

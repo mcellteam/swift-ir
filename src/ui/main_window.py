@@ -38,7 +38,7 @@ import qtawesome as qta
 from qtpy.QtCore import Qt, QSize, QUrl, QThreadPool, Slot, Signal, QEvent, QTimer, QPoint, QRectF, \
     QPropertyAnimation, QSettings, QObject, QThread, QFileInfo
 from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QFont, \
-    QKeySequence, QMovie, QStandardItemModel, QColor, QCursor, QImage, QPainterPath, QRegion
+    QKeySequence, QMovie, QStandardItemModel, QColor, QCursor, QImage, QPainterPath, QRegion, QPainter
 from qtpy.QtWebEngineWidgets import *
 from qtpy.QtWidgets import QApplication, qApp, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
     QStackedWidget, QGridLayout, QInputDialog, QLineEdit, QPushButton, QMessageBox, \
@@ -131,7 +131,7 @@ class MainWindow(QMainWindow):
             self.restoreState(self.settings.value("windowState"))
             self.restoreGeometry(self.settings.value("geometry"))
 
-        self.initThreadpool(timeout=250)
+        # self.initThreadpool(timeout=250)
         self.menu = QMenu()
         # self.menu.setFixedWidth(700)
         cfg.thumb = Thumbnailer()
@@ -431,13 +431,7 @@ class MainWindow(QMainWindow):
         self.hud.post(message, level=logging.DEBUG)
         self.update()
 
-    def initThreadpool(self, timeout=1000):
-        if cfg.USE_EXTRA_THREADING:
-            logger.info('')
-            self.threadpool = QThreadPool.globalInstance()
-            self.threadpool.setExpiryTimeout(timeout)  # ms
-        else:
-            self.threadpool = None
+    # def initThreadpool(self, timeout=1000):
 
     def initImageAllocations(self):
         logger.info('')
@@ -996,7 +990,7 @@ class MainWindow(QMainWindow):
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(fn=GenerateAligned(
                     cfg.data, scale, indexes=indexes, reallocate_zarr=reallocate_zarr, use_gui=True))
-                self.threadpool.start(self.worker)
+                QThreadPool.globalInstance().start(self.worker)
             else:
                 GenerateAligned(cfg.data, scale, indexes=indexes, reallocate_zarr=reallocate_zarr, use_gui=True)
         except:
@@ -1006,7 +1000,7 @@ class MainWindow(QMainWindow):
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(
                     fn=cfg.thumb.reduce_aligned(indexes=indexes, dest=cfg.data.dest(), scale=scale))
-                self.threadpool.start(self.worker)
+                QThreadPool.globalInstance().start(self.worker)
             else:
                 cfg.thumb.reduce_aligned(indexes=indexes, dest=cfg.data.dest(), scale=scale)
 
@@ -1017,14 +1011,14 @@ class MainWindow(QMainWindow):
             if cfg.USE_EXTRA_THREADING:
                 self.worker = BackgroundWorker(
                     fn=cfg.thumb.reduce_matches(indexes=indexes, dest=cfg.data.dest(), scale=scale))
-                self.threadpool.start(self.worker)
+                QThreadPool.globalInstance().start(self.worker)
             else:
                 cfg.thumb.reduce_matches(indexes=indexes, dest=cfg.data.dest(), scale=scale)
 
         except:
             print_exception()
 
-
+        self._working = False
         self.setNoPbarMessage(False)
         # self.updateAllCpanelDetails()
         cfg.pt.updateDetailsPanel()
@@ -1153,7 +1147,7 @@ class MainWindow(QMainWindow):
 
 
     def onAlignmentEnd(self):
-        logger.info('Running Post-Alignment Tasks...')
+        logger.critical('Running Post-Alignment Tasks...')
         # self.alignmentFinished.emit()
         t0 = time.time()
         try:
@@ -1367,28 +1361,32 @@ class MainWindow(QMainWindow):
 
         try:
             if cfg.USE_EXTRA_THREADING:
-                self.worker = BackgroundWorker(
-                    fn=ComputeAffines(scale, path=None, indexes=indexes, swim_only=swim_only, renew_od=renew_od,
-                                      reallocate_zarr=reallocate_zarr, dm=cfg.data))
-                self.threadpool.start(self.worker)
+                self.worker = BackgroundWorker(fn=ComputeAffines(scale, path=None, indexes=indexes,
+                                                                 swim_only=swim_only, renew_od=renew_od, reallocate_zarr=reallocate_zarr, dm=cfg.data))
+                logger.critical("Starting worker...")
+                logger.critical(f"active thread count: {QThreadPool.globalInstance().activeThreadCount()}")
+                QThreadPool.globalInstance().start(self.worker)
+                logger.critical(f"active thread count: {QThreadPool.globalInstance().activeThreadCount()}")
             else:
                 ComputeAffines(scale, path=None, indexes=indexes, swim_only=swim_only, renew_od=renew_od, reallocate_zarr=reallocate_zarr, dm=cfg.data)
         except:
             print_exception()
             self.err('An Exception Was Raised During Alignment.')
 
-        try:
-            if cfg.USE_EXTRA_THREADING:
-                self.worker = BackgroundWorker(
-                    fn=cfg.thumb.reduce_matches(indexes=indexes, dest=cfg.data.dest(), scale=scale))
-                self.threadpool.start(self.worker)
-            else:
-                cfg.thumb.reduce_matches(indexes=indexes, dest=cfg.data.dest(), scale=scale)
-
-        except:
-            print_exception()
+        # try:
+        #     if cfg.USE_EXTRA_THREADING:
+        #         logger.critical("Starting worker...")
+        #         self.worker = BackgroundWorker(fn=cfg.thumb.reduce_matches(indexes=indexes, dest=cfg.data.dest(), scale=scale))
+        #         QThreadPool.globalInstance().start(self.worker)
+        #     else:
+        #         cfg.thumb.reduce_matches(indexes=indexes, dest=cfg.data.dest(), scale=scale)
+        #
+        # except:
+        #     print_exception()
 
         self.onAlignmentEnd()
+
+        logger.critical(f"active thread count: {QThreadPool.globalInstance().activeThreadCount()}")
 
         snr_after = cfg.data.snr_list()
         self.present_snr_results(indexes, snr_before, snr_after)
@@ -1443,7 +1441,7 @@ class MainWindow(QMainWindow):
     #     try:
     #         if cfg.USE_EXTRA_THREADING:
     #             self.worker = BackgroundWorker(fn=GenerateScalesZarr())
-    #             self.threadpool.start(self.worker)
+    #             QThreadPool.globalInstance().start(self.worker)
     #         else:
     #             GenerateScalesZarr()
     #     except:
@@ -1679,7 +1677,7 @@ class MainWindow(QMainWindow):
     async def dataUpdateAsync(self):
         # if cfg.USE_EXTRA_THREADING:
         #     worker = BackgroundWorker(fn=self._dataUpdateWidgets())
-        #     self.threadpool.start(worker)
+        #     QThreadPool.globalInstance().start(worker)
         # else:
         # self._dataUpdateWidgets()
         await self._dataUpdateWidgets()
@@ -2539,7 +2537,7 @@ class MainWindow(QMainWindow):
             try:
                 self.tell('Waiting For Threadpool...')
                 logger.info('Waiting For Threadpool...')
-                result = self.threadpool.waitForDone(msecs=500)
+                result = QThreadPool.globalInstance().waitForDone(msecs=500)
             except:
                 print_exception()
                 self.warn(f'Having trouble shutting down threadpool')
@@ -5570,11 +5568,12 @@ class MainWindow(QMainWindow):
         self.widgetPbar.layout.setContentsMargins(4, 0, 4, 0)
         self.widgetPbar.layout.setSpacing(4)
 
-        self.w_pbarUnavailable = QLabel('GUI Progress Bar Unavailable. See Progress in Terminal...')
-        self.w_pbarUnavailable.setFixedHeight(22)
-        self.w_pbarUnavailable.setAlignment(Qt.AlignCenter)
+        # self.w_pbarUnavailable = QLabel('GUI Progress Bar Unavailable. See Progress in Terminal...')
+        self.w_pbarUnavailable = MarqueeLabel('GUI Progress Bar Unavailable. See Progress in Terminal...')
+        self.w_pbarUnavailable.setFixedHeight(20)
+        # self.w_pbarUnavailable.setAlignment(Qt.AlignHCenter)
         self.w_pbarUnavailable.setStyleSheet("""font-size: 11px; font-weight: 600; background-color: #339933; color: 
-        #f3f6fb; border-width: 2px; border-color: #f3f6fb; """)
+        #f3f6fb; border-width: 2px; border-color: #f3f6fb; border-radius: 4px;""")
 
         self.sw_pbar.addWidget(self.widgetPbar)
         self.sw_pbar.addWidget(self.w_pbarUnavailable)
@@ -5983,6 +5982,81 @@ class VerticalLabel(QLabel):
             style += f'font-size: {str(font_size)};'
         if style != '':
             self.setStyleSheet(style)
+
+
+
+
+class MarqueeLabel(QLabel):
+    def __init__(self, parent=None):
+        QLabel.__init__(self, parent)
+        self.px = 0
+        self.py = 15
+        self._direction = Qt.LeftToRight
+        self.setWordWrap(True)
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update)
+        self.timer.start(40)
+        self._speed = 2
+        self.textLength = 0
+        self.fontPointSize = 0
+        self.setAlignment(Qt.AlignVCenter)
+        self.setFixedHeight(self.fontMetrics().height())
+
+    def setFont(self, font):
+        QLabel.setFont(self, font)
+        self.setFixedHeight(self.fontMetrics().height())
+
+    def updateCoordinates(self):
+        align = self.alignment()
+        if align == Qt.AlignTop:
+            self.py = 10
+        elif align == Qt.AlignBottom:
+            self.py = self.height() - 10
+        elif align == Qt.AlignVCenter:
+            self.py = self.height() / 2
+        self.fontPointSize = self.font().pointSize() / 2
+        self.textLength = self.fontMetrics().width(self.text())
+
+    def setAlignment(self, alignment):
+        self.updateCoordinates()
+        QLabel.setAlignment(self, alignment)
+
+    def resizeEvent(self, event):
+        self.updateCoordinates()
+        QLabel.resizeEvent(self, event)
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        if self._direction == Qt.RightToLeft:
+            self.px -= self.speed()
+            if self.px <= -self.textLength:
+                self.px = self.width()
+        else:
+            self.px += self.speed()
+            if self.px >= self.width():
+                self.px = -self.textLength
+        painter.drawText(int(self.px), int(self.py + self.fontPointSize), self.text())
+        painter.translate(self.px, 0)
+
+    def speed(self):
+        return self._speed
+
+    def setSpeed(self, speed):
+        self._speed = speed
+
+    def setDirection(self, direction):
+        self._direction = direction
+        if self._direction == Qt.RightToLeft:
+            self.px = self.width() - self.textLength
+        else:
+            self.px = 0
+        self.update()
+
+    def pause(self):
+        self.timer.stop()
+
+    def unpause(self):
+        self.timer.start()
 
 
 class NullWidget(QLabel):
