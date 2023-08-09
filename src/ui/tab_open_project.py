@@ -34,7 +34,6 @@ from src.helpers import get_project_list, list_paths_absolute, get_bytes, absFil
     get_appdir, caller_name, initLogFiles
 from src.data_model import DataModel
 from src.ui.tab_project import ProjectTab
-from src.background_worker import BackgroundWorker
 from src.ui.timer import Timer
 from src.ui.tab_zarr import ZarrTab
 from src.ui.dialogs import ImportImagesDialog, NewConfigureProjectDialog

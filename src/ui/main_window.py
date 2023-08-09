@@ -8,24 +8,23 @@ import sys
 import copy
 import json
 import time
+import timeit
+import datetime
 from math import sqrt
 import threading
 import inspect
 import logging
 import textwrap
 import tracemalloc
-import timeit
 import getpass
 from pathlib import Path
 import zarr
 import dis
 import stat
-import time
 import psutil
 import resource
 import platform
 from math import floor
-import datetime
 import multiprocessing
 import subprocess
 import asyncio
@@ -35,8 +34,8 @@ import numpy as np
 import neuroglancer as ng
 import qtawesome as qta
 # from rechunker import rechunk
-from qtpy.QtCore import Qt, QSize, QUrl, QThreadPool, Slot, Signal, QEvent, QTimer, QPoint, QRectF, \
-    QPropertyAnimation, QSettings, QObject, QThread, QFileInfo
+from qtpy.QtCore import Qt, QThread, QThreadPool, QEvent, Slot, Signal, QSize, QUrl,  QTimer, QPoint, QRectF, \
+    QSettings, QObject, QFileInfo
 from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QFont, \
     QKeySequence, QMovie, QStandardItemModel, QColor, QCursor, QImage, QPainterPath, QRegion, QPainter
 from qtpy.QtWebEngineWidgets import *
@@ -46,14 +45,12 @@ from qtpy.QtWidgets import QApplication, qApp, QMainWindow, QWidget, QLabel, QHB
     QShortcut, QGraphicsOpacityEffect, QCheckBox, QSpinBox, QDoubleSpinBox, QRadioButton, QSlider, \
     QDesktopWidget, QTextEdit, QToolBar, QListWidget, QMenu, QMenuBar, QTableView, QTabWidget, QStatusBar, QTextBrowser, \
     QFormLayout, QGroupBox, QScrollArea, QToolButton, QWidgetAction, QSpacerItem, QButtonGroup, QAbstractButton, \
-    QApplication, QPlainTextEdit, QTableWidget, QTableWidgetItem, QDockWidget, QDialog, QDialogButtonBox, QFrame, \
+    QApplication, QPlainTextEdit, QTableWidget, QTableWidgetItem, QDockWidget, QDialog, QFrame, \
     QSizeGrip, QTabBar, QAbstractItemView, QStyledItemDelegate, QMdiArea, QMdiSubWindow
 import pyqtgraph.examples
 import src.config as cfg
 import src.shaders
 from src.thumbnailer import Thumbnailer
-from src.background_worker import BackgroundWorker
-from src.compute_affines import ComputeAffines
 from src.config import ICON_COLOR
 from src.data_model import DataModel
 from src.funcs_zarr import tiffs2MultiTiff
@@ -67,6 +64,7 @@ from src.helpers import setOpt, getOpt, getData, setData, print_exception, get_s
 from src.ui.dialogs import AskContinueDialog, ConfigProjectDialog, ConfigAppDialog, NewConfigureProjectDialog, \
     open_project_dialog, export_affines_dialog, mendenhall_dialog, RechunkDialog, ExitAppDialog, SaveExitAppDialog
 from src.ui.process_monitor import HeadupDisplay
+from src.ui.align_worker import AlignWorker
 from src.ui.models.json_tree import JsonModel
 from src.ui.toggle_switch import ToggleSwitch
 from src.ui.sliders import DoubleSlider, RangeSlider
@@ -96,6 +94,8 @@ DEV = is_joel()
 
 # logger.critical('_Directory of this script: %s' % os.path.dirname(__file__))
 
+
+
 class MainWindow(QMainWindow):
     resized = Signal()
     # keyPressed = Signal(int)
@@ -103,10 +103,6 @@ class MainWindow(QMainWindow):
     # alignmentFinished = Signal()
     updateTable = Signal()
     cancelMultiprocessing = Signal()
-    # zposChanged = Signal()
-    # swimWindowChanged = Signal()
-
-
 
     def __init__(self, data=None):
         QMainWindow.__init__(self)
@@ -223,28 +219,29 @@ class MainWindow(QMainWindow):
         # 
         # self.focusOutEvent.(fn_main_window_lost_focus)
 
-    def focusOutEvent(self, event):
-        reasons = {0:'MouseFocusReason', 1:'TabFocusReason', 2: 'BacktabFocusReason', 3: 'ActiveWindowFocusReason', 4:
-                   'PopupFocusReason', 5: 'ShortcutFocusReason', 6: 'MenuBarFocusReason', 7: 'OtherFocusReason'}
-        logger.warning(f"\n\n"
-                       f"Event               : {event}\n"
-                       f"Got focus           : {event.gotFocus()}\n"
-                       f"Lost focus          : {event.lostFocus()}\n"
-                       f"Reason              : {event.reason()} / {reasons[event.reason()]}\n"
-                       f"Current focus       : {self.focusWidget()}\n")
-        # if type(cfg.mw.focusWidget()) != QTextEdit:
-        #     self.focusW = self.focusWidget()
-        #
-        # self.setFocus()
+        self.clicksCount = 0
+
+
+    def reportProgress(self, n):
+        self.stepLabel.setText(f"Long-Running Step: {n}")
 
     def focusInEvent(self, event):
         reasons = {0:'MouseFocusReason', 1:'TabFocusReason', 2: 'BacktabFocusReason', 3: 'ActiveWindowFocusReason', 4:
                    'PopupFocusReason', 5: 'ShortcutFocusReason', 6: 'MenuBarFocusReason', 7: 'OtherFocusReason'}
-        logger.warning(f"Focusing in on MainWindow..."
-                       f"Got focus           : {event.gotFocus()}\n"
-                       f"Lost focus          : {event.lostFocus()}\n"
-                       f"Reason              : {event.reason()} / {reasons[event.reason()]}\n"
-                       f"Current focus       : {self.focusWidget()}\n")
+        logger.warning(f"(!) focus IN event | Reason : {event.reason()} / {reasons[event.reason()]}\n"
+                       f"Current focus       : {self.focusWidget()}")
+
+
+    def focusOutEvent(self, event):
+        reasons = {0:'MouseFocusReason', 1:'TabFocusReason', 2: 'BacktabFocusReason', 3: 'ActiveWindowFocusReason', 4:
+                   'PopupFocusReason', 5: 'ShortcutFocusReason', 6: 'MenuBarFocusReason', 7: 'OtherFocusReason'}
+        logger.warning(f"(!) focus LOST | Reason : {event.reason()} / {reasons[event.reason()]}\n"
+                       f"Current focus       : {self.focusWidget()}")
+        # if type(cfg.mw.focusWidget()) != QTextEdit:
+        #     self.focusW = self.focusWidget()
+        # self.setFocus()
+
+
 
     def pyqtgraph_examples(self):
         pyqtgraph.examples.run()
@@ -473,6 +470,8 @@ class MainWindow(QMainWindow):
         self._dock_snr = None
         self._dock_matches = None
         self._dock_thumbs = None
+
+        self._snr_before = None
 
     def initStyle(self):
         logger.info('')
@@ -990,34 +989,17 @@ class MainWindow(QMainWindow):
         cfg.data.set_has_bb(cfg.data.use_bb())  # Critical, also see regenerate
         self.tell(f'Regenerating {cfg.data.scale_pretty(s=scale)} aligned images for indexes {indexes}...')
         try:
-            if cfg.USE_EXTRA_THREADING:
-                self.worker = BackgroundWorker(fn=GenerateAligned(
-                    cfg.data, scale, indexes=indexes, reallocate_zarr=reallocate_zarr, use_gui=True))
-                QThreadPool.globalInstance().start(self.worker)
-            else:
-                GenerateAligned(cfg.data, scale, indexes=indexes, reallocate_zarr=reallocate_zarr, use_gui=True)
+            GenerateAligned(cfg.data, scale, indexes=indexes, reallocate_zarr=reallocate_zarr)
         except:
             print_exception()
 
         try:
-            if cfg.USE_EXTRA_THREADING:
-                self.worker = BackgroundWorker(
-                    fn=cfg.thumb.reduce_aligned(indexes=indexes, dest=cfg.data.dest(), scale=scale))
-                QThreadPool.globalInstance().start(self.worker)
-            else:
-                cfg.thumb.reduce_aligned(indexes=indexes, dest=cfg.data.dest(), scale=scale)
-
+            cfg.thumb.reduce_aligned(indexes=indexes, dest=cfg.data.dest(), scale=scale)
         except:
             print_exception()
 
         try:
-            if cfg.USE_EXTRA_THREADING:
-                self.worker = BackgroundWorker(
-                    fn=cfg.thumb.reduce_matches(indexes=indexes, dest=cfg.data.dest(), scale=scale))
-                QThreadPool.globalInstance().start(self.worker)
-            else:
-                cfg.thumb.reduce_matches(indexes=indexes, dest=cfg.data.dest(), scale=scale)
-
+            cfg.thumb.reduce_matches(indexes=indexes, dest=cfg.data.dest(), scale=scale)
         except:
             print_exception()
 
@@ -1059,7 +1041,10 @@ class MainWindow(QMainWindow):
     #     self.updateEnabledButtons()
     #     self.sw_pbar.hide()
 
-    def present_snr_results(self, indexes, snr_before, snr_after):
+    def present_snr_results(self, indexes):
+        snr_before = self._snr_before
+        snr_after = cfg.data.snr_list()
+
         try:
             import statistics
             if cfg.data.is_aligned():
@@ -1150,8 +1135,7 @@ class MainWindow(QMainWindow):
 
 
     def onAlignmentEnd(self):
-        logger.critical('Running Post-Alignment Tasks...')
-        # self.alignmentFinished.emit()
+        logger.critical('\n\nRunning Post-Alignment Tasks...\n')
         t0 = time.time()
         try:
             if self._isProjectTab():
@@ -1163,7 +1147,6 @@ class MainWindow(QMainWindow):
                 cfg.project_tab.updateTreeWidget() #0603-
                 cfg.pt._bbToggle.setChecked(cfg.data.has_bb())
                 cfg.pt.updateDetailsPanel()
-
         except:
             print_exception()
         finally:
@@ -1178,15 +1161,11 @@ class MainWindow(QMainWindow):
                 self.setdw_snr(True)  # Also initializes
                 if cfg.pt._tabs.currentIndex() == 4:
                     cfg.pt.snr_plot.initSnrPlot()
-
-                # if cfg.pt._tabs.currentIndex() == 1:
-                #     self.setdw_matches(True)
-
-            t9 = time.time()
-            dt = t9 - t0
+            cfg.project_tab.initNeuroglancer()
+            dt = time.time() - t0
             logger.info(f'  Elapsed Time         : {dt:.2f}s')
-            self.tell(f'  Elapsed Time         : {dt:.2f}s')
             self.setFocus()
+            self.set_status("Alignment Complete!")
 
 
     def alignAllScales(self):
@@ -1345,8 +1324,7 @@ class MainWindow(QMainWindow):
             cfg.data['data']['scales'][cfg.data.scale]['initial_snr'] = cfg.data.snr_list()
 
         cfg.data['data']['scales'][cfg.data.scale]['aligned'] = True
-        # if not cfg.CancelProcesses:
-        #     self.present_snr_results()
+
 
 
 
@@ -1359,45 +1337,44 @@ class MainWindow(QMainWindow):
         self.onAlignmentStart(scale=scale)
         self.tell("%s Affines (%s)..." % (('Initializing', 'Refining')[cfg.data.isRefinement()], cfg.data.scale_pretty(s=scale)))
         # logger.info(f'Aligning indexes:{indexes}, {cfg.data.scale_pretty(scale)}...')
-        snr_before = cfg.data.snr_list()
+        self._snr_before = cfg.data.snr_list()
 
         self.shutdownNeuroglancer()
+
+        if cfg.DEBUG_MP:
+            # if 1:
+            logger.critical('Multiprocessing Module Debugging is Enabled!')
+            mpl = multiprocessing.log_to_stderr()
+            mpl.setLevel(logging.DEBUG)
 
         if not ignore_bb:
             cfg.data.set_use_bounding_rect(cfg.pt._bbToggle.isChecked())
 
-        try:
-            if cfg.USE_EXTRA_THREADING:
-                self.worker = BackgroundWorker(fn=ComputeAffines(scale, path=None, indexes=indexes,
-                                                                 swim_only=swim_only, renew_od=renew_od, reallocate_zarr=reallocate_zarr, dm=cfg.data))
-                logger.critical("Starting worker...")
-                logger.critical(f"active thread count: {QThreadPool.globalInstance().activeThreadCount()}")
-                QThreadPool.globalInstance().start(self.worker)
-                logger.critical(f"active thread count: {QThreadPool.globalInstance().activeThreadCount()}")
-            else:
-                ComputeAffines(scale, path=None, indexes=indexes, swim_only=swim_only, renew_od=renew_od, reallocate_zarr=reallocate_zarr, dm=cfg.data)
-        except:
-            print_exception()
-            self.err('An Exception Was Raised During Alignment.')
+        self.thread = QThread()  # Step 2: Create a QThread object
+        self.worker = AlignWorker(scale=scale,
+                                  path=None,
+                                  indexes=indexes,
+                                  swim_only=swim_only,
+                                  renew_od=renew_od,
+                                  reallocate_zarr=reallocate_zarr,
+                                  dm=cfg.data
+                                  )  # Step 3: Create a worker object
+        self.worker.moveToThread(self.thread)  # Step 4: Move worker to the thread
+        self.thread.started.connect(self.worker.run)  # Step 5: Connect signals and slots
+        self.worker.alignmentFinished.connect(self.thread.quit)
+        self.worker.alignmentFinished.connect(self.worker.deleteLater)
+        self.thread.finished.connect(self.thread.deleteLater)
+        self.worker.progress.connect(self.reportProgress)
+        self.worker.testSignal.connect(lambda: logger.critical("\n\ntestSignal Received!!!!!!!!\n"))
+        self.thread.start()  # Step 6: Start the thread
 
-        # try:
-        #     if cfg.USE_EXTRA_THREADING:
-        #         logger.critical("Starting worker...")
-        #         self.worker = BackgroundWorker(fn=cfg.thumb.reduce_matches(indexes=indexes, dest=cfg.data.dest(), scale=scale))
-        #         QThreadPool.globalInstance().start(self.worker)
-        #     else:
-        #         cfg.thumb.reduce_matches(indexes=indexes, dest=cfg.data.dest(), scale=scale)
-        #
-        # except:
-        #     print_exception()
-
-        self.onAlignmentEnd()
-
-        logger.critical(f"active thread count: {QThreadPool.globalInstance().activeThreadCount()}")
-
-        snr_after = cfg.data.snr_list()
-        self.present_snr_results(indexes, snr_before, snr_after)
-        cfg.project_tab.initNeuroglancer()
+        self._btn_alignAll.setEnabled(False)  # Final resets
+        self._btn_alignOne.setEnabled(False)  # Final resets
+        self.thread.finished.connect(lambda: self._btn_alignAll.setEnabled(True))
+        self.thread.finished.connect(lambda: self._btn_alignOne.setEnabled(True))
+        self.thread.finished.connect(self.onAlignmentEnd)
+        self.thread.finished.connect(lambda: self.present_snr_results(indexes))
+        self.thread.finished.connect(lambda: print(self.worker.result))
 
 
     def rescale(self):
@@ -1682,11 +1659,6 @@ class MainWindow(QMainWindow):
 
     @staticmethod
     async def dataUpdateAsync(self):
-        # if cfg.USE_EXTRA_THREADING:
-        #     worker = BackgroundWorker(fn=self._dataUpdateWidgets())
-        #     QThreadPool.globalInstance().start(worker)
-        # else:
-        # self._dataUpdateWidgets()
         await self._dataUpdateWidgets()
 
 
@@ -2905,9 +2877,9 @@ class MainWindow(QMainWindow):
         #Todo refactor
         caller = inspect.stack()[1].function
         # if caller == 'main':
-        logger.critical(f'caller: {caller}')
         if self._isProjectTab():
             if caller != 'dataUpdateWidgets':
+                logger.critical(f'caller: {caller}')
                 skip_state = not self._skipCheckbox.isChecked()
                 layer = cfg.data.zpos
                 for s in cfg.data.finer_scales():
@@ -2938,13 +2910,13 @@ class MainWindow(QMainWindow):
                     if layer + x in range(0,len(cfg.data)):
                         cfg.pt.project_table.set_row_data(row=layer + x)
 
-            if cfg.project_tab._tabs.currentIndex() == 4:
-                cfg.project_tab.snr_plot.initSnrPlot()
+                if cfg.project_tab._tabs.currentIndex() == 4:
+                    cfg.project_tab.snr_plot.initSnrPlot()
 
-            if self.dw_snr.isVisible():
-                cfg.project_tab.dSnr_plot.initSnrPlot()
+                if self.dw_snr.isVisible():
+                    cfg.project_tab.dSnr_plot.initSnrPlot()
 
-            cfg.mw.dataUpdateWidgets()
+                cfg.mw.dataUpdateWidgets()
 
 
     def skip_change_shortcut(self):
@@ -3342,6 +3314,9 @@ class MainWindow(QMainWindow):
         # self.tbbMenu.clicked.connect(fn_glossary)
         self.tbbMenu.setIcon(qta.icon("mdi.menu", color='#161c20'))
 
+        # self.tbbTestThread = QToolButton()
+        # self.tbbTestThread.pressed.connect(self.runLongTask)
+        # self.tbbTestThread.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
 
 
@@ -3360,7 +3335,8 @@ class MainWindow(QMainWindow):
             self.tbbHud,
             self.tbbNotes,
             self.tbbPython,
-            self.tbbDetachNgButton
+            self.tbbDetachNgButton,
+            # self.tbbTestThread,
         ]
 
         names = ['Menu', 'Projects', ' &Refresh','Getting\nStarted',' FAQ','Glossary','Issue\nTracker','3DEM\nData',
@@ -3411,6 +3387,7 @@ class MainWindow(QMainWindow):
         self.toolbar.addWidget(self.tbbPython)
         self.toolbar.addWidget(self.tbbNotes)
         self.toolbar.addWidget(self.tbbDetachNgButton)
+        # self.toolbar.addWidget(self.tbbTestThread)
 
         self.toolbar.setStyleSheet('font-size: 10px; font-weight: 600; color: #161c20;')
 
@@ -4526,6 +4503,7 @@ class MainWindow(QMainWindow):
         # logger.info('')
         caller = inspect.stack()[1].function
         if caller == 'main':
+            cfg.data['state']['auto_generate'] = cfg.pt._toggleAutogenerate.isChecked()
             if cfg.pt._toggleAutogenerate.isChecked():
                 self.tell('Images will be generated automatically after alignment')
             else:
@@ -5462,9 +5440,7 @@ class MainWindow(QMainWindow):
         vbl.addWidget(browser_bottom_controls)
         self.browser_widget.setLayout(vbl)
 
-        self.test_widget = QLabel()
-        self.test_widget.setFixedSize(40,40)
-        self.test_widget.setStyleSheet("background-color: #000000;")
+
 
         self.globTabs.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.sw_pbar.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -5474,7 +5450,31 @@ class MainWindow(QMainWindow):
         self.addToolBar(Qt.LeftToolBarArea, self.toolbar)
         self.globTabsAndCpanel.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
+        # self.test_widget = QWidget()
+        # self.test_widget.setFixedHeight(100)
+        # # self.test_widget.setFixedSize(40, 40)
+        # # self.test_widget.setStyleSheet("background-color: #000000;")
+        # self.clicksLabel = QLabel("Counting: 0 clicks", self)
+        # self.clicksLabel.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+        # self.stepLabel = QLabel("Long-Running Step: 0")
+        # self.stepLabel.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+        # self.countBtn = QPushButton("Click me!", self)
+        # self.countBtn.clicked.connect(self.countClicks)
+        # # self.longRunningBtn = QPushButton("Long-Running Task!", self)
+        # # self.longRunningBtn.clicked.connect(self.runLongTask)
+        # # Set the layout
+        # layout = QVBoxLayout()
+        # layout.addWidget(self.clicksLabel)
+        # layout.addWidget(self.countBtn)
+        # layout.addStretch()
+        # layout.addWidget(self.stepLabel)
+        # layout.addWidget(self.longRunningBtn)
+        # self.test_widget.setLayout(layout)
+
+
+
         self.setCentralWidget(self.globTabsAndCpanel)
+        # self.setCentralWidget(VWidget(self.globTabsAndCpanel, self.test_widget))
 
         # self.setDockOptions(QMainWindow.AnimatedDocks | QMainWindow.AllowNestedDocks)
         self.setDockOptions(QMainWindow.AnimatedDocks)

@@ -194,7 +194,7 @@ class DataModel:
         if int(index) in range(0, len(self)):
             if int(index) != self.zpos:
                 self['data']['z_position'] = int(index)
-                logger.critical(f"[{index}] Z-position Set")
+                logger.info(f"[{index}] Z-position Changed!")
                 self.signals.zposChanged.emit()
                 QApplication.processEvents()
         else:
@@ -832,6 +832,7 @@ class DataModel:
         self._data['state'].setdefault('show_bounds', False)
         self._data['state'].setdefault('show_axes', True)
         self._data['state'].setdefault('show_scalebar', True)
+        self._data['state'].setdefault('auto_generate', True)
 
         self._data['state']['show_ng_controls'] = False
         self._data['state']['neutral_contrast'] = False
@@ -1470,7 +1471,7 @@ class DataModel:
         '''Sets manual correspondence points for a single section at the current scale_key, and applies
          scaling factor then sets the same points for all scale_key levels above the current scale_key.'''
         if l == None: l = self.zpos
-        logger.critical(f"Writing manual points to project dictionary for section #{l}: {matchpoints}")
+        logger.info(f"Writing manual points to project dictionary for section #{l}: {matchpoints}")
         # scale_vals  = [x for x in self.scale_vals() if x <= self.scale_val()]
         # scales      = [get_scale_key(x) for x in scale_vals]
         glob_coords = [None,None,None]
@@ -1815,7 +1816,7 @@ class DataModel:
         lst = [(not self.data_comports(s=s, l=l)[0]) and (not self.skipped(s=s, l=l)) for l in range(0, len(self))]
         t1 = time.time()
         indexes = np.array(lst).nonzero()[0].tolist()
-        logger.critical(f"data_dn_comport_indexes dt = {time.time() - t0:.3g} ({t1 - t0:.3g}/{time.time() - t1:.3g})")
+        logger.info(f"data_dn_comport_indexes dt = {time.time() - t0:.3g} ({t1 - t0:.3g}/{time.time() - t1:.3g})")
         return indexes
 
 
@@ -1823,7 +1824,7 @@ class DataModel:
         if s == None: s = self.scale
         t0 = time.time()
         indexes = list(set(range(len(self))) - set(self.cafm_dn_comport_indexes(s=s)) - set(self.data_dn_comport_indexes(s=s)))
-        logger.critical(f"all_comports_indexes dt = {time.time() - t0:.3g}")
+        logger.info(f"all_comports_indexes dt = {time.time() - t0:.3g}")
         return indexes
 
 
@@ -1841,7 +1842,7 @@ class DataModel:
                 if not self.skipped(s=s, l=i):
                     indexes.append(i)
 
-        logger.critical(f"cafm_dn_comport_indexes dt = {time.time() - t0:.3g}")
+        logger.info(f"cafm_dn_comport_indexes dt = {time.time() - t0:.3g}")
         return indexes
 
 
@@ -2192,7 +2193,7 @@ class DataModel:
 
     def set_manual_swim_window_px(self, pixels=None) -> None:
         '''Sets the SWIM Window for the Current Layer when using Manual Alignment.'''
-        logger.critical(f'Setting Local SWIM Window to [{pixels}] pixels...')
+        logger.info(f'Setting Local SWIM Window to [{pixels}] pixels...')
 
         if (pixels % 2) == 1:
             pixels -= 1
@@ -2681,7 +2682,7 @@ class DataModel:
     def upgrade_data_model(self):
         # Upgrade the "Data Model"
         if self._data['version'] != self._current_version:
-            logger.critical('Upgrading Data Model...')
+            logger.info('Upgrading Data Model...')
 
             # Begin the upgrade process:
 
