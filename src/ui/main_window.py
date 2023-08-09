@@ -5579,8 +5579,17 @@ class MainWindow(QMainWindow):
         self.hidePbar()
 
     def forceStopMultiprocessing(self):
-        cfg.CancelProcesses = True
-        cfg.event.set()
+        logger.critical("STOP requested!")
+        try:
+            cfg.CancelProcesses = True
+            self.thread.quit()
+            # self.thread.wait()
+
+            # self.thread.exit()
+
+            # self.thread.terminate() # NOTE this is discouraged!
+        except:
+            print_exception()
 
 
     def setPbarMax(self, x):

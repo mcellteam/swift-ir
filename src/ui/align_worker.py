@@ -183,6 +183,7 @@ class AlignWorker(QObject):
             #                   total=len(tasks), desc="Compute Affines",
             #                   position=0, leave=True))
 
+            self.initPbar.emit(len(tasks))
             all_results = []
             i = 0
             with ctx.Pool(processes=cpus) as pool:
@@ -284,7 +285,8 @@ class AlignWorker(QObject):
                 GenerateAligned(dm, scale, indexes, renew_od=renew_od, reallocate_zarr=reallocate_zarr)
                 thumbnailer.reduce_aligned(indexes, dest=dest, scale=scale)
 
-        self.alignmentFinished.emit()
+        self.result = dm
+        self.alignmentFinished.emit() #Important!
 
 
 
