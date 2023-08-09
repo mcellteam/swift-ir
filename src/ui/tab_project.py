@@ -1046,7 +1046,7 @@ class ProjectTab(QWidget):
         self._toggleAutogenerate = ToggleSwitch()
         self._toggleAutogenerate.stateChanged.connect(cfg.mw._toggledAutogenerate)
         self._toggleAutogenerate.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        self._toggleAutogenerate.setChecked(True)
+        self._toggleAutogenerate.setChecked(cfg.data['state']['auto_generate'])
 
         tip = """Bounding box is only applied upon "Align All" and "Regenerate". Caution: Turning this ON may 
         significantly increase the size of generated images."""
@@ -3164,7 +3164,6 @@ class ProjectTab(QWidget):
         # print(f"cur_key = {cur_key}")
         # print(f"par_key = {par_key}")
         if par_key == 'stack':
-            logger.info(f"setting z-position to {cur_key}")
             cfg.data.zpos = int(cur_key)
 
 

@@ -32,7 +32,7 @@ class Thumbnailer:
     def __init__(self):
         self.iscale2_c = os.path.join(get_appdir(), 'lib', get_bindir(), 'iscale2')
 
-    def reduce_main(self, dest, use_gui=True):
+    def reduce_main(self, dest):
         print(f'\n\n######## Reducing: Source Images ########\n')
 
         pbar_text = 'Generating %s Source Image Thumbnails...' % cfg.data.scale_pretty()
@@ -43,11 +43,11 @@ class Thumbnailer:
             src = os.path.join(cfg.data.dest(), coarsest_scale, 'img_src')
             od = os.path.join(cfg.data.dest(), 'thumbnails')
             dt = self.reduce(
-                src=src, od=od, rmdir=True, prefix='', start=0, end=None, pbar_text=pbar_text, dest=dest, use_gui=use_gui)
+                src=src, od=od, rmdir=True, prefix='', start=0, end=None, pbar_text=pbar_text, dest=dest)
             return dt
 
 
-    def reduce_aligned(self, indexes, dest, scale, use_gui=True):
+    def reduce_aligned(self, indexes, dest, scale):
         print(f'\n\n######## Reducing: Aligned Images ########\n')
         src = os.path.join(dest, scale, 'img_aligned')
         od = os.path.join(dest, scale, 'thumbnails_aligned')
@@ -67,8 +67,7 @@ class Thumbnailer:
         else:
 
             dt = self.reduce(
-                src=src, od=od, rmdir=False, prefix='', filenames=files, pbar_text=pbar_text, dest=dest,
-                use_gui=use_gui)
+                src=src, od=od, rmdir=False, prefix='', filenames=files, pbar_text=pbar_text, dest=dest)
             try:
                 cfg.data.t_thumbs_aligned = dt
             except:
@@ -79,7 +78,7 @@ class Thumbnailer:
             #     end = len(cfg.data)
             # cfg.mw.hud.done()
 
-    def reduce_signals(self, indexes, dest, scale, use_gui=True):
+    def reduce_signals(self, indexes, dest, scale):
 
         print(f'\n\n######## Reducing: Correlation Signals ########\n')
 
@@ -132,14 +131,13 @@ class Thumbnailer:
                              pbar_text=pbar_text,
                              filenames=files,
                              dest=dest,
-                             use_gui=use_gui,
                              full_size=full_size
                              )
             cfg.data.t_thumbs_spot = dt
             cfg.main_window.hud.done()
 
 
-    def reduce_matches(self, indexes, dest, scale, use_gui=True):
+    def reduce_matches(self, indexes, dest, scale):
 
         print(f'\n\n######## Reducing: Matches ########\n')
 
@@ -186,7 +184,6 @@ class Thumbnailer:
                              pbar_text=pbar_text,
                              filenames=files,
                              dest=dest,
-                             use_gui=use_gui,
                              full_size=False
                              )
             cfg.data.t_thumbs_matches = dt
@@ -213,7 +210,6 @@ class Thumbnailer:
                target_size=cfg.TARGET_THUMBNAIL_SIZE,
                full_size=False,
                dest='',
-               use_gui=True,
                ):
 
         logpath = os.path.join(dest, 'logs', 'thumbnails.log')
@@ -245,10 +241,8 @@ class Thumbnailer:
             if scale_factor == 0:
                 scale_factor = 1
         except Exception as e:
-            # print_exception()
-            logger.warning('Do file(s) exist? - Returning')
-            if use_gui:
-                cfg.main_window.err('Unable to generate thumbnail(s)')
+            print_exception()
+            logger.error('Unable to generate thumbnail(s) - Do file(s) exist?')
             raise e
 
         if rmdir:

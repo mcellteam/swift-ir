@@ -29,7 +29,6 @@ from src.helpers import get_scale_val, print_exception, reorder_tasks, renew_dir
 from src.mp_queue import TaskQueue
 from src.funcs_image import SetStackCafm
 from src.funcs_zarr import preallocate_zarr
-from src.background_worker import BackgroundWorker
 from src.job_apply_affine import run_mir
 
 
@@ -39,23 +38,23 @@ logger = logging.getLogger(__name__)
 
 mp.set_start_method('forkserver', force=True)
 
-def GenerateAligned(dm, scale, indexes, renew_od=False, reallocate_zarr=False, use_gui=True):
+def GenerateAligned(dm, scale, indexes, renew_od=False, reallocate_zarr=False):
     logger.info('>>>> GenerateAligned >>>>')
 
     scale_val = get_scale_val(scale)
 
     if cfg.CancelProcesses:
-        cfg.main_window.warn('Canceling Generate Alignment')
+        logger.warning('Canceling Generate Alignment')
         return
 
 
     tryRemoveDatFiles(dm, scale,dm.dest())
 
-    SetStackCafm(dm.get_iter(scale), scale=scale, poly_order=cfg.data.default_poly_order)
+    SetStackCafm(dm.get_iter(scale), scale=scale, poly_order=dm.default_poly_order)
 
-    cfg.data.propagate_swim_1x1_custom_px(indexes=indexes)
-    cfg.data.propagate_swim_2x2_custom_px(indexes=indexes)
-    cfg.data.propagate_manual_swim_window_px(indexes=indexes)
+    dm.propagate_swim_1x1_custom_px(indexes=indexes)
+    dm.propagate_swim_2x2_custom_px(indexes=indexes)
+    dm.propagate_manual_swim_window_px(indexes=indexes)
 
     od = os.path.join(dm.dest(), scale, 'img_aligned')
     if renew_od:
@@ -74,14 +73,13 @@ def GenerateAligned(dm, scale, indexes, renew_od=False, reallocate_zarr=False, u
         # Note: now have got new cafm's -> recalculate bounding box
         rect = dm.set_calculate_bounding_rect(s=scale) # Only after SetStackCafm
         logger.info(f'Bounding Box           : ON\nNew Bounding Box  : {str(rect)}')
-        logger.info(f'Corrective Polynomial  : {cfg.data.default_poly_order} (Polynomial Order: {cfg.data.default_poly_order})')
+        logger.info(f'Corrective Polynomial  : {dm.default_poly_order} (Polynomial Order: {dm.default_poly_order})')
     else:
         logger.info(f'Bounding Box      : OFF')
         w, h = dm.image_size(s=scale)
         rect = [0, 0, w, h] # might need to swap w/h for Zarr
     logger.info(f'Aligned Size      : {rect[2:]}')
     logger.info(f'Offsets           : {rect[0]}, {rect[1]}')
-    # args_list = makeTasksList(dm, iter(stack[start:end]), job_script, scale_key, rect) #0129-
     if is_tacc():
         cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(indexes)),1)
     else:
@@ -99,7 +97,6 @@ def GenerateAligned(dm, scale, indexes, renew_od=False, reallocate_zarr=False, u
         cafm = sec['alignment_history'][method]['method_results']['cumulative_afm']
         tasks.append([base_name, al_name, rect, cafm, 128])
 
-    cfg.mw.set_status('Generating aligned images. No progress bar available. Awaiting multiprocessing pool...')
     # pbar = tqdm.tqdm(total=len(tasks), position=0, leave=True, desc="Generating Alignment")
 
     # def update_pbar(*a):
@@ -131,18 +128,13 @@ def GenerateAligned(dm, scale, indexes, renew_od=False, reallocate_zarr=False, u
     #     [p.get() for p in results]
 
     """Blocking"""
-    # with ThreadPool(processes=cpus) as pool:
-
     ctx = mp.get_context('forkserver')
     with ctx.Pool() as pool:
         list(tqdm.tqdm(pool.imap_unordered(run_mir, tasks), total=len(tasks), desc="Generate Alignment", position=0, leave=True))
         pool.close()
 
-
     # with ThreadPoolExecutor(max_workers=cpus) as pool:
     #     list(pool.map(run_mir, tqdm.tqdm(tasks, total=len(tasks), desc="Generate Alignment", position=0, leave=True)))
-    #
-
 
     # _it = 0
     # while (count_aligned_files(dm.dest(), scale) < len(dm)) or _it > 4:
@@ -152,20 +144,16 @@ def GenerateAligned(dm, scale, indexes, renew_od=False, reallocate_zarr=False, u
 
     logger.info("Generate Alignment Finished")
 
-
     t_elapsed = time.time() - t0
     dm.t_generate = t_elapsed
-    cfg.main_window.set_elapsed(t_elapsed, f'Generate alignment')
-
-    # Sleeping for 1 second...
-    # time.sleep(1)
+    # cfg.main_window.set_elapsed(t_elapsed, f'Generate alignment')
 
     dm.register_cafm_hashes(s=scale, indexes=indexes)
     dm.set_image_aligned_size()
 
     pbar_text = 'Copy-converting Scale %d Alignment To Zarr (%d Cores)...' % (scale_val, cpus)
     if cfg.CancelProcesses:
-        cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
+        logger.warning('Canceling Tasks: %s' % pbar_text)
         return
     if reallocate_zarr:
         preallocate_zarr(dm=dm,
@@ -174,16 +162,6 @@ def GenerateAligned(dm, scale, indexes, renew_od=False, reallocate_zarr=False, u
                          shape=(len(dm), rect[3], rect[2]),
                          dtype='|u1',
                          overwrite=True)
-
-    # Create "staged" Zarr hierarchy and its groups
-    # dir = os.path.join(dm.dest(), scale_key)
-    # stage_path = os.path.join(dir, 'zarr_staged')
-    # store = zarr.DirectoryStore(stage_path)  # Does not create directory
-    # root = zarr.group(store=store, overwrite=False)  # <-- creates physical directory.
-    # for i in range(len(dm)):
-    #     if not os.path.exists(os.path.join(stage_path, str(i))):
-    #         logger.info('creating group: %s' %str(i))
-    #         root.create_group(str(i))
 
     print(f'\n\nCopy-convert Alignment To Zarr for {indexes}\n')
 
@@ -196,7 +174,6 @@ def GenerateAligned(dm, scale, indexes, renew_od=False, reallocate_zarr=False, u
         tasks.append(task)
     # shuffle(tasks)
 
-
     t0 = time.time()
 
     if ng.is_server_running():
@@ -204,13 +181,11 @@ def GenerateAligned(dm, scale, indexes, renew_od=False, reallocate_zarr=False, u
         ng.server.stop()
 
     # with ctx.Pool(processes=cpus) as pool:
-    """Non-blocking"""
     # with ThreadPool(processes=cpus) as pool:
     #     results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_pbar) for task in tasks]
     #     pool.close()
     #     [p.get() for p in results]
     #     # pool.join()
-    """Blocking"""
     with ThreadPoolExecutor(max_workers=10) as executor:
         list(executor.map(convert_zarr, tqdm.tqdm(tasks, total=len(tasks), desc="Convert Alignment to Zarr", position=0, leave=True)))
 
@@ -218,22 +193,15 @@ def GenerateAligned(dm, scale, indexes, renew_od=False, reallocate_zarr=False, u
 
     t_elapsed = time.time() - t0
     dm.t_convert_zarr = t_elapsed
-    cfg.main_window.set_elapsed(t_elapsed, f'Copy-convert alignment to Zarr')
+    # cfg.main_window.set_elapsed(t_elapsed, f'Copy-convert alignment to Zarr')
     # time.sleep(1)
 
-    cfg.main_window._autosave(silently=True) #0722+
+    # cfg.main_window._autosave(silently=True) #0722+
 
 
 # def update_pbar():
 #     logger.info('')
 #     cfg.mw.pbar.setValue(cfg.mw.pbar.value()+1)
-
-def imread(filename):
-    # return first image in TIFF file as numpy array
-    with open(filename, 'rb') as fh:
-        data = fh.read()
-    return imagecodecs.tiff_decode(data)
-
 
 def convert_zarr(task):
     try:
@@ -241,51 +209,11 @@ def convert_zarr(task):
         fn = task[1]
         out = task[2]
         store = zarr.open(out)
-        # tif = libtiff.TIFF.open(fn)
-        # img = tif.read_image()[:, ::-1]  # np.array
-        # img = imread(fn)[:, ::-1]
-        # store[ID, :, :] = img  # store: <zarr.core.Array (19, 1244, 1130) uint8>
         store[ID, :, :] = libtiff.TIFF.open(fn).read_image()[:, ::-1]  # store: <zarr.core.Array (19, 1244, 1130) uint8>
-        # store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
-
         return 0
     except Exception as e:
         print(e)
         return 1
-
-def makeTasksList(dm, iter, job_script, scale, rect, zarr_group):
-    logger.info('Making Generate Alignment Tasks List...')
-    args_list = []
-    dest = dm.dest()
-    for ID, layer in enumerate(iter):
-        # if ID in [0,1,2]:
-        #     logger.info('afm = %s\n' % ' '.join(map(str, datamodel.afm(l=ID))))
-        #     logger.info('cafm = %s\n' % ' '.join(map(str, datamodel.cafm(l=ID))))
-        base_name = layer['alignment']['swim_settings']['fn_transforming']
-        _ , fn = os.path.split(base_name)
-        al_name = os.path.join(dest, scale, 'img_aligned', fn)
-        # layer['images']['aligned'] = {}
-        # layer['images']['aligned']['filename'] = al_name
-
-        # cafm = layer['alignment']['method_results']['cumulative_afm'] #0802-
-        method = layer['alignment']['swim_settings']['method']  # 0802+
-        cafm = layer['alignment_history'][method]['method_results']['cumulative_afm']
-        args = [sys.executable, job_script, '-gray', '-rect',
-                str(rect[0]), str(rect[1]), str(rect[2]), str(rect[3]), '-afm', str(cafm[0][0]), str(cafm[0][1]),
-                str(cafm[0][2]), str(cafm[1][0]), str(cafm[1][1]), str(cafm[1][2]), base_name, al_name,
-                zarr_group, str(ID)]
-        if cfg.PRINT_EXAMPLE_ARGS:
-            if ID in [0,1,2]:
-                logger.info('Example Arguments (ID: %d):\n%s' % (ID, '    '.join(map(str,args))))
-            # if ID is 7:
-            #     args[2] = '-bogus_option'
-            # if ID is 11:
-            #     args[15] = 'bogus_file'
-
-        # NOTE - previously had conditional here for 'if use_bounding_rect' then don't pass -rect args
-        args_list.append(args)
-    return args_list
-
 
 
 def count_aligned_files(dest, s):
@@ -335,19 +263,7 @@ def print_example_cafms(dm):
     except:
         pass
 
-# def create_align_directories(s):
-#     source_dir = os.path.join(datamodel['data']['destination_path'], s, "img_src")
-#     makedirs_exist_ok(source_dir, exist_ok=True)
-#     target_dir = os.path.join(datamodel['data']['destination_path'], s, "img_aligned")
-#     makedirs_exist_ok(target_dir, exist_ok=True)
-
 
 # Old Job Script
 # Running (Example): python job_python_apply_affine.py [ options ] -afm 1 0 0 0 1 0  in_file_name out_file_name')
 
-
-'''
-Previous functionality was located:
-regenerate_aligned()       <- alignem_swift.py
-generate_aligned_images()  <- project_runner.py
-'''

@@ -21,7 +21,6 @@ numcodecs.blosc.use_threads = False
 from src.funcs_zarr import preallocate_zarr
 from src.helpers import renew_directory, get_img_filenames
 # from thumbnailer import Thumbnailer
-# from background_worker import BackgroundWorker
 from src.data_model import DataModel
 
 import src.config as cfg

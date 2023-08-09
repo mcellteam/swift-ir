@@ -315,7 +315,7 @@ class SnrPlot(QWidget):
         self.plotData()
         self.updateLayerLinePos()
 
-        logger.critical(f"initSnrPlot dt={time() - t0:.3g}")
+        logger.info(f"initSnrPlot dt={time() - t0:.3g}")
 
 
 
@@ -350,7 +350,7 @@ class SnrPlot(QWidget):
                 else:
                     x_axis.append(i)
                     y_axis.append(cfg.data.snr(s=s, l=i))
-        logger.critical(f"get_everything_comport_axis_data dt={time() - t0:.3g}")
+        logger.info(f"get_everything_comport_axis_data dt={time() - t0:.3g}")
         return x_axis, y_axis
 
     def get_cafm_no_comport_axis_data(self, s=None) -> tuple:
@@ -368,7 +368,7 @@ class SnrPlot(QWidget):
                 else:
                     x_axis.append(i)
                     y_axis.append(cfg.data.snr(s=s, l=i))
-        logger.critical(f"get_cafm_no_comport_axis_data dt={time() - t0:.3g}")
+        logger.info(f"get_cafm_no_comport_axis_data dt={time() - t0:.3g}")
         return x_axis, y_axis
 
     def get_data_no_comport_axis_data(self, s=None) -> tuple:
@@ -386,7 +386,7 @@ class SnrPlot(QWidget):
                 else:
                     x_axis.append(i)
                     y_axis.append(cfg.data.snr(s=s, l=i))
-        logger.critical(f"get_data_no_comport_axis_data dt={time()-t0:.3g}")
+        logger.info(f"get_data_no_comport_axis_data dt={time()-t0:.3g}")
         return x_axis, y_axis
 
 
@@ -429,7 +429,7 @@ class SnrPlot(QWidget):
                     maxYRange=yMax,
                 )
 
-        logger.critical(f"plotData dt={time() - t0:.3g}")
+        logger.info(f"plotData dt={time() - t0:.3g}")
 
 
 
@@ -656,7 +656,7 @@ class SnrPlot(QWidget):
 
 
     def wipePlot(self):
-        logger.critical('')
+        logger.info('')
         try:
             for i in reversed(range(self.checkboxes_hlayout.count())):
                 self.checkboxes_hlayout.removeItem(self.checkboxes_hlayout.itemAt(i))

@@ -14,8 +14,6 @@ import tqdm
 import psutil
 from qtpy.QtCore import QObject
 from qtpy.QtWidgets import QApplication
-import neuroglancer as ng
-import src.config as cfg
 from src.helpers import print_exception, is_tacc
 
 import numcodecs
@@ -34,7 +32,6 @@ logger = logging.getLogger(__name__)
 # mpl.setLevel(logging.INFO)
 
 SENTINEL = 1
-
 
 def worker(worker_id, task_q, result_q, n_tasks, n_workers):
     '''Function run by worker processes'''
@@ -82,15 +79,10 @@ def watchdog(wd_queue):
 
 class TaskQueue(QObject):
 
-    def __init__(self, n_tasks, dest, parent=None, start_method='forkserver', pbar_text=None, use_gui=True):
+    def __init__(self, n_tasks, dest, parent=None, start_method='forkserver', pbar_text=None):
         QObject.__init__(self)
         self.dest = dest
         self.parent = parent
-        self.use_gui = use_gui
-        # if is_tacc():
-        #     start_method = 'spawn'
-        # self.limit_workers = limit_workers
-
         self.start_method = start_method
         self.ctx = mp.get_context(self.start_method)
         # self.task_dict = {}
@@ -119,64 +111,40 @@ class TaskQueue(QObject):
     # def start(self, n_workers, retries=10) -> None:
     def start(self, n_workers, retries=0) -> None:
 
-        if cfg.CancelProcesses == True:
-            cfg.main_window.warn('Canceling Tasks: %s' % self.pbar_text)
-            logger.warning('Canceling Tasks: %s' % self.pbar_text)
-            return
+        # if cfg.CancelProcesses == True:
+        #     cfg.main_window.warn('Canceling Tasks: %s' % self.pbar_text)
+        #     logger.warning('Canceling Tasks: %s' % self.pbar_text)
+        #     return
+        #
+        # if cfg.DEBUG_MP:
+        #     logger.info('Multiprocessing Module Debugging is ENABLED')
+        #     mpl = mp.log_to_stderr()
+        #     mpl.setLevel(logging.DEBUG)
 
-        if cfg.DEBUG_MP:
-        # if 1:
-            logger.info('Multiprocessing Module Debugging is ENABLED')
-            mpl = mp.log_to_stderr()
-            mpl.setLevel(logging.DEBUG)
-        # else:
-        #     mpl.setLevel(logging.INFO)
 
         self.work_queue = self.ctx.JoinableQueue()
         self.result_queue = self.ctx.Queue()
         self.task_dict = {}
         self.task_id = 0
         self.n_workers = n_workers
-        # if self.limit_workers:
-        #     self.n_workers = min(self.n_tasks, n_workers, self.limit_workers)
-        # else:
-        #     self.n_workers = min(self.n_tasks, n_workers)
         self.retries = retries
 
-        # cfg.main_window.shutdownNeuroglancer()
-        # logger.info(f'use_gui = {self.use_gui} ({self.taskPrefix})')
-        # if (not cfg.ignore_pbar) and (self.use_gui):
-        #     # cfg.main_window.showZeroedPbar()  # 0208+
-        #     cfg.nProcessDone += 1
-        #     try:
-        #         self.parent.setPbarMax(self.n_tasks)
-        #         if self.pbar_text:
-        #             self.parent.setPbarText(text=self.pbar_text)
-        #             # self.parent.statusBar.showMessage(self.pbar_text)
-        #         self.parent.sw_pbar.show()
-        #         self.parent.update()
-        #     except:
-        #         logger.error('An exception was raised while setting up progress bar')
-
-        logger.info('Starting Task Queue: %s...' % self.pbar_text)
-        if self.use_gui:
-            cfg.main_window.tell('Processing %d Task(s): %s' % (self.n_tasks, self.pbar_text))
-        logger.critical('Processing %d Task(s): %s' % (self.n_tasks, self.pbar_text))
+        logger.info('Starting Task Queue: %s. Processing %d Task(s): %s' % (self.pbar_text, self.n_tasks, self.pbar_text))
 
         for i in range(self.n_workers):
-            # if i != 0: sys.stderr.write('\n')
             sys.stderr.write('Starting Worker %d >>>>' % i)
             # logger.info('Starting Worker %d...' % i)
             try:
-                if cfg.DAEMON_THREADS:
-                    p = self.ctx.Process(target=worker, daemon=True,
-                                         args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers,))
-                else:
-                    p = self.ctx.Process(target=worker,
-                                         args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers,))
-                # p = QProcess('', [i, self.m.work_queue, self.m.result_queue, self.n_tasks, self.n_workers, self.m.pbar_q])
-                self.workers.append(p)
-                self.workers[i].start()
+                p = self.ctx.Process(target=worker, daemon=True,
+                                     args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers,))
+                # if cfg.DAEMON_THREADS:
+                #     p = self.ctx.Process(target=worker, daemon=True,
+                #                          args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers,))
+                # else:
+                #     p = self.ctx.Process(target=worker,
+                #                          args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers,))
+                # self.workers.append(p)
+                # self.workers[i].start()
 
             except:
                 logger.warning('Original Worker # %d Triggered An Exception' % i)
@@ -192,13 +160,14 @@ class TaskQueue(QObject):
             sys.stderr.write('Restarting Worker %d >>>>' % i)
             # time.sleep(.1)
             try:
-                if cfg.DAEMON_THREADS:
-                    p = self.ctx.Process(target=worker, daemon=True,
-                                         args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers,))
-                else:
-                    p = self.ctx.Process(target=worker,
-                                         args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers,))
-                # p = QProcess('', [i, self.m.work_queue, self.m.result_queue, self.n_tasks, self.n_workers, self.m.pbar_q])
+                p = self.ctx.Process(target=worker, daemon=True,
+                                     args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers,))
+                # if cfg.DAEMON_THREADS:
+                #     p = self.ctx.Process(target=worker, daemon=True,
+                #                          args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers,))
+                # else:
+                #     p = self.ctx.Process(target=worker,
+                #                          args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers,))
                 self.workers.append(p)
                 self.workers[i].start()
             except:
@@ -296,51 +265,9 @@ class TaskQueue(QObject):
                 retry_list = []
                 # Loop over pending tasks...
                 # Update progress bar and result queue as tasks finish (mp.Queue.get() is blocking).
-                for img_index, j in enumerate(range(n_pending)):
-                    # task_str = self.task_dict[task_id]['cmd'] + self.task_dict[task_id]['args']
-                    # logger.info(task_str)
-                    if self.use_gui:
-                        if cfg.event.is_set():
-                            logger.info('Terminating Running Processes...')
-                            cfg.main_window.tell('Terminating Running Processes...')
-                            cfg.CancelProcesses = True
-                            for w in self.workers:
-                                logger.info('Terminating Process %s...' % w.name)
-                                w.terminate()
-                            cfg.main_window.hud.done()
-                            cfg.main_window.warn('Canceling Future Tasks...')
-                            self.parent.update()
-                            cfg.main_window.cancelMultiprocessing.emit()
-                            # QApplication.processEvents()
-                            sys.exit(1)
-                    # self.pbar.update(n_tasks - realtime)
-                    # print(self.pbar.n)
-                    # print(n_tasks - realtime)
+                # for img_index, j in enumerate(range(n_pending)):
+                for _ in range(n_pending):
                     self.pbar.update(1)
-                    # print(self.pbar.n)
-
-                    # sys.stdout.flush()
-
-                    # print(f"n_pending = {n_pending}, n_tasks - realtime = {n_tasks - realtime}")
-                    # logger.info(f"# tasks completed: {n_tasks - realtime}")
-                    # if (not cfg.ignore_pbar) and self.use_gui:
-                    #     try:
-                    #         self.parent.updatePbar(n_tasks - realtime)
-                    #         if self.taskPrefix and self.taskNameList:
-                    #             try:
-                    #                 name = self.taskNameList[img_index]
-                    #                 # self.parent.statusBar.showMessage(self.taskPrefix + name + '...', 500)
-                    #                 self.parent.statusBar.showMessage(self.taskPrefix + name + '...')
-                    #             except:
-                    #                 # print_exception()
-                    #                 logger.warning('Improperly sized taskNameList! [size=%d] '
-                    #                                '[prefix=%s] '
-                    #                                '[n_tasks=%d]' % (len(self.taskNameList), self.taskPrefix, n_tasks))
-                    #             QApplication.processEvents()
-                    #     except:
-                    #         # print_exception()
-                    #         logger.warning(f'An exception was raised while updating progress bar [{self.taskPrefix}]')
-                    #         print_exception()
 
                     # .get method is BLOCKING by default for mp.Queue
                     task_id, outs, errs, rc, dt = self.result_queue.get()
@@ -390,17 +317,10 @@ class TaskQueue(QObject):
                                         f'Tasks Failed      : {n_pending}\n'
                                         f'══════ Complete [{self.pbar_text}] ══════')
 
-                if self.use_gui:
-                    cfg.main_window.tell('Tasks Successful  : %d' % (n_tasks - n_pending))
-                    cfg.main_window.tell('Tasks Failed      : %d' % n_pending)
-                    cfg.main_window.tell('══════ Complete ══════')
+                print('Tasks Successful  : %d' % (n_tasks - n_pending))
+                print('Tasks Failed      : %d' % n_pending)
+                print('══════ Complete ══════')
             else:
-                if self.use_gui:
-                    cfg.main_window.warn('Something Went Wrong')
-                    cfg.main_window.warn('Tasks Successful  : %d' % (n_tasks - n_pending))
-                    cfg.main_window.warn('Failed Tasks      : %d' % n_pending)
-                    cfg.main_window.warn('══════ Warning ══════')
-
                 logger.warning('Something Went Wrong')
                 logger.warning('Tasks Successful  : %d' % (n_tasks - n_pending))
                 logger.warning('Failed Tasks      : %d' % n_pending)
