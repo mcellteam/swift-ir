@@ -381,6 +381,7 @@ class MainWindow(QMainWindow):
     def refreshTab(self):
         # caller = inspect.stack()[1].function
         # logger.critical(f'caller: {caller}')
+        self.setUpdatesEnabled(True)
         if cfg.CancelProcesses:
             cfg.CancelProcesses = False
             logger.warning('\n\ncfg.CancelProcesses was TRUE. Resetting its value.\n')
@@ -2265,6 +2266,7 @@ class MainWindow(QMainWindow):
               % os.path.basename(cfg.data.dest()))
         self.tell("Loading Project '%s'..." % cfg.data.dest())
         # initLogFiles(cfg.data)
+        self.setUpdatesEnabled(False)
 
         #Critical this might be critical for now
         # cfg.data['data']['current_scale'] = cfg.data.coarsest_scale_key() #0720-
@@ -2298,6 +2300,8 @@ class MainWindow(QMainWindow):
         # QTimer.singleShot(1000, lambda: self.initNeuroglancer(init_all=True))
 
         self.hud.done()
+
+        self.setUpdatesEnabled(True)
 
     def saveUserPreferences(self):
         logger.info('Saving User Preferences...')
