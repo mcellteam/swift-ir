@@ -1358,6 +1358,8 @@ class MainWindow(QMainWindow):
         # logger.info(f'Aligning indexes:{indexes}, {cfg.data.scale_pretty(scale)}...')
         snr_before = cfg.data.snr_list()
 
+        self.shutdownNeuroglancer()
+
         if not ignore_bb:
             cfg.data.set_use_bounding_rect(cfg.pt._bbToggle.isChecked())
 
