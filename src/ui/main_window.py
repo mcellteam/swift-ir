@@ -150,6 +150,8 @@ class MainWindow(QMainWindow):
 
         self.initUI()
 
+        QThreadPool.globalInstance().setMaxThreadCount(1)
+
         # self.initMenu()
         self.initWidgetSpacing()
         self.initStyle()
