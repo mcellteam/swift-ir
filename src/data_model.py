@@ -412,16 +412,12 @@ class DataModel:
     # @cache
     def is_aligned(self, s=None):
         caller = inspect.stack()[1].function
-        # logger.critical(f' is_aligned caller: {caller} >>>> ')
         if s == None: s = self.scale
-        return self['data']['scales'][s]['aligned'] #0808+
-        # snr_list = self.snr_list(s=s)
-        # if sum(snr_list) < 1:
-        #     # logger.info(f'is_aligned [{s}] is returning False (sum of SNR list is < 1)')
-        #     return False
-        # else:
-        #     # logger.info(f'is_aligned [{s}] is returning True (sum of SNR list > 1)')
-        #     return True
+        if 'aligned' not in self['data']['scales'][s]:
+            self['data']['scales'][s]['aligned'] = sum(self.snr_list(s=s)) > 1
+        return self['data']['scales'][s]['aligned']
+
+
 
     def is_alignable(self) -> bool:
         '''Checks if the current scale is able to be aligned'''
