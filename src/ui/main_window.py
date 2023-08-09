@@ -218,25 +218,24 @@ class MainWindow(QMainWindow):
         #     logger.warning(f"\n\nMain Window lost its focus to: {self.focusWidget()}!\n")
         # 
         # self.focusOutEvent.(fn_main_window_lost_focus)
+        self.focusreasons = {0: 'MouseFocusReason',
+                             1: 'TabFocusReason',
+                             2: 'BacktabFocusReason',
+                             3: 'ActiveWindowFocusReason',
+                             4: 'PopupFocusReason',
+                             5: 'ShortcutFocusReason',
+                             6: 'MenuBarFocusReason',
+                             7: 'OtherFocusReason'}
 
-        self.clicksCount = 0
 
-
-    def reportProgress(self, n):
-        self.stepLabel.setText(f"Long-Running Step: {n}")
 
     def focusInEvent(self, event):
-        reasons = {0:'MouseFocusReason', 1:'TabFocusReason', 2: 'BacktabFocusReason', 3: 'ActiveWindowFocusReason', 4:
-                   'PopupFocusReason', 5: 'ShortcutFocusReason', 6: 'MenuBarFocusReason', 7: 'OtherFocusReason'}
-        logger.warning(f"(!) focus IN event | Reason : {event.reason()} / {reasons[event.reason()]}\n"
-                       f"Current focus       : {self.focusWidget()}")
-
+        logger.warning(f"\nFocus GAINED - reason : ({event.reason()}) {self.focusreasons[event.reason()]}"
+                       f"\nFocus belongs to      : {self.focusWidget()}")
 
     def focusOutEvent(self, event):
-        reasons = {0:'MouseFocusReason', 1:'TabFocusReason', 2: 'BacktabFocusReason', 3: 'ActiveWindowFocusReason', 4:
-                   'PopupFocusReason', 5: 'ShortcutFocusReason', 6: 'MenuBarFocusReason', 7: 'OtherFocusReason'}
-        logger.warning(f"(!) focus LOST | Reason : {event.reason()} / {reasons[event.reason()]}\n"
-                       f"Current focus       : {self.focusWidget()}")
+        logger.warning(f"\nFocus LOST - reason : ({event.reason()}) {self.focusreasons[event.reason()]}"
+                       f"\nFocus belongs to    : {self.focusWidget()}")
         # if type(cfg.mw.focusWidget()) != QTextEdit:
         #     self.focusW = self.focusWidget()
         # self.setFocus()
@@ -289,17 +288,6 @@ class MainWindow(QMainWindow):
                     logger.critical(f'No memory data to report.')
             except:
                 print_exception()
-
-    def eventFilter(self, object, event):
-        if DEV:
-            if event.type() == QEvent.WindowActivate:
-                logger.critical("widget window has gained focus")
-            elif event.type() == QEvent.WindowDeactivate:
-                logger.critical("widget window has lost focus")
-            elif event.type() == QEvent.FocusIn:
-                logger.critical("widget has gained keyboard focus")
-            elif event.type() == QEvent.FocusOut:
-                logger.critical("widget has lost keyboard focus")
 
 
     # def resizeThings(self):
@@ -1125,8 +1113,6 @@ class MainWindow(QMainWindow):
         self.stopPlaybackTimer()
         self._disableGlobTabs()
         # self.pbarLabel.setText('Task (0/%d)...' % cfg.nProcessSteps)
-        # if not cfg.ignore_pbar:
-        #     self.showZeroedPbar()
         self._autosave(silently=True)
         self._changeScaleCombo.setEnabled(False)
         check_project_status()
@@ -1180,7 +1166,6 @@ class MainWindow(QMainWindow):
 
             self.tell(f'# Scales Unaligned: {len(alignThese)}. Aligning now...')
             ntasks = 4 * len(alignThese)
-            self.showZeroedPbar(set_n_processes=ntasks)
             for s in alignThese:
                 cfg.data.scale_key = s
                 # cfg.project_tab.initNeuroglancer()
@@ -1339,7 +1324,8 @@ class MainWindow(QMainWindow):
         # logger.info(f'Aligning indexes:{indexes}, {cfg.data.scale_pretty(scale)}...')
         self._snr_before = cfg.data.snr_list()
 
-        self.shutdownNeuroglancer()
+        # self.shutdownNeuroglancer()
+        # self.showZeroedPbar(pbar_max=len(indexes))
 
         if cfg.DEBUG_MP:
             # if 1:
@@ -1364,8 +1350,8 @@ class MainWindow(QMainWindow):
         self.worker.alignmentFinished.connect(self.thread.quit)
         self.worker.alignmentFinished.connect(self.worker.deleteLater)
         self.thread.finished.connect(self.thread.deleteLater)
-        self.worker.progress.connect(self.reportProgress)
-        self.worker.testSignal.connect(lambda: logger.critical("\n\ntestSignal Received!!!!!!!!\n"))
+        self.worker.progress.connect(self.setPbar)
+        self.worker.initPbar.connect(self.resetPbar)
         self.thread.start()  # Step 6: Start the thread
 
         self._btn_alignAll.setEnabled(False)  # Final resets
@@ -5596,20 +5582,39 @@ class MainWindow(QMainWindow):
         cfg.CancelProcesses = True
         cfg.event.set()
 
+
     def setPbarMax(self, x):
         self.pbar.setMaximum(x)
 
+
     def setNoPbarMessage(self, b):
-        self.setUpdatesEnabled(False)
-        if b:
-            self.sw_pbar.setCurrentIndex(1)
-            self.sw_pbar.show()
-        else:
-            self.sw_pbar.setCurrentIndex(0)
-            self.sw_pbar.hide()
-        self.setUpdatesEnabled(True)
+        # self.setUpdatesEnabled(False)
+        # if b:
+        #     self.sw_pbar.setCurrentIndex(1)
+        #     self.sw_pbar.show()
+        # else:
+        #     self.sw_pbar.setCurrentIndex(0)
+        #     self.sw_pbar.hide()
+        # self.setUpdatesEnabled(True)
+        # QApplication.processEvents()
+        pass
+
+
+    def setPbar(self, n:int):
+        '''New method to replace historical pbar functionality 2023-08-09'''
+        self.pbar.setValue(n)
         QApplication.processEvents()
 
+    def resetPbar(self, max:int, msg:str=None):
+        '''New method to replace historical pbar functionality 2023-08-09'''
+        self.sw_pbar.show()
+        self.pbar.show()
+        self.pbar.setMaximum(max)
+        self.pbar.setValue(0)
+        if msg:
+            self.setPbarText(msg)
+        logger.critical(f"Progress bar reset with maximum {max}")
+        QApplication.processEvents()
 
 
     def updatePbar(self, x=None):
@@ -5649,33 +5654,33 @@ class MainWindow(QMainWindow):
 
     # def showZeroedPbar(self, set_n_processes=None, cancel_processes=None):
     def showZeroedPbar(self, set_n_processes=None, pbar_max=None):
-        # '''
-        # Note:
-        # pbar_max is set by mp queue for all multiprocessing functions
-        # '''
-        # caller = inspect.stack()[1].function
-        # # logger.critical(f'caller = {caller}, set_n_processes = {set_n_processes}')
-        # cfg.CancelProcesses = False #0602+
-        # if set_n_processes and (set_n_processes > 1):
-        #     # logger.critical('Resetting # tasks...')
-        #     cfg.nProcessSteps = set_n_processes
-        #     cfg.nProcessDone = 0
-        #     self.pbarLabel.show()
+        '''
+        Note:
+        pbar_max is set by mp queue for all multiprocessing functions
+        '''
+        caller = inspect.stack()[1].function
+        # logger.critical(f'caller = {caller}, set_n_processes = {set_n_processes}')
+        cfg.CancelProcesses = False #0602+
+        if set_n_processes and (set_n_processes > 1):
+            # logger.critical('Resetting # tasks...')
+            cfg.nProcessSteps = set_n_processes
+            cfg.nProcessDone = 0
+            self.pbarLabel.show()
+        else:
+            self.pbarLabel.hide()
+        # if cancel_processes:
+        #     cfg.CancelProcesses = True
+        #     self.pbar_cancel_button.hide()
         # else:
-        #     self.pbarLabel.hide()
-        # # if cancel_processes:
-        # #     cfg.CancelProcesses = True
-        # #     self.pbar_cancel_button.hide()
-        # # else:
-        # #     self.pbar_cancel_button.show()
-        # # logger.critical(f'cfg.nProcessSteps = {cfg.nProcessSteps}, cfg.nProcessDone = {cfg.nProcessDone}')
-        # if pbar_max:
-        #     self.pbar.setMaximum(pbar_max)
-        # self.pbar.setValue(0)
+        #     self.pbar_cancel_button.show()
+        # logger.critical(f'cfg.nProcessSteps = {cfg.nProcessSteps}, cfg.nProcessDone = {cfg.nProcessDone}')
+        if pbar_max:
+            self.pbar.setMaximum(pbar_max)
+        self.pbar.setValue(0)
         # self.setPbarText('Preparing Tasks...')
-        # self.sw_pbar.show()
-        # QApplication.processEvents()
-        pass
+        self.sw_pbar.show()
+        QApplication.processEvents()
+        # pass
 
     def hidePbar(self):
         # logger.info('')
