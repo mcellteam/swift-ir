@@ -253,20 +253,20 @@ def main():
     if cfg.PROFILING_MODE:
         sys.setprofile(tracefunc)
 
-    # os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
+    os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
     # logger.info('Setting OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES')
     # logger.info('Setting QTWEBENGINE_CHROMIUM_FLAGS')
-    # os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
+    os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
 
     # ***************
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--no-sandbox -disable-web-security --enable-logging'
     # ***************
 
-    os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--enable-logging --log-level=3' # suppress JS warnings
+    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--enable-logging --log-level=3' # suppress JS warnings
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=0'
     os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --no-sandbox --num-raster-threads=%s' % cfg.QTWEBENGINE_RASTER_THREADS
-    # os.environ['OPENBLAS_NUM_THREADS'] = '1'
+    os.environ['OPENBLAS_NUM_THREADS'] = '1'
     # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
     os.environ['LIBTIFF_STRILE_ARRAY_MAX_RESIZE_COUNT'] = '1000000000'
 
@@ -282,8 +282,8 @@ def main():
         QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
     logger.info('Setting Qt.AA_ShareOpenGLContexts')
-    # QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created. #2230-
-    # QCoreApplication.setAttribute(Qt.AA_UseOpenGLES)
+    QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created. #2230-
+    QCoreApplication.setAttribute(Qt.AA_UseOpenGLES)
     # QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseDesktopOpenGL) #0226-
 
     # report the number of worker threads chosen by default
