@@ -56,6 +56,7 @@ NOTES
 https://github.com/nexpy/nexpy/issues/398
 
 """
+print('(Hang tight. The application will launch shortly...)')
 import os
 import asyncio
 import subprocess as sp
@@ -295,8 +296,8 @@ def main():
     # app = QApplication([])
     app = QApplication(sys.argv)
 
-    # app.setStyle('Fusion')
-    app.setStyle('cleanlooks')
+    app.setStyle('Fusion')
+    # app.setStyle('cleanlooks')
     # app.setStyle('Breeze')
     # app.setStyle('Oxygen')
     # app.setStyle('Windows')

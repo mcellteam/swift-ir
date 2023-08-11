@@ -3291,6 +3291,7 @@ class MainWindow(QMainWindow):
             for i in range(self.globTabs.count()):
                 if self.globTabs.widget(i).__class__.__name__ == 'OpenProject':
                     self.globTabs.setCurrentIndex(i)
+                    self.globTabs._splitter.setSizes([700, 300])
                     return
 
             self._dock_thumbs = self.dw_thumbs.isVisible()
