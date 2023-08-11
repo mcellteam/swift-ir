@@ -138,7 +138,8 @@ class MAViewer(neuroglancer.Viewer):
             if getData('state,neutral_contrast'):
                 s.crossSectionBackgroundColor = '#808080'
             else:
-                s.crossSectionBackgroundColor = '#222222'
+                # s.crossSectionBackgroundColor = '#222222'
+                s.crossSectionBackgroundColor = '#000000'
 
     def position(self):
         return copy.deepcopy(self.state.position)
@@ -342,7 +343,8 @@ class MAViewer(neuroglancer.Viewer):
                 s.crossSectionBackgroundColor = getOpt('neuroglancer,CUSTOM_BACKGROUND_COLOR')
             else:
                 if getOpt('neuroglancer,USE_DEFAULT_DARK_BACKGROUND'):
-                    s.crossSectionBackgroundColor = '#222222'
+                    # s.crossSectionBackgroundColor = '#222222'
+                    s.crossSectionBackgroundColor = '#000000'
                 else:
                     s.crossSectionBackgroundColor = '#808080'
 
