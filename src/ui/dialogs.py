@@ -148,66 +148,93 @@ class ImportImagesDialog(QFileDialog):
         self.setModal(True)
         urls = self.sidebarUrls()
         self.setSidebarUrls(urls)
-        # self.setFixedSize(self.width() + 360, self.height())
         self.mpPreview = QLabel("Preview", self)
-        # self.mpPreview.setFixedSize(360, 360)
-        self.mpPreview.setMinimumSize(128, 128)
+        self.mpPreview.setMinimumSize(300, 300)
         self.mpPreview.setAlignment(Qt.AlignCenter)
         self.mpPreview.setObjectName("labelPreview")
+        self.mpPreview.setText('Preview')
+        self.mpPreview.setAutoFillBackground(True)
+        self.mpPreview.setStyleSheet("background-color: #dadada;")
         self.imageDimensionsLabel = QLabel('')
+        self.imageDimensionsLabel.setMaximumHeight(16)
         self.imageDimensionsLabel.setStyleSheet("""
-            font-size: 13px; 
-            font-weight: 600; 
+            font-size: 12px; 
             color: #141414; 
-            background-color: #ede9e8;
             padding: 2px;
         """)
         self.cb_cal_grid = QCheckBox('Image 0 is calibration grid')
         self.cb_cal_grid.setChecked(False)
 
-        box = QVBoxLayout()
-        box.addWidget(self.mpPreview)
-        box.addStretch()
+        self.cb_display_thumbs = QCheckBox('Display Thumbnails')
+        self.cb_display_thumbs.setChecked(cfg.settings['ui']['DISPLAY_THUMBNAILS_IN_DIALOG'])
+        self.cb_display_thumbs.toggled.connect(self.onToggle)
+
+        # self.cb_overwrite = QCheckBox('Overwrite')
+        # self.cb_overwrite.setChecked(False)
+
+        self.box = QVBoxLayout()
+        self.box.addWidget(self.mpPreview)
+        self.box.addStretch()
         # box.addWidget(self.imageDimensionsLabel)
         self.extra_layout = QVBoxLayout()
         self.extra_layout.addWidget(self.imageDimensionsLabel, alignment=Qt.AlignRight)
-        self.extra_layout.addWidget(self.cb_cal_grid, alignment=Qt.AlignRight)
-        self.layout().addLayout(box, 1, 3, 1, 1)
+        self.extra_layout.addWidget(self.cb_display_thumbs, alignment=Qt.AlignRight)
+        # self.extra_layout.addWidget(self.cb_cal_grid, alignment=Qt.AlignRight)
+        self.layout().addLayout(self.box, 1, 3, 1, 1)
         self.layout().addLayout(self.extra_layout, 3, 3, 1, 1)
+        self.layout().addLayout(HBL(self.cb_cal_grid), 4, 0, 1, 3)
+        self.layout().setContentsMargins(2,2,2,2)
+        self.layout().setHorizontalSpacing(2)
+        self.layout().setVerticalSpacing(0)
         self.currentChanged.connect(self.onChange)
         self.fileSelected.connect(self.onFileSelected)
         self.filesSelected.connect(self.onFilesSelected)
         self._fileSelected = None
         self._filesSelected = None
-        self.pixmap = None
+        # self.pixmap = None
+        self.pixmap = QPixmap()
+        # self.pixmap = ThumbnailFast(self).pixmap()
+
+
+
+    def onToggle(self):
+        cfg.settings['ui']['DISPLAY_THUMBNAILS_IN_DIALOG'] = self.cb_display_thumbs.isChecked()
+        if cfg.settings['ui']['DISPLAY_THUMBNAILS_IN_DIALOG']:
+            self.imageDimensionsLabel.show()
+            self.mpPreview.show()
+        else:
+            self.imageDimensionsLabel.hide()
+            self.mpPreview.hide()
+
 
     def onChange(self, path):
         # logger.info('')
         self.pixmap = QPixmap(path)
         if(self.pixmap.isNull()):
-            self.mpPreview.setText('Preview')
             self.imageDimensionsLabel.setText('')
-        else:
+        elif cfg.settings['ui']['DISPLAY_THUMBNAILS_IN_DIALOG']:
             self.mpPreview.setPixmap(self.pixmap.scaled(self.mpPreview.width(),
                                                    self.mpPreview.height(),
                                                    Qt.KeepAspectRatio,
                                                    Qt.SmoothTransformation))
-            logger.info(f'Selected File: {path}')
-            img_siz = ImageSize(path)
-            # img_siz = ImageIOSize(path)
-            self.imageDimensionsLabel.setText('Size: %dx%dpx' %(img_siz[0], img_siz[1]))
-
+            logger.info(f'Selected: {path}')
+            # siz = ImageSize(path)
+            # self.imageDimensionsLabel.setText('Size: %dx%dpx' %(siz[0], siz[1]))
+            self.imageDimensionsLabel.setText('Size: %dx%dpx' % ImageSize(path))
+            self.imageDimensionsLabel.show()
 
 
     def onFileSelected(self, file):
         self._fileSelected = file
         cfg.data['data']['has_cal_grid'] = self.cb_cal_grid.isChecked()
+
     def onFilesSelected(self, files):
         self._filesSelected = files
         cfg.data['data']['has_cal_grid'] = self.cb_cal_grid.isChecked()
 
     def getFileSelected(self):
         return self._fileSelected
+
     def getFilesSelected(self):
         return self._filesSelected
 

@@ -64,7 +64,8 @@ from src.helpers import setOpt, getOpt, getData, setData, print_exception, get_s
 from src.ui.dialogs import AskContinueDialog, ConfigProjectDialog, ConfigAppDialog, NewConfigureProjectDialog, \
     open_project_dialog, export_affines_dialog, mendenhall_dialog, RechunkDialog, ExitAppDialog, SaveExitAppDialog
 from src.ui.process_monitor import HeadupDisplay
-from src.ui.align_worker import AlignWorker
+from src.ui.worker_align import AlignWorker
+from src.ui.worker_scale import ScaleWorker
 from src.ui.models.json_tree import JsonModel
 from src.ui.toggle_switch import ToggleSwitch
 from src.ui.sliders import DoubleSlider, RangeSlider
@@ -1306,9 +1307,6 @@ class MainWindow(QMainWindow):
         # logger.info(f'Aligning indexes:{indexes}, {cfg.data.scale_pretty(scale)}...')
         self._snr_before = cfg.data.snr_list()
 
-
-
-
         # self.shutdownNeuroglancer()
         # self.showZeroedPbar(pbar_max=len(indexes))
 
@@ -1341,11 +1339,47 @@ class MainWindow(QMainWindow):
 
         self._btn_alignAll.setEnabled(False)  # Final resets
         self._btn_alignOne.setEnabled(False)  # Final resets
-        self.thread.finished.connect(lambda: self._btn_alignAll.setEnabled(True))
-        self.thread.finished.connect(lambda: self._btn_alignOne.setEnabled(True))
-        self.thread.finished.connect(self.onAlignmentEnd)
-        self.thread.finished.connect(lambda: self.present_snr_results(indexes))
-        self.thread.finished.connect(lambda: print(self.worker.dm))
+        self.worker.alignmentFinished.connect(lambda: self._btn_alignAll.setEnabled(True))
+        self.worker.alignmentFinished.connect(lambda: self._btn_alignOne.setEnabled(True))
+        self.worker.alignmentFinished.connect(self.onAlignmentEnd)
+        self.worker.alignmentFinished.connect(lambda: self.present_snr_results(indexes))
+        self.worker.alignmentFinished.connect(lambda: print(self.worker.dm))
+
+    def autoscale(self, dm):
+        logger.critical('')
+
+
+        if self._working == True:
+            self.warn('Another Process is Already Running')
+            return
+
+        self.tell('Generating scale pyramid...')
+
+        self.thread = QThread()  # Step 2: Create a QThread object
+        self.worker = ScaleWorker(dm=cfg.data)  # Step 3: Create a worker object
+        self.worker.moveToThread(self.thread)  # Step 4: Move worker to the thread
+        self.thread.started.connect(self.worker.run)  # Step 5: Connect signals and slots
+        self.worker.scalingFinished.connect(self.thread.quit)
+        self.worker.scalingFinished.connect(self.worker.deleteLater)
+        self.thread.finished.connect(self.thread.deleteLater)
+        self.worker.progress.connect(self.setPbar)
+        self.worker.initPbar.connect(self.resetPbar)
+        self.thread.start()  # Step 6: Start the thread
+
+        self._btn_alignAll.setEnabled(False)  # Final resets
+        self._btn_alignOne.setEnabled(False)  # Final resets
+        def fn():
+            self.tell(f"Auto-align flag: {cfg.data['data']['autoalign_flag']}")
+            logger.critical(f"Auto-align flag: {cfg.data['data']['autoalign_flag']}")
+
+            if cfg.data['data']['autoalign_flag']:
+                logger.info('Initializing alignment...')
+                self.tell(f'Aligning {cfg.data.scale_pretty(cfg.data.coarsest_scale_key())}...')
+                self.alignAll(force=True, ignore_bb=True)
+            self.onStartProject()
+            self.enableAllTabs()
+        self.worker.scalingFinished.connect(fn)
+        self.thread.finished.connect(lambda: print("\n\n\nScaling Worker Finished!\n\n"))
 
 
     def rescale(self):
@@ -5426,7 +5460,9 @@ class MainWindow(QMainWindow):
         self.globTabs.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.sw_pbar.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
-        self.globTabsAndCpanel = VWidget(self.globTabs, self.sw_pbar)
+        # self.globTabsAndCpanel = VWidget(self.globTabs, self.sw_pbar)
+        self.globTabsAndCpanel = VWidget(self.globTabs)
+        self.statusBar.addPermanentWidget(self.sw_pbar)
         self.addToolBar(Qt.BottomToolBarArea, self.toolbar_cpanel)
         self.addToolBar(Qt.LeftToolBarArea, self.toolbar)
         self.globTabsAndCpanel.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -5533,9 +5569,9 @@ class MainWindow(QMainWindow):
 
     def initPbar(self):
         self.pbar = QProgressBar()
-        self.pbar.setFixedHeight(14)
+        # self.pbar.setFixedHeight(14)
         # self.pbar.setStyleSheet("font-size: 9px; font-weight: 600;")
-        self.pbar.setStyleSheet("font-size: 9px;")
+        self.pbar.setStyleSheet("font-size: 9px; padding: 0px;")
         self.pbar.setTextVisible(True)
         # font = QFont('Arial', 12)
         # font.setBold(True)
@@ -5543,31 +5579,23 @@ class MainWindow(QMainWindow):
         # self.pbar.setFixedWidth(400)
         # self.sw_pbar = QWidget(self)
         self.sw_pbar = QStackedWidget(self)
-        self.sw_pbar.setMaximumHeight(16)
+        self.sw_pbar.setMaximumHeight(14)
         self.sw_pbar.setAutoFillBackground(True)
         self.pbar_cancel_button = QPushButton('Stop')
-        self.pbar_cancel_button.setFixedSize(42, 16)
+        self.pbar_cancel_button.setFixedSize(42, 14)
         self.pbar_cancel_button.setIconSize(QSize(14, 14))
         self.pbar_cancel_button.setToolTip('Terminate Pending Multiprocessing Tasks')
         self.pbar_cancel_button.setIcon(qta.icon('mdi.cancel', color=cfg.ICON_COLOR))
         self.pbar_cancel_button.setStyleSheet("""font-size: 9px;""")
         self.pbar_cancel_button.clicked.connect(self.cancelTasks)
         self.pbarLabel = QLabel('Task... ')
-        self.pbarLabel.setStyleSheet("""font-size: 9px;font-weight: 600;""")
+        self.pbarLabel.setStyleSheet("""font-size: 9px; font-weight: 600;""")
 
         self.widgetPbar = HWidget(self.pbarLabel, self.pbar, self.pbar_cancel_button)
         self.widgetPbar.layout.setContentsMargins(4, 0, 4, 0)
-        self.widgetPbar.layout.setSpacing(4)
-
-        # self.w_pbarUnavailable = QLabel('GUI Progress Bar Unavailable. See Progress in Terminal...')
-        self.w_pbarUnavailable = QLabel('GUI Progress Bar Unavailable. See Progress in Terminal...')
-        self.w_pbarUnavailable.setFixedHeight(20)
-        # self.w_pbarUnavailable.setAlignment(Qt.AlignHCenter)
-        self.w_pbarUnavailable.setStyleSheet("""font-size: 11px; font-weight: 600; background-color: #339933; color: 
-        #f3f6fb; border-width: 2px; border-color: #f3f6fb;""")
+        self.widgetPbar.layout.setSpacing(2)
 
         self.sw_pbar.addWidget(self.widgetPbar)
-        self.sw_pbar.addWidget(self.w_pbarUnavailable)
         self.sw_pbar.setCurrentIndex(0)
 
         # self.statusBar.addPermanentWidget(self.sw_pbar)
