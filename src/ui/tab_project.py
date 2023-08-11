@@ -356,11 +356,11 @@ class ProjectTab(QWidget):
         # MA Stage Buffer Widget
 
         self.lab_ref_title = QLabel('Reference Section')
-        self.lab_ref_title.setStyleSheet('font-size: 10px; background-color: #ede9e8; color: #161c20;')
+        self.lab_ref_title.setStyleSheet('color: #161c20;')
         self.lab_ref_title.setMaximumHeight(14)
 
         self.lab_tra_title = QLabel('Transforming Section')
-        self.lab_tra_title.setStyleSheet('font-size: 10px; background-color: #ede9e8; color: #161c20;')
+        self.lab_tra_title.setStyleSheet('color: #161c20;')
         self.lab_tra_title.setMaximumHeight(14)
 
         self.lw_ref = ListWidget()
@@ -543,11 +543,12 @@ class ProjectTab(QWidget):
             self.dataUpdateMA()
             #     layer['alignment']['swim_settings'].setdefault('iterations', cfg.DEFAULT_SWIM_ITERATIONS)
 
-        self.btnResetAllMA = QPushButton('Set All Methods To Default Grid')
+        self.btnResetAllMA = QPushButton('Set All Methods\n'
+                                         'To Default Grid')
         self.btnResetAllMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.btnResetAllMA.setFixedSize(QSize(160, 18))
+        self.btnResetAllMA.setFixedSize(QSize(84, 28))
         self.btnResetAllMA.clicked.connect(fn)
-        self.btnResetAllMA.setStyleSheet('font-size: 9px;')
+        self.btnResetAllMA.setStyleSheet('font-size: 8px;')
 
         self.combo_MA_actions = QComboBox(self)
         self.combo_MA_actions.setStyleSheet('font-size: 11px')
@@ -598,7 +599,7 @@ class ProjectTab(QWidget):
         # self.btnQuickSWIM.clicked.connect(lambda: cfg.mw.setdw_matches(True))
 
         # self.lw_gb_l = GroupBox("Transforming")
-        self.lw_gb_l = GroupBox("")
+        self.lw_gb_l = GroupBox("Transforming")
         def fn():
             logger.info('')
             if cfg.data['state']['tra_ref_toggle'] == 0:
@@ -606,13 +607,13 @@ class ProjectTab(QWidget):
         self.lw_gb_l.clicked.connect(fn)
         vbl = VBL()
         vbl.setSpacing(1)
-        vbl.addWidget(self.lab_tra_title)
+        # vbl.addWidget(self.lab_tra_title)
         vbl.addWidget(self.lw_tra)
         vbl.addWidget(self.baseNextColorWidget)
         self.lw_gb_l.setLayout(vbl)
 
         # self.lw_gb_r = GroupBox("Reference")
-        self.lw_gb_r = GroupBox("")
+        self.lw_gb_r = GroupBox("Reference")
         def fn():
             logger.info('')
             if cfg.data['state']['tra_ref_toggle'] == 1:
@@ -620,12 +621,12 @@ class ProjectTab(QWidget):
         self.lw_gb_r.clicked.connect(fn)
         vbl = VBL()
         vbl.setSpacing(1)
-        vbl.addWidget(self.lab_ref_title)
+        # vbl.addWidget(self.lab_ref_title)
         vbl.addWidget(self.lw_ref)
         vbl.addWidget(self.refNextColorWidget)
         self.lw_gb_r.setLayout(vbl)
-        self.labSlash = QLabel('← / →')
-        self.labSlash.setStyleSheet("""font-size: 12px; font-weight: 600;""")
+        self.labSlash = QLabel('←/→')
+        self.labSlash.setStyleSheet("""font-size: 11px; font-weight: 600;""")
         self.MA_sbw = HWidget(self.lw_gb_l, self.labSlash, self.lw_gb_r)
         self.MA_sbw.layout.setSpacing(0)
         # self.msg_MAinstruct = YellowTextLabel("⇧ + Click - Select 3 corresponding points")
@@ -1026,8 +1027,8 @@ class ProjectTab(QWidget):
 
         self.fl_swimSettings = QFormLayout()
         self.fl_swimSettings.setContentsMargins(2, 2, 2, 2)
-        # self.fl_swimSettings.setFormAlignment(Qt.AlignVCenter)
-        self.fl_swimSettings.setVerticalSpacing(4)
+        # self.fl_swimSettings.setFormAlignment(Qt.AlignBottom)
+        self.fl_swimSettings.setVerticalSpacing(2)
         self.fl_swimSettings.addRow('Window Width (px):', self._swimWindowControl)
         self.fl_swimSettings.addRow('Signal Whitening:', self.sb_whiteningControl)
         self.fl_swimSettings.addRow('SWIM Iterations:', self.sb_SWIMiterations)
@@ -1035,11 +1036,12 @@ class ProjectTab(QWidget):
         self.fl_swimSettings.addRow('Clobber Amount (px)', self.sb_clobber_pixels_default)
         self.fl_swimSettings.addWidget(self.btnResetAllMA)
         # self.fl_swimSettings.setAlignment(Qt.AlignCenter)
-        self.fl_swimSettings.setFormAlignment(Qt.AlignVCenter)
+        # self.fl_swimSettings.setFormAlignment(Qt.AlignVCenter)
 
         self.gb_defaultGridSwimSettings = QGroupBox("Default SWIM Settings")
         self.gb_defaultGridSwimSettings.setObjectName('gb_cpanel')
         self.gb_defaultGridSwimSettings.setLayout(self.fl_swimSettings)
+        self.gb_defaultGridSwimSettings.setAlignment(Qt.AlignBottom)
 
         '''
         OUTPUT SETTINGS
@@ -1077,11 +1079,13 @@ class ProjectTab(QWidget):
         # self.flSettings.addRow('Bounding Box: ', HWidget(ExpandingWidget(self), self._bbToggle))
         # self.flSettings.addRow('Corrective Bias: ', HWidget(ExpandingWidget(self), self._polyBiasCombo))
 
-        hl = HBL(QLabel('Bounding Box:'), self._bbToggle, QLabel('Corrective Bias:'), self._polyBiasCombo)
-
-
+        hl = HBL(QLabel('Bounding Box:'), self._bbToggle, ExpandingHWidget(self), QLabel('Corrective Bias:'),
+            self._polyBiasCombo)
+        hl.setAlignment(Qt.AlignBottom)
         self.gb_outputSettings = QGroupBox("Global Output Settings")
-        self.gb_outputSettings.setStyleSheet("font-size: 10px;")
+        self.gb_outputSettings.setMinimumHeight(38)
+        self.gb_outputSettings.setAlignment(Qt.AlignBottom)
+        self.gb_outputSettings.setStyleSheet("font-size: 9px;")
         self.gb_outputSettings.setObjectName('gb_cpanel')
         # self.gb_outputSettings.setLayout(self.flSettings)
         self.gb_outputSettings.setLayout(hl)
@@ -2119,7 +2123,8 @@ class ProjectTab(QWidget):
         self.warning_data.hide()
 
         self.gb_warnings = QGroupBox("Warnings")
-        self.gb_warnings.setStyleSheet("padding: 2px;")
+        # self.gb_warnings.setStyleSheet("padding: 2px;")
+        self.gb_warnings.setStyleSheet("margin-top: 4px;")
         # self.gb_warnings.setFixedHeight(44)
         self.gb_warnings.setObjectName('gb_cpanel')
         self.vbl_warnings = VBL()
@@ -2319,6 +2324,7 @@ class ProjectTab(QWidget):
             border-radius: 2px;
             margin: 2px;
             padding: 2px;
+            padding-top: 8px;
         }
         QGroupBox:title {
             color: #161c20;
@@ -2326,36 +2332,17 @@ class ProjectTab(QWidget):
             font-size: 9px;
             subcontrol-origin: margin;
             subcontrol-position: top center;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
         }
         """)
 
         self.splitterEditAlignment = QSplitter(Qt.Orientation.Horizontal)
-
-
-        #0802 #Surgery
-
-        # self.splitterEditAlignment.addWidget(self.ng_widget_container)
-        # self.thumbnailEditor = QWidget()
-        # self.thumbnailEditor = QLabel("Test")
-
-
-        # lab = QLabel("Test")
-        # lab.setStyleSheet("background-color: #222222; color: #f3f6fb; font-size: 16px;")
-        # lab.setAlignment(Qt.AlignCenter)
-        # self.dummyWidget = VWidget()
-        # self.dummyWidget.setStyleSheet("background-color: #222222; color: #f3f6fb; font-size: 16px;")
-        # self.dummyWidget.setMinimumWidth(300)
-        # self.dummyWidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-
         self.splitterEditAlignment.addWidget(self.ng_widget_container)
         self.splitterEditAlignment.addWidget(self.side_controls)
         self.splitterEditAlignment.setCollapsible(0,False)
         self.splitterEditAlignment.setCollapsible(1,False)
-        self.splitterEditAlignment.setCollapsible(2,False)
-        self.splitterEditAlignment.setStretchFactor(0, 0)
-        self.splitterEditAlignment.setStretchFactor(1, 1)
-        self.splitterEditAlignment.setStretchFactor(2, 1)
+        self.splitterEditAlignment.setStretchFactor(0, 99)
+        # self.splitterEditAlignment.setStretchFactor(1, 1)
 
         logger.info("<<<<")
 
@@ -2387,8 +2374,8 @@ class ProjectTab(QWidget):
         self.lab_tra_title.setStyleSheet("color: #4d4d4d;")
         self.lab_ref.setStyleSheet("color: #161c20;")
         self.lab_ref_title.setStyleSheet("color: #161c20;")
-        self.lw_gb_r.setStyleSheet("""border-width: 3px; border-color: #339933;""")
-        self.lw_gb_l.setStyleSheet("""border-color: #666666;""")
+        self.lw_gb_r.setStyleSheet("""border-width: 3px; border-color: #339933; font-weight: 600;""")
+        self.lw_gb_l.setStyleSheet("""border-color: #666666; font-weight: 300;""")
         self.baseViewer.drawSWIMwindow() #redundant
         for i in list(range(0,3)):
             self.lw_tra.item(i).setForeground(QColor('#444444'))
@@ -2417,8 +2404,8 @@ class ProjectTab(QWidget):
         self.lab_ref_title.setStyleSheet("color: #4d4d4d;")
         self.lab_tra.setStyleSheet("color: #161c20;")
         self.lab_tra_title.setStyleSheet("color: #161c20;")
-        self.lw_gb_l.setStyleSheet("""border-width: 3px; border-color: #339933;""")
-        self.lw_gb_r.setStyleSheet("""border-color: #666666;""")
+        self.lw_gb_l.setStyleSheet("""border-width: 3px; border-color: #339933; font-weight: 600;""")
+        self.lw_gb_r.setStyleSheet("""border-color: #666666; font-weight: 300;""")
         self.baseViewer.drawSWIMwindow() #redundant
         for i in list(range(0,3)):
             self.lw_tra.item(i).setForeground(QColor('#141414'))
@@ -3634,11 +3621,11 @@ class ProjectTab(QWidget):
                     combined = s1 + ' ' + s2
                     self.lowestX_txt.append(combined)
                     zpos = copy.deepcopy(lowest_X_i[i])
-                    btn = QPushButton(f'Fix Alignment {zpos}')
+                    btn = QPushButton(f'Jump To {zpos}')
                     self.lowestX_btns.append(btn)
                     btn.setLayoutDirection(Qt.RightToLeft)
-                    btn.setFixedSize(QSize(130, 18))
-                    btn.setStyleSheet("font-size: 10px;")
+                    btn.setFixedSize(QSize(70, 16))
+                    btn.setStyleSheet("font-size: 9px;")
                     btn.setIconSize(QSize(14, 14))
                     btn.setIcon(qta.icon('fa.arrow-right', color='#161c20'))
                     # self.lowestX_btns[i].clicked.connect(funcs[i])
@@ -3762,11 +3749,10 @@ class ExpandingWidget(QWidget):
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-class ExpandingVWidget(QWidget):
+class ExpandingHWidget(QWidget):
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
-        # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
 
 class WebEngine(QWebEngineView):
@@ -3909,21 +3895,21 @@ class WarningNotice(QWidget):
         # p = self.palette()
         # p.setColor(self.backgroundRole(), QColor('#f3f6fb'))
         # self.setPalette(p)
-        self.setStyleSheet(
-            """QWidget{border-color: #161c20; background-color: #dadada; font-size: 11px; border-radius: 4px;}""")
-
+        # self.setStyleSheet(
+        #     """QWidget{border-color: #161c20; background-color: #dadada; font-size: 11px; border-radius: 4px;}""")
+        # 
 
         # font = QFont()
         # font.setBold(True)
         # self.setFont(font)
 
-        if symbol:
-            self.symbol = QLabel(symbol)
-            self.symbol.setStyleSheet("""color: #f3f6fb; font-size: 16px; background-color: #ff0000; border-radius: 
-            6px; font-weight: 600; padding: 2px;""")
-            self.symbol.setFixedSize(QSize(16,16))
-            self.symbol.setAlignment(Qt.AlignCenter)
-            self.layout.addWidget(self.symbol)
+        # if symbol:
+        #     self.symbol = QLabel(symbol)
+        #     self.symbol.setStyleSheet("""color: #f3f6fb; font-size: 16px; background-color: #ff0000; border-radius:
+        #     6px; font-weight: 600; padding: 2px;""")
+        #     self.symbol.setFixedSize(QSize(16,16))
+        #     self.symbol.setAlignment(Qt.AlignCenter)
+        #     self.layout.addWidget(self.symbol)
 
         self.layout.addWidget(self.label)
 

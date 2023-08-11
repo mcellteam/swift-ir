@@ -230,16 +230,16 @@ class MainWindow(QMainWindow):
 
 
 
-    def focusInEvent(self, event):
-        logger.warning(f"\nFocus GAINED - reason : ({event.reason()}) {self.focusreasons[event.reason()]}"
-                       f"\nFocus belongs to      : {self.focusWidget()}")
-
-    def focusOutEvent(self, event):
-        logger.warning(f"\nFocus LOST - reason : ({event.reason()}) {self.focusreasons[event.reason()]}"
-                       f"\nFocus belongs to    : {self.focusWidget()}")
-        # if type(cfg.mw.focusWidget()) != QTextEdit:
-        #     self.focusW = self.focusWidget()
-        # self.setFocus()
+    # def focusInEvent(self, event):
+    #     logger.warning(f"\nFocus GAINED - reason : ({event.reason()}) {self.focusreasons[event.reason()]}"
+    #                    f"\nFocus belongs to      : {self.focusWidget()}")
+    #
+    # def focusOutEvent(self, event):
+    #     logger.warning(f"\nFocus LOST - reason : ({event.reason()}) {self.focusreasons[event.reason()]}"
+    #                    f"\nFocus belongs to    : {self.focusWidget()}")
+    #     # if type(cfg.mw.focusWidget()) != QTextEdit:
+    #     #     self.focusW = self.focusWidget()
+    #     # self.setFocus()
 
 
 
