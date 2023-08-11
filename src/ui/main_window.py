@@ -5577,6 +5577,7 @@ class MainWindow(QMainWindow):
 
     def initPbar(self):
         self.pbar = QProgressBar()
+        self.pbar.setFixedWidth(320)
         # self.pbar.setFixedHeight(14)
         # self.pbar.setStyleSheet("font-size: 9px; font-weight: 600;")
         self.pbar.setStyleSheet("font-size: 9px; padding: 0px;")
@@ -5591,10 +5592,10 @@ class MainWindow(QMainWindow):
         self.sw_pbar.setAutoFillBackground(True)
         self.pbar_cancel_button = QPushButton('Stop')
         self.pbar_cancel_button.setFixedSize(42, 14)
-        self.pbar_cancel_button.setIconSize(QSize(14, 14))
+        self.pbar_cancel_button.setIconSize(QSize(12, 12))
         self.pbar_cancel_button.setToolTip('Terminate Pending Multiprocessing Tasks')
         self.pbar_cancel_button.setIcon(qta.icon('mdi.cancel', color=cfg.ICON_COLOR))
-        self.pbar_cancel_button.setStyleSheet("""font-size: 9px;""")
+        self.pbar_cancel_button.setStyleSheet("""font-size: 8px; margin: 0px; padding: 0px;""")
         self.pbar_cancel_button.clicked.connect(self.cancelTasks)
         self.pbarLabel = QLabel('Task... ')
         self.pbarLabel.setStyleSheet("""font-size: 9px; font-weight: 600;""")

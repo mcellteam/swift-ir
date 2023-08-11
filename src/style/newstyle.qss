@@ -140,7 +140,7 @@ QScrollBar:horizontal {
 }
 
 QProgressBar {
-    border: none;
+    /*border: none;*/
     text-align: center;
     font-size: 10px;
     font-weight: 600;
