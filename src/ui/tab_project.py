@@ -119,15 +119,15 @@ class ProjectTab(QWidget):
         index = self._tabs.currentIndex()
         cfg.data['state']['current_tab'] = index
         if index == 0:
-            cfg.mw.setdw_thumbs(True)
-            cfg.mw.setdw_matches(False)
+            # cfg.mw.setdw_thumbs(True)
+            # cfg.mw.setdw_matches(False)
             pass
         elif index == 1:
             self.updateLowest8widget()
             self.updateDetailsPanel()
             self.updateTimingsWidget()
-            cfg.mw.setdw_thumbs(False) #BEFORE init neuroglancer
-            cfg.mw.setdw_matches(True) #BEFORE init neuroglancer
+            # cfg.mw.setdw_thumbs(False) #BEFORE init neuroglancer
+            # cfg.mw.setdw_matches(True) #BEFORE init neuroglancer
             self.initNeuroglancer() #Todo necessary for now
             self.baseViewer.set_layer()
             self.set_transforming() #0802+
@@ -551,7 +551,7 @@ class ProjectTab(QWidget):
         self.btnResetAllMA.setStyleSheet('font-size: 8px;')
 
         self.combo_MA_actions = QComboBox(self)
-        self.combo_MA_actions.setStyleSheet('font-size: 11px')
+        self.combo_MA_actions.setStyleSheet('font-size: 10px')
         self.combo_MA_actions.setFixedHeight(20)
         self.combo_MA_actions.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         items = ['Set All Auto-SWIM']
@@ -1067,7 +1067,7 @@ class ProjectTab(QWidget):
         # self._polyBiasCombo.setCurrentText(str(cfg.DEFAULT_CORRECTIVE_POLYNOMIAL))
         self._polyBiasCombo.currentIndexChanged.connect(cfg.mw._valueChangedPolyOrder)
         self._polyBiasCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._polyBiasCombo.setFixedSize(QSize(70, 16))
+        self._polyBiasCombo.setFixedSize(QSize(64, 16))
         self._polyBiasCombo.lineEdit()
 
         # self.flSettings = QFormLayout()
@@ -1183,14 +1183,16 @@ class ProjectTab(QWidget):
 
         self.rb_method0 = QRadioButton('Default Grid')
         self.rb_method0.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.rb_method0.setStyleSheet("font-size: 9px; font-weight: 600;")
+        # self.rb_method0.setStyleSheet("font-size: 9px; font-weight: 600;")
+        self.rb_method0.setStyleSheet("font-size: 9px;")
 
         tip = """Similar to the Default Grid method, but the user is able to avoid image defects 
         by adjusting the grid shape and location and adding or removing quadrants of the grid. 
         An affine transformation requires at least 3 regions (quadrants)."""
         self.rb_method1 = QRadioButton('Custom Grid')
         self.rb_method1.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.rb_method1.setStyleSheet("font-size: 9px; font-weight: 600;")
+        # self.rb_method1.setStyleSheet("font-size: 9px; font-weight: 600;")
+        self.rb_method1.setStyleSheet("font-size: 9px;")
         self.rb_method1.setToolTip(tip)
 
 
@@ -1199,7 +1201,8 @@ class ProjectTab(QWidget):
         # self.rb_method2 = QRadioButton('Correspondence Points')
         self.rb_method2 = QRadioButton('Match Regions')
         self.rb_method2.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.rb_method2.setStyleSheet("font-size: 9px; font-weight: 600;")
+        # self.rb_method2.setStyleSheet("font-size: 9px; font-weight: 600;")
+        self.rb_method2.setStyleSheet("font-size: 9px;")
         self.rb_method2.setToolTip(tip)
 
 
@@ -1249,6 +1252,7 @@ class ProjectTab(QWidget):
         self.bg_method.buttonClicked.connect(method_bg_fn)
 
         self.radioboxes_method = HWidget(self.rb_method0, self.rb_method1, self.rb_method2)
+        self.radioboxes_method.layout.setSpacing(2)
         self.radioboxes_method.setMaximumHeight(20)
 
         self.lab_region_selection = QLabel("Double Click to select 3 matching regions")
@@ -2283,8 +2287,8 @@ class ProjectTab(QWidget):
 
         self.sideTabs = QTabWidget()
         # self.sideTabs.addTab(self.MA_stackedWidget, 'Configure')
-        self.sideTabs.addTab(self.sa_lowest8, 'Worst 8 SNR')
         self.sideTabs.addTab(self.sa_details, 'Details')
+        self.sideTabs.addTab(self.sa_lowest8, 'Worst 8 SNR')
         self.sideTabs.addTab(self.sa_runtimes, 'Timings')
         self.sideTabs.addTab(self.logs_widget, 'Logs')
         if is_tacc() or is_joel():
@@ -2483,6 +2487,7 @@ class ProjectTab(QWidget):
                 self.rb_MA_strict.setChecked(True)
             else:
                 self.rb_MA_hint.setChecked(True)
+            self.update_MA_list_widgets()
 
         if soft and (cur_index in (3, 4)):
             self.MA_stackedWidget.setCurrentIndex(cur_index)
@@ -3355,9 +3360,8 @@ class ProjectTab(QWidget):
         QTabBar::tab {
             padding-top: 1px;
             padding-bottom: 1px;
-            height: 16px;            
+            height: 15px;            
             font-size: 11px;
-            font-weight: 600;
             border: 1px solid #ede9e8;
             background-color: #dadada;
         }
@@ -3624,9 +3628,9 @@ class ProjectTab(QWidget):
                     btn = QPushButton(f'Jump To {zpos}')
                     self.lowestX_btns.append(btn)
                     btn.setLayoutDirection(Qt.RightToLeft)
-                    btn.setFixedSize(QSize(70, 16))
+                    btn.setFixedSize(QSize(78, 16))
                     btn.setStyleSheet("font-size: 9px;")
-                    btn.setIconSize(QSize(14, 14))
+                    btn.setIconSize(QSize(12, 12))
                     btn.setIcon(qta.icon('fa.arrow-right', color='#161c20'))
                     # self.lowestX_btns[i].clicked.connect(funcs[i])
                     btn.clicked.connect(lambda state, x=zpos: self.jump_to_manual(x))
