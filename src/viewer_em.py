@@ -555,7 +555,8 @@ class EMViewer(AbstractEMViewer):
             s.scale_bar_options.left_pixel_offset = 10  # default = 10
             s.scale_bar_options.bottom_pixel_offset = 10  # default = 10
             s.scale_bar_options.bar_top_margin_in_pixels = 4 # default = 5
-            s.scale_bar_options.font_name = 'monospace'
+            # s.scale_bar_options.font_name = 'monospace'
+            s.scale_bar_options.font_name = 'serif'
 
 
 
