@@ -726,26 +726,6 @@ class OpenProject(QWidget):
         QApplication.processEvents()
 
         cfg.mw.autoscale(dm)
-        logger.info("\n\nFinished autoscaling.\n")
-        logger.info('Generating Source Thumbnails...')
-
-
-
-
-        # cfg.pt.initNeuroglancer()
-
-
-        QApplication.processEvents()
-
-
-        # if dm['data']['autoalign_flag']:
-        #     logger.info('Initializing alignment...')
-        #     cfg.mw.tell(
-        #         f'Auto-align flag is set. Aligning {dm.scale_pretty(dm.coarsest_scale_key())}...')
-        #     cfg.mw.alignAll(force=True, ignore_bb=True)
-
-        # cfg.mw.onStartProject()
-        # cfg.mw.enableAllTabs()
 
         logger.info('<<<< new_project <<<<')
 
