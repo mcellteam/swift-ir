@@ -1303,8 +1303,8 @@ class UserProjects(QWidget):
             # logger.critical(f"extra_toplevel_paths = {extra_toplevel_paths}")
             #Todo refactor this
             # if extra_toplevel_paths != []:
-            if cfg.data['data']['has_cal_grid']:
-                extra.append(cfg.data['data']['cal_grid_path'])
+            if dm['data']['has_cal_grid']:
+                extra.append(dm['data']['cal_grid_path'])
             else:
                 extra.append('No Thumbnail')
             # extra.append(os.path.join(get_appdir(), 'resources', 'no-image.png'))
