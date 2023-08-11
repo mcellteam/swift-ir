@@ -648,13 +648,15 @@ class OpenProject(QWidget):
         makedirs_exist_ok(path, exist_ok=True)
 
         if cfg.data['data']['has_cal_grid']:
+            logger.info('Linking to calibration grid image...')
             cfg.data['data']['cal_grid_path'] = self.NEW_PROJECT_IMAGES[0]
             self.NEW_PROJECT_IMAGES = self.NEW_PROJECT_IMAGES[1:]
-            logger.info("Copying calibration grid image...")
-            try:
-                shutil.copy(cfg.data['data']['cal_grid_path'], cfg.data.dest())
-            except:
-                print_exception()
+
+            # logger.info("Copying calibration grid image...")
+            # try:
+            #     shutil.copy(cfg.data['data']['cal_grid_path'], cfg.data.dest())
+            # except:
+            #     print_exception()
 
 
         cfg.data.set_source_path(os.path.dirname(self.NEW_PROJECT_IMAGES[0]))  # Critical!
@@ -1300,8 +1302,9 @@ class UserProjects(QWidget):
             extra_toplevel_paths = glob(f'{project_dir}/*.tif')
             # logger.critical(f"extra_toplevel_paths = {extra_toplevel_paths}")
             #Todo refactor this
-            if extra_toplevel_paths != []:
-                extra.append(extra_toplevel_paths[0])
+            # if extra_toplevel_paths != []:
+            if cfg.data['data']['has_cal_grid']:
+                extra.append(cfg.data['data']['cal_grid_path'])
             else:
                 extra.append('No Thumbnail')
             # extra.append(os.path.join(get_appdir(), 'resources', 'no-image.png'))
