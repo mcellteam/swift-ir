@@ -263,9 +263,8 @@ class SnrPlot(QWidget):
 
 
     def initSnrPlot(self, s=None):
-        logger.info("Initializing SNR plot...")
         caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
+        logger.info(f"[{caller}] Initializing SNR plot...")
         sys.stdout.flush()
         t0 = time()
         try:
