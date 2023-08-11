@@ -1,5 +1,5 @@
 '''
-This class is adapted from:
+Adapted from:
 https://stackoverflow.com/questions/9727673/list-directory-tree-structure-in-python
 '''
 

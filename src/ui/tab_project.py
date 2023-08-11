@@ -28,7 +28,6 @@ from src.helpers import print_exception, getOpt, setOpt, getData, setData, get_s
 from src.viewer_em import EMViewer
 from src.viewer_ma import MAViewer
 from src.ui.snr_plot import SnrPlot
-from src.ui.widget_area import WidgetArea
 from src.ui.project_table import ProjectTable
 from src.ui.models.json_tree import JsonModel
 from src.ui.sliders import DoubleSlider
@@ -1614,44 +1613,43 @@ class ProjectTab(QWidget):
         self.labScaleStatus = QLabel('Status: ')
         self.labScaleStatus.setStyleSheet("""color: #ede9e8; font-weight: 600; font-size: 10px;""")
 
-        def fn():
-            logger.info('')
-            opt = getData('state,show_ng_controls')
-            opt = not opt
-            setData('state,show_ng_controls', opt)
-            self.initNeuroglancer()
-            # self.spreadW.setVisible(opt)
-            # self.updateUISpacing()
-            if cfg.data['state']['current_tab'] == 1:
-                self.baseViewer.updateUIControls()
-            else:
-                cfg.emViewer.updateUIControls()
-            QApplication.processEvents()
-        self.ngcl_uiControls = QToolButton()
-        self.ngcl_uiControls.setCheckable(True)
-        self.ngcl_uiControls.setText('NG Controls')
-        self.ngcl_uiControls.clicked.connect(fn)
+        # def fn():
+        #     logger.info('')
+        #     opt = getData('state,show_ng_controls')
+        #     opt = not opt
+        #     setData('state,show_ng_controls', opt)
+        #     self.initNeuroglancer()
+        #     # self.spreadW.setVisible(opt)
+        #     # self.updateUISpacing()
+        #     if cfg.data['state']['current_tab'] == 1:
+        #         self.baseViewer.updateUIControls()
+        #     else:
+        #         cfg.emViewer.updateUIControls()
+        #     QApplication.processEvents()
+        # self.ngcl_uiControls = QToolButton()
+        # self.ngcl_uiControls.setCheckable(True)
+        # self.ngcl_uiControls.setText('NG Controls')
+        # self.ngcl_uiControls.clicked.connect(fn)
 
 
-        def fn():
-            if not self.ngcl_shader.isChecked():
-                self.shaderToolbar.hide()
-                self.ngcl_shader.setToolTip('Show Brightness & Contrast Shaders')
-            else:
-                self.contrastSlider.setValue(int(cfg.data.contrast))
-                self.contrastLE.setText('%d' % cfg.data.contrast)
-                self.brightnessSlider.setValue(int(cfg.data.brightness))
-                self.brightnessLE.setText('%d' % cfg.data.brightness)
-                self.initNeuroglancer() #Critical #Cringe #guarantees sliders will work
-                self.shaderToolbar.show()
-                self.ngcl_shader.setToolTip('Hide Brightness & Contrast Shaders')
-            QApplication.processEvents()
-
-        # self.ngcl_shader = NgClickLabel(self)
-        self.ngcl_shader = QToolButton()
-        self.ngcl_shader.setCheckable(True)
-        self.ngcl_shader.setText('Shader')
-        self.ngcl_shader.clicked.connect(fn)
+        # def fn():
+        #     if not self.ngcl_shader.isChecked():
+        #         self.shaderToolbar.hide()
+        #         self.ngcl_shader.setToolTip('Show Brightness & Contrast Shaders')
+        #     else:
+        #         self.contrastSlider.setValue(int(cfg.data.contrast))
+        #         self.contrastLE.setText('%d' % cfg.data.contrast)
+        #         self.brightnessSlider.setValue(int(cfg.data.brightness))
+        #         self.brightnessLE.setText('%d' % cfg.data.brightness)
+        #         self.initNeuroglancer() #Critical #Cringe #guarantees sliders will work
+        #         self.shaderToolbar.show()
+        #         self.ngcl_shader.setToolTip('Hide Brightness & Contrast Shaders')
+        #
+        # # self.ngcl_shader = NgClickLabel(self)
+        # self.ngcl_shader = QToolButton()
+        # self.ngcl_shader.setCheckable(True)
+        # self.ngcl_shader.setText('Shader')
+        # self.ngcl_shader.clicked.connect(fn)
 
         self.blinkLab = QLabel(f"  Blink {hotkey('B')}: ")
         self.blinkLab.setStyleSheet("""color: #f3f6fb; font-size: 10px;""")
@@ -1697,6 +1695,117 @@ class ProjectTab(QWidget):
         self.ngcl_background.setToolTip('Neuroglancer background setting')
 
 
+
+        self.tbbColorPicker = QToolButton()
+        self.tbbColorPicker.setText('Background   ')
+        menu = QMenu()
+        def openColorDialog():
+            logger.info('')
+            color = QColorDialog.getColor()
+
+            if color.isValid():
+                logger.info(f"Selected color: {color.name()}")
+                setOpt('neuroglancer,CUSTOM_BACKGROUND_COLOR', color.name())
+                setOpt('neuroglancer,USE_CUSTOM_BACKGROUND', True)
+                self.colorAction0.setChecked(False)
+                self.colorAction1.setChecked(False)
+                self.colorAction3.setChecked(True)
+                self.colorAction3.setVisible(True)
+                self.colorAction3.setText(f'Custom ({color.name()})')
+                if self._tabs.currentIndex() == 0:
+                    cfg.emViewer.setBackground()
+                elif self._tabs.currentIndex() == 1:
+                    self.baseViewer.setBackground()
+                # self.initNeuroglancer()
+            else:
+                self.colorAction3.setChecked(False)
+
+
+
+        self.colorAction0 = QAction('Neutral', self)
+        def fn():
+            # setData('state,neutral_contrast', True)
+            if self._tabs.currentIndex() == 0:
+                cfg.emViewer.updateHighContrastMode()
+            elif self._tabs.currentIndex() == 1:
+                self.baseViewer.updateHighContrastMode()
+            setOpt('neuroglancer,USE_CUSTOM_BACKGROUND', False)
+            setOpt('neuroglancer,USE_DEFAULT_DARK_BACKGROUND', False)
+            # self.colorAction0.setChecked(True)
+            self.colorAction0.setChecked(True)
+            self.colorAction1.setChecked(False)
+            self.colorAction3.setChecked(False)
+            # self.colorAction2.setChecked(False)
+            if self._tabs.currentIndex() == 0:
+                cfg.emViewer.setBackground()
+            elif self._tabs.currentIndex() == 1:
+                self.baseViewer.setBackground()
+            # self.initNeuroglancer()
+        self.colorAction0.triggered.connect(fn)
+
+        self.colorAction1 = QAction('Dark', self)
+        def fn():
+            # setData('state,neutral_contrast', False)
+            if self._tabs.currentIndex() == 0:
+                cfg.emViewer.updateHighContrastMode()
+            elif self._tabs.currentIndex() == 1:
+                self.baseViewer.updateHighContrastMode()
+            setOpt('neuroglancer,USE_CUSTOM_BACKGROUND', False)
+            setOpt('neuroglancer,USE_DEFAULT_DARK_BACKGROUND', True)
+            self.colorAction0.setChecked(False)
+            self.colorAction1.setChecked(True)
+            self.colorAction3.setChecked(False)
+            # self.colorAction2.setChecked(False)
+            if self._tabs.currentIndex() == 0:
+                cfg.emViewer.setBackground()
+            elif self._tabs.currentIndex() == 1:
+                self.baseViewer.setBackground()
+            # self.initNeuroglancer()
+        self.colorAction1.triggered.connect(fn)
+
+        self.colorAction2 = QAction('Pick...', self)
+        self.colorAction2.triggered.connect(openColorDialog)
+
+        self.colorAction3 = QAction('Custom', self)
+        def fn():
+            self.colorAction0.setChecked(False)
+            self.colorAction1.setChecked(False)
+            self.colorAction3.setChecked(True)
+            setOpt('neuroglancer,USE_CUSTOM_BACKGROUND', True)
+            if self._tabs.currentIndex() == 0:
+                cfg.emViewer.setBackground()
+            elif self._tabs.currentIndex() == 1:
+                self.baseViewer.setBackground()
+
+        self.colorAction3.triggered.connect(fn)
+        self.colorAction3.setObjectName('customColor')
+        if getOpt('neuroglancer,CUSTOM_BACKGROUND_COLOR'):
+            self.colorAction3.setVisible(True)
+            self.colorAction3.setText(f"Custom ({getOpt('neuroglancer,CUSTOM_BACKGROUND_COLOR')})")
+        else:
+            self.colorAction3.setVisible(False)
+        self.colorAction3.setChecked(getOpt('neuroglancer,USE_CUSTOM_BACKGROUND'))
+
+        self.colorAction0.setCheckable(True)
+        self.colorAction1.setCheckable(True)
+        # self.colorAction2.setCheckable(True)
+        self.colorAction3.setCheckable(True)
+        self.colorAction0.setChecked(not getOpt('neuroglancer,USE_CUSTOM_BACKGROUND') and not getOpt('neuroglancer,USE_DEFAULT_DARK_BACKGROUND'))
+        self.colorAction1.setChecked(not getOpt('neuroglancer,USE_CUSTOM_BACKGROUND') and getOpt('neuroglancer,USE_DEFAULT_DARK_BACKGROUND'))
+        # self.colorAction2.setChecked(getOpt('neuroglancer,USE_CUSTOM_BACKGROUND'))
+
+
+
+
+        menu.addAction(self.colorAction1)
+        menu.addAction(self.colorAction0)
+        menu.addAction(self.colorAction3)
+        menu.addAction(self.colorAction2)
+        self.tbbColorPicker.setMenu(menu)
+        self.tbbColorPicker.setPopupMode(QToolButton.InstantPopup)
+        self.tbbColorPicker.clicked.connect(openColorDialog)
+
+
         # ----------------
         # widgets to gain insight into Neuroglancer state
 
@@ -1736,15 +1845,29 @@ class ProjectTab(QWidget):
         self.ngAccessoriesCombobox.setFixedWidth(84)
         self.ngAccessoriesCombobox.setFixedHeight(15)
         self.ngAccessoriesCombobox.addItem("Show/Hide...")
+        self.ngAccessoriesCombobox.addItem("NG Controls", state=cfg.data['state']['show_ng_controls'])
         self.ngAccessoriesCombobox.addItem("Bounds", state=cfg.data['state']['show_bounds'])
         self.ngAccessoriesCombobox.addItem("Axes", state=cfg.data['state']['show_axes'])
         self.ngAccessoriesCombobox.addItem("Scale Bar", state=cfg.data['state']['show_scalebar'])
+        self.ngAccessoriesCombobox.addItem("Shader", state=False)
+
         def cb_itemChanged():
             logger.info('')
-            cfg.data['state']['show_bounds'] = self.ngAccessoriesCombobox.itemChecked(1)
-            cfg.data['state']['show_axes'] = self.ngAccessoriesCombobox.itemChecked(2)
-            cfg.data['state']['show_scalebar'] = self.ngAccessoriesCombobox.itemChecked(3)
+            cfg.data['state']['show_ng_controls'] = self.ngAccessoriesCombobox.itemChecked(1)
+            cfg.data['state']['show_bounds'] = self.ngAccessoriesCombobox.itemChecked(2)
+            cfg.data['state']['show_axes'] = self.ngAccessoriesCombobox.itemChecked(3)
+            cfg.data['state']['show_scalebar'] = self.ngAccessoriesCombobox.itemChecked(4)
             cfg.emViewer.updateDisplayAccessories()
+            if self.ngAccessoriesCombobox.itemChecked(5):
+                self.contrastSlider.setValue(int(cfg.data.contrast))
+                self.contrastLE.setText('%d' % cfg.data.contrast)
+                self.brightnessSlider.setValue(int(cfg.data.brightness))
+                self.brightnessLE.setText('%d' % cfg.data.brightness)
+                self.initNeuroglancer() #Critical #Cringe #guarantees sliders will work
+                self.shaderToolbar.show()
+            else:
+                self.shaderToolbar.hide()
+
         self.ngAccessoriesCombobox.model().itemChanged.connect(cb_itemChanged)
 
 
@@ -1758,12 +1881,12 @@ class ProjectTab(QWidget):
 
         # self.w_ng_extended_toolbar.addWidget(self.labNgLayout)
         self.w_ng_extended_toolbar.addWidget(self.comboNgLayout)
-        self.w_ng_extended_toolbar.addSeparator()
+        # self.w_ng_extended_toolbar.addSeparator()
         self.w_ng_extended_toolbar.addWidget(self.ngAccessoriesCombobox)
-        self.w_ng_extended_toolbar.addSeparator()
+        # self.w_ng_extended_toolbar.addSeparator()
         self.w_ng_extended_toolbar.addWidget(self.blinkLab)
         self.w_ng_extended_toolbar.addWidget(self.tbbBlinkToggle)
-        self.w_ng_extended_toolbar.addSeparator()
+        # self.w_ng_extended_toolbar.addSeparator()
         # ----------------
         # Add additional widgets to gain insight into Neuroglancer state
 
@@ -1772,9 +1895,10 @@ class ProjectTab(QWidget):
 
         # ----------------
         self.w_ng_extended_toolbar.addWidget(ExpandingWidget(self))
-        self.w_ng_extended_toolbar.addWidget(self.ngcl_uiControls)
-        self.w_ng_extended_toolbar.addWidget(self.ngcl_shader)
-        self.w_ng_extended_toolbar.addWidget(self.ngcl_background)
+        # self.w_ng_extended_toolbar.addWidget(self.ngcl_uiControls)
+        # self.w_ng_extended_toolbar.addWidget(self.ngcl_shader)
+        # self.w_ng_extended_toolbar.addWidget(self.ngcl_background)
+        self.w_ng_extended_toolbar.addWidget(self.tbbColorPicker)
 
         toolbar_style2 = """
            QToolBar {
@@ -1800,23 +1924,31 @@ class ProjectTab(QWidget):
            }
            QToolBar::separator {
                 background-color: #ede9e8; 
-                width: 2px; 
-                height: 10px;
-                margin-left: 10px;
-                margin-right: 10px;
+                width: 1px; 
+                height: 6px;
+                margin-left: 6px;
+                margin-right: 6px;
            }
         """
 
         toolbar_style3 = """
-            QToolBar {
-               background-color: #ede9e8;
-               color: #161c20;
+           QToolBar {
+               background-color: #222222;
+               color: #f3f6fb;
                font-size: 10px;
            }
+            QToolButton {
+               border-radius: 3px;
+               color: #f3f6fb;
+               font-size: 10px;
+               margin: 1px;
+               padding: 1px;
+           }
+           QToolButton#customColor { background:blue; }
            
         """
 
-        self.w_ng_extended_toolbar.setStyleSheet(toolbar_style2)
+        self.w_ng_extended_toolbar.setStyleSheet(toolbar_style3)
 
         self.sideSliders = VWidget(self.ZdisplaySliderAndLabel, self.zoomSliderAndLabel)
         self.sideSliders.setFixedWidth(16)

@@ -352,6 +352,20 @@ class AbstractEMViewer(neuroglancer.Viewer):
             s.show_axis_lines = cfg.data['state']['show_axes']
             s.show_scale_bar = cfg.data['state']['show_scalebar']
 
+        with self.config_state.txn() as s:
+            s.show_ui_controls = getData('state,show_ng_controls')
+
+
+    def setBackground(self):
+        with self.txn() as s:
+            if getOpt('neuroglancer,USE_CUSTOM_BACKGROUND'):
+                s.crossSectionBackgroundColor = getOpt('neuroglancer,CUSTOM_BACKGROUND_COLOR')
+            else:
+                if getOpt('neuroglancer,USE_DEFAULT_DARK_BACKGROUND'):
+                    # s.crossSectionBackgroundColor = '#222222'
+                    s.crossSectionBackgroundColor = '#000000'
+                else:
+                    s.crossSectionBackgroundColor = '#808080'
 
     def updateUIControls(self):
         with self.config_state.txn() as s:
@@ -536,12 +550,16 @@ class EMViewer(AbstractEMViewer):
             s.show_axis_lines = getData('state,show_axes')
             s.position=[cfg.data.zpos + 0.5, self.store.shape[1]/2, self.store.shape[2]/2]
             s.layers['layer'] = ng.ImageLayer( source=cfg.LV, shader=cfg.data['rendering']['shader'], )
-            if getData('state,neutral_contrast'):
-                s.crossSectionBackgroundColor = '#808080'
-            else:
-                s.crossSectionBackgroundColor = '#222222'
             s.show_default_annotations = getData('state,show_bounds')
             s.projectionScale = 1
+            if getOpt('neuroglancer,USE_CUSTOM_BACKGROUND'):
+                s.crossSectionBackgroundColor = getOpt('neuroglancer,CUSTOM_BACKGROUND_COLOR')
+            else:
+                if getOpt('neuroglancer,USE_DEFAULT_DARK_BACKGROUND'):
+                    s.crossSectionBackgroundColor = '#222222'
+                else:
+                    s.crossSectionBackgroundColor = '#808080'
+
 
 
 
