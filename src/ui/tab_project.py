@@ -186,11 +186,11 @@ class ProjectTab(QWidget):
     def initNeuroglancer(self, init_all=False):
         caller = inspect.stack()[1].function
         if cfg.mw._is_initialized == 0:
-            logger.info(f"[{caller}] UNABLE TO INITIALIZE NEUROGLANCER AT THIS TIME")
+            logger.warning(f"[{caller}] UNABLE TO INITIALIZE NEUROGLANCER AT THIS TIME")
             return
 
         if cfg.mw._working:
-            logger.info(f"[{caller}] UNABLE TO INITIALIZE NEUROGLANCER AT THIS TIME... BUSY WORKING!")
+            logger.warning(f"[{caller}] UNABLE TO INITIALIZE NEUROGLANCER AT THIS TIME... BUSY WORKING!")
             return
 
         cfg.mw.set_status('Initializing Neuroglancer...')
@@ -1015,11 +1015,11 @@ class ProjectTab(QWidget):
         self.cb_clobber_default.toggled.connect(lambda: cfg.data.set_clobber(b=self.cb_clobber_default.isChecked(),
                                                                              glob=True))
         self.sb_clobber_pixels_default = QSpinBox()
-        self.sb_clobber_pixels_default.valueChanged.connect(lambda: cfg.data.set_clobber_px(
-            self.sb_clobber_pixels_default.value(), glob=True))
         self.sb_clobber_pixels_default.setFixedSize(QSize(50, 18))
         self.sb_clobber_pixels_default.setMinimum(1)
         self.sb_clobber_pixels_default.setMaximum(16)
+        self.sb_clobber_pixels_default.valueChanged.connect(lambda: cfg.data.set_clobber_px(
+            self.sb_clobber_pixels_default.value(), glob=True))
 
 
         self.fl_swimSettings = QFormLayout()
@@ -1066,18 +1066,23 @@ class ProjectTab(QWidget):
         self._polyBiasCombo.setFixedSize(QSize(70, 16))
         self._polyBiasCombo.lineEdit()
 
-        self.flSettings = QFormLayout()
-        self.flSettings.setFormAlignment(Qt.AlignVCenter)
-        self.flSettings.setContentsMargins(2, 2, 2, 2)
-        self.flSettings.setVerticalSpacing(2)
-        self.flSettings.setHorizontalSpacing(0)
-        self.flSettings.addRow('Generate TIFFs && Zarr: ', HWidget(ExpandingWidget(self), self._toggleAutogenerate))
-        self.flSettings.addRow('Bounding Box: ', HWidget(ExpandingWidget(self), self._bbToggle))
-        self.flSettings.addRow('Corrective Bias: ', HWidget(ExpandingWidget(self), self._polyBiasCombo))
+        # self.flSettings = QFormLayout()
+        # self.flSettings.setFormAlignment(Qt.AlignVCenter)
+        # self.flSettings.setContentsMargins(2, 2, 2, 2)
+        # self.flSettings.setVerticalSpacing(2)
+        # self.flSettings.setHorizontalSpacing(0)
+        # # self.flSettings.addRow('Generate TIFFs && Zarr: ', HWidget(ExpandingWidget(self), self._toggleAutogenerate))
+        # self.flSettings.addRow('Bounding Box: ', HWidget(ExpandingWidget(self), self._bbToggle))
+        # self.flSettings.addRow('Corrective Bias: ', HWidget(ExpandingWidget(self), self._polyBiasCombo))
+
+        hl = HBL(QLabel('Bounding Box:'), self._bbToggle, QLabel('Corrective Bias:'), self._polyBiasCombo)
+
 
         self.gb_outputSettings = QGroupBox("Global Output Settings")
+        self.gb_outputSettings.setStyleSheet("font-size: 10px;")
         self.gb_outputSettings.setObjectName('gb_cpanel')
-        self.gb_outputSettings.setLayout(self.flSettings)
+        # self.gb_outputSettings.setLayout(self.flSettings)
+        self.gb_outputSettings.setLayout(hl)
 
         self.fl_results = QFormLayout()
         self.fl_results.setVerticalSpacing(2)

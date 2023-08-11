@@ -170,13 +170,12 @@ class ProjectTable(QWidget):
         self.table.setRowCount(0)
         self.set_column_headers() #Critical
         cnt = 0
-        cfg.mw.showZeroedPbar(set_n_processes=1, pbar_max=cfg.data.count)
+        cfg.mw.resetPbar((cfg.data.count, 'Loading Table'))
         try:
             for row in range(0, len(cfg.data)):
                 if cfg.CancelProcesses:
                     logger.warning("Canceling table load!")
                     return
-                cfg.main_window.setPbarText('Loading %s...' % cfg.data.base_image_name(l=row))
                 cnt += 1
                 cfg.main_window.updatePbar(cnt)
                 self.table.insertRow(row)
@@ -214,7 +213,7 @@ class ProjectTable(QWidget):
 
     def updateTableData(self):
         logger.info('')
-        cfg.mw.showZeroedPbar(set_n_processes=1, pbar_max=len(cfg.data))
+        cfg.mw.resetPbar((cfg.data.count, 'Updating Table'))
 
         if self.btn_splash_load_table.isVisible():
             self.initTableData()
@@ -228,7 +227,6 @@ class ProjectTable(QWidget):
             self.table.clearContents()
             self.set_column_headers()  # Critical
             for row in range(0,len(cfg.data)):
-                cfg.main_window.setPbarText('Loading %s...' % cfg.data.base_image_name(l=row))
                 cfg.nProcessDone += 1
                 cfg.main_window.updatePbar(cfg.nProcessDone)
                 self.set_row_data(row=row)

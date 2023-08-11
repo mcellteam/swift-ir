@@ -1,5 +1,3 @@
-
-
 #!/usr/bin/env python3
 
 import os
@@ -8,35 +6,41 @@ import sys
 import copy
 import json
 import glob
-import platform
-from glob import glob
 import time
+import shutil
 import psutil
 import logging
-from datetime import datetime
 from pathlib import Path
 from multiprocessing import Pool
 from multiprocessing.pool import ThreadPool
-import concurrent
 from concurrent.futures import ThreadPoolExecutor
 import multiprocessing as mp
 import subprocess as sp
 import numpy as np
 import tqdm
+import zarr
+import neuroglancer as ng
+# import imagecodecs
+import numcodecs
+numcodecs.blosc.use_threads = False
+import libtiff
+# libtiff.libtiff_ctypes.suppress_warnings()
 # sys.path.insert(1, os.path.dirname(os.path.split(os.path.realpath(__file__))[0]))
 # sys.path.insert(1, os.path.split(os.path.realpath(__file__))[0])
 from src.data_model import DataModel
 from src.funcs_image import SetStackCafm
-from src.generate_aligned import GenerateAligned
 from src.thumbnailer import Thumbnailer
 from src.mp_queue import TaskQueue
-from src.data_model import DataModel
-import src.config as cfg
 from src.ui.timer import Timer
 from src.recipe_maker import run_recipe
 from src.helpers import print_exception, pretty_elapsed, is_tacc, get_n_tacc_cores
+from src.save_bias_analysis import save_bias_analysis
+from src.helpers import get_scale_val, renew_directory, file_hash, pretty_elapsed, is_tacc
+from src.funcs_zarr import preallocate_zarr
+from src.job_apply_affine import run_mir
+import src.config as cfg
 
-from qtpy.QtCore import Signal, QObject
+from qtpy.QtCore import Signal, QObject, QMutex
 
 __all__ = ['AlignWorker']
 
@@ -46,30 +50,58 @@ logger = logging.getLogger(__name__)
 class AlignWorker(QObject):
     alignmentFinished = Signal()
     progress = Signal(int)
-    initPbar = Signal(int)
+    initPbar = Signal(tuple) # (# tasks, description)
 
     def __init__(self, scale, path, indexes, swim_only, renew_od, reallocate_zarr, dm):
+        logger.info('')
         self.scale = scale
         self.path = path
         self.indexes = indexes
-        self.swim_only = swim_only
-        self.renew_od = renew_od
-        self.reallocate_zarr = reallocate_zarr
+        self._align = True #Temporary
+        self._generate = not swim_only
+        self._renew_od = renew_od
+        self._reallocate_zarr = reallocate_zarr
         self.dm = dm
         self.result = None
+        self._mutex = QMutex()
+        self._running = True
+
+        self._tasks = []
+        if self._align:
+            self._tasks.append(self.align)
+        if self._generate:
+            self._tasks.append(self.generate)
+
+
 
         super().__init__()
 
+    def running(self):
+        try:
+            self._mutex.lock()
+            return self._running
+        finally:
+            self._mutex.unlock()
+
+
+    def stop(self):
+        self._mutex.lock()
+        self._running = False
+        self._mutex.unlock()
+
+
     def run(self):
+        logger.info('')
+        while self._tasks and self._running:
+            self._tasks.pop(0)()
+        self.alignmentFinished.emit() #Important!
+
+
+    def align(self):
         """Long-running task."""
 
-
         scale = self.scale
-        path = self.path
         indexes = self.indexes
-        swim_only = self.swim_only
-        renew_od = self.renew_od
-        reallocate_zarr = self.reallocate_zarr
         dm = self.dm
 
         if scale == dm.coarsest_scale_key():
@@ -79,30 +111,27 @@ class AlignWorker(QObject):
 
         # cfg.mw._autosave()
 
-        # use_gui = 1
-        # if not use_gui:
-        #     with open(path, 'r') as f:
-        #         try:
-        #             data = json.load(f)
-        #         except Exception as e:
-        #             logger.warning(e)
-        #             return
-        #     dm = DataModel(data)
-        #     dm.set_defaults()
-
         scratchpath = os.path.join(dm.dest(), 'logs', 'scratch.log')
         if os.path.exists(scratchpath):
             os.remove(scratchpath)
 
         # checkForTiffs(path)
 
-        signals_dir = os.path.join(dm.dest(), scale, 'signals')
-        if not os.path.exists(signals_dir):
-            os.mkdir(signals_dir)
+        d = os.path.join(dm.dest(), scale, 'signals')
+        if not os.path.exists(d):
+            os.mkdir(d)
 
-        matches_dir = os.path.join(dm.dest(), scale, 'matches_raw')
-        if not os.path.exists(matches_dir):
-            os.mkdir(matches_dir)
+        # d = os.path.join(dm.dest(), scale, 'matches_raw')
+        # if not os.path.exists(d):
+        #     os.mkdir(d)
+
+        # d = os.path.join(dm.dest(), scale, 'matches')
+        # if not os.path.exists(d):
+        #     os.mkdir(d)
+
+        # d = os.path.join(dm.dest(), scale, 'thumbnails')
+        # if not os.path.exists(d):
+        #     os.mkdir(d)
 
         first_unskipped = dm.first_unskipped(s=scale)
 
@@ -127,6 +156,7 @@ class AlignWorker(QObject):
             # ss['include'] = not sec['skipped']
             ss['dev_mode'] = cfg.DEV_MODE
             ss['log_recipe_to_file'] = cfg.LOG_RECIPE_TO_FILE
+            ss['target_thumb_size'] = cfg.TARGET_THUMBNAIL_SIZE
             ss['verbose_swim'] = cfg.VERBOSE_SWIM
             ss['fn_transforming'] = sec['filename']
             ss['fn_reference'] = sec['reference']
@@ -183,33 +213,40 @@ class AlignWorker(QObject):
             #                   total=len(tasks), desc="Compute Affines",
             #                   position=0, leave=True))
 
-            self.initPbar.emit(len(tasks))
+            #initPbar
+            desc = f"Computing Affines ({len(tasks)} tasks)"
+            self.initPbar.emit((len(tasks), desc))
             all_results = []
             i = 0
             with ctx.Pool(processes=cpus) as pool:
                 for result in tqdm.tqdm(
                         pool.imap_unordered(run_recipe, tasks),
                         total=len(tasks),
-                        desc="Compute Affines",
+                        desc=desc,
                         position=0,
                         leave=True):
                     all_results.append(result)
                     i += 1
                     self.progress.emit(i)
+                    if not self._running:
+                        break
 
-            # # For use with ThreadPool ONLY
-            for r in all_results:
-                index = r['swim_settings']['index']
-                method = r['swim_settings']['method']
-                sec = dm['data']['scales'][scale]['stack'][index]
-                sec['alignment'] = r
-                sec['alignment_history'][method]['method_results'] = copy.deepcopy(r['method_results'])
-                sec['alignment_history'][method]['swim_settings'] = copy.deepcopy(r['swim_settings'])
-                try:
-                    assert np.array(sec['alignment_history'][method]['method_results']['affine_matrix']).shape == (2, 3)
-                    # dm['data']['scales'][scale]['stack'][index]['alignment_history'][method]['complete'] = True
-                except:
-                    logger.warning(f"Task failed at index: {index}")
+            logger.critical(f"\n\n# Completed Alignment Tasks: {len(all_results)}\n")
+
+            # # # For use with ThreadPool ONLY
+            # for r in all_results:
+            #     index = r['swim_settings']['index']
+            #     method = r['swim_settings']['method']
+            #     sec = dm['data']['scales'][scale]['stack'][index]
+            #     sec['alignment'] = r
+            #     sec['alignment_history'][method]['method_results'] = copy.deepcopy(r['method_results'])
+            #     sec['alignment_history'][method]['swim_settings'] = copy.deepcopy(r['swim_settings'])
+            #     sec['alignment_history'][method]['complete'] = True
+            #     try:
+            #         assert np.array(sec['alignment_history'][method]['method_results']['affine_matrix']).shape == (2, 3)
+            #         # dm['data']['scales'][scale]['stack'][index]['alignment_history'][method]['complete'] = True
+            #     except:
+            #         logger.warning(f"Task failed at index: {index}")
         else:
 
             task_queue = TaskQueue(n_tasks=len(tasks), dest=dest)
@@ -227,49 +264,61 @@ class AlignWorker(QObject):
                     task_queue.add_task(task_args)
             dt = task_queue.collect_results()
             dm.t_align = dt
-            all_results = task_queue.task_dict
+            tq_results = task_queue.task_dict
 
             dm.t_align = time.time() - t0
 
             logger.info('Reading task results and updating data model...')
             # # For use with mp_queue.py ONLY
-            for tnum in range(len(all_results)):
+
+            all_results = []
+            for tnum in range(len(tq_results)):
+                # logger.critical(f"------------------------------------------------------")
                 # Get the updated datamodel previewmodel from stdout for the task
-                parts = all_results[tnum]['stdout'].split('---JSON-DELIMITER---')
+                parts = tq_results[tnum]['stdout'].split('---JSON-DELIMITER---')
                 dm_text = None
                 for p in parts:
+                    # logger.critical(f"\n\n\np = {p}\n\n")
                     ps = p.strip()
                     if ps.startswith('{') and ps.endswith('}'):
-                        dm_text = p
-                if dm_text != None:
-                    results_dict = json.loads(dm_text)
-                    index = results_dict['swim_settings']['index']
-                    method = results_dict['swim_settings']['method']
-                    sec = dm['data']['scales'][scale]['stack'][index]
-                    sec['alignment'] = results_dict
-                    sec['alignment_history'][method]['method_results'] = copy.deepcopy(results_dict['method_results'])
-                    sec['alignment_history'][method]['swim_settings'] = copy.deepcopy(results_dict['swim_settings'])
-                    try:
-                        assert np.array(sec['alignment_history'][method]['method_results']['affine_matrix']).shape == (
-                        2, 3)
-                        dm['data']['scales'][scale]['stack'][index]['alignment_history'][method]['complete'] = True
-                    except:
-                        logger.warning(f"Task failed at index: {index}")
+                        all_results.append(json.loads(p))
+
+
+        for r in all_results:
+            index = r['swim_settings']['index']
+            method = r['swim_settings']['method']
+            sec = dm['data']['scales'][scale]['stack'][index]
+            sec['alignment'] = r
+            sec['alignment_history'][method]['method_results'] = copy.deepcopy(r['method_results'])
+            sec['alignment_history'][method]['swim_settings'] = copy.deepcopy(r['swim_settings'])
+            sec['alignment_history'][method]['complete'] = True
+            try:
+                assert np.array(sec['alignment_history'][method]['method_results']['affine_matrix']).shape == (2, 3)
+                # dm['data']['scales'][scale]['stack'][index]['alignment_history'][method]['complete'] = True
+            except:
+                logger.warning(f"Task failed at index: {index}")
+
+
+        SetStackCafm(dm.get_iter(scale), scale=scale, poly_order=dm.default_poly_order)
+
+        #Todo
+        # try:
+        #     shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale_key, 'matches_raw'), ignore_errors=True)
+        #     shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale_key, 'matches_raw'), ignore_errors=True)
+        # except:
+        #     print_exception()
+
+        if not self._running:
+            return
 
         t_elapsed = time.time() - t0
         dm.t_align = t_elapsed
         logger.info(f"Elapsed Time, SWIM to compute affines: {t_elapsed:.3g}")
-        for zpos, sec in [(i, dm()[i]) for i in indexes]:
-            method = sec['alignment']['swim_settings']['method']
-            sec['alignment_history'][method]['complete'] = True
 
-        logger.info(f"Compute Affines Finished for {indexes}")
-
-        SetStackCafm(dm.get_iter(scale), scale=scale, poly_order=dm.default_poly_order)
 
         # Todo make this better
-        for i, layer in enumerate(dm.get_iter(scale)):
-            layer['alignment_history'][dm.method(l=i)]['method_results']['cafm_hash'] = dm.cafm_current_hash(l=i)
+        # for i, layer in enumerate(dm.get_iter(scale)):
+        #     layer['alignment_history'][dm.method(l=i)]['method_results']['cafm_hash'] = dm.cafm_current_hash(l=i)
 
         # if cfg.mw._isProjectTab():
         #     cfg.mw.updateCorrSignalsDrawer()
@@ -277,16 +326,214 @@ class AlignWorker(QObject):
 
         save2file(dm=dm._data, name=dm.dest())
 
+        # initPbar
+        # thumbnailer = Thumbnailer()
+        # thumbnailer.reduce_matches(indexes=indexes, dest=dm['data']['destination_path'], scale=scale)
+
+
+
+    def generate(self):
+        logger.info('\n\nGenerating Aligned Images...\n')
+
+        dm = self.dm
+        scale = self.scale
+        indexes = self.indexes
+
+        scale_val = get_scale_val(scale)
+
+        if not self._running:
+            logger.warning('Canceling Generate Alignment')
+            return
+
+        tryRemoveDatFiles(dm, scale, dm.dest())
+
+        SetStackCafm(dm.get_iter(scale), scale=scale, poly_order=dm.default_poly_order)
+
+        dm.propagate_swim_1x1_custom_px(indexes=indexes)
+        dm.propagate_swim_2x2_custom_px(indexes=indexes)
+        dm.propagate_manual_swim_window_px(indexes=indexes)
+
+        od = os.path.join(dm.dest(), scale, 'img_aligned')
+        if self._renew_od:
+            renew_directory(directory=od)
+        # print_example_cafms(scale_dict)
+
+        # try:
+        #     bias_path = os.path.join(dm.dest(), scale_key, 'bias_data')
+        #     save_bias_analysis(layers=dm.get_iter(s=scale_key), bias_path=bias_path)
+        # except:
+        #     print_exception()
+
+        print_example_cafms(dm)
+
+        if dm.has_bb():
+            # Note: now have got new cafm's -> recalculate bounding box
+            rect = dm.set_calculate_bounding_rect(s=scale)  # Only after SetStackCafm
+            logger.info(f'Bounding Box           : ON\nNew Bounding Box  : {str(rect)}')
+            logger.info(f'Corrective Polynomial  : {dm.default_poly_order} (Polynomial Order: {dm.default_poly_order})')
+        else:
+            logger.info(f'Bounding Box      : OFF')
+            w, h = dm.image_size(s=scale)
+            rect = [0, 0, w, h]  # might need to swap w/h for Zarr
+        logger.info(f'Aligned Size      : {rect[2:]}')
+        logger.info(f'Offsets           : {rect[0]}, {rect[1]}')
+        if is_tacc():
+            cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(indexes)), 1)
+        else:
+            cpus = psutil.cpu_count(logical=False)
+
+        dest = dm['data']['destination_path']
+        print(f'\n\nGenerating Aligned Images for {indexes}\n')
+
+        tasks = []
+        for sec in [dm()[i] for i in indexes]:
+            base_name = sec['alignment']['swim_settings']['fn_transforming']
+            _, fn = os.path.split(base_name)
+            al_name = os.path.join(dest, scale, 'img_aligned', fn)
+            method = sec['alignment']['swim_settings']['method']  # 0802+
+            cafm = sec['alignment_history'][method]['method_results']['cumulative_afm']
+            tasks.append([base_name, al_name, rect, cafm, 128])
+
+        # pbar = tqdm.tqdm(total=len(tasks), position=0, leave=True, desc="Generating Alignment")
+
+        # def update_pbar(*a):
+        #     pbar.update()
+
+        t0 = time.time()
+        # ctx = mp.get_context('forkserver')
+        # with ctx.Pool(processes=cpus) as pool:
+        # with ThreadPool(processes=cpus) as pool:
+        #     results = [pool.apply_async(func=run_mir, args=(task,), callback=update_pbar) for task in tasks]
+        #     pool.close()
+        #     [p.get() for p in results]
+        #     pool.join()
+
+        # def run_apply_async_multiprocessing(func, argument_list, num_processes):
+        #     pool = mp.Pool(processes=num_processes)
+        #     results = [pool.apply_async(func=func, args=(*argument,), callback=update_pbar) if isinstance(argument, tuple) else pool.apply_async(
+        #         func=func, args=(argument,), callback=update_pbar) for argument in argument_list]
+        #     pool.close()
+        #     result_list = [p.get() for p in results]
+        #     return result_list
+        #
+        # run_apply_async_multiprocessing(func=run_mir, argument_list=tasks, num_processes=cpus)
+        #
+        """Non-blocking"""
+        # with ThreadPool(processes=cpus) as pool:
+        #     results = [pool.apply_async(func=run_mir, args=(task,), callback=update_pbar) for task in tasks]
+        #     pool.close()
+        #     [p.get() for p in results]
+
+        """Blocking"""
+        ctx = mp.get_context('forkserver')
+        #initPbar
+        desc = f"Generating Alignment ({len(tasks)} tasks)"
+        self.initPbar.emit((len(tasks), desc))
+        all_results = []
+        i = 0
+        with ctx.Pool(processes=cpus) as pool:
+            for result in tqdm.tqdm(
+                    pool.imap_unordered(run_mir, tasks),
+                    total=len(tasks),
+                    desc=desc,
+                    position=0,
+                    leave=True):
+                all_results.append(result)
+                i += 1
+                self.progress.emit(i)
+                if not self._running:
+                    break
+
+
+        # with ctx.Pool() as pool:
+        #     list(tqdm.tqdm(pool.imap_unordered(run_mir, tasks), total=len(tasks), desc="Generate Alignment", position=0,
+        #                    leave=True))
+        #     pool.close()
+
+        logger.info("Generate Alignment Finished")
+
+        if not self._running:
+            return
+
+        #initPbar
         thumbnailer = Thumbnailer()
-        thumbnailer.reduce_matches(indexes=indexes, dest=dm['data']['destination_path'], scale=scale)
+        thumbnailer.reduce_aligned(indexes, dest=dest, scale=scale)
 
-        if not swim_only:
-            if dm['state']['auto_generate']:
-                GenerateAligned(dm, scale, indexes, renew_od=renew_od, reallocate_zarr=reallocate_zarr)
-                thumbnailer.reduce_aligned(indexes, dest=dest, scale=scale)
+        if not self._running:
+            return
 
-        self.result = dm
-        self.alignmentFinished.emit() #Important!
+        t_elapsed = time.time() - t0
+        dm.t_generate = t_elapsed
+        # cfg.main_window.set_elapsed(t_elapsed, f'Generate alignment')
+
+        # dm.register_cafm_hashes(s=scale, indexes=indexes)
+        dm.set_image_aligned_size()
+
+        pbar_text = 'Copy-converting Scale %d Alignment To Zarr (%d Cores)...' % (scale_val, cpus)
+        if not self._running:
+            logger.warning('Canceling Tasks: %s' % pbar_text)
+            return
+        if self._reallocate_zarr:
+            preallocate_zarr(dm=dm,
+                             name='img_aligned.zarr',
+                             group='s%d' % scale_val,
+                             shape=(len(dm), rect[3], rect[2]),
+                             dtype='|u1',
+                             overwrite=True)
+
+        print(f'\n\nCopy-convert Alignment To Zarr for {indexes}\n')
+
+        tasks = []
+        for i in indexes:
+            _, fn = os.path.split(dm()[i]['alignment']['swim_settings']['fn_transforming'])
+            al_name = os.path.join(dm.dest(), scale, 'img_aligned', fn)
+            zarr_group = os.path.join(dm.dest(), 'img_aligned.zarr', 's%d' % scale_val)
+            task = [i, al_name, zarr_group]
+            tasks.append(task)
+        # shuffle(tasks)
+
+        t0 = time.time()
+
+        if ng.is_server_running():
+            logger.info('Stopping Neuroglancer...')
+            ng.server.stop()
+
+        # with ctx.Pool(processes=cpus) as pool:
+        # with ThreadPool(processes=cpus) as pool:
+        #     results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_pbar) for task in tasks]
+        #     pool.close()
+        #     [p.get() for p in results]
+        #     # pool.join()
+
+        desc = f"Convert Alignment to Zarr ({len(tasks)} tasks)"
+        # with ThreadPoolExecutor(max_workers=10) as executor:
+        #     list(executor.map(convert_zarr,
+        #                       tqdm.tqdm(tasks, total=len(tasks), desc=desc, position=0,
+        #                                 leave=True)))
+
+        ctx = mp.get_context('forkserver')
+        self.initPbar.emit((len(tasks), desc))
+        all_results = []
+        i = 0
+        with ctx.Pool(processes=cpus) as pool:
+            for result in tqdm.tqdm(
+                    pool.imap_unordered(convert_zarr, tasks),
+                    total=len(tasks),
+                    desc=desc,
+                    position=0,
+                    leave=True):
+                all_results.append(result)
+                i += 1
+                self.progress.emit(i)
+                if not self._running:
+                    break
+
+
+        logger.info("Convert Alignment to Zarr Finished")
+
+        t_elapsed = time.time() - t0
+        dm.t_convert_zarr = t_elapsed
+        # cfg.main_window.set_elapsed(t_elapsed, f'Copy-convert alignment to Zarr')
 
 
 
@@ -350,3 +597,69 @@ def save2file(dm, name):
     # logger.info('Save Name: %s' % name)
     with open(name, 'w') as f:
         f.write(proj_json)
+
+
+
+# def update_pbar():
+#     logger.info('')
+#     cfg.mw.pbar.setValue(cfg.mw.pbar.value()+1)
+
+def convert_zarr(task):
+    try:
+        ID = task[0]
+        fn = task[1]
+        out = task[2]
+        store = zarr.open(out)
+        store[ID, :, :] = libtiff.TIFF.open(fn).read_image()[:, ::-1]  # store: <zarr.core.Array (19, 1244, 1130) uint8>
+        return 0
+    except Exception as e:
+        print(e)
+        return 1
+
+
+def count_aligned_files(dest, s):
+    path = os.path.join(dest, s, 'img_aligned')
+    files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
+    # print(f"# {s} Files: {len(files)}")
+    print(f"# complete: {len(files)}", end="\r")
+    return len(files)
+
+def tryRemoveFile(directory):
+    try:
+        os.remove(directory)
+    except:
+        pass
+
+def tryRemoveDatFiles(dm, scale, path):
+    # bb_str = str(dm.has_bb())
+    # poly_order_str = str(cfg.data.default_poly_order)
+    bias_data_path = os.path.join(path, scale, 'bias_data')
+    # tryRemoveFile(os.path.join(path, scale_key,
+    #                            'swim_log_' + bb_str + '_' + null_cafm_str + '_' + poly_order_str + '.dat'))
+    # tryRemoveFile(os.path.join(path, scale_key,
+    #                            'mir_commands_' + bb_str + '_' + null_cafm_str + '_' + poly_order_str + '.dat'))
+    tryRemoveFile(os.path.join(path, scale, 'swim_log.dat'))
+    tryRemoveFile(os.path.join(path, scale, 'mir_commands.dat'))
+    tryRemoveFile(os.path.join(path, 'fdm_new.txt'))
+    tryRemoveFile(os.path.join(bias_data_path, 'snr_1.dat'))
+    tryRemoveFile(os.path.join(bias_data_path, 'bias_x_1.dat'))
+    tryRemoveFile(os.path.join(bias_data_path, 'bias_y_1.dat'))
+    tryRemoveFile(os.path.join(bias_data_path, 'bias_rot_1.dat'))
+    tryRemoveFile(os.path.join(bias_data_path, 'bias_scale_x_1.dat'))
+    tryRemoveFile(os.path.join(bias_data_path, 'bias_scale_y_1.dat'))
+    tryRemoveFile(os.path.join(bias_data_path, 'bias_skew_x_1.dat'))
+    tryRemoveFile(os.path.join(bias_data_path, 'bias_det_1.dat'))
+    tryRemoveFile(os.path.join(bias_data_path, 'afm_1.dat'))
+    tryRemoveFile(os.path.join(bias_data_path, 'c_afm_1.dat'))
+
+
+def print_example_cafms(dm):
+    try:
+        print('First Three CAFMs:')
+        print(str(dm.cafm(l=0)))
+        if len(dm) > 1:
+            print(str(dm.cafm(l=1)))
+        if len(dm) > 2:
+            print(str(dm.cafm(l=2)))
+    except:
+        pass

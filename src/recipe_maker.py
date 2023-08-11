@@ -5,6 +5,7 @@ import re
 import sys
 import time
 import copy
+import glob
 import logging
 import platform
 import datetime
@@ -15,6 +16,9 @@ from typing import Dict, Any
 import hashlib
 import json
 import psutil
+import shutil
+from src.funcs_image import ImageSize
+import src.config as cfg
 
 __all__ = ['run_recipe']
 
@@ -49,6 +53,10 @@ class align_recipe:
         p = os.path.split(os.path.realpath(__file__))[0]
         self.swim_c = '%s/lib/bin_%s/swim' % (p, slug)
         self.mir_c = '%s/lib/bin_%s/mir' % (p, slug)
+        self.iscale2_c = '%s/lib/bin_%s/iscale2' % (p, slug)
+        self.signals_dir = os.path.join(self.meta['destination_path'], self.meta['scale_key'], 'signals')
+        self.matches_dir = os.path.join(self.meta['destination_path'], self.meta['scale_key'], 'matches')
+        self.tmp_dir = os.path.join(self.meta['destination_path'], self.meta['scale_key'], 'tmp')
 
 
     def configure_logging(self):
@@ -56,6 +64,8 @@ class align_recipe:
         MAlogger = logging.getLogger('MAlogger')
         RMlogger = logging.getLogger('recipemaker')
         Exceptlogger = logging.getLogger('exceptlogger')
+        tnLogger = logging.getLogger('tnLogger')
+        tnLogger = logging.getLogger('tnLogger')
         Exceptlogger.addHandler(
             logging.FileHandler(os.path.join(self.meta['destination_path'],
                                              'logs', 'exceptions.log')))
@@ -64,10 +74,13 @@ class align_recipe:
                 self.meta['destination_path'], 'logs', 'manual_align.log')))
             RMlogger.addHandler(logging.FileHandler(os.path.join(
                 self.meta['destination_path'], 'logs', 'recipemaker.log')))
+            tnLogger.addHandler(logging.FileHandler(os.path.join(
+                self.meta['destination_path'], 'logs', 'thumbnails.log')))
         else:
             MAlogger.disabled = True
             RMlogger.disabled = True
             logger.disabled = True
+            # tnLogger.disabled = True
 
 
     def megabytes(self):
@@ -225,6 +238,13 @@ class align_recipe:
 
     def execute_recipe(self):
 
+        if not os.path.exists(self.signals_dir):
+            os.mkdir(self.signals_dir)
+        if not os.path.exists(self.matches_dir):
+            os.mkdir(self.matches_dir)
+        if not os.path.exists(self.tmp_dir):
+            os.mkdir(self.tmp_dir)
+
         self.afm = np.array(self.meta['init_afm'])
 
         if (self.meta['fn_reference'] == self.meta['fn_transforming']) \
@@ -238,6 +258,8 @@ class align_recipe:
                 self.afm = ingredient.execute_ingredient()
             except:
                 print_exception(extra=f'ERROR ing{i}/{len(self.ingredients)}')
+
+
 
 
     def set_results(self):
@@ -372,6 +394,7 @@ class align_ingredient:
         self.mir_toks = {}
         self.ID = ID
         self.last = last
+        self.matches_filenames = []
 
 
     def __str__(self):
@@ -413,8 +436,13 @@ class align_ingredient:
                 self.snr = np.zeros(len(self.psta[0]))
                 self.snr_report = snr_report(self.snr)
                 return self.afm
+
             self.crop_match_signals()
             self.afm = self.ingest_swim_output(swim_output)
+
+
+        if self.last:
+            self.reduce_matches()
         return self.afm
 
 
@@ -426,7 +454,7 @@ class align_ingredient:
         multi_arg_str = ArgString(sep='\n')
         dir_scale = os.path.join(
             self.recipe.meta['destination_path'], self.recipe.meta['scale_key'])
-        self.ms_names = []
+        self.ms_paths = []
         m = self.recipe.method
         iters = str(self.recipe.meta['swim_iters'])
         whiten = str(self.recipe.meta['whiten'])
@@ -445,9 +473,8 @@ class align_ingredient:
             else:
                 ind = i
             # correlation signals argument (output path)
-            b_arg = os.path.join(dir_scale, 'signals', '%s_%s_%d%s' %
-                           (fn, m, ind, ext))
-            self.ms_names.append(b_arg)
+            b_arg = os.path.join(self.recipe.signals_dir, '%s_%s_%d%s' % (fn, m, ind, ext))
+            self.ms_paths.append(b_arg)
             args = ArgString(sep=' ')
             args.append("%dx%d" % (self.ww[0], self.ww[1]))
             if self.recipe.meta['verbose_swim']:
@@ -464,11 +491,18 @@ class align_ingredient:
             args.add_flag(flag='-b', arg=b_arg)
             if self.last:
                 k_arg_name = '%s_%s_k_%d%s' % (fn, m, ind, ext)
-                k_arg_path = os.path.join(dir_scale, 'matches_raw', k_arg_name)
+                # k_arg_path = os.path.join(dir_scale, 'matches_raw', k_arg_name)
+                # k_arg_path = os.path.join(dir_scale, 'matches', k_arg_name)
+                k_arg_path = os.path.join(self.recipe.tmp_dir, k_arg_name)
                 args.add_flag(flag='-k', arg=k_arg_path)
+                self.matches_filenames.append(k_arg_path)
+
                 t_arg_name = '%s_%s_t_%d%s' % (fn, m, ind, ext)
-                t_arg_path = os.path.join(dir_scale, 'matches_raw', t_arg_name)
+                # t_arg_path = os.path.join(dir_scale, 'matches_raw', t_arg_name)
+                # t_arg_path = os.path.join(dir_scale, 'matches', t_arg_name)
+                t_arg_path = os.path.join(self.recipe.tmp_dir, t_arg_name)
                 args.add_flag(flag='-t', arg=t_arg_path)
+                self.matches_filenames.append(t_arg_path)
             args.append(self.recipe.data['swim_settings']['extra_kwargs'])
             args.append(self.recipe.meta['fn_reference'])
             if m in ('manual-hint'):
@@ -516,11 +550,11 @@ class align_ingredient:
         y1 = '%d' % int((self.ww[1] - px_keep) / 2.0 + 0.5)
         x2 = '%d' % int((self.ww[0] / 2) + (px_keep / 2.0) + 0.5)
         y2 = '%d' % int((self.ww[1] / 2) + (px_keep / 2.0) + 0.5)
-        for name in self.ms_names:
+        for path in self.ms_paths:
             self.crop_str_args = [
                 'B', w, h, '1',
                 '\nZ',
-                '\nF', name,
+                '\nF', path,
                 '\n0', '0', x1, y1,
                 '\n%s'%w, '0', x2, y1,
                 '\n%s'%w, h, x2, y2,
@@ -528,7 +562,7 @@ class align_ingredient:
                 '\nT',
                 '\n0', '1', '2',
                 '\n2', '3', '0',
-                '\nW', name
+                '\nW', path
             ]
             self.crop_str_mir = ' '.join(self.crop_str_args)
             logger.critical(f'MIR crop string:\n{self.crop_str_mir}')
@@ -605,7 +639,7 @@ class align_ingredient:
             if self.psta[0][i] and self.psta[1][i]:
                 mir_script_mp += f'{self.psta[0][i]} {self.psta[1][i]} ' \
                                  f'{self.pmov[0][i]} {self.pmov[1][i]}\n'
-        print(f"mir_script_mp:\n{mir_script_mp}")
+        # print(f"mir_script_mp:\n{mir_script_mp}")
         mir_script_mp += 'R'
         self.mir_script = mir_script_mp
         out, err = run_command(
@@ -616,7 +650,7 @@ class align_ingredient:
         mir_mp_out_lines = out.strip().split('\n')
         mir_mp_err_lines = err.strip().split('\n')
         logging.getLogger('MAlogger').critical(
-            f'\n==========\nMIR script:\n{mir_script_mp}\n'
+            f'\n==========\nManual MIR script:\n{mir_script_mp}\n'
             f'stdout >>\n{mir_mp_out_lines}\nstderr >>\n{mir_mp_err_lines}')
         afm = np.eye(2, 3, dtype=np.float32)
         self.mir_out_lines = mir_mp_out_lines
@@ -634,6 +668,51 @@ class align_ingredient:
         self.snr = np.zeros(len(self.psta[0]))
         self.snr_report = snr_report(self.snr)
         return self.afm
+
+
+    def reduce_matches(self):
+        tnLogger = logging.getLogger('tnLogger')
+        tnLogger.critical("Reducing Matches...")
+
+
+        src = self.recipe.tmp_dir
+        od = self.recipe.matches_dir
+
+        #Special handling since they are variable in # and never 1:1 with project files
+        fn, ext = os.path.splitext(self.recipe.meta['fn_transforming'])
+        method = self.recipe.method
+        od_pattern = os.path.join(od, '%s_%s_[tk]_%d%s' % (fn, method, self.recipe.meta['index'], ext))
+
+        for tn in glob.glob(od_pattern):
+            logger.info(f'Removing {tn}...')
+            try:
+                os.remove(tn)
+            except:
+                logger.warning('An exception was triggered during removal of expired thumbnail: %s' % tn)
+
+        tnLogger.critical('Reducing the following thumbnails:\n%s' %str(self.matches_filenames))
+        logger.info(f'Reducing {len(self.matches_filenames)} total match images...')
+
+        try:
+            siz_x, siz_y = ImageSize(next(absFilePaths(src)))
+            scale_factor = int(max(siz_x, siz_y) / self.recipe.meta['target_thumb_size'])
+            if scale_factor == 0:
+                scale_factor = 1
+        except Exception as e:
+            print_exception()
+            logger.error('Unable to generate thumbnail(s) - Do file(s) exist?')
+            raise e
+
+        for i, fn in enumerate(self.matches_filenames):
+            ofn = os.path.join(od, os.path.basename(fn))
+            args = ['+%d' % scale_factor, 'of=%s' % ofn, '%s' % fn]
+            # tnLogger.critical(f"Args:\n{args}")
+            run_command(self.recipe.iscale2_c, args, desc="Reduce Matches")
+            try:
+                if os.path.exists(fn):
+                    os.remove(fn)
+            except:
+                print_exception()
 
 
 def run_command(cmd, arg_list=(), cmd_input=None, desc=''):
@@ -709,6 +788,17 @@ def dict_hash(dictionary: Dict[str, Any]) -> str:
     dhash.update(encoded)
     return dhash.hexdigest()
 
+def absFilePaths(d):
+    for dirpath, _, filenames in os.walk(d):
+        for f in filenames:
+            yield os.path.abspath(os.path.join(dirpath, f))
+
+
+def natural_sort(l):
+    '''Natural sort a list of strings regardless of zero padding'''
+    convert = lambda text: int(text) if text.isdigit() else text.lower()
+    alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
+    return sorted(l, key=alphanum_key)
 
 if __name__ == '__main__':
     logger = logging.getLogger(__name__)

@@ -459,9 +459,9 @@ def SetSingleCafm(layer_dict, c_afm, bias_mat=None, method='grid-default'):
     if type(bias_mat) != type(None):
         c_afm = composeAffine(bias_mat, c_afm)
     layer_dict['alignment_history'][method]['method_results']['cumulative_afm'] = c_afm.tolist()
-
+    # Register cumualtive affine hash
+    layer_dict['cafm_hash'] = hashstring(str(c_afm.tolist()))
     # logger.info('Returning c_afm: %s' % format_cafm(c_afm))
-
     return c_afm
 
 
@@ -498,6 +498,12 @@ def SetStackCafm(iterator, scale, poly_order=None):
     cfg.mw.hud.done()
     return c_afm_init,
 
+
+def hashstring(text:str):
+    hash=0
+    for ch in text:
+        hash = ( hash*281  ^ ord(ch)*997) & 0xFFFFFFFF
+    return hash
 
 def composeAffine(afm, bfm):
     '''COMPOSEAFFINE - Compose two affine transforms
