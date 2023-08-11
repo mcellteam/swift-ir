@@ -57,7 +57,6 @@ QSpinBox:focus {
 
 
 QComboBox {
-
     color: #141414;
     background-color: #f3f6fb;
     border: 1px solid #c7c7c7;
@@ -77,7 +76,6 @@ QLineEdit {
     background-color: #f3f6fb;
     border: 1px solid #c7c7c7;
 	selection-background-color: #daebfe;
-	/*background:#daebfe;*/
 	font-size: 10px;
     border-radius: 3px;
     padding: 2px;

@@ -206,10 +206,13 @@ def delete_recursive(dir, keep_core_dirs=False):
 
 
 def update_preferences_model():
-    caller = inspect.stack()[1].function
-    logger.info(f'>>>> update_preferences_model [{caller}] >>>>')
+    # caller = inspect.stack()[1].function
+    logger.info(f'Updating user preferences model...')
     cfg.settings.setdefault('neuroglancer', {})
     cfg.settings['neuroglancer'].setdefault('SHOW_UI_CONTROLS', False)
+    cfg.settings['neuroglancer'].setdefault('USE_CUSTOM_BACKGROUND', False)
+    cfg.settings['neuroglancer'].setdefault('CUSTOM_BACKGROUND_COLOR', None)
+    cfg.settings['neuroglancer'].setdefault('USE_DEFAULT_DARK_BACKGROUND', True)
     cfg.settings['neuroglancer'].setdefault('SHOW_YELLOW_FRAME', False)
     cfg.settings['neuroglancer'].setdefault('SHOW_SCALE_BAR', False)
     cfg.settings['neuroglancer'].setdefault('SHOW_AXIS_LINES', False)
@@ -228,19 +231,17 @@ def update_preferences_model():
     cfg.settings['ui'].setdefault('DISPLAY_THUMBNAILS_IN_DIALOG', True)
     cfg.settings.setdefault('notes', {})
     cfg.settings['notes'].setdefault('global_notes', '')
-    logger.info('<<<< update_preferences_model <<<<')
 
 
 def initialize_user_preferences():
-    logger.info('>>>> initialize_user_preferences >>>>')
     userpreferencespath = os.path.join(os.path.expanduser('~'), '.swiftrc')
     try:
         if os.path.exists(userpreferencespath):
-            logger.info(f"Loading user settings from '{userpreferencespath}'...")
+            logger.info(f"Loading user preferences from '{userpreferencespath}'...")
             with open(userpreferencespath, 'r') as f:
                 cfg.settings = json.load(f)
         else:
-            # logger.info(f'Loading user settings from defaults...')
+            logger.critical(f'Creating user preferences from defaults...')
             open(userpreferencespath, 'a').close()
             cfg.settings = {}
     except:
@@ -255,7 +256,6 @@ def initialize_user_preferences():
     except:
         print_exception()
         logger.warning(f'Unable to save current user preferences')
-    logger.info('<<<< initialize_user_preferences <<<<')
 
 
 def reset_user_preferences():
@@ -779,6 +779,8 @@ def register_login():
         with open(of, 'a+') as f:
             f.write(login_txt)
         os.chmod(of, 0o666)
+
+
 
 
 def print_exception(extra=''):

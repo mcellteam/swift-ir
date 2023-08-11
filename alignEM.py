@@ -167,12 +167,12 @@ def addLoggingLevel(levelName, levelNum, methodName=None):
     setattr(logging, methodName, logToRoot)
 
 class CustomFormatter(logging.Formatter):
-
+    # ANSI color codess
     grey = "\x1b[38;20m"
     yellow = "\x1b[33;20m"
     red = "\x1b[31;20m"
     bold_red = "\x1b[31;1m"
-    # blue = "\x1b[1;34m"
+    blue = "\x1b[1;34m"
     reset = "\x1b[0m"
     format = '%(asctime)s %(levelname)s [%(module)s.%(funcName)s:%(lineno)d] %(message)s'
     format2 = '%(asctime)s [%(module)s.%(funcName)s:%(lineno)d] %(message)s'
@@ -181,7 +181,8 @@ class CustomFormatter(logging.Formatter):
         logging.INFO: grey + format + reset,
         logging.WARNING: yellow + format + reset,
         logging.ERROR: red + format + reset,
-        logging.CRITICAL: bold_red + format2 + reset,
+        # logging.CRITICAL: bold_red + format2 + reset,
+        logging.CRITICAL: blue + format2 + reset,
     }
     def format(self, record):
         log_fmt = self.FORMATS.get(record.levelno)
@@ -340,7 +341,7 @@ def main():
     logger.info(f"ThreadPoolExecutor _max_workers: {ThreadPoolExecutor()._max_workers}")
 
     initialize_user_preferences()
-    configure_project_paths()
+    # configure_project_paths()
 
     # app = QApplication([])
     app = QApplication(sys.argv)

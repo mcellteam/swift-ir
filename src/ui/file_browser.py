@@ -96,9 +96,6 @@ class FileBrowser(QWidget):
 
         button_size = QSize(54, 16)
 
-        # with open('src/style/buttonstyle.qss', 'r') as f:
-        #     button_gradient_style = f.read()
-
         self.buttonSetRootRoot = QPushButton('Root')
         # self.buttonSetRootRoot.setStyleSheet(button_gradient_style)
         self.buttonSetRootRoot.setStyleSheet('font-size: 9px;')

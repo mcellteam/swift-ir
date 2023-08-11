@@ -35,11 +35,6 @@ class WidgetArea(QWidget):
         self.updateLayout()
         self.updateStyle()
 
-        # self.setSizePolicy(
-        #     QSizePolicy.MinimumExpanding,
-        #     QSizePolicy.MinimumExpanding
-        # )
-
     def hideTitle(self):
         self._title.hide()
 
@@ -59,30 +54,6 @@ class WidgetArea(QWidget):
         self._labels.append(item)
 
     def updateLayout(self):
-        # self._layout = QVBoxLayout()
-        # self._layout.setContentsMargins(0, 0, 0, 0)
-        # self._layout.setSpacing(0)
-        #
-        # self._form = QFormLayout()
-        # self._form.setVerticalSpacing(1)
-        # self._form.setRowWrapPolicy(QFormLayout.WrapAllRows)
-        #
-        # self._gb = QGroupBox()
-        # self._gb.setContentsMargins(0, 0, 0, 0)
-        # # self._gb.setLayout(self._form)
-        # self._gb.setLayout(self._layout)
-        # self._scroll = QScrollArea()
-        # self._scroll.setContentsMargins(0, 0, 0, 0)
-        # # self._scroll.setWidget(self._gb)
-        # self._scroll.setLayout(self._layout)
-        # self._scroll.setWidgetResizable(True)
-        # if self._title:
-        #     self._layout.addWidget(self._title)
-        # self._layout.addWidget(self._scroll)
-        # for lb in self._labels:
-        #     self._form.addRow(lb)
-        # self.setLayout(self._layout)
-
         self._layout = QVBoxLayout()
         self._layout.setContentsMargins(0, 0, 0, 0)
         self._layout.setSpacing(4)

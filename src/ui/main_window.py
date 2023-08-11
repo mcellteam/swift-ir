@@ -28,7 +28,6 @@ from math import floor
 import multiprocessing
 import subprocess
 import asyncio
-from collections import OrderedDict
 import numpy as np
 # from guppy import hpy; h=hpy()
 import neuroglancer as ng
@@ -45,15 +44,13 @@ from qtpy.QtWidgets import QApplication, qApp, QMainWindow, QWidget, QLabel, QHB
     QShortcut, QGraphicsOpacityEffect, QCheckBox, QSpinBox, QDoubleSpinBox, QRadioButton, QSlider, \
     QDesktopWidget, QTextEdit, QToolBar, QListWidget, QMenu, QMenuBar, QTableView, QTabWidget, QStatusBar, QTextBrowser, \
     QFormLayout, QGroupBox, QScrollArea, QToolButton, QWidgetAction, QSpacerItem, QButtonGroup, QAbstractButton, \
-    QApplication, QPlainTextEdit, QTableWidget, QTableWidgetItem, QDockWidget, QDialog, QFrame, \
-    QSizeGrip, QTabBar, QAbstractItemView, QStyledItemDelegate, QMdiArea, QMdiSubWindow
+    QApplication, QPlainTextEdit, QTableWidget, QTableWidgetItem, QDockWidget, QMdiArea, QMdiSubWindow
 import pyqtgraph.examples
 import src.config as cfg
 import src.shaders
 from src.thumbnailer import Thumbnailer
 from src.config import ICON_COLOR
 from src.data_model import DataModel
-from src.funcs_zarr import tiffs2MultiTiff
 from src.generate_aligned import GenerateAligned
 # from src.generate_scales import GenerateScales
 from src.helpers import setOpt, getOpt, getData, setData, print_exception, get_scale_val, \
@@ -68,15 +65,10 @@ from src.ui.worker_align import AlignWorker
 from src.ui.worker_scale import ScaleWorker
 from src.ui.models.json_tree import JsonModel
 from src.ui.toggle_switch import ToggleSwitch
-from src.ui.sliders import DoubleSlider, RangeSlider
-from src.ui.widget_area import WidgetArea
-from src.funcs_image import ImageSize
 from src.ui.webpage import WebPage
 from src.ui.tab_browser import WebBrowser
 from src.ui.tab_open_project import OpenProject
-from src.ui.thumbnail import CorrSignalThumbnail, ThumbnailFast, SnrThumbnail
 from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter, YellowTextLabel, Button
-from src.ui.timer import Timer
 from src.autoscale import autoscale
 from src.funcs_image import SetStackCafm
 
@@ -1612,7 +1604,6 @@ class MainWindow(QMainWindow):
         logger.info('Changing stylesheet to minimal')
 
     def apply_default_style(self):
-        # self.main_stylesheet = os.path.abspath('src/style/default.qss')
         self.main_stylesheet = os.path.abspath('src/style/newstyle.qss')
         with open(self.main_stylesheet, 'r') as f:
             style = f.read()
@@ -2882,8 +2873,8 @@ class MainWindow(QMainWindow):
         caller = inspect.stack()[1].function
         # if caller == 'main':
         if self._isProjectTab():
-            if caller != 'dataUpdateWidgets':
-                logger.critical(f'caller: {caller}')
+            if caller != '_updateZposWidgets':
+                logger.critical(f'[{caller}]')
                 skip_state = not self._skipCheckbox.isChecked()
                 layer = cfg.data.zpos
                 for s in cfg.data.finer_scales():
@@ -3041,9 +3032,6 @@ class MainWindow(QMainWindow):
 
     def initToolbar(self):
         logger.info('')
-
-        # with open('src/style/buttonstyle.qss', 'r') as f:
-        #     button_gradient_style = f.read()
 
         f = QFont()
         f.setBold(True)
@@ -5253,6 +5241,8 @@ class MainWindow(QMainWindow):
 
         # self.pythonConsole = PythonConsole()
         self.pythonConsole = PythonConsoleWidget()
+        # self.pythonConsole.pyconsole.set_color_linux()
+        self.pythonConsole.pyconsole.set_color_none()
         self.pythonConsole.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         # self.pythonConsole.resize(QSize(600,600))
 
@@ -5271,7 +5261,8 @@ class MainWindow(QMainWindow):
 
             # logger.critical(f'caller: {caller}')
             if self. dw_python.isVisible():
-                self.setUpdatesEnabled(False)
+                logger.info('>>>>')
+                # self.setUpdatesEnabled(False)
                 loc_py = self.dockWidgetArea(self.dw_python)
                 if loc_py in (1,2):
                     self.dw_python.setFeatures(
@@ -5293,7 +5284,8 @@ class MainWindow(QMainWindow):
                         self.splitDockWidget(self.dw_hud, self.dw_python, Qt.Vertical)
                         h = int(self.height() / 2)
                         self.resizeDocks((self.dw_hud, self.dw_python), (h, h), Qt.Vertical)
-                self.setUpdatesEnabled(True)
+                # self.setUpdatesEnabled(True)
+                logger.info('<<<<')
 
         self.dw_python.dockLocationChanged.connect(fn_dw_python_visChanged)
         self.dw_python.setFeatures(QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetClosable | QDockWidget.DockWidgetVerticalTitleBar)
@@ -5314,6 +5306,8 @@ class MainWindow(QMainWindow):
 
         self.dw_snr = DockWidget('SNR', self)
         self.dw_snr.visibilityChanged.connect(self.callbackDwVisibilityChanged)
+
+
         def fn_dw_snr_visChanged():
             self.setUpdatesEnabled(False)
             caller = inspect.stack()[1].function
@@ -5473,8 +5467,8 @@ class MainWindow(QMainWindow):
         # self.globTabsAndCpanel = VWidget(self.globTabs, self.sw_pbar)
         self.globTabsAndCpanel = VWidget(self.globTabs)
         self.statusBar.addPermanentWidget(self.sw_pbar)
-        self.addToolBar(Qt.BottomToolBarArea, self.toolbar_cpanel)
         self.addToolBar(Qt.LeftToolBarArea, self.toolbar)
+        self.addToolBar(Qt.BottomToolBarArea, self.toolbar_cpanel)
         self.globTabsAndCpanel.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
         # self.test_widget = QWidget()

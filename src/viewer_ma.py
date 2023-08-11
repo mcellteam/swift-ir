@@ -275,15 +275,20 @@ class MAViewer(neuroglancer.Viewer):
             # s.show_scale_bar = False
             s.show_scale_bar = True
             s.show_axis_lines = False
-            s.show_default_annotations = getData('state,show_bounds')
             s.projectionScale = 1
             s.layers['layer'] = ng.ImageLayer(source=self.LV, shader=cfg.data['rendering']['shader'], )
-            if getData('state,neutral_contrast'):
-                s.crossSectionBackgroundColor = '#808080'
-            else:
-                s.crossSectionBackgroundColor = '#222222'
             _, y, x = self.store.shape
             s.voxel_coordinates = [self.index + .5, y / 2, x / 2]
+            s.show_default_annotations = False
+            s.projectionScale = 1
+            if getOpt('neuroglancer,USE_CUSTOM_BACKGROUND'):
+                s.crossSectionBackgroundColor = getOpt('neuroglancer,CUSTOM_BACKGROUND_COLOR')
+            else:
+                if getOpt('neuroglancer,USE_DEFAULT_DARK_BACKGROUND'):
+                    # s.crossSectionBackgroundColor = '#222222'
+                    s.crossSectionBackgroundColor = '#000000'
+                else:
+                    s.crossSectionBackgroundColor = '#808080'
 
         self.actions.add('add_manpoint', self.add_matchpoint)
         self.actions.add('swim', self.swim)
@@ -330,6 +335,16 @@ class MAViewer(neuroglancer.Viewer):
 
     def text(self):
         txt = ''
+
+    def setBackground(self):
+        with self.txn() as s:
+            if getOpt('neuroglancer,USE_CUSTOM_BACKGROUND'):
+                s.crossSectionBackgroundColor = getOpt('neuroglancer,CUSTOM_BACKGROUND_COLOR')
+            else:
+                if getOpt('neuroglancer,USE_DEFAULT_DARK_BACKGROUND'):
+                    s.crossSectionBackgroundColor = '#222222'
+                else:
+                    s.crossSectionBackgroundColor = '#808080'
 
 
 
