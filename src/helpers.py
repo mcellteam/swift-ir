@@ -163,10 +163,7 @@ def count_widgets(name_or_type) -> int:
 def delete_recursive(dir, keep_core_dirs=False):
     # chunks = glob(dir + '/img_aligned.zarr/**/*', recursive=True) + glob(dir + '/img_src.zarr/**/*', recursive=True)
     cfg.main_window.showZeroedPbar(set_n_processes=False)
-    cfg.main_window.setPbarText('Deleting Files...')
-
     to_delete = []
-
     scales = glob(dir + '/scale_*')
     for s in scales:
         if keep_core_dirs:
@@ -182,8 +179,8 @@ def delete_recursive(dir, keep_core_dirs=False):
             to_delete.append(os.path.join(dir, s, 'bias_data'))
         if os.path.exists(os.path.join(dir, s, 'img_aligned')):
             to_delete.append(os.path.join(dir, s, 'img_aligned'))
-        if os.path.exists(os.path.join(dir, s, 'thumbnails_aligned')):
-            to_delete.append(os.path.join(dir, s, 'thumbnails_aligned'))
+        if os.path.exists(os.path.join(dir, s, 'thumbnails')):
+            to_delete.append(os.path.join(dir, s, 'thumbnails'))
         if os.path.exists(os.path.join(dir, s, 'img_src')):
             to_delete.append(os.path.join(dir, s, 'img_src'))
     to_delete.extend(glob(dir + '/img_aligned.zarr/s*'))
@@ -200,7 +197,6 @@ def delete_recursive(dir, keep_core_dirs=False):
     for d in to_delete:
         cfg.nProcessDone += 1
         shutil.rmtree(d, ignore_errors=True, onerror=handleError)
-        cfg.main_window.setPbarText('Deleting %s...' % os.path.basename(d))
         cfg.main_window.updatePbar(cfg.nProcessDone)
         cfg.main_window.update()
         QApplication.processEvents()

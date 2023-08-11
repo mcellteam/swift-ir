@@ -26,11 +26,12 @@ from dataclasses import dataclass
 from functools import cache, cached_property
 from functools import reduce
 import numpy as np
-from qtpy.QtCore import QObject, Signal, Slot
+from qtpy.QtCore import QObject, Signal, Slot, QMutex
 from qtpy.QtWidgets import QApplication
 
 
 from src.data_structs import data_template, layer_template
+from src.funcs_image import SetStackCafm
 from src.helpers import print_exception, exist_aligned_zarr, get_scales_with_generated_alignments, getOpt, \
     caller_name
 from src.funcs_image import ComputeBoundingRect, ImageSize, ImageIOSize
@@ -94,7 +95,6 @@ class DataModel:
         self._data['version'] = cfg.VERSION
 
         self._data.setdefault('changelog', [])
-
 
         # self.zpos = self._data['data']['z_position']
         if not quietly:
@@ -660,7 +660,7 @@ class DataModel:
         if s == None: s = self.scale
         if l == None: l = self.zpos
         '''Returns absolute path of thumbnail for current layer '''
-        return os.path.join(self.dest(), self.scale, 'thumbnails_aligned', self.filename_basename(s=s,l=l))
+        return os.path.join(self.dest(), self.scale, 'thumbnails', self.filename_basename(s=s,l=l))
 
     def thumbnails_ref(self) -> list:
         paths = []
@@ -671,7 +671,7 @@ class DataModel:
     def thumbnails_aligned(self) -> list:
         paths = []
         for layer in range(0, len(self)):
-            paths.append(os.path.join(self.dest(), self.scale, 'thumbnails_aligned', self.base_image_name(l=layer)))
+            paths.append(os.path.join(self.dest(), self.scale, 'thumbnails', self.base_image_name(l=layer)))
         return paths
 
 
@@ -884,7 +884,6 @@ class DataModel:
             scale = self._data['data']['scales'][s]
             scale.setdefault('stack', []) #0725+
             scale.setdefault('aligned', False) #0808+
-            scale.setdefault('initial_snr', None) #0808+
             scale.setdefault('use_bounding_rect', cfg.DEFAULT_BOUNDING_BOX)
             scale.setdefault('has_bounding_rect', cfg.DEFAULT_BOUNDING_BOX) #0512+
             scale.setdefault('resolution', (cfg.DEFAULT_RESZ, cfg.DEFAULT_RESY, cfg.DEFAULT_RESX))
@@ -910,8 +909,7 @@ class DataModel:
                 layer.pop('selected_method', None)
                 layer.setdefault('data_comports', True)
                 layer.setdefault('needs_propagation', False)
-                layer.setdefault('alignment_hash', '')
-                layer.setdefault('cafm_alignment_hash', None)
+                layer.setdefault('cafm_hash', '')
 
                 layer.setdefault('alignment_history', {})
                 layer['alignment_history'].setdefault('grid-default', {})
@@ -1685,10 +1683,9 @@ class DataModel:
                 lst.append(self.cafm(s=s, l=i))
         return lst
 
-    def cafm_registered_hash(self, s=None, l=None):
+    def set_stack_cafm(self, s=None):
         if s == None: s = self.scale
-        if l == None: l = self.zpos
-        return self._data['data']['scales'][s]['stack'][l]['cafm_alignment_hash']
+        SetStackCafm(self.get_iter(s), scale=s, poly_order=self.default_poly_order)
 
 
     def cafm_hashable(self, s=None, end=None):
@@ -1704,17 +1701,27 @@ class DataModel:
             print_exception(extra=f'end={end}, caller: {caller}')
 
 
+    def cafm_registered_hash(self, s=None, l=None):
+        if s == None: s = self.scale
+        if l == None: l = self.zpos
+        return self._data['data']['scales'][s]['stack'][l]['cafm_hash']
+
+
     def cafm_current_hash(self, s=None, l=None):
         if s == None: s = self.scale
         if l == None: l = self.zpos
         # return hash(str(self.cafm_list(s=s, end=l)))
-        return self.cafm_hashable(s=s, end=l)
+        try:
+            return self.cafm_hashable(s=s, end=l)
+        except:
+            print_exception(extra=f"scale={s}, section={l}")
 
+    #Deprecated now registering cafm hash in SetStackCafm
     def register_cafm_hashes(self, indexes, s=None):
         logger.info('Registering cafm hashes...')
         if s == None: s = self.scale
         for i in indexes:
-            self._data['data']['scales'][s]['stack'][i]['cafm_alignment_hash'] = self.cafm_current_hash(l=i)
+            self._data['data']['scales'][s]['stack'][i]['cafm_hash'] = self.cafm_current_hash(l=i)
 
 
     def cafm_hash_comports(self, s=None, l=None):
@@ -1831,6 +1838,8 @@ class DataModel:
     def cafm_comports_indexes(self, s=None):
         if s == None: s = self.scale
         return np.array([self.cafm_hash_comports(s=s, l=l) for l in range(0, len(self))]).nonzero()[0].tolist()
+
+
 
 
     def cafm_dn_comport_indexes(self, s=None):
@@ -2878,10 +2887,10 @@ class StripNullFields:
 
 
 def hashstring(text:str):
-  hash=0
-  for ch in text:
-    hash = ( hash*281  ^ ord(ch)*997) & 0xFFFFFFFF
-  return hash
+    hash=0
+    for ch in text:
+        hash = ( hash*281  ^ ord(ch)*997) & 0xFFFFFFFF
+    return hash
 
 def dict_hash(dictionary: Dict[str, Any]) -> str:
     """Returns an MD5 hash of a Python dictionary. source:

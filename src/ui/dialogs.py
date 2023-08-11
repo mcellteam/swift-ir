@@ -526,7 +526,7 @@ class ConfigProjectDialog(QDialog):
         self.main_layout.addWidget(self.buttonWidget)
         self.setLayout(self.main_layout)
         # self.setWindowTitle("New Project - Project Configuration (3/3)")
-        self.setWindowTitle('New Project (3/3) - Global Configuration')
+        self.setWindowTitle('New Project (3/3) - Configure')
         cfg.main_window.hud('Set Scales and Configure:')
         self.show()
         cfg.main_window.set_status('Awaiting User Input...')

@@ -50,16 +50,13 @@ class Thumbnailer:
     def reduce_aligned(self, indexes, dest, scale):
         print(f'\n\n######## Reducing: Aligned Images ########\n')
         src = os.path.join(dest, scale, 'img_aligned')
-        od = os.path.join(dest, scale, 'thumbnails_aligned')
+        od = os.path.join(dest, scale, 'thumbnails')
 
 
         files = []
         baseFileNames = cfg.data.basefilenames()
         for name in [baseFileNames[i] for i in indexes]:
             files.append(os.path.join(src,name))
-
-
-
 
         pbar_text = 'Generating %s Aligned Image Thumbnails...' % cfg.data.scale_pretty()
         if cfg.CancelProcesses:
@@ -86,7 +83,8 @@ class Thumbnailer:
         if cfg.CancelProcesses:
             cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
         else:
-            src = os.path.join(dest, scale, 'signals_raw')
+            # src = os.path.join(dest, scale, 'signals_raw')
+            src = os.path.join(dest, scale, 'signals')
             od = os.path.join(dest, scale, 'signals')
 
             rmdir = False
@@ -145,7 +143,8 @@ class Thumbnailer:
         if cfg.CancelProcesses:
             cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
         else:
-            src = os.path.join(dest, scale, 'matches_raw')
+            # src = os.path.join(dest, scale, 'matches_raw')
+            src = os.path.join(dest, scale, 'matches')
             od = os.path.join(dest, scale, 'matches')
 
             rmdir = False

@@ -665,8 +665,8 @@ class OpenProject(QWidget):
         self.le_project_name_w.hide()
 
         '''Step 3/3'''
-        self.new_project_lab1.setText('New Project (Step: 3/3) - Global Configuration')
-        cfg.mw.set_status('New Project (Step: 3/3) - Global Configuration')
+        self.new_project_lab1.setText('New Project (Step: 3/3) - Configure')
+        cfg.mw.set_status('New Project (Step: 3/3) - Configure')
 
         dialog = NewConfigureProjectDialog(parent=self)
         dialog.setWindowFlags(Qt.FramelessWindowHint)
@@ -702,11 +702,11 @@ class OpenProject(QWidget):
         try:
             autoscale(dm)
             logger.info("\n\nFinished autoscaling.\n")
-            if dm['data']['autoalign_flag']:
-                logger.info('Initializing alignment...')
-                cfg.mw.tell(
-                    f'Auto-align flag is set. Aligning {dm.scale_pretty(dm.coarsest_scale_key())}...')
-                cfg.mw.alignAll(set_pbar=False, force=True, ignore_bb=True)
+            # if dm['data']['autoalign_flag']:
+            #     logger.info('Initializing alignment...')
+            #     cfg.mw.tell(
+            #         f'Auto-align flag is set. Aligning {dm.scale_pretty(dm.coarsest_scale_key())}...')
+            #     cfg.mw.alignAll(force=True, ignore_bb=True)
             logger.info('Generating Source Thumbnails...')
             thumbnailer = Thumbnailer()
             cfg.data.t_thumbs = thumbnailer.reduce_main(dest=dm.dest())
@@ -735,8 +735,18 @@ class OpenProject(QWidget):
         QApplication.processEvents()
         cfg.mw.setNoPbarMessage(False)
         cfg.mw.enableAllTabs()
+
+
+
         cfg.pt.initNeuroglancer()
         cfg.mw.onStartProject()
+
+
+        if dm['data']['autoalign_flag']:
+            logger.info('Initializing alignment...')
+            cfg.mw.tell(
+                f'Auto-align flag is set. Aligning {dm.scale_pretty(dm.coarsest_scale_key())}...')
+            cfg.mw.alignAll(force=True, ignore_bb=True)
 
         logger.info('<<<< new_project <<<<')
 

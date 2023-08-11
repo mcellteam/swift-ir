@@ -35,7 +35,7 @@ import neuroglancer as ng
 import qtawesome as qta
 # from rechunker import rechunk
 from qtpy.QtCore import Qt, QThread, QThreadPool, QEvent, Slot, Signal, QSize, QUrl,  QTimer, QPoint, QRectF, \
-    QSettings, QObject, QFileInfo
+    QSettings, QObject, QFileInfo, QMutex
 from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QFont, \
     QKeySequence, QMovie, QStandardItemModel, QColor, QCursor, QImage, QPainterPath, QRegion, QPainter
 from qtpy.QtWebEngineWidgets import *
@@ -155,8 +155,6 @@ class MainWindow(QMainWindow):
 
         self.initLaunchTab()
 
-        cfg.event = multiprocessing.Event()
-
         # self.alignmentFinished.connect(self.updateProjectTable)
         self.cancelMultiprocessing.connect(self.cleanupAfterCancel)
 
@@ -226,6 +224,8 @@ class MainWindow(QMainWindow):
                              5: 'ShortcutFocusReason',
                              6: 'MenuBarFocusReason',
                              7: 'OtherFocusReason'}
+
+        self._mutex = QMutex()
 
 
 
@@ -344,6 +344,7 @@ class MainWindow(QMainWindow):
         if self.dw_snr.isVisible():
             cfg.project_tab.dSnr_plot.initSnrPlot()
         # cfg.project_tab.updateTreeWidget()
+        self.enableAllTabs()
         self.dataUpdateWidgets()
         self.updateEnabledButtons()
 
@@ -367,9 +368,6 @@ class MainWindow(QMainWindow):
         # caller = inspect.stack()[1].function
         # logger.critical(f'caller: {caller}')
         self.setUpdatesEnabled(True)
-        if cfg.CancelProcesses:
-            cfg.CancelProcesses = False
-            logger.warning('\n\ncfg.CancelProcesses was TRUE. Resetting its value.\n')
         if not self._working:
             self.tell('Refreshing...')
             logger.info('Refreshing...')
@@ -895,16 +893,15 @@ class MainWindow(QMainWindow):
         self.setUpdatesEnabled(True)
 
     def setdw_snr(self, state):
-        logger.info(f'state={state}')
-        self.setUpdatesEnabled(False)
-        self.dw_snr.setVisible(state)
+        logger.info(f'Setting dw_snr state: {state}...')
         self.a_snr.setText(('Show SNR Plot', 'Hide SNR Plot')[state])
         self.tbbSnr.setToolTip((f"Show SNR Plot Tool Window ({hotkey('L')})",
                                  f"Hide SNR Plot Tool Window ({hotkey('L')})")[state])
         if self._isProjectTab():
             cfg.data['state']['tool_windows']['snr_plot'] = state
-            cfg.pt.dSnr_plot.initSnrPlot()
-        self.setUpdatesEnabled(True)
+            if state:
+                cfg.pt.dSnr_plot.initSnrPlot()
+        self.dw_snr.setVisible(state)
 
     # def _callbk_showHidePython(self):
     #     # self.dw_python.setHidden(not self.dw_python.isHidden())
@@ -958,8 +955,6 @@ class MainWindow(QMainWindow):
             scale = cfg.data.scale
         if indexes == None:
             indexes = [cfg.data.zpos]
-        if cfg.event.is_set():
-            cfg.event.clear()
         if not self._isProjectTab():
             return
         if self._working == True:
@@ -970,7 +965,6 @@ class MainWindow(QMainWindow):
             return
         cfg.nProcessSteps = 3
         cfg.nProcessDone = 0
-        cfg.CancelProcesses = False
         self.pbarLabel.setText('Task (0/%d)...' % cfg.nProcessSteps)
         self.showZeroedPbar(set_n_processes=3)
 
@@ -1069,8 +1063,6 @@ class MainWindow(QMainWindow):
 
     def onAlignmentStart(self, scale):
         logger.info('')
-        if cfg.event.is_set():
-            cfg.event.clear()
         t0 = time.time()
         dt = datetime.datetime.now()
 
@@ -1123,35 +1115,35 @@ class MainWindow(QMainWindow):
     def onAlignmentEnd(self):
         logger.critical('\n\nRunning Post-Alignment Tasks...\n')
         t0 = time.time()
-        try:
-            if self._isProjectTab():
-                self.setNoPbarMessage(False)
-                self.updateEnabledButtons()
-                self.dataUpdateWidgets()
-                self._showSNRcheck()
-                cfg.project_tab.updateTimingsWidget()
-                cfg.project_tab.updateTreeWidget() #0603-
-                cfg.pt._bbToggle.setChecked(cfg.data.has_bb())
-                cfg.pt.updateDetailsPanel()
-        except:
-            print_exception()
-        finally:
-            self._autosave()
-            if cfg.event.is_set():
-                cfg.event.clear()
-            self._working = False
-            self._changeScaleCombo.setEnabled(True)
-            self.hidePbar()
-            self.enableAllTabs()
-            if self._isProjectTab():
-                self.setdw_snr(True)  # Also initializes
-                if cfg.pt._tabs.currentIndex() == 4:
-                    cfg.pt.snr_plot.initSnrPlot()
-            cfg.project_tab.initNeuroglancer()
-            dt = time.time() - t0
-            logger.info(f'  Elapsed Time         : {dt:.2f}s')
-            self.setFocus()
-            self.set_status("Alignment Complete!")
+        self._working = False
+        time.sleep(1)
+
+        if 'initial_snr' not in cfg.data['data']['scales'][cfg.data.scale]:
+            cfg.data['data']['scales'][cfg.data.scale]['initial_snr'] = cfg.data.snr_list()
+        cfg.data['data']['scales'][cfg.data.scale]['aligned'] = True
+        self.updateEnabledButtons()
+        self.dataUpdateWidgets()
+        if self._isProjectTab():
+            self._showSNRcheck()
+            cfg.pt.updateTimingsWidget()
+            cfg.pt.updateTreeWidget() #0603-
+            cfg.pt._bbToggle.setChecked(cfg.data.has_bb())
+            cfg.pt.updateDetailsPanel()
+
+        self._autosave()
+        self._changeScaleCombo.setEnabled(True)
+        self.hidePbar()
+        self.enableAllTabs()
+        cfg.project_tab.initNeuroglancer()
+        if self._isProjectTab():
+            self.setdw_snr(True)  # Also initializes
+            cfg.pt.dSnr_plot.initSnrPlot() #Todo #Redundant #Why is this needed?? Race conditino?
+            if cfg.pt._tabs.currentIndex() == 4:
+                cfg.pt.snr_plot.initSnrPlot()
+        dt = time.time() - t0
+        logger.info(f'  Elapsed Time         : {dt:.2f}s')
+        self.setFocus()
+        self.set_status("Alignment Complete!")
 
 
     def alignAllScales(self):
@@ -1171,7 +1163,7 @@ class MainWindow(QMainWindow):
                 # cfg.project_tab.initNeuroglancer()
                 cfg.project_tab.refreshTab()
                 self.dataUpdateWidgets()
-                self.alignAll(set_pbar=False)
+                self.alignAll()
 
     # def alignRange(self, start=None, end=None):
     #     cfg.ignore_pbar = False
@@ -1185,8 +1177,6 @@ class MainWindow(QMainWindow):
     #         self.showZeroedPbar(set_n_processes=2)
     #     self.hidePbar()
     #     cfg.nProcessDone = 0
-    #     cfg.CancelProcesses = False
-    #     # cfg.event = multiprocessing.Event()
     #     self.tell('Re-aligning Sections #%d through #%d (%s)...' %
     #               (start, end, cfg.data.scale_pretty()))
     #     self.align(
@@ -1212,8 +1202,6 @@ class MainWindow(QMainWindow):
     #         self.showZeroedPbar(set_n_processes=2)
     #     self.hidePbar()
     #     cfg.nProcessDone = 0
-    #     cfg.CancelProcesses = False
-    #     # cfg.event = multiprocessing.Event()
     #     self.tell('Re-aligning Sections #%d through #%d (%s)...' %
     #               (start, end, cfg.data.scale_pretty()))
     #     self.align(
@@ -1278,11 +1266,7 @@ class MainWindow(QMainWindow):
     #     cfg.ignore_pbar = False
 
 
-    def alignAll(self, set_pbar=True, force=False, ignore_bb=False):
-        caller = inspect.stack()[1].function
-        if caller == 'main':
-            set_pbar = True
-
+    def alignAll(self, force=False, ignore_bb=False):
 
         if (not force) and (not self._isProjectTab()):
             return
@@ -1294,8 +1278,6 @@ class MainWindow(QMainWindow):
 
         indexes = list(range(0,len(cfg.data)))
 
-        cfg.CancelProcesses = False
-        # cfg.event = multiprocessing.Event()
         cfg.data.set_has_bb(cfg.data.use_bb())  # Critical, also see regenerate
         self.align(
             scale=cfg.data.scale,
@@ -1305,24 +1287,27 @@ class MainWindow(QMainWindow):
             ignore_bb=ignore_bb,
         )
 
-        if not cfg.data['data']['scales'][cfg.data.scale]['aligned']:
-            cfg.data['data']['scales'][cfg.data.scale]['initial_snr'] = cfg.data.snr_list()
-
-        cfg.data['data']['scales'][cfg.data.scale]['aligned'] = True
-
-
-
-
 
     def align(self, scale=None, indexes=None, renew_od=False, reallocate_zarr=False, swim_only=False, ignore_bb=False):
+        logger.critical('')
+
         if scale == None:
             scale = cfg.data.scale
         if indexes == None:
             indexes = [cfg.data.zpos]
+
+
+        if self._working == True:
+            self.warn('Another Process is Already Running')
+            return
+
         self.onAlignmentStart(scale=scale)
         self.tell("%s Affines (%s)..." % (('Initializing', 'Refining')[cfg.data.isRefinement()], cfg.data.scale_pretty(s=scale)))
         # logger.info(f'Aligning indexes:{indexes}, {cfg.data.scale_pretty(scale)}...')
         self._snr_before = cfg.data.snr_list()
+
+
+
 
         # self.shutdownNeuroglancer()
         # self.showZeroedPbar(pbar_max=len(indexes))
@@ -1360,7 +1345,7 @@ class MainWindow(QMainWindow):
         self.thread.finished.connect(lambda: self._btn_alignOne.setEnabled(True))
         self.thread.finished.connect(self.onAlignmentEnd)
         self.thread.finished.connect(lambda: self.present_snr_results(indexes))
-        self.thread.finished.connect(lambda: print(self.worker.result))
+        self.thread.finished.connect(lambda: print(self.worker.dm))
 
 
     def rescale(self):
@@ -1680,7 +1665,7 @@ class MainWindow(QMainWindow):
         # logger.critical(f"self.sender() = {self.sender()}")
 
         if self._working:
-            logger.warning("Busy working! Not going to update the interface rn.")
+            logger.warning("Busy working! Not going to update the entire interface rn.")
             return
 
 
@@ -1698,9 +1683,6 @@ class MainWindow(QMainWindow):
                     self.uiUpdateTimer.start()
                     logger.info('Updating UI on timeout...')
 
-            cfg.CancelProcesses = False  # 0720+ probably a necessary precaution until something better
-
-
             if self.dw_thumbs.isVisible():
                 cfg.pt.tn_tra.set_data(path=cfg.data.thumbnail_tra())
                 cfg.pt.tn_tra_lab.setText(f'Transforming Section (Thumbnail)\n'
@@ -1708,16 +1690,18 @@ class MainWindow(QMainWindow):
 
                 if cfg.data.skipped():
                     cfg.pt.tn_ref_lab.setText(f'--')
-                    if not cfg.project_tab.tn_tra_overlay.isVisible():
-                        cfg.project_tab.tn_tra_overlay.show()
-                    cfg.project_tab.tn_ref.hide()
+                    if not cfg.pt.tn_tra_overlay.isVisible():
+                        cfg.pt.tn_tra_overlay.show()
+                    cfg.pt.tn_ref.hide()
+                    cfg.pt.tn_ref_lab.hide()
                 else:
                     cfg.pt.tn_ref_lab.setText(f'Reference Section (Thumbnail)\n'
                           f'[{cfg.data.zpos}] {cfg.data.reference_basename()}')
-                    if cfg.project_tab.tn_tra_overlay.isVisible():
-                     cfg.project_tab.tn_tra_overlay.hide()
+                    if cfg.pt.tn_tra_overlay.isVisible():
+                     cfg.pt.tn_tra_overlay.hide()
                     cfg.pt.tn_ref.set_data(path=cfg.data.thumbnail_ref())
-                    cfg.project_tab.tn_ref.show()
+                    cfg.pt.tn_ref.show()
+                    cfg.pt.tn_ref_lab.show()
 
 
             if self.dw_notes.isVisible():
@@ -3287,6 +3271,16 @@ class MainWindow(QMainWindow):
 
 
         self.tbbProjects.setToolTip("Project Manager")
+        # menu = QMenu()
+        # projectsMenu = menu.addMenu("New Project")
+        # action = QAction('From Folder', self)
+        # action.triggered.connect()
+        # projectsMenu.addAction(action)
+        # action = QAction('From Selected Images', self)
+        # action.triggered.connect()
+        # projectsMenu.addAction(action)
+        # self.tbbProjects.setMenu(projectsMenu)
+        # self.tbbProjects.setPopupMode(QToolButton.InstantPopup)
         self.tbbProjects.pressed.connect(fn_projectmanager)
         self.tbbProjects.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.tbbProjects.setIcon(qta.icon("fa.folder", color='#161c20'))
@@ -3401,10 +3395,11 @@ class MainWindow(QMainWindow):
 
 
     def changeEvent(self, event):
-        logger.info('')
+        # logger.info('')
 
         # Allows catching of window maximized/unmaximized events
         if event.type() == QEvent.WindowStateChange:
+            print("(!) Window State Change!")
             if event.oldState() and Qt.WindowMinimized:
                 logger.info("(!) window un-maximized")
                 self.fullScreenAction.setIcon(qta.icon('mdi.fullscreen', color='#ede9e8'))
@@ -5556,7 +5551,7 @@ class MainWindow(QMainWindow):
         self.pbar_cancel_button.setToolTip('Terminate Pending Multiprocessing Tasks')
         self.pbar_cancel_button.setIcon(qta.icon('mdi.cancel', color=cfg.ICON_COLOR))
         self.pbar_cancel_button.setStyleSheet("""font-size: 9px;""")
-        self.pbar_cancel_button.clicked.connect(self.forceStopMultiprocessing)
+        self.pbar_cancel_button.clicked.connect(self.cancelTasks)
         self.pbarLabel = QLabel('Task... ')
         self.pbarLabel.setStyleSheet("""font-size: 9px;font-weight: 600;""")
 
@@ -5578,18 +5573,19 @@ class MainWindow(QMainWindow):
         # self.statusBar.addPermanentWidget(self.sw_pbar)
         self.hidePbar()
 
-    def forceStopMultiprocessing(self):
+    def cancelTasks(self):
         logger.critical("STOP requested!")
         try:
-            cfg.CancelProcesses = True
-            self.thread.quit()
+            self._working = False
+            self.worker.stop()
+            # self.thread.quit()
             # self.thread.wait()
-
             # self.thread.exit()
-
-            # self.thread.terminate() # NOTE this is discouraged!
+            self.thread.terminate() # NOTE this is discouraged!
         except:
             print_exception()
+        finally:
+            self.cleanupAfterCancel()
 
 
     def setPbarMax(self, x):
@@ -5611,18 +5607,20 @@ class MainWindow(QMainWindow):
 
     def setPbar(self, n:int):
         '''New method to replace historical pbar functionality 2023-08-09'''
+        # self._mutex.lock()
         self.pbar.setValue(n)
+        # cfg.data.zpos = n
         QApplication.processEvents()
+        # self._mutex.unlock()
 
-    def resetPbar(self, max:int, msg:str=None):
+    def resetPbar(self, data:tuple):
         '''New method to replace historical pbar functionality 2023-08-09'''
         self.sw_pbar.show()
         self.pbar.show()
-        self.pbar.setMaximum(max)
+        self.pbar.setMaximum(data[0])
         self.pbar.setValue(0)
-        if msg:
-            self.setPbarText(msg)
-        logger.critical(f"Progress bar reset with maximum {max}")
+        self.pbar.setFormat('(%p%) ' + data[1])
+        logger.critical(f"Progress bar reset with maximum {data[0]}, descript: {data[1]}")
         QApplication.processEvents()
 
 
@@ -5669,7 +5667,6 @@ class MainWindow(QMainWindow):
         '''
         caller = inspect.stack()[1].function
         # logger.critical(f'caller = {caller}, set_n_processes = {set_n_processes}')
-        cfg.CancelProcesses = False #0602+
         if set_n_processes and (set_n_processes > 1):
             # logger.critical('Resetting # tasks...')
             cfg.nProcessSteps = set_n_processes
@@ -5678,7 +5675,6 @@ class MainWindow(QMainWindow):
         else:
             self.pbarLabel.hide()
         # if cancel_processes:
-        #     cfg.CancelProcesses = True
         #     self.pbar_cancel_button.hide()
         # else:
         #     self.pbar_cancel_button.show()
