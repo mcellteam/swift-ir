@@ -149,7 +149,7 @@ class ImportImagesDialog(QFileDialog):
         urls = self.sidebarUrls()
         self.setSidebarUrls(urls)
         self.mpPreview = QLabel("Preview", self)
-        self.mpPreview.setMinimumSize(300, 300)
+        self.mpPreview.setMinimumSize(256, 256)
         self.mpPreview.setAlignment(Qt.AlignCenter)
         self.mpPreview.setObjectName("labelPreview")
         self.mpPreview.setText('Preview')
