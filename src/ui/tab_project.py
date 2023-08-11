@@ -3479,11 +3479,13 @@ class ProjectTab(QWidget):
                 logger.critical('')
                 self.dSnr_plot.updateLayerLinePos()
         # self.datamodel.signals.zposChanged.connect(update_dSnr_zpos)
-        def reinit_dSnr():
-            if self.dSnr_plot.isVisible():
-                logger.info('Signal received! Reinitializing SNR plot dock widget...')
-                self.dSnr_plot.initSnrPlot()
-        self.datamodel.signals.warning2.connect(reinit_dSnr)
+
+        #Todo this results in far too many calls for certain widgets. Figure out something better.
+        # def reinit_dSnr():
+        #     if self.dSnr_plot.isVisible():
+        #         logger.info('Signal received! Reinitializing SNR plot dock widget...')
+        #         self.dSnr_plot.initSnrPlot()
+        # self.datamodel.signals.warning2.connect(reinit_dSnr)
         self.datamodel.signals.warning2.connect(cfg.main_window._callbk_unsavedChanges)
         self.dSnr_plot.setStyleSheet('background-color: #222222; font-weight: 600; font-size: 12px; color: #ede9e8;')
         cfg.mw.dw_snr.setWidget(self.dSnr_plot)
@@ -4060,19 +4062,25 @@ class WarningNotice(QWidget):
             self.fixbutton = QPushButton('Fix All')
             self.fixbutton.setStyleSheet("font-size: 10px;")
             self.fixbutton.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+            # self.fixbutton.setStyleSheet("""
+            # QPushButton{
+            #     background-color: #ede9e8;
+            #     border-style: solid;
+            #     border-width: 1px;
+            #     border-radius: 4px;
+            #     border-color: #f3f6fb;
+            #     color: #161c20;
+            #     font-size: 9px;
+            #     font-weight: 600;
+            # }
+            # """)
             self.fixbutton.setStyleSheet("""
             QPushButton{
-                background-color: #ede9e8;
-                border-style: solid;
-                border-width: 1px;
-                border-radius: 4px;
-                border-color: #f3f6fb;
                 color: #161c20;
                 font-size: 9px;
-                font-weight: 600;
             }
             """)
-            self.fixbutton.setFixedSize(QSize(40,15))
+            self.fixbutton.setFixedSize(QSize(40,18))
             # self.fixbutton.setFixedHeight(16)
             self.layout.addWidget(self.fixbutton)
 
