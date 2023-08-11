@@ -317,7 +317,8 @@ class SnrPlot(QWidget):
         if cfg.data.is_aligned():
             if cfg.data['data']['scales'][cfg.data.scale]['aligned']:
                 try:
-                    self.plotGhostScaleData()
+                    if self.dock:
+                        self.plotGhostScaleData()
                 except:
                     print_exception()
             else:

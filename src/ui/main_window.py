@@ -2099,8 +2099,8 @@ class MainWindow(QMainWindow):
                             cfg.pt.updateDetailsPanel()
                     self._showSNRcheck()
                     cfg.project_tab.refreshTab()
-                    if cfg.pt._tabs.currentIndex() == 0:
-                        self.setdw_thumbs(cfg.data.is_aligned())
+                    # if cfg.pt._tabs.currentIndex() == 0:
+                    #     self.setdw_thumbs(cfg.data.is_aligned())
                     if self.dw_snr.isVisible():
                         cfg.pt.dSnr_plot.initSnrPlot()
 
@@ -2269,8 +2269,8 @@ class MainWindow(QMainWindow):
         QApplication.processEvents()
 
         cfg.mw.setdw_snr(True)
-        cfg.mw.setdw_thumbs(True)
-        cfg.mw.setdw_matches(False)
+        # cfg.mw.setdw_thumbs(True)
+        # cfg.mw.setdw_matches(False)
         self.dataUpdateWidgets()
 
         self.setFocus()
@@ -4747,6 +4747,8 @@ class MainWindow(QMainWindow):
         tip = """Align and generate all sections for the current scale"""
         # self._btn_alignAll = QPushButton(f"Align All {hotkey('A')}")
         self._btn_alignAll = QPushButton(f"Align All")
+        self._btn_alignAll.setMaximumWidth(128)
+        self._btn_alignAll.setFixedHeight(20)
         self._btn_alignAll.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self._btn_alignAll.setEnabled(False)
         self._btn_alignAll.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -4755,6 +4757,9 @@ class MainWindow(QMainWindow):
 
         tip = """Align and generate the current section only"""
         self._btn_alignOne = QPushButton('Align One')
+        self._btn_alignOne.setMaximumWidth(128)
+        self._btn_alignOne.setFixedHeight(20)
+        self._btn_alignOne.setFixedHeight(20)
         self._btn_alignOne.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self._btn_alignOne.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self._btn_alignOne.setEnabled(False)
@@ -4813,16 +4818,20 @@ class MainWindow(QMainWindow):
         self.w_range.layout.setSpacing(2)
 
         self.newActionsWidget = HWidget(self._btn_alignAll, self._btn_alignOne)
-        self.newActionsWidget.layout.setSpacing(4)
-        self.newActionsWidget.setStyleSheet("font-size: 10px; font-weight: 600;")
+        self.newActionsWidget.layout.setSpacing(2)
+        self.newActionsWidget.setStyleSheet("font-size: 10px;")
 
         self.toolbar_cpanel = QToolBar()
         self.toolbar_cpanel.setObjectName("Main Toolbar")
         self.toolbar_cpanel.setAllowedAreas(Qt.TopToolBarArea | Qt.BottomToolBarArea)
         # self.toolbar_cpanel.setMovable(False)
-        self.toolbar_cpanel.setFixedHeight(38)
-        self.toolbar_cpanel.addWidget(self.navControls)
-        self.toolbar_cpanel.addWidget(self.newActionsWidget)
+        self.toolbar_cpanel.setFixedHeight(32)
+        hw = HWidget(self.navControls, self.newActionsWidget)
+        hw.layout.setStretch(0,1)
+        hw.layout.setStretch(1,0)
+        # self.toolbar_cpanel.addWidget(self.navControls)
+        # self.toolbar_cpanel.addWidget(self.newActionsWidget)
+        self.toolbar_cpanel.addWidget(hw)
         self.toolbar_cpanel.hide()
 
     def initUI(self):
@@ -5216,7 +5225,7 @@ class MainWindow(QMainWindow):
             background-color: qlineargradient(x1:0, y1:0, x2:.5, y2:1, stop:0 #141414, stop:1 #222222);
             color: #f3f6fb;
             min-width: 120px;
-            height: 18px;
+            height: 16px;
             padding-left:4px;
             margin-left:4px;
             font-size: 10px;
@@ -5550,7 +5559,7 @@ class MainWindow(QMainWindow):
         logger.info('')
         # self.statusBar = self.statusBar()
         self.statusBar = QStatusBar()
-        self.statusBar.setFixedHeight(16)
+        self.statusBar.setFixedHeight(18)
         self.statusBar.setStyleSheet("""
             font-size: 10px;
             color: #161c20;
