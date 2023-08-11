@@ -80,7 +80,7 @@ class align_recipe:
             MAlogger.disabled = True
             RMlogger.disabled = True
             logger.disabled = True
-            # tnLogger.disabled = True
+            tnLogger.disabled = True
 
 
     def megabytes(self):
@@ -690,8 +690,8 @@ class align_ingredient:
             except:
                 logger.warning('An exception was triggered during removal of expired thumbnail: %s' % tn)
 
-        tnLogger.critical('Reducing the following thumbnails:\n%s' %str(self.matches_filenames))
-        logger.info(f'Reducing {len(self.matches_filenames)} total match images...')
+        tnLogger.info('Reducing the following thumbnails:\n%s' %str(self.matches_filenames))
+        # logger.info(f'Reducing {len(self.matches_filenames)} total match images...')
 
         try:
             siz_x, siz_y = ImageSize(next(absFilePaths(src)))

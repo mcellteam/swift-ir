@@ -1,25 +1,5 @@
 #!/usr/bin/env python3
 
-import os
-import re
-import sys
-import copy
-import json
-import glob
-import time
-import shutil
-import psutil
-import logging
-from pathlib import Path
-from multiprocessing import Pool
-from multiprocessing.pool import ThreadPool
-from concurrent.futures import ThreadPoolExecutor
-import multiprocessing as mp
-import subprocess as sp
-import numpy as np
-import tqdm
-import zarr
-import neuroglancer as ng
 # import imagecodecs
 import numcodecs
 numcodecs.blosc.use_threads = False
@@ -68,15 +48,18 @@ class ScaleWorker(QObject):
     scalingFinished = Signal()
     progress = Signal(int)
     initPbar = Signal(tuple) # (# tasks, description)
+    hudMessage = Signal(str) # (# tasks, description)
+    hudWarning = Signal(str) # (# tasks, description)
 
     def __init__(self, dm):
+        super().__init__()
         logger.info('')
         self.dm = dm
         self.result = None
         self._mutex = QMutex()
         self._running = True
 
-        super().__init__()
+
 
     def running(self):
         try:
@@ -98,15 +81,14 @@ class ScaleWorker(QObject):
         print(f'\n\n######## Generating Downsampled Images ########\n')
 
         # Todo This should check for source files before doing anything
-        if cfg.CancelProcesses:
-            cfg.mw.warn('Canceling Tasks: Generate Scale Image Hierarchy')
-            cfg.mw.warn('Canceling Tasks: Copy-convert Scale Images to Zarr')
+        if not self._running:
+            self.hudWarning.emit('Canceling Tasks: Generate Scale Image Hierarchy')
+            self.hudWarning.emit('Canceling Tasks: Copy-convert Scale Images to Zarr')
             return
         cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(dm) * len(dm.downscales()))
         cur_path = os.path.split(os.path.realpath(__file__))[0] + '/'
         create_project_structure_directories(dm.dest(), dm.scales(), gui=False)
         iscale2_c = os.path.join(Path(cur_path).parent.absolute(), 'lib', get_bindir(), 'iscale2')
-        # print(path.parent.absolute())
 
         # Create Scale 1 Symlinks
         logger.info('Creating Scale 1 symlinks...')
@@ -126,20 +108,6 @@ class ScaleWorker(QObject):
                     except: logger.warning("Unable to link or copy from " + fn + " to " + ofn)
 
         logger.info('Creating downsampling tasks...')
-        task_groups = {}
-        for s in dm.downscales()[::-1]:  # value string '1 2 4'
-            task_groups[s] = []
-            scale_val = get_scale_val(s)
-
-            for i, layer in enumerate(dm['data']['scales'][s]['stack']):
-                if_arg     = os.path.join(src_path, dm.base_image_name(s=s, l=i))
-                ofn        = os.path.join(dm.dest(), s, 'img_src', os.path.split(if_arg)[1])
-                of_arg     = 'of=%s' % ofn
-                scale_arg  = '+%d' % scale_val
-                task_groups[s].append([iscale2_c, scale_arg, of_arg, if_arg])
-                layer['filename'] = ofn #0220+
-                # logger.info(f"task =\n{[iscale2_c, scale_arg, of_arg, if_arg]}\n")
-
 
         t0 = time.time()
 
@@ -148,24 +116,36 @@ class ScaleWorker(QObject):
 
         logger.info(f"cpus: {cpus}")
         ctx = mp.get_context('forkserver')
-        for group in task_groups:
-            logger.info(f'Downsampling {group}...')
+        for s in dm.downscales()[::-1]:
+            desc = f'Downsampling {dm.scale_pretty(s)}...'
+            logger.info(desc)
+
+            tasks = []
+            for i, layer in enumerate(dm['data']['scales'][s]['stack']):
+                if_arg     = os.path.join(src_path, dm.base_image_name(s=s, l=i))
+                ofn        = os.path.join(dm.dest(), s, 'img_src', os.path.split(if_arg)[1])
+                of_arg     = 'of=%s' % ofn
+                scale_arg  = '+%d' % dm.scale_val(s)
+                tasks.append([iscale2_c, scale_arg, of_arg, if_arg])
+                layer['filename'] = ofn #0220+
+                layer['alignment']['swim_settings']['fn_transforming'] = ofn
+
+            self.initPbar.emit((len(tasks), desc))
             t = time.time()
-            with ctx.Pool() as pool:
-                list(tqdm.tqdm(pool.map(run, task_groups[group]),
-                               total=len(task_groups[group]),
-                               desc=f"Downsampling {group}",
-                               position=0,
-                               leave=True))
-                # pool.close() #0723+
-                # pool.join()
+            with ctx.Pool(processes=cpus) as pool:
+                for i, result in enumerate(tqdm.tqdm(pool.imap_unordered(run, tasks),
+                                                     total=len(tasks),
+                                                     desc=desc, position=0,
+                                                     leave=True)):
+                    self.progress.emit(i)
+                    if not self._running:
+                        break
 
             dt = time.time() - t
-            dm['data']['benchmarks']['scales'][group]['t_scale_generate'] = dt
+            dm['data']['benchmarks']['scales'][s]['t_scale_generate'] = dt
             logger.info(f"Elapsed Time: {'%.3g' % dt}s")
 
         print("Finished generating images")
-        # show_mp_queue_results(task_queue=task_queue, dt=dt)
         dm.t_scaling = time.time() - t0
 
         dm.link_reference_sections(s_list=dm.scales()) #This is necessary
@@ -185,8 +165,8 @@ class ScaleWorker(QObject):
             dm['data']['scales'][s]['image_src_size'] = siz
 
 
-        if cfg.CancelProcesses:
-            cfg.main_window.warn('Canceling Tasks:  Convert TIFFs to NGFF Zarr')
+        if not self._running:
+            self.hudWarning.emit('Canceling Tasks:  Convert TIFFs to NGFF Zarr')
             return
 
         print(f'\n\n######## Copy-converting TIFFs to NGFF Zarr ########\n')
@@ -222,10 +202,8 @@ class ScaleWorker(QObject):
 
         t_elapsed = time.time() - t0
         dm.t_scaling_convert_zarr = t_elapsed
-        cfg.main_window.set_elapsed(t_elapsed, "Copy-convert scales to Zarr")
-
-        cfg.mw.tell('**** Autoscaling Complete ****')
-        logger.info('<<<< autoscale <<<<')
+        self.hudMessage.emit('**** Autoscaling Complete ****')
+        logger.info('**** Autoscaling Complete ****')
         self.scalingFinished.emit()
 
 

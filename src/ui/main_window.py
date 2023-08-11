@@ -1327,6 +1327,8 @@ class MainWindow(QMainWindow):
         self.thread.finished.connect(self.thread.deleteLater)
         self.worker.progress.connect(self.setPbar)
         self.worker.initPbar.connect(self.resetPbar)
+        self.worker.hudMessage.connect(self.tell)
+        self.worker.hudWarning.connect(self.warn)
         self.thread.start()  # Step 6: Start the thread
 
         self._btn_alignAll.setEnabled(False)  # Final resets
@@ -1356,6 +1358,8 @@ class MainWindow(QMainWindow):
         self.thread.finished.connect(self.thread.deleteLater)
         self.worker.progress.connect(self.setPbar)
         self.worker.initPbar.connect(self.resetPbar)
+        self.worker.hudMessage.connect(self.tell)
+        self.worker.hudWarning.connect(self.warn)
         self.thread.start()  # Step 6: Start the thread
 
         self._btn_alignAll.setEnabled(False)  # Final resets
@@ -1371,7 +1375,7 @@ class MainWindow(QMainWindow):
             self.onStartProject()
             self.enableAllTabs()
         self.worker.scalingFinished.connect(fn)
-        self.thread.finished.connect(lambda: print("\n\n\nScaling Worker Finished!\n\n"))
+        self.thread.finished.connect(lambda: print("\n\n\nScaling Thread Finished!\n\n"))
 
 
     def rescale(self):
@@ -5613,7 +5617,7 @@ class MainWindow(QMainWindow):
             # self.thread.quit()
             # self.thread.wait()
             # self.thread.exit()
-            self.thread.terminate() # NOTE this is discouraged!
+            # self.thread.terminate() # NOTE this is discouraged!
         except:
             print_exception()
         finally:
@@ -5652,7 +5656,7 @@ class MainWindow(QMainWindow):
         self.pbar.setMaximum(data[0])
         self.pbar.setValue(0)
         self.pbar.setFormat('(%p%) ' + data[1])
-        logger.critical(f"Progress bar reset with maximum {data[0]}, descript: {data[1]}")
+        # logger.info(f"Progress bar reset with maximum {data[0]}, descript: {data[1]}")
         QApplication.processEvents()
 
 

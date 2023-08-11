@@ -51,8 +51,11 @@ class AlignWorker(QObject):
     alignmentFinished = Signal()
     progress = Signal(int)
     initPbar = Signal(tuple) # (# tasks, description)
+    hudMessage = Signal(str) # (# tasks, description)
+    hudWarning = Signal(str)
 
     def __init__(self, scale, path, indexes, swim_only, renew_od, reallocate_zarr, dm):
+        super().__init__()
         logger.info('')
         self.scale = scale
         self.path = path
@@ -73,8 +76,6 @@ class AlignWorker(QObject):
             self._tasks.append(self.generate)
 
 
-
-        super().__init__()
 
     def running(self):
         try:
@@ -116,22 +117,6 @@ class AlignWorker(QObject):
             os.remove(scratchpath)
 
         # checkForTiffs(path)
-
-        d = os.path.join(dm.dest(), scale, 'signals')
-        if not os.path.exists(d):
-            os.mkdir(d)
-
-        # d = os.path.join(dm.dest(), scale, 'matches_raw')
-        # if not os.path.exists(d):
-        #     os.mkdir(d)
-
-        # d = os.path.join(dm.dest(), scale, 'matches')
-        # if not os.path.exists(d):
-        #     os.mkdir(d)
-
-        # d = os.path.join(dm.dest(), scale, 'thumbnails')
-        # if not os.path.exists(d):
-        #     os.mkdir(d)
 
         first_unskipped = dm.first_unskipped(s=scale)
 
@@ -217,21 +202,15 @@ class AlignWorker(QObject):
             desc = f"Computing Affines ({len(tasks)} tasks)"
             self.initPbar.emit((len(tasks), desc))
             all_results = []
-            i = 0
             with ctx.Pool(processes=cpus) as pool:
-                for result in tqdm.tqdm(
-                        pool.imap_unordered(run_recipe, tasks),
-                        total=len(tasks),
-                        desc=desc,
-                        position=0,
-                        leave=True):
+                for i, result in enumerate(tqdm.tqdm(pool.imap_unordered(run_recipe, tasks),
+                                        total=len(tasks), desc=desc, position=0, leave=True)):
                     all_results.append(result)
-                    i += 1
                     self.progress.emit(i)
                     if not self._running:
                         break
 
-            logger.critical(f"\n\n# Completed Alignment Tasks: {len(all_results)}\n")
+            logger.critical(f"# Completed Alignment Tasks: {len(all_results)}")
 
             # # # For use with ThreadPool ONLY
             # for r in all_results:
@@ -464,7 +443,6 @@ class AlignWorker(QObject):
 
         t_elapsed = time.time() - t0
         dm.t_generate = t_elapsed
-        # cfg.main_window.set_elapsed(t_elapsed, f'Generate alignment')
 
         # dm.register_cafm_hashes(s=scale, indexes=indexes)
         dm.set_image_aligned_size()
@@ -533,7 +511,6 @@ class AlignWorker(QObject):
 
         t_elapsed = time.time() - t0
         dm.t_convert_zarr = t_elapsed
-        # cfg.main_window.set_elapsed(t_elapsed, f'Copy-convert alignment to Zarr')
 
 
 

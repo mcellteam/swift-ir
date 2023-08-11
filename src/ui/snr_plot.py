@@ -263,7 +263,7 @@ class SnrPlot(QWidget):
 
 
     def initSnrPlot(self, s=None):
-        logger.critical("Initializing SNR plot...")
+        logger.info("Initializing SNR plot...")
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
         sys.stdout.flush()
@@ -414,13 +414,13 @@ class SnrPlot(QWidget):
         '''Update SNR plot widget based on checked/unchecked state of checkboxes'''
 
 
-        logger.critical(f"[{self.dock}] {cfg.data.snr_list()}")
+        # logger.critical(f"[{self.dock}] {cfg.data.snr_list()}")
         # caller = inspect.stack()[1].function
         t0 = time()
         if cfg.data:
             # self.plot.clear() #0808-
             # self.plot.addItem(self._curLayerLine) #0808-
-            logger.critical('Plotting data...')
+            # logger.critical('Plotting data...')
             if self.dock:
                 # self.plotGhostScaleData()
                 self.plotSingleScale()
@@ -498,14 +498,14 @@ class SnrPlot(QWidget):
 
 
     def plotSingleScale(self, s=None):
-        logger.critical(f'[{self.dock}] plotSingleScale (scale_key: {s}):')
+        # logger.critical(f'[{self.dock}] plotSingleScale (scale_key: {s}):')
         if s == None: s = cfg.data.scale
         # x_axis, y_axis = self.get_axis_data(s=s)
         x_axis, y_axis = self.get_everything_comport_axis_data(s=s)
         if not self.dock: x_axis = [x+self._getScaleOffset(s=s) for x in x_axis]
         brush = self._plot_brushes[cfg.data.scales()[::-1].index(s)]
 
-        logger.critical("Plotting everything comports axis data...")
+        # logger.critical("Plotting everything comports axis data...")
         self.snr_points[s] = pg.ScatterPlotItem(
             size=(11,8)[self.dock],
             # pen=pg.mkPen(None),
@@ -562,7 +562,7 @@ class SnrPlot(QWidget):
 
         if self.dock:
 
-            logger.critical("Plotting cafm no comports data points...")
+            # logger.critical("Plotting cafm no comports data points...")
             self.no_comport_cafm_points[s] = pg.ScatterPlotItem(
                 size=8,
                 # pen=pg.mkPen(None),
@@ -597,7 +597,7 @@ class SnrPlot(QWidget):
             self.no_comport_cafm_points[s].sigHovered.connect(hoverSlot0)
             sys.stdout.flush()
 
-            logger.critical("Plotting data no comports data points...")
+            # logger.critical("Plotting data no comports data points...")
             self.no_comport_data_points[s] = pg.ScatterPlotItem(
                 size=9,
                 # pen=pg.mkPen(None),
