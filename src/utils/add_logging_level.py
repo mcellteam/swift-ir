@@ -43,7 +43,7 @@ def addLoggingLevel(levelName, levelNum, methodName=None):
     if hasattr(logging.getLoggerClass(), methodName):
        raise AttributeError('{} already defined in logger class'.format(methodName))
 
-    # This method was inspired by the answers to Stack Overflow post
+    # This method is based on answers to Stack Overflow post
     # http://stackoverflow.com/q/2183233/2988730, especially
     # http://stackoverflow.com/a/13638084/2988730
     def logForLevel(self, message, *args, **kwargs):

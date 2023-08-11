@@ -58,67 +58,113 @@ https://github.com/nexpy/nexpy/issues/398
 """
 print('(Hang tight. The application will launch shortly...)')
 import os
-import asyncio
 import subprocess as sp
 import qtpy
-# os.environ['QT_API'] = 'pyqt5'
-os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt5'
-# os.environ["BLOSC_NOLOCK"] = "1"
-os.environ["BLOSC_NTHREADS"] = "1"
+# os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt5'
+# os.environ["BLOSC_NTHREADS"] = "1"
 import sys, signal, logging, argparse
 import faulthandler
 from concurrent.futures import ThreadPoolExecutor
 
 from qtpy import QtCore
-from qtpy.QtCore import QCoreApplication, Qt, QEventLoop
+from qtpy.QtCore import QCoreApplication, Qt
 from qtpy.QtWidgets import QApplication
 from src.ui.main_window import MainWindow
-from src.utils.add_logging_level import addLoggingLevel
 from src.helpers import check_for_binaries, configure_project_paths, initialize_user_preferences, \
     is_tacc, print_exception, register_login
 import src.config as cfg
 from qtconsole import __version__ as qcv
 
-
-WHITE_LIST = {'src'}      # Look for these words in the file path.
-EXCLUSIONS = {'<'}          # Ignore <listcomp>, etc. in the function name.
+print("Imports complete.", flush=True)
 
 
-def tracefunc(frame, event, arg):
-    # https://stackoverflow.com/questions/8315389/how-do-i-print-functions-as-they-are-called
-    if event == "call":
-        tracefunc.stack_level += 1
-
-        unique_id = frame.f_code.co_filename + str(frame.f_lineno)
-        if unique_id in tracefunc.memorized:
-            return
-
-        # Part of filename MUST be in white list.
-        if any(x in frame.f_code.co_filename for x in WHITE_LIST) \
-                and \
-                not any(x in frame.f_code.co_name for x in EXCLUSIONS):
-
-            if 'self' in frame.f_locals:
-                class_name = frame.f_locals['self'].__class__.__name__
-                func_name = class_name + '.' + frame.f_code.co_name
-            else:
-                func_name = frame.f_code.co_name
-
-            func_name = '{name:->{indent}s}()'.format(indent=tracefunc.stack_level * 2, name=func_name)
-            txt = '{: <40} # {}, {}'.format(
-                func_name, frame.f_code.co_filename, frame.f_lineno)
-            print(txt)
-
-            tracefunc.memorized.add(unique_id)
-
-    elif event == "return":
-        tracefunc.stack_level -= 1
 
 
-tracefunc.memorized = set()
-tracefunc.stack_level = 0
+# WHITE_LIST = {'src'}      # Look for these words in the file path.
+# EXCLUSIONS = {'<'}          # Ignore <listcomp>, etc. in the function name.
 
+# def tracefunc(frame, event, arg):
+#     # https://stackoverflow.com/questions/8315389/how-do-i-print-functions-as-they-are-called
+#     if event == "call":
+#         tracefunc.stack_level += 1
+#
+#         unique_id = frame.f_code.co_filename + str(frame.f_lineno)
+#         if unique_id in tracefunc.memorized:
+#             return
+#
+#         # Part of filename MUST be in white list.
+#         if any(x in frame.f_code.co_filename for x in WHITE_LIST) \
+#                 and \
+#                 not any(x in frame.f_code.co_name for x in EXCLUSIONS):
+#
+#             if 'self' in frame.f_locals:
+#                 class_name = frame.f_locals['self'].__class__.__name__
+#                 func_name = class_name + '.' + frame.f_code.co_name
+#             else:
+#                 func_name = frame.f_code.co_name
+#
+#             func_name = '{name:->{indent}s}()'.format(indent=tracefunc.stack_level * 2, name=func_name)
+#             txt = '{: <40} # {}, {}'.format(
+#                 func_name, frame.f_code.co_filename, frame.f_lineno)
+#             print(txt)
+#
+#             tracefunc.memorized.add(unique_id)
+#
+#     elif event == "return":
+#         tracefunc.stack_level -= 1
+#
+#
+# tracefunc.memorized = set()
+# tracefunc.stack_level = 0
 
+def addLoggingLevel(levelName, levelNum, methodName=None):
+    """
+    Comprehensively adds a new logging level to the `logging` module and the
+    currently configured logging class.
+
+    `levelName` becomes an attribute of the `logging` module with the value
+    `levelNum`. `methodName` becomes a convenience method for both `logging`
+    itself and the class returned by `logging.getLoggerClass()` (usually just
+    `logging.Logger`). If `methodName` is not specified, `levelName.lower()` is
+    used.
+
+    To avoid accidental clobberings of existing attributes, this method will
+    raise an `AttributeError` if the level name is already an attribute of the
+    `logging` module or if the method name is already present
+
+    Example
+    -------
+    >>> addLoggingLevel('TRACE', logging.DEBUG - 5)
+    >>> logging.getLogger(__name__).setLevel("TRACE")
+    >>> logging.getLogger(__name__).trace('that worked')
+    >>> logging.trace('so did this')
+    >>> logging.TRACE
+    5
+
+    """
+    if not methodName:
+        methodName = levelName.lower()
+
+    if hasattr(logging, levelName):
+       raise AttributeError('{} already defined in logging module'.format(levelName))
+    if hasattr(logging, methodName):
+       raise AttributeError('{} already defined in logging module'.format(methodName))
+    if hasattr(logging.getLoggerClass(), methodName):
+       raise AttributeError('{} already defined in logger class'.format(methodName))
+
+    # This method is based on answers to Stack Overflow post
+    # http://stackoverflow.com/q/2183233/2988730, especially
+    # http://stackoverflow.com/a/13638084/2988730
+    def logForLevel(self, message, *args, **kwargs):
+        if self.isEnabledFor(levelNum):
+            self._log(levelNum, message, args, **kwargs)
+    def logToRoot(message, *args, **kwargs):
+        logging.log(levelNum, message, *args, **kwargs)
+
+    logging.addLevelName(levelNum, levelName)
+    setattr(logging, levelName, levelNum)
+    setattr(logging.getLoggerClass(), methodName, logForLevel)
+    setattr(logging, methodName, logToRoot)
 
 class CustomFormatter(logging.Formatter):
 
@@ -181,6 +227,9 @@ def main():
     args = parser.parse_args()
     os.environ['QT_API'] = args.api  # This env setting is ingested by qtpy
     # os.environ['PYQTGRAPH_QT_LIB'] = args.api #do not set!
+
+    os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt5'
+    os.environ["BLOSC_NTHREADS"] = "1"
 
     if logger.hasHandlers():  logger.handlers.clear() #orig
     ch = logging.StreamHandler()
@@ -251,8 +300,8 @@ def main():
     if cfg.FAULT_HANDLER:
         faulthandler.enable(file=sys.stderr, all_threads=True)
 
-    if cfg.PROFILING_MODE:
-        sys.setprofile(tracefunc)
+    # if cfg.PROFILING_MODE:
+    #     sys.setprofile(tracefunc)
 
     os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
     # logger.info('Setting OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES')
