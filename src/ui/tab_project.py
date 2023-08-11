@@ -139,7 +139,7 @@ class ProjectTab(QWidget):
             self.treeview_model.jumpToLayer()
         elif index == 4:
             self.snr_plot.initSnrPlot()
-        cfg.mw.dataUpdateWidgets() #0805-
+        # cfg.mw.dataUpdateWidgets() #0805-
 
 
     # def refreshTab(self, index=None):
@@ -192,6 +192,8 @@ class ProjectTab(QWidget):
         if cfg.mw._working:
             logger.warning(f"[{caller}] UNABLE TO INITIALIZE NEUROGLANCER AT THIS TIME... BUSY WORKING!")
             return
+
+
 
         cfg.mw.set_status('Initializing Neuroglancer...')
         if DEV:

@@ -225,6 +225,7 @@ def update_preferences_model():
     cfg.settings.setdefault('ui', {})
     cfg.settings['ui'].setdefault('SHOW_CORR_SPOTS', False)
     cfg.settings['ui'].setdefault('FETCH_PROJECT_SIZES', False)
+    cfg.settings['ui'].setdefault('DISPLAY_THUMBNAILS_IN_DIALOG', True)
     cfg.settings.setdefault('notes', {})
     cfg.settings['notes'].setdefault('global_notes', '')
     logger.info('<<<< update_preferences_model <<<<')
@@ -891,7 +892,7 @@ def initLogFiles(dm):
 
 def create_project_structure_directories(destination, scales, gui=True) -> None:
     caller = inspect.stack()[1].function
-    logger.info(f'Creating Project Structure Directories...')
+    logger.info(f'Creating Project Structure Directories for destination {destination}, scales: {scales}...')
 
     for scale in scales:
         if gui:

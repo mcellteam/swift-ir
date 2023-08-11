@@ -42,6 +42,9 @@ class Thumbnailer:
             coarsest_scale = cfg.data.smallest_scale()
             src = os.path.join(cfg.data.dest(), coarsest_scale, 'img_src')
             od = os.path.join(cfg.data.dest(), 'thumbnails')
+            logger.info(f"coarsest_scale = {coarsest_scale}\n"
+                            f"src            = {src}\n"
+                            f"od             = {od}")
             dt = self.reduce(
                 src=src, od=od, rmdir=True, prefix='', start=0, end=None, pbar_text=pbar_text, dest=dest)
             return dt

@@ -295,7 +295,8 @@ def main():
     # app = QApplication([])
     app = QApplication(sys.argv)
 
-    app.setStyle('Fusion')
+    # app.setStyle('Fusion')
+    app.setStyle('cleanlooks')
     # app.setStyle('Breeze')
     # app.setStyle('Oxygen')
     # app.setStyle('Windows')

@@ -381,10 +381,11 @@ class OpenProject(QWidget):
         self._splitter.setSizes([700, 300])
 
         self.vbl_main = VBL()
+        self.vbl_main.addWidget(self.new_project_header)
         self.vbl_main.addWidget(self._splitter)
         self.vbl_main.addWidget(self._actions_widget)
         self.vbl_main.addWidget(self.le_project_name_w)
-        self.vbl_main.addWidget(self.new_project_header)
+        # self.vbl_main.addWidget(self.new_project_header)
 
         self.setLayout(self.vbl_main)
 
@@ -502,9 +503,12 @@ class OpenProject(QWidget):
             logger.info('Creating name_dialog...')
             self.name_dialog = QFileDialog()
             self.vbl_main.addWidget(self.name_dialog)
-            self.name_dialog.setContentsMargins(0,0,0,0)
+            self.name_dialog.setContentsMargins(2,2,2,2)
             self.name_dialog.setWindowFlags(Qt.FramelessWindowHint)
             self.name_dialog.setOption(QFileDialog.DontUseNativeDialog)
+            self.name_dialog.layout().setContentsMargins(2,2,2,2)
+            self.name_dialog.layout().setHorizontalSpacing(2)
+            self.name_dialog.layout().setVerticalSpacing(0)
 
             logger.info('Setting name filter...')
             self.name_dialog.setNameFilter("Text Files (*.swiftir)")
@@ -610,8 +614,8 @@ class OpenProject(QWidget):
 
             '''Step 2/3'''
             '''Dialog for importing images. Returns list of filenames.'''
-            dialog = ImportImagesDialog()
-            self.vbl_main.addWidget(dialog)
+            cfg.iid_dialog = ImportImagesDialog()
+            self.vbl_main.addWidget(cfg.iid_dialog)
             self.new_project_lab1.setText('New Project (Step: 2/3) - Import TIFF Images')
             cfg.mw.set_status('New Project (Step: 2/3) - Import TIFF Images')
             sidebar = self.findChild(QListView, "sidebar")
@@ -619,14 +623,14 @@ class OpenProject(QWidget):
             delegate.mapping = getSideBarPlacesImportImages()
             sidebar.setItemDelegate(delegate)
 
-            if dialog.exec_() == QDialog.Accepted:
-                filenames = dialog.selectedFiles()
-                dialog.pixmap = None
+            if cfg.iid_dialog.exec_() == QDialog.Accepted:
+                filenames = cfg.iid_dialog.selectedFiles()
+                cfg.iid_dialog.pixmap = None
             else:
                 logger.warning('Import images dialog did not return a valid file list')
                 cfg.mw.warn('Import images dialog did not return a valid file list')
                 self.showMainUI()
-                dialog.pixmap = None
+                cfg.iid_dialog.pixmap = None
                 return 1
 
             if filenames == 1:
@@ -669,6 +673,7 @@ class OpenProject(QWidget):
         cfg.mw.set_status('New Project (Step: 3/3) - Configure')
 
         dialog = NewConfigureProjectDialog(parent=self)
+        dialog.layout().setContentsMargins(2,2,2,2)
         dialog.setWindowFlags(Qt.FramelessWindowHint)
         self.vbl_main.addWidget(dialog)
         # cfg.data = dm
@@ -690,7 +695,7 @@ class OpenProject(QWidget):
         dm.set_defaults()
         cfg.project_tab = cfg.pt = ProjectTab(self, path=path, datamodel=dm)
 
-        cfg.mw._closeOpenProjectTab()
+        # cfg.mw._closeOpenProjectTab()
 
         # cfg.mw._disableGlobTabs()
 
@@ -698,27 +703,12 @@ class OpenProject(QWidget):
         cfg.mw.setNoPbarMessage(True)
 
         cfg.mw.set_status('')
+
         QApplication.processEvents()
-        try:
-            autoscale(dm)
-            logger.info("\n\nFinished autoscaling.\n")
-            # if dm['data']['autoalign_flag']:
-            #     logger.info('Initializing alignment...')
-            #     cfg.mw.tell(
-            #         f'Auto-align flag is set. Aligning {dm.scale_pretty(dm.coarsest_scale_key())}...')
-            #     cfg.mw.alignAll(force=True, ignore_bb=True)
-            logger.info('Generating Source Thumbnails...')
-            thumbnailer = Thumbnailer()
-            cfg.data.t_thumbs = thumbnailer.reduce_main(dest=dm.dest())
-        except:
-            print_exception()
-        finally:
-            # cfg.mw.enableAllTabs()
-            QApplication.processEvents()
-            cfg.data = dm
-            cfg.mw._autosave(silently=True)
-            name, ext = os.path.splitext(os.path.basename(path))
-            cfg.mw.addGlobTab(cfg.project_tab, name)
+        cfg.data = dm
+        cfg.mw._autosave(silently=True)
+        name, ext = os.path.splitext(os.path.basename(path))
+        cfg.mw.addGlobTab(cfg.project_tab, name)
 
         QApplication.processEvents()
 
@@ -732,21 +722,30 @@ class OpenProject(QWidget):
         cfg.mw._autosave()
         self.user_projects.set_data()
         cfg.mw._is_initialized = 1
+
         QApplication.processEvents()
-        cfg.mw.setNoPbarMessage(False)
-        cfg.mw.enableAllTabs()
+
+        cfg.mw.autoscale(dm)
+        logger.info("\n\nFinished autoscaling.\n")
+        logger.info('Generating Source Thumbnails...')
 
 
 
-        cfg.pt.initNeuroglancer()
-        cfg.mw.onStartProject()
+
+        # cfg.pt.initNeuroglancer()
 
 
-        if dm['data']['autoalign_flag']:
-            logger.info('Initializing alignment...')
-            cfg.mw.tell(
-                f'Auto-align flag is set. Aligning {dm.scale_pretty(dm.coarsest_scale_key())}...')
-            cfg.mw.alignAll(force=True, ignore_bb=True)
+        QApplication.processEvents()
+
+
+        # if dm['data']['autoalign_flag']:
+        #     logger.info('Initializing alignment...')
+        #     cfg.mw.tell(
+        #         f'Auto-align flag is set. Aligning {dm.scale_pretty(dm.coarsest_scale_key())}...')
+        #     cfg.mw.alignAll(force=True, ignore_bb=True)
+
+        # cfg.mw.onStartProject()
+        # cfg.mw.enableAllTabs()
 
         logger.info('<<<< new_project <<<<')
 
@@ -844,9 +843,9 @@ class OpenProject(QWidget):
             cfg.dataById[id(cfg.project_tab)] = cfg.data
 
             # cfg.mw.addGlobTab(cfg.project_tab, os.path.basename(cfg.data.dest()) + '.swiftir')
-            cfg.mw._closeOpenProjectTab()
+            # cfg.mw._closeOpenProjectTab()
             cfg.mw.addGlobTab(cfg.project_tab, os.path.basename(cfg.data.dest()))
-            cfg.mw._setLastTab()
+            # cfg.mw._setLastTab()
             cfg.mw._is_initialized = 1
             QApplication.processEvents()
             cfg.pt.initNeuroglancer()

@@ -22,6 +22,7 @@ from src.funcs_zarr import preallocate_zarr
 from src.helpers import renew_directory, get_img_filenames
 # from thumbnailer import Thumbnailer
 from src.data_model import DataModel
+from src.thumbnailer import Thumbnailer
 
 import src.config as cfg
 # from qtpy.QtCore import QThreadPool
@@ -114,6 +115,10 @@ def autoscale(dm:DataModel, gui=True):
     dm.t_scaling = time.time() - t0
 
     dm.link_reference_sections(s_list=dm.scales()) #This is necessary
+
+    thumbnailer = Thumbnailer()
+    cfg.data.t_thumbs = thumbnailer.reduce_main(dest=dm.dest())
+
     dm.scale = dm.scales()[-1]
 
     src_img_size = dm.image_size(s='scale_1')
