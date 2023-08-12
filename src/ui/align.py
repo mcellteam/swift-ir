@@ -48,7 +48,7 @@ logger = logging.getLogger(__name__)
 
 
 class AlignWorker(QObject):
-    alignmentFinished = Signal()
+    finished = Signal()
     progress = Signal(int)
     initPbar = Signal(tuple) # (# tasks, description)
     hudMessage = Signal(str) # (# tasks, description)
@@ -93,9 +93,9 @@ class AlignWorker(QObject):
 
     def run(self):
         logger.info('')
-        while self._tasks and self._running:
+        while self._tasks and self.running():
             self._tasks.pop(0)()
-        self.alignmentFinished.emit() #Important!
+        self.finished.emit() #Important!
 
 
     def align(self):
@@ -207,7 +207,7 @@ class AlignWorker(QObject):
                                         total=len(tasks), desc=desc, position=0, leave=True)):
                     all_results.append(result)
                     self.progress.emit(i)
-                    if not self._running:
+                    if not self.running():
                         break
 
             logger.critical(f"# Completed Alignment Tasks: {len(all_results)}")
@@ -287,7 +287,7 @@ class AlignWorker(QObject):
         # except:
         #     print_exception()
 
-        if not self._running:
+        if not self.running():
             return
 
         t_elapsed = time.time() - t0
@@ -320,7 +320,7 @@ class AlignWorker(QObject):
 
         scale_val = get_scale_val(scale)
 
-        if not self._running:
+        if not self.running():
             logger.warning('Canceling Generate Alignment')
             return
 
@@ -420,7 +420,7 @@ class AlignWorker(QObject):
                 all_results.append(result)
                 i += 1
                 self.progress.emit(i)
-                if not self._running:
+                if not self.running():
                     break
 
 
@@ -431,14 +431,14 @@ class AlignWorker(QObject):
 
         logger.info("Generate Alignment Finished")
 
-        if not self._running:
+        if not self.running():
             return
 
         #initPbar
         thumbnailer = Thumbnailer()
         thumbnailer.reduce_aligned(indexes, dest=dest, scale=scale)
 
-        if not self._running:
+        if not self.running():
             return
 
         t_elapsed = time.time() - t0
@@ -448,7 +448,7 @@ class AlignWorker(QObject):
         dm.set_image_aligned_size()
 
         pbar_text = 'Copy-converting Scale %d Alignment To Zarr (%d Cores)...' % (scale_val, cpus)
-        if not self._running:
+        if not self.running():
             logger.warning('Canceling Tasks: %s' % pbar_text)
             return
         if self._reallocate_zarr:
@@ -503,7 +503,7 @@ class AlignWorker(QObject):
                 all_results.append(result)
                 i += 1
                 self.progress.emit(i)
-                if not self._running:
+                if not self.running():
                     break
 
 

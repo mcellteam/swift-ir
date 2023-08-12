@@ -159,7 +159,7 @@ class OpenProject(QWidget):
         # User Files Widget
         self.userFilesWidget = QWidget()
         lab = QLabel('Open AlignEM-SWIFT Project or...\nOpen OME-NGFF Zarr in Neuroglancer or...\nSelect folder of images for new project...')
-        lab.setStyleSheet('font-size: 10px; font-weight: 600; color: #161c20;')
+        lab.setStyleSheet('font-size: 10px; color: #161c20;')
         vbl = QVBoxLayout()
         vbl.setContentsMargins(4, 4, 4, 4)
         vbl.addWidget(HWidget(lab))
@@ -707,10 +707,9 @@ class OpenProject(QWidget):
         cfg.mw.set_status('')
 
         QApplication.processEvents()
-        cfg.data = dm
+
         cfg.mw._autosave(silently=True)
-        name, ext = os.path.splitext(os.path.basename(path))
-        cfg.mw.addGlobTab(cfg.project_tab, name)
+        cfg.mw.set_status(f"Creating project {os.path.basename(path)}...")
 
         QApplication.processEvents()
 
@@ -725,9 +724,18 @@ class OpenProject(QWidget):
         self.user_projects.set_data()
         cfg.mw._is_initialized = 1
 
+
         QApplication.processEvents()
 
+
+        name,_ = os.path.splitext(os.path.basename(dm.location))
+        cfg.mw.addGlobTab(cfg.project_tab, name, switch_to=False)
         cfg.mw.autoscale(dm)
+
+
+        cfg.data = dm
+        # name, ext = os.path.splitext(os.path.basename(path))
+        # cfg.mw.addGlobTab(cfg.project_tab, name)
 
         logger.info('<<<< new_project <<<<')
 
@@ -806,7 +814,7 @@ class OpenProject(QWidget):
 
             try:
                 with open(filename, 'r') as f:
-                    cfg.data = DataModel(data=json.load(f))
+                    dm = cfg.data = DataModel(data=json.load(f))
                 cfg.data.set_defaults()
                 cfg.mw._autosave()
             except:
@@ -826,12 +834,11 @@ class OpenProject(QWidget):
 
             # cfg.mw.addGlobTab(cfg.project_tab, os.path.basename(cfg.data.dest()) + '.swiftir')
             # cfg.mw._closeOpenProjectTab()
-            cfg.mw.addGlobTab(cfg.project_tab, os.path.basename(cfg.data.dest()))
             # cfg.mw._setLastTab()
             cfg.mw._is_initialized = 1
             QApplication.processEvents()
             cfg.pt.initNeuroglancer()
-            cfg.mw.onStartProject()
+            cfg.mw.onStartProject(dm)
 
         else:
             cfg.mw.warn("Invalid Path")
@@ -1274,7 +1281,7 @@ class UserProjects(QWidget):
             except: modified.append('Unknown')
             try:    n_sections.append(len(dm))
             except: n_sections.append('Unknown')
-            try:    img_dimensions.append(dm.full_scale_size())
+            try:    img_dimensions.append(dm.image_size('scale_1'))
             except: img_dimensions.append('Unknown')
             try:    projects.append(os.path.basename(p))
             except: projects.append('Unknown')
