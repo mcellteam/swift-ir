@@ -587,6 +587,12 @@ class EMViewer(AbstractEMViewer):
         self.set_contrast()
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
+        if self.state.cross_section_scale:
+            val = (self.state.cross_section_scale, self.state.cross_section_scale * 250000000)[self.state.cross_section_scale < .001]
+            if round(val, 3) != round(getData('state,ng_zoom'), 3):
+                setData('state,ng_zoom', val)
+                self.signals.zoomChanged.emit(val)
+
 
 # class EMViewerStage(AbstractEMViewer):
 #

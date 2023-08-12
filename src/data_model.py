@@ -2666,10 +2666,10 @@ class DataModel:
             ofn = os.path.join(self.location, 'scale_1', 'img_src', os.path.split(fn)[1])
             # normalize path for different OSs
             if os.path.abspath(os.path.normpath(fn)) != os.path.abspath(os.path.normpath(ofn)):
-                # try:
-                #     os.unlink(ofn)
-                # except:
-                #     pass
+                try:
+                    os.unlink(ofn)
+                except:
+                    pass
                 try:
                     os.symlink(fn, ofn)
                 except:

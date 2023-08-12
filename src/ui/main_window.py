@@ -1092,26 +1092,33 @@ class MainWindow(QMainWindow):
             cfg.data['data']['scales'][cfg.data.scale]['initial_snr'] = cfg.data.snr_list()
         cfg.data['data']['scales'][cfg.data.scale]['aligned'] = True
         self.updateEnabledButtons()
+        logger.critical('2')
         self.dataUpdateWidgets()
+        logger.critical('3')
         if self._isProjectTab():
+            logger.critical('4')
             self._showSNRcheck()
+            logger.critical('5')
             cfg.pt.updateTimingsWidget()
+            logger.critical('6')
             cfg.pt.updateTreeWidget() #0603-
+            logger.critical('7')
             cfg.pt._bbToggle.setChecked(cfg.data.has_bb())
+            logger.critical('8')
             cfg.pt.updateDetailsPanel()
 
-        logger.critical('2')
+        logger.critical('01')
         self._autosave()
         self._changeScaleCombo.setEnabled(True)
         self.hidePbar()
         cfg.project_tab.initNeuroglancer()
-        logger.critical('3')
+        logger.critical('02')
         if self._isProjectTab():
             self.setdw_snr(True)  # Also initializes
             cfg.pt.dSnr_plot.initSnrPlot() #Todo #Redundant #Why is this needed?? Race conditino?
             if cfg.pt._tabs.currentIndex() == 4:
                 cfg.pt.snr_plot.initSnrPlot()
-        logger.critical('4')
+        logger.critical('03')
         dt = time.time() - t0
         logger.info(f'  Elapsed Time         : {dt:.2f}s')
         self.setFocus()
