@@ -116,7 +116,7 @@ class ScaleWorker(QObject):
 
             self.initPbar.emit((len(tasks), desc))
             t = time.time()
-            with ctx.Pool(processes=40, maxtasksperchild=1) as pool:
+            with ctx.Pool(processes=80, maxtasksperchild=1) as pool:
             # with ThreadPoolExecutor(max_workers=10) as pool:
                 for i, result in enumerate(tqdm.tqdm(pool.imap_unordered(run, tasks),
                                                      total=len(tasks),
@@ -168,7 +168,7 @@ class ScaleWorker(QObject):
         # for group in task_groups:
 
         of = 'img_src.zarr'
-        for s in self.dm.scales()[::-1]:
+        for s in self.dm.scales()[::-1]: # do coarsest scale first for quicker viewing
             tasks = []
             for ID, img in enumerate(imgs):
                 out = os.path.join(od, 's%d' % get_scale_val(s))
@@ -180,7 +180,7 @@ class ScaleWorker(QObject):
             grp = 's%d' % self.dm.scale_val(s=s)
             preallocate_zarr(dm=self.dm, name=of, group=grp, shape=shape, dtype='|u1', overwrite=True, gui=False)
             t = time.time()
-            with ThreadPoolExecutor(max_workers=10) as executor:
+            with ThreadPoolExecutor(max_workers=60) as executor:
                 list(tqdm.tqdm(executor.map(convert_zarr, tasks), total=len(tasks), position=0, leave=True, desc=f"Converting {s} to Zarr"))
 
             dt = time.time() - t
