@@ -410,7 +410,7 @@ class AlignWorker(QObject):
         self.initPbar.emit((len(tasks), desc))
         all_results = []
         i = 0
-        with ctx.Pool(processes=110, maxtasksperchild=1) as pool:
+        with ctx.Pool(processes=104, maxtasksperchild=1) as pool:
             for result in tqdm.tqdm(
                     pool.imap_unordered(run_mir, tasks),
                     total=len(tasks),
@@ -493,7 +493,7 @@ class AlignWorker(QObject):
         self.initPbar.emit((len(tasks), desc))
         all_results = []
         i = 0
-        with ctx.Pool(processes=110, maxtasksperchild=1) as pool:
+        with ctx.Pool(processes=104, maxtasksperchild=1) as pool:
             for result in tqdm.tqdm(
                     pool.imap_unordered(convert_zarr, tasks),
                     total=len(tasks),
