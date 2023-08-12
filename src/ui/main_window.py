@@ -1085,7 +1085,8 @@ class MainWindow(QMainWindow):
         logger.critical('\n\nRunning Post-Alignment Tasks...\n')
         t0 = time.time()
         self._working = False
-        time.sleep(1)
+
+        logger.critical('1')
 
         if 'initial_snr' not in cfg.data['data']['scales'][cfg.data.scale]:
             cfg.data['data']['scales'][cfg.data.scale]['initial_snr'] = cfg.data.snr_list()
@@ -1099,15 +1100,18 @@ class MainWindow(QMainWindow):
             cfg.pt._bbToggle.setChecked(cfg.data.has_bb())
             cfg.pt.updateDetailsPanel()
 
+        logger.critical('2')
         self._autosave()
         self._changeScaleCombo.setEnabled(True)
         self.hidePbar()
         cfg.project_tab.initNeuroglancer()
+        logger.critical('3')
         if self._isProjectTab():
             self.setdw_snr(True)  # Also initializes
             cfg.pt.dSnr_plot.initSnrPlot() #Todo #Redundant #Why is this needed?? Race conditino?
             if cfg.pt._tabs.currentIndex() == 4:
                 cfg.pt.snr_plot.initSnrPlot()
+        logger.critical('4')
         dt = time.time() - t0
         logger.info(f'  Elapsed Time         : {dt:.2f}s')
         self.setFocus()
@@ -5554,7 +5558,7 @@ class MainWindow(QMainWindow):
         # self.pbar.setFixedWidth(400)
         # self.sw_pbar = QWidget(self)
         self.sw_pbar = QStackedWidget(self)
-        self.sw_pbar.setMaximumHeight(14)
+        self.sw_pbar.setMaximumHeight(16)
         self.sw_pbar.setAutoFillBackground(True)
         self.pbar_cancel_button = QPushButton('Stop')
         self.pbar_cancel_button.setFixedSize(42, 14)
