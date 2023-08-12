@@ -190,15 +190,15 @@ class ScaleWorker(QObject):
             with ctx.Pool(processes=cpus) as pool:
                 for result in tqdm.tqdm(
                     pool.imap_unordered(convert_zarr, tasks),
-                    total=len(tasks),
-                    desc=desc,
-                    position=0,
-                    leave=True):
-                all_results.append(result)
-                i += 1
-                self.progress.emit(i)
-                if not self.running():
-                    break
+                        total=len(tasks),
+                        desc=desc,
+                        position=0,
+                        leave=True):
+                    all_results.append(result)
+                    i += 1
+                    self.progress.emit(i)
+                    if not self.running():
+                        break
 
             dt = time.time() - t
             self.dm['data']['benchmarks']['scales'][s]['t_scale_convert'] = dt
