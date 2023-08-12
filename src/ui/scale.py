@@ -34,6 +34,7 @@ from src.helpers import print_exception, create_project_structure_directories, g
     renew_directory, renew_directory, get_img_filenames
 from src.funcs_zarr import preallocate_zarr
 import src.config as cfg
+from src.ui.align import AlignWorker
 
 from qtpy.QtCore import Signal, QObject, QMutex
 from qtpy.QtWidgets import QApplication
@@ -187,9 +188,22 @@ class ScaleWorker(QObject):
             dt = time.time() - t
             self.dm['data']['benchmarks']['scales'][s]['t_scale_convert'] = dt
             logger.info(f"ThreadPoolExecutor Time: {'%.3g' % dt}s")
+
+
             if s == dm.coarsest_scale_key():
-                self.coarsestDone.emit()
-                QApplication.processEvents()
+                if dm['data']['autoalign_flag']:
+                    self._alignworker = AlignWorker(scale=s,
+                              path=None,
+                              indexes=list(range(0,len(dm))),
+                              swim_only=False,
+                              renew_od=False,
+                              reallocate_zarr=True,
+                              dm=dm
+                              )  # Step 3: Create a worker object
+
+                    self._alignworker.run()
+                    self.coarsestDone.emit()
+                    QApplication.processEvents()
 
 
 
