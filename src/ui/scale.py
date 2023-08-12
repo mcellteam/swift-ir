@@ -181,10 +181,10 @@ class ScaleWorker(QObject):
             grp = 's%d' % self.dm.scale_val(s=s)
             preallocate_zarr(dm=self.dm, name=of, group=grp, shape=shape, dtype='|u1', overwrite=True, gui=False)
             t = time.time()
-            self.initPbar.emit((len(tasks), desc))
-
-            # with ThreadPoolExecutor(max_workers=60) as executor:
-            # with ThreadPoolExecutor(max_workers=120) as executor:
+            # self.initPbar.emit((len(tasks), desc))
+            #
+            # # with ThreadPoolExecutor(max_workers=60) as executor:
+            # with ThreadPoolExecutor(max_workers=110) as executor:
             #     list(tqdm.tqdm(executor.map(convert_zarr, tasks), total=len(tasks), position=0, leave=True, desc=desc))
 
             self.initPbar.emit((len(tasks), desc))
