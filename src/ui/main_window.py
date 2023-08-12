@@ -1370,8 +1370,8 @@ class MainWindow(QMainWindow):
             dm.scale = dm.coarsest_scale_key()
             name,_ = os.path.splitext(os.path.basename(dm.location))
             self._scaleworker.coarsestDone.connect(lambda: self.addGlobTab(cfg.project_tab, name, switch_to=True))
-        if dm['data']['autoalign_flag']:
-            self._scaleworker.finished.connect(self.alignAll)
+        # if dm['data']['autoalign_flag']:
+        #     self._scaleworker.finished.connect(self.alignAll)
         self._scaleThread.start()  # Step 6: Start the thread
 
 
