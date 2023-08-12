@@ -1086,6 +1086,7 @@ class MainWindow(QMainWindow):
         t0 = time.time()
         self._working = False
 
+        self.hidePbar()
         logger.critical('1')
 
         if 'initial_snr' not in cfg.data['data']['scales'][cfg.data.scale]:
@@ -1093,7 +1094,7 @@ class MainWindow(QMainWindow):
         cfg.data['data']['scales'][cfg.data.scale]['aligned'] = True
         self.updateEnabledButtons()
         logger.critical('2')
-        self.dataUpdateWidgets()
+        # self.dataUpdateWidgets()
         logger.critical('3')
         if self._isProjectTab():
             logger.critical('4')
@@ -1110,7 +1111,6 @@ class MainWindow(QMainWindow):
         logger.critical('01')
         self._autosave()
         self._changeScaleCombo.setEnabled(True)
-        self.hidePbar()
         cfg.project_tab.initNeuroglancer()
         logger.critical('02')
         if self._isProjectTab():
@@ -1366,6 +1366,7 @@ class MainWindow(QMainWindow):
         self._scaleworker.initPbar.connect(self.resetPbar)
         self._scaleworker.hudMessage.connect(self.tell)
         self._scaleworker.hudWarning.connect(self.warn)
+        self._scaleworker.refresh.connect(self.refreshTab)
         if new_tab:
             dm.scale = dm.coarsest_scale_key()
             name,_ = os.path.splitext(os.path.basename(dm.location))
@@ -5565,7 +5566,7 @@ class MainWindow(QMainWindow):
         # self.pbar.setFixedWidth(400)
         # self.sw_pbar = QWidget(self)
         self.sw_pbar = QStackedWidget(self)
-        self.sw_pbar.setMaximumHeight(16)
+        self.sw_pbar.setMaximumHeight(18)
         self.sw_pbar.setAutoFillBackground(True)
         self.pbar_cancel_button = QPushButton('Stop')
         self.pbar_cancel_button.setFixedSize(42, 14)

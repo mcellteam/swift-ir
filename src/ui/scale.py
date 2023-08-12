@@ -48,6 +48,7 @@ class ScaleWorker(QObject):
     finished = Signal()
     progress = Signal(int)
     coarsestDone = Signal()
+    refresh = Signal()
     initPbar = Signal(tuple) # (# tasks, description)
     hudMessage = Signal(str) # (# tasks, description)
     hudWarning = Signal(str) # (# tasks, description)
@@ -137,15 +138,13 @@ class ScaleWorker(QObject):
                         break
             dt = time.time() - t
             self.dm['data']['benchmarks']['scales'][s]['t_scale_generate'] = dt
-            logger.info(f"Elapsed Time: {'%.3g' % dt}s")
+            logger.info(f"Pool Time: {'%.3g' % dt}s")
 
             self.dm.link_reference_sections(s_list=[s]) #This is necessary
             # if s != 'scale_1':
             #     siz = (np.array(self.dm.image_size(s='scale_1')) / self.dm.scale_val(s)).astype(int).tolist()
             #     logger.info(f"Setting size for {s} to {siz}...")
             #     self.dm['data']['scales'][s]['image_src_size'] = siz
-
-
 
             if not self.running():
                 self.hudWarning.emit('Canceling Tasks:  Convert TIFFs to NGFF Zarr')
@@ -187,9 +186,9 @@ class ScaleWorker(QObject):
 
             dt = time.time() - t
             self.dm['data']['benchmarks']['scales'][s]['t_scale_convert'] = dt
-            logger.info(f"ThreadPoolExecutor Time: {'%.3g' % dt}s")
+            logger.info(f"Pool Time: {'%.3g' % dt}s")
 
-
+            self.coarsestDone.emit()
             if s == dm.coarsest_scale_key():
                 if dm['data']['autoalign_flag']:
                     self._alignworker = AlignWorker(scale=s,
@@ -200,9 +199,11 @@ class ScaleWorker(QObject):
                               reallocate_zarr=True,
                               dm=dm
                               )  # Step 3: Create a worker object
-
+                    self._alignworker.initPbar.connect(lambda: self.initPbar.emit((len(tasks), desc)))
+                    self._alignworker.progress.connect(lambda: self.progress.emit(i))
                     self._alignworker.run()
-                    self.coarsestDone.emit()
+                    # self.coarsestDone.emit()
+                    self.refresh.emit()
                     QApplication.processEvents()
 
 
