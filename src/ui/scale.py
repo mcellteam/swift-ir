@@ -201,8 +201,6 @@ class ScaleWorker(QObject):
                               )  # Step 3: Create a worker object
                     self._alignworker.initPbar.connect(lambda t: self.initPbar.emit(t))
                     self._alignworker.progress.connect(lambda i: self.progress.emit(i))
-                    self._alignworker.initPbar.connect(lambda t: print(f't = {t}'))
-                    self._alignworker.progress.connect(lambda i: print(f'i = {i}'))
                     self._alignworker.run()
                     # self.coarsestDone.emit()
                     self.refresh.emit()
