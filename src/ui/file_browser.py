@@ -2,7 +2,7 @@
 
 import os, sys, logging
 from qtpy.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTreeView, QFileSystemModel, \
-    QPushButton, QSizePolicy, QAbstractItemView, QLineEdit
+    QPushButton, QSizePolicy, QAbstractItemView, QLineEdit, QAction, QMenu, QComboBox
 from qtpy.QtCore import Slot, Qt, QSize, QDir
 from src.helpers import is_joel, is_tacc
 from src.ui.layouts import HWidget, VWidget
@@ -17,6 +17,7 @@ class FileBrowser(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.treeview = cfg.treeview = QTreeView()
+        # self.treeview.customContextMenuRequested.connect(self._show_context_menu)
         self.treeview.setStyleSheet('border-width: 0px; color: #161c20;')
         self.treeview.expandsOnDoubleClick()
         self.treeview.setAnimated(True)
@@ -25,11 +26,14 @@ class FileBrowser(QWidget):
         self.fileSystemModel = QFileSystemModel(self.treeview)
         self.fileSystemModel.setReadOnly(False)
         self.fileSystemModel.setFilter(QDir.AllEntries | QDir.Hidden)
+        # self.fileSystemModel.setFilter(QDir.Files)
+        # self.fileSystemModel.setFilter(QDir.NoDotAndDotDot)
         self.treeview.setModel(self.fileSystemModel)
         root = self.fileSystemModel.setRootPath(os.path.expanduser('~'))
-        # root = self.fileSystemModel.setRootPath('/Users/joelyancey/glanceem_swift/test_images')
         # root = self.fileSystemModel.setRootPath('/')
+
         self.treeview.setRootIndex(root)
+
 
         self.path_scratch = os.getenv('SCRATCH')
         self.path_work = os.getenv('WORK')
@@ -39,40 +43,52 @@ class FileBrowser(QWidget):
         self.initUI()
         # self.treeview.selectionModel().selectionChanged.connect(self.selectionChanged)
 
+
+    # def _show_context_menu(self, position):
+    #     display_action1 = QAction("Display Selection")
+    #     display_action1.triggered.connect(self.display_selection)
+    #     menu = QMenu(self.tree_widget)
+    #     menu.addAction(display_action1)
+    #
+    #     menu.exec_(self.tree_widget.mapToGlobal(position))
+
     def setRootHome(self):
         try:    self.treeview.setRootIndex(self.fileSystemModel.index(os.path.expanduser('~')))
-        except: cfg.main_window.warn('Directory cannot be accessed')
+        except: logger.warning('Directory cannot be accessed')
 
     def setRootRoot(self):
         try:    self.treeview.setRootIndex(self.fileSystemModel.index('/'))
-        except: cfg.main_window.warn('Directory cannot be accessed')
+        except: logger.warning('Directory cannot be accessed')
 
     def setRootWork(self):
         try:   self.treeview.setRootIndex(self.fileSystemModel.index(self.path_work))
-        except: cfg.main_window.warn('Directory cannot be accessed')
+        except: logger.warning('Directory cannot be accessed')
 
     def setRootScratch(self):
         try:    self.treeview.setRootIndex(self.fileSystemModel.index(self.path_scratch))
-        except: cfg.main_window.warn('Directory cannot be accessed')
+        except: logger.warning('Directory cannot be accessed')
 
     def setRootSpecial(self):
         try:    self.treeview.setRootIndex(self.fileSystemModel.index(self.path_special))
-        except: cfg.main_window.warn('Directory cannot be accessed')
+        except: logger.warning('Directory cannot be accessed')
 
     def setRoot_corral_projects(self):
         corral_projects_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/3dem-1076/Projects_AlignEM'
         try:    self.treeview.setRootIndex(self.fileSystemModel.index(corral_projects_dir))
-        except: cfg.main_window.warn('Directory cannot be accessed')
+        except: logger.warning('Directory cannot be accessed')
 
     def setRoot_corral_images(self):
         corral_images_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/3dem-1076/EM_Series'
         try:    self.treeview.setRootIndex(self.fileSystemModel.index(corral_images_dir))
-        except: cfg.main_window.warn('Directory cannot be accessed')
+        except: logger.warning('Directory cannot be accessed')
 
     def set_corral_root(self):
         dir = '/corral-repl'
         try:    self.treeview.setRootIndex(self.fileSystemModel.index(dir))
-        except: cfg.main_window.warn('Directory cannot be accessed')
+        except: logger.warning('Directory cannot be accessed')
+
+
+
 
 
     def initUI(self):
@@ -174,6 +190,9 @@ class FileBrowser(QWidget):
         self.controlsNavigation.setLayout(hbl)
         self.controlsNavigation.hide()
 
+
+        self.comboLocations = QComboBox()
+
         self.le_navigate_to = QLineEdit()
         self.le_navigate_to.setStyleSheet('font-size: 8px;')
         self.le_navigate_to.setFixedHeight(20)
@@ -197,6 +216,7 @@ class FileBrowser(QWidget):
         vbl = QVBoxLayout(self)
         vbl.setContentsMargins(0, 0, 0, 0)
         vbl.addWidget(self.treeview)
+        vbl.addWidget(self.comboLocations)
         vbl.addWidget(self.nav_widget)
         vbl.addWidget(self.controlsNavigation, alignment=Qt.AlignmentFlag.AlignLeft)
         vbl.addWidget(self.controls, alignment=Qt.AlignmentFlag.AlignLeft)
@@ -212,8 +232,6 @@ class FileBrowser(QWidget):
         logger.info(f'Navigating to: {path}')
         try:    self.treeview.setRootIndex(self.fileSystemModel.index(path))
         except: cfg.main_window.warn('Directory cannot be accessed')
-        pass
-
 
     def createProjectFromFolder(self):
         pass

@@ -25,6 +25,7 @@ from datetime import datetime
 from dataclasses import dataclass
 from functools import cache, cached_property
 from functools import reduce
+import shutil
 import numpy as np
 from qtpy.QtCore import QObject, Signal, Slot, QMutex
 from qtpy.QtWidgets import QApplication
@@ -160,6 +161,16 @@ class DataModel:
     @created.setter
     def created(self, val):
         self._data['created'] = val
+
+
+    @property
+    def location(self):
+        return self._data['data']['destination_path']
+
+    @location.setter
+    def location(self, p):
+        self._data['data']['destination_path'] = p
+        self._data['data']['location'] = p
 
     # def created(self):
     #     return self._data['created']
@@ -808,7 +819,8 @@ class DataModel:
         logger.info(f'[{inspect.stack()[1].function}] Setting Defaults')
 
         initial_zpos = int(len(self)/2)
-        self._data['data']['zposition'] = initial_zpos
+        self['data']['zposition'] = initial_zpos
+        # self['data']['location'] = self['data'].pop('destination_path', None)
 
         self._data.setdefault('developer_mode', cfg.DEV_MODE)
         self._data.setdefault('data', {})
@@ -2335,13 +2347,6 @@ class DataModel:
         # logger.info(f'Just Set {s} image size to {val}')
         # logger.info(f'Aligned Image Size is {self.scale_pretty(s=s)}: {self.image_size(s=s)}')
 
-    def full_scale_size(self):
-        try:
-            return self.image_size('scale_1')
-        except:
-            print_exception()
-            return (0,0)
-
 
     # def poly_order(self, s=None) -> int:
     #     '''Returns the Polynomial Order for the Current Scale.'''
@@ -2408,9 +2413,6 @@ class DataModel:
     def roles(self):
         l, s = self.zpos, self.scale
         return self._data['data']['scales'][s]['stack'][l]['images'].keys()
-
-    def set_destination(self, s):
-        self._data['data']['destination_path'] = s
 
 
     def has_bb(self, s=None) -> bool:
@@ -2496,12 +2498,12 @@ class DataModel:
 
     def set_destination_absolute(self, head):
         head = os.path.split(head)[0]
-        self.set_destination(os.path.join(head, self.dest()))
+        self.location = os.path.join(head, self.dest())
 
     def set_paths_absolute(self, filename):
         logger.info(f'Setting Absolute File Paths...')
         # returns path to project file minus extension (should be the project directory)
-        self.set_destination(os.path.splitext(filename)[0])
+        self.location = os.path.splitext(filename)[0]
         logger.debug(f'Setting absolute project dest/head: {self.dest()}...')
         try:
             head = self.dest()
@@ -2655,6 +2657,29 @@ class DataModel:
                 return section['alignment']['swim_settings']['index']
 
 
+
+    def link_full_resolution(self):
+        logger.info('Symbolically linking full scale images...')
+        for img in self.basefilenames():
+            fn = os.path.join(self['data']['source_path'], img)
+            ofn = os.path.join(self.location, 'scale_1', 'img_src', os.path.split(fn)[1])
+            # normalize path for different OSs
+            if os.path.abspath(os.path.normpath(fn)) != os.path.abspath(os.path.normpath(ofn)):
+                try:
+                    os.unlink(ofn)
+                except:
+                    pass
+                try:
+                    os.symlink(fn, ofn)
+                except:
+                    logger.warning("Unable to link %s to %s. Copying instead." %
+                                   (fn, ofn))
+                    try:
+                        shutil.copy(fn, ofn)
+                    except:
+                        logger.warning("Unable to link or copy from " + fn + " to " + ofn)
+
+
     def link_reference_sections(self, s_list=None):
         logger.info('')
         if s_list == None:
@@ -2665,8 +2690,6 @@ class DataModel:
             first_unskipped = self.first_unskipped(s=s)
             for layer_index in range(len(self)):
                 base_layer = self._data['data']['scales'][s]['stack'][layer_index]
-
-
                 #0804- #UnsureReprecussions
                 # if layer_index in skip_list:
                 #     self._data['data']['scales'][s]['stack'][layer_index]['reference'] = ''
@@ -2681,8 +2704,6 @@ class DataModel:
                     # base_layer['images']['ref']['filename'] = ref
                     base_layer['reference'] = ref
                     base_layer['alignment']['swim_settings']['fn_reference'] = ref
-
-
             # kludge - set reference of first_unskipped to itself
             # self._data['data']['scales'][s]['stack'][first_unskipped]['reference'] = self._data['data']['scales'][s]['stack'][first_unskipped]['filename']
             self._data['data']['scales'][s]['stack'][first_unskipped]['reference'] = '' #0804
@@ -2826,7 +2847,7 @@ class DataModel:
 
 
     def make_paths_relative(self, start):
-        self.set_destination(os.path.relpath(self.dest(), start=start))
+        self.location = os.path.relpath(self.dest(), start=start)
         for s in self.downscales():
             for layer in self.stack(s=s):
                 # for role in layer['images'].keys():

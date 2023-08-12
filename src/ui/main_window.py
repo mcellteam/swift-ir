@@ -61,8 +61,8 @@ from src.helpers import setOpt, getOpt, getData, setData, print_exception, get_s
 from src.ui.dialogs import AskContinueDialog, ConfigProjectDialog, ConfigAppDialog, NewConfigureProjectDialog, \
     open_project_dialog, export_affines_dialog, mendenhall_dialog, RechunkDialog, ExitAppDialog, SaveExitAppDialog
 from src.ui.process_monitor import HeadupDisplay
-from src.ui.worker_align import AlignWorker
-from src.ui.worker_scale import ScaleWorker
+from src.ui.align import AlignWorker
+from src.ui.scale import ScaleWorker
 from src.ui.models.json_tree import JsonModel
 from src.ui.toggle_switch import ToggleSwitch
 from src.ui.webpage import WebPage
@@ -93,7 +93,7 @@ class MainWindow(QMainWindow):
     resized = Signal()
     # keyPressed = Signal(int)
     keyPressed = Signal(QEvent)
-    # alignmentFinished = Signal()
+    # finished = Signal()
     updateTable = Signal()
     cancelMultiprocessing = Signal()
 
@@ -146,9 +146,9 @@ class MainWindow(QMainWindow):
         self.initStyle()
         # self.initShortcuts()
 
-        self.initLaunchTab()
+        self._initProjectManager()
 
-        # self.alignmentFinished.connect(self.updateProjectTable)
+        # self.finished.connect(self.updateProjectTable)
         self.cancelMultiprocessing.connect(self.cleanupAfterCancel)
 
         self.activateWindow()
@@ -1041,13 +1041,13 @@ class MainWindow(QMainWindow):
             self.tell('  # No Change  (SNR =) : %s' % ' '.join(map(str, no_chg)))
             self.tell('  Total Avg. SNR       : %.3f' % (cfg.data.snr_average()))
             if abs(diff_avg) < .001:
-                self.tell('  Δ AVG. SNR           : <span style="color: #66FF00;"><b>%.3g (NO CHANGE)</b></span>' %
+                self.tell('  Δ AVG. SNR           : <span style="color: #66FF00;"><b>%.4g (NO CHANGE)</b></span>' %
                           diff_avg)
             elif diff_avg < 0:
-                self.tell('  Δ AVG. SNR           : <span style="color: #a30000;"><b>%.3g (WORSE)</b></span>' %
+                self.tell('  Δ AVG. SNR           : <span style="color: #a30000;"><b>%.4g (WORSE)</b></span>' %
                           diff_avg)
             else:
-                self.tell('  Δ AVG. SNR           : <span style="color: #66FF00;"><b>%.3g (BETTER)</b></span>' %
+                self.tell('  Δ AVG. SNR           : <span style="color: #66FF00;"><b>%.4g (BETTER)</b></span>' %
                           diff_avg)
 
         except:
@@ -1077,31 +1077,8 @@ class MainWindow(QMainWindow):
         cfg.project_tab.matches_tn2.set_no_image()
         cfg.project_tab.matches_tn3.set_no_image()
 
-        # logger_log = os.path.join(cfg.data.dest(), 'logs', 'logger.log')
-        # mp_log = os.path.join(cfg.data.dest(), 'logs', 'multiprocessing.log')
-        # manual_log = os.path.join(cfg.data.dest(), 'logs', 'manual_align.log')
-        # swim_log = os.path.join(cfg.data.dest(), 'logs', 'swim.log')
-        # thumbs_log = os.path.join(cfg.data.dest(), 'logs', 'thumbnails.log')
-        # # open(logger_log, 'a+').close()
-        # # open(mp_log, 'a+').close()
-        # # open(manual_log, 'a+').close()
-        # # open(thumbs_log, 'a+').close()
-        # with open(logger_log, 'a+') as f:
-        #     f.write('\n\n====================== NEW RUN ' + str(dt) + ' ======================\n\n')
-        # with open(manual_log, 'a+') as f:
-        #     f.write('\n\n====================== NEW RUN ' + str(dt) + ' ======================\n\n')
-        # with open(mp_log, 'a+') as f:
-        #     f.write('\n\n====================== NEW RUN ' + str(dt) + ' ======================\n\n')
-        # with open(swim_log, 'a+') as f:
-        #     f.write('\n\n====================== NEW RUN ' + str(dt) + ' ======================\n\n')
-        # time point 5: = 0.0032761096954345703
-        self.stopPlaybackTimer()
-        self._disableGlobTabs()
-        # self.pbarLabel.setText('Task (0/%d)...' % cfg.nProcessSteps)
         self._autosave(silently=True)
-        self._changeScaleCombo.setEnabled(False)
         check_project_status()
-        self.setNoPbarMessage(True)
 
 
 
@@ -1259,123 +1236,128 @@ class MainWindow(QMainWindow):
     #     cfg.ignore_pbar = False
 
 
-    def alignAll(self, force=False, ignore_bb=False):
+    # def alignAll(self, force=False, ignore_bb=False):
+    #
+    #     if (not force) and (not self._isProjectTab()):
+    #         return
+    #     scale = cfg.data.scale_key
+    #     if not self.verify_alignment_readiness():
+    #         self.warn('%s is not a valid target for alignment!' % cfg.data.scale_pretty(scale))
+    #         return
+    #     self.tell('Aligning All Sections (%s)...' % cfg.data.scale_pretty())
+    #
+    #     indexes = list(range(0,len(cfg.data)))
+    #
+    #     cfg.data.set_has_bb(cfg.data.use_bb())  # Critical, also see regenerate
+    #     self.align(
+    #         scale=cfg.data.scale,
+    #         indexes=indexes,
+    #         renew_od=True,
+    #         reallocate_zarr=True,
+    #         ignore_bb=ignore_bb,
+    #     )
 
-        if (not force) and (not self._isProjectTab()):
-            return
-        scale = cfg.data.scale_key
-        if not self.verify_alignment_readiness():
-            self.warn('%s is not a valid target for alignment!' % cfg.data.scale_pretty(scale))
-            return
-        self.tell('Aligning All Sections (%s)...' % cfg.data.scale_pretty())
-
-        indexes = list(range(0,len(cfg.data)))
-
-        cfg.data.set_has_bb(cfg.data.use_bb())  # Critical, also see regenerate
-        self.align(
-            scale=cfg.data.scale,
-            indexes=indexes,
-            renew_od=True,
-            reallocate_zarr=True,
-            ignore_bb=ignore_bb,
-        )
+    @Slot()
+    def alignAll(self):
+        self.align(indexes=list(range(0,len(cfg.data))), reallocate_zarr=True)
 
 
-    def align(self, scale=None, indexes=None, renew_od=False, reallocate_zarr=False, swim_only=False, ignore_bb=False):
+    @Slot()
+    def align(self, indexes=None, scale=None, renew_od=False, reallocate_zarr=False, swim_only=False, ignore_bb=False):
         logger.critical('')
+        dm = cfg.data
 
-        if scale == None:
-            scale = cfg.data.scale
         if indexes == None:
-            indexes = [cfg.data.zpos]
+            indexes = [dm.zpos]
+        if scale == None:
+            scale = dm.scale
 
 
         if self._working == True:
             self.warn('Another Process is Already Running')
             return
 
-        self.onAlignmentStart(scale=scale)
-        self.tell("%s Affines (%s)..." % (('Initializing', 'Refining')[cfg.data.isRefinement()], cfg.data.scale_pretty(s=scale)))
+        # self.onAlignmentStart(scale=scale) #0811-
+        self.tell("%s Affines (%s)..." % (('Initializing', 'Refining')[dm.isRefinement()], dm.scale_pretty(s=scale)))
         # logger.info(f'Aligning indexes:{indexes}, {cfg.data.scale_pretty(scale)}...')
         self._snr_before = cfg.data.snr_list()
 
         # self.shutdownNeuroglancer()
         # self.showZeroedPbar(pbar_max=len(indexes))
-
+        logger.info("Setting mp debugging...")
         if cfg.DEBUG_MP:
             # if 1:
             logger.critical('Multiprocessing Module Debugging is Enabled!')
             mpl = multiprocessing.log_to_stderr()
             mpl.setLevel(logging.DEBUG)
 
+        print("Setting bb stuff...", flush=True)
         if not ignore_bb:
-            cfg.data.set_use_bounding_rect(cfg.pt._bbToggle.isChecked())
+            dm.set_use_bounding_rect(cfg.pt._bbToggle.isChecked())
 
-        self.thread = QThread()  # Step 2: Create a QThread object
-        self.worker = AlignWorker(scale=scale,
+
+        print("Instantiating Thread...", flush=True)
+        self._alignThread = QThread()  # Step 2: Create a QThread object
+        logger.info("Instantiating Worker...")
+        print("Instantiating Worker...", flush=True)
+        self._alignworker = AlignWorker(scale=scale,
                                   path=None,
                                   indexes=indexes,
                                   swim_only=swim_only,
                                   renew_od=renew_od,
                                   reallocate_zarr=reallocate_zarr,
-                                  dm=cfg.data
+                                  dm=dm
                                   )  # Step 3: Create a worker object
-        self.worker.moveToThread(self.thread)  # Step 4: Move worker to the thread
-        self.thread.started.connect(self.worker.run)  # Step 5: Connect signals and slots
-        self.worker.alignmentFinished.connect(self.thread.quit)
-        self.worker.alignmentFinished.connect(self.worker.deleteLater)
-        self.thread.finished.connect(self.thread.deleteLater)
-        self.worker.progress.connect(self.setPbar)
-        self.worker.initPbar.connect(self.resetPbar)
-        self.worker.hudMessage.connect(self.tell)
-        self.worker.hudWarning.connect(self.warn)
-        self.thread.start()  # Step 6: Start the thread
-
+        logger.info("Connecting things...")
+        self._alignworker.moveToThread(self._alignThread)  # Step 4: Move worker to the thread
+        self._alignThread.started.connect(self._alignworker.run)  # Step 5: Connect signals and slots
+        self._alignworker.finished.connect(self._alignThread.quit)
+        self._alignworker.finished.connect(self._alignworker.deleteLater)
+        self._alignThread.finished.connect(self._alignThread.deleteLater)
+        self._alignworker.progress.connect(self.setPbar)
+        self._alignworker.initPbar.connect(self.resetPbar)
+        self._alignworker.hudMessage.connect(self.tell)
+        self._alignworker.hudWarning.connect(self.warn)
+        self._alignworker.finished.connect(lambda: self._btn_alignAll.setEnabled(True))
+        self._alignworker.finished.connect(lambda: self._btn_alignOne.setEnabled(True))
+        self._alignworker.finished.connect(self.onAlignmentEnd)
+        if dm['data']['scales'][dm.scale]['aligned']:
+            self._alignworker.finished.connect(lambda: self.present_snr_results(indexes))
+        self._alignworker.finished.connect(lambda: print(self._alignworker.dm))
         self._btn_alignAll.setEnabled(False)  # Final resets
         self._btn_alignOne.setEnabled(False)  # Final resets
-        self.worker.alignmentFinished.connect(lambda: self._btn_alignAll.setEnabled(True))
-        self.worker.alignmentFinished.connect(lambda: self._btn_alignOne.setEnabled(True))
-        self.worker.alignmentFinished.connect(self.onAlignmentEnd)
-        self.worker.alignmentFinished.connect(lambda: self.present_snr_results(indexes))
-        self.worker.alignmentFinished.connect(lambda: print(self.worker.dm))
+        self._alignThread.start()  # Step 6: Start the thread
 
+    @Slot()
     def autoscale(self, dm):
-        logger.critical('')
+        logger.info('autoscaling...')
+        self.tell('Generating scale pyramid...')
 
 
         if self._working == True:
             self.warn('Another Process is Already Running')
             return
 
-        self.tell('Generating scale pyramid...')
+        logger.info('instantiating thread...')
+        self._scaleThread = QThread()  # Step 2: Create a QThread object
+        logger.info('instantiating autoscale worker...')
+        self._scaleworker = ScaleWorker(dm=cfg.data)  # Step 3: Create a worker object
+        self._scaleworker.moveToThread(self._scaleThread)  # Step 4: Move worker to the thread
+        self._scaleThread.started.connect(self._scaleworker.run)  # Step 5: Connect signals and slots
+        self._scaleworker.finished.connect(self._scaleThread.quit)
+        self._scaleworker.finished.connect(self._scaleworker.deleteLater)
+        self._scaleThread.finished.connect(self._scaleThread.deleteLater)
+        self._scaleworker.progress.connect(self.setPbar)
+        self._scaleworker.initPbar.connect(self.resetPbar)
+        self._scaleworker.hudMessage.connect(self.tell)
+        self._scaleworker.hudWarning.connect(self.warn)
+        if dm['data']['autoalign_flag']:
+            self._scaleworker.finished.connect(self.alignAll)
+        self._scaleThread.start()  # Step 6: Start the thread
 
-        self.thread = QThread()  # Step 2: Create a QThread object
-        self.worker = ScaleWorker(dm=cfg.data)  # Step 3: Create a worker object
-        self.worker.moveToThread(self.thread)  # Step 4: Move worker to the thread
-        self.thread.started.connect(self.worker.run)  # Step 5: Connect signals and slots
-        self.worker.scalingFinished.connect(self.thread.quit)
-        self.worker.scalingFinished.connect(self.worker.deleteLater)
-        self.thread.finished.connect(self.thread.deleteLater)
-        self.worker.progress.connect(self.setPbar)
-        self.worker.initPbar.connect(self.resetPbar)
-        self.worker.hudMessage.connect(self.tell)
-        self.worker.hudWarning.connect(self.warn)
-        self.thread.start()  # Step 6: Start the thread
 
-        self._btn_alignAll.setEnabled(False)  # Final resets
-        self._btn_alignOne.setEnabled(False)  # Final resets
-        def fn():
-            self.tell(f"Auto-align flag: {cfg.data['data']['autoalign_flag']}")
-            logger.critical(f"Auto-align flag: {cfg.data['data']['autoalign_flag']}")
 
-            if cfg.data['data']['autoalign_flag']:
-                logger.info('Initializing alignment...')
-                self.tell(f'Aligning {cfg.data.scale_pretty(cfg.data.coarsest_scale_key())}...')
-                self.alignAll(force=True, ignore_bb=True)
-            self.onStartProject()
-            self.enableAllTabs()
-        self.worker.scalingFinished.connect(fn)
-        self.thread.finished.connect(lambda: print("\n\n\nScaling Thread Finished!\n\n"))
+
 
 
     def rescale(self):
@@ -1388,8 +1370,6 @@ class MainWindow(QMainWindow):
                 if recipe_dialog.exec():
 
                     # self.stopNgServer()  # 0202-
-                    self._disableGlobTabs()
-
                     self.tell('Clobbering the Project Directory %s...')
                     try:
                         delete_recursive(dir=cfg.data.dest(), keep_core_dirs=True)
@@ -1408,8 +1388,6 @@ class MainWindow(QMainWindow):
                     else:
                         self._autosave()
                         self.tell('Rescaling Successful')
-                    finally:
-                        self.onStartProject()
 
     # def generate_multiscale_zarr(self):
     #     pass
@@ -1465,70 +1443,41 @@ class MainWindow(QMainWindow):
         # logger.critical('')
         # self.dataUpdateResults()
 
-        if self._isProjectTab():
-            # self._btn_alignAll.setText('Align All Sections - %s' % cfg.data.scale_pretty())
-            # self._btn_regenerate.setText('Regenerate All Sections - %s' % cfg.data.scale_pretty())
-            self.gb_ctlActions.setTitle('%s Multiprocessing Functions' % cfg.data.scale_pretty())
-            # self.alignmentResults.setTitle('%s Data && Results' % cfg.data.scale_pretty())
-            # self._btn_alignRange.setText('Regenerate\nAll %s' % cfg.data.scale_pretty())
-            self._skipCheckbox.setEnabled(True)
-
-            self._changeScaleCombo.setEnabled(True)
-
-        else:
-            self._skipCheckbox.setEnabled(False)
-
-            # self._ctlpanel_applyAllButton.setEnabled(False)
 
         if self._isProjectTab():
             # if cfg.data.is_aligned_and_generated(): #0202-
+            self.gb_ctlActions.setTitle('%s Multiprocessing Functions' % cfg.data.scale_pretty())
+            self._skipCheckbox.setEnabled(True)
+            self._changeScaleCombo.setEnabled(True)
+            self._btn_prevSection.setEnabled(True)
+            self._btn_nextSection.setEnabled(True)
+            self._sectionSlider.setEnabled(True)
+            self._btn_automaticPlayTimer.setEnabled(True)
+            self.spinbox_fps.setEnabled(True)
+            self._w_skipCheckbox.setEnabled(True)
+            self._jumpToLineedit.setEnabled(True)
+            self._changeScaleCombo.setEnabled(True)
 
             if cfg.data.is_aligned():
                 # self._btn_alignAll.setText('Re-Align All Sections (%s)' % cfg.data.scale_pretty())
                 # self._btn_alignAll.setText('Align All')
                 self._btn_alignAll.setEnabled(True)
                 self._btn_alignOne.setEnabled(True)
-                # self._btn_alignForward.setEnabled(True)
-                # self._btn_alignRange.setEnabled(True)
-                # self._btn_regenerate.setEnabled(True)
-                # self.startRangeInput.setEnabled(True)
-                # self.endRangeInput.setEnabled(True)
-
             elif cfg.data.is_alignable():
                 self._btn_alignAll.setEnabled(True)
                 self._btn_alignOne.setEnabled(False)
-                # self._btn_alignForward.setEnabled(False)
-                # self._btn_alignRange.setEnabled(False)
-                # self._btn_regenerate.setEnabled(False)
-                # self.startRangeInput.setEnabled(False)
-                # self.endRangeInput.setEnabled(False)
             else:
                 self._btn_alignAll.setEnabled(False)
                 self._btn_alignOne.setEnabled(False)
-                # self._btn_alignForward.setEnabled(False)
-                # self._btn_alignRange.setEnabled(False)
-                # self._btn_regenerate.setEnabled(False)
-                # self.startRangeInput.setEnabled(False)
-                # self.endRangeInput.setEnabled(False)
             if len(cfg.data.scales()) == 1:
                 self._scaleUpButton.setEnabled(False)
                 self._scaleDownButton.setEnabled(False)
                 if cfg.data.is_aligned():
                     self._btn_alignAll.setEnabled(True)
                     self._btn_alignOne.setEnabled(True)
-                    # self._btn_alignForward.setEnabled(True)
-                    # self._btn_alignRange.setEnabled(True)
-                    # self._btn_regenerate.setEnabled(True)
-                    # self.startRangeInput.setEnabled(True)
-                    # self.endRangeInput.setEnabled(True)
                 else:
                     self._btn_alignAll.setEnabled(True)
                     self._btn_alignOne.setEnabled(False)
-                    # self._btn_alignForward.setEnabled(False)
-                    # self._btn_alignRange.setEnabled(False)
-                    # self._btn_regenerate.setEnabled(False)
-                    # self.startRangeInput.setEnabled(False)
-                    # self.endRangeInput.setEnabled(False)
             else:
                 cur_index = self._changeScaleCombo.currentIndex()
                 if cur_index == 0:
@@ -1543,13 +1492,20 @@ class MainWindow(QMainWindow):
         else:
             self._scaleUpButton.setEnabled(False)
             self._scaleDownButton.setEnabled(False)
+            self._btn_prevSection.setEnabled(False)
+            self._btn_nextSection.setEnabled(False)
             self._btn_alignAll.setEnabled(False)
             self._btn_alignOne.setEnabled(False)
-            # self._btn_alignForward.setEnabled(False)
-            # self._btn_alignRange.setEnabled(False)
-            # self._btn_regenerate.setEnabled(False)
-            # self.startRangeInput.setEnabled(False)
-            # self.endRangeInput.setEnabled(False)
+            self._skipCheckbox.setEnabled(False)
+            self._sectionSlider.setRange(0,1)
+            self._sectionSlider.setValue(0)
+            self._sectionSlider.setEnabled(False)
+            self._btn_automaticPlayTimer.setEnabled(False)
+            self.spinbox_fps.setEnabled(False)
+            self._w_skipCheckbox.setEnabled(False)
+            self._jumpToLineedit.setEnabled(False)
+            self._changeScaleCombo.setEnabled(False)
+
 
 
     def layer_left(self):
@@ -2211,7 +2167,7 @@ class MainWindow(QMainWindow):
             if self.globTabs.widget(i).__class__.__name__ == 'OpenProject':
                 self.globTabs.setCurrentIndex(i)
                 return
-        self.globTabs.addTab(OpenProject(), 'Project Manager')
+        self.globTabs.addTab(self._pm, 'Project Manager')
 
     def detachNeuroglancer(self):
         logger.info('')
@@ -2232,9 +2188,13 @@ class MainWindow(QMainWindow):
                 self.warn('Neuroglancer is not running.')
 
 
-    def onStartProject(self, mendenhall=False):
+    def onStartProject(self, dm, switch_to=False):
         '''Functions that only need to be run once per project
                 Do not automatically save, there is nothing to save yet'''
+        logger.info('')
+        cfg.data = dm
+        name,_ = os.path.splitext(os.path.basename(dm.location))
+        self.addGlobTab(cfg.project_tab, name, switch_to=switch_to)
         print(f'\n\n######## Loading Project - %s ########\n'
               % os.path.basename(cfg.data.dest()))
         self.tell("Loading Project '%s'..." % cfg.data.dest())
@@ -2249,24 +2209,25 @@ class MainWindow(QMainWindow):
 
         # cfg.project_tab.updateTreeWidget()  #TimeConsuming dt = 0.001 -> dt = 0.535 ~1/2 second
         # cfg.project_tab.updateTreeWidget() #TimeConsuming!! dt = 0.58 - > dt = 1.10
-        self.spinbox_fps.setValue(float(cfg.DEFAULT_PLAYBACK_SPEED))
-        self.reload_scales_combobox()  # fast
-        self.updateEnabledButtons()
-        # self.updateMenus()
-        # cfg.pt.initNeuroglancer()
-        self.reload_zpos_slider_and_lineedit()  # fast
-        self.enableAllTabs()  # fast
+        
+        
+        
+        # self.spinbox_fps.setValue(float(cfg.DEFAULT_PLAYBACK_SPEED))
+        # self.reload_scales_combobox()  # fast
+        # self.updateEnabledButtons()
+        # self.reload_zpos_slider_and_lineedit()  # fast
+        # self.enableAllTabs()  # fast
         self.setCpanelVisibility(True)
-        # cfg.project_tab.initNeuroglancer(init_all=True)
-        cfg.project_tab.updateTimingsWidget()
-        cfg.project_tab.dataUpdateMA() #Important must come after initNeuroglancer
+        # cfg.project_tab.updateTimingsWidget()
+        # cfg.project_tab.dataUpdateMA() #Important must come after initNeuroglancer
         check_project_status()
         QApplication.processEvents()
 
-        cfg.mw.setdw_snr(True)
-        # cfg.mw.setdw_thumbs(True)
-        # cfg.mw.setdw_matches(False)
-        self.dataUpdateWidgets()
+        if switch_to:
+            cfg.mw.setdw_snr(True)
+            # cfg.mw.setdw_thumbs(True)
+            # cfg.mw.setdw_matches(False)
+        # self.dataUpdateWidgets()
 
         self.setFocus()
 
@@ -2310,7 +2271,7 @@ class MainWindow(QMainWindow):
             new_dest = os.path.join(parent, new_name)
             new_dest_no_ext = os.path.splitext(new_dest)[0]
             os.rename(dest_orig, new_dest_no_ext)
-            cfg.data.set_destination(new_dest)
+            cfg.data.location = new_dest
             # if not new_dest.endswith('.json'):  # 0818-
             #     new_dest += ".json"
             # logger.info('new_dest = %s' % new_dest)
@@ -2346,46 +2307,41 @@ class MainWindow(QMainWindow):
         if cfg.data:
             if self._isProjectTab():
                 try:
-                    # 0514-
-                    # hud_text = self.hud.textedit.toPlainText()
-                    # cfg.data['hud'] = hud_text
-
-                    # cfg.data.basefilenames()
+                    self._mutex.lock()
                     if saveas is not None:
-                        cfg.data.set_destination(saveas)
+                        cfg.data.location = saveas
                     data_cp = copy.deepcopy(cfg.data._data)
                     # data_cp.make_paths_relative(start=cfg.data.dest())
                     # data_cp_json = data_cp.to_dict()
-                    name = cfg.data.dest()
+                    location = cfg.data.location
                     if not silently:
-                        logger.info(f'---- SAVING DATA PROJECT TO FILE ----\n{name}')
+                        logger.info(f'---- SAVING TO FILE ----\n{location}')
                     jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
-                    proj_json = jde.encode(data_cp)
+
+                    name = copy.deepcopy(location)
 
                     if not name.endswith('.swiftir'):
                         name += ".swiftir"
                     with open(name, 'w') as f:
-                        f.write(proj_json)
+                        f.write(jde.encode(data_cp))
 
-                    if is_tacc():
-                        node = platform.node()
-                        user = getpass.getuser()
-                        tstamp = datetime.datetime.now().strftime('%Y%m%d')
-                        fn = f"pf_{tstamp}_{node}_{user}_" + os.path.basename(name)
-                        location = "/work/08507/joely/ls6/log_db"
-                        of = os.path.join(location, fn)
-                        with open(of, 'w') as f:
-                            f.write(proj_json)
+                    # if is_tacc():
+                    #     node = platform.node()
+                    #     user = getpass.getuser()
+                    #     tstamp = datetime.datetime.now().strftime('%Y%m%d')
+                    #     fn = f"pf_{tstamp}_{node}_{user}_" + os.path.basename(name)
+                    #     location = "/work/08507/joely/ls6/log_db"
+                    #     of = os.path.join(location, fn)
+                    #     with open(of, 'w') as f:
+                    #         f.write(jde.encode(data_cp))
 
-
-                    self.globTabs.setTabText(self.globTabs.currentIndex(), os.path.basename(name))
-                    # self.statusBar.showMessage('Project Saved!', 3000)
+                    # self.globTabs.setTabText(self.globTabs.currentIndex(), os.path.basename(name))
 
                     # self.saveUserPreferences()
                     if not silently:
-                        self.statusBar.showMessage('Project Saved!')
+                        self.statusBar.showMessage('Project Saved!', 3000)
 
-
+                    self._mutex.unlock()
 
                 except:
                     print_exception()
@@ -3283,7 +3239,6 @@ class MainWindow(QMainWindow):
             for i in range(self.globTabs.count()):
                 if self.globTabs.widget(i).__class__.__name__ == 'OpenProject':
                     self.globTabs.setCurrentIndex(i)
-                    self.globTabs._splitter.setSizes([700, 300])
                     return
 
             self._dock_thumbs = self.dw_thumbs.isVisible()
@@ -3293,7 +3248,7 @@ class MainWindow(QMainWindow):
             self.setdw_matches(False)
             self.setdw_snr(False)
             # self.globTabs.addTab(OpenProject(), 'Project Manager')
-            self.globTabs.insertTab(0, OpenProject(), 'Project Manager')
+            self.globTabs.insertTab(0, self._pm, 'Project Manager')
             self._switchtoOpenProjectTab()
 
 
@@ -3447,7 +3402,8 @@ class MainWindow(QMainWindow):
 
 
     def _disableGlobTabs(self):
-        logger.info('')
+        clr = inspect.stack()[1].function
+        logger.info(f"[{clr}]")
         indexes = list(range(0, self.globTabs.count()))
         if indexes:
             indexes.remove(self.globTabs.currentIndex())
@@ -3491,6 +3447,7 @@ class MainWindow(QMainWindow):
         else:
             return False
 
+
     def _closeOpenProjectTab(self):
         for i in range(self.globTabs.count()):
             if self.globTabs.widget(i).__class__.__name__ == 'OpenProject':
@@ -3533,13 +3490,16 @@ class MainWindow(QMainWindow):
         return self.globTabs.currentWidget()
 
 
-    def addGlobTab(self, tab_widget, name):
+    def addGlobTab(self, tab_widget, name, switch_to=True):
         logger.info(f'Adding Tab, type: {type(tab_widget)}\nName: {name}')
         cfg.tabsById[id(tab_widget)] = {}
         cfg.tabsById[id(tab_widget)]['name'] = name
         cfg.tabsById[id(tab_widget)]['type'] = type(tab_widget)
         cfg.tabsById[id(tab_widget)]['widget'] = tab_widget
-        self.globTabs.setCurrentIndex(self.globTabs.addTab(tab_widget, name))
+        if switch_to:
+            self.globTabs.setCurrentIndex(self.globTabs.addTab(tab_widget, name))
+        else:
+            self.globTabs.addTab(tab_widget, name)
 
 
     def getTabIndexById(self, ID):
@@ -4603,8 +4563,8 @@ class MainWindow(QMainWindow):
         self._skipCheckbox.stateChanged.connect(self._callbk_skipChanged)
         self._skipCheckbox.stateChanged.connect(lambda: cfg.pt.updateDetailsPanel())
 
-        self.labInclude = QLabel('Include\nSection:')
-        self.labInclude.setStyleSheet('font-size: 8px; font-weight: 600;')
+        self.labInclude = QLabel('Include:')
+        self.labInclude.setStyleSheet('font-size: 9px;')
 
         self._w_skipCheckbox = HWidget(self.labInclude, self._skipCheckbox)
         self._w_skipCheckbox.layout.setAlignment(Qt.AlignCenter)
@@ -4717,13 +4677,13 @@ class MainWindow(QMainWindow):
         resLab = QLabel('Level / Downsampled Image Resolution')
         resLab.setStyleSheet('font-size: 8px; font-weight: 600;')
         scaleLabel = QLabel('Scale:')
-        scaleLabel.setStyleSheet("font-size: 11px; font-weight: 600;")
+        scaleLabel.setStyleSheet("font-size: 10px; font-weight:600;")
         hw = HWidget(scaleLabel, self._changeScaleCombo, self._scaleSetWidget)
         hw.layout.setSpacing(8)
         self.scaleWidget = VWidget(hw)
 
         secLabel = QLabel('Section:')
-        secLabel.setStyleSheet("font-size: 11px; font-weight: 600;")
+        secLabel.setStyleSheet("font-size: 10px; font-weight:600;")
         self.sectionIndexWidget = HWidget(
             secLabel, self._jumpToLineedit,
             self._sectionChangeWidget,
@@ -4824,7 +4784,7 @@ class MainWindow(QMainWindow):
         # self.toolbar_cpanel.addWidget(self.navControls)
         # self.toolbar_cpanel.addWidget(self.newActionsWidget)
         self.toolbar_cpanel.addWidget(hw)
-        self.toolbar_cpanel.hide()
+        # self.toolbar_cpanel.hide() #0811-
 
     def initUI(self):
         '''Initialize Main UI'''
@@ -5507,8 +5467,8 @@ class MainWindow(QMainWindow):
 
     def setCpanelVisibility(self, b):
         # self.sa_cpanel.setVisible(b)
-        self.toolbar_cpanel.setVisible(b)
-        # pass
+        # self.toolbar_cpanel.setVisible(b)
+        pass
 
 
 
@@ -5537,11 +5497,11 @@ class MainWindow(QMainWindow):
 
 
 
-    def initLaunchTab(self):
-        self._launchScreen = OpenProject()
-        self.globTabs.addTab(self._launchScreen, 'Project Manager')
+    def _initProjectManager(self):
+        self._pm = OpenProject()
+        self.globTabs.addTab(self._pm, 'Project Manager')
         # self.globTabs.tabBar().setTabButton(0, QTabBar.RightSide,None)
-        self._setLastTab()
+        # self._setLastTab()
 
     def get_application_root(self):
         return Path(__file__).parents[2]
@@ -5558,13 +5518,13 @@ class MainWindow(QMainWindow):
         # self.statusBar = self.statusBar()
         self.statusBar = QStatusBar()
         self.statusBar.setFixedHeight(18)
-        self.statusBar.setStyleSheet("""
-            font-size: 10px;
-            color: #161c20;
-            background-color: #ede9e8;
-            margin: 0px;
-            padding: 0px;
-        """)
+        # self.statusBar.setStyleSheet("""
+        #     font-size: 10px;
+        #     color: #161c20;
+        #     background-color: #ede9e8;
+        #     margin: 0px;
+        #     padding: 0px;
+        # """)
         # self.statusBar.setStyleSheet("""
         #         font-size: 10px;
         #         font-weight: 600;
@@ -5598,7 +5558,7 @@ class MainWindow(QMainWindow):
         self.pbar_cancel_button.setStyleSheet("""font-size: 8px; margin: 0px; padding: 0px;""")
         self.pbar_cancel_button.clicked.connect(self.cancelTasks)
         self.pbarLabel = QLabel('Task... ')
-        self.pbarLabel.setStyleSheet("""font-size: 9px; font-weight: 600;""")
+        self.pbarLabel.setStyleSheet("""font-size: 9px;""")
 
         self.widgetPbar = HWidget(self.pbarLabel, self.pbar, self.pbar_cancel_button)
         self.widgetPbar.layout.setContentsMargins(4, 0, 4, 0)

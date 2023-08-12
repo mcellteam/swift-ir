@@ -208,6 +208,7 @@ def delete_recursive(dir, keep_core_dirs=False):
 def update_preferences_model():
     # caller = inspect.stack()[1].function
     logger.info(f'Updating user preferences model...')
+    cfg.settings.setdefault('locations', [])
     cfg.settings.setdefault('neuroglancer', {})
     cfg.settings['neuroglancer'].setdefault('SHOW_UI_CONTROLS', False)
     cfg.settings['neuroglancer'].setdefault('USE_CUSTOM_BACKGROUND', False)
