@@ -1322,6 +1322,7 @@ class MainWindow(QMainWindow):
         self._alignThread.started.connect(self._alignworker.run)  # Step 5: Connect signals and slots
         self._alignworker.finished.connect(self._alignThread.quit)
         self._alignworker.finished.connect(self._alignworker.deleteLater)
+        self._alignworker.finished.connect(self.hidePbar)
         self._alignThread.finished.connect(self._alignThread.deleteLater)
         self._alignworker.progress.connect(self.setPbar)
         self._alignworker.initPbar.connect(self.resetPbar)
@@ -1361,6 +1362,7 @@ class MainWindow(QMainWindow):
         self._scaleThread.started.connect(self._scaleworker.run)  # Step 5: Connect signals and slots
         self._scaleworker.finished.connect(self._scaleThread.quit)
         self._scaleworker.finished.connect(self._scaleworker.deleteLater)
+        self._scaleworker.finished.connect(self.hidePbar)
         self._scaleThread.finished.connect(self._scaleThread.deleteLater)
         self._scaleworker.progress.connect(self.setPbar)
         self._scaleworker.initPbar.connect(self.resetPbar)
