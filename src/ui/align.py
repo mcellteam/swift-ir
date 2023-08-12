@@ -41,6 +41,7 @@ from src.job_apply_affine import run_mir
 import src.config as cfg
 
 from qtpy.QtCore import Signal, QObject, QMutex
+from qtpy.QtWidgets import QApplication
 
 __all__ = ['AlignWorker']
 
@@ -201,12 +202,14 @@ class AlignWorker(QObject):
             #initPbar
             desc = f"Computing Affines ({len(tasks)} tasks)"
             self.initPbar.emit((len(tasks), desc))
+            QApplication.processEvents()
             all_results = []
             with ctx.Pool(processes=cpus) as pool:
                 for i, result in enumerate(tqdm.tqdm(pool.imap_unordered(run_recipe, tasks),
                                         total=len(tasks), desc=desc, position=0, leave=True)):
                     all_results.append(result)
                     self.progress.emit(i)
+                    QApplication.processEvents()
                     if not self.running():
                         break
 
@@ -408,6 +411,7 @@ class AlignWorker(QObject):
         #initPbar
         desc = f"Generating Alignment ({len(tasks)} tasks)"
         self.initPbar.emit((len(tasks), desc))
+        QApplication.processEvents()
         all_results = []
         i = 0
         with ctx.Pool(processes=104, maxtasksperchild=1) as pool:
@@ -420,6 +424,7 @@ class AlignWorker(QObject):
                 all_results.append(result)
                 i += 1
                 self.progress.emit(i)
+                QApplication.processEvents()
                 if not self.running():
                     break
 
@@ -491,6 +496,7 @@ class AlignWorker(QObject):
 
         ctx = mp.get_context('forkserver')
         self.initPbar.emit((len(tasks), desc))
+        QApplication.processEvents()
         all_results = []
         i = 0
         with ctx.Pool(processes=104, maxtasksperchild=1) as pool:
@@ -503,6 +509,7 @@ class AlignWorker(QObject):
                 all_results.append(result)
                 i += 1
                 self.progress.emit(i)
+                QApplication.processEvents()
                 if not self.running():
                     break
 

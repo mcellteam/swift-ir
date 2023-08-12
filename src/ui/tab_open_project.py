@@ -590,7 +590,7 @@ class OpenProject(QWidget):
         # self.NEW_PROJECT_PATH = path + '.swiftir'
         self.NEW_PROJECT_PATH = path
 
-        makedirs_exist_ok(path, exist_ok=True)
+        # makedirs_exist_ok(path, exist_ok=True)
 
 
         cfg.data = dm = DataModel(name=self.NEW_PROJECT_PATH)
@@ -689,6 +689,9 @@ class OpenProject(QWidget):
             dialog.close()
             cfg.mw.set_status('')
             return 1
+
+
+        makedirs_exist_ok(path, exist_ok=True)
 
         # cfg.project_tab = ProjectTab(self, path=path, datamodel=dm)
         ID = id(cfg.project_tab)
