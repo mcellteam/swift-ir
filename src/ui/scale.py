@@ -187,6 +187,8 @@ class ScaleWorker(QObject):
             # with ThreadPoolExecutor(max_workers=110) as executor:
             #     list(tqdm.tqdm(executor.map(convert_zarr, tasks), total=len(tasks), position=0, leave=True, desc=desc))
 
+
+            t = time.time()
             self.initPbar.emit((len(tasks), desc))
             all_results = []
             i = 0
