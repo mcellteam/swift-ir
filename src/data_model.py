@@ -2659,26 +2659,27 @@ class DataModel:
 
 
     def link_full_resolution(self):
+        t0 = time.time()
         logger.info('Symbolically linking full scale images >>>>')
         for img in self.basefilenames():
             fn = os.path.join(self['data']['source_path'], img)
             ofn = os.path.join(self.location, 'scale_1', 'img_src', os.path.split(fn)[1])
             # normalize path for different OSs
             if os.path.abspath(os.path.normpath(fn)) != os.path.abspath(os.path.normpath(ofn)):
-                try:
-                    os.unlink(ofn)
-                except:
-                    pass
+                # try:
+                #     os.unlink(ofn)
+                # except:
+                #     pass
                 try:
                     os.symlink(fn, ofn)
                 except:
-                    logger.warning("Unable to link %s to %s. Copying instead." %
-                                   (fn, ofn))
+                    logger.warning("Unable to link %s to %s. Copying instead." % (fn, ofn))
                     try:
                         shutil.copy(fn, ofn)
                     except:
                         logger.warning("Unable to link or copy from " + fn + " to " + ofn)
-        logger.info('<<<<')
+        dt = time.time() - t0
+        logger.info(f'<<<< {dt}')
 
 
     def link_reference_sections(self, s_list=None):
