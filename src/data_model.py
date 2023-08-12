@@ -2659,7 +2659,7 @@ class DataModel:
 
 
     def link_full_resolution(self):
-        logger.info('Symbolically linking full scale images...')
+        logger.info('Symbolically linking full scale images >>>>')
         for img in self.basefilenames():
             fn = os.path.join(self['data']['source_path'], img)
             ofn = os.path.join(self.location, 'scale_1', 'img_src', os.path.split(fn)[1])
@@ -2678,6 +2678,7 @@ class DataModel:
                         shutil.copy(fn, ofn)
                     except:
                         logger.warning("Unable to link or copy from " + fn + " to " + ofn)
+        logger.info('<<<<')
 
 
     def link_reference_sections(self, s_list=None):
