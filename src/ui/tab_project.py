@@ -216,7 +216,7 @@ class ProjectTab(QWidget):
             self.viewer = cfg.emViewer = EMViewer(webengine=self.webengine)
             self.viewer.initZoom(self.webengine.width(), self.webengine.height())
             cfg.emViewer.signals.layoutChanged.connect(self.slot_layout_changed)
-            cfg.emViewer.signals.zoomChanged.connect(self.slot_zoom_changed)
+            # cfg.emViewer.signals.zoomChanged.connect(self.slot_zoom_changed)
             logger.info(f"Local Volume:\n{cfg.LV.info()}")
 
         cfg.mw.set_status('')

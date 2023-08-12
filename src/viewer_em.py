@@ -139,6 +139,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
         if self.state.cross_section_scale:
             val = (self.state.cross_section_scale, self.state.cross_section_scale * 250000000)[self.state.cross_section_scale < .001]
             if round(val, 3) != round(getData('state,ng_zoom'), 3):
+                setData('state,ng_zoom', val)
                 self.signals.zoomChanged.emit(val)
 
         # self.post_message(f"Voxel Coordinates: {str(self.state.voxel_coordinates)}")
