@@ -36,6 +36,7 @@ from src.funcs_zarr import preallocate_zarr
 import src.config as cfg
 
 from qtpy.QtCore import Signal, QObject, QMutex
+from qtpy.QtWidgets import QApplication
 
 __all__ = ['ScaleWorker']
 
@@ -45,6 +46,7 @@ logger = logging.getLogger(__name__)
 class ScaleWorker(QObject):
     finished = Signal()
     progress = Signal(int)
+    coarsestDone = Signal()
     initPbar = Signal(tuple) # (# tasks, description)
     hudMessage = Signal(str) # (# tasks, description)
     hudWarning = Signal(str) # (# tasks, description)
@@ -93,11 +95,18 @@ class ScaleWorker(QObject):
 
         logger.info('Creating downsampling tasks...')
 
+        # self.dm.link_reference_sections(s_list=self.dm.scales()) #This is necessary
+        # for s in self.dm.scales()[::-1]:
+        #     if s != 'scale_1':
+        #         siz = (np.array(self.dm.image_size(s='scale_1')) / self.dm.scale_val(s)).astype(int).tolist()
+        #         self.dm['data']['scales'][s]['image_src_size'] = siz
+
         t0 = time.time()
 
-        n_imgs = len(self.dm)
-        logger.info(f'# images: {n_imgs}')
-
+        imgs = get_img_filenames(os.path.join(self.dm.location, 'scale_1', 'img_src'))
+        zarr_od = os.path.abspath(os.path.join(self.dm.location, 'img_src.zarr'))
+        renew_directory(directory=zarr_od, gui=False)
+        logger.info(f'# images: {len(imgs)}')
         logger.info(f"cpus: {cpus}")
         ctx = mp.get_context('forkserver')
         for s in self.dm.downscales()[::-1]:
@@ -125,68 +134,37 @@ class ScaleWorker(QObject):
                     self.progress.emit(i)
                     if not self.running():
                         break
-            # with ctx.Pool(processes=cpus) as pool:
-            #     for i, result in enumerate(tqdm.tqdm(pool.map(run, tasks),
-            #                                          total=len(tasks),
-            #                                          desc=desc, position=0,
-            #                                          leave=True)):
-            #         self.progress.emit(i)
-            #         if not self.running():
-            #             break
-
             dt = time.time() - t
             self.dm['data']['benchmarks']['scales'][s]['t_scale_generate'] = dt
             logger.info(f"Elapsed Time: {'%.3g' % dt}s")
 
-        print("Finished generating images")
-        self.dm.t_scaling = time.time() - t0
+            self.dm.link_reference_sections(s_list=[s]) #This is necessary
+            # if s != 'scale_1':
+            #     siz = (np.array(self.dm.image_size(s='scale_1')) / self.dm.scale_val(s)).astype(int).tolist()
+            #     logger.info(f"Setting size for {s} to {siz}...")
+            #     self.dm['data']['scales'][s]['image_src_size'] = siz
 
-        self.dm.link_reference_sections(s_list=self.dm.scales()) #This is necessary
 
-        thumbnailer = Thumbnailer()
-        self.dm.t_thumbs = thumbnailer.reduce_main(dest=self.dm.dest())
 
-        self.dm.scale = self.dm.scales()[-1]
+            if not self.running():
+                self.hudWarning.emit('Canceling Tasks:  Convert TIFFs to NGFF Zarr')
+                return
 
-        for s in self.dm.scales()[::-1]:
-            if s != 'scale_1':
-                siz = (np.array(self.dm.image_size(s='scale_1')) / self.dm.scale_val(s)).astype(int).tolist()
-                self.dm['data']['scales'][s]['image_src_size'] = siz
-
-        if not self.running():
-            self.hudWarning.emit('Canceling Tasks:  Convert TIFFs to NGFF Zarr')
-            return
-
-        print(f'\n\n######## Copy-converting TIFFs to NGFF Zarr ########\n')
-
-        dest = self.dm.dest()
-        imgs = get_img_filenames(os.path.join(dest, 'scale_1', 'img_src'))
-        od = os.path.abspath(os.path.join(dest, 'img_src.zarr'))
-        renew_directory(directory=od, gui=False)
-
-        t0 = time.time()
-        # for group in task_groups:
-
-        of = 'img_src.zarr'
-        for s in self.dm.scales()[::-1]: # do coarsest scale first for quicker viewing
             desc = f"Converting {s} to Zarr"
             tasks = []
             for ID, img in enumerate(imgs):
-                out = os.path.join(od, 's%d' % get_scale_val(s))
-                fn = os.path.join(dest, s, 'img_src', img)
+                out = os.path.join(zarr_od, 's%d' % get_scale_val(s))
+                fn = os.path.join(self.dm.location, s, 'img_src', img)
                 tasks.append([ID, fn, out])
 
             x, y = self.dm.image_size(s=s)
             shape = (len(self.dm), y, x)
             grp = 's%d' % self.dm.scale_val(s=s)
-            preallocate_zarr(dm=self.dm, name=of, group=grp, shape=shape, dtype='|u1', overwrite=True, gui=False)
-            t = time.time()
+            preallocate_zarr(dm=self.dm, name=zarr_od, group=grp, shape=shape, dtype='|u1', overwrite=True, gui=False)
+            # t = time.time()
             # self.initPbar.emit((len(tasks), desc))
-            #
-            # # with ThreadPoolExecutor(max_workers=60) as executor:
             # with ThreadPoolExecutor(max_workers=110) as executor:
             #     list(tqdm.tqdm(executor.map(convert_zarr, tasks), total=len(tasks), position=0, leave=True, desc=desc))
-
 
             t = time.time()
             self.initPbar.emit((len(tasks), desc))
@@ -209,10 +187,85 @@ class ScaleWorker(QObject):
             dt = time.time() - t
             self.dm['data']['benchmarks']['scales'][s]['t_scale_convert'] = dt
             logger.info(f"ThreadPoolExecutor Time: {'%.3g' % dt}s")
-            # time.sleep(1)
+            if s == dm.coarsest_scale_key():
+                self.coarsestDone.emit()
+                QApplication.processEvents()
 
-        t_elapsed = time.time() - t0
-        self.dm.t_scaling_convert_zarr = t_elapsed
+
+
+
+
+        # self.dm.t_scaling = time.time() - t0
+
+
+
+        thumbnailer = Thumbnailer()
+        self.dm.t_thumbs = thumbnailer.reduce_main(dest=self.dm.dest())
+
+        # self.dm.scale = self.dm.scales()[-1]
+
+
+
+        if not self.running():
+            self.hudWarning.emit('Canceling Tasks:  Convert TIFFs to NGFF Zarr')
+            return
+
+        # print(f'\n\n######## Copy-converting TIFFs to NGFF Zarr ########\n')
+
+
+        #
+        # t0 = time.time()
+        # # for group in task_groups:
+        #
+        # for s in self.dm.scales()[::-1]: # do coarsest scale first for quicker viewing
+        #     desc = f"Converting {s} to Zarr"
+        #     tasks = []
+        #     for ID, img in enumerate(imgs):
+        #         out = os.path.join(zarr_od, 's%d' % get_scale_val(s))
+        #         fn = os.path.join(self.dm.location, s, 'img_src', img)
+        #         tasks.append([ID, fn, out])
+        #
+        #     x, y = self.dm.image_size(s=s)
+        #     shape = (len(self.dm), y, x)
+        #     grp = 's%d' % self.dm.scale_val(s=s)
+        #     preallocate_zarr(dm=self.dm, name=zarr_od, group=grp, shape=shape, dtype='|u1', overwrite=True, gui=False)
+        #     # t = time.time()
+        #     # self.initPbar.emit((len(tasks), desc))
+        #     # with ThreadPoolExecutor(max_workers=110) as executor:
+        #     #     list(tqdm.tqdm(executor.map(convert_zarr, tasks), total=len(tasks), position=0, leave=True, desc=desc))
+        #
+        #     t = time.time()
+        #     self.initPbar.emit((len(tasks), desc))
+        #     all_results = []
+        #     i = 0
+        #     # with ctx.Pool(processes=110, maxtasksperchild=1) as pool:
+        #     with ctx.Pool(processes=104, maxtasksperchild=1) as pool:
+        #         for result in tqdm.tqdm(
+        #             pool.imap_unordered(convert_zarr, tasks),
+        #                 total=len(tasks),
+        #                 desc=desc,
+        #                 position=0,
+        #                 leave=True):
+        #             all_results.append(result)
+        #             i += 1
+        #             self.progress.emit(i)
+        #             if not self.running():
+        #                 break
+        #
+        #     dt = time.time() - t
+        #     self.dm['data']['benchmarks']['scales'][s]['t_scale_convert'] = dt
+        #     logger.info(f"ThreadPoolExecutor Time: {'%.3g' % dt}s")
+        #     if s == dm.coarsest_scale_key():
+        #         self.coarsestDone.emit()
+        #         QApplication.processEvents()
+
+
+
+        # t_elapsed = time.time() - t0
+        # self.dm.t_scaling_convert_zarr = t_elapsed
+
+
+
         self.hudMessage.emit('**** Autoscaling Complete ****')
         logger.info('**** Autoscaling Complete ****')
         self.finished.emit()

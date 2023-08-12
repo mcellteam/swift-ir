@@ -2300,7 +2300,7 @@ class DataModel:
     def image_size(self, s=None) -> tuple:
         if s == None: s = self.scale
         caller = inspect.stack()[1].function
-        # logger.info('Called by %s, s=%s' % (inspect.stack()[1].function, s))
+        logger.info('Called by %s, s=%s' % (inspect.stack()[1].function, s))
         try:
             return tuple(self._data['data']['scales'][s]['image_src_size'])
         except:
@@ -2316,7 +2316,7 @@ class DataModel:
 
     def set_image_size(self, s=None) -> None:
         if s == None: s = self.scale
-        caller = inspect.stack()[1].function
+        # caller = inspect.stack()[1].function
         # logger.info(f"[{caller}] scale_key={s}")
         self._data['data']['scales'][s]['image_src_size'] = list(ImageSize(self.path_base(s=s)))
         # self._data['data']['scales'][s]['image_src_size'] = list(ImageIOSize(self.path_base(s=s)))

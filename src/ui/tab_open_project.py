@@ -12,6 +12,7 @@ import textwrap
 from glob import glob
 from pathlib import Path
 import subprocess as sp
+import numpy as np
 import multiprocessing as mp
 import libtiff
 libtiff.libtiff_ctypes.suppress_warnings()
@@ -651,7 +652,6 @@ class OpenProject(QWidget):
             logger.info('Linking to calibration grid image...')
             cfg.data['data']['cal_grid_path'] = self.NEW_PROJECT_IMAGES[0]
             self.NEW_PROJECT_IMAGES = self.NEW_PROJECT_IMAGES[1:]
-
             # logger.info("Copying calibration grid image...")
             # try:
             #     shutil.copy(cfg.data['data']['cal_grid_path'], cfg.data.dest())
@@ -727,10 +727,14 @@ class OpenProject(QWidget):
 
         QApplication.processEvents()
 
-
-        name,_ = os.path.splitext(os.path.basename(dm.location))
-        cfg.mw.addGlobTab(cfg.project_tab, name, switch_to=False)
-        cfg.mw.autoscale(dm)
+        for s in dm.scales():
+            if s != 'scale_1':
+                siz = (np.array(dm.image_size(s='scale_1')) / dm.scale_val(s)).astype(int).tolist()
+                logger.info(f"Setting size for {s} to {siz}...")
+                dm['data']['scales'][s]['image_src_size'] = siz
+        # name,_ = os.path.splitext(os.path.basename(dm.location))
+        # cfg.mw.addGlobTab(cfg.project_tab, name, switch_to=False)
+        cfg.mw.autoscale(dm, new_tab=True)
 
 
         cfg.data = dm
