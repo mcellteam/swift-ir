@@ -116,7 +116,7 @@ class ScaleWorker(QObject):
 
             self.initPbar.emit((len(tasks), desc))
             t = time.time()
-            with ctx.Pool(processes=cpus) as pool:
+            with ctx.Pool(processes=8) as pool:
             # with ThreadPoolExecutor(max_workers=10) as pool:
                 for i, result in enumerate(tqdm.tqdm(pool.imap_unordered(run, tasks),
                                                      total=len(tasks),
