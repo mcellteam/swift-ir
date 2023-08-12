@@ -180,9 +180,25 @@ class ScaleWorker(QObject):
             grp = 's%d' % self.dm.scale_val(s=s)
             preallocate_zarr(dm=self.dm, name=of, group=grp, shape=shape, dtype='|u1', overwrite=True, gui=False)
             t = time.time()
+            desc = f"Converting {s} to Zarr"
             # with ThreadPoolExecutor(max_workers=60) as executor:
             with ThreadPoolExecutor(max_workers=120) as executor:
-                list(tqdm.tqdm(executor.map(convert_zarr, tasks), total=len(tasks), position=0, leave=True, desc=f"Converting {s} to Zarr"))
+                list(tqdm.tqdm(executor.map(convert_zarr, tasks), total=len(tasks), position=0, leave=True, desc=desc))
+
+            all_results = []
+            i = 0
+            with ctx.Pool(processes=cpus) as pool:
+                for result in tqdm.tqdm(
+                    pool.imap_unordered(convert_zarr, tasks),
+                    total=len(tasks),
+                    desc=desc,
+                    position=0,
+                    leave=True):
+                all_results.append(result)
+                i += 1
+                self.progress.emit(i)
+                if not self.running():
+                    break
 
             dt = time.time() - t
             self.dm['data']['benchmarks']['scales'][s]['t_scale_convert'] = dt
