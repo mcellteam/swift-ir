@@ -1259,11 +1259,6 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def alignAll(self):
-        try:
-            self.pythonConsole.pyconsole.kernel_client.stop_channels()
-            self.pythonConsole.pyconsole.kernel_manager.shutdown_kernel()
-        except:
-            print_exception()
         self.align(indexes=list(range(0,len(cfg.data))), reallocate_zarr=True)
 
 
@@ -1337,11 +1332,11 @@ class MainWindow(QMainWindow):
     def autoscale(self, dm):
         logger.info('autoscaling...')
         self.tell('Generating scale pyramid...')
-        try:
-            self.pythonConsole.pyconsole.kernel_client.stop_channels()
-            self.pythonConsole.pyconsole.kernel_manager.shutdown_kernel()
-        except:
-            print_exception()
+        # try:
+        #     self.pythonConsole.pyconsole.kernel_client.stop_channels()
+        #     self.pythonConsole.pyconsole.kernel_manager.shutdown_kernel()
+        # except:
+        #     print_exception()
 
 
         if self._working == True:
