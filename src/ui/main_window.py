@@ -337,7 +337,6 @@ class MainWindow(QMainWindow):
         if self.dw_snr.isVisible():
             cfg.project_tab.dSnr_plot.initSnrPlot()
         # cfg.project_tab.updateTreeWidget()
-        self.enableAllTabs()
         self.dataUpdateWidgets()
         self.updateEnabledButtons()
 
@@ -1103,7 +1102,6 @@ class MainWindow(QMainWindow):
         self._autosave()
         self._changeScaleCombo.setEnabled(True)
         self.hidePbar()
-        self.enableAllTabs()
         cfg.project_tab.initNeuroglancer()
         if self._isProjectTab():
             self.setdw_snr(True)  # Also initializes
@@ -1328,8 +1326,9 @@ class MainWindow(QMainWindow):
         self._btn_alignOne.setEnabled(False)  # Final resets
         self._alignThread.start()  # Step 6: Start the thread
 
+
     @Slot()
-    def autoscale(self, dm):
+    def autoscale(self, dm, new_tab=False):
         logger.info('autoscaling...')
         self.tell('Generating scale pyramid...')
         # try:
@@ -1356,6 +1355,10 @@ class MainWindow(QMainWindow):
         self._scaleworker.initPbar.connect(self.resetPbar)
         self._scaleworker.hudMessage.connect(self.tell)
         self._scaleworker.hudWarning.connect(self.warn)
+        if new_tab:
+            dm.scale = dm.coarsest_scale_key()
+            name,_ = os.path.splitext(os.path.basename(dm.location))
+            self._scaleworker.coarsestDone.connect(lambda: self.addGlobTab(cfg.project_tab, name, switch_to=True))
         if dm['data']['autoalign_flag']:
             self._scaleworker.finished.connect(self.alignAll)
         self._scaleThread.start()  # Step 6: Start the thread
@@ -3527,7 +3530,8 @@ class MainWindow(QMainWindow):
         self.setUpdatesEnabled(False)
 
         caller = inspect.stack()[1].function
-        logger.info(f'_onGlobTabChange [{caller}]')
+        logger.critical(f'[{caller}]')
+        logger.critical(f'self._getTabType() = {self._getTabType()}')
         # if caller not in ('onStartProject', '_setLastTab'): #0524-
         #     self.shutdownNeuroglancer()  # 0329+
         if caller == '_closeOpenProjectTab':
@@ -3535,7 +3539,6 @@ class MainWindow(QMainWindow):
 
         cfg.project_tab = None
         cfg.zarr_tab = None
-        self.enableAllTabs()  # Critical - Necessary for case of glob tab closure during disabled state for MA Mode
         self.stopPlaybackTimer()
         self._changeScaleCombo.clear()
         # self.combo_mode.clear()
@@ -3585,16 +3588,13 @@ class MainWindow(QMainWindow):
             except:
                 print_exception()
 
-            cfg.pt.dataUpdateMA()
+            # cfg.pt.dataUpdateMA()
             self.dw_thumbs.setWidget(cfg.pt.tn_widget)
             self.dw_matches.setWidget(cfg.pt.match_widget)
             self.dw_snr.setWidget(cfg.pt.dSnr_plot)
             if self.dw_snr.isVisible():
                 cfg.pt.dSnr_plot.initSnrPlot()
             self.setCpanelVisibility(True)
-
-
-
 
             # self.updateAllCpanelDetails()
 
@@ -3604,7 +3604,8 @@ class MainWindow(QMainWindow):
             cfg.emViewer = cfg.zarr_tab.viewer
             # self.set_nglayout_combo_text(layout='4panel')
             cfg.zarr_tab.viewer.bootstrap()
-
+        
+        logger.info('Wrapping up...')
         # self.updateMenus()
         self.reload_zpos_slider_and_lineedit()  # future changes to image importing will require refactor
         self.reload_scales_combobox()
