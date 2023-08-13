@@ -30,7 +30,7 @@ import numcodecs
 numcodecs.blosc.use_threads = False
 
 from src.thumbnailer import Thumbnailer
-from src.helpers import print_exception, create_project_structure_directories, get_bindir, get_scale_val, \
+from src.helpers import print_exception, create_project_directories, get_bindir, get_scale_val, \
     renew_directory, renew_directory, get_img_filenames
 from src.funcs_zarr import preallocate_zarr
 import src.config as cfg
@@ -90,7 +90,7 @@ class ScaleWorker(QObject):
             return
         cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(self.dm) * len(self.dm.downscales()))
         cur_path = os.path.split(os.path.realpath(__file__))[0] + '/'
-        create_project_structure_directories(self.dm.dest(), self.dm.scales(), gui=False)
+        # create_project_directories(self.dm.dest(), self.dm.scales(), gui=False)
         iscale2_c = os.path.join(Path(cur_path).parent.absolute(), 'lib', get_bindir(), 'iscale2')
 
         dm.link_full_resolution()

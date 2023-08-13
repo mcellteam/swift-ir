@@ -13,7 +13,7 @@ sys.path.insert(1, context)
 
 from src.data_model import DataModel
 from src.autoscale import autoscale
-from src.helpers import create_project_structure_directories, get_scale_val, natural_sort
+from src.helpers import create_project_directories, get_scale_val, natural_sort
 
 def absoluteFilePaths(directory):
     for dirpath,_,filenames in os.walk(directory):
@@ -35,7 +35,7 @@ if __name__ == '__main__':
     dm = DataModel(name=pd)
     # scales = ['scale_1', 'scale_2', 'scale_4']
     scales = ['scale_1']
-    create_project_structure_directories(dm.dest(), scales, gui=False)
+    create_project_directories(dm.dest(), scales, gui=False)
     test_images = natural_sort(absoluteFilePaths(os.path.join(wd,'tests','test_images')))
     print('test images:\n  %s' % '\n  '.join(test_images))
     print('appending images...')

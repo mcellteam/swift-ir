@@ -26,19 +26,16 @@ from qtpy.QtGui import QGuiApplication, QFont, QPixmap, QPainter, QKeySequence, 
 
 from src.ui.file_browser import FileBrowser
 from src.ui.file_browser_tacc import FileBrowserTacc
-# from src.funcs_image import ImageSize
 from src.thumbnailer import Thumbnailer
-from src.autoscale import autoscale
 from src.helpers import get_project_list, list_paths_absolute, get_bytes, absFilePaths, getOpt, setOpt, \
-    print_exception, append_project_path, configure_project_paths, delete_recursive, \
-    create_project_structure_directories, makedirs_exist_ok, natural_sort, is_tacc, is_joel, hotkey, \
-    get_appdir, caller_name, initLogFiles
+    print_exception, configure_project_paths, delete_recursive, natural_sort, is_tacc, \
+    is_joel, hotkey, get_appdir, caller_name, initLogFiles, create_project_directories
 from src.data_model import DataModel
 from src.ui.tab_project import ProjectTab
 from src.ui.timer import Timer
 from src.ui.tab_zarr import ZarrTab
 from src.ui.dialogs import ImportImagesDialog, NewConfigureProjectDialog
-from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter, YellowTextLabel, Button, SmallButton
+from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter
 from src.ui.tab_project import VerticalLabel
 from src.ui.thumbnail import ThumbnailFast
 import src.config as cfg
@@ -146,7 +143,7 @@ class OpenProject(QWidget):
         self.new_project_header.setAutoFillBackground(True)
         self.new_project_header.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.new_project_header.setStyleSheet('background-color: #222222;')
-        self.new_project_header.hide()
+        # self.new_project_header.hide()
 
         self.vbl_projects = QVBoxLayout()
         self.vbl_projects.setSpacing(1)
@@ -381,11 +378,83 @@ class OpenProject(QWidget):
         self._splitter.addWidget(self.userFilesWidget)
         self._splitter.setSizes([700, 300])
 
+
+
+        '''Step 1/3'''
+        logger.info('Creating name_dialog...')
+        self.name_dialog = QFileDialog()
+        # self.name_dialog.setContentsMargins(2,2,2,2)
+        self.name_dialog.setWindowFlags(Qt.FramelessWindowHint)
+        self.name_dialog.setOption(QFileDialog.DontUseNativeDialog)
+        self.name_dialog.layout().setContentsMargins(2,2,2,2)
+        self.name_dialog.layout().setHorizontalSpacing(2)
+        self.name_dialog.layout().setVerticalSpacing(2)
+
+        logger.info('Setting name filter...')
+        self.name_dialog.setNameFilter("Text Files (*.swiftir)")
+        self.name_dialog.setLabelText(QFileDialog.Accept, "Create")
+        self.name_dialog.setViewMode(QFileDialog.Detail)
+        self.name_dialog.setAcceptMode(QFileDialog.AcceptSave)
+        self.name_dialog.setModal(True)
+        # self.name_dialog.setFilter(QDir.AllEntries | QDir.Hidden)
+
+        logger.info('Getting sidebar URLs...')
+        urls = self.name_dialog.sidebarUrls()
+
+        corral_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/3dem-1076/Projects_AlignEM'
+
+        if '.tacc.utexas.edu' in platform.node():
+            urls.append(QUrl.fromLocalFile(os.getenv('SCRATCH')))
+            urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
+            urls.append(QUrl.fromLocalFile(os.getenv('HOME')))
+            urls.append(QUrl.fromLocalFile(corral_dir))
+
+        else:
+            urls.append(QUrl.fromLocalFile(QDir.homePath()))
+            urls.append(QUrl.fromLocalFile('/tmp'))
+            if os.path.exists('/Volumes'):
+                urls.append(QUrl.fromLocalFile('/Volumes'))
+            if is_joel():
+                if os.path.exists('/Volumes/3dem_data'):
+                    urls.append(QUrl.fromLocalFile('/Volumes/3dem_data'))
+
+        logger.info('Settings sidebar URLs...')
+        self.name_dialog.setSidebarUrls(urls)
+
+        places = getSideBarPlacesProjectName()
+        # print(str(places))
+
+        sidebar = self.name_dialog.findChild(QListView, "sidebar")
+        delegate = StyledItemDelegate(sidebar)
+        delegate.mapping = places
+        sidebar.setItemDelegate(delegate)
+        # urls = self.name_dialog.sidebarUrls()
+        # logger.info(f'urls: {urls}')
+
+        # cfg.cp_dialog = NewConfigureProjectDialog(parent=self)
+        # cfg.cp_dialog.layout().setContentsMargins(2,2,2,2)
+        # cfg.cp_dialog.setWindowFlags(Qt.FramelessWindowHint)
+        # self.vbl_main.addWidget(cfg.cp_dialog)
+
+        cfg.iid_dialog = ImportImagesDialog()
+        cfg.iid_dialog.hide()
+        # self.vbl_main.addWidget(cfg.iid_dialog)
+
+        # self.w_name_dialog = VWidget(self.new_project_header, self.name_dialog, cfg.iid_dialog, cfg.cp_dialog)
+        self.w_name_dialog = VWidget(self.new_project_header, self.name_dialog, cfg.iid_dialog)
+        self.w_name_dialog.layout.setSpacing(0)
+        self.w_name_dialog.hide()
+
+
+
         self.vbl_main = VBL()
-        self.vbl_main.addWidget(self.new_project_header)
-        self.vbl_main.addWidget(self._splitter)
-        self.vbl_main.addWidget(self._actions_widget)
-        self.vbl_main.addWidget(self.le_project_name_w)
+        self._vw = VWidget(self._splitter, self._actions_widget, self.le_project_name_w)
+        self._vsplitter = QSplitter(Qt.Orientation.Vertical)
+        self._vsplitter.addWidget(self._vw)
+        self._vsplitter.addWidget(self.w_name_dialog)
+
+        self.vbl_main.addWidget(self._vsplitter)
+
         # self.vbl_main.addWidget(self.new_project_header)
 
         self.setLayout(self.vbl_main)
@@ -394,17 +463,16 @@ class OpenProject(QWidget):
 
     def hideMainUI(self):
         logger.info('')
-        self._splitter.hide()
         self._actions_widget.hide()
-        self.new_project_header.show()
+        # self.new_project_header.show()
         # pass
 
 
     def showMainUI(self):
         logger.info('')
-        self._splitter.show()
         self._actions_widget.show()
-        self.new_project_header.hide()
+        self.w_name_dialog.hide()
+        # self.new_project_header.hide()
 
     def validate_path(self):
         # logger.info(f'caller:{inspect.stack()[1].function}')
@@ -464,7 +532,6 @@ class OpenProject(QWidget):
             print_exception()
 
 
-
     '''New Project From TIFFs (1/3)'''
     def createProjectFromTiffFolder(self):
         logger.info(f'caller:{inspect.stack()[1].function}')
@@ -477,6 +544,7 @@ class OpenProject(QWidget):
             path_par = str(pathlib.parent.absolute())
             self.le_project_name.setText(os.path.join(path_par,'myproject.swiftir'))
             self.NEW_PROJECT_IMAGES = natural_sort(glob(os.path.join(cur_path, '*.tif')) + glob(os.path.join(cur_path, '*.tiff')))
+
 
     '''New Project From TIFFs (2/3)'''
     def skipToConfig(self):
@@ -494,63 +562,14 @@ class OpenProject(QWidget):
         cfg.mw._is_initialized = 0
 
         if not skip_to_config:
-            self.hideMainUI()
+            # self.hideMainUI()
             cfg.mw.stopPlaybackTimer()
             cfg.mw.tell('New Project Path:')
             self.new_project_lab1.setText('New Project (Step: 1/3) - Name & Location')
             cfg.mw.set_status('New Project (Step: 1/3) - Name & Location')
 
-            '''Step 1/3'''
-            logger.info('Creating name_dialog...')
-            self.name_dialog = QFileDialog()
-            self.vbl_main.addWidget(self.name_dialog)
-            self.name_dialog.setContentsMargins(2,2,2,2)
-            self.name_dialog.setWindowFlags(Qt.FramelessWindowHint)
-            self.name_dialog.setOption(QFileDialog.DontUseNativeDialog)
-            self.name_dialog.layout().setContentsMargins(2,2,2,2)
-            self.name_dialog.layout().setHorizontalSpacing(2)
-            self.name_dialog.layout().setVerticalSpacing(0)
-
-            logger.info('Setting name filter...')
-            self.name_dialog.setNameFilter("Text Files (*.swiftir)")
-            self.name_dialog.setLabelText(QFileDialog.Accept, "Create")
-            self.name_dialog.setViewMode(QFileDialog.Detail)
-            self.name_dialog.setAcceptMode(QFileDialog.AcceptSave)
-            self.name_dialog.setModal(True)
-            # self.name_dialog.setFilter(QDir.AllEntries | QDir.Hidden)
-
-            logger.info('Getting sidebar URLs...')
-            urls = self.name_dialog.sidebarUrls()
-
-            corral_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/3dem-1076/Projects_AlignEM'
-
-            if '.tacc.utexas.edu' in platform.node():
-                urls.append(QUrl.fromLocalFile(os.getenv('SCRATCH')))
-                urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
-                urls.append(QUrl.fromLocalFile(os.getenv('HOME')))
-                urls.append(QUrl.fromLocalFile(corral_dir))
-
-            else:
-                urls.append(QUrl.fromLocalFile(QDir.homePath()))
-                urls.append(QUrl.fromLocalFile('/tmp'))
-                if os.path.exists('/Volumes'):
-                    urls.append(QUrl.fromLocalFile('/Volumes'))
-                if is_joel():
-                    if os.path.exists('/Volumes/3dem_data'):
-                        urls.append(QUrl.fromLocalFile('/Volumes/3dem_data'))
-
-            logger.info('Settings sidebar URLs...')
-            self.name_dialog.setSidebarUrls(urls)
-
-            places = getSideBarPlacesProjectName()
-            # print(str(places))
-
-            sidebar = self.name_dialog.findChild(QListView, "sidebar")
-            delegate = StyledItemDelegate(sidebar)
-            delegate.mapping = places
-            sidebar.setItemDelegate(delegate)
-            # urls = self.name_dialog.sidebarUrls()
-            # logger.info(f'urls: {urls}')
+            self._actions_widget.hide()
+            self.w_name_dialog.show()
             if self.name_dialog.exec() == QFileDialog.Accepted:
                 logger.info('Save File Path: %s' % self.name_dialog.selectedFiles()[0])
                 filename = self.name_dialog.selectedFiles()[0]
@@ -568,7 +587,6 @@ class OpenProject(QWidget):
                 self.showMainUI()
                 cfg.mw.set_status('')
                 return
-            cfg.mw.set_status('')
 
             filename.replace(' ','_')
             fn, ext = os.path.splitext(filename)
@@ -587,26 +605,15 @@ class OpenProject(QWidget):
             self.NEW_PROJECT_PATH = filename
 
         path,_ = os.path.splitext(self.NEW_PROJECT_PATH)
-        # self.NEW_PROJECT_PATH = path + '.swiftir'
         self.NEW_PROJECT_PATH = path
 
-        # makedirs_exist_ok(path, exist_ok=True)
-
-
-        cfg.data = dm = DataModel(name=self.NEW_PROJECT_PATH)
+        dm = cfg.data = DataModel(name=self.NEW_PROJECT_PATH)
         initLogFiles(dm)
 
         if skip_to_config:
-            cfg.data['data']['has_cal_grid'] = self.cbCalGrid.isChecked()
+            dm['data']['has_cal_grid'] = self.cbCalGrid.isChecked()
 
-
-        # cfg.project_tab = ProjectTab(self, path=path, datamodel=cfg.data)
-        # cfg.dataById[id(cfg.project_tab)] = cfg.data
         self.new_project_lab2.setText(path)
-
-        # if mendenhall:
-        #     create_project_structure_directories(cfg.data.dest(), ['scale_1'])
-        # else:
 
         if not skip_to_config:
             '''Step 2/3...'''
@@ -615,8 +622,9 @@ class OpenProject(QWidget):
 
             '''Step 2/3'''
             '''Dialog for importing images. Returns list of filenames.'''
-            cfg.iid_dialog = ImportImagesDialog()
-            self.vbl_main.addWidget(cfg.iid_dialog)
+            # cfg.iid_dialog = ImportImagesDialog()
+            # self.vbl_main.addWidget(cfg.iid_dialog)
+            cfg.iid_dialog.show()
             self.new_project_lab1.setText('New Project (Step: 2/3) - Import TIFF Images')
             cfg.mw.set_status('New Project (Step: 2/3) - Import TIFF Images')
             sidebar = self.findChild(QListView, "sidebar")
@@ -641,32 +649,24 @@ class OpenProject(QWidget):
                 return 1
 
             self.NEW_PROJECT_IMAGES = natural_sort(filenames)
-            logger.info(f'destination: {cfg.data.dest()}')
+            logger.info(f'destination: {dm.dest()}')
 
 
         self.NEW_PROJECT_IMAGES = natural_sort(self.NEW_PROJECT_IMAGES)
 
-        makedirs_exist_ok(path, exist_ok=True)
-
-        if cfg.data['data']['has_cal_grid']:
+        if dm['data']['has_cal_grid']:
             logger.info('Linking to calibration grid image...')
-            cfg.data['data']['cal_grid_path'] = self.NEW_PROJECT_IMAGES[0]
+            dm['data']['cal_grid_path'] = self.NEW_PROJECT_IMAGES[0]
             self.NEW_PROJECT_IMAGES = self.NEW_PROJECT_IMAGES[1:]
-            # logger.info("Copying calibration grid image...")
-            # try:
-            #     shutil.copy(cfg.data['data']['cal_grid_path'], cfg.data.dest())
-            # except:
-            #     print_exception()
 
-
-        cfg.data.set_source_path(os.path.dirname(self.NEW_PROJECT_IMAGES[0]))  # Critical!
+        dm.set_source_path(os.path.dirname(self.NEW_PROJECT_IMAGES[0]))  # Critical!
         cfg.mw.tell(f'Importing {len(self.NEW_PROJECT_IMAGES)} Images...')
         # logger.info(f'Selected Images: \n{self.NEW_PROJECT_IMAGES}')
-        cfg.data.append_images(self.NEW_PROJECT_IMAGES)
+        dm.append_images(self.NEW_PROJECT_IMAGES)
 
-        cfg.mw.tell(f'Dimensions: %dx%d' % cfg.data.image_size(s='scale_1'))
+        cfg.mw.tell(f'Dimensions: %dx%d' % dm.image_size(s='scale_1'))
 
-        cfg.data.set_defaults()
+        dm.set_defaults()
 
         self.le_project_name_w.hide()
 
@@ -674,76 +674,45 @@ class OpenProject(QWidget):
         self.new_project_lab1.setText('New Project (Step: 3/3) - Configure')
         cfg.mw.set_status('New Project (Step: 3/3) - Configure')
 
-        dialog = NewConfigureProjectDialog(parent=self)
-        dialog.layout().setContentsMargins(2,2,2,2)
-        dialog.setWindowFlags(Qt.FramelessWindowHint)
-        self.vbl_main.addWidget(dialog)
-        # cfg.data = dm
-        result = dialog.exec()
+        cfg.cp_dialog = NewConfigureProjectDialog(parent=self)
+        cfg.cp_dialog.layout().setContentsMargins(2,2,2,2)
+        cfg.cp_dialog.setWindowFlags(Qt.FramelessWindowHint)
+        self.vbl_main.addWidget(cfg.cp_dialog)
+        response = cfg.cp_dialog.exec()
         self.showMainUI()
         cfg.mw.set_status('')
-        if result:
-            logger.info('Save File Path: %s' % path)
-        else:
-            # self.showMainUI()
-            dialog.close()
-            cfg.mw.set_status('')
-            return 1
-
-
+        if response == QDialog.Rejected:
+            logger.warning("Dialog was rejected")
+            return
+        QApplication.processEvents()
+        logger.info('Save File Path: %s' % path)
         makedirs_exist_ok(path, exist_ok=True)
+        create_project_directories(dm.location, dm.scales())
+        logger.critical(os.listdir(path))
 
         # cfg.project_tab = ProjectTab(self, path=path, datamodel=dm)
         ID = id(cfg.project_tab)
         logger.info(f'New Tab ID: {ID}')
         cfg.dataById[id(cfg.project_tab)] = dm
         dm.set_defaults()
+        set_image_sizes(dm)
+
         cfg.project_tab = cfg.pt = ProjectTab(self, path=path, datamodel=dm)
-
-        # cfg.mw._closeOpenProjectTab()
-
-        # cfg.mw._disableGlobTabs()
-
-        logger.info("Creating new project...")
-        cfg.mw.setNoPbarMessage(True)
-
-        cfg.mw.set_status('')
-
-        QApplication.processEvents()
-
-        cfg.mw._autosave(silently=True)
-        cfg.mw.set_status(f"Creating project {os.path.basename(path)}...")
-
-        QApplication.processEvents()
-
-        logger.info(f'Appending project to .swift_cache...')
-        userprojectspath = os.path.join(os.path.expanduser('~'), '.swift_cache')
-        try:
-            with open(userprojectspath, 'a') as f:
-                f.write(filename + '\n')
-        except:
-            print_exception()
         cfg.mw._autosave()
+        time.sleep(20)
+        cfg.mw.tell(f"Creating project {os.path.basename(path)}...")
+        logger.info(f'Appending project {filename} to .swift_cache...')
+
+        # append_project_path(filename)
+        cfg.settings['projects'].append(filename)
+        cfg.mw.saveUserPreferences()
+
+
+        # cfg.mw._autosave()
         self.user_projects.set_data()
         cfg.mw._is_initialized = 1
-
-
-        QApplication.processEvents()
-
-        for s in dm.scales():
-            if s != 'scale_1':
-                siz = (np.array(dm.image_size(s='scale_1')) / dm.scale_val(s)).astype(int).tolist()
-                logger.info(f"Setting size for {s} to {siz}...")
-                dm['data']['scales'][s]['image_src_size'] = siz
-        # name,_ = os.path.splitext(os.path.basename(dm.location))
-        # cfg.mw.addGlobTab(cfg.project_tab, name, switch_to=False)
         cfg.mw.autoscale(dm, new_tab=True)
-
-
-        cfg.data = dm
-        # name, ext = os.path.splitext(os.path.basename(path))
-        # cfg.mw.addGlobTab(cfg.project_tab, name)
-
+        # cfg.data = dm
         logger.info('<<<< new_project <<<<')
 
 
@@ -833,10 +802,12 @@ class OpenProject(QWidget):
                 logger.info(f'Project Opened!')
 
             initLogFiles(cfg.data) #0805+
-            append_project_path(filename)
+            # append_project_path(filename)
+            cfg.settings['projects'].append(filename)
+            cfg.mw.saveUserPreferences()
             cfg.data.set_paths_absolute(filename=filename)
             # cfg.project_tab = ProjectTab(self, path=cfg.data.dest() + '.swiftir', datamodel=cfg.data)
-            cfg.project_tab = ProjectTab(self, path=cfg.data.dest(), datamodel=cfg.data)
+            cfg.project_tab = cfg.pt = ProjectTab(self, path=cfg.data.dest(), datamodel=cfg.data)
             cfg.dataById[id(cfg.project_tab)] = cfg.data
 
             # cfg.mw.addGlobTab(cfg.project_tab, os.path.basename(cfg.data.dest()) + '.swiftir')
@@ -1267,6 +1238,7 @@ class UserProjects(QWidget):
         # logger.info('>>>> get_data >>>>')
         # logger.info(f'caller: {caller}')
         self.project_paths = get_project_list()
+        # self.project_paths = []
         projects, thumbnail_first, thumbnail_last, created, modified, \
         n_sections, location, img_dimensions, bytes, gigabytes, extra = \
             [], [], [], [], [], [], [], [], [], [], []
@@ -1402,6 +1374,39 @@ def validate_zarr_selection(path) -> bool:
             # logger.info('Directory contains .zarray -> selection is a valid Zarr')
             return True
     return False
+
+
+def makedirs_exist_ok(path_to_build, exist_ok=False):
+    # Needed for old python which doesn't have the exist_ok option!!!
+    logger.info("Making directories for path %s" % path_to_build)
+    parts = path_to_build.split(
+        os.sep)  # Variable "parts" should be a list of subpath sections. The first will be empty ('') if it was absolute.
+    full = ""
+    if len(parts[0]) == 0:
+        # This happens with an absolute PosixPath
+        full = os.sep
+    else:
+        # This may be a Windows drive or the start of a non-absolute path
+        if ":" in parts[0]:
+            # Assume a Windows drive
+            full = parts[0] + os.sep
+        else:
+            # This is a non-absolute path which will be handled naturally with full=""
+            pass
+    for p in parts:
+        full = os.path.join(full, p)
+        if not os.path.exists(full):
+            os.makedirs(full)
+        elif not exist_ok:
+            pass
+            # logger.info("Warning: Attempt to create existing directory: " + full)
+
+def set_image_sizes(dm):
+    for s in dm.scales():
+        if s != 'scale_1':
+            siz = (np.array(dm.image_size(s='scale_1')) / dm.scale_val(s)).astype(int).tolist()
+            logger.info(f"Setting size for {s} to {siz}...")
+            dm['data']['scales'][s]['image_src_size'] = siz
 
 class Slider(QSlider):
     def __init__(self, parent):

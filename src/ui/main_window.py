@@ -158,7 +158,7 @@ class MainWindow(QMainWindow):
         if not cfg.NO_SPLASH:
             self.show_splash()
 
-        self.pbar_cancel_button.setEnabled(cfg.DAEMON_THREADS)
+        self.bPbarStop.setEnabled(cfg.DAEMON_THREADS)
 
         # self.settings = QSettings("cnl", "alignem")
         # # if not self.settings.value("geometry") == None:
@@ -942,7 +942,6 @@ class MainWindow(QMainWindow):
     def regenerate(self, scale=None, indexes=None, reallocate_zarr=True) -> None:
         '''Note: For now this will always reallocate Zarr, i.e. expects arguments for full stack'''
         logger.info('regenerate >>>>')
-        self.setNoPbarMessage(True)
         if scale == None:
             scale = cfg.data.scale
         if indexes == None:
@@ -955,10 +954,6 @@ class MainWindow(QMainWindow):
         if not cfg.data.is_aligned(s=scale):
             self.warn('Scale Must Be Aligned First')
             return
-        cfg.nProcessSteps = 3
-        cfg.nProcessDone = 0
-        self.pbarLabel.setText('Task (0/%d)...' % cfg.nProcessSteps)
-        self.showZeroedPbar(set_n_processes=3)
 
         cfg.data.set_has_bb(cfg.data.use_bb())  # Critical, also see regenerate
         self.tell(f'Regenerating {cfg.data.scale_pretty(s=scale)} aligned images for indexes {indexes}...')
@@ -978,7 +973,6 @@ class MainWindow(QMainWindow):
             print_exception()
 
         self._working = False
-        self.setNoPbarMessage(False)
         # self.updateAllCpanelDetails()
         cfg.pt.updateDetailsPanel()
         self.hidePbar()
@@ -1007,13 +1001,6 @@ class MainWindow(QMainWindow):
             ans = True
         # logger.info(f'Returning: {ans}')
         return ans
-
-    # @Slot()
-    # def restore_interactivity(self):
-    #     self._working = False
-    #     self.enableAllButtons()
-    #     self.updateEnabledButtons()
-    #     self.sw_pbar.hide()
 
     def present_snr_results(self, indexes):
         snr_before = self._snr_before
@@ -2009,7 +1996,7 @@ class MainWindow(QMainWindow):
     def jump_to_slider(self):
         if self._isProjectTab():
             if inspect.stack()[1].function == 'main':
-                logger.info('')
+                # logger.info('')
                 cfg.data.zpos = self._sectionSlider.value()
             # caller = inspect.stack()[1].function
             # if caller == 'main':
@@ -2327,48 +2314,50 @@ class MainWindow(QMainWindow):
 
     def _saveProjectToFile(self, saveas=None, silently=False):
         if cfg.data:
-            if self._isProjectTab():
-                try:
-                    self._mutex.lock()
-                    if saveas is not None:
-                        cfg.data.location = saveas
-                    data_cp = copy.deepcopy(cfg.data._data)
-                    # data_cp.make_paths_relative(start=cfg.data.dest())
-                    # data_cp_json = data_cp.to_dict()
-                    location = cfg.data.location
-                    if not silently:
-                        logger.info(f'---- SAVING TO FILE ----\n{location}')
-                    jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
+            try:
+                # self._mutex.lock()
+                if saveas is not None:
+                    cfg.data.location = saveas
+                data_cp = copy.deepcopy(cfg.data._data)
+                # data_cp.make_paths_relative(start=cfg.data.dest())
+                # data_cp_json = data_cp.to_dict()
+                location = cfg.data.location
+                if not silently:
+                    logger.info(f'---- SAVING TO FILE ----\n{location}')
+                jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
 
-                    name = copy.deepcopy(location)
+                name = copy.deepcopy(location)
 
-                    if not name.endswith('.swiftir'):
-                        name += ".swiftir"
-                    with open(name, 'w') as f:
-                        f.write(jde.encode(data_cp))
+                if not name.endswith('.swiftir'):
+                    name += ".swiftir"
+                with open(name, 'w') as f:
+                    f.write(jde.encode(data_cp))
 
-                    # if is_tacc():
-                    #     node = platform.node()
-                    #     user = getpass.getuser()
-                    #     tstamp = datetime.datetime.now().strftime('%Y%m%d')
-                    #     fn = f"pf_{tstamp}_{node}_{user}_" + os.path.basename(name)
-                    #     location = "/work/08507/joely/ls6/log_db"
-                    #     of = os.path.join(location, fn)
-                    #     with open(of, 'w') as f:
-                    #         f.write(jde.encode(data_cp))
+                # if is_tacc():
+                #     node = platform.node()
+                #     user = getpass.getuser()
+                #     tstamp = datetime.datetime.now().strftime('%Y%m%d')
+                #     fn = f"pf_{tstamp}_{node}_{user}_" + os.path.basename(name)
+                #     location = "/work/08507/joely/ls6/log_db"
+                #     of = os.path.join(location, fn)
+                #     with open(of, 'w') as f:
+                #         f.write(jde.encode(data_cp))
 
-                    # self.globTabs.setTabText(self.globTabs.currentIndex(), os.path.basename(name))
+                # self.globTabs.setTabText(self.globTabs.currentIndex(), os.path.basename(name))
 
-                    # self.saveUserPreferences()
-                    if not silently:
-                        self.statusBar.showMessage('Project Saved!', 3000)
+                # self.saveUserPreferences()
+                if not silently:
+                    self.statusBar.showMessage('Project Saved!', 3000)
 
-                    self._mutex.unlock()
+                # self._mutex.unlock()
+                logger.info("<<<<")
 
-                except:
-                    print_exception()
-                else:
-                    self._unsaved_changes = False
+            except:
+                print_exception()
+            else:
+                self._unsaved_changes = False
+            finally:
+                logger.info("<<<<")
 
     def _callbk_unsavedChanges(self):
         if self._isProjectTab():
@@ -4637,7 +4626,8 @@ class MainWindow(QMainWindow):
         # self._sectionSlider.setMaximumWidth(220)
         self._sectionSlider.setObjectName('z-index-slider')
         self._sectionSlider.setFocusPolicy(Qt.StrongFocus)
-        self._sectionSlider.valueChanged.connect(self.jump_to_slider)
+        # self._sectionSlider.valueChanged.connect(self.jump_to_slider)
+        self._sectionSlider.valueChanged.connect(lambda v: setData('data,z_position', v))
 
         tip = 'Jumpt to section #'
         self._jumpToLineedit = QLineEdit(self)
@@ -5446,11 +5436,10 @@ class MainWindow(QMainWindow):
 
 
         self.globTabs.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.sw_pbar.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.pbar.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
         # self.globTabsAndCpanel = VWidget(self.globTabs, self.sw_pbar)
         self.globTabsAndCpanel = VWidget(self.globTabs)
-        self.statusBar.addPermanentWidget(self.sw_pbar)
         self.addToolBar(Qt.LeftToolBarArea, self.toolbar)
         self.addToolBar(Qt.BottomToolBarArea, self.toolbar_cpanel)
         self.globTabsAndCpanel.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -5558,36 +5547,24 @@ class MainWindow(QMainWindow):
     def initPbar(self):
         self.pbar = QProgressBar()
         self.pbar.setFixedWidth(320)
-        # self.pbar.setFixedHeight(14)
-        # self.pbar.setStyleSheet("font-size: 9px; font-weight: 600;")
+        self.pbar.setFixedHeight(14)
         self.pbar.setStyleSheet("font-size: 9px; padding: 0px;")
         self.pbar.setTextVisible(True)
-        # font = QFont('Arial', 12)
-        # font.setBold(True)
-        # self.pbar.setFont(font)
-        # self.pbar.setFixedWidth(400)
-        # self.sw_pbar = QWidget(self)
-        self.sw_pbar = QStackedWidget(self)
-        self.sw_pbar.setMaximumHeight(18)
-        self.sw_pbar.setAutoFillBackground(True)
-        self.pbar_cancel_button = QPushButton('Stop')
-        self.pbar_cancel_button.setFixedSize(42, 14)
-        self.pbar_cancel_button.setIconSize(QSize(12, 12))
-        self.pbar_cancel_button.setToolTip('Terminate Pending Multiprocessing Tasks')
-        self.pbar_cancel_button.setIcon(qta.icon('mdi.cancel', color=cfg.ICON_COLOR))
-        self.pbar_cancel_button.setStyleSheet("""font-size: 8px; margin: 0px; padding: 0px;""")
-        self.pbar_cancel_button.clicked.connect(self.cancelTasks)
-        self.pbarLabel = QLabel('Task... ')
-        self.pbarLabel.setStyleSheet("""font-size: 9px;""")
-
-        self.widgetPbar = HWidget(self.pbarLabel, self.pbar, self.pbar_cancel_button)
-        self.widgetPbar.layout.setContentsMargins(4, 0, 4, 0)
-        self.widgetPbar.layout.setSpacing(2)
-
-        self.sw_pbar.addWidget(self.widgetPbar)
-        self.sw_pbar.setCurrentIndex(0)
-
-        # self.statusBar.addPermanentWidget(self.sw_pbar)
+        self.bPbarStop = QPushButton('Stop')
+        self.bPbarStop.setFixedSize(42, 13)
+        self.bPbarStop.setIconSize(QSize(12, 12))
+        self.bPbarStop.setToolTip('Terminate Pending Multiprocessing Tasks')
+        self.bPbarStop.setIcon(qta.icon('mdi.cancel', color=cfg.ICON_COLOR))
+        self.bPbarStop.setStyleSheet("""font-size: 8px; margin: 0px; padding: 0px;""")
+        self.bPbarStop.clicked.connect(self.cancelTasks)
+        # self.pbarLabel = QLabel('Task... ')
+        # self.pbarLabel.setStyleSheet("""font-size: 9px;""")
+        # self.wPbar = HWidget(self.pbarLabel, self.pbar, self.bPbarStop)
+        self.wPbar = HWidget(self.pbar, self.bPbarStop)
+        self.wPbar.layout.setAlignment(Qt.AlignCenter)
+        self.wPbar.layout.setContentsMargins(4, 0, 4, 0)
+        self.wPbar.layout.setSpacing(2)
+        self.statusBar.addPermanentWidget(self.wPbar)
         self.hidePbar()
 
     def cancelTasks(self):
@@ -5609,17 +5586,6 @@ class MainWindow(QMainWindow):
         self.pbar.setMaximum(x)
 
 
-    def setNoPbarMessage(self, b):
-        # self.setUpdatesEnabled(False)
-        # if b:
-        #     self.sw_pbar.setCurrentIndex(1)
-        #     self.sw_pbar.show()
-        # else:
-        #     self.sw_pbar.setCurrentIndex(0)
-        #     self.sw_pbar.hide()
-        # self.setUpdatesEnabled(True)
-        # QApplication.processEvents()
-        pass
 
 
     def setPbar(self, n:int):
@@ -5632,8 +5598,8 @@ class MainWindow(QMainWindow):
 
     def resetPbar(self, data:tuple):
         '''New method to replace historical pbar functionality 2023-08-09'''
-        self.sw_pbar.show()
-        self.pbar.show()
+        # self.sw_pbar.show()
+        self.wPbar.show()
         self.pbar.setMaximum(data[0])
         self.pbar.setValue(0)
         self.pbar.setFormat('(%p%) ' + data[1])
@@ -5692,24 +5658,23 @@ class MainWindow(QMainWindow):
         else:
             self.pbarLabel.hide()
         # if cancel_processes:
-        #     self.pbar_cancel_button.hide()
+        #     self.bPbarStop.hide()
         # else:
-        #     self.pbar_cancel_button.show()
+        #     self.bPbarStop.show()
         # logger.critical(f'cfg.nProcessSteps = {cfg.nProcessSteps}, cfg.nProcessDone = {cfg.nProcessDone}')
         if pbar_max:
             self.pbar.setMaximum(pbar_max)
         self.pbar.setValue(0)
         # self.setPbarText('Preparing Tasks...')
-        self.sw_pbar.show()
+        self.wPbar.show()
         QApplication.processEvents()
         # pass
 
     def hidePbar(self):
         # logger.info('')
-        self.pbarLabel.setText('')
-        self.sw_pbar.hide()
-        self.sw_pbar.setCurrentIndex(0)
-        self.statusBar.clearMessage()  # Shoehorn
+        # self.pbarLabel.setText('')
+        self.wPbar.hide()
+        # self.statusBar.clearMessage()  # Shoehorn
         QApplication.processEvents()
 
     def back_callback(self):
