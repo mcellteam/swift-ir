@@ -29,7 +29,7 @@ import src.config as cfg
 
 
 from src.helpers import print_exception, get_scale_val, \
-    create_project_structure_directories, get_bindir, pretty_elapsed
+    create_project_directories, get_bindir, pretty_elapsed
 
 
 __all__ = ['autoscale']
@@ -50,7 +50,7 @@ def autoscale(dm:DataModel, gui=True):
         return
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(dm) * len(dm.downscales()))
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
-    create_project_structure_directories(dm.dest(), dm.scales(), gui=gui)
+    create_project_directories(dm.dest(), dm.scales(), gui=gui)
     iscale2_c = os.path.join(my_path, 'lib', get_bindir(), 'iscale2')
 
     # Create Scale 1 Symlinks

@@ -46,8 +46,7 @@ except:
     from utils.treeview import Treeview
 
 __all__ = ['is_tacc', 'is_linux', 'is_mac', 'create_paged_tiff', 'check_for_binaries', 'delete_recursive',
-           'do_scales_exist', 'make_relative', 'make_absolute', 'are_aligned_images_generated', 'get_img_filenames',
-           'print_exception', 'get_scale_key', 'get_scale_val', 'makedirs_exist_ok', 'print_project_tree',
+           'do_scales_exist', 'make_relative', 'make_absolute', 'are_aligned_images_generated', 'get_img_filenames',           'print_exception', 'get_scale_key', 'get_scale_val', 'print_project_tree',
            'verify_image_file', 'exist_aligned_zarr', 'get_scales_with_generated_alignments', 'handleError',
            'count_widgets', 'find_allocated_widgets', 'absFilePaths', 'validate_file', 'hotkey',
            'caller_name'
@@ -162,7 +161,7 @@ def count_widgets(name_or_type) -> int:
 
 def delete_recursive(dir, keep_core_dirs=False):
     # chunks = glob(dir + '/img_aligned.zarr/**/*', recursive=True) + glob(dir + '/img_src.zarr/**/*', recursive=True)
-    cfg.main_window.showZeroedPbar(set_n_processes=False)
+    # cfg.main_window.showZeroedPbar(set_n_processes=False)
     to_delete = []
     scales = glob(dir + '/scale_*')
     for s in scales:
@@ -202,7 +201,7 @@ def delete_recursive(dir, keep_core_dirs=False):
         QApplication.processEvents()
     shutil.rmtree(dir, ignore_errors=True, onerror=handleError)
 
-    cfg.main_window.hidePbar()
+    # cfg.main_window.hidePbar()
 
 
 def update_preferences_model():
@@ -232,6 +231,21 @@ def update_preferences_model():
     cfg.settings['ui'].setdefault('DISPLAY_THUMBNAILS_IN_DIALOG', True)
     cfg.settings.setdefault('notes', {})
     cfg.settings['notes'].setdefault('global_notes', '')
+    cfg.settings.setdefault('projects', [])
+    if is_tacc():
+        ps = os.path.join(os.environ['SCRATCH'], '.alignem_data')
+        cfg.settings.setdefault('content_roots', [ps])
+        if not os.path.exists(ps):
+            os.mkdir(ps)
+        pw = os.path.join(os.environ['WORK'], '.alignem_data')
+        if not os.path.exists(pw):
+            os.mkdir(pw)
+        cfg.settings.setdefault('content_roots', [pw])
+    else:
+        cfg.settings.setdefault('content_roots', ['~/.alignem_data'])
+        homdir = os.path.expanduser('~')
+        if not os.path.exists(homdir):
+            os.mkdir(homdir)
 
 
 def initialize_user_preferences():
@@ -325,12 +339,8 @@ def cleanup_project_list(paths: list) -> list:
 def get_project_list():
     logger.info('>>>> get_project_list >>>>')
     try:
-        userprojectspath = os.path.join(os.path.expanduser('~'), '.swift_cache')
-        if not os.path.exists(userprojectspath):
-            open(userprojectspath, 'a').close()
-        with open(userprojectspath, 'r') as f:
-            projectpaths = [line.rstrip() for line in f]
-        return projectpaths
+        # convert_projects_model()
+        return cfg.settings['projects']
     except:
         print_exception()
     finally:
@@ -338,40 +348,43 @@ def get_project_list():
 
 
 # file = os.path.join(os.path.expanduser('~'), '.swift_cache')
-def append_project_path(path):
-    logger.info('')
+
+
+def convert_projects_model():
     userprojectspath = os.path.join(os.path.expanduser('~'), '.swift_cache')
-    if not os.path.exists(userprojectspath):
-        open(userprojectspath, 'a').close()
-    with open(userprojectspath, 'r') as f:
-        lines = f.readlines()
-    paths = [line.rstrip() for line in lines]
-    paths.append(path)
-    new_paths = cleanup_project_list(paths)
-    with open(userprojectspath, 'a') as f:
-        for p in new_paths:
-            f.write(f"{p}\n")
+    if os.path.exists(userprojectspath):
+        with open(userprojectspath, 'r') as f:
+            logger.warning('Converting projects model...')
+            projectpaths = [line.rstrip() for line in f]
+
+            logger.critical(f"Projects found in old file: {projectpaths}")
+            cfg.settings['projects'] = projectpaths
+            cfg.mw.saveUserPreferences()
+            os.remove(userprojectspath)
 
 
 def configure_project_paths():
     # caller = inspect.stack()[1].function
     # logger.info('')
-    userprojectspath = os.path.join(os.path.expanduser('~'), '.swift_cache')
-    if not os.path.exists(userprojectspath):
-        open(userprojectspath, 'a').close()
+    # userprojectspath = os.path.join(os.path.expanduser('~'), '.swift_cache')
+    # if not os.path.exists(userprojectspath):
+    #     open(userprojectspath, 'a').close()
     try:
-        with open(userprojectspath, 'r') as f:
-            lines = f.readlines()
-        paths = [line.rstrip() for line in lines]
-        # logger.info(f'paths: {paths}')
-        projectpaths = cleanup_project_list(paths)
-        # logger.info(f'projectpaths: {projectpaths}')
-        with open(userprojectspath, 'w') as f:
-            for p in projectpaths:
-                f.write(f"{p}\n")
-        if projectpaths:
+        # with open(userprojectspath, 'r') as f:
+        #     lines = f.readlines()
+        # paths = [line.rstrip() for line in lines]
+        # convert_projects_model()
+        paths = cfg.settings['projects']
+        logger.critical(f'paths: {paths}')
+        cleanpaths = cleanup_project_list(paths)
+        logger.critical(f'cleanpaths: {cleanpaths}')
+        # with open(userprojectspath, 'w') as f:
+        #     for p in cleanpaths:
+        #         f.write(f"{p}\n")
+        cfg.settings['projects'] = cleanpaths
+        if cleanpaths:
             logger.info('AlignEM-SWiFT knows about the following projects:\n\n'
-                        '  %s\n' % '\n  '.join(projectpaths))
+                        '  %s\n' % '\n  '.join(cleanpaths))
     except:
         print_exception()
 
@@ -893,7 +906,7 @@ def initLogFiles(dm):
         print_exception()
 
 
-def create_project_structure_directories(destination, scales, gui=True) -> None:
+def create_project_directories(destination, scales, gui=True) -> None:
     caller = inspect.stack()[1].function
     logger.info(f'Creating Project Structure Directories for destination {destination}, scales: {scales}...')
 
@@ -966,30 +979,6 @@ def print_scratch(msg):
         f.write(str(msg))
 
 
-def makedirs_exist_ok(path_to_build, exist_ok=False):
-    # Needed for old python which doesn't have the exist_ok option!!!
-    logger.info("Making directories for path %s" % path_to_build)
-    parts = path_to_build.split(
-        os.sep)  # Variable "parts" should be a list of subpath sections. The first will be empty ('') if it was absolute.
-    full = ""
-    if len(parts[0]) == 0:
-        # This happens with an absolute PosixPath
-        full = os.sep
-    else:
-        # This may be a Windows drive or the start of a non-absolute path
-        if ":" in parts[0]:
-            # Assume a Windows drive
-            full = parts[0] + os.sep
-        else:
-            # This is a non-absolute path which will be handled naturally with full=""
-            pass
-    for p in parts:
-        full = os.path.join(full, p)
-        if not os.path.exists(full):
-            os.makedirs(full)
-        elif not exist_ok:
-            pass
-            # logger.info("Warning: Attempt to create existing directory: " + full)
 
 
 def update_skip_annotations():

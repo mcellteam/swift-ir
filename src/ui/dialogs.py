@@ -809,8 +809,8 @@ class NewConfigureProjectDialog(QDialog):
 
     def on_cancel(self):
         self.reject()
-        # self.close()
-        # return 1
+        self.close()
+        return 1
 
 
     def onScaleAndAlign(self):
@@ -848,6 +848,7 @@ class NewConfigureProjectDialog(QDialog):
             logger.warning(e)
         finally:
             self.accept()
+            return 0
 
     def scale_only(self):
         cfg.data['data']['autoalign_flag'] = False
@@ -1174,12 +1175,12 @@ class RechunkDialog(QDialog):
         self.chunk_x_lineedit.setText(str(chunkshape[2]))
         self.chunk_y_lineedit.setText(str(chunkshape[1]))
         self.chunk_z_lineedit.setText(str(chunkshape[0]))
-        img_size = cfg.data.image_size()
+        # img_size = cfg.data.image_size()
         # self.chunk_x_lineedit.setValidator(QIntValidator(0, img_size[0]))
         # self.chunk_y_lineedit.setValidator(QIntValidator(0, img_size[1]))
         # self.chunk_z_lineedit.setValidator(QIntValidator(0, len(cfg.data)))
-        self.chunk_x_lineedit.setValidator(QIntValidator(0, img_size[0]))
-        self.chunk_y_lineedit.setValidator(QIntValidator(0, img_size[1]))
+        # self.chunk_x_lineedit.setValidator(QIntValidator(0, img_size[0]))
+        # self.chunk_y_lineedit.setValidator(QIntValidator(0, img_size[1]))
         self.chunk_z_lineedit.setValidator(QIntValidator(0, len(cfg.data)))
         self.chunk_x_layout = QHBoxLayout()
         self.chunk_x_layout.setContentsMargins(4,4,4,4)
