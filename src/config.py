@@ -1,18 +1,15 @@
 #!/usr/bin/env python3
 
 '''This file is for initializing global config and 'data' the dictionary datamodel state in memory.'''
-import math
+import os
 import platform
 import getpass
-from math import inf
-# from src import shaders
 
 __all__ = ['data']
 
 VERSION = '0.5.49'
 
 LOOP = None
-
 
 # max_downsampling=1024 #default=64
 # max_downsampled_size=2048 #default=128
@@ -82,6 +79,11 @@ WIDTH, HEIGHT = 1280, 700
 
 '''Default Alignment Params'''
 
+DEFAULT_CONTENT_ROOT = os.path.join(os.path.expanduser('~'), '.alignem_data')
+try:
+    DEFAULT_CONTENT_ROOT_TACC = os.path.join(os.getenv('SCRATCH'),'.alignem_data')
+except:
+    pass
 # DEFAULT_POLY_ORDER            = int(0)
 DEFAULT_NULL_BIAS             = bool(False)
 DEFAULT_BOUNDING_BOX          = bool(False)
@@ -109,7 +111,7 @@ CHUNK_X, CHUNK_Y, CHUNK_Z = 1024, 1024, 1
 
 '''Default Compression Parameters'''
 # CNAME = 'zstd'
-CNAME = 'None'
+CNAME = 'none'
 CLEVEL = 5
 
 '''Other Defaults'''

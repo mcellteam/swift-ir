@@ -22,7 +22,6 @@ data_template = \
             "defaults": {},
             "shader": None,
             "source_path": "",
-            "destination_path": "",
             "z_position": 0,
             "current_scale": "scale_1",
             "thumb_scaling_factor_source": None,

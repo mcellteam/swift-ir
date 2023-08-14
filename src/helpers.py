@@ -231,21 +231,44 @@ def update_preferences_model():
     cfg.settings['ui'].setdefault('DISPLAY_THUMBNAILS_IN_DIALOG', True)
     cfg.settings.setdefault('notes', {})
     cfg.settings['notes'].setdefault('global_notes', '')
-    cfg.settings.setdefault('projects', [])
+    cfg.settings.setdefault('alignments', [])
+    cfg.settings.setdefault('search_paths', [])
     if is_tacc():
-        ps = os.path.join(os.environ['SCRATCH'], '.alignem_data')
-        cfg.settings.setdefault('content_roots', [ps])
-        if not os.path.exists(ps):
-            os.mkdir(ps)
-        pw = os.path.join(os.environ['WORK'], '.alignem_data')
-        if not os.path.exists(pw):
-            os.mkdir(pw)
-        cfg.settings.setdefault('content_roots', [pw])
+        p = cfg.DEFAULT_CONTENT_ROOT_TACC
+        cfg.settings.setdefault('content_root', p)
+        if not os.path.exists(p):
+            os.mkdir(p)
+        p = os.path.join(cfg.DEFAULT_CONTENT_ROOT,'alignments')
+        if not p in cfg.settings['search_paths']:
+            cfg.settings['search_paths'].append(p)
+        if not os.path.exists(p):
+            os.mkdir(p)
     else:
-        cfg.settings.setdefault('content_roots', ['~/.alignem_data'])
-        homdir = os.path.expanduser('~')
-        if not os.path.exists(homdir):
-            os.mkdir(homdir)
+        p = os.path.join(cfg.DEFAULT_CONTENT_ROOT)
+        cfg.settings.setdefault('content_root', cfg.DEFAULT_CONTENT_ROOT)
+        if not os.path.exists(p):
+            os.mkdir(p)
+        p = os.path.join(cfg.DEFAULT_CONTENT_ROOT,'alignments')
+        if not p in cfg.settings['search_paths']:
+            cfg.settings['search_paths'].append(p)
+        if not os.path.exists(p):
+            os.mkdir(p)
+
+    try:
+        p = os.path.join(cfg.settings['content_root'], 'series')
+        if not os.path.exists(p):
+            logger.critical(f'Creating directory! {p}')
+            os.mkdir(p)
+    except:
+        print_exception()
+
+    try:
+        p = os.path.join(cfg.settings['content_root'], 'alignments')
+        if not os.path.exists(p):
+            logger.critical(f'Creating directory! {p}')
+            os.mkdir(p)
+    except:
+        print_exception()
 
 
 def initialize_user_preferences():
@@ -336,15 +359,15 @@ def cleanup_project_list(paths: list) -> list:
     return clean_paths
 
 
-def get_project_list():
-    logger.info('>>>> get_project_list >>>>')
-    try:
-        # convert_projects_model()
-        return cfg.settings['projects']
-    except:
-        print_exception()
-    finally:
-        logger.info('<<<< get_project_list <<<<')
+# def get_project_list():
+#     logger.info('>>>> get_project_list >>>>')
+#     try:
+#         # convert_projects_model()
+#         return cfg.settings['projects']
+#     except:
+#         print_exception()
+#     finally:
+#         logger.info('<<<< get_project_list <<<<')
 
 
 # file = os.path.join(os.path.expanduser('~'), '.swift_cache')
@@ -469,6 +492,10 @@ def get_bindir() -> str:
 
 def get_appdir() -> str:
     return os.path.split(os.path.realpath(__file__))[0]
+
+
+def example_zarr() -> str:
+    return os.path.join(get_appdir(), 'resources','example.zarr')
 
 
 def absFilePaths(d):
@@ -688,7 +715,7 @@ def get_scale_val(scale_of_any_type) -> int:
 def do_scales_exist() -> bool:
     '''Checks whether any stacks of scaled images exist'''
     try:
-        if any(d.startswith('scale_') for d in os.listdir(cfg.data['data']['destination_path'])):
+        if any(d.startswith('scale_') for d in os.listdir(cfg.data['data']['series_path'])):
             return True
         else:
             return False
@@ -942,7 +969,7 @@ def is_not_hidden(path):
 
 def print_project_tree() -> None:
     '''Recursive function that lists datamodel directory contents as a tree.'''
-    paths = Treeview.make_tree(Path(cfg.data['data']['destination_path']))
+    paths = Treeview.make_tree(Path(cfg.data['data']['series_path']))
     for path in paths:
         print(path.displayable())
 

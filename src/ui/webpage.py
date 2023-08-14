@@ -2,9 +2,10 @@
 import logging
 from qtpy.QtWidgets import QMainWindow, QApplication, QWidget, QVBoxLayout
 from qtpy.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
+from qtpy.QtWebEngineWidgets import *
 from qtpy.QtCore import QUrl, QSize
 
-__all__ = ['WebPage']
+__all__ = ['QuickWebPage']
 
 logger = logging.getLogger(__name__)
 
@@ -87,9 +88,9 @@ class WebEnginePage(QWebEnginePage):
         return super().acceptNavigationRequest(url, _type, isMainFrame)
 
 
-class WebPage(QMainWindow):
+class QuickWebPage(QMainWindow):
     def __init__(self, url=None, *args, **kwargs):
-        super(WebPage, self).__init__(*args, **kwargs)
+        super(QuickWebPage, self).__init__(*args, **kwargs)
 
         self.webengineview = QWebEngineView()
         self.webengineview.setPage(WebEnginePage())

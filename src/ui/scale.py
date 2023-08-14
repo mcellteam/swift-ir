@@ -93,6 +93,7 @@ class ScaleWorker(QObject):
         # create_project_directories(self.dm.dest(), self.dm.scales(), gui=False)
         iscale2_c = os.path.join(Path(cur_path).parent.absolute(), 'lib', get_bindir(), 'iscale2')
 
+        logger.critical(f"dm.location = {dm.location}")
         dm.link_full_resolution()
 
         logger.info('Creating downsampling tasks...')
@@ -205,6 +206,7 @@ class ScaleWorker(QObject):
                     # self.coarsestDone.emit()
                     self.refresh.emit()
                     QApplication.processEvents()
+        self.finished.emit()
 
 
 

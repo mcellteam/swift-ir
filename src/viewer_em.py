@@ -23,7 +23,8 @@ from qtpy.QtCore import QObject, Signal, Slot, QUrl, QTimer
 from qtpy.QtWidgets import QApplication, QSizePolicy
 from qtpy.QtWebEngineWidgets import *
 from src.funcs_zarr import get_zarr_tensor
-from src.helpers import getOpt, getData, setData, obj_to_string, print_exception, is_joel, is_tacc, caller_name
+from src.helpers import getOpt, getData, setData, obj_to_string, print_exception, is_joel, is_tacc, caller_name, \
+    example_zarr
 from src.shaders import ann_shader
 import src.config as cfg
 
@@ -42,7 +43,7 @@ import numpy as np
 ng.server.debug = cfg.DEBUG_NEUROGLANCER
 numcodecs.blosc.use_threads = False
 
-__all__ = ['EMViewer', 'EMViewerSnr', 'EMViewerMendenhall']
+__all__ = ['EMViewer', 'PMViewer', 'EMViewerMendenhall']
 
 logger = logging.getLogger(__name__)
 # handler = logging.StreamHandler(stream=sys.stdout)
@@ -70,8 +71,12 @@ class AbstractEMViewer(neuroglancer.Viewer):
         self.cs_scale = None
         self.created = datetime.datetime.now()
         # self._layer = None
-        self._layer = cfg.data.zpos
-        self.scale = cfg.data.scale_key
+        # try:
+        #     self._layer = cfg.data.zpos
+        # except:
+        #     self._layer = 0
+        #     print_exception()
+        # self.scale = cfg.data.scale_key
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
         self.type = 'AbstractEMViewer'
         self._zmag_set = 0
@@ -410,8 +415,12 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
 
     def get_zoom(self, w, h):
-        _, tensor_y, tensor_x = cfg.tensor.shape
-        res_z, res_y, res_x = cfg.data.resolution(s=cfg.data.scale_key)  # nm per imagepixel
+        _, tensor_y, tensor_x = self.tensor.shape
+        try:
+            res_z, res_y, res_x = cfg.data.resolution(s=cfg.data.scale_key)  # nm per imagepixel
+        except:
+            res_z, res_y, res_x = [50,2,2]
+            # print_exception()
         scale_h = ((res_y * tensor_y) / h) * 1e-9  # nm/pixel
         scale_w = ((res_x * tensor_x) / w) * 1e-9  # nm/pixel
         cs_scale = max(scale_h, scale_w)
@@ -427,6 +436,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
 
     def get_tensors(self):
+        '''TODO study this #0813'''
+
         # del cfg.tensor
         # del cfg.unal_tensor
         # del cfg.al_tensor
@@ -569,15 +580,15 @@ class EMViewer(AbstractEMViewer):
         with self.config_state.txn() as s:
             s.show_ui_controls = getData('state,show_ng_controls')
             s.show_panel_borders = False
+            s.show_layer_panel = False
             # s.viewer_size = [100,100]
             s.show_help_button = True
-            s.show_layer_panel = False
             s.scale_bar_options.padding_in_pixels = 0 # default = 8
             s.scale_bar_options.left_pixel_offset = 10  # default = 10
             s.scale_bar_options.bottom_pixel_offset = 10  # default = 10
             s.scale_bar_options.bar_top_margin_in_pixels = 4 # default = 5
             # s.scale_bar_options.font_name = 'monospace'
-            s.scale_bar_options.font_name = 'serif'
+            # s.scale_bar_options.font_name = 'serif'
 
 
 
@@ -681,6 +692,64 @@ class EMViewer(AbstractEMViewer):
 #
 #
 
+class PMViewer(AbstractEMViewer):
+
+    def __init__(self, **kwags):
+        super().__init__(**kwags)
+        # self.shared_state.add_changed_callback(self.on_state_changed)
+        # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
+        self.type = 'PMViewer'
+        self._example_path = example_zarr()
+
+    def initExample(self):
+        logger.critical('')
+        self.initViewer(path=self._example_path)
+        self.post_message("No series have been imported yet. This is just an example.")
+
+
+    def initViewer(self, path=None):
+        logger.critical(f"path: {path}")
+        if path:
+            self.path = path
+        else:
+            self.path = self._example_path
+        logger.critical('Initializing PMViewer...')
+        # coordinate_space = ng.CoordinateSpace(names=['z', 'y', 'x'], units=['nm', 'nm', 'nm'], scales=scales, )
+        coordinate_space = ng.CoordinateSpace(names=['z', 'y', 'x'], units=['nm', 'nm', 'nm'], scales=[50,2,2])
+        try:
+            self.tensor = get_zarr_tensor(path).result()
+        except:
+            self.initExample()
+
+        LV = ng.LocalVolume(
+                volume_type='image',
+                data=self.tensor[:, :, :],
+                dimensions=coordinate_space,
+                # max_voxels_per_chunk_log2=1024
+                # downsampling=None, # '3d' to use isotropic downsampling, '2d' to downsample separately in XY, XZ, and YZ,
+                # None to use no downsampling.
+                max_downsampling=cfg.max_downsampling,
+                max_downsampled_size=cfg.max_downsampled_size,
+                # max_downsampling_scales=cfg.max_downsampling_scales #Goes a LOT slower when set to 1
+            )
+
+        with self.txn() as s:
+            s.layout.type = 'yz'
+            s.layers['layer'] = ng.ImageLayer(source=LV)
+            s.crossSectionBackgroundColor = '#222222'
+            s.gpu_memory_limit = -1
+            s.system_memory_limit = -1
+            s.show_default_annotations = True
+            s.show_axis_lines = True
+            s.show_scale_bar = False
+            s.show_panel_borders = False
+            s.show_layer_panel = False
+        with self.config_state.txn() as s:
+            s.show_ui_controls = False
+            s.status_messages = None
+
+        self.webengine.setUrl(QUrl(self.get_viewer_url()))
+
 
 
 
@@ -689,7 +758,7 @@ class EMViewerMendenhall(AbstractEMViewer):
     def __init__(self, **kwags):
         super().__init__(**kwags)
         # self.shared_state.add_changed_callback(self.on_state_changed)
-        self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
+        # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
         self.type = 'EMViewerMendenhall'
 
     def initViewer(self):
