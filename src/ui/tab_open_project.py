@@ -18,16 +18,19 @@ import multiprocessing as mp
 import libtiff
 libtiff.libtiff_ctypes.suppress_warnings()
 
-from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QCheckBox, QLabel, QAbstractItemView, \
-    QSplitter, QTableWidget, QTableWidgetItem, QSlider, QGridLayout, QFrame, QPushButton, \
-    QSizePolicy, QSpacerItem, QLineEdit, QMessageBox, QDialog, QFileDialog, QStyle, QStyledItemDelegate, \
-    QListView, QApplication, QScrollArea, QMenu, QAction, QTextEdit, QFormLayout, QGroupBox, QComboBox
-from qtpy.QtCore import Qt, QRect, QUrl, QDir, QSize, QPoint, QEvent
-from qtpy.QtGui import QGuiApplication, QFont, QPixmap, QPainter, QKeySequence, QColor, QBrush, QIntValidator, \
-    QPalette
+from qtpy.QtWidgets import *
+from qtpy.QtCore import *
+from qtpy.QtGui import *
+# from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QCheckBox, QLabel, QAbstractItemView, \
+#     QSplitter, QTableWidget, QTableWidgetItem, QSlider, QGridLayout, QFrame, QPushButton, \
+#     QSizePolicy, QSpacerItem, QLineEdit, QMessageBox, QDialog, QFileDialog, QStyle, QStyledItemDelegate, \
+#     QListView, QApplication, QScrollArea, QMenu, QAction, QTextEdit, QFormLayout, QGroupBox, QComboBox
+# from qtpy.QtCore import Qt, QRect, QUrl, QDir, QSize, QPoint, QEvent
+# from qtpy.QtGui import QGuiApplication, QFont, QPixmap, QPainter, QKeySequence, QColor, QBrush, QIntValidator, \
+#     QPalette
 from qtpy.QtWebEngineWidgets import *
 # from qtpy.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
-
+import qtawesome as qta
 from src.ui.file_browser import FileBrowser
 from src.ui.file_browser_tacc import FileBrowserTacc
 from src.thumbnailer import Thumbnailer
@@ -66,6 +69,7 @@ class OpenProject(QWidget):
         self.initUI()
         # self.row_height_slider.setValue(self.user_projects.ROW_HEIGHT)
         self.selected_file = ''
+        self._series = None
 
         clipboard = QGuiApplication.clipboard()
         clipboard.dataChanged.connect(self.onClipboardChanged)
@@ -89,65 +93,12 @@ class OpenProject(QWidget):
 
     def initUI(self):
 
-        # self.userProjectsWidget = QWidget()
-        #
-        # self.row_height_slider = Slider(self)
-        # self.row_height_slider.setMinimum(16)
-        # self.row_height_slider.setMaximum(180)
-        # self.row_height_slider.setMaximumWidth(120)
-        # self.row_height_slider.valueChanged.connect(self.user_projects.updateRowHeight)
-        # self.row_height_slider.valueChanged.connect(
-        #     lambda: setOpt('state,open_project_tab,row_height', self.row_height_slider.value()))
-        # # self.row_height_slider.setValue(self.initial_row_height)
-        # # self.updateRowHeight(self.initial_row_height)
-        #
-        # self.fetchSizesCheckbox = QCheckBox()
-        # self.fetchSizesCheckbox.setStyleSheet("font-size: 10px;")
-        # # self.fetchSizesCheckbox.setChecked(getOpt(lookup='ui,FETCH_PROJECT_SIZES'))
-        # self.fetchSizesCheckbox.setChecked(getOpt(lookup='ui,FETCH_PROJECT_SIZES'))
-        # self.fetchSizesCheckbox.toggled.connect(
-        #     lambda: setOpt('ui,FETCH_PROJECT_SIZES', self.fetchSizesCheckbox.isChecked()))
-        #
-        # self.fetchSizesCheckbox.toggled.connect(self.user_projects.set_data)
-        #
-        #
-        # self.controls = QWidget()
-        # self.controls.setFixedHeight(18)
-        # hbl = HBL()
-        # # hbl.setContentsMargins(2, 0, 2, 0)
-        # hbl.addWidget(QLabel('  '))
-        # # hbl.addStretch(1)
-        # hbl.addWidget(HWidget(QLabel(' Table Size '), self.row_height_slider), alignment=Qt.AlignLeft)
-        # hbl.addWidget(QLabel('  '))
-        # # hbl.addStretch(1)
-        # hbl.addWidget(HWidget(QLabel(' Fetch Sizes '), self.fetchSizesCheckbox), alignment=Qt.AlignLeft)
-        # hbl.addStretch(10)
-        # # hbl.addWidget(ExpandingHWidget(self))
-        # self.controls.setLayout(hbl)
-        # self.controls.setStyleSheet('font-size: 10px;')
-        #
-        # self.new_project_lab1 = QLabel()
-        # self.new_project_lab1.setStyleSheet('font-size: 13px; font-weight: 600; padding: 4px; color: #f3f6fb; background-color: #222222;')
-        # self.new_project_lab2 = QLabel()
-        # self.new_project_lab2.setStyleSheet('font-size: 11px; font-weight: 600; padding: 4px; color: #f3f6fb; background-color: #222222;')
-        # # self.new_project_lab2.setStyleSheet('font-size: 11px; font-weight: 600; padding: 4px; color: #9fdf9f; background-color: #222222;')
-        # self.new_project_lab2.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        # self.new_project_lab_gap = QLabel('      ')
-        # self.new_project_lab_gap.setStyleSheet('color: #f3f6fb; background-color: #222222; padding: 0px;')
-        # self.new_project_header = HWidget(self.new_project_lab1, self.new_project_lab_gap, self.new_project_lab2)
-        # self.new_project_header.setFixedHeight(28)
-        # self.new_project_header.layout.setSpacing(0)
-        # self.new_project_header.setAutoFillBackground(True)
-        # self.new_project_header.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        # self.new_project_header.setStyleSheet('background-color: #222222;')
-        #
         # self.vbl_projects = QVBoxLayout()
         # self.vbl_projects.setSpacing(1)
         # self.vbl_projects.setContentsMargins(2, 2, 2, 2)
         # self.vbl_projects.addWidget(self.user_projects)
         # self.vbl_projects.addWidget(self.controls)
         # # self.userProjectsWidget.setLayout(self.vbl_projects)
-
 
         # User Files Widget
         self.userFilesWidget = QWidget()
@@ -186,7 +137,6 @@ class OpenProject(QWidget):
         self._buttonProjectFromTiffFolder1.setFixedSize(button_size)
 
         self._buttonCancelProjectFromTiffFolder = QPushButton(f"Cancel")
-        # self._buttonProjectFromTiffFolder1.setShortcut()
         self._buttonCancelProjectFromTiffFolder.setStyleSheet('font-size: 9px;')
         def fn():
             self.le_project_name_w.hide()
@@ -194,12 +144,6 @@ class OpenProject(QWidget):
         self._buttonCancelProjectFromTiffFolder.setFixedSize(button_size)
 
         self.cbCalGrid = QCheckBox('Image 0 is calibration grid')
-        # def setCalGridData():
-        #     try:
-        #         cfg.data['data']['has_cal_grid'] = self.cbCalGrid.isChecked()
-        #     except:
-        #         print_exception()
-        # self.cbCalGrid.stateChanged.connect(fn)
         self.cbCalGrid.setChecked(False)
         self.cbCalGrid.hide()
 
@@ -213,19 +157,8 @@ class OpenProject(QWidget):
         self._buttonDelete.setFixedSize(button_size)
         # self._buttonDelete.hide()
 
-
-
         def paste_from_buffer():
             buffer = QApplication.clipboard().text()
-            # path_exists = os.path.exists(buffer)
-            # if path_exists:
-            #     logger.info('Paste buffer text is a valid path.')
-            #     cfg.mw.tell('Paste buffer text is a valid path')
-            #     self.selectionReadout.setText(os.path.abspath(buffer))
-            #     self.validate_path()
-            # else:
-            #     cfg.mw.warn('Paste buffer text is not a valid path')
-            #     logger.warn('Paste buffer text is not a valid path')
             self.selectionReadout.setText(os.path.abspath(buffer))
             self.validate_path()
 
@@ -378,11 +311,29 @@ class OpenProject(QWidget):
         self.comboSelectAlignment.addItems(["Null"])
         self.comboSelectAlignment.setAutoFillBackground(True)
 
+        self.bPlusAlignment = QPushButton()
+        self.bPlusAlignment.setIcon(qta.icon('fa.plus', color=cfg.ICON_COLOR))
+        self.bPlusAlignment.setToolTip("New Alignment")
+        self.bPlusAlignment.setFixedSize(QSize(18,18))
+        self.bPlusAlignment.setIconSize(QSize(12,12))
+        self.bMinusAlignment = QPushButton()
+        self.bMinusAlignment.setIcon(qta.icon('fa.minus', color=cfg.ICON_COLOR))
+        self.bMinusAlignment.setToolTip("Delete Alignment")
+        self.bMinusAlignment.setFixedSize(QSize(18,18))
+        self.bMinusAlignment.setIconSize(QSize(12,12))
+        self.bOpenAlignment = QPushButton()
+        self.bOpenAlignment.setIcon(qta.icon('fa.folder-open', color=cfg.ICON_COLOR))
+        self.bOpenAlignment.setToolTip("Open Alignment")
+        self.bOpenAlignment.setFixedSize(QSize(18,18))
+        self.bOpenAlignment.setIconSize(QSize(12,12))
+
+        self.alignButtons = HWidget(self.bOpenAlignment, self.bPlusAlignment, self.bMinusAlignment)
+
         self.l0 = QLabel('Series: ')
         self.l0.setFixedWidth(58)
         self.l1 = QLabel('Alignment: ')
         self.l1.setFixedWidth(58)
-        self.combos = HWidget(self.l0, self.comboSelectSeries, QLabel(' '), self.l1, self.comboSelectAlignment)
+        self.combos = HWidget(self.l0, self.comboSelectSeries, QLabel(' '), self.l1, self.comboSelectAlignment, self.alignButtons)
         self.combos.setAutoFillBackground(True)
         self.combos.setStyleSheet("background-color: #222222; color: #f3f6fb; font-size: 11px;")
         # self.combos.layout.setSpacing(0)
@@ -399,8 +350,7 @@ class OpenProject(QWidget):
         self.updateSeriesCombo()
         logger.critical(self.comboSelectSeries.currentText())
         if self.comboSelectSeries.currentText() != "null":
-            path = os.path.join(self.comboSelectSeries.currentText(), 'img_src.zarr', 's2')
-            logger.critical(f"path: {path}")
+            path = os.path.join(self.comboSelectSeries.currentText(), 'zarr', 's2')
             # try:
             self.viewer.initViewer(path=path)
             # self.viewer.initZoom(self.webengine.width(), self.webengine.height())
@@ -429,11 +379,6 @@ class OpenProject(QWidget):
         }    
             
         """)
-
-
-
-
-
 
         '''Step 1/3'''
         logger.info('Creating name_dialog...')
@@ -610,12 +555,19 @@ class OpenProject(QWidget):
         self._NEW_SERIES_PATHS = []
 
 
+    def onNewAlignment(self):
+        series = self._series
+        dm = cfg.data = DataModel(name=self.NEW_PROJECT_PATH)
+
+        logger.critical(f"series: {series}")
+
 
     def onSelectSeriesCombo(self):
-        logger.info('')
+        self._series = self.comboSelectSeries.currentText()
+        logger.critical(f'Selected series: {self._series}')
         if self.comboSelectSeries.currentText() != "null":
-            path = os.path.join(self.comboSelectSeries.currentText(), 'img_src.zarr', 's2')
-            logger.critical(f"path: {path}")
+            self.viewer = cfg.pmViewer = PMViewer(webengine=self.webengine)
+            path = os.path.join(self.comboSelectSeries.currentText(), 'zarr', 's2')
             self.viewer.initViewer(path=path)
             # self.viewer.initZoom(self.webengine.width(), self.webengine.height())
         else:
@@ -636,13 +588,6 @@ class OpenProject(QWidget):
         else:
             self.comboSelectSeries.addItems(["null"])
         self.comboSelectSeries.currentIndexChanged.connect(self.onSelectSeriesCombo)
-
-
-    def hideMainUI(self):
-        logger.info('')
-        self._actions_widget.hide()
-        # self.new_project_header.show()
-        # pass
 
 
     def showMainUI(self):
@@ -704,7 +649,6 @@ class OpenProject(QWidget):
             self._buttonProjectFromTiffFolder1.setEnabled(validate_tiff_folder(self.selected_file))
             self.cbCalGrid.setVisible(validate_tiff_folder(self.selected_file))
             self.validity_label.setVisible(validate_tiff_folder(self.selected_file))
-
             self.validate_path()
         except:
             # path = ''
@@ -731,7 +675,6 @@ class OpenProject(QWidget):
     def skipToConfig(self):
         logger.info('')
         self.NEW_PROJECT_PATH = self.le_project_name.text()
-        # self.USE_CAL_GRID = self.cbCalGrid.isChecked()
         self.new_project(skip_to_config=True)
         self.le_project_name_w.hide()
         self.le_project_name.setText('')
@@ -804,6 +747,7 @@ class OpenProject(QWidget):
 
     def importSeries(self):
         logger.critical("")
+        self.bConfirmImport.setEnabled(False)
 
         name = self.leNameSeries.text()
         name.replace(' ','_')
@@ -845,10 +789,41 @@ class OpenProject(QWidget):
         makedirs_exist_ok(dirname, exist_ok=True)
         logger.critical(f"dirname = {dirname}")
         logger.critical(f"dm.scales() = {dm.scales()}")
-        create_project_directories(dirname, dm.scales())
+        # create_project_directories(dirname, dm.scales())
+
+        tiff_path = os.path.join(dirname, 'tiff')
+        zarr_path = os.path.join(dirname, 'zarr')
+        os.makedirs(tiff_path, exist_ok=True)
+        os.makedirs(zarr_path, exist_ok=True)
+
+        for sv in dm.scale_vals():
+            cfg.mw.hud('Creating new series directories for scale %s...' % sv)
+            logger.info('Creating new series directories for scale %s...' % sv)
+            os.makedirs(os.path.join(tiff_path, 's%d' % sv), exist_ok=True)
+            os.makedirs(os.path.join(zarr_path, 's%d' % sv), exist_ok=True)
 
 
-
+        t0 = time.time()
+        logger.info('>>>> Symbolically linking full scale images >>>>')
+        for img in self._NEW_SERIES_PATHS:
+            fn = os.path.join(dm['data']['source_path'], img)
+            ofn = os.path.join(dm.location, 'tiff', 's1', os.path.split(fn)[1])
+            # normalize path for different OSs
+            if os.path.abspath(os.path.normpath(fn)) != os.path.abspath(os.path.normpath(ofn)):
+                try:
+                    os.unlink(ofn)
+                except:
+                    pass
+                try:
+                    os.symlink(fn, ofn)
+                except:
+                    logger.warning("Unable to link %s to %s. Copying instead." % (fn, ofn))
+                    try:
+                        shutil.copy(fn, ofn)
+                    except:
+                        logger.warning("Unable to link or copy from " + fn + " to " + ofn)
+        dt = time.time() - t0
+        logger.info(f'<<<< linking took {dt:.3g}s <<<<')
 
         # cfg.project_tab = ProjectTab(self, path=path, datamodel=dm)
         ID = id(cfg.project_tab)
@@ -856,6 +831,7 @@ class OpenProject(QWidget):
         cfg.dataById[id(cfg.project_tab)] = dm
         dm.set_defaults()
         set_image_sizes(dm)
+
 
 
 
@@ -881,7 +857,6 @@ class OpenProject(QWidget):
         cfg.mw.tell('Starting A New Project...')
         cfg.mw._is_initialized = 0
 
-        # self.hideMainUI()
         cfg.mw.stopPlaybackTimer()
         cfg.mw.tell('New Project Path:')
         # self.new_project_lab1.setText('New Project (Step: 1/3) - Name & Location')

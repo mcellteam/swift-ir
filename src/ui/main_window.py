@@ -35,17 +35,20 @@ import qtawesome as qta
 # from rechunker import rechunk
 from qtpy.QtWebEngineWidgets import *
 # from src.ui.webpage import QuickWebPage
-from qtpy.QtCore import Qt, QThread, QThreadPool, QEvent, Slot, Signal, QSize, QUrl,  QTimer, QPoint, QRectF, \
-    QSettings, QObject, QFileInfo, QMutex
-from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QFont, \
-    QKeySequence, QMovie, QStandardItemModel, QColor, QCursor, QImage, QPainterPath, QRegion, QPainter
-from qtpy.QtWidgets import QApplication, qApp, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
-    QStackedWidget, QGridLayout, QInputDialog, QLineEdit, QPushButton, QMessageBox, \
-    QComboBox, QSplitter, QTreeView, QHeaderView, QAction, QActionGroup, QProgressBar, \
-    QShortcut, QGraphicsOpacityEffect, QCheckBox, QSpinBox, QDoubleSpinBox, QRadioButton, QSlider, \
-    QDesktopWidget, QTextEdit, QToolBar, QListWidget, QMenu, QMenuBar, QTableView, QTabWidget, QStatusBar, QTextBrowser, \
-    QFormLayout, QGroupBox, QScrollArea, QToolButton, QWidgetAction, QSpacerItem, QButtonGroup, QAbstractButton, \
-    QApplication, QPlainTextEdit, QTableWidget, QTableWidgetItem, QDockWidget, QMdiArea, QMdiSubWindow
+from qtpy.QtCore import *
+from qtpy.QtGui import *
+from qtpy.QtWidgets import *
+# from qtpy.QtCore import Qt, QThread, QThreadPool, QEvent, Slot, Signal, QSize, QUrl,  QTimer, QPoint, QRectF, \
+#     QSettings, QObject, QFileInfo, QMutex
+# from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QFont, \
+#     QKeySequence, QMovie, QStandardItemModel, QColor, QCursor, QImage, QPainterPath, QRegion, QPainter
+# from qtpy.QtWidgets import QApplication, qApp, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
+#     QStackedWidget, QGridLayout, QInputDialog, QLineEdit, QPushButton, QMessageBox, \
+#     QComboBox, QSplitter, QTreeView, QHeaderView, QAction, QActionGroup, QProgressBar, \
+#     QShortcut, QGraphicsOpacityEffect, QCheckBox, QSpinBox, QDoubleSpinBox, QRadioButton, QSlider, \
+#     QDesktopWidget, QTextEdit, QToolBar, QListWidget, QMenu, QMenuBar, QTableView, QTabWidget, QStatusBar, QTextBrowser, \
+#     QFormLayout, QGroupBox, QScrollArea, QToolButton, QWidgetAction, QSpacerItem, QButtonGroup, QAbstractButton, \
+#     QApplication, QPlainTextEdit, QTableWidget, QTableWidgetItem, QDockWidget, QMdiArea, QMdiSubWindow
 import pyqtgraph.examples
 import src.config as cfg
 import src.shaders
@@ -101,6 +104,7 @@ class MainWindow(QMainWindow):
     def __init__(self, data=None):
         QMainWindow.__init__(self)
         self.app = QApplication.instance()
+        self.setAttribute(Qt.WA_DeleteOnClose)
         self.app.setStyleSheet("border-radius: 12px; ")
         self.setObjectName('mainwindow')
         try:
@@ -372,7 +376,7 @@ class MainWindow(QMainWindow):
                 #     cfg.project_tab.dSnr_plot.initSnrPlot()
             elif self._isOpenProjTab():
                 # self._getTabObject().user_projects.set_data()
-                self._pm.showMainUI()
+                # self._pm.showMainUI()
                 self._pm.updateSeriesCombo()
                 self._pm.viewer = cfg.pmViewer = PMViewer(webengine=self._pm.webengine)
                 if self._pm.comboSelectSeries.count() > 0:
@@ -1347,17 +1351,22 @@ class MainWindow(QMainWindow):
             self.warn('Another Process is Already Running')
             return
 
+        dm.link_full_resolution()
+
         logger.info('instantiating thread...')
         self._scaleThread = QThread()  # Step 2: Create a QThread object
         logger.info('instantiating autoscale worker...')
         self._scaleworker = ScaleWorker(dm=cfg.data)  # Step 3: Create a worker object
         self._scaleworker.moveToThread(self._scaleThread)  # Step 4: Move worker to the thread
         self._scaleThread.started.connect(self._scaleworker.run)  # Step 5: Connect signals and slots
+        self._scaleThread.finished.connect(self._scaleThread.deleteLater)
+
         self._scaleworker.finished.connect(self._scaleThread.quit)
         self._scaleworker.finished.connect(self._scaleworker.deleteLater)
         self._scaleworker.finished.connect(self.hidePbar)
+        self._scaleworker.finished.connect(self.refreshTab)
+
         # self._scaleworker.finished.connect(self._pm.user_projects.set_data)
-        self._scaleThread.finished.connect(self._scaleThread.deleteLater)
         self._scaleworker.progress.connect(self.setPbar)
         self._scaleworker.initPbar.connect(self.resetPbar)
         self._scaleworker.hudMessage.connect(self.tell)
@@ -1390,22 +1399,35 @@ class MainWindow(QMainWindow):
             self.warn('Another Process is Already Running')
             return
 
+
+        # dm.link_full_resolution() # must create directories first
+
         logger.info('instantiating thread...')
         self._scaleThread = QThread()  # Step 2: Create a QThread object
         logger.info('instantiating autoscale worker...')
-        self._scaleworker = ScaleWorker(dm=cfg.data)  # Step 3: Create a worker object
+        zarr_opts = dm.get_user_zarr_settings()
+        scale_keys = dm.scales()[::-1]
+        logger.critical(f"scale_keys: {scale_keys}")
+        scales = zip(scale_keys, [dm.image_size(s=s) for s in scale_keys])
+        self._scaleworker = ScaleWorker(dm=dm, out=dm.location, scales=scales, imgs=dm.filenames(), zarr_opts=zarr_opts)
+        # Step 3: Create a
+        # worker
+        # object
         self._scaleworker.moveToThread(self._scaleThread)  # Step 4: Move worker to the thread
         self._scaleThread.started.connect(self._scaleworker.run)  # Step 5: Connect signals and slots
+        self._scaleThread.finished.connect(self._scaleThread.deleteLater)
+
         self._scaleworker.finished.connect(self._scaleThread.quit)
         self._scaleworker.finished.connect(self._scaleworker.deleteLater)
         self._scaleworker.finished.connect(self.hidePbar)
+        self._scaleworker.finished.connect(self.refreshTab)
+        self._scaleworker.finished.connect(lambda: self._pm.bConfirmImport.setEnabled(True))
         # self._scaleworker.finished.connect(self._pm.user_projects.set_data)
-        self._scaleThread.finished.connect(self._scaleThread.deleteLater)
         self._scaleworker.progress.connect(self.setPbar)
         self._scaleworker.initPbar.connect(self.resetPbar)
         self._scaleworker.hudMessage.connect(self.tell)
         self._scaleworker.hudWarning.connect(self.warn)
-        self._scaleworker.refresh.connect(self.refreshTab)
+
         self._scaleThread.start()  # Step 6: Start the thread
 
 
@@ -3548,6 +3570,7 @@ class MainWindow(QMainWindow):
         cfg.tabsById[id(tab_widget)]['name'] = name
         cfg.tabsById[id(tab_widget)]['type'] = type(tab_widget)
         cfg.tabsById[id(tab_widget)]['widget'] = tab_widget
+        tab_widget.setAttribute(Qt.WA_DeleteOnClose)
         if switch_to:
             self.globTabs.setCurrentIndex(self.globTabs.addTab(tab_widget, name))
         else:

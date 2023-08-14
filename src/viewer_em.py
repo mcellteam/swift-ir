@@ -704,7 +704,9 @@ class PMViewer(AbstractEMViewer):
     def initExample(self):
         logger.critical('')
         self.initViewer(path=self._example_path)
-        self.post_message("No series have been imported yet. This is just an example.")
+        # self.post_message("No series have been imported yet. This is just an example.")
+        with self.config_state.txn() as cs:
+            cs.status_messages['message'] = "No series have been imported yet. This is just an example."
 
 
     def initViewer(self, path=None):
@@ -713,13 +715,16 @@ class PMViewer(AbstractEMViewer):
             self.path = path
         else:
             self.path = self._example_path
-        logger.critical('Initializing PMViewer...')
+        logger.critical(f'Initializing PMViewer - {path}...')
         # coordinate_space = ng.CoordinateSpace(names=['z', 'y', 'x'], units=['nm', 'nm', 'nm'], scales=scales, )
         coordinate_space = ng.CoordinateSpace(names=['z', 'y', 'x'], units=['nm', 'nm', 'nm'], scales=[50,2,2])
         try:
             self.tensor = get_zarr_tensor(path).result()
         except:
-            self.initExample()
+            self.tensor = get_zarr_tensor(self._example_path).result()
+            with self.config_state.txn() as cs:
+                cs.status_messages['message'] = "No series have been imported yet. This is just an example."
+            print_exception()
 
         LV = ng.LocalVolume(
                 volume_type='image',
