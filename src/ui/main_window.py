@@ -374,7 +374,7 @@ class MainWindow(QMainWindow):
                 # self._getTabObject().user_projects.set_data()
                 self._pm.showMainUI()
                 self._pm.updateSeriesCombo()
-                self._pm.viewer = cfg.pmViewer = PMViewer(webengine=self.webengine)
+                self._pm.viewer = cfg.pmViewer = PMViewer(webengine=self._pm.webengine)
                 if self._pm.comboSelectSeries.count() > 0:
                     self._pm.viewer.initViewer()
             elif self._getTabType() == 'WebBrowser':
