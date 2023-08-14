@@ -28,7 +28,7 @@ VERBOSE_SWIM = 0
 LOG_RECIPE_TO_FILE = 0
 LOG_LEVEL = 1
 # LOG_RECIPE_TO_FILE = int(getpass.getuser() in ('joelyancey','joely'))
-TACC_MAX_CPUS = 40 # x3 is > 304
+TACC_MAX_CPUS = 100 # x3 is > 304
 # QTWEBENGINE_RASTER_THREADS = 1024
 QTWEBENGINE_RASTER_THREADS = 128
 TARGET_THUMBNAIL_SIZE = 256
@@ -79,9 +79,9 @@ WIDTH, HEIGHT = 1280, 700
 
 '''Default Alignment Params'''
 
-DEFAULT_CONTENT_ROOT = os.path.join(os.path.expanduser('~'), '.alignem_data')
+DEFAULT_CONTENT_ROOT = os.path.join(os.path.expanduser('~'), 'alignem_data')
 try:
-    DEFAULT_CONTENT_ROOT_TACC = os.path.join(os.getenv('SCRATCH'),'.alignem_data')
+    DEFAULT_CONTENT_ROOT_TACC = os.path.join(os.getenv('SCRATCH'),'alignem_data')
 except:
     pass
 # DEFAULT_POLY_ORDER            = int(0)

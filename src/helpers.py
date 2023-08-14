@@ -963,6 +963,8 @@ def create_project_directories(destination, scales, gui=True) -> None:
             logger.warning('Exception Raised While Creating Directory Structure')
 
 
+
+
 def is_not_hidden(path):
     return not path.name.startswith(".")
 

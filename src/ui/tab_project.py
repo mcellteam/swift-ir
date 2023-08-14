@@ -11,16 +11,19 @@ import neuroglancer as ng
 import numpy as np
 import shutil
 import qtawesome as qta
-from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QStyleOption, \
-    QStyle, QTabBar, QTabWidget, QGridLayout, QTreeView, QSplitter, QTextEdit, QSlider, QPushButton, QSizePolicy, \
-    QListWidget, QListWidgetItem, QMenu, QMenuBar, QAction, QFormLayout, QGroupBox, QRadioButton, QButtonGroup, QComboBox, \
-    QCheckBox, QToolBar, QListView, QDockWidget, QLineEdit, QPlainTextEdit, QDoubleSpinBox, QSpinBox, QButtonGroup, \
-    QStackedWidget, QHeaderView, QWidgetAction, QTableWidget, QTableWidgetItem, QAbstractItemView, QSpacerItem, \
-    QShortcut, QScrollArea, QMdiSubWindow, QMdiArea, QToolButton, QStyleOptionViewItem, QStyledItemDelegate, \
-    QColorDialog, QFontDialog
-from qtpy.QtCore import Qt, QSize, QRect, QUrl, Signal, Slot, QEvent, QThread, QTimer, QEventLoop, QPoint, QObject
-from qtpy.QtGui import QPainter, QBrush, QFont, QPixmap, QColor, QCursor, QPalette, QStandardItemModel, \
-    QDoubleValidator, QIntValidator, QKeySequence, QIcon
+from qtpy.QtWidgets import *
+from qtpy.QtCore import *
+from qtpy.QtGui import *
+# from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QStyleOption, \
+#     QStyle, QTabBar, QTabWidget, QGridLayout, QTreeView, QSplitter, QTextEdit, QSlider, QPushButton, QSizePolicy, \
+#     QListWidget, QListWidgetItem, QMenu, QMenuBar, QAction, QFormLayout, QGroupBox, QRadioButton, QButtonGroup, QComboBox, \
+#     QCheckBox, QToolBar, QListView, QDockWidget, QLineEdit, QPlainTextEdit, QDoubleSpinBox, QSpinBox, QButtonGroup, \
+#     QStackedWidget, QHeaderView, QWidgetAction, QTableWidget, QTableWidgetItem, QAbstractItemView, QSpacerItem, \
+#     QShortcut, QScrollArea, QMdiSubWindow, QMdiArea, QToolButton, QStyleOptionViewItem, QStyledItemDelegate, \
+#     QColorDialog, QFontDialog
+# from qtpy.QtCore import Qt, QSize, QRect, QUrl, Signal, Slot, QEvent, QThread, QTimer, QEventLoop, QPoint, QObject
+# from qtpy.QtGui import QPainter, QBrush, QFont, QPixmap, QColor, QCursor, QPalette, QStandardItemModel, \
+#     QDoubleValidator, QIntValidator, QKeySequence, QIcon
 from qtpy.QtWebEngineWidgets import *
 import src.config as cfg
 from src.helpers import print_exception, getOpt, setOpt, getData, setData, get_scale_key, natural_sort, hotkey, \
@@ -63,6 +66,7 @@ class ProjectTab(QWidget):
         super().__init__(parent)
         logger.info(f'Initializing Project Tab...\nID(datamodel): {id(datamodel)}, Path: {path}')
         # self.signals = Signals()
+        self.setAttribute(Qt.WA_DeleteOnClose)
         self.parent = parent
         self.path = path
         self.viewer = None

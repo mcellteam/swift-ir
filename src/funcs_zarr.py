@@ -54,7 +54,7 @@ def get_zarr_tensor(zarr_path):
     :return: A webengineview into the dataset.
     :rtype: tensorstore.Future
     '''
-    logger.info('Getting TensorStore view object at %s' %zarr_path)
+    logger.critical('Getting TensorStore view object at:\n%s' %zarr_path)
     node = platform.node()
     # total_bytes_limit = 250_000_000_000  # just under 256 GB
     # if '.tacc.utexas.edu' in node:
@@ -75,8 +75,8 @@ def get_zarr_tensor(zarr_path):
         },
         'context': {
             'cache_pool': {'total_bytes_limit': total_bytes_limit},
-            'data_copy_concurrency': {'limit': 128}, #0726+
-            'file_io_concurrency': {'limit': 128}, #0726+
+            'data_copy_concurrency': {'limit': 512}, #0726+
+            'file_io_concurrency': {'limit': 512}, #0726+
         },
         # 'recheck_cached_data': 'open',
         'recheck_cached_data': True, #0726 revert to default (True)
