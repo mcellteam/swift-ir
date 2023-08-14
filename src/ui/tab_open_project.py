@@ -155,7 +155,7 @@ class OpenProject(QWidget):
         lab.setStyleSheet('font-size: 10px; color: #161c20;')
         vbl = QVBoxLayout()
         vbl.setContentsMargins(4, 4, 4, 4)
-        vbl.addWidget(HWidget(lab))
+        # vbl.addWidget(HWidget(lab))
         vbl.addWidget(self.filebrowser)
         self.userFilesWidget.setLayout(vbl)
 
@@ -547,7 +547,7 @@ class OpenProject(QWidget):
 
 
         self.leNameSeries = QLineEdit()
-        self.placeholderText = 'Short, descriptive name'
+        self.placeholderText = '<short, descriptive name>'
         self.leNameSeries.setPlaceholderText(self.placeholderText)
         self.leNameSeries.setFixedHeight(18)
         self.leNameSeries.setReadOnly(False)
@@ -1756,11 +1756,11 @@ class SeriesConfig(QWidget):
 
         '''Scales Input Field'''
         self.scales_input = QLineEdit(self)
-        self.scales_input.setMaximumWidth(64)
+        self.scales_input.setMaximumWidth(80)
         self.scales_input.setMinimumWidth(50)
         self.scales_input.setFixedHeight(18)
         self.scales_input.setText('24 6 2 1')
-        # self.scales_input.setAlignment(Qt.AlignLeft)
+        self.scales_input.setAlignment(Qt.AlignCenter)
         tip = "Scale factors, space-delimited.\nThis would generate a 4x 2x and 1x scale_key hierarchy:\n\n4 2 1"
         # self.scale_instructions_label = QLabel(tip)
         # self.scale_instructions_label.setStyleSheet("font-size: 11px;")
