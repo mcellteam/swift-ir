@@ -66,6 +66,7 @@ import sys, signal, logging, argparse
 import faulthandler
 from concurrent.futures import ThreadPoolExecutor
 
+from qtpy.QtWebEngineWidgets import *
 from qtpy import QtCore
 from qtpy.QtCore import QCoreApplication, Qt
 from qtpy.QtWidgets import QApplication
@@ -202,6 +203,10 @@ def main():
     # # os.chdir(os.path.dirname(__file__))
     # logger.critical('new cwd: %s' % os.getcwd())
 
+    logger.info('Setting Qt.AA_ShareOpenGLContexts')
+    QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created. #2230-
+    QCoreApplication.setAttribute(Qt.AA_UseOpenGLES)
+
     QCoreApplication.setApplicationName("ALIGNEM-SWIFT")
 
     addLoggingLevel('VERSIONCHECK', logging.DEBUG + 5)
@@ -332,9 +337,7 @@ def main():
         logger.info('Setting Qt.AA_UseHighDpiPixmaps')
         QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
-    logger.info('Setting Qt.AA_ShareOpenGLContexts')
-    QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created. #2230-
-    QCoreApplication.setAttribute(Qt.AA_UseOpenGLES)
+
     # QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseDesktopOpenGL) #0226-
 
     # report the number of worker threads chosen by default

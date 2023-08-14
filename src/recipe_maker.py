@@ -54,9 +54,9 @@ class align_recipe:
         self.swim_c = '%s/lib/bin_%s/swim' % (p, slug)
         self.mir_c = '%s/lib/bin_%s/mir' % (p, slug)
         self.iscale2_c = '%s/lib/bin_%s/iscale2' % (p, slug)
-        self.signals_dir = os.path.join(self.meta['destination_path'], self.meta['scale_key'], 'signals')
-        self.matches_dir = os.path.join(self.meta['destination_path'], self.meta['scale_key'], 'matches')
-        self.tmp_dir = os.path.join(self.meta['destination_path'], self.meta['scale_key'], 'tmp')
+        self.signals_dir = os.path.join(self.meta['series_path'], self.meta['scale_key'], 'signals')
+        self.matches_dir = os.path.join(self.meta['series_path'], self.meta['scale_key'], 'matches')
+        self.tmp_dir = os.path.join(self.meta['series_path'], self.meta['scale_key'], 'tmp')
 
 
     def configure_logging(self):
@@ -66,16 +66,17 @@ class align_recipe:
         Exceptlogger = logging.getLogger('exceptlogger')
         tnLogger = logging.getLogger('tnLogger')
         tnLogger = logging.getLogger('tnLogger')
-        Exceptlogger.addHandler(
-            logging.FileHandler(os.path.join(self.meta['destination_path'],
-                                             'logs', 'exceptions.log')))
+
         if self.meta['log_recipe_to_file']:
+            Exceptlogger.addHandler(logging.FileHandler(os.path.join(self.meta['series_path'],
+                                             'logs', 'exceptions.log')))
+
             MAlogger.addHandler(logging.FileHandler(os.path.join(
-                self.meta['destination_path'], 'logs', 'manual_align.log')))
+                self.meta['series_path'], 'logs', 'manual_align.log')))
             RMlogger.addHandler(logging.FileHandler(os.path.join(
-                self.meta['destination_path'], 'logs', 'recipemaker.log')))
+                self.meta['series_path'], 'logs', 'recipemaker.log')))
             tnLogger.addHandler(logging.FileHandler(os.path.join(
-                self.meta['destination_path'], 'logs', 'thumbnails.log')))
+                self.meta['series_path'], 'logs', 'thumbnails.log')))
         else:
             MAlogger.disabled = True
             RMlogger.disabled = True
@@ -453,7 +454,7 @@ class align_ingredient:
         fn, ext = os.path.splitext(basename)
         multi_arg_str = ArgString(sep='\n')
         dir_scale = os.path.join(
-            self.recipe.meta['destination_path'], self.recipe.meta['scale_key'])
+            self.recipe.meta['series_path'], self.recipe.meta['scale_key'])
         self.ms_paths = []
         m = self.recipe.method
         iters = str(self.recipe.meta['swim_iters'])

@@ -76,8 +76,9 @@ class Signals(QObject):
 class DataModel:
 
     """ Encapsulate datamodel dictionary and wrap with methods for convenience """
-    def __init__(self, data=None, name=None, quietly=False, mendenhall=False):
+    def __init__(self, data=None, name=None, series_path=None, quietly=False, mendenhall=False):
         self._current_version = cfg.VERSION
+        logger.critical("CREATING DATA MODEL")
         if not quietly:
             logger.info('>>>> __init__ >>>>')
         if data:
@@ -90,10 +91,11 @@ class DataModel:
             self._data['modified'] = date_time()
             self.signals = Signals()
             self.signals.zposChanged.connect(cfg.mw._updateZposWidgets)
-        if name:
-            self._data['data']['destination_path'] = name
         self._data['data']['mendenhall'] = mendenhall
         self._data['version'] = cfg.VERSION
+        if series_path:
+            logger.critical('Setting series path...')
+            self.location = series_path
 
         self._data.setdefault('changelog', [])
 
@@ -154,6 +156,16 @@ class DataModel:
             f.write(str(self.to_json()))
 
 
+
+    @property
+    def name(self) -> str:
+        return self['name']
+
+
+    @name.setter
+    def name(self, v):
+        self['name'] = v
+
     @property
     def created(self):
         return self._data['created']
@@ -165,12 +177,11 @@ class DataModel:
 
     @property
     def location(self):
-        return self._data['data']['destination_path']
+        return self._data['data']['series_path']
 
     @location.setter
     def location(self, p):
-        self._data['data']['destination_path'] = p
-        self._data['data']['location'] = p
+        self._data['data']['series_path'] = p
 
     # def created(self):
     #     return self._data['created']
@@ -583,10 +594,8 @@ class DataModel:
         return self._data
 
     def dest(self) -> str:
-        return self._data['data']['destination_path']
+        return self._data['data']['series_path']
 
-    def name(self) -> str:
-        return os.path.split(self.dest())[-1]
 
     def set_system_info(self):
         logger.info('')
@@ -820,7 +829,6 @@ class DataModel:
 
         initial_zpos = int(len(self)/2)
         self['data']['zposition'] = initial_zpos
-        # self['data']['location'] = self['data'].pop('destination_path', None)
 
         self._data.setdefault('developer_mode', cfg.DEV_MODE)
         self._data.setdefault('data', {})
@@ -2406,8 +2414,7 @@ class DataModel:
     def zarr_scale_paths(self):
         l = []
         for s in self.scales():
-            # l.append(os.path.join(self._data['data']['destination_path'], s + '.zarr'))
-            l.append(os.path.join(self._data['data']['destination_path'], 'img_src.zarr', s + str(get_scale_val(s))))
+            l.append(os.path.join(self._data['data']['series_path'], 'img_src.zarr', s + str(get_scale_val(s))))
         return l
 
     def roles(self):

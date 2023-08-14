@@ -33,11 +33,12 @@ import numpy as np
 import neuroglancer as ng
 import qtawesome as qta
 # from rechunker import rechunk
+from qtpy.QtWebEngineWidgets import *
+# from src.ui.webpage import QuickWebPage
 from qtpy.QtCore import Qt, QThread, QThreadPool, QEvent, Slot, Signal, QSize, QUrl,  QTimer, QPoint, QRectF, \
     QSettings, QObject, QFileInfo, QMutex
 from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QFont, \
     QKeySequence, QMovie, QStandardItemModel, QColor, QCursor, QImage, QPainterPath, QRegion, QPainter
-from qtpy.QtWebEngineWidgets import *
 from qtpy.QtWidgets import QApplication, qApp, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
     QStackedWidget, QGridLayout, QInputDialog, QLineEdit, QPushButton, QMessageBox, \
     QComboBox, QSplitter, QTreeView, QHeaderView, QAction, QActionGroup, QProgressBar, \
@@ -63,9 +64,9 @@ from src.ui.dialogs import AskContinueDialog, ConfigProjectDialog, ConfigAppDial
 from src.ui.process_monitor import HeadupDisplay
 from src.ui.align import AlignWorker
 from src.ui.scale import ScaleWorker
+from src.viewer_em import PMViewer
 from src.ui.models.json_tree import JsonModel
 from src.ui.toggle_switch import ToggleSwitch
-from src.ui.webpage import WebPage
 from src.ui.tab_browser import WebBrowser
 from src.ui.tab_open_project import OpenProject
 from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter, YellowTextLabel, Button
@@ -370,7 +371,12 @@ class MainWindow(QMainWindow):
                 # if self.dw_snr.isVisible(): #0803-
                 #     cfg.project_tab.dSnr_plot.initSnrPlot()
             elif self._isOpenProjTab():
-                self._getTabObject().user_projects.set_data()
+                # self._getTabObject().user_projects.set_data()
+                self._pm.showMainUI()
+                self._pm.updateSeriesCombo()
+                self._pm.viewer = cfg.pmViewer = PMViewer(webengine=self.webengine)
+                if self._pm.comboSelectSeries.count() > 0:
+                    self._pm.viewer.initViewer()
             elif self._getTabType() == 'WebBrowser':
                 self._getTabObject().browser.page().triggerAction(QWebEnginePage.Reload)
             elif self._getTabType() == 'QWebEngineView':
@@ -437,7 +443,7 @@ class MainWindow(QMainWindow):
         self._scales_combobox_switch = 0  # 1125
         self._isPlayingBack = 0
         self._isProfiling = 0
-        self.detachedNg = WebPage()
+        self.detachedNg = None
         self.count_calls = {}
         self._exiting = 0
         self._is_initialized = 0
@@ -1350,6 +1356,7 @@ class MainWindow(QMainWindow):
         self._scaleworker.finished.connect(self._scaleThread.quit)
         self._scaleworker.finished.connect(self._scaleworker.deleteLater)
         self._scaleworker.finished.connect(self.hidePbar)
+        # self._scaleworker.finished.connect(self._pm.user_projects.set_data)
         self._scaleThread.finished.connect(self._scaleThread.deleteLater)
         self._scaleworker.progress.connect(self.setPbar)
         self._scaleworker.initPbar.connect(self.resetPbar)
@@ -1357,6 +1364,7 @@ class MainWindow(QMainWindow):
         self._scaleworker.hudWarning.connect(self.warn)
         self._scaleworker.refresh.connect(self.refreshTab)
         if new_tab:
+            logger.info('')
             dm.scale = dm.coarsest_scale_key()
             name,_ = os.path.splitext(os.path.basename(dm.location))
             self._scaleworker.coarsestDone.connect(lambda: self.addGlobTab(cfg.project_tab, name, switch_to=True))
@@ -1366,6 +1374,39 @@ class MainWindow(QMainWindow):
 
 
 
+
+    @Slot()
+    def autoscaleSeries(self, dm):
+        logger.info('autoscaling...')
+        self.tell('Generating scale pyramid...')
+        # try:
+        #     self.pythonConsole.pyconsole.kernel_client.stop_channels()
+        #     self.pythonConsole.pyconsole.kernel_manager.shutdown_kernel()
+        # except:
+        #     print_exception()
+
+
+        if self._working == True:
+            self.warn('Another Process is Already Running')
+            return
+
+        logger.info('instantiating thread...')
+        self._scaleThread = QThread()  # Step 2: Create a QThread object
+        logger.info('instantiating autoscale worker...')
+        self._scaleworker = ScaleWorker(dm=cfg.data)  # Step 3: Create a worker object
+        self._scaleworker.moveToThread(self._scaleThread)  # Step 4: Move worker to the thread
+        self._scaleThread.started.connect(self._scaleworker.run)  # Step 5: Connect signals and slots
+        self._scaleworker.finished.connect(self._scaleThread.quit)
+        self._scaleworker.finished.connect(self._scaleworker.deleteLater)
+        self._scaleworker.finished.connect(self.hidePbar)
+        # self._scaleworker.finished.connect(self._pm.user_projects.set_data)
+        self._scaleThread.finished.connect(self._scaleThread.deleteLater)
+        self._scaleworker.progress.connect(self.setPbar)
+        self._scaleworker.initPbar.connect(self.resetPbar)
+        self._scaleworker.hudMessage.connect(self.tell)
+        self._scaleworker.hudWarning.connect(self.warn)
+        self._scaleworker.refresh.connect(self.refreshTab)
+        self._scaleThread.start()  # Step 6: Start the thread
 
 
 
@@ -2180,21 +2221,21 @@ class MainWindow(QMainWindow):
 
     def detachNeuroglancer(self):
         logger.info('')
-        if self._isProjectTab() or self._isZarrTab():
-            try:
-                self.detachedNg = WebPage(url=cfg.emViewer.url())
-            except:
-                logger.info('Cannot open detached neuroglancer view')
+        # if self._isProjectTab() or self._isZarrTab():
+        #     try:
+        #         self.detachedNg = QuickWebPage(url=cfg.emViewer.url())
+        #     except:
+        #         logger.info('Cannot open detached neuroglancer view')
 
     def openDetatchedZarr(self):
         logger.info('')
-        if self._isProjectTab() or self._isZarrTab():
-            self.detachedNg = WebPage()
-            self.detachedNg.open(url=str(cfg.emViewer.url()))
-            self.detachedNg.show()
-        else:
-            if not ng.server.is_server_running():
-                self.warn('Neuroglancer is not running.')
+        # if self._isProjectTab() or self._isZarrTab():
+        #     self.detachedNg = QuickWebPage()
+        #     self.detachedNg.open(url=str(cfg.emViewer.url()))
+        #     self.detachedNg.show()
+        # else:
+        #     if not ng.server.is_server_running():
+        #         self.warn('Neuroglancer is not running.')
 
 
     def onStartProject(self, dm, switch_to=False):
@@ -3573,9 +3614,9 @@ class MainWindow(QMainWindow):
             self.dw_matches.setWidget(NullWidget())
             self.dw_snr.setWidget(NullWidget())
 
-        elif self._getTabType() == 'OpenProject':
-            # configure_project_paths()
-            self._getTabObject().user_projects.set_data()
+        # elif self._getTabType() == 'OpenProject':
+        #     # configure_project_paths()
+        #     self._getTabObject().user_projects.set_data()
 
         elif self._getTabType() == 'ProjectTab':
             cfg.data = self.globTabs.currentWidget().datamodel
@@ -5507,7 +5548,7 @@ class MainWindow(QMainWindow):
 
 
     def _initProjectManager(self):
-        self._pm = OpenProject()
+        self._pm = cfg.pm = OpenProject()
         self.globTabs.addTab(self._pm, 'Project Manager')
         # self.globTabs.tabBar().setTabButton(0, QTabBar.RightSide,None)
         # self._setLastTab()

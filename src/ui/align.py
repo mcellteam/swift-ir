@@ -136,7 +136,7 @@ class AlignWorker(QObject):
             # ss['scale_val'] = scale_val
             ss['scale_key'] = scale
             ss['isRefinement'] = dm['data']['scales'][scale]['isRefinement']
-            ss['destination_path'] = dm['data']['destination_path']
+            ss['series_path'] = dm['data']['series_path']
             ss['defaults'] = dm['data']['defaults']
             ss['img_size'] = dm['data']['scales'][scale]['image_src_size']
             # ss['include'] = not sec['skipped']
@@ -175,7 +175,7 @@ class AlignWorker(QObject):
 
         delete_correlation_signals(dm=dm, scale=scale, indexes=indexes)
         delete_matches(dm=dm, scale=scale, indexes=indexes)
-        dest = dm['data']['destination_path']
+        dest = dm['data']['series_path']
 
         if is_tacc():
             cpus = get_n_tacc_cores(n_tasks=len(tasks))
@@ -310,7 +310,7 @@ class AlignWorker(QObject):
 
         # initPbar
         # thumbnailer = Thumbnailer()
-        # thumbnailer.reduce_matches(indexes=indexes, dest=dm['data']['destination_path'], scale=scale)
+        # thumbnailer.reduce_matches(indexes=indexes, dest=dm['data']['series_path'], scale=scale)
 
 
 
@@ -364,7 +364,7 @@ class AlignWorker(QObject):
         else:
             cpus = psutil.cpu_count(logical=False)
 
-        dest = dm['data']['destination_path']
+        dest = dm['data']['series_path']
         print(f'\n\nGenerating Aligned Images for {indexes}\n')
 
         tasks = []
@@ -572,7 +572,7 @@ def checkForTiffs(path) -> bool:
 
 def save2file(dm, name):
     data_cp = copy.deepcopy(dm)
-    name = data_cp['data']['destination_path']
+    name = data_cp['data']['series_path']
     jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
     proj_json = jde.encode(data_cp)
     logger.info(f'---- SAVING  ----\n{name}')

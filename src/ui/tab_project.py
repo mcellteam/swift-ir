@@ -197,6 +197,7 @@ class ProjectTab(QWidget):
         cfg.mw.set_status('Initializing Neuroglancer...')
         if DEV:
             logger.critical(f"[DEV][{caller_name()}] Initializing Neuroglancer...")
+
         if cfg.data['state']['current_tab'] == 1 or init_all:
             # self.MA_webengine_ref.setUrl(QUrl("http://localhost:8888/"))
             # self.MA_webengine_base.setUrl(QUrl("http://localhost:8888/"))

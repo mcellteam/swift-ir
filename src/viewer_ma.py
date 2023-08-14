@@ -203,8 +203,8 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def post_message(self, msg):
-        with self.config_state.txn() as cs:
-            cs.status_messages['message'] = msg
+        with self.config_state.txn() as s:
+            s.status_messages['message'] = msg
 
 
     # async def initViewer(self, obey_zpos=True):

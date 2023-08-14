@@ -9,6 +9,7 @@ import inspect
 import logging
 import platform
 import textwrap
+import copy
 from glob import glob
 from pathlib import Path
 import subprocess as sp
@@ -20,16 +21,19 @@ libtiff.libtiff_ctypes.suppress_warnings()
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QCheckBox, QLabel, QAbstractItemView, \
     QSplitter, QTableWidget, QTableWidgetItem, QSlider, QGridLayout, QFrame, QPushButton, \
     QSizePolicy, QSpacerItem, QLineEdit, QMessageBox, QDialog, QFileDialog, QStyle, QStyledItemDelegate, \
-    QListView, QApplication, QScrollArea, QMenu, QAction
+    QListView, QApplication, QScrollArea, QMenu, QAction, QTextEdit, QFormLayout, QGroupBox, QComboBox
 from qtpy.QtCore import Qt, QRect, QUrl, QDir, QSize, QPoint, QEvent
-from qtpy.QtGui import QGuiApplication, QFont, QPixmap, QPainter, QKeySequence, QColor, QBrush
+from qtpy.QtGui import QGuiApplication, QFont, QPixmap, QPainter, QKeySequence, QColor, QBrush, QIntValidator, \
+    QPalette
+from qtpy.QtWebEngineWidgets import *
+# from qtpy.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
 
 from src.ui.file_browser import FileBrowser
 from src.ui.file_browser_tacc import FileBrowserTacc
 from src.thumbnailer import Thumbnailer
-from src.helpers import get_project_list, list_paths_absolute, get_bytes, absFilePaths, getOpt, setOpt, \
+from src.helpers import list_paths_absolute, get_bytes, absFilePaths, getOpt, setOpt, \
     print_exception, configure_project_paths, delete_recursive, natural_sort, is_tacc, \
-    is_joel, hotkey, get_appdir, caller_name, initLogFiles, create_project_directories
+    is_joel, hotkey, get_appdir, caller_name, initLogFiles, create_project_directories, get_appdir, example_zarr
 from src.data_model import DataModel
 from src.ui.tab_project import ProjectTab
 from src.ui.timer import Timer
@@ -38,6 +42,8 @@ from src.ui.dialogs import ImportImagesDialog, NewConfigureProjectDialog
 from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter
 from src.ui.tab_project import VerticalLabel
 from src.ui.thumbnail import ThumbnailFast
+from src.viewer_em import PMViewer
+
 import src.config as cfg
 
 __all__ = ['OpenProject']
@@ -56,13 +62,9 @@ class OpenProject(QWidget):
             self.selectionReadout.setText(self.filebrowser.getSelectionPath())
         self.filebrowser.treeview.selectionModel().selectionChanged.connect(fn)
         self.filebrowser.controlsNavigation.show()
-        self.user_projects = UserProjects(parent=self)
+        # self.user_projects = UserProjects(parent=self)
         self.initUI()
-        self.row_height_slider.setValue(self.user_projects.ROW_HEIGHT)
-        # self.row_height_slider.setValue(getOpt('state,open_project_tab,row_height'))
-        # p = self.palette()
-        # p.setColor(self.backgroundRole(), QColor('#ede9e8'))
-        # self.USE_CAL_GRID = False
+        # self.row_height_slider.setValue(self.user_projects.ROW_HEIGHT)
         self.selected_file = ''
 
         clipboard = QGuiApplication.clipboard()
@@ -87,71 +89,64 @@ class OpenProject(QWidget):
 
     def initUI(self):
 
-        # User Projects Widget
-        self.userProjectsWidget = QWidget()
-        # lab = QLabel('Saved AlignEM-SWiFT Projects:')
-        # lab = QLabel('Project Management')
-        # lab.setStyleSheet('font-size: 13px; font-weight: 600; color: #161c20;')
-
-
-        self.row_height_slider = Slider(self)
-        self.row_height_slider.setMinimum(16)
-        self.row_height_slider.setMaximum(180)
-        self.row_height_slider.setMaximumWidth(120)
-        self.row_height_slider.valueChanged.connect(self.user_projects.updateRowHeight)
-        self.row_height_slider.valueChanged.connect(
-            lambda: setOpt('state,open_project_tab,row_height', self.row_height_slider.value()))
-        # self.row_height_slider.setValue(self.initial_row_height)
-        # self.updateRowHeight(self.initial_row_height)
-
-        self.fetchSizesCheckbox = QCheckBox()
-        self.fetchSizesCheckbox.setStyleSheet("font-size: 10px;")
+        # self.userProjectsWidget = QWidget()
+        #
+        # self.row_height_slider = Slider(self)
+        # self.row_height_slider.setMinimum(16)
+        # self.row_height_slider.setMaximum(180)
+        # self.row_height_slider.setMaximumWidth(120)
+        # self.row_height_slider.valueChanged.connect(self.user_projects.updateRowHeight)
+        # self.row_height_slider.valueChanged.connect(
+        #     lambda: setOpt('state,open_project_tab,row_height', self.row_height_slider.value()))
+        # # self.row_height_slider.setValue(self.initial_row_height)
+        # # self.updateRowHeight(self.initial_row_height)
+        #
+        # self.fetchSizesCheckbox = QCheckBox()
+        # self.fetchSizesCheckbox.setStyleSheet("font-size: 10px;")
+        # # self.fetchSizesCheckbox.setChecked(getOpt(lookup='ui,FETCH_PROJECT_SIZES'))
         # self.fetchSizesCheckbox.setChecked(getOpt(lookup='ui,FETCH_PROJECT_SIZES'))
-        self.fetchSizesCheckbox.setChecked(getOpt(lookup='ui,FETCH_PROJECT_SIZES'))
-        self.fetchSizesCheckbox.toggled.connect(
-            lambda: setOpt('ui,FETCH_PROJECT_SIZES', self.fetchSizesCheckbox.isChecked()))
-
-        self.fetchSizesCheckbox.toggled.connect(self.user_projects.set_data)
-
-
-        self.controls = QWidget()
-        self.controls.setFixedHeight(18)
-        hbl = HBL()
-        # hbl.setContentsMargins(2, 0, 2, 0)
-        hbl.addWidget(QLabel('  '))
-        # hbl.addStretch(1)
-        hbl.addWidget(HWidget(QLabel(' Table Size '), self.row_height_slider), alignment=Qt.AlignLeft)
-        hbl.addWidget(QLabel('  '))
-        # hbl.addStretch(1)
-        hbl.addWidget(HWidget(QLabel(' Fetch Sizes '), self.fetchSizesCheckbox), alignment=Qt.AlignLeft)
-        hbl.addStretch(10)
-        # hbl.addWidget(ExpandingHWidget(self))
-        self.controls.setLayout(hbl)
-        self.controls.setStyleSheet('font-size: 10px;')
-
-        self.new_project_lab1 = QLabel()
-        self.new_project_lab1.setStyleSheet('font-size: 13px; font-weight: 600; padding: 4px; color: #f3f6fb; background-color: #222222;')
-        self.new_project_lab2 = QLabel()
-        self.new_project_lab2.setStyleSheet('font-size: 11px; font-weight: 600; padding: 4px; color: #f3f6fb; background-color: #222222;')
-        # self.new_project_lab2.setStyleSheet('font-size: 11px; font-weight: 600; padding: 4px; color: #9fdf9f; background-color: #222222;')
-        self.new_project_lab2.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        self.new_project_lab_gap = QLabel('      ')
-        self.new_project_lab_gap.setStyleSheet('color: #f3f6fb; background-color: #222222; padding: 0px;')
-        self.new_project_header = HWidget(self.new_project_lab1, self.new_project_lab_gap, self.new_project_lab2)
-        self.new_project_header.setFixedHeight(28)
-        self.new_project_header.layout.setSpacing(0)
-        self.new_project_header.setAutoFillBackground(True)
-        self.new_project_header.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        self.new_project_header.setStyleSheet('background-color: #222222;')
-        # self.new_project_header.hide()
-
-        self.vbl_projects = QVBoxLayout()
-        self.vbl_projects.setSpacing(1)
-        self.vbl_projects.setContentsMargins(2, 2, 2, 2)
-        self.vbl_projects.addWidget(self.user_projects)
-        self.vbl_projects.addWidget(self.controls)
-        # self.vbl_projects.addWidget(self.new_project_header)
-        self.userProjectsWidget.setLayout(self.vbl_projects)
+        # self.fetchSizesCheckbox.toggled.connect(
+        #     lambda: setOpt('ui,FETCH_PROJECT_SIZES', self.fetchSizesCheckbox.isChecked()))
+        #
+        # self.fetchSizesCheckbox.toggled.connect(self.user_projects.set_data)
+        #
+        #
+        # self.controls = QWidget()
+        # self.controls.setFixedHeight(18)
+        # hbl = HBL()
+        # # hbl.setContentsMargins(2, 0, 2, 0)
+        # hbl.addWidget(QLabel('  '))
+        # # hbl.addStretch(1)
+        # hbl.addWidget(HWidget(QLabel(' Table Size '), self.row_height_slider), alignment=Qt.AlignLeft)
+        # hbl.addWidget(QLabel('  '))
+        # # hbl.addStretch(1)
+        # hbl.addWidget(HWidget(QLabel(' Fetch Sizes '), self.fetchSizesCheckbox), alignment=Qt.AlignLeft)
+        # hbl.addStretch(10)
+        # # hbl.addWidget(ExpandingHWidget(self))
+        # self.controls.setLayout(hbl)
+        # self.controls.setStyleSheet('font-size: 10px;')
+        #
+        # self.new_project_lab1 = QLabel()
+        # self.new_project_lab1.setStyleSheet('font-size: 13px; font-weight: 600; padding: 4px; color: #f3f6fb; background-color: #222222;')
+        # self.new_project_lab2 = QLabel()
+        # self.new_project_lab2.setStyleSheet('font-size: 11px; font-weight: 600; padding: 4px; color: #f3f6fb; background-color: #222222;')
+        # # self.new_project_lab2.setStyleSheet('font-size: 11px; font-weight: 600; padding: 4px; color: #9fdf9f; background-color: #222222;')
+        # self.new_project_lab2.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        # self.new_project_lab_gap = QLabel('      ')
+        # self.new_project_lab_gap.setStyleSheet('color: #f3f6fb; background-color: #222222; padding: 0px;')
+        # self.new_project_header = HWidget(self.new_project_lab1, self.new_project_lab_gap, self.new_project_lab2)
+        # self.new_project_header.setFixedHeight(28)
+        # self.new_project_header.layout.setSpacing(0)
+        # self.new_project_header.setAutoFillBackground(True)
+        # self.new_project_header.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        # self.new_project_header.setStyleSheet('background-color: #222222;')
+        #
+        # self.vbl_projects = QVBoxLayout()
+        # self.vbl_projects.setSpacing(1)
+        # self.vbl_projects.setContentsMargins(2, 2, 2, 2)
+        # self.vbl_projects.addWidget(self.user_projects)
+        # self.vbl_projects.addWidget(self.controls)
+        # # self.userProjectsWidget.setLayout(self.vbl_projects)
 
 
         # User Files Widget
@@ -190,17 +185,6 @@ class OpenProject(QWidget):
         self._buttonProjectFromTiffFolder1.clicked.connect(self.createProjectFromTiffFolder)
         self._buttonProjectFromTiffFolder1.setFixedSize(button_size)
 
-
-        # self._buttonNew = QPushButton('New Project')
-        tip = "Create a new project by selecting which images to import."
-        self._buttonNew = QPushButton(f"Select Images {hotkey('I')}")
-        self._buttonNew.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        self._buttonNew.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._buttonNew.setShortcut('Ctrl+I')
-        self._buttonNew.clicked.connect(self.new_project)
-        self._buttonNew.setFixedSize(button_size)
-        self._buttonNew.setStyleSheet('font-size: 9px;')
-
         self._buttonCancelProjectFromTiffFolder = QPushButton(f"Cancel")
         # self._buttonProjectFromTiffFolder1.setShortcut()
         self._buttonCancelProjectFromTiffFolder.setStyleSheet('font-size: 9px;')
@@ -231,12 +215,6 @@ class OpenProject(QWidget):
 
 
 
-        # self._buttonNew = QPushButton('Remember')
-        # self._buttonNew.setStyleSheet("font-size: 9px;")
-        # self._buttonNew.clicked.connect(self.new_project)
-        # self._buttonNew.setFixedSize(64, 20)
-        # # self._buttonNew.setStyleSheet(w)
-
         def paste_from_buffer():
             buffer = QApplication.clipboard().text()
             # path_exists = os.path.exists(buffer)
@@ -259,7 +237,17 @@ class OpenProject(QWidget):
         self._buttonBrowserPaste.setStyleSheet('font-size: 9px;')
         # self._buttonBrowserPaste.setEnabled(os.path.exists(QApplication.clipboard().text()))
 
-
+        self.bSetContentSources = QPushButton('Set Content Sources')
+        self.bSetContentSources.setFixedSize(QSize(100,18))
+        self.bSetContentSources.setStyleSheet('font-size: 9px;')
+        def fn():
+            self.w_teContentSources.setVisible(not self.w_teContentSources.isVisible())
+            if self.w_teContentSources.isVisible():
+                self.leContentRoot.setText(cfg.settings['content_root'])
+                self.teSearchPaths.setText('\n'.join(cfg.settings['search_paths']))
+            self.bSetContentSources.setText(('Set Content Sources', 'Hide')[
+                                                self.w_teContentSources.isVisible()])
+        self.bSetContentSources.clicked.connect(fn)
         self.lab_path_exists = cfg.lab_path_exists = QLabel('Path Exists')
         self.lab_path_exists.setFixedWidth(80)
         self.lab_path_exists.setAttribute(Qt.WA_TransparentForMouseEvents)
@@ -268,6 +256,11 @@ class OpenProject(QWidget):
         self.lab_path_exists.setFixedHeight(16)
         self.lab_path_exists.setAlignment(Qt.AlignRight)
         self.lab_path_exists.hide()
+
+        self.bImportSeries = QPushButton('Import Series')
+        self.bImportSeries.setFixedSize(QSize(100,18))
+        self.bImportSeries.setStyleSheet('font-size: 9px;')
+        self.bImportSeries.clicked.connect(self.showImportSeriesDialog)
 
         self.lab_project_name = QLabel(' New Project Path: ')
         self.lab_project_name.setStyleSheet("font-size: 10px; font-weight: 600; color: #ede9e8; background-color: #339933; border-radius: 4px;")
@@ -354,29 +347,90 @@ class OpenProject(QWidget):
 
 
         hbl = QHBoxLayout()
-        hbl.setContentsMargins(6, 2, 6, 2)
-        hbl.addWidget(self.labNewProject)
-        hbl.addWidget(self._buttonNew)
-        hbl.addWidget(self._buttonProjectFromTiffFolder1)
-        # hbl.addWidget(self.selectionReadout)
-        hbl.addWidget(self.selectionReadout_w_overlay)
-        # hbl.addWidget(self.validity_label)
-        hbl.addWidget(self._buttonOpen)
-        hbl.addWidget(self._buttonDelete)
-        hbl.addWidget(self._buttonBrowserPaste)
+        hbl.setContentsMargins(0,0,0,0)
+        # hbl.addWidget(self.labNewProject)
+        # hbl.addWidget(self._buttonProjectFromTiffFolder1)
+        # hbl.addWidget(self.selectionReadout_w_overlay)
+        # hbl.addWidget(self._buttonOpen)
+        # hbl.addWidget(self._buttonDelete)
+        # hbl.addWidget(self._buttonBrowserPaste)
+        hbl.addWidget(self.bSetContentSources)
+        hbl.addWidget(self.bImportSeries)
         hbl.addWidget(self.cbCalGrid)
         hbl.setStretch(3,5)
         self.spacer_item_docs = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         hbl.addSpacerItem(self.spacer_item_docs)
 
         self._actions_widget = QWidget()
+        self._actions_widget.setAutoFillBackground(True)
         self._actions_widget.setFixedHeight(26)
         self._actions_widget.setLayout(hbl)
 
-        self._splitter = QSplitter()
-        self._splitter.addWidget(self.userProjectsWidget)
-        self._splitter.addWidget(self.userFilesWidget)
-        self._splitter.setSizes([700, 300])
+
+        self.comboSelectSeries = QComboBox()
+        self.comboSelectSeries.setAutoFillBackground(True)
+        self.comboSelectSeries.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # self.comboSelectSeries.setCurrentText()
+        self.updateSeriesCombo()
+
+
+        self.comboSelectAlignment = QComboBox()
+        self.comboSelectAlignment.addItems(["Null"])
+        self.comboSelectAlignment.setAutoFillBackground(True)
+
+        self.l0 = QLabel('Series: ')
+        self.l0.setFixedWidth(58)
+        self.l1 = QLabel('Alignment: ')
+        self.l1.setFixedWidth(58)
+        self.combos = HWidget(self.l0, self.comboSelectSeries, QLabel(' '), self.l1, self.comboSelectAlignment)
+        self.combos.setStyleSheet("background-color: #222222; color: #f3f6fb; font-size: 10px; font-weight: 600;")
+        # self.combos.layout.setSpacing(0)
+        self.combos.layout.setStretch(1,9)
+        self.combos.layout.setStretch(4,9)
+        # self.combos.layout.setAlignment(Qt.AlignLeft)
+
+        self.webengine = WebEngine(ID='pmViewer')
+        setWebengineProperties(self.webengine)
+        self.webengine.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.webengine.setMinimumWidth(400)
+        self.webengine.setMinimumHeight(400)
+        self.viewer = cfg.pmViewer = PMViewer(webengine=self.webengine)
+        self.updateSeriesCombo()
+        logger.critical(self.comboSelectSeries.currentText())
+        if self.comboSelectSeries.currentText() != "null":
+            path = os.path.join(self.comboSelectSeries.currentText(), 'img_src.zarr', 's2')
+            logger.critical(f"path: {path}")
+            # try:
+            self.viewer.initViewer(path=path)
+            # self.viewer.initZoom(self.webengine.width(), self.webengine.height())
+            # except:
+            #     self.viewer.initExample()
+            #     self.viewer.initZoom(self.webengine.width(), self.webengine.height())
+
+        else:
+            self.viewer.initExample()
+            # self.viewer.initZoom(self.webengine.width(), self.webengine.height())
+
+        self.labTitle = QLabel("Series Manager")
+        self.labTitle.setContentsMargins(1,1,0,4)
+        self.labTitle.setStyleSheet("font-size: 12px; font-weight: 600;")
+
+        self.wProjects = VWidget(self.labTitle, self.combos, self.webengine)
+        self.wProjects.layout.setContentsMargins(2,2,2,2)
+        self.wProjects.setStyleSheet("""
+        QWidget {
+            background-color: #222222; 
+            color: #f3f6fb;
+        }
+        QComboBox {
+            background-color: #222222;
+            color: #f3f6fb;
+        }    
+            
+        """)
+
+
+
 
 
 
@@ -437,28 +491,150 @@ class OpenProject(QWidget):
         # self.vbl_main.addWidget(cfg.cp_dialog)
 
         cfg.iid_dialog = ImportImagesDialog()
-        cfg.iid_dialog.hide()
-        # self.vbl_main.addWidget(cfg.iid_dialog)
 
-        # self.w_name_dialog = VWidget(self.new_project_header, self.name_dialog, cfg.iid_dialog, cfg.cp_dialog)
-        self.w_name_dialog = VWidget(self.new_project_header, self.name_dialog, cfg.iid_dialog)
-        self.w_name_dialog.layout.setSpacing(0)
+        self.leProjName = QLineEdit()
+        self.leProjName.setReadOnly(False)
+
+        self.w_name_dialog = HWidget(QLabel("Project Name:"), self.leProjName)
         self.w_name_dialog.hide()
 
+        self.leContentRoot = QLineEdit()
+        self.leContentRoot.setFixedHeight(18)
+        self.leContentRoot.setReadOnly(False)
 
+        self.teSearchPaths = QTextEdit()
+        self.teSearchPaths.setMaximumHeight(100)
+        self.teSearchPaths.setReadOnly(False)
+        # self.teSearchPaths.setMaximumHeight(140)
+        # self.teSearchPaths.setMinimumHeight(40)
+
+        self.bSaveContentSources = QPushButton('Save')
+        self.bSaveContentSources.setFixedSize(QSize(60,18))
+        def fn():
+            logger.info(f'Saving search paths and content roots...')
+            cfg.settings['search_paths'] = self.teSearchPaths.toPlainText().split('\n')
+            cfg.settings['content_root'] = self.leContentRoot.text()
+
+            makedirs_exist_ok(cfg.settings['content_root'], exist_ok=True)
+            p = os.path.join(cfg.settings['content_root'], 'series')
+            if not os.path.exists(p):
+                logger.critical(f'Creating directory! {p}')
+                os.mkdir(p)
+            p = os.path.join(cfg.settings['content_root'], 'projects')
+            if not os.path.exists(p):
+                logger.critical(f'Creating directory! {p}')
+                os.mkdir(p)
+            cfg.mw._autosave()
+            self.w_teContentSources.hide()
+            self.bSetContentSources.setText('Set Content Sources')
+            cfg.mw.statusBar.showMessage('Content roots saved!', 3000)
+        self.bSaveContentSources.clicked.connect(fn)
+
+
+        self.w_teContentSources = QWidget()
+        self.flContentAndSearch = QFormLayout()
+        self.flContentAndSearch.setContentsMargins(0,0,0,0)
+        self.flContentAndSearch.setSpacing(2)
+        self.flContentAndSearch.addRow('Content Root', self.leContentRoot)
+        self.flContentAndSearch.addRow('Search Paths', self.teSearchPaths)
+        self.flContentAndSearch.addWidget(self.bSaveContentSources)
+        # self.w_teContentSources.setMaximumHeight(140)
+        self.w_teContentSources.setLayout(self.flContentAndSearch)
+        self.w_teContentSources.setMinimumHeight(50)
+        self.w_teContentSources.setMaximumHeight(150)
+        self.w_teContentSources.hide()
+
+
+        self.leNameSeries = QLineEdit()
+        self.placeholderText = 'Short, descriptive name'
+        self.leNameSeries.setPlaceholderText(self.placeholderText)
+        self.leNameSeries.setFixedHeight(18)
+        self.leNameSeries.setReadOnly(False)
+        pal = self.leNameSeries.palette()
+        pal.setColor(QPalette.PlaceholderText, QColor("#dadada"))
+        self.leNameSeries.setPalette(pal)
+        self.leNameSeries.textChanged.connect(self.updateImportSeriesUI)
+
+
+        lab = QLabel('Series Name:')
+        lab.setStyleSheet("font-size: 10px;")
+        self.bSelect = QPushButton("Select Images")
+        self.bSelect.clicked.connect(self.selectImages)
+
+        self.bCancel = QPushButton("Cancel")
+        def fn():
+            self.showMainUI()
+            self._NEW_SERIES_PATHS = []
+        self.bCancel.clicked.connect(fn)
+
+        self.bConfirmImport = QPushButton("Import")
+        self.bConfirmImport.clicked.connect(self.importSeries)
+        self.bConfirmImport.setEnabled(False)
+        # self.wNameSeries = HWidget(lab, self.leNameSeries, self.bSelect, self.bConfirmImport, self.bCancel)
+        self.wNameSeries = HWidget(lab, self.leNameSeries, self.bSelect, self.bConfirmImport)
+        self.wNameSeries.layout.setSpacing(4)
+        self.wNameSeries.layout.setContentsMargins(0,0,0,0)
+
+        bs = [self.bSelect, self.bConfirmImport, self.bCancel]
+        for b in bs:
+            # b.setStyleSheet("font-size: 10px; ")
+            b.setFixedSize(QSize(78,18))
+
+        self.wSeriesConfig = SeriesConfig(parent=self)
+
+        vbl = VBL(self.wNameSeries, self.wSeriesConfig)
+        vbl.setContentsMargins(4,10,4,4)
+        self.gbImportSeries = QGroupBox("Import Series")
+        self.gbImportSeries.setLayout(vbl)
+        self.gbImportSeries.setFixedHeight(70)
+        # self.gbImportSeries.layout.setContentsMargins(4,4,4,4)
+        self.gbImportSeries.hide()
+
+        self._splitter = QSplitter()
+        # self._splitter.addWidget(self.userProjectsWidget)
+        self._splitter.addWidget(VSplitter(self.wProjects,self.gbImportSeries, self.w_teContentSources))
+        self._splitter.addWidget(self.userFilesWidget)
+        self._splitter.setSizes([700, 300])
 
         self.vbl_main = VBL()
         self._vw = VWidget(self._splitter, self._actions_widget, self.le_project_name_w)
         self._vsplitter = QSplitter(Qt.Orientation.Vertical)
         self._vsplitter.addWidget(self._vw)
-        self._vsplitter.addWidget(self.w_name_dialog)
-
+        # self._vsplitter.addWidget(self.w_teContentSources)
+        # self._vsplitter.addWidget(self.w_name_dialog)
         self.vbl_main.addWidget(self._vsplitter)
-
-        # self.vbl_main.addWidget(self.new_project_header)
-
+        # self.vbl_main.addWidget(self.gbImportSeries)
         self.setLayout(self.vbl_main)
 
+        self._NEW_SERIES_PATHS = []
+
+
+
+    def onSelectSeriesCombo(self):
+        logger.info('')
+        if self.comboSelectSeries.currentText() != "null":
+            path = os.path.join(self.comboSelectSeries.currentText(), 'img_src.zarr', 's2')
+            logger.critical(f"path: {path}")
+            self.viewer.initViewer(path=path)
+            # self.viewer.initZoom(self.webengine.width(), self.webengine.height())
+        else:
+            self.viewer.initExample()
+            # self.viewer.initZoom(self.webengine.width(), self.webengine.height())
+
+
+    def updateSeriesCombo(self):
+        self.comboSelectSeries.disconnect()
+        self.comboSelectSeries.clear()
+        cr = cfg.settings['content_root'] # content root full path
+        crn = os.path.basename(cfg.settings['content_root']) # content root name
+        d = os.path.join(cr, 'series')
+        # dirs = ['./' + crn + '/series/' + name for name in os.listdir(d) if os.path.isdir(os.path.join(d, name)) ]
+        dirs = [d + '/' + name for name in os.listdir(d) if os.path.isdir(os.path.join(d, name)) ]
+        if dirs:
+            self.comboSelectSeries.addItems(dirs)
+        else:
+            self.comboSelectSeries.addItems(["null"])
+        self.comboSelectSeries.currentIndexChanged.connect(self.onSelectSeriesCombo)
 
 
     def hideMainUI(self):
@@ -471,7 +647,11 @@ class OpenProject(QWidget):
     def showMainUI(self):
         logger.info('')
         self._actions_widget.show()
-        self.w_name_dialog.hide()
+        # self.w_name_dialog.hide()
+        self.gbImportSeries.hide()
+        # self.bImportSeries.setText("Set Content Source")
+        # self.bSetContentSources.setText("Import Series")
+        self.update()
         # self.new_project_header.hide()
 
     def validate_path(self):
@@ -556,56 +736,180 @@ class OpenProject(QWidget):
         self.le_project_name.setText('')
 
 
+    def showImportSeriesDialog(self):
+        self.gbImportSeries.setVisible(not self.gbImportSeries.isVisible())
+        self._NEW_SERIES_PATHS = []
+        if self.gbImportSeries.isVisible():
+            self.wSeriesConfig.le_res_x.setText(str(cfg.DEFAULT_RESX))
+            self.wSeriesConfig.le_res_y.setText(str(cfg.DEFAULT_RESY))
+            self.wSeriesConfig.le_res_z.setText(str(cfg.DEFAULT_RESZ))
+            self.wSeriesConfig.le_chunk_x.setText(str(cfg.CHUNK_X))
+            self.wSeriesConfig.le_chunk_y.setText(str(cfg.CHUNK_Y))
+            self.wSeriesConfig.le_chunk_z.setText(str(cfg.CHUNK_Z))
+            self.wSeriesConfig.cname_combobox.setCurrentText(str(cfg.CNAME))
+            # self.leContentRoot.setText(cfg.settings['content_root'])
+            # self.teSearchPaths.setText('\n'.join(cfg.settings['search_paths']))
+        self.bImportSeries.setText(('Import Series', 'Hide')[self.gbImportSeries.isVisible()])
+        # self._actions_widget.hide()
+
+
+        # response = cfg.iid_dialog.exec()
+        # self.showMainUI()
+        # cfg.mw.set_status('')
+        # if response == QDialog.Rejected:
+        #     logger.warning("Dialog was rejected")
+        #     return
+
+
+    def updateImportSeriesUI(self):
+        logger.info('')
+        self.bConfirmImport.setEnabled(False)
+        if len(self.leNameSeries.text()) > 1:
+            if len(self._NEW_SERIES_PATHS) > 1:
+                self.bConfirmImport.setEnabled(True)
+        # self.bConfirmImport.setStyleSheet(("color: #dadada;","color: #161c20;")[self.bConfirmImport.isEnabled()])
+
+
+    def selectImages(self):
+        cfg.new_iid_dialog = ImportImagesDialog()
+        cfg.new_iid_dialog.resize(QSize(820,480))
+        cfg.new_iid_dialog.show()
+        # sidebar = self.findChild(QListView, "sidebar")
+        # delegate = StyledItemDelegate(sidebar)
+        # delegate.mapping = getSideBarPlacesImportImages()
+        # sidebar.setItemDelegate(delegate)
+
+        if cfg.new_iid_dialog.exec_() == QDialog.Accepted:
+            filenames = cfg.new_iid_dialog.selectedFiles()
+            cfg.new_iid_dialog.pixmap = None
+        else:
+            logger.warning('Import images dialog did not return a valid file list')
+            cfg.mw.warn('Import images dialog did not return a valid file list')
+            self.showMainUI()
+            cfg.new_iid_dialog.pixmap = None
+            return 1
+
+        if filenames == 1:
+            logger.warning('New Project Canceled')
+            cfg.mw.warn('No Project Canceled')
+            self.showMainUI()
+            return 1
+
+        self._NEW_SERIES_PATHS = natural_sort(filenames)
+        self.updateImportSeriesUI()
+        logger.critical(f"{filenames}")
+
+
+
+    def importSeries(self):
+        logger.critical("")
+
+        name = self.leNameSeries.text()
+        name.replace(' ','_')
+        name, _ = os.path.splitext(name)
+        filename = os.path.join(cfg.settings['content_root'], 'series', name + ".series")
+        dirname = os.path.join(cfg.settings['content_root'], 'series', name)
+
+
+        logger.critical(f"has cal grid? {cfg.new_iid_dialog.cb_cal_grid.isChecked()}")
+        logger.critical(f"paths: {self._NEW_SERIES_PATHS}")
+        logger.critical(f"name: {name}")
+        logger.critical(f"dirname: {dirname}")
+
+        dm = cfg.data = DataModel(series_path=dirname)
+        dm['data']['autoalign_flag'] = False
+        logger.critical(f"0, dm.location = {dm.location}")
+        initLogFiles(dm)
+
+
+        dm['data']['has_cal_grid'] = cfg.new_iid_dialog.cb_cal_grid.isChecked()
+        if dm['data']['has_cal_grid']:
+            logger.info('Linking to calibration grid image...')
+            dm['data']['cal_grid_path'] = self._NEW_SERIES_PATHS[0]
+            self._NEW_SERIES_PATHS = self._NEW_SERIES_PATHS[1:]
+
+        dm.set_source_path(os.path.dirname(self._NEW_SERIES_PATHS[0]))  # Critical!
+        cfg.mw.tell(f'Importing {len(self._NEW_SERIES_PATHS)} Images...')
+        dm.append_images(self._NEW_SERIES_PATHS)
+
+        cfg.mw.tell(f'Dimensions: %dx%d' % dm.image_size(s='scale_1'))
+        logger.critical(f"1, dm.location = {dm.location}")
+
+
+        dm.set_scales_from_string(self.wSeriesConfig.scales_input.text())
+
+
+        dm.set_defaults()
+
+        makedirs_exist_ok(dirname, exist_ok=True)
+        logger.critical(f"dirname = {dirname}")
+        logger.critical(f"dm.scales() = {dm.scales()}")
+        create_project_directories(dirname, dm.scales())
+
+
+
+
+        # cfg.project_tab = ProjectTab(self, path=path, datamodel=dm)
+        ID = id(cfg.project_tab)
+        logger.info(f'New Tab ID: {ID}')
+        cfg.dataById[id(cfg.project_tab)] = dm
+        dm.set_defaults()
+        set_image_sizes(dm)
+
+
+
+        # settings = self.gbImportSeries.getSettings()
+
+        # data_cp = copy.deepcopy(dm.to_json())
+        jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
+        with open(filename, 'w') as f:
+            f.write(jde.encode(copy.deepcopy(dm._data)))
+
+        cfg.mw.autoscaleSeries(dm)
+
+        cfg.mw._is_initialized = 1
+        # cfg.data = dm
+        logger.critical('<<<< new_project <<<<')
+
+
+
+
+
     def new_project(self, mendenhall=False, skip_to_config=False):
         logger.info('\n\nStarting A New Project...\n')
         cfg.mw.tell('Starting A New Project...')
         cfg.mw._is_initialized = 0
 
-        if not skip_to_config:
-            # self.hideMainUI()
-            cfg.mw.stopPlaybackTimer()
-            cfg.mw.tell('New Project Path:')
-            self.new_project_lab1.setText('New Project (Step: 1/3) - Name & Location')
-            cfg.mw.set_status('New Project (Step: 1/3) - Name & Location')
+        # self.hideMainUI()
+        cfg.mw.stopPlaybackTimer()
+        cfg.mw.tell('New Project Path:')
+        # self.new_project_lab1.setText('New Project (Step: 1/3) - Name & Location')
+        cfg.mw.set_status('New Project (Step: 1/3) - Name & Location')
 
-            self._actions_widget.hide()
-            self.w_name_dialog.show()
-            if self.name_dialog.exec() == QFileDialog.Accepted:
-                logger.info('Save File Path: %s' % self.name_dialog.selectedFiles()[0])
-                filename = self.name_dialog.selectedFiles()[0]
-                self.new_project_lab2.setText(filename)
-                self.name_dialog.close()
-            else:
-                self.showMainUI()
-                self.name_dialog.close()
-                cfg.mw.set_status('')
-                return 1
+        self._actions_widget.hide()
+        if self.name_dialog.exec() == QFileDialog.Accepted:
+            logger.info('Save File Path: %s' % self.name_dialog.selectedFiles()[0])
+            filename = self.name_dialog.selectedFiles()[0]
+            self.new_project_lab2.setText(filename)
+            self.name_dialog.close()
+        else:
+            self.showMainUI()
+            self.name_dialog.close()
+            cfg.mw.set_status('')
+            return 1
 
-            if filename in ['', None]:
-                logger.info('New Project Canceled.')
-                cfg.mw.warn("New Project Canceled.")
-                self.showMainUI()
-                cfg.mw.set_status('')
-                return
+        if filename in ['', None]:
+            logger.info('New Project Canceled.')
+            cfg.mw.warn("New Project Canceled.")
+            self.showMainUI()
+            cfg.mw.set_status('')
+            return
 
-            filename.replace(' ','_')
-            fn, ext = os.path.splitext(filename)
-            filename = fn + ".swiftir"
-            if os.path.exists(filename):
-                logger.warning("The file '%s' already exists." % filename)
-                cfg.mw.warn("The file '%s' already exists." % filename)
-                path_proj = os.path.splitext(filename)[0]
-                cfg.mw.tell(f"Removing Extant Project Directory '{path_proj}'...")
-                logger.info(f"Removing extant project directory '{path_proj}'...")
-                shutil.rmtree(path_proj, ignore_errors=True)
-                cfg.mw.tell(f"Removing Extant Project File '{path_proj}'...")
-                logger.info(f"Removing extant project file '{path_proj}'...")
-                os.remove(filename)
 
-            self.NEW_PROJECT_PATH = filename
+        self.NEW_PROJECT_PATH = filename
 
         path,_ = os.path.splitext(self.NEW_PROJECT_PATH)
-        self.NEW_PROJECT_PATH = path
+        self.NEW_PROJECT_PATH = os.path.join(cfg.settings['content_root'], 'alignment', os.path.basename(path))
 
         dm = cfg.data = DataModel(name=self.NEW_PROJECT_PATH)
         initLogFiles(dm)
@@ -625,7 +929,7 @@ class OpenProject(QWidget):
             # cfg.iid_dialog = ImportImagesDialog()
             # self.vbl_main.addWidget(cfg.iid_dialog)
             cfg.iid_dialog.show()
-            self.new_project_lab1.setText('New Project (Step: 2/3) - Import TIFF Images')
+            # self.new_project_lab1.setText('New Project (Step: 2/3) - Import TIFF Images')
             cfg.mw.set_status('New Project (Step: 2/3) - Import TIFF Images')
             sidebar = self.findChild(QListView, "sidebar")
             delegate = StyledItemDelegate(sidebar)
@@ -671,7 +975,7 @@ class OpenProject(QWidget):
         self.le_project_name_w.hide()
 
         '''Step 3/3'''
-        self.new_project_lab1.setText('New Project (Step: 3/3) - Configure')
+        # self.new_project_lab1.setText('New Project (Step: 3/3) - Configure')
         cfg.mw.set_status('New Project (Step: 3/3) - Configure')
 
         cfg.cp_dialog = NewConfigureProjectDialog(parent=self)
@@ -685,7 +989,6 @@ class OpenProject(QWidget):
             logger.warning("Dialog was rejected")
             return
         QApplication.processEvents()
-        logger.info('Save File Path: %s' % path)
         makedirs_exist_ok(path, exist_ok=True)
         create_project_directories(dm.location, dm.scales())
         logger.critical(os.listdir(path))
@@ -699,7 +1002,6 @@ class OpenProject(QWidget):
 
         cfg.project_tab = cfg.pt = ProjectTab(self, path=path, datamodel=dm)
         cfg.mw._autosave()
-        time.sleep(20)
         cfg.mw.tell(f"Creating project {os.path.basename(path)}...")
         logger.info(f'Appending project {filename} to .swift_cache...')
 
@@ -714,6 +1016,9 @@ class OpenProject(QWidget):
         cfg.mw.autoscale(dm, new_tab=True)
         # cfg.data = dm
         logger.info('<<<< new_project <<<<')
+
+
+
 
 
     def setSelectionPathText(self, path):
@@ -751,6 +1056,7 @@ class OpenProject(QWidget):
     def open_project_selected(self):
         # caller = inspect.stack()[1].function
         # logger.info(f'caller: {caller}')
+        logger.info('')
 
         cfg.mw.set_status("Loading Project...")
         cfg.mw._is_initialized = 0
@@ -791,7 +1097,7 @@ class OpenProject(QWidget):
             try:
                 with open(filename, 'r') as f:
                     dm = cfg.data = DataModel(data=json.load(f))
-                cfg.data.set_defaults()
+                dm.set_defaults()
                 cfg.mw._autosave()
             except:
                 cfg.mw.warn(f'No Such File Found: {filename}')
@@ -801,14 +1107,14 @@ class OpenProject(QWidget):
             else:
                 logger.info(f'Project Opened!')
 
-            initLogFiles(cfg.data) #0805+
+            initLogFiles(dm) #0805+
             # append_project_path(filename)
             cfg.settings['projects'].append(filename)
             cfg.mw.saveUserPreferences()
-            cfg.data.set_paths_absolute(filename=filename)
+            dm.set_paths_absolute(filename=filename)
             # cfg.project_tab = ProjectTab(self, path=cfg.data.dest() + '.swiftir', datamodel=cfg.data)
-            cfg.project_tab = cfg.pt = ProjectTab(self, path=cfg.data.dest(), datamodel=cfg.data)
-            cfg.dataById[id(cfg.project_tab)] = cfg.data
+            cfg.project_tab = cfg.pt = ProjectTab(self, path=dm.name, datamodel=dm)
+            cfg.dataById[id(cfg.project_tab)] = dm
 
             # cfg.mw.addGlobTab(cfg.project_tab, os.path.basename(cfg.data.dest()) + '.swiftir')
             # cfg.mw._closeOpenProjectTab()
@@ -910,12 +1216,12 @@ class OpenProject(QWidget):
 
                     cfg.mw.tell('Wrapping up...')
                     # configure_project_paths()
-                    if cfg.mw.globTabs.currentWidget().__class__.__name__ == 'OpenProject':
-                        try:
-                            self.user_projects.set_data()
-                        except:
-                            logger.warning('There was a problem updating the project list')
-                            print_exception()
+                    # if cfg.mw.globTabs.currentWidget().__class__.__name__ == 'OpenProject':
+                    #     try:
+                    #         self.user_projects.set_data()
+                    #     except:
+                    #         logger.warning('There was a problem updating the project list')
+                    #         print_exception()
 
                     self.selectionReadout.setText('')
 
@@ -1026,282 +1332,285 @@ def getSideBarPlacesImportImages():
 #         else:
 #             super().keyPressEvent(event)
 
-class UserProjects(QWidget):
-    def __init__(self, parent, **kwargs):
-        super().__init__(**kwargs)
-        self.parent = parent
 
-        # self.initial_row_height = 64
-        # self.ROW_HEIGHT = 64
-        self.ROW_HEIGHT = 64
-
-        self.counter1 = 0
-        self.counter2 = 0
-        # self.counter3 = 0
-        # self.setFocusPolicy(Qt.StrongFocus)
-
-        self.table = QTableWidget()
-        self.table.setFocusPolicy(Qt.NoFocus)
-        self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        # self.table.setAlternatingRowColors(True)
-        # self.table = TableWidget(self)
-
-        # self.table.setShowGrid(False)
-        self.table.setSortingEnabled(True)
-        self.table.setWordWrap(True)
-        self.table.horizontalHeader().setHighlightSections(False)
-        self.table.horizontalHeader().setStretchLastSection(True)
-        self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.table.verticalHeader().setVisible(False)
-        # self.table.horizontalHeader().setDefaultAlignment(Qt.Alignment(Qt.TextWordWrap))
-        self.table.horizontalHeader().setDefaultAlignment(Qt.AlignLeft)
-        def countCurrentItemChangedCalls(): self.counter2 += 1
-        self.table.currentItemChanged.connect(countCurrentItemChangedCalls)
-        self.table.currentItemChanged.connect(self.parent.userSelectionChanged)
-        def countItemClickedCalls(): self.counter1 += 1
-        self.table.itemClicked.connect(countItemClickedCalls)
-        self.table.itemClicked.connect(self.parent.userSelectionChanged)
-        # def onDoubleClick(): self.parent.open_project_selected()
-        # self.table.itemDoubleClicked.connect(self.parent.open_project_selected)
-        self.table.doubleClicked.connect(self.parent.open_project_selected) #Critical this always emits
-        self.table.itemSelectionChanged.connect(self.parent.userSelectionChanged)  # Works!
-        # self.table.itemSelectionChanged.connect(lambda: print('itemselectionChanged was emitted!'))  # Works!
-        # self.table.itemPressed.connect(lambda: print('itemPressed was emitted!'))
-        # self.table.cellActivated.connect(lambda: print('cellActivated was emitted!'))
-        # self.table.currentItemChanged.connect(lambda: print('currentItemChanged was emitted!'))
-        # self.table.itemDoubleClicked.connect(lambda: print('itemDoubleClicked was emitted!'))
-        # self.table.cellChanged.connect(lambda: print('cellChanged was emitted!'))
-        # self.table.cellClicked.connect(lambda: print('cellClicked was emitted!'))
-        # self.table.itemChanged.connect(lambda: print('itemChanged was emitted!'))
-
-        self.table.setColumnCount(11)
-        self.set_headers()
-
-        self.layout = QVBoxLayout()
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.addWidget(self.table)
-        # self.layout.addWidget(controls)
-        self.setLayout(self.layout)
-        self.set_data()
-
-        self.table.setMouseTracking(True)
-
-        self.current_hover = [0, 0]
-        self.table.cellEntered.connect(self.cellHover)
-
-    def cellHover(self, row, column):
-        self.current_hover = [row, column]
-
-    # btn.clicked.connect(lambda state, x=zpos: self.jump_to_manual(x))
-
-    # def setNotes(self, index, txt):
-    #     caller = inspect.stack()[1].function
-    #     if caller != 'updateNotes':
-    #         self.statusBar.showMessage('Note Saved!', 3000)
-    #
-    #         # cfg.data.save_notes(text=txt, l=index)
-    #     else:
-    #         cfg.settings['notes']['global_notes'] = self.notes.toPlainText()
-    #     self.notes.update()
-
-
-
-
-    def updateRowHeight(self, h):
-        for section in range(self.table.verticalHeader().count()):
-            self.table.verticalHeader().resizeSection(section, h)
-        self.table.setColumnWidth(1, h)
-        self.table.setColumnWidth(2, h)
-        self.table.setColumnWidth(3, h)
-        # self.table.setColumnWidth(10, h)
-
-
-    # def userSelectionChanged(self):
-    #     caller = inspect.stack()[1].function
-    #     # if caller == 'initTableData':
-    #     #     return
-    #     row = self.table.currentIndex().row()
-    #     try:
-    #         path = self.table.item(row,9).text()
-    #     except:
-    #         cfg.selected_file = ''
-    #         logger.warning(f'No file path at project_table.currentIndex().row()! '
-    #                        f'caller: {caller} - Returning...')
-    #         return
-    #     logger.info(f'path: {path}')
-    #     cfg.selected_file = path
-    #     cfg.mw.setSelectionPathText(path)
-    #     # logger.info(f'counter1={self.counter1}, counter2={self.counter2}')
-
-
-    def set_headers(self):
-        self.table.setHorizontalHeaderLabels([
-            "Location",
-            "First\nSection",
-            "Last\nSection",
-            "Calibration\nGrid",
-            "Created",
-            "Last\nOpened",
-            "#\nImgs",
-            "Image\nSize (px)",
-            "Disk Space\n(Bytes)",
-            "Disk Space\n(Gigabytes)",
-            "Tags"
-        ])
-
-        header = self.table.horizontalHeader()
-        header.setFrameStyle(QFrame.Box | QFrame.Plain)
-        header.setStyleSheet("QHeaderView::section { border-bottom: 1px solid gray; }");
-        self.table.setHorizontalHeader(header)
-
-
-    def set_data(self):
-        logger.info('')
-
-        configure_project_paths()
-        # logger.info(">>>> set_data >>>>")
-        # caller = inspect.stack()[1].function
-        # logger.info(f'[{caller}]')
-        self.table.clear()
-        self.table.clearContents()
-        font0 = QFont()
-        # font0.setBold(True)
-        font0.setPointSize(9)
-
-        font1 = QFont()
-        # font1.setBold(True)
-        font1.setPointSize(9)
-        self.table.setRowCount(0)
-        for i, row in enumerate(self.get_data()):
-            # logger.info(f'>>>> row #{i} >>>>')
-            self.table.insertRow(i)
-            for j, item in enumerate(row):
-                if j == 0:
-                    twi = QTableWidgetItem(str(item))
-                    twi.setFont(font1)
-                    self.table.setItem(i, j, twi)
-                elif j in (1,2,3):
-                    # logger.info(f"j={j}, path={item}")
-                    if item == 'No Thumbnail':
-                        thumbnail = ThumbnailFast(self)
-                        self.table.setCellWidget(i, j, thumbnail)
-                    else:
-                        thumbnail = ThumbnailFast(self, path=item)
-                        self.table.setCellWidget(i, j, thumbnail)
-                elif j in (4,5):
-                    item.replace("_", " ")
-                    item.replace('-', ':')
-                    # item = item[9:].replace('-', ':')
-                    twi = QTableWidgetItem(item)
-                    twi.setFont(font0)
-                    self.table.setItem(i, j, twi)
-                elif j in (6,7):
-                    twi = QTableWidgetItem(str(item))
-                    twi.setFont(font0)
-                    # twi.setTextAlignment(Qt.AlignCenter)
-                    self.table.setItem(i, j, twi)
-                else:
-                    twi = QTableWidgetItem(str(item))
-                    twi.setFont(font0)
-                    self.table.setItem(i, j, twi)
-        self.table.setColumnWidth(0, 220)
-        self.table.setColumnWidth(1, self.ROW_HEIGHT) # <first thumbnail>
-        self.table.setColumnWidth(2, self.ROW_HEIGHT) # <last thumbnail>
-        self.table.setColumnWidth(3, self.ROW_HEIGHT) # <last thumbnail>
-        self.table.setColumnWidth(4, 100)
-        self.table.setColumnWidth(5, 100)
-        self.table.setColumnWidth(6, 36)
-        self.table.setColumnWidth(7, 70)
-        self.table.setColumnWidth(8, 70)
-        self.table.setColumnWidth(9, 70)
-        # self.table.setColumnWidth(10, self.ROW_HEIGHT) # <extra thumbnail>
-        # self.table.setColumnWidth(10, 70) # <extra thumbnail>
-        # self.table.setColumnWidth(10, 100)
-        # self.updateRowHeight(self.ROW_HEIGHT) #0508-
-
-        self.set_headers()
-
-        # logger.info("<<<< set_data <<<<")
-        for section in range(self.table.verticalHeader().count()):
-            self.table.verticalHeader().resizeSection(section, self.ROW_HEIGHT)
-
-        self.table.sortByColumn(4, Qt.DescendingOrder)
-
-        logger.info('----Table Data Set----')
-
-
-
-    def get_data(self):
-        caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
-        # logger.info('>>>> get_data >>>>')
-        # logger.info(f'caller: {caller}')
-        self.project_paths = get_project_list()
-        # self.project_paths = []
-        projects, thumbnail_first, thumbnail_last, created, modified, \
-        n_sections, location, img_dimensions, bytes, gigabytes, extra = \
-            [], [], [], [], [], [], [], [], [], [], []
-
-        logger.info(f'# saved projects: {len(self.project_paths)}')
-        for p in self.project_paths:
-            logger.info(f'Collecting {p}...')
-
-            try:
-                with open(p, 'r') as f:
-                    dm = DataModel(data=json.load(f), quietly=True)
-            except:
-                # print_exception()
-                logger.error('Unable to locate or load data model: %s' % p)
-
-            try:    created.append(dm.created)
-            except: created.append('Unknown')
-            try:    modified.append(dm.modified)
-            except: modified.append('Unknown')
-            try:    n_sections.append(len(dm))
-            except: n_sections.append('Unknown')
-            try:    img_dimensions.append(dm.image_size('scale_1'))
-            except: img_dimensions.append('Unknown')
-            try:    projects.append(os.path.basename(p))
-            except: projects.append('Unknown')
-            project_dir = os.path.splitext(p)[0]
-            try:
-                if getOpt(lookup='ui,FETCH_PROJECT_SIZES'):
-                    logger.info('Getting project size...')
-                    _bytes = get_bytes(project_dir)
-                    bytes.append(_bytes)
-                    gigabytes.append('%.4f' % float(_bytes / 1073741824))
-                else:
-                    bytes.append('N/A')
-                    gigabytes.append('N/A')
-            except:
-                bytes.append('Unknown')
-                gigabytes.append('Unknown')
-            thumb_path = os.path.join(project_dir, 'thumbnails')
-            absolute_content_paths = list_paths_absolute(thumb_path)
-            try:    thumbnail_first.append(absolute_content_paths[0])
-            except: thumbnail_first.append('No Thumbnail')
-            try:    thumbnail_last.append(absolute_content_paths[-1])
-            except: thumbnail_last.append('No Thumbnail')
-            try:    location.append(p)
-            except: location.append('Unknown')
-            extra_toplevel_paths = glob(f'{project_dir}/*.tif')
-            # logger.critical(f"extra_toplevel_paths = {extra_toplevel_paths}")
-            #Todo refactor this
-            # if extra_toplevel_paths != []:
-            if dm['data']['has_cal_grid']:
-                extra.append(dm['data']['cal_grid_path'])
-            else:
-                extra.append('No Thumbnail')
-            # extra.append(os.path.join(get_appdir(), 'resources', 'no-image.png'))
-
-        # logger.info('<<<< get_data <<<<')
-        # return zip(projects, location, thumbnail_first, thumbnail_last, created, modified,
-        #            n_sections, img_dimensions, bytes, gigabytes, extra)
-        return zip(location, thumbnail_first, thumbnail_last, extra, created, modified,
-                   n_sections, img_dimensions, bytes, gigabytes)
-
-            # logger.info('Getting project location...')
+#
+# class UserProjects(QWidget):
+#     def __init__(self, parent, **kwargs):
+#         super().__init__(**kwargs)
+#         self.parent = parent
+#
+#         # self.initial_row_height = 64
+#         # self.ROW_HEIGHT = 64
+#         self.ROW_HEIGHT = 64
+#
+#         self.counter1 = 0
+#         self.counter2 = 0
+#         # self.counter3 = 0
+#         # self.setFocusPolicy(Qt.StrongFocus)
+#
+#         self.table = QTableWidget()
+#         self.table.setFocusPolicy(Qt.NoFocus)
+#         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+#         # self.table.setAlternatingRowColors(True)
+#         # self.table = TableWidget(self)
+#
+#         # self.table.setShowGrid(False)
+#         self.table.setSortingEnabled(True)
+#         self.table.setWordWrap(True)
+#         self.table.horizontalHeader().setHighlightSections(False)
+#         self.table.horizontalHeader().setStretchLastSection(True)
+#         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+#         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
+#         self.table.verticalHeader().setVisible(False)
+#         # self.table.horizontalHeader().setDefaultAlignment(Qt.Alignment(Qt.TextWordWrap))
+#         self.table.horizontalHeader().setDefaultAlignment(Qt.AlignLeft)
+#         def countCurrentItemChangedCalls(): self.counter2 += 1
+#         self.table.currentItemChanged.connect(countCurrentItemChangedCalls)
+#         self.table.currentItemChanged.connect(self.parent.userSelectionChanged)
+#         def countItemClickedCalls(): self.counter1 += 1
+#         self.table.itemClicked.connect(countItemClickedCalls)
+#         self.table.itemClicked.connect(self.parent.userSelectionChanged)
+#         # def onDoubleClick(): self.parent.open_project_selected()
+#         # self.table.itemDoubleClicked.connect(self.parent.open_project_selected)
+#         self.table.doubleClicked.connect(self.parent.open_project_selected) #Critical this always emits
+#         self.table.itemSelectionChanged.connect(self.parent.userSelectionChanged)  # Works!
+#         # self.table.itemSelectionChanged.connect(lambda: print('itemselectionChanged was emitted!'))  # Works!
+#         # self.table.itemPressed.connect(lambda: print('itemPressed was emitted!'))
+#         # self.table.cellActivated.connect(lambda: print('cellActivated was emitted!'))
+#         # self.table.currentItemChanged.connect(lambda: print('currentItemChanged was emitted!'))
+#         # self.table.itemDoubleClicked.connect(lambda: print('itemDoubleClicked was emitted!'))
+#         # self.table.cellChanged.connect(lambda: print('cellChanged was emitted!'))
+#         # self.table.cellClicked.connect(lambda: print('cellClicked was emitted!'))
+#         # self.table.itemChanged.connect(lambda: print('itemChanged was emitted!'))
+#
+#         self.table.setColumnCount(11)
+#         self.set_headers()
+#
+#         self.layout = QVBoxLayout()
+#         self.layout.setContentsMargins(0, 0, 0, 0)
+#         self.layout.addWidget(self.table)
+#         # self.layout.addWidget(controls)
+#         self.setLayout(self.layout)
+#         self.set_data()
+#
+#         self.table.setMouseTracking(True)
+#
+#         self.current_hover = [0, 0]
+#         self.table.cellEntered.connect(self.cellHover)
+#
+#     def cellHover(self, row, column):
+#         self.current_hover = [row, column]
+#
+#     # btn.clicked.connect(lambda state, x=zpos: self.jump_to_manual(x))
+#
+#     # def setNotes(self, index, txt):
+#     #     caller = inspect.stack()[1].function
+#     #     if caller != 'updateNotes':
+#     #         self.statusBar.showMessage('Note Saved!', 3000)
+#     #
+#     #         # cfg.data.save_notes(text=txt, l=index)
+#     #     else:
+#     #         cfg.settings['notes']['global_notes'] = self.notes.toPlainText()
+#     #     self.notes.update()
+#
+#
+#
+#
+#     def updateRowHeight(self, h):
+#         for section in range(self.table.verticalHeader().count()):
+#             self.table.verticalHeader().resizeSection(section, h)
+#         self.table.setColumnWidth(1, h)
+#         self.table.setColumnWidth(2, h)
+#         self.table.setColumnWidth(3, h)
+#         # self.table.setColumnWidth(10, h)
+#
+#
+#     # def userSelectionChanged(self):
+#     #     caller = inspect.stack()[1].function
+#     #     # if caller == 'initTableData':
+#     #     #     return
+#     #     row = self.table.currentIndex().row()
+#     #     try:
+#     #         path = self.table.item(row,9).text()
+#     #     except:
+#     #         cfg.selected_file = ''
+#     #         logger.warning(f'No file path at project_table.currentIndex().row()! '
+#     #                        f'caller: {caller} - Returning...')
+#     #         return
+#     #     logger.info(f'path: {path}')
+#     #     cfg.selected_file = path
+#     #     cfg.mw.setSelectionPathText(path)
+#     #     # logger.info(f'counter1={self.counter1}, counter2={self.counter2}')
+#
+#
+#     def set_headers(self):
+#         self.table.setHorizontalHeaderLabels([
+#             "Location",
+#             "First\nSection",
+#             "Last\nSection",
+#             "Calibration\nGrid",
+#             "Created",
+#             "Last\nOpened",
+#             "#\nImgs",
+#             "Image\nSize (px)",
+#             "Disk Space\n(Bytes)",
+#             "Disk Space\n(Gigabytes)",
+#             "Tags"
+#         ])
+#
+#         header = self.table.horizontalHeader()
+#         header.setFrameStyle(QFrame.Box | QFrame.Plain)
+#         header.setStyleSheet("QHeaderView::section { border-bottom: 1px solid gray; }");
+#         self.table.setHorizontalHeader(header)
+#
+#
+#     def set_data(self):
+#         logger.info('')
+#
+#         configure_project_paths()
+#         # logger.info(">>>> set_data >>>>")
+#         # caller = inspect.stack()[1].function
+#         # logger.info(f'[{caller}]')
+#         self.table.clear()
+#         self.table.clearContents()
+#         font0 = QFont()
+#         # font0.setBold(True)
+#         font0.setPointSize(9)
+#
+#         font1 = QFont()
+#         # font1.setBold(True)
+#         font1.setPointSize(9)
+#         self.table.setRowCount(0)
+#         for i, row in enumerate(self.get_data()):
+#             # logger.info(f'>>>> row #{i} >>>>')
+#             self.table.insertRow(i)
+#             for j, item in enumerate(row):
+#                 if j == 0:
+#                     twi = QTableWidgetItem(str(item))
+#                     twi.setFont(font1)
+#                     self.table.setItem(i, j, twi)
+#                 elif j in (1,2,3):
+#                     # logger.info(f"j={j}, path={item}")
+#                     if item == 'No Thumbnail':
+#                         thumbnail = ThumbnailFast(self)
+#                         self.table.setCellWidget(i, j, thumbnail)
+#                     else:
+#                         thumbnail = ThumbnailFast(self, path=item)
+#                         self.table.setCellWidget(i, j, thumbnail)
+#                 elif j in (4,5):
+#                     item.replace("_", " ")
+#                     item.replace('-', ':')
+#                     # item = item[9:].replace('-', ':')
+#                     twi = QTableWidgetItem(item)
+#                     twi.setFont(font0)
+#                     self.table.setItem(i, j, twi)
+#                 elif j in (6,7):
+#                     twi = QTableWidgetItem(str(item))
+#                     twi.setFont(font0)
+#                     # twi.setTextAlignment(Qt.AlignCenter)
+#                     self.table.setItem(i, j, twi)
+#                 else:
+#                     twi = QTableWidgetItem(str(item))
+#                     twi.setFont(font0)
+#                     self.table.setItem(i, j, twi)
+#         self.table.setColumnWidth(0, 220)
+#         self.table.setColumnWidth(1, self.ROW_HEIGHT) # <first thumbnail>
+#         self.table.setColumnWidth(2, self.ROW_HEIGHT) # <last thumbnail>
+#         self.table.setColumnWidth(3, self.ROW_HEIGHT) # <last thumbnail>
+#         self.table.setColumnWidth(4, 100)
+#         self.table.setColumnWidth(5, 100)
+#         self.table.setColumnWidth(6, 36)
+#         self.table.setColumnWidth(7, 70)
+#         self.table.setColumnWidth(8, 70)
+#         self.table.setColumnWidth(9, 70)
+#         # self.table.setColumnWidth(10, self.ROW_HEIGHT) # <extra thumbnail>
+#         # self.table.setColumnWidth(10, 70) # <extra thumbnail>
+#         # self.table.setColumnWidth(10, 100)
+#         # self.updateRowHeight(self.ROW_HEIGHT) #0508-
+#
+#         self.set_headers()
+#
+#         # logger.info("<<<< set_data <<<<")
+#         for section in range(self.table.verticalHeader().count()):
+#             self.table.verticalHeader().resizeSection(section, self.ROW_HEIGHT)
+#
+#         self.table.sortByColumn(4, Qt.DescendingOrder)
+#
+#         logger.info('----Table Data Set----')
+#
+#
+#
+#     def get_data(self):
+#         caller = inspect.stack()[1].function
+#         logger.info(f'[{caller}]')
+#         # logger.info('>>>> get_data >>>>')
+#         # logger.info(f'caller: {caller}')
+#         self.project_paths = cfg.settings['projects']
+#         # self.project_paths = []
+#         projects, thumbnail_first, thumbnail_last, created, modified, \
+#         n_sections, location, img_dimensions, bytes, gigabytes, extra = \
+#             [], [], [], [], [], [], [], [], [], [], []
+#
+#         logger.info(f'# saved projects: {len(self.project_paths)}')
+#         for p in self.project_paths:
+#             logger.info(f'Collecting {p}...')
+#
+#             try:
+#                 with open(p, 'r') as f:
+#                     dm = DataModel(data=json.load(f), quietly=True)
+#             except:
+#                 # print_exception()
+#                 logger.error('Unable to locate or load data model: %s' % p)
+#
+#             try:    created.append(dm.created)
+#             except: created.append('Unknown')
+#             try:    modified.append(dm.modified)
+#             except: modified.append('Unknown')
+#             try:    n_sections.append(len(dm))
+#             except: n_sections.append('Unknown')
+#             try:    img_dimensions.append(dm.image_size('scale_1'))
+#             except: img_dimensions.append('Unknown')
+#             try:    projects.append(os.path.basename(p))
+#             except: projects.append('Unknown')
+#             project_dir = os.path.splitext(p)[0]
+#             try:
+#                 if getOpt(lookup='ui,FETCH_PROJECT_SIZES'):
+#                     logger.info('Getting project size...')
+#                     _bytes = get_bytes(project_dir)
+#                     bytes.append(_bytes)
+#                     gigabytes.append('%.4f' % float(_bytes / 1073741824))
+#                 else:
+#                     bytes.append('N/A')
+#                     gigabytes.append('N/A')
+#             except:
+#                 bytes.append('Unknown')
+#                 gigabytes.append('Unknown')
+#             thumb_path = os.path.join(project_dir, 'thumbnails')
+#             absolute_content_paths = list_paths_absolute(thumb_path)
+#             try:    thumbnail_first.append(absolute_content_paths[0])
+#             except: thumbnail_first.append('No Thumbnail')
+#             try:    thumbnail_last.append(absolute_content_paths[-1])
+#             except: thumbnail_last.append('No Thumbnail')
+#             try:    location.append(p)
+#             except: location.append('Unknown')
+#             extra_toplevel_paths = glob(f'{project_dir}/*.tif')
+#             # logger.critical(f"extra_toplevel_paths = {extra_toplevel_paths}")
+#             #Todo refactor this
+#             # if extra_toplevel_paths != []:
+#             if dm['data']['has_cal_grid']:
+#                 extra.append(dm['data']['cal_grid_path'])
+#             else:
+#                 extra.append('No Thumbnail')
+#             # extra.append(os.path.join(get_appdir(), 'resources', 'no-image.png'))
+#
+#         # logger.info('<<<< get_data <<<<')
+#         # return zip(projects, location, thumbnail_first, thumbnail_last, created, modified,
+#         #            n_sections, img_dimensions, bytes, gigabytes, extra)
+#         return zip(location, thumbnail_first, thumbnail_last, extra, created, modified,
+#                    n_sections, img_dimensions, bytes, gigabytes)
+#
+#             # logger.info('Getting project location...')
+#         logger.info('<<<<')
 
 
 
@@ -1408,6 +1717,137 @@ def set_image_sizes(dm):
             logger.info(f"Setting size for {s} to {siz}...")
             dm['data']['scales'][s]['image_src_size'] = siz
 
+
+
+
+class SeriesConfig(QWidget):
+    def __init__(self, parent, **kwargs):
+        super().__init__(parent, **kwargs)
+        logger.info('')
+        self.parent = parent
+        self._settings = {}
+        self.initUI()
+        # self.setStyleSheet("""font-size: 10px;""")
+
+
+    def getSettings(self):
+
+        cfg.main_window.hud('Setting series configuration...')
+        self._settings['scale_factors'] = list(map(int, self.scales_input.text().split(' ')))
+        self._settings['clevel'] = int(self.clevel_input.text())
+        self._settings['cname'] = self.cname_combobox.currentText()
+        self._settings['chunkshape'] = (int(self.le_chunk_z.text()),
+                                          int(self.le_chunk_y.text()),
+                                          int(self.le_chunk_x.text()))
+        self._settings['scales'] = {}
+        # if cfg.data['data']['has_cal_grid']:
+        for sv in self._settings['scale_factors']:
+            res_x = int(self.le_res_x.text()) * sv
+            res_y = int(self.le_res_y.text()) * sv
+            res_z = int(self.le_res_z.text())
+            self._settings['scales'][sv]['resolution'] = [res_x, res_y, res_z]
+
+        return self._settings
+
+
+    def initUI(self):
+        logger.info('')
+
+        '''Scales Input Field'''
+        self.scales_input = QLineEdit(self)
+        self.scales_input.setMaximumWidth(80)
+        self.scales_input.setMinimumWidth(24)
+        self.scales_input.setFixedHeight(18)
+        self.scales_input.setText('24 6 2 1')
+        # self.scales_input.setAlignment(Qt.AlignLeft)
+        tip = "Scale factors, space-delimited.\nThis would generate a 4x 2x and 1x scale_key hierarchy:\n\n4 2 1"
+        # self.scale_instructions_label = QLabel(tip)
+        # self.scale_instructions_label.setStyleSheet("font-size: 11px;")
+        self.scales_input.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+
+        wScaling = HWidget(QLabel('Scale Factors: '), self.scales_input)
+        # wScaling.layout.setAlignment(Qt.AlignLeft)
+
+        '''Voxel Size (Resolution) Fields'''
+        tip = "Resolution or size of each voxel (nm)"
+        self.le_res_x = QLineEdit(self)
+        self.le_res_y = QLineEdit(self)
+        self.le_res_z = QLineEdit(self)
+        self.le_res_x.setFixedSize(QSize(24, 18))
+        self.le_res_y.setFixedSize(QSize(24, 18))
+        self.le_res_z.setFixedSize(QSize(24, 18))
+        self.le_res_x.setValidator(QIntValidator())
+        self.le_res_y.setValidator(QIntValidator())
+        self.le_res_z.setValidator(QIntValidator())
+        self.resolution_widget = HWidget(QLabel("x:"), self.le_res_x,
+                                         QLabel("y:"), self.le_res_y,
+                                         QLabel("z:"), self.le_res_z)
+        self.resolution_widget.layout.setSpacing(4)
+        self.resolution_widget.setToolTip(tip)
+
+        wVoxelSize = HWidget(QLabel('Voxel Size (nm): '), self.resolution_widget)
+        wVoxelSize.layout.setAlignment(Qt.AlignCenter)
+
+        tip = 'Zarr Compression Level\n(default=5)'
+        self.clevel_input = QLineEdit(self)
+        self.clevel_input.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+        self.clevel_input.setAlignment(Qt.AlignCenter)
+        self.clevel_input.setText(str(cfg.CLEVEL))
+        self.clevel_input.setFixedSize(QSize(24,18))
+        self.clevel_valid = QIntValidator(1, 9, self)
+        self.clevel_input.setValidator(self.clevel_valid)
+
+        tip = f'Compression Type (default={cfg.CNAME})'
+        self.cname_label = QLabel('Compression Option:')
+        self.cname_label.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+        self.cname_combobox = QComboBox(self)
+        self.cname_combobox.addItems(["none", "zstd", "zlib"])
+        self.cname_combobox.setFixedSize(QSize(64,18))
+
+        labType = QLabel('Compression: ')
+        labLevel = QLabel('Level (1-9): ')
+        wCompression = HWidget(labType, self.cname_combobox, QLabel(' '), labLevel, self.clevel_input)
+        wCompression.layout.setAlignment(Qt.AlignCenter)
+
+        '''Chunk Shape'''
+        self.chunk_shape_label = QLabel("Chunk Shape:")
+        self.le_chunk_x = QLineEdit(self)
+        self.le_chunk_y = QLineEdit(self)
+        self.le_chunk_z = QLineEdit(self)
+        self.le_chunk_x.setFixedSize(QSize(40, 18))
+        self.le_chunk_y.setFixedSize(QSize(40, 18))
+        self.le_chunk_z.setFixedSize(QSize(24, 18))
+        self.le_chunk_x.setValidator(QIntValidator())
+        self.le_chunk_y.setValidator(QIntValidator())
+        self.le_chunk_z.setValidator(QIntValidator())
+        self.chunk_shape_widget = HWidget(QLabel("x:"), self.le_chunk_x,
+                                          QLabel("y:"), self.le_chunk_y,
+                                          QLabel("z:"), self.le_chunk_z)
+        self.chunk_shape_widget.layout.setSpacing(4)
+        txt = "The way volumetric data will be stored. Zarr is an open-source " \
+              "format for the storage of chunked, compressed, N-dimensional " \
+              "arrays with an interface similar to NumPy."
+        txt = '\n'.join(textwrap.wrap(txt, width=60))
+        wChunk = HWidget(QLabel('Chunk Shape: '), self.chunk_shape_widget)
+        wChunk.setToolTip(txt)
+        wChunk.layout.setAlignment(Qt.AlignCenter)
+
+
+
+        hbl = HBL(wScaling,
+                  QLabel(' '),
+                  wVoxelSize,
+                  QLabel(' '),
+                  wCompression,
+                  QLabel(' '),
+                  wChunk,
+                  ExpandingHWidget(self))
+
+        self.setLayout(hbl)
+
+
+
+
 class Slider(QSlider):
     def __init__(self, parent):
         super().__init__(parent)
@@ -1468,3 +1908,15 @@ class ExpandingHWidget(QWidget):
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
+class WebEngine(QWebEngineView):
+    def __init__(self, ID='webengine'):
+        QWebEngineView.__init__(self)
+        self.ID = ID
+        self.grabGesture(Qt.PinchGesture, Qt.DontStartGestureOnChildren)
+
+def setWebengineProperties(webengine):
+    webengine.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
+    webengine.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
+    webengine.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
+    webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
+    webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)

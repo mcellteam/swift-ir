@@ -226,14 +226,15 @@ class ImportImagesDialog(QFileDialog):
 
     def onFileSelected(self, file):
         self._fileSelected = file
-        cfg.data['data']['has_cal_grid'] = self.cb_cal_grid.isChecked()
+
 
     def onFilesSelected(self, files):
         self._filesSelected = files
-        cfg.data['data']['has_cal_grid'] = self.cb_cal_grid.isChecked()
+
 
     def getFileSelected(self):
         return self._fileSelected
+
 
     def getFilesSelected(self):
         return self._filesSelected
@@ -623,7 +624,7 @@ class ConfigProjectDialog(QDialog):
         self.chunk_x_lineedit = QLineEdit(self)
         self.chunk_y_lineedit = QLineEdit(self)
         self.chunk_z_lineedit = QLineEdit(self)
-        # self.chunk_z_lineedit.setEnabled(False)
+        # self.le_chunk_z.setEnabled(False)
         self.chunk_x_lineedit.setFixedWidth(40)
         self.chunk_y_lineedit.setFixedWidth(40)
         self.chunk_z_lineedit.setFixedWidth(40)
@@ -719,9 +720,9 @@ class ConfigProjectDialog(QDialog):
         self.res_x_lineedit.setFixedWidth(40)
         self.res_y_lineedit.setFixedWidth(40)
         self.res_z_lineedit.setFixedWidth(40)
-        # self.res_x_lineedit.setText(str(cfg.datamodel['data']['resolution_x']))
-        # self.res_y_lineedit.setText(str(cfg.datamodel['data']['resolution_y']))
-        # self.res_z_lineedit.setText(str(cfg.datamodel['data']['resolution_z']))
+        # self.le_res_x.setText(str(cfg.datamodel['data']['resolution_x']))
+        # self.le_res_y.setText(str(cfg.datamodel['data']['resolution_y']))
+        # self.le_res_z.setText(str(cfg.datamodel['data']['resolution_z']))
         self.res_x_lineedit.setText(str(cfg.DEFAULT_RESX))
         self.res_y_lineedit.setText(str(cfg.DEFAULT_RESY))
         self.res_z_lineedit.setText(str(cfg.DEFAULT_RESZ))
@@ -910,21 +911,23 @@ class NewConfigureProjectDialog(QDialog):
         self.w_buttons.setLayout(VBL(HWidget(self.cancelButton, self.createScalesButton, self.scaleAndAlignButton, ExpandingWidget(self)), ExpandingWidget(self)))
 
         '''Scales Input Field'''
-        if do_scales_exist():
-            scales_lst = [str(v) for v in
-                          sorted([get_scale_val(s) for s in cfg.data['data']['scales'].keys()])]
-        else:
-            width, height = cfg.data.image_size(s='scale_1')
-            if (width * height) > 400_000_000:
-                scales_lst = ['24 6 2 1']
-            elif (width * height) > 200_000_000:
-                scales_lst = ['16 6 2 1']
-            elif (width * height) > 100_000_000:
-                scales_lst = ['8 2 1']
-            elif (width * height) > 10_000_000:
-                scales_lst = ['4 2 1']
-            else:
-                scales_lst = ['4 1']
+        # if do_scales_exist():
+        #     scales_lst = [str(v) for v in
+        #                   sorted([get_scale_val(s) for s in cfg.data['data']['scales'].keys()])]
+        # else:
+        #     width, height = cfg.data.image_size(s='scale_1')
+        #     if (width * height) > 400_000_000:
+        #         scales_lst = ['24 6 2 1']
+        #     elif (width * height) > 200_000_000:
+        #         scales_lst = ['16 6 2 1']
+        #     elif (width * height) > 100_000_000:
+        #         scales_lst = ['8 2 1']
+        #     elif (width * height) > 10_000_000:
+        #         scales_lst = ['4 2 1']
+        #     else:
+        #         scales_lst = ['4 1']
+
+        scales_lst = ['24 6 2 1']
 
         scales_str = ' '.join(scales_lst)
         self.scales_input = QLineEdit(self)
@@ -1119,6 +1122,7 @@ class NewConfigureProjectDialog(QDialog):
         self.setLayout(vbl)
 
 
+
 class RechunkDialog(QDialog):
     def __init__(self, parent=None, target=None): # parent=None allows passing in MainWindow if needed
         super().__init__()
@@ -1167,7 +1171,7 @@ class RechunkDialog(QDialog):
         self.chunk_x_lineedit = QLineEdit(self)
         self.chunk_y_lineedit = QLineEdit(self)
         self.chunk_z_lineedit = QLineEdit(self)
-        # self.chunk_z_lineedit.setEnabled(False)
+        # self.le_chunk_z.setEnabled(False)
         self.chunk_x_lineedit.setFixedWidth(40)
         self.chunk_y_lineedit.setFixedWidth(40)
         self.chunk_z_lineedit.setFixedWidth(40)
@@ -1176,11 +1180,11 @@ class RechunkDialog(QDialog):
         self.chunk_y_lineedit.setText(str(chunkshape[1]))
         self.chunk_z_lineedit.setText(str(chunkshape[0]))
         # img_size = cfg.data.image_size()
-        # self.chunk_x_lineedit.setValidator(QIntValidator(0, img_size[0]))
-        # self.chunk_y_lineedit.setValidator(QIntValidator(0, img_size[1]))
-        # self.chunk_z_lineedit.setValidator(QIntValidator(0, len(cfg.data)))
-        # self.chunk_x_lineedit.setValidator(QIntValidator(0, img_size[0]))
-        # self.chunk_y_lineedit.setValidator(QIntValidator(0, img_size[1]))
+        # self.le_chunk_x.setValidator(QIntValidator(0, img_size[0]))
+        # self.le_chunk_y.setValidator(QIntValidator(0, img_size[1]))
+        # self.le_chunk_z.setValidator(QIntValidator(0, len(cfg.data)))
+        # self.le_chunk_x.setValidator(QIntValidator(0, img_size[0]))
+        # self.le_chunk_y.setValidator(QIntValidator(0, img_size[1]))
         self.chunk_z_lineedit.setValidator(QIntValidator(0, len(cfg.data)))
         self.chunk_x_layout = QHBoxLayout()
         self.chunk_x_layout.setContentsMargins(4,4,4,4)
