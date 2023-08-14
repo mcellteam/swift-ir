@@ -383,7 +383,8 @@ class OpenProject(QWidget):
         self.l1 = QLabel('Alignment: ')
         self.l1.setFixedWidth(58)
         self.combos = HWidget(self.l0, self.comboSelectSeries, QLabel(' '), self.l1, self.comboSelectAlignment)
-        self.combos.setStyleSheet("background-color: #222222; color: #f3f6fb; font-size: 10px; font-weight: 600;")
+        self.combos.setAutoFillBackground(True)
+        self.combos.setStyleSheet("background-color: #222222; color: #f3f6fb; font-size: 11px;")
         # self.combos.layout.setSpacing(0)
         self.combos.layout.setStretch(1,9)
         self.combos.layout.setStretch(4,9)
@@ -413,7 +414,7 @@ class OpenProject(QWidget):
 
         self.labTitle = QLabel("Series Manager")
         self.labTitle.setContentsMargins(1,1,0,4)
-        self.labTitle.setStyleSheet("font-size: 12px; font-weight: 600;")
+        self.labTitle.setStyleSheet("font-size: 11px; font-weight: 600;")
 
         self.wProjects = VWidget(self.labTitle, self.combos, self.webengine)
         self.wProjects.layout.setContentsMargins(2,2,2,2)
@@ -1755,8 +1756,8 @@ class SeriesConfig(QWidget):
 
         '''Scales Input Field'''
         self.scales_input = QLineEdit(self)
-        self.scales_input.setMaximumWidth(80)
-        self.scales_input.setMinimumWidth(24)
+        self.scales_input.setMaximumWidth(64)
+        self.scales_input.setMinimumWidth(50)
         self.scales_input.setFixedHeight(18)
         self.scales_input.setText('24 6 2 1')
         # self.scales_input.setAlignment(Qt.AlignLeft)
@@ -1804,7 +1805,7 @@ class SeriesConfig(QWidget):
         self.cname_combobox.addItems(["none", "zstd", "zlib"])
         self.cname_combobox.setFixedSize(QSize(64,18))
 
-        labType = QLabel('Compression: ')
+        labType = QLabel('Compress: ')
         labLevel = QLabel('Level (1-9): ')
         wCompression = HWidget(labType, self.cname_combobox, QLabel(' '), labLevel, self.clevel_input)
         wCompression.layout.setAlignment(Qt.AlignCenter)
@@ -1816,7 +1817,7 @@ class SeriesConfig(QWidget):
         self.le_chunk_z = QLineEdit(self)
         self.le_chunk_x.setFixedSize(QSize(40, 18))
         self.le_chunk_y.setFixedSize(QSize(40, 18))
-        self.le_chunk_z.setFixedSize(QSize(24, 18))
+        self.le_chunk_z.setFixedSize(QSize(20, 18))
         self.le_chunk_x.setValidator(QIntValidator())
         self.le_chunk_y.setValidator(QIntValidator())
         self.le_chunk_z.setValidator(QIntValidator())
