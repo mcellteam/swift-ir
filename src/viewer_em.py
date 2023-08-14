@@ -742,11 +742,11 @@ class PMViewer(AbstractEMViewer):
             s.show_default_annotations = True
             s.show_axis_lines = True
             s.show_scale_bar = False
-            s.show_panel_borders = False
-            s.show_layer_panel = False
         with self.config_state.txn() as s:
             s.show_ui_controls = False
             s.status_messages = None
+            s.show_panel_borders = False
+            s.show_layer_panel = False
 
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
