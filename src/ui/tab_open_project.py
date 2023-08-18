@@ -1177,7 +1177,8 @@ class OpenProject(QWidget):
 
         self._NEW_SERIES_PATHS = natural_sort(filenames)
         self.updateImportSeriesUI()
-        logger.info(f"{filenames}")
+        # logger.info(f"{filenames}")
+        logger.info(f"<<<< selectImages <<<<")
 
 
     #importseries
