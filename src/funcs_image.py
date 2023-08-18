@@ -319,9 +319,10 @@ def BiasMat(x, bias_funcs):
 # Find the bias functions that best fit the trends in cafm across the whole stack
 # For now the form of the functions is an Nth-order polynomial
 # def BiasFuncs(layerator, bias_funcs=None, poly_order=4):
-def BiasFuncs(layerator, poly_order=0, bias_funcs=None):
+def BiasFuncs(dm, scale, poly_order=0, bias_funcs=None):
     poly_order = int(poly_order)
-    n_tasks = sum(1 for _ in copy.deepcopy(layerator))
+    # n_tasks = sum(1 for _ in copy.deepcopy(layerator))
+    n_tasks = len(dm)
     if type(bias_funcs) == type(None):
         init_scalars = True
         bias_funcs = {}
@@ -343,9 +344,9 @@ def BiasFuncs(layerator, poly_order=0, bias_funcs=None):
     y_array = np.zeros((n_tasks, 2))
 
     # for align_idx in range(len(al_stack)):
-    for i, layer in enumerate(layerator):
-        method = layer['alignment']['swim_settings']['method']
-        c_afm = np.array(layer['alignment_history'][method]['method_results']['cumulative_afm'])
+    for i, layer in enumerate(dm()):
+        method = layer['levels'][scale]['swim_settings']['method']
+        c_afm = np.array(layer['levels'][scale]['alignment_history'][method]['method_results']['cumulative_afm'])
 
         rot = np.arctan(c_afm[1, 0] / c_afm[0, 0])
         scale_x = np.sqrt(c_afm[0, 0] ** 2 + c_afm[1, 0] ** 2)
@@ -441,12 +442,12 @@ def InitCafm(bias_funcs):
     return c_afm_init
 
 
-def SetSingleCafm(layer_dict, c_afm, bias_mat=None, method='grid-default'):
+def SetSingleCafm(layer_dict, scale, c_afm, bias_mat=None, method='grid-default'):
     '''Calculate and set the value of the cafm (with optional bias) for a single layer_dict item'''
     # atrm = layer_dict['alignment']
     try:
-        if layer_dict['alignment']['swim_settings']['include']:
-            afm = np.array(layer_dict['alignment_history'][method]['method_results']['affine_matrix'])
+        if layer_dict['levels'][scale]['swim_settings']['include']:
+            afm = np.array(layer_dict['levels'][scale]['alignment_history'][method]['method_results']['affine_matrix'])
         else:
             afm = identityAffine()
     except:
@@ -458,7 +459,7 @@ def SetSingleCafm(layer_dict, c_afm, bias_mat=None, method='grid-default'):
     # Apply bias_mat if given
     if type(bias_mat) != type(None):
         c_afm = composeAffine(bias_mat, c_afm)
-    layer_dict['alignment_history'][method]['method_results']['cumulative_afm'] = c_afm.tolist()
+    layer_dict['levels'][scale]['alignment_history'][method]['method_results']['cumulative_afm'] = c_afm.tolist()
     # Register cumualtive affine hash
     layer_dict['cafm_hash'] = hashstring(str(c_afm.tolist()))
     # logger.info('Returning c_afm: %s' % format_cafm(c_afm))
@@ -466,18 +467,18 @@ def SetSingleCafm(layer_dict, c_afm, bias_mat=None, method='grid-default'):
 
 
 # def SetStackCafm(iterator, scale_key, poly_order=None):
-def SetStackCafm(iterator, scale, poly_order=None):
+def SetStackCafm(dm, scale, poly_order=None):
     '''Calculate cafm across the whole stack with optional bias correction'''
     logger.info(f'Setting Stack CAFM (polynoial: {poly_order})...')
     # logger.info(f'Setting Stack CAFM (iterator={str(iterator)}, scale_key={scale_key}, poly_order={poly_order})...')
     cfg.mw.tell('<span style="color: #FFFF66;"><b>Setting Stack CAFM...</b></span>')
     use_poly = (poly_order != None)
     if use_poly:
-        SetStackCafm(iterator, scale=scale, poly_order=None) # first initialize Cafms without bias correction
+        SetStackCafm(dm, scale=scale, poly_order=None) # first initialize Cafms without bias correction
     bias_mat = None
     if use_poly:
         # If null_biases==True, Iteratively determine and null out bias in cafm
-        bias_funcs = BiasFuncs(cfg.data.get_iter(scale), poly_order=poly_order)
+        bias_funcs = BiasFuncs(dm, scale, poly_order=poly_order)
         c_afm_init = InitCafm(bias_funcs)
     else:
         c_afm_init = identityAffine()
@@ -486,14 +487,14 @@ def SetStackCafm(iterator, scale, poly_order=None):
     for bi in range(bias_iters):
         # logger.critical(f'\n\nbi = {bi}\n')
         c_afm = c_afm_init
-        for i, layer in enumerate(cfg.data.get_iter(scale)):
+        for i, layer in enumerate(cfg.data()):
             if use_poly:
                 bias_mat = BiasMat(i, bias_funcs)
-            c_afm = SetSingleCafm(layer, c_afm, bias_mat=bias_mat, method=layer['alignment']['swim_settings']['method']) # <class
+            c_afm = SetSingleCafm(layer, scale, c_afm, bias_mat=bias_mat, method=layer['levels'][scale]['swim_settings']['method']) # <class
             # 'numpy.ndarray'>
 
         if bi < bias_iters - 1:
-            bias_funcs = BiasFuncs(cfg.data.get_iter(scale), bias_funcs=bias_funcs, poly_order=poly_order)
+            bias_funcs = BiasFuncs(dm, scale, bias_funcs=bias_funcs, poly_order=poly_order)
 
     cfg.mw.hud.done()
     return c_afm_init,
@@ -590,7 +591,7 @@ def reptoshape(mat, pattern):
     return mat
 
 # def ComputeBoundingRect(al_stack, s=None):
-def ComputeBoundingRect(al_stack, scale=None):
+def ComputeBoundingRect(dm, scale=None):
     '''
     Determines Bounding Rectangle size for alignment stack. Must be preceded by a call to SetStackCafm.
 
@@ -635,9 +636,9 @@ array([[   0,    0],
         # al_stack = cfg.datamodel.stack()
         model_bounds = [[0,0]] #Todo initialize this better
         siz = cfg.data.image_size(s=scale)
-        for item in al_stack:
-            method = item['alignment']['swim_settings']['method']
-            c_afm = np.array(item['alignment_history'][method]['method_results']['cumulative_afm'])
+        for item in dm():
+            method = item['levels'][scale]['swim_settings']['method']
+            c_afm = np.array(item['levels'][scale]['alignment_history'][method]['method_results']['cumulative_afm'])
             model_bounds = np.append(model_bounds, modelBounds2(c_afm, siz), axis=0)
         border_width_x = max(0 - model_bounds[:, 0].min(), model_bounds[:, 0].max() - siz[0])
         border_width_y = max(0 - model_bounds[:, 1].min(), model_bounds[:, 1].max() - siz[1])
@@ -650,9 +651,9 @@ array([[   0,    0],
         '''Old code/square only'''
         model_bounds = None
         siz = cfg.data.image_size(s=scale)
-        for item in al_stack:
-            method = item['alignment']['swim_settings']['method']
-            c_afm = np.array(item['alignment_history'][method]['method_results']['cumulative_afm'])
+        for item in dm():
+            method = item['levels'][scale]['swim_settings']['method']
+            c_afm = np.array(item['levels'][scale]['alignment_history'][method]['method_results']['cumulative_afm'])
             if type(model_bounds) == type(None):
                 model_bounds = modelBounds2(c_afm, siz)
             else:
@@ -662,7 +663,7 @@ array([[   0,    0],
                            model_bounds[:, 0].max() - siz[0],
                            model_bounds[:, 1].max() - siz[0])
         rect = [int(-border_width), int(-border_width), int(siz[0] + 2 * border_width), int(siz[0] + 2 * border_width)]
-        logger.info('ComputeBoundingRectangle Return: %s' % str(rect))
+        logger.critical('ComputeBoundingRectangle Return: %s' % str(rect))
 
     # logger.critical('<<<< ComputeBoundingRect <<<<')
     return rect

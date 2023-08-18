@@ -54,7 +54,7 @@ def get_zarr_tensor(zarr_path):
     :return: A webengineview into the dataset.
     :rtype: tensorstore.Future
     '''
-    logger.critical('Getting TensorStore view object at:\n%s' %zarr_path)
+    logger.critical('Requested Tensor: %s...' %zarr_path)
     node = platform.node()
     # total_bytes_limit = 250_000_000_000  # just under 256 GB
     # if '.tacc.utexas.edu' in node:
@@ -246,7 +246,7 @@ def preallocate_zarr(dm, name, group, shape, dtype, overwrite, gui=True):
 def write_metadata_zarr_multiscale(path):
     root = zarr.group(store=path)
     datasets = []
-    for scale in get_scales_with_generated_alignments(cfg.data.scales()):
+    for scale in get_scales_with_generated_alignments(cfg.data.scales):
         scale_factor = get_scale_val(scale)
         name = 's' + str(scale_factor)
         metadata = {
@@ -308,9 +308,9 @@ def write_metadata_zarr_aligned(name='img_aligned.zarr'):
 # def generate_zarr_scales_da():
 #     logger.info('generate_zarr_scales_da:')
 #     dest = cfg.datamodel.dest()
-#     logger.info('scales() = %s' % str(cfg.datamodel.scales()))
+#     logger.info('scales = %s' % str(cfg.datamodel.scales))
 #
-#     for s in cfg.datamodel.scales():
+#     for s in cfg.datamodel.scales:
 #         logger.info('Working On %s' % s)
 #         tif_files = sorted(glob(os.path.join(dest, s, 'img_src', '*.tif')))
 #         # zarrurl = os.path.join(dest, s + '.zarr')

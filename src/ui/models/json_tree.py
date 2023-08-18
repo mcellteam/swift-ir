@@ -413,17 +413,17 @@ class JsonModel(QAbstractItemModel):
         if s == None: s = cfg.data.scale_key
         if l == None: l = cfg.data.zpos
         # cfg.project_tab.treeview.collapseAll()
-        keys = ['data', 'scales', s, 'stack', l]
+        keys = ['stack', l, 'levels', s]
         # if l !=0:
         #     self.collapseIndex(l=l - 1)
         self.getIndex(findkeys=keys, expand=True)
         cfg.project_tab.treeview.scrollTo(self.next_treeitem, QAbstractItemView.PositionAtTop)
 
-    def jumpToScale(self, s=None):
-        if s == None: s = cfg.data.scale_key
-        keys = ['data', 'scales', s]
-        self.getIndex(findkeys=keys, expand=True)
-        cfg.project_tab.treeview.scrollTo(self.next_treeitem, QAbstractItemView.PositionAtTop)
+    # def jumpToScale(self, s=None):
+    #     if s == None: s = cfg.data.scale_key
+    #     keys = ['data', 'scales', s]
+    #     self.getIndex(findkeys=keys, expand=True)
+    #     cfg.project_tab.treeview.scrollTo(self.next_treeitem, QAbstractItemView.PositionAtTop)
 
 
     def jumpToSection(self, sec, s=None):

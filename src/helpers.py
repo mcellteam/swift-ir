@@ -166,7 +166,7 @@ def delete_recursive(dir, keep_core_dirs=False):
     scales = glob(dir + '/scale_*')
     for s in scales:
         if keep_core_dirs:
-            if s == 'scale_1':
+            if s == 's1':
                 continue
         if os.path.exists(os.path.join(dir, s, 'history')):
             to_delete.append(os.path.join(dir, s, 'history'))
@@ -176,14 +176,14 @@ def delete_recursive(dir, keep_core_dirs=False):
             to_delete.append(os.path.join(dir, s, 'matches'))
         if os.path.exists(os.path.join(dir, s, 'bias_data')):
             to_delete.append(os.path.join(dir, s, 'bias_data'))
-        if os.path.exists(os.path.join(dir, s, 'img_aligned')):
-            to_delete.append(os.path.join(dir, s, 'img_aligned'))
+        if os.path.exists(os.path.join(dir, s, 'tiff')):
+            to_delete.append(os.path.join(dir, s, 'tiff'))
         if os.path.exists(os.path.join(dir, s, 'thumbnails')):
             to_delete.append(os.path.join(dir, s, 'thumbnails'))
-        if os.path.exists(os.path.join(dir, s, 'img_src')):
-            to_delete.append(os.path.join(dir, s, 'img_src'))
-    to_delete.extend(glob(dir + '/img_aligned.zarr/s*'))
-    to_delete.extend(glob(dir + '/img_src.zarr/s*'))
+        # if os.path.exists(os.path.join(dir, s, 'img_src')):
+        #     to_delete.append(os.path.join(dir, s, 'img_src'))
+    to_delete.extend(glob(dir + '/zarr/s*'))
+    # to_delete.extend(glob(dir + '/img_src.zarr/s*'))
     if not keep_core_dirs:
         to_delete.append(dir + '/thumbnails')
         to_delete.append(dir)
@@ -237,28 +237,28 @@ def update_preferences_model():
         p = cfg.DEFAULT_CONTENT_ROOT_TACC
         cfg.settings.setdefault('content_root', p)
         if not os.path.exists(p):
-            os.mkdir(p)
+            os.makedirs(p)
         p = os.path.join(cfg.DEFAULT_CONTENT_ROOT,'alignments')
         if not p in cfg.settings['search_paths']:
             cfg.settings['search_paths'].append(p)
         if not os.path.exists(p):
-            os.mkdir(p)
+            os.makedirs(p)
     else:
         p = os.path.join(cfg.DEFAULT_CONTENT_ROOT)
         cfg.settings.setdefault('content_root', cfg.DEFAULT_CONTENT_ROOT)
         if not os.path.exists(p):
-            os.mkdir(p)
+            os.makedirs(p)
         p = os.path.join(cfg.DEFAULT_CONTENT_ROOT,'alignments')
         if not p in cfg.settings['search_paths']:
             cfg.settings['search_paths'].append(p)
         if not os.path.exists(p):
-            os.mkdir(p)
+            os.makedirs(p)
 
     try:
         p = os.path.join(cfg.settings['content_root'], 'series')
         if not os.path.exists(p):
             logger.critical(f'Creating directory! {p}')
-            os.mkdir(p)
+            os.makedirs(p, exist_ok=True)
     except:
         print_exception()
 
@@ -266,7 +266,7 @@ def update_preferences_model():
         p = os.path.join(cfg.settings['content_root'], 'alignments')
         if not os.path.exists(p):
             logger.critical(f'Creating directory! {p}')
-            os.mkdir(p)
+            os.makedirs(p, exist_ok=True)
     except:
         print_exception()
 
@@ -696,7 +696,8 @@ def get_scale_key(scale_val) -> str:
     s = str(scale_val)
     while s.startswith('scale_'):
         s = s[len('scale_'):]
-    return 'scale_' + s
+    # return 'scale_' + s
+    return 's' + s
 
 
 def get_scale_val(scale_of_any_type) -> int:
@@ -705,8 +706,11 @@ def get_scale_val(scale_of_any_type) -> int:
         if type(scale) == type(1):
             return scale
         else:
-            while scale.startswith('scale_'):
-                scale = scale[len('scale_'):]
+            # while scale.startswith('scale_'):
+            #     scale = scale[len('scale_'):]
+            # return int(scale)
+            while scale.startswith('s'):
+                scale = scale[len('s'):]
             return int(scale)
     except:
         logger.warning('Unable to return s value')
@@ -737,7 +741,7 @@ def exist_aligned_zarr(scale: str) -> bool:
     caller = inspect.stack()[1].function
     logger.info('called by %s' % inspect.stack()[1].function)
     if cfg.data:
-        zarr_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(get_scale_val(scale)))
+        zarr_path = os.path.join(cfg.data.dest(), 'zarr', 's' + str(get_scale_val(scale)))
         if not os.path.isdir(zarr_path):
             # logger.critical(f"Path Not Found: {zarr_path}")
             result = False
@@ -760,7 +764,7 @@ def exist_aligned_zarr(scale: str) -> bool:
 
 def are_aligned_images_generated(dir, scale) -> bool:
     '''Returns True or False dependent on whether aligned images have been generated for the current s.'''
-    path = os.path.join(dir, scale, 'img_aligned')
+    path = os.path.join(dir, tiff, scale)
     files = glob(path + '/*.tif')
     if len(files) < 1:
         logger.debug('Zero aligned TIFs were found at this s - Returning False')
@@ -836,15 +840,15 @@ def print_exception(extra=''):
         except:
             print_exception()
 
-    txt = f" [{tstamp}]\nError Type/Value : {exi[0]} {exi[1]}\n{traceback.format_exc()}{extra}"
+    txt = f"[{inspect.stack()[1].function}] [{tstamp}]\nError Type/Value : {exi[0]} {exi[1]}\n{traceback.format_exc()}{extra}"
     logger.warning(txt)
 
-    if cfg.data:
-        lf = os.path.join(cfg.data.dest(), 'logs', 'exceptions.log')
-        file = Path(lf)
-        file.touch(exist_ok=True)
-        with open(lf, 'a+') as f:
-            f.write('\n' + txt)
+    # if cfg.data:
+    #     lf = os.path.join(cfg.data.dest(), 'logs', 'exceptions.log')
+    #     file = Path(lf)
+    #     file.touch(exist_ok=True)
+    #     with open(lf, 'a+') as f:
+    #         f.write('\n' + txt)
 
     if is_tacc():
         node = platform.node()
@@ -971,7 +975,7 @@ def is_not_hidden(path):
 
 def print_project_tree() -> None:
     '''Recursive function that lists datamodel directory contents as a tree.'''
-    paths = Treeview.make_tree(Path(cfg.data['data']['series_path']))
+    paths = Treeview.make_tree(Path(cfg.data.location))
     for path in paths:
         print(path.displayable())
 
@@ -1061,7 +1065,7 @@ DEFAULT_ZARR_STORE = zarr.NestedDirectoryStore
 
 def create_paged_tiff():
     dest = cfg.data.dest()
-    for scale in cfg.data.scales():
+    for scale in cfg.data.scales:
         path = os.path.join(dest, scale, 'img_src')
         of = os.path.join(dest, scale + '_img_src.tif')
         files = glob(path + '/*.tif')

@@ -50,7 +50,7 @@ def autoscale(dm:DataModel, gui=True):
         return
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(dm) * len(dm.downscales()))
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
-    create_project_directories(dm.dest(), dm.scales(), gui=gui)
+    create_project_directories(dm.dest(), dm.scales, gui=gui)
     iscale2_c = os.path.join(my_path, 'lib', get_bindir(), 'iscale2')
 
     # Create Scale 1 Symlinks
@@ -60,7 +60,7 @@ def autoscale(dm:DataModel, gui=True):
     src_path = dm.source_path()
     for img in dm.basefilenames():
         fn = os.path.join(src_path, img)
-        ofn = os.path.join(dm.dest(), 'scale_1', 'img_src', os.path.split(fn)[1])
+        ofn = os.path.join(dm.dest(), 's1', 'img_src', os.path.split(fn)[1])
         # normalize path for different OSs
         if os.path.abspath(os.path.normpath(fn)) != os.path.abspath(os.path.normpath(ofn)):
             try:    os.unlink(ofn)
@@ -106,7 +106,7 @@ def autoscale(dm:DataModel, gui=True):
             # pool.join()
 
         dt = time.time() - t
-        dm['data']['benchmarks']['scales'][group]['t_scale_generate'] = dt
+        dm['timings']['scales'][group]['t_scale_generate'] = dt
         logger.info(f"Elapsed Time: {'%.3g' % dt}s")
         cfg.main_window.set_elapsed(time.time() - t, f'Generate {group}')
 
@@ -114,16 +114,16 @@ def autoscale(dm:DataModel, gui=True):
     # show_mp_queue_results(task_queue=task_queue, dt=dt)
     dm.t_scaling = time.time() - t0
 
-    dm.link_reference_sections(s_list=dm.scales()) #This is necessary
+    dm.link_reference_sections(s_list=dm.scales) #This is necessary
 
     thumbnailer = Thumbnailer()
     cfg.data.t_thumbs = thumbnailer.reduce_main(dest=dm.dest())
 
-    dm.scale = dm.scales()[-1]
+    dm.scale = dm.scales[-1]
 
-    src_img_size = dm.image_size(s='scale_1')
-    for s in dm.scales()[::-1]:
-        if s == 'scale_1':
+    src_img_size = dm.image_size(s='s1')
+    for s in dm.scales[::-1]:
+        if s == 's1':
             continue
         sv = dm.scale_val(s)
         siz = (int(src_img_size[0] / sv), int(src_img_size[1] / sv))
@@ -138,7 +138,7 @@ def autoscale(dm:DataModel, gui=True):
     print(f'\n\n######## Copy-converting TIFFs to NGFF Zarr ########\n')
 
     dest = dm.dest()
-    imgs = get_img_filenames(os.path.join(dest, 'scale_1', 'img_src'))
+    imgs = get_img_filenames(os.path.join(dest, 's1', 'img_src'))
     od = os.path.abspath(os.path.join(dest, 'img_src.zarr'))
     renew_directory(directory=od, gui=gui)
 
@@ -146,7 +146,7 @@ def autoscale(dm:DataModel, gui=True):
     # for group in task_groups:
 
     of = 'img_src.zarr'
-    for s in dm.scales()[::-1]:
+    for s in dm.scales[::-1]:
         tasks = []
         for ID, img in enumerate(imgs):
             out = os.path.join(od, 's%d' % get_scale_val(s))
@@ -162,7 +162,7 @@ def autoscale(dm:DataModel, gui=True):
             list(tqdm.tqdm(executor.map(convert_zarr, tasks), total=len(tasks), position=0, leave=True, desc=f"Converting {s} to Zarr"))
 
         dt = time.time() - t
-        dm['data']['benchmarks']['scales'][s]['t_scale_convert'] = dt
+        dm['timings']['scales'][s]['t_scale_convert'] = dt
         logger.info(f"ThreadPoolExecutor Time: {'%.3g' % dt}s")
         # time.sleep(1)
 

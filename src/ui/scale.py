@@ -32,7 +32,7 @@ numcodecs.blosc.use_threads = False
 from src.funcs_image import ImageSize
 
 from src.thumbnailer import Thumbnailer
-from src.helpers import print_exception, create_project_directories, get_bindir, get_scale_val, \
+from src.helpers import print_exception, get_bindir, get_scale_val, \
     renew_directory, renew_directory, get_img_filenames
 # from src.funcs_zarr import preallocate_zarr
 from src.funcs_zarr import remove_zarr
@@ -56,15 +56,15 @@ class ScaleWorker(QObject):
     hudMessage = Signal(str) # (# tasks, description)
     hudWarning = Signal(str) # (# tasks, description)
 
-    def __init__(self, dm, out, scales, imgs, zarr_opts):
+    def __init__(self, src, out, scales, opts):
         super().__init__()
         # print("Initializing Worker...", flush=True)
         print("Initializing Worker...")
-        self.dm = dm
+        self.src = src
         self.out = out
+        self.opts = opts
         self.scales = scales
-        self.imgs = imgs
-        self.zarr_opts = zarr_opts
+        self.paths = self.opts['paths']
         self.result = None
         self._mutex = QMutex()
         self._running = True
@@ -99,39 +99,29 @@ class ScaleWorker(QObject):
         cur_path = os.path.split(os.path.realpath(__file__))[0] + '/'
         iscale2_c = os.path.join(Path(cur_path).parent.absolute(), 'lib', get_bindir(), 'iscale2')
 
-        # dm.link_full_resolution()
-
         logger.info('Creating downsampling tasks...')
 
-        logger.info(f'# images: {len(self.imgs)}')
+        logger.info(f'# images: {len(self.paths)}')
 
         ctx = mp.get_context('forkserver')
-        # for s in self.dm.downscales()[::-1]:
-        # for s in self.dm.scales()[::-1]:
         for s, siz in self.scales:
             sv = get_scale_val(s)
             logger.info(f"s = {s}, siz = {siz}")
 
-
-            if s != 'scale_1':
+            if s != 's1':
                 desc = f'Downsampling {s}...'
                 logger.info(desc)
 
-
                 tasks = []
-                for i, layer in enumerate(self.dm['data']['scales'][s]['stack']):
-                    if_arg     = os.path.join(self.dm['data']['source_path'], self.imgs[i])
+                for i in range(0, len(self.paths)):
+                    if_arg     = os.path.join(self.src, self.paths[i])
                     ofn        = os.path.join(self.out, 'tiff', 's%d' % sv, os.path.split(if_arg)[1])
                     of_arg     = 'of=%s' % ofn
                     scale_arg  = '+%d' % get_scale_val(s)
                     tasks.append([iscale2_c, scale_arg, of_arg, if_arg])
-                    # layer['filename'] = ofn #0220+
-                    # layer['alignment']['swim_settings']['fn_transforming'] = ofn
 
-                cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks) * len(self.dm.downscales()))
+                cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks))
 
-                # cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks) * len(self.dm.downscales()))
-                # logger.info(f"cpus: {cpus}")
                 self.initPbar.emit((len(tasks), desc))
                 t = time.time()
 
@@ -158,21 +148,17 @@ class ScaleWorker(QObject):
             # renew_directory(directory=zarr_od, gui=False)
             desc = f"Converting {s} to Zarr"
             tasks = []
-            for ID, img in enumerate(self.imgs):
+            for ID, img in enumerate(self.paths):
                 fn = os.path.join(self.out, 'tiff', 's%d' % sv, os.path.basename(img))
                 out = os.path.join(zarr_od, 's%d' % sv)
                 tasks.append([ID, fn, out])
                 # logger.critical(f"\n\ntask : {[ID, fn, out]}\n")
 
-            # x, y = ImageSize(tasks[0][1])
-            # x, y = self.dm.image_size(s=s)
             x, y = siz[0], siz[1]
 
-            shape = (len(self.imgs), y, x)
+            shape = (len(self.paths), y, x)
             name = 's%d' % get_scale_val(s)
-            # preallocate_zarr(out=self.out, name='zarr', group=grp, shape=shape, dtype='|u1', overwrite=True,
-            #                  zarr_opts=self.zarr_opts)
-            preallocate_zarr(zarr_od=zarr_od, name=name, shape=shape, dtype='|u1', zarr_opts=self.zarr_opts)
+            preallocate_zarr(zarr_od=zarr_od, name=name, shape=shape, dtype='|u1', opts=self.opts)
             # t = time.time()
             # self.initPbar.emit((len(tasks), desc))
             # with ThreadPoolExecutor(max_workers=110) as executor:
@@ -181,7 +167,7 @@ class ScaleWorker(QObject):
             t = time.time()
             self.initPbar.emit((len(tasks), desc))
             all_results = []
-            cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks) * len(self.dm.downscales()))
+            cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks))
             i = 0
             # with ctx.Pool(processes=104, maxtasksperchild=1) as pool:
             with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
@@ -221,8 +207,8 @@ class ScaleWorker(QObject):
             #         QApplication.processEvents()
         self.finished.emit()
 
-        thumbnailer = Thumbnailer()
-        self._timing_results['t_thumbs'][s] = thumbnailer.reduce_main(dest=self.out)
+        # thumbnailer = Thumbnailer()
+        # self._timing_results['t_thumbs'][s] = thumbnailer.reduce_main(src, out)
 
 
         if not self.running():
@@ -233,13 +219,20 @@ class ScaleWorker(QObject):
         logger.info('**** Autoscaling Complete ****')
         self.finished.emit()
 
-def preallocate_zarr(zarr_od, name, shape, dtype, zarr_opts):
+def preallocate_zarr(zarr_od, name, shape, dtype, opts):
     '''zarr.blosc.list_compressors() -> ['blosclz', 'lz4', 'lz4hc', 'zlib', 'zstd']'''
-    cname, clevel, chunkshape = zarr_opts
+
+    logger.info(f"zarr_od={zarr_od}")
+    logger.info(f"name={name}")
+    logger.info(f"shape={shape}")
+    logger.info(f"dtype={dtype}")
+    # logger.critical(f"opts={opts}")
+
+    cname, clevel, chunkshape = opts['settings']['cname'], opts['settings']['clevel'], opts['settings']['chunkshape']
     # src = os.path.abspath(out)
     # path_zarr = os.path.join(out, name)
     # path_out = os.path.join(path_zarr, group)
-    logger.critical(f'allocating {zarr_od}/{name}...')
+    logger.info(f'allocating {zarr_od}/{name}...')
 
     # if gui:
     #     cfg.main_window.hud(f'Preallocating {os.path.basename(src)}/{group} Zarr...')
@@ -377,3 +370,41 @@ def count_files(dest, scales):
 
 
 #/Users/joelyancey/.alignem_data/series/0816_DW02_3imgs/scale_24/img_src/SYGQK_003.tif
+
+
+"""
+
+23:25:33 [scale.preallocate_zarr:231] zarr_od=/Users/joelyancey/alignem_data/series/seriesU/zarr
+23:25:33 [scale.preallocate_zarr:232] name=s1
+23:25:33 [scale.preallocate_zarr:233] shape=(5, 4096, 4096)
+23:25:33 [scale.preallocate_zarr:234] dtype=|u1
+23:25:33 [scale.preallocate_zarr:235] 
+
+opts={
+'created': '2023-08-14_23-25-22', 
+'count': 5, 
+'paths': ['/Users/joelyancey/glanceem_swift/test_images/dummy1.tif', 
+    ...'/Users/joelyancey/glanceem_swift/test_images/dummy5.tif'], 
+'tiff_path': '/Users/joelyancey/alignem_data/series/seriesU/tiff', 
+'zarr_path': '/Users/joelyancey/alignem_data/series/seriesU/zarr', 
+'scale_vals': [24, 6, 2, 1], 
+'scale_keys': ['s24', 's6', 's2', 's1'], 
+'levels': 
+    {'s24': {'size_zyx': [5, 170, 170], 'size_xy': [170, 170]}, 
+    's6': {'size_zyx': [5, 682, 682], 'size_xy': [682, 682]}, 
+    's2': {'size_zyx': [5, 2048, 2048], 'size_xy': [2048, 2048]}, 
+    's1': {'size_zyx': [5, 4096, 4096], 'size_xy': [4096, 4096]}}, 
+'settings': 
+    {'scale_factors': [24, 6, 2, 1], 
+    'clevel': 5, 
+    'cname': 'none', 
+    'chunkshape': (1, 1024, 1024), 
+    'scales': 
+        {24: {'resolution': [48, 48, 50]}, 
+        6: {'resolution': [12, 12, 50]}, 
+        2: {'resolution': [4, 4, 50]}, 
+        1: {'resolution': [2, 2, 50]}}}}
+
+
+
+"""

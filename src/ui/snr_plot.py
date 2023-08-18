@@ -170,8 +170,10 @@ class SnrPlot(QWidget):
         self.points = []
         self.ev = []
 
-        self._memHover0 = None
-        self._memHover1 = None
+        # self._memHover0 = None
+        # self._memHover1 = None
+        self._memHover0 = np.array(0)
+        self._memHover1 = np.array(0)
 
 
 
@@ -273,7 +275,7 @@ class SnrPlot(QWidget):
 
             if not self.dock:
                 n_aligned = 0
-                for s in cfg.data.scales():
+                for s in cfg.data.scales:
                     if cfg.data.is_aligned(s=s):
                         n_aligned += 1
                 if n_aligned == 0:
@@ -284,9 +286,9 @@ class SnrPlot(QWidget):
                 for i in reversed(range(self.checkboxes_hlayout.count())):
                     self.checkboxes_hlayout.itemAt(i).widget().setParent(None)
 
-                for i, s in enumerate(cfg.data.scales()):
+                for i, s in enumerate(cfg.data.scales):
                     if cfg.data.is_aligned(s=s):
-                        color = self._plot_colors[cfg.data.scales()[::-1].index(s)]
+                        color = self._plot_colors[cfg.data.scales[::-1].index(s)]
                         self._snr_checkboxes[s] = QCheckBox()
                         self._snr_checkboxes[s].setText(cfg.data.scale_pretty(s=s))
                         self.checkboxes_hlayout.addWidget(self._snr_checkboxes[s],
@@ -313,11 +315,11 @@ class SnrPlot(QWidget):
         finally:
             sys.stdout.flush()
 
-        if cfg.data.is_aligned():
-            if cfg.data['data']['scales'][cfg.data.scale]['aligned']:
+
+        if self.dock:
+            if cfg.data.is_aligned():
                 try:
-                    if self.dock:
-                        self.plotGhostScaleData()
+                    self.plotGhostScaleData()
                 except:
                     print_exception()
             else:
@@ -404,7 +406,7 @@ class SnrPlot(QWidget):
                     x_axis.append(i)
                     y_axis.append(cfg.data.snr(s=s, l=i))
         logger.info(f"get_data_no_comport_axis_data dt={time()-t0:.3g}")
-        logger.info(f"\nx-axis: {x_axis}\ny-axis: {y_axis}")
+        # logger.info(f"\nx-axis: {x_axis}\ny-axis: {y_axis}")
         sys.stdout.flush()
         return x_axis, y_axis
 
@@ -431,7 +433,7 @@ class SnrPlot(QWidget):
                 self.plot.setLimits(xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax)
 
             else:
-                for s in cfg.data.scales()[::-1]:
+                for s in cfg.data.scales[::-1]:
                     if cfg.data.is_aligned(s=s):
                         if self._snr_checkboxes[s].isChecked():
                             self.plotSingleScale(s=s)
@@ -457,7 +459,7 @@ class SnrPlot(QWidget):
 
     def _getScaleOffset(self, s):
         # return cfg.data.scales()[::-1].index(s) * (.5/len(cfg.data.scales()))
-        return cfg.data.scales().index(s) * (.5/len(cfg.data.scales()))
+        return cfg.data.scales.index(s) * (.5/len(cfg.data.scales))
 
 
     def plotGhostScaleData(self, s=None):
@@ -467,7 +469,7 @@ class SnrPlot(QWidget):
         # for layer, snr in enumerate(cfg.data.snr_list(s=s)):
         # for layer, snr in enumerate(cfg.data.snr_list(s=s)[1:]): #0601+ #Todo
         first_unskipped = cfg.data.first_unskipped(s=s)
-        data = cfg.data['data']['scales'][s]['initial_snr']
+        data = cfg.data['initial_snr'][s]
         for i in range(0, len(cfg.data)): #0601+
             if i != first_unskipped:
                 x_axis.append(i)
@@ -502,7 +504,7 @@ class SnrPlot(QWidget):
         # x_axis, y_axis = self.get_axis_data(s=s)
         x_axis, y_axis = self.get_everything_comport_axis_data(s=s)
         if not self.dock: x_axis = [x+self._getScaleOffset(s=s) for x in x_axis]
-        brush = self._plot_brushes[cfg.data.scales()[::-1].index(s)]
+        brush = self._plot_brushes[cfg.data.scales[::-1].index(s)]
 
         # logger.critical("Plotting everything comports axis data...")
         self.snr_points[s] = pg.ScatterPlotItem(
@@ -583,18 +585,19 @@ class SnrPlot(QWidget):
             self.plot.addItem(self.no_comport_cafm_points[s])
             self.no_comport_cafm_points[s].sigClicked.connect(self.onSnrClick)
 
-            def hoverSlot0(points, ev):
-                if len(ev) == 1:
-                    if self._memHover0 != ev:
-                        hoverIndex = int(ev.item().pos()[0])
-                        print(f"hovered index: {hoverIndex}")
-                        comport_data = cfg.data.cafm_hash_comports(l=hoverIndex)
-                        if comport_data:
-                            logger.info(f'CAFM does not comport for section #{hoverIndex}')
-                    self._memHover0 = ev
-
-            self.no_comport_cafm_points[s].sigHovered.connect(hoverSlot0)
-            sys.stdout.flush()
+            # def hoverSlot0(points, ev):
+            #     if len(ev) == 1:
+            #         if self._memHover0.any():
+            #             if self._memHover0 != ev:
+            #                 hoverIndex = int(ev.item().pos()[0])
+            #                 print(f"hovered index: {hoverIndex}")
+            #                 comport_data = cfg.data.cafm_hash_comports(l=hoverIndex)
+            #                 if comport_data:
+            #                     logger.info(f'CAFM does not comport for section #{hoverIndex}')
+            #         self._memHover0 = ev
+            #
+            # self.no_comport_cafm_points[s].sigHovered.connect(hoverSlot0)
+            # sys.stdout.flush()
 
             # logger.critical("Plotting data no comports data points...")
             self.no_comport_data_points[s] = pg.ScatterPlotItem(
@@ -617,17 +620,21 @@ class SnrPlot(QWidget):
             self.plot.addItem(self.no_comport_data_points[s])
             self.no_comport_data_points[s].sigClicked.connect(self.onSnrClick)
 
-            def hoverSlot1(points, ev):
-                if len(ev):
-                    if self._memHover1 != ev:
-                        hoverIndex = int(ev.item().pos()[0])
-                        print(f"hovered index: {hoverIndex}")
-                        comport_data = cfg.data.data_comports(l=hoverIndex)
-                        if comport_data[0]:
-                            logger.info(comport_data)
-                    self._memHover1 = ev
-
-            self.no_comport_data_points[s].sigHovered.connect(hoverSlot1)
+            # def hoverSlot1(points, ev):
+            #     if len(ev):
+            #         logger.info(f"type(self._memHover1) = {type(self._memHover1)}")
+            #         logger.info(f"type(ev) = {type(ev)}")
+            #         logger.info(f"len(ev) = {len(ev)}")
+            #         if self._memHover1.any():
+            #             if self._memHover1 != ev:
+            #                 hoverIndex = int(ev.item().pos()[0])
+            #                 print(f"hovered index: {hoverIndex}")
+            #                 comport_data = cfg.data.data_comports(l=hoverIndex)
+            #                 if comport_data[0]:
+            #                     logger.info(comport_data)
+            #         self._memHover1 = ev
+            #
+            # self.no_comport_data_points[s].sigHovered.connect(hoverSlot1)
 
 
         # if not self.dock:

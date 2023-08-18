@@ -32,28 +32,23 @@ class Thumbnailer:
     def __init__(self):
         self.iscale2_c = os.path.join(get_appdir(), 'lib', get_bindir(), 'iscale2')
 
-    def reduce_main(self, dest):
+    def reduce_main(self, src, od):
         print(f'\n\n######## Reducing: Source Images ########\n')
 
         pbar_text = 'Generating %s Source Image Thumbnails...' % cfg.data.scale_pretty()
-        if cfg.CancelProcesses:
-            cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
-        else:
-            coarsest_scale = cfg.data.smallest_scale()
-            src = os.path.join(cfg.data.dest(), coarsest_scale, 'img_src')
-            od = os.path.join(cfg.data.dest(), 'thumbnails')
-            logger.info(f"coarsest_scale = {coarsest_scale}\n"
-                            f"src            = {src}\n"
-                            f"od             = {od}")
-            dt = self.reduce(
-                src=src, od=od, rmdir=True, prefix='', start=0, end=None, pbar_text=pbar_text, dest=dest)
-            return dt
+        coarsest_scale = cfg.data.smallest_scale()
+        logger.info(f"coarsest_scale = {coarsest_scale}\n"
+                        f"src            = {src}\n"
+                        f"od             = {od}")
+        dt = self.reduce(
+            src=src, od=od, rmdir=True, prefix='', start=0, end=None, pbar_text=pbar_text)
+        return dt
 
 
     def reduce_aligned(self, indexes, dest, scale):
         print(f'\n\n######## Reducing: Aligned Images ########\n')
-        src = os.path.join(dest, scale, 'img_aligned')
-        od = os.path.join(dest, scale, 'thumbnails')
+        src = os.path.join(dest, 'tiff', scale)
+        od = os.path.join(dest, 'thumbnails', scale)
 
 
         files = []
@@ -122,7 +117,7 @@ class Thumbnailer:
             # tnLogger.info('Reducing the following corr spot thumbnails:\n%s' %str(filenames))
             tnLogger.info(f'Reducing {len(files)} corr spot thumbnails...')
 
-            if scale == list(cfg.data.scales())[-1]:
+            if scale == list(cfg.data.scales)[-1]:
                 full_size = True
             else:
                 full_size = False
@@ -252,7 +247,7 @@ class Thumbnailer:
                 try:    shutil.rmtree(od)
                 except: print_exception()
         if not os.path.exists(od):
-            os.mkdir(od)
+            os.makedirs(od, exist_ok=True)
 
         if filenames == None:
             filenames = natural_sort(glob(os.path.join(src, '*.tif')))[start:end]

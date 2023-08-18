@@ -23,7 +23,7 @@ max_downsampled_size=2056
 
 DEBUG_MP = 0
 DEBUG_NEUROGLANCER = 0
-DEV_MODE = 0
+DEV_MODE = 1
 VERBOSE_SWIM = 0
 LOG_RECIPE_TO_FILE = 0
 LOG_LEVEL = 1
@@ -82,8 +82,10 @@ WIDTH, HEIGHT = 1280, 700
 DEFAULT_CONTENT_ROOT = os.path.join(os.path.expanduser('~'), 'alignem_data')
 try:
     DEFAULT_CONTENT_ROOT_TACC = os.path.join(os.getenv('SCRATCH'),'alignem_data')
-except:
-    pass
+    print(f"DEFAULT_CONTENT_ROOT_TACC = {DEFAULT_CONTENT_ROOT_TACC}")
+except  Exception as e:
+    print(e)
+
 # DEFAULT_POLY_ORDER            = int(0)
 DEFAULT_NULL_BIAS             = bool(False)
 DEFAULT_BOUNDING_BOX          = bool(False)
