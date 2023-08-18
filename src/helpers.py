@@ -382,8 +382,11 @@ def convert_projects_model():
 
             logger.critical(f"Projects found in old file: {projectpaths}")
             cfg.settings['projects'] = projectpaths
-            cfg.mw.saveUserPreferences()
-            os.remove(userprojectspath)
+            # cfg.mw.saveUserPreferences()
+            try:
+                os.remove(userprojectspath)
+            except:
+                print_exception()
 
 
 def configure_project_paths():
