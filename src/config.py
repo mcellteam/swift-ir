@@ -82,7 +82,7 @@ WIDTH, HEIGHT = 1280, 700
 DEFAULT_CONTENT_ROOT = os.path.join(os.path.expanduser('~'), 'alignem_data')
 try:
     DEFAULT_CONTENT_ROOT_TACC = os.path.join(os.getenv('SCRATCH'),'alignem_data')
-    print(f"DEFAULT_CONTENT_ROOT_TACC = {DEFAULT_CONTENT_ROOT_TACC}")
+    # print(f"DEFAULT_CONTENT_ROOT_TACC = {DEFAULT_CONTENT_ROOT_TACC}")
 except  Exception as e:
     print(e)
 
