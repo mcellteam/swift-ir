@@ -23,10 +23,9 @@ data_template = \
             "shader": None,
             "source_path": "",
             "z_position": 0,
-            "current_scale": "scale_1",
-            "thumb_scaling_factor_source": None,
+            "current_scale": "s1",
             "scales": {
-                "scale_1": {
+                "s1": {
                     "use_bounding_rect": cfg.DEFAULT_BOUNDING_BOX,
                     "stack": [],
                 }

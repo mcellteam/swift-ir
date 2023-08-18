@@ -50,7 +50,7 @@ def GenerateAligned(dm, scale, indexes, renew_od=False, reallocate_zarr=False):
 
     tryRemoveDatFiles(dm, scale,dm.dest())
 
-    SetStackCafm(dm.get_iter(scale), scale=scale, poly_order=dm.default_poly_order)
+    SetStackCafm(cfg.data, scale=scale, poly_order=dm.default_poly_order)
 
     dm.propagate_swim_1x1_custom_px(indexes=indexes)
     dm.propagate_swim_2x2_custom_px(indexes=indexes)
@@ -59,7 +59,6 @@ def GenerateAligned(dm, scale, indexes, renew_od=False, reallocate_zarr=False):
     od = os.path.join(dm.dest(), scale, 'img_aligned')
     if renew_od:
         renew_directory(directory=od)
-    # print_example_cafms(scale_dict)
 
     # try:
     #     bias_path = os.path.join(dm.dest(), scale_key, 'bias_data')
@@ -149,7 +148,7 @@ def GenerateAligned(dm, scale, indexes, renew_od=False, reallocate_zarr=False):
     # cfg.main_window.set_elapsed(t_elapsed, f'Generate alignment')
 
     dm.register_cafm_hashes(s=scale, indexes=indexes)
-    dm.set_image_aligned_size()
+    # dm.set_image_aligned_size() #Todo upgrade
 
     pbar_text = 'Copy-converting Scale %d Alignment To Zarr (%d Cores)...' % (scale_val, cpus)
     if cfg.CancelProcesses:
@@ -217,7 +216,7 @@ def convert_zarr(task):
 
 
 def count_aligned_files(dest, s):
-    path = os.path.join(dest, s, 'img_aligned')
+    path = os.path.join(dest, 'tiff', s)
     files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
     # print(f"# {s} Files: {len(files)}")
     print(f"# complete: {len(files)}", end="\r")

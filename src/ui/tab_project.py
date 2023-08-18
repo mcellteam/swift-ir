@@ -28,7 +28,7 @@ from qtpy.QtWebEngineWidgets import *
 import src.config as cfg
 from src.helpers import print_exception, getOpt, setOpt, getData, setData, get_scale_key, natural_sort, hotkey, \
     get_appdir, caller_name, is_tacc, is_joel, make_affine_widget_HTML
-from src.viewer_em import EMViewer
+from src.viewer_em import EMViewer, PMViewer
 from src.viewer_ma import MAViewer
 from src.ui.snr_plot import SnrPlot
 from src.ui.project_table import ProjectTable
@@ -188,9 +188,6 @@ class ProjectTab(QWidget):
 
     def initNeuroglancer(self, init_all=False):
         caller = inspect.stack()[1].function
-        if cfg.mw._is_initialized == 0:
-            logger.warning(f"[{caller}] UNABLE TO INITIALIZE NEUROGLANCER AT THIS TIME")
-            return
 
         if cfg.mw._working:
             logger.warning(f"[{caller}] UNABLE TO INITIALIZE NEUROGLANCER AT THIS TIME... BUSY WORKING!")
@@ -202,27 +199,33 @@ class ProjectTab(QWidget):
         if DEV:
             logger.critical(f"[DEV][{caller_name()}] Initializing Neuroglancer...")
 
-        if cfg.data['state']['current_tab'] == 1 or init_all:
-            # self.MA_webengine_ref.setUrl(QUrl("http://localhost:8888/"))
-            # self.MA_webengine_base.setUrl(QUrl("http://localhost:8888/"))
+        if cfg.mw._isOpenProjTab():
+            cfg.mw.pm.loadSeriesCombo()
+            cfg.mw.pm.viewer = cfg.pmViewer = PMViewer(webengine=cfg.mw.pm.webengine)
+            if cfg.mw.pm.comboSelectSeries.count() > 0:
+                cfg.mw.pm.viewer.initViewer()
+        else:
+            if self._tabs.currentIndex() == 1 or init_all:
+                # self.MA_webengine_ref.setUrl(QUrl("http://localhost:8888/"))
+                # self.MA_webengine_base.setUrl(QUrl("http://localhost:8888/"))
 
-            self.baseViewer = cfg.baseViewer = MAViewer(role='base', webengine=self.MA_webengine_base)
-            self.baseViewer.signals.badStateChange.connect(self.set_transforming)
-            self.baseViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314
-            self.baseViewer.signals.ptsChanged.connect(self.update_MA_list_widgets)
-            self.baseViewer.signals.ptsChanged.connect(self.updateWarnings)
-            self.baseViewer.signals.zVoxelCoordChanged.connect(lambda zpos: setattr(cfg.data, 'zpos', zpos))
-            # self.baseViewer.signals.swimAction.connect(cfg.main_window.alignOne)
-            self.update_MA_list_widgets()
-            self.dataUpdateMA()
-            logger.info(f"Local Volume:\n{self.baseViewer.LV.info()}")
+                self.baseViewer = cfg.baseViewer = MAViewer(role='base', webengine=self.MA_webengine_base)
+                self.baseViewer.signals.badStateChange.connect(self.set_transforming)
+                self.baseViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314
+                self.baseViewer.signals.ptsChanged.connect(self.update_MA_list_widgets)
+                self.baseViewer.signals.ptsChanged.connect(self.updateWarnings)
+                self.baseViewer.signals.zVoxelCoordChanged.connect(lambda zpos: setattr(cfg.data, 'zpos', zpos))
+                # self.baseViewer.signals.swimAction.connect(cfg.main_window.alignOne)
+                self.update_MA_list_widgets()
+                self.dataUpdateMA()
+                logger.info(f"Local Volume:\n{self.baseViewer.LV.info()}")
 
-        if cfg.data['state']['current_tab'] == 0 or init_all:
-            self.viewer = cfg.emViewer = EMViewer(webengine=self.webengine)
-            self.viewer.initZoom(self.webengine.width(), self.webengine.height())
-            cfg.emViewer.signals.layoutChanged.connect(self.slot_layout_changed)
-            # cfg.emViewer.signals.zoomChanged.connect(self.slot_zoom_changed)
-            logger.info(f"Local Volume:\n{cfg.LV.info()}")
+            if self._tabs.currentIndex() == 0 or init_all:
+                self.viewer = cfg.emViewer = EMViewer(webengine=self.webengine)
+                self.viewer.initZoom(self.webengine.width(), self.webengine.height())
+                self.viewer.signals.layoutChanged.connect(self.slot_layout_changed)
+                # cfg.emViewer.signals.zoomChanged.connect(self.slot_zoom_changed)
+                logger.info(f"Local Volume:\n{cfg.LV.info()}")
 
         cfg.mw.set_status('')
         cfg.mw.hud.done()
@@ -581,8 +584,8 @@ class ProjectTab(QWidget):
             # self.slider_MA_SWIM_window.setValue(cfg.DEFAULT_MANUAL_SWIM_WINDOW)
             # self.MA_SWIM_window_le.setText(str(cfg.DEFAULT_MANUAL_SWIM_WINDOW))
 
-            self.spinbox_whitening.setValue(float(cfg.data['data']['defaults']['signal-whitening']))
-            self.spinbox_swim_iters.setValue(int(cfg.data['data']['defaults']['swim-iterations']))
+            self.spinbox_whitening.setValue(float(cfg.data['defaults']['signal-whitening']))
+            self.spinbox_swim_iters.setValue(int(cfg.data['defaults']['swim-iterations']))
 
             self.baseViewer.drawSWIMwindow()
 
@@ -999,7 +1002,7 @@ class ProjectTab(QWidget):
                 try:
                     val = int(self._swimWindowControl.text())
                 except:
-                    self._swimWindowControl.setText(str(cfg.data['data']['defaults'][cfg.data.scale_key]['swim-window-px'][0]))
+                    self._swimWindowControl.setText(str(cfg.data['defaults'][cfg.data.scale_key]['swim-window-px'][0]))
                     print_exception()
                     return
                 logger.info(f"val = {val}")
@@ -1250,7 +1253,7 @@ class ProjectTab(QWidget):
 
             logger.critical(f"AFTER:\n{cfg.data.swim_settings()}")
 
-            SetStackCafm(cfg.data.get_iter(cfg.data.scale), scale=cfg.data.scale,
+            SetStackCafm(cfg.data, scale=cfg.data.scale,
                          poly_order=cfg.data.default_poly_order)
             if cfg.mw.dw_snr.isVisible():
                 self.dSnr_plot.initSnrPlot()
@@ -2255,7 +2258,7 @@ class ProjectTab(QWidget):
                     print_exception()
 
             # cfg.main_window.alignOne(swim_only=True)
-            SetStackCafm(cfg.data.get_iter(cfg.data.scale), scale=cfg.data.scale,
+            SetStackCafm(cfg.data, scale=cfg.data.scale,
                          poly_order=cfg.data.default_poly_order)
             self.dataUpdateMA()
             cfg.mw.dataUpdateWidgets()
@@ -2823,7 +2826,7 @@ class ProjectTab(QWidget):
 
 
     def updateCafmComportsLabel(self):
-        if cfg.data.is_aligned_and_generated() and cfg.data.cafm_hash_comports():
+        if cfg.data.is_aligned() and cfg.data.cafm_hash_comports():
             self.warning_cafm.hide()
         else:
             self.warning_cafm.show()
@@ -2831,7 +2834,7 @@ class ProjectTab(QWidget):
 
     def updateDataComportsLabel(self):
         # if cfg.data.is_aligned_and_generated() and not cfg.data.data_comports():
-        if cfg.data.is_aligned_and_generated() and cfg.data.data_comports()[0]:
+        if cfg.data.is_aligned() and cfg.data.data_comports()[0]:
             self.warning_data.hide()
         else:
             self.warning_data.show()
@@ -2844,42 +2847,25 @@ class ProjectTab(QWidget):
         # if DEV:
         #     logger.critical(f"[DEV] called by {caller_name()}")
 
-        #0526 set skipped overlay
-
-        # caller = inspect.stack()[1].function
-
-        # logger.info(f'cfg.data.skipped() = {cfg.data.skipped()} , cfg.data.has_reference() = {cfg.data.has_reference()}')
-        # if cfg.data.skipped():
-        #     txt = '\n'.join(textwrap.wrap('X EXCLUDED - %s' % cfg.data.name_base(), width=35))
-        #     self.MA_gl_overlay._overlayLab.setText(txt)
-        #     self.MA_gl_overlay.show()
-        # elif not cfg.data.has_reference():
-        #     self.MA_gl_overlay.setText('This Section Has No Reference')
-        #     self.MA_gl_overlay.show()
-        # else:
-        #     self.MA_gl_overlay.hide()
-        #     self.MA_gl_overlay.setText('')
-
-
         # self.msg_MAinstruct.setVisible(cfg.data.current_method not in ('grid-default', 'grid-custom'))
 
         #### previously in cfg.mw.setControlPanelData ####
-        self._swimWindowControl.setText(str(getData(f'data,defaults,{cfg.data.scale_key},swim-window-px')[0]))
+        self._swimWindowControl.setText(str(getData(f'defaults,{cfg.data.scale_key},swim-window-px')[0]))
         self._swimWindowControl.setValidator(QIntValidator(0, cfg.data.image_size()[0]))
-        self.sb_whiteningControl.setValue(float(getData('data,defaults,signal-whitening')))
-        self.sb_SWIMiterations.setValue(int(getData('data,defaults,swim-iterations')))
+        self.sb_whiteningControl.setValue(float(getData('defaults,signal-whitening')))
+        self.sb_SWIMiterations.setValue(int(getData('defaults,swim-iterations')))
 
         self.cb_clobber_default.setChecked(cfg.data.clobber())
         self.sb_clobber_pixels_default.setValue(cfg.data.clobber_px())
 
-        poly = getData('data,defaults,corrective-polynomial')
+        poly = getData('defaults,corrective-polynomial')
         if (poly == None) or (poly == 'None'):
             self._polyBiasCombo.setCurrentText('None')
         else:
             # cfg.pt._polyBiasCombo.setCurrentText(str(poly))
             self._polyBiasCombo.setCurrentIndex(int(poly) + 1)
 
-        self._bbToggle.setChecked(bool(getData(f'data,defaults,bounding-box')))
+        self._bbToggle.setChecked(bool(getData(f"bounding_box,{cfg.data.scale},use")))
 
         try:
             self._bbToggle.setChecked(cfg.data.use_bb())
@@ -3364,11 +3350,11 @@ class ProjectTab(QWidget):
                 section = int(self.le_tree_jumpToSec.text())
             else:
                 section = cfg.data.zpos
-            if (len(self.le_tree_jumpToScale.text()) > 0) and \
-                    (int(self.le_tree_jumpToScale.text()) in cfg.data.scale_vals()):
-                scale = get_scale_key(int(self.le_tree_jumpToScale.text()))
-            else:
-                scale = cfg.data.scale_key
+            # if (len(self.le_tree_jumpToScale.text()) > 0) and \
+            #         (int(self.le_tree_jumpToScale.text()) in cfg.data.scale_vals()):
+            #     scale = get_scale_key(int(self.le_tree_jumpToScale.text()))
+            # else:
+            scale = cfg.data.scale_key
             self.updateTreeWidget()
 
             keys = ['data', 'scales', scale, 'stack', section]
@@ -3410,15 +3396,15 @@ class ProjectTab(QWidget):
                 else:
                     self.treeview_model.jumpToKey(keys=keys)
 
-        self.le_tree_jumpToScale = QLineEdit()
-        self.le_tree_jumpToScale.setFixedHeight(18)
-        self.le_tree_jumpToScale.setFixedWidth(30)
+        # self.le_tree_jumpToScale = QLineEdit()
+        # self.le_tree_jumpToScale.setFixedHeight(18)
+        # self.le_tree_jumpToScale.setFixedWidth(30)
         # def fn():
         #     requested = int(self.le_tree_jumpToScale.text())
         #     if requested in cfg.data.scale_vals():
         #         self.updateTreeWidget()
         #         self.treeview_model.jumpToScale(s=get_scale_key(requested))
-        self.le_tree_jumpToScale.returnPressed.connect(goToData)
+        # self.le_tree_jumpToScale.returnPressed.connect(goToData)
 
         self.le_tree_jumpToSec = QLineEdit()
         self.le_tree_jumpToSec.setFixedHeight(18)
@@ -3447,8 +3433,8 @@ class ProjectTab(QWidget):
         hbl.addWidget(self.btnExpandAll)
         hbl.addWidget(ExpandingWidget(self))
         hbl.addWidget(self.jumpToTreeLab)
-        hbl.addWidget(QLabel(' Scale:'))
-        hbl.addWidget(self.le_tree_jumpToScale)
+        # hbl.addWidget(QLabel(' Level:'))
+        # hbl.addWidget(self.le_tree_jumpToScale)
         hbl.addWidget(QLabel(' Section:'))
         hbl.addWidget(self.le_tree_jumpToSec)
         hbl.addWidget(self.combo_data_tree)
@@ -3723,12 +3709,14 @@ class ProjectTab(QWidget):
                 self.secExcluded.setText('\n'.join([f'z-index: {a}, name: {b}' for a, b in skips]))
             self.secHasBB.setText(str(cfg.data.has_bb()))
             self.secUseBB.setText(str(cfg.data.use_bb()))
-            self.secSrcImageSize.setText('%dx%d pixels' % cfg.data.image_size())
+            siz = cfg.data.image_size()
+            self.secSrcImageSize.setText('%dx%d pixels' % (siz[0], siz[1]))
             if cfg.data.is_aligned():
-                try:
-                    self.secAlignedImageSize.setText('%dx%d pixels' % cfg.data.image_size_aligned())
-                except:
-                    print_exception()
+                #Todo come back and upgrade this
+                # try:
+                #     self.secAlignedImageSize.setText('%dx%d pixels' % cfg.data.image_size_aligned())
+                # except:
+                #     print_exception()
                 if cfg.data.zpos <= cfg.data.first_unskipped():
                     self.secSNR.setText('--')
                 else:

@@ -54,9 +54,9 @@ class align_recipe:
         self.swim_c = '%s/lib/bin_%s/swim' % (p, slug)
         self.mir_c = '%s/lib/bin_%s/mir' % (p, slug)
         self.iscale2_c = '%s/lib/bin_%s/iscale2' % (p, slug)
-        self.signals_dir = os.path.join(self.meta['series_path'], self.meta['scale_key'], 'signals')
-        self.matches_dir = os.path.join(self.meta['series_path'], self.meta['scale_key'], 'matches')
-        self.tmp_dir = os.path.join(self.meta['series_path'], self.meta['scale_key'], 'tmp')
+        self.signals_dir = os.path.join(self.meta['location'], 'signals', self.meta['scale_key'])
+        self.matches_dir = os.path.join(self.meta['location'], 'matches', self.meta['scale_key'])
+        self.tmp_dir = os.path.join(self.meta['location'], 'tmp', self.meta['scale_key'])
 
 
     def configure_logging(self):
@@ -68,15 +68,15 @@ class align_recipe:
         tnLogger = logging.getLogger('tnLogger')
 
         if self.meta['log_recipe_to_file']:
-            Exceptlogger.addHandler(logging.FileHandler(os.path.join(self.meta['series_path'],
+            Exceptlogger.addHandler(logging.FileHandler(os.path.join(self.meta['location'],
                                              'logs', 'exceptions.log')))
 
             MAlogger.addHandler(logging.FileHandler(os.path.join(
-                self.meta['series_path'], 'logs', 'manual_align.log')))
+                self.meta['location'], 'logs', 'manual_align.log')))
             RMlogger.addHandler(logging.FileHandler(os.path.join(
-                self.meta['series_path'], 'logs', 'recipemaker.log')))
+                self.meta['location'], 'logs', 'recipemaker.log')))
             tnLogger.addHandler(logging.FileHandler(os.path.join(
-                self.meta['series_path'], 'logs', 'thumbnails.log')))
+                self.meta['location'], 'logs', 'thumbnails.log')))
         else:
             MAlogger.disabled = True
             RMlogger.disabled = True
@@ -248,8 +248,8 @@ class align_recipe:
 
         self.afm = np.array(self.meta['init_afm'])
 
-        if (self.meta['fn_reference'] == self.meta['fn_transforming']) \
-                or (self.meta['fn_reference'] == ''):
+        if (self.meta['reference'] == self.meta['filename']) \
+                or (self.meta['reference'] == ''):
             print_exception(extra=f'Image #{self.index} Has No Reference!')
             return
 
@@ -450,11 +450,11 @@ class align_ingredient:
     def get_swim_args(self):
         self.cx = int(self.recipe.meta['img_size'][0] / 2.0)
         self.cy = int(self.recipe.meta['img_size'][1] / 2.0)
-        basename = os.path.basename(self.recipe.meta['fn_transforming'])
+        basename = os.path.basename(self.recipe.meta['filename'])
         fn, ext = os.path.splitext(basename)
         multi_arg_str = ArgString(sep='\n')
         dir_scale = os.path.join(
-            self.recipe.meta['series_path'], self.recipe.meta['scale_key'])
+            self.recipe.meta['location'], self.recipe.meta['scale_key'])
         self.ms_paths = []
         m = self.recipe.method
         iters = str(self.recipe.meta['swim_iters'])
@@ -505,12 +505,12 @@ class align_ingredient:
                 args.add_flag(flag='-t', arg=t_arg_path)
                 self.matches_filenames.append(t_arg_path)
             args.append(self.recipe.data['swim_settings']['extra_kwargs'])
-            args.append(self.recipe.meta['fn_reference'])
+            args.append(self.recipe.meta['reference'])
             if m in ('manual-hint'):
                 args.append('%s %s' % (self.psta[0][i], self.psta[1][i]))
             else:
                 args.append('%s %s' % (self.cx, self.cy))
-            args.append(self.recipe.meta['fn_transforming'])
+            args.append(self.recipe.meta['filename'])
             if m in ('manual-hint'):
                 args.append('%s %s' % (self.pmov[0][i], self.pmov[1][i]))
             else:
@@ -680,9 +680,16 @@ class align_ingredient:
         od = self.recipe.matches_dir
 
         #Special handling since they are variable in # and never 1:1 with project files
-        fn, ext = os.path.splitext(self.recipe.meta['fn_transforming'])
+        fn, ext = os.path.splitext(self.recipe.meta['filename'])
         method = self.recipe.method
         od_pattern = os.path.join(od, '%s_%s_[tk]_%d%s' % (fn, method, self.recipe.meta['index'], ext))
+
+
+        logger.critical(f"src         = {src}")
+        logger.critical(f"fn          = {fn}")
+        logger.critical(f"od          = {od}")
+        logger.critical(f"method      = {od}")
+        logger.critical(f"od_pattern  = {od_pattern}")
 
         for tn in glob.glob(od_pattern):
             logger.info(f'Removing {tn}...')
@@ -693,6 +700,7 @@ class align_ingredient:
 
         tnLogger.info('Reducing the following thumbnails:\n%s' %str(self.matches_filenames))
         # logger.info(f'Reducing {len(self.matches_filenames)} total match images...')
+
 
         try:
             siz_x, siz_y = ImageSize(next(absFilePaths(src)))

@@ -374,7 +374,7 @@ class ProjectTable(QWidget):
                 self.table.setCellWidget(row, col, w)
             elif col == 1:
                 lab1 = QLabel(cfg.data.filename_basename(l=row))
-                lab1.setStyleSheet("font-weight: 600; font-size: 12px; background: transparent;")
+                lab1.setStyleSheet("font-weight: 600; font-size: 11px; background: transparent;")
                 if cfg.data.skipped(l=row):
                     lab2 = QLabel('* Exclude')
                     lab2.setStyleSheet("font-size: 10px; color: #d0342c; padding:2px; background: transparent;")
@@ -602,7 +602,7 @@ class ProjectTable(QWidget):
 
 
         self.scaleLabel = QLabel()
-        self.scaleLabel.setStyleSheet("""font-size: 14px; font-weight: 600; color: #f3f6fb;""")
+        self.scaleLabel.setStyleSheet("""font-size: 12px; color: #f3f6fb;""")
         self.scaleLabel.setAlignment(Qt.AlignLeft)
         self.scaleLabel.setFixedHeight(22)
 

@@ -228,14 +228,15 @@ class MAViewer(neuroglancer.Viewer):
         # self.restoreManAlignPts()
 
         sf = cfg.data.scale_val(s=cfg.data.scale_key)
-        path = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(sf))
+        path = os.path.join(cfg.data.series['zarr_path'], cfg.data.scale_key)
+        logger.critical(f"\n\npath: {path}\n")
 
         if not os.path.exists(path):
             cfg.main_window.warn('Data Store Not Found: %s' % path)
             logger.warning('Data Store Not Found: %s' % path); return
 
         try:
-            self.store = get_zarr_tensor(path).result()
+            self.store = self.tensor = get_zarr_tensor(path).result()
             # self.store
             # self.store = await get_zarr_tensor(path)
         except Exception as e:
@@ -711,7 +712,7 @@ class MAViewer(neuroglancer.Viewer):
 
             img_siz = cfg.data.image_size()
             img_w, img_h = img_siz[0], img_siz[1]
-            ww_full = cfg.data['data']['defaults'][cfg.data.scale_key]['swim-window-px']
+            ww_full = cfg.data['defaults'][cfg.data.scale_key]['swim-window-px']
 
             offset_x1 = (img_w / 2) - (ww_full[0] * (1 / 4))
             offset_x2 = (img_w / 2) + (ww_full[0] * (1 / 4))

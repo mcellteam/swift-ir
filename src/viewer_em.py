@@ -393,6 +393,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
     # def initZoom(self, w, h, adjust=1.20):
     def initZoom(self, w, h, adjust=1.10):
+        #Todo add check for Zarr existence
+
         # QApplication.processEvents()
         # logger.info(f'w={w}, h={h}')
         # self._settingZoom = True
@@ -415,12 +417,20 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
 
     def get_zoom(self, w, h):
+        assert hasattr(self, 'tensor')
+        try:
+            assert self.tensor != None
+        except:
+            print_exception()
+            return
         _, tensor_y, tensor_x = self.tensor.shape
         try:
             res_z, res_y, res_x = cfg.data.resolution(s=cfg.data.scale_key)  # nm per imagepixel
         except:
+
             res_z, res_y, res_x = [50,2,2]
-            # print_exception()
+            print_exception()
+            logger.warning("Fell back to default resolution settings")
         scale_h = ((res_y * tensor_y) / h) * 1e-9  # nm/pixel
         scale_w = ((res_x * tensor_x) / w) * 1e-9  # nm/pixel
         cs_scale = max(scale_h, scale_w)
@@ -442,20 +452,20 @@ class AbstractEMViewer(neuroglancer.Viewer):
         # del cfg.unal_tensor
         # del cfg.al_tensor
         cfg.mw.hud.post('Loading Zarr asynchronously using Tensorstore...')
-        cfg.tensor = None
+        cfg.tensor = self.tensor = None
         try:
             # cfg.unal_tensor = get_zarr_tensor(unal_path).result()
             sf = cfg.data.scale_val(s=cfg.data.scale_key)
-            if cfg.data.is_aligned_and_generated():
-                path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(sf))
+            if cfg.data.is_aligned():
+                path = os.path.join(cfg.data.dest(), 'zarr', 's' + str(sf))
                 future = get_zarr_tensor(path)
                 future.add_done_callback(lambda f: print(f'Callback: {f.result().domain}'))
-                cfg.tensor = cfg.al_tensor = future.result()
+                self.tensor = cfg.tensor = cfg.al_tensor = future.result()
             else:
-                path = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(sf))
+                path = os.path.join(cfg.data.dest(), 'zarr', 's' + str(sf))
                 future = get_zarr_tensor(path)
                 future.add_done_callback(lambda f: print(f'Callback: {f.result().domain}'))
-                cfg.tensor = cfg.unal_tensor = future.result()
+                self.tensor = cfg.tensor = cfg.unal_tensor = future.result()
 
         except Exception as e:
             logger.warning('Failed to acquire Tensorstore view')
@@ -479,8 +489,11 @@ class EMViewer(AbstractEMViewer):
         self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
         self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
 
+        self.tensor = None
+
         self.type = 'EMViewer'
         self.initViewer()
+
         # asyncio.ensure_future(self.initViewer())
 
 
@@ -488,7 +501,7 @@ class EMViewer(AbstractEMViewer):
     def initViewer(self, nglayout=None):
         caller = inspect.stack()[1].function
         if DEV:
-            logger.info(f'\n\n[DEV] [{caller}] Initializing Neuroglancer...\n')
+            logger.info(f'\n\n[DEV] [{caller}] [{self.type}] Initializing Neuroglancer...\n')
         self._blockStateChanged = False
 
         if not nglayout:
@@ -497,14 +510,27 @@ class EMViewer(AbstractEMViewer):
               'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
             nglayout = mapping[requested]
 
-        zd = ('img_src.zarr', 'img_aligned.zarr')[cfg.data.is_aligned_and_generated()]
-        path = os.path.join(cfg.data.dest(), zd, 's' + str(cfg.data.scale_val()))
-        if not os.path.exists(path):
-            cfg.main_window.warn('Zarr Not Found: %s' % path)
+        # zd = ('img_src.zarr', 'img_aligned.zarr')[cfg.data.is_aligned()] #Todo this is wrong
+        if cfg.data.is_aligned():
+            logger.critical("ALIGNED...")
+            path = os.path.join(cfg.data.location,'zarr', cfg.data.scale_key)
+        else:
+            logger.critical("NOT ALIGNED...")
+            path = os.path.join(cfg.data.series['zarr_path'], cfg.data.scale_key)
+        if not os.path.exists(os.path.join(path,'.zarray')):
+            cfg.main_window.warn('Zarr (.zarray) Not Found: %s' % path)
+            logger.warning('Zarr (.zarray) Not Found: %s' % path)
             return
 
-        self.store = cfg.tensor = get_zarr_tensor(path).result()
-        # self.store = cfg.tensor = await get_zarr_tensor(path).result()
+        assert os.path.exists(path)
+        nfiles = sum(1 for entry in os.listdir(path) if os.path.isfile(os.path.join(path,entry)))
+        try:
+            assert nfiles > 1
+        except:
+            print_exception()
+            return
+        self.tensor = cfg.tensor = get_zarr_tensor(path).result()
+        # self.tensor = cfg.tensor = await get_zarr_tensor(path).result()
 
         self.coordinate_space = self.getCoordinateSpace()
 
@@ -528,7 +554,7 @@ class EMViewer(AbstractEMViewer):
         if is_tacc():
             cfg.LV = ng.LocalVolume(
                 volume_type='image',
-                data=self.store[:, :, :],
+                data=self.tensor[:, :, :],
                 dimensions=self.coordinate_space,
                 # max_voxels_per_chunk_log2=1024
                 # downsampling=None, # '3d' to use isotropic downsampling, '2d' to downsample separately in XY, XZ, and YZ,
@@ -540,7 +566,7 @@ class EMViewer(AbstractEMViewer):
         else:
             cfg.LV = ng.LocalVolume(
                 volume_type='image',
-                data=self.store[:, :, :],
+                data=self.tensor[:, :, :],
                 dimensions=self.coordinate_space,
                 # max_voxels_per_chunk_log2=1024
                 # downsampling=None, # '3d' to use isotropic downsampling, '2d' to downsample separately in XY, XZ, and YZ,
@@ -561,7 +587,7 @@ class EMViewer(AbstractEMViewer):
             #     s.show_scale_bar = True
             s.show_scale_bar = True
             s.show_axis_lines = getData('state,show_axes')
-            s.position=[cfg.data.zpos + 0.5, self.store.shape[1]/2, self.store.shape[2]/2]
+            s.position=[cfg.data.zpos + 0.5, self.tensor.shape[1]/2, self.tensor.shape[2]/2]
             s.layers['layer'] = ng.ImageLayer( source=cfg.LV, shader=cfg.data['rendering']['shader'], )
             s.show_default_annotations = getData('state,show_bounds')
             s.projectionScale = 1
@@ -605,6 +631,8 @@ class EMViewer(AbstractEMViewer):
                 self.signals.zoomChanged.emit(val)
 
 
+
+
 # class EMViewerStage(AbstractEMViewer):
 #
 #     def __init__(self, **kwags):
@@ -627,14 +655,14 @@ class EMViewer(AbstractEMViewer):
 #
 #         self.index = cfg.data.zpos
 #         # dir_staged = os.path.join(cfg.data.dest(), self.scale_key, 'zarr_staged', str(self.index), 'staged')
-#         # self.store = cfg.stageViewer = get_zarr_tensor(dir_staged).result()
+#         # self.tensor = cfg.stageViewer = get_zarr_tensor(dir_staged).result()
 #
 #         tensor = get_zarr_tensor(path).result()
 #         self.LV = ng.LocalVolume(
 #             volume_type='image',
-#             # data=self.store,
+#             # data=self.tensor,
 #             data=tensor[:,:,:],
-#             # data=self.store[self.index:self.index+1, :, :],
+#             # data=self.tensor[self.index:self.index+1, :, :],
 #             # dimensions=self.coordinate_space,
 #             # dimensions=[1,1,1],
 #             # dimensions=self.getCoordinateSpacePlanar(),
@@ -710,12 +738,12 @@ class PMViewer(AbstractEMViewer):
 
 
     def initViewer(self, path=None):
-        logger.critical(f"path: {path}")
+        caller = inspect.stack()[1].function
+        logger.critical(f"[{caller}] [{self.type}] path: {path}")
         if path:
             self.path = path
         else:
             self.path = self._example_path
-        logger.critical(f'Initializing PMViewer - {path}...')
         # coordinate_space = ng.CoordinateSpace(names=['z', 'y', 'x'], units=['nm', 'nm', 'nm'], scales=scales, )
         coordinate_space = ng.CoordinateSpace(names=['z', 'y', 'x'], units=['nm', 'nm', 'nm'], scales=[50,2,2])
         try:
