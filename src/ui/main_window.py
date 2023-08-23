@@ -204,8 +204,8 @@ class MainWindow(QMainWindow):
         #     self.restoreState(self.settings.value("windowState"))
 
         # QApplication.setFont(QFont("Calibri"))
-        self.font = QFont("Tahoma")
-        QApplication.setFont(self.font)
+        # self.font = QFont("Tahoma")
+        # self.app.setFont(self.font)
 
         self.setFocusPolicy(Qt.StrongFocus)
 
