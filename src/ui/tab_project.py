@@ -792,6 +792,7 @@ class ProjectTab(QWidget):
 
         def fn():
             caller = inspect.stack()[1].function
+            logger.info(f"[{caller}]")
             if caller == 'main':
                 val = int(self.slider_AS_2x2_SWIM_window.value())
                 cfg.data.set_swim_2x2_custom_px(val)

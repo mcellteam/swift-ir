@@ -373,20 +373,22 @@ class AbstractEMViewer(neuroglancer.Viewer):
         # self._settingZoom = True
         # logger.critical(f'initZoom... w={w}, h={h}')
         # logger.critical(f'initZoom... w_ng_display w={cfg.project_tab.w_ng_display.width()}, w_ng_display h={cfg.project_tab.w_ng_display.height()}')
-
-        if self.cs_scale:
-            # logger.info(f'w={w}, h={h}, cs_scale={self.cs_scale}')
-            with self.txn() as s:
-                s.cross_section_scale = self.cs_scale
-            # logger.critical(f"\n\nself.cs_scale set!! {self.cs_scale}\n\n")
+        if self.tensor:
+            if self.cs_scale:
+                # logger.info(f'w={w}, h={h}, cs_scale={self.cs_scale}')
+                with self.txn() as s:
+                    s.cross_section_scale = self.cs_scale
+                # logger.critical(f"\n\nself.cs_scale set!! {self.cs_scale}\n\n")
+            else:
+                # logger.info(f'w={w}, h={h}')
+                self.cs_scale = self.get_zoom(w=w, h=h)
+                adjusted = self.cs_scale * adjust
+                with self.txn() as s:
+                    s.cross_section_scale = adjusted
+            # logger.critical(f"self.cs_scale = {self.cs_scale}")
+            self.signals.zoomChanged.emit(self.cs_scale * 250000000)
         else:
-            # logger.info(f'w={w}, h={h}')
-            self.cs_scale = self.get_zoom(w=w, h=h)
-            adjusted = self.cs_scale * adjust
-            with self.txn() as s:
-                s.cross_section_scale = adjusted
-        # logger.critical(f"self.cs_scale = {self.cs_scale}")
-        self.signals.zoomChanged.emit(self.cs_scale * 250000000)
+            logger.warning("Cant set zoom now, no tensor object")
 
 
     def get_zoom(self, w, h):
@@ -400,10 +402,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
         try:
             res_z, res_y, res_x = cfg.data.resolution(s=cfg.data.scale_key)  # nm per imagepixel
         except:
-
             res_z, res_y, res_x = [50,2,2]
-            print_exception()
-            logger.warning("Fell back to default resolution settings")
+            logger.warning("Fell back to default resolution settings (cfg.data may not exist)")
         scale_h = ((res_y * tensor_y) / h) * 1e-9  # nm/pixel
         scale_w = ((res_x * tensor_x) / w) * 1e-9  # nm/pixel
         cs_scale = max(scale_h, scale_w)
@@ -714,26 +714,26 @@ class PMViewer(AbstractEMViewer):
         # if path_l:
         self.path_l = path_l
         self.path_r = path_r
-        self.tensor_l, self.tensor_r = None, None
+        self.tensor, self.tensor_r = None, None
         self.LV_l, self.LV_r = None, None
         # else:
         #     self.path_l = self._example_path
         # coordinate_space = ng.CoordinateSpace(names=['z', 'y', 'x'], units=['nm', 'nm', 'nm'], scales=scales, )
         coordinate_space = ng.CoordinateSpace(names=['z', 'y', 'x'], units=['nm', 'nm', 'nm'], scales=[50,2,2])
         # try:
-        #     self.tensor_l = get_zarr_tensor(path_l).result()
+        #     self.tensor = get_zarr_tensor(path_l).result()
         # except:
-        #     self.tensor_l = get_zarr_tensor(self._example_path).result()
+        #     self.tensor = get_zarr_tensor(self._example_path).result()
         #     with self.config_state.txn() as cs:
         #         cs.status_messages['message'] = "No series have been imported yet. This is just an example."
         #     print_exception()
 
         if self.path_l:
             try:
-                self.tensor_l = get_zarr_tensor(path_l).result()
+                self.tensor = get_zarr_tensor(path_l).result()
                 self.LV_l = ng.LocalVolume(
                     volume_type='image',
-                    data=self.tensor_l[:, :, :],
+                    data=self.tensor[:, :, :],
                     dimensions=coordinate_space,
                     # max_voxels_per_chunk_log2=1024
                     # downsampling=None, # '3d' to use isotropic downsampling, '2d' to downsample separately in XY, XZ, and YZ,
@@ -789,6 +789,7 @@ class PMViewer(AbstractEMViewer):
             s.status_messages = None
             s.show_panel_borders = False
             s.show_layer_panel = False
+
 
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
 

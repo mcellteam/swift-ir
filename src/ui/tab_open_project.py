@@ -114,7 +114,8 @@ class OpenProject(QWidget):
         lab = QLabel('Open AlignEM-SWIFT Project or...\nOpen OME-NGFF Zarr in Neuroglancer or...\nSelect folder of images for new project...')
         lab.setStyleSheet('font-size: 10px; color: #161c20;')
         vbl = QVBoxLayout()
-        vbl.setContentsMargins(4, 4, 4, 4)
+        # vbl.setContentsMargins(4, 4, 4, 4)
+        vbl.setContentsMargins(0,0,0,0)
         # vbl.addWidget(HWidget(lab))
         vbl.addWidget(self.filebrowser)
         self.userFilesWidget.setLayout(vbl)
@@ -199,13 +200,9 @@ class OpenProject(QWidget):
         self.lab_path_exists.setAlignment(Qt.AlignRight)
         self.lab_path_exists.hide()
 
-        # self.bImportSeries = QPushButton("Import")
         self.bImportSeries = HoverButton("Import")
         self.bImportSeries.setIcon(qta.icon('mdi.import', color='#f3f6fb'))
         self.bImportSeries.setToolTip("Import Series")
-        # self.bImportSeries.setFixedSize(QSize(58,18))
-        # self.bImportSeries.setFixedSize(QSize(18,18))
-        # self.bImportSeries.setStyleSheet('font-size: 9px;')
         self.bImportSeries.clicked.connect(self.showImportSeriesDialog)
 
         self.lab_project_name = QLabel(' New Project Path: ')
@@ -498,15 +495,15 @@ class OpenProject(QWidget):
         # QFileDialog{background-color: #222222; color: #f3f6fb;
         # border-bottom-right-radius: 2px; border-bottom-left-radius: 2px;}""")
         self.iid_dialog.hide()
-        self.iid_dialog.setMinimumWidth(500)
-        self.iid_dialog.setMinimumHeight(500)
+        # self.iid_dialog.setMinimumWidth(500)
+        # self.iid_dialog.setMinimumHeight(500)
 
         self.leContentRoot = QLineEdit()
         self.leContentRoot.setFixedHeight(18)
         self.leContentRoot.setReadOnly(False)
 
         self.teSearchPaths = QTextEdit()
-        self.teSearchPaths.setMaximumHeight(100)
+        # self.teSearchPaths.setMaximumHeight(100)
         self.teSearchPaths.setReadOnly(False)
         # self.teSearchPaths.setMaximumHeight(140)
         # self.teSearchPaths.setMinimumHeight(40)
@@ -612,7 +609,7 @@ class OpenProject(QWidget):
         self.gbImportSeries.setAutoFillBackground(True)
         self.gbImportSeries.setStyleSheet("padding: 2px; background-color: #222222; color: #f3f6fb;")
         self.gbImportSeries.setLayout(vbl)
-        self.gbImportSeries.setFixedHeight(64)
+        # self.gbImportSeries.setFixedHeight(64)
         self.gbImportSeries.hide()
 
         # self.wTitle = HWidget(self.labTitle, ExpandingHWidget(self), self.bSetContentSources)
@@ -946,9 +943,17 @@ class OpenProject(QWidget):
     def initPMviewer(self):
         caller = inspect.stack()[1].function
         logger.critical(f'[{caller}]')
+        w = int(self.webengine.width() / 2)
+        h = self.webengine.height()
         self.viewer = cfg.pmViewer = PMViewer(webengine=self.webengine)
-        path_l, path_r = self.get_pmviewer_paths()
-        self.viewer.initViewer(path_l=path_l, path_r=path_r)
+        if self.comboSelectSeries.currentText() != 'null':
+            path_l, path_r = self.get_pmviewer_paths()
+            self.viewer.initViewer(path_l=path_l, path_r=path_r)
+            self.viewer.initZoom(w=w, h=h)
+        else:
+            self.viewer.initViewer(path_l=None, path_r=None)
+            self.viewer.initZoom(w=w, h=h)
+
 
 
 
@@ -1094,10 +1099,13 @@ class OpenProject(QWidget):
             self.gbImportSeries.hide()
             self.wNameAlignment.hide()
             self._series = self.comboSelectSeries.currentText()
+            w = int(self.webengine.width() / 2)
+            h = self.webengine.height()
             if self.comboSelectSeries.currentText() != "null":
                 self.viewer = cfg.pmViewer = PMViewer(webengine=self.webengine)
                 path_l, path_r = self.get_pmviewer_paths()
                 self.viewer.initViewer(path_l=path_l, path_r=path_r)
+                self.viewer.initZoom(w=w, h=h)
             else:
                 self.viewer.initExample()
             try:
@@ -1437,10 +1445,10 @@ class OpenProject(QWidget):
 
         # settings = self.gbImportSeries.getSettings()
 
-        # data_cp = copy.deepcopy(dm.to_json())
         jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
-        with open(filename, 'w') as f:
-            f.write(jde.encode(copy.deepcopy(dm._data)))
+        # data_cp = copy.deepcopy(dm.to_json())
+        # with open(filename, 'w') as f:
+        #     f.write(jde.encode(copy.deepcopy(dm._data)))
 
         with open(os.path.join(dirname, 'info.json'), 'w') as f:
             f.write(jde.encode(copy.deepcopy(opts)))

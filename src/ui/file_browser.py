@@ -39,7 +39,7 @@ class FileBrowser(QWidget):
         self.path_work = os.getenv('WORK', "WORK not found")
         self.path_special = '/Volumes/3dem_data'
 
-        self.treeview.setColumnWidth(0, 600)
+        self.treeview.setColumnWidth(0, 400)
         self.initUI()
         # self.treeview.selectionModel().selectionChanged.connect(self.selectionChanged)
 

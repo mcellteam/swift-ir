@@ -138,6 +138,8 @@ class MainWindow(QMainWindow):
     def __init__(self, data=None):
         QMainWindow.__init__(self)
         self.app = QApplication.instance()
+        font = QFont("Tahoma")
+        self.app.setFont(font)
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.setObjectName('mainwindow')
         try:
@@ -258,6 +260,8 @@ class MainWindow(QMainWindow):
 
         self.tabChanged.connect(self.stopPlaybackTimer)
         self.tabChanged.connect(self.reload_scales_combobox)
+
+
 
 
     # def focusInEvent(self, event):
