@@ -323,6 +323,11 @@ def main():
     logger.info('Showing application window')
     cfg.main_window.show()
 
+
+
+
+    sys.exit(app.exec())
+
     # sys.exit(app.exec())
 
     # stats = pstats.Stats(profiler).sort_stats('ncalls')
@@ -332,12 +337,16 @@ def main():
 
 
 if __name__ == "__main__":
+    # app = QApplication(sys.argv)
+    # app.setStyle('Fusion')
+    # font = QFont("Tahoma")
+    # app.setFont(font)
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
-    font = QFont("Tahoma")
-    app.setFont(font)
+    # font = QFont("Tahoma")
+    # app.setFont(font)
     main()
-    sys.exit(app.exec())
+    # sys.exit(app.exec())
 
 
 

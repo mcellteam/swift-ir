@@ -619,6 +619,7 @@ class MAViewer(neuroglancer.Viewer):
 
     # @functools.cache
     def drawSWIMwindow(self, z=None):
+        logger.info('')
         if z == None:
             z = cfg.data.zpos
 
