@@ -213,7 +213,7 @@ class AlignWorker(QObject):
                     all_results.append(result)
                     self.progress.emit(i)
                     QApplication.processEvents()
-                    logger.info(f'running? {self.running()}')
+                    # logger.info(f'running? {self.running()}')
                     if not self.running():
                         break
 
