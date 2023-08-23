@@ -1045,7 +1045,7 @@ class OpenProject(QWidget):
         else:
             self.comboSelectSeries.addItems(["null"])
 
-        logger.critical(f"Valid series list: {self.valid_series_list}")
+        logger.info(f"Valid series list: {self.valid_series_list}")
         self._series = self.comboSelectSeries.currentText()
         if len(self.valid_series_list) > 0:
             self.loadAlignmentCombo()
@@ -1065,7 +1065,7 @@ class OpenProject(QWidget):
         keys = self.getScaleKeys(series=series)
         if scale == '':
             scale = keys[-1]
-        logger.critical(f"scale: {scale}")
+        logger.info(f"scale to set: {scale}")
         if self.comboSelectSeries.count() > 0:
             path_l = os.path.join(cr, 'series', series, 'zarr', scale)
             if self.comboSelectAlignment.currentText() != 'null':
