@@ -70,6 +70,7 @@ from qtpy.QtWebEngineWidgets import *
 from qtpy import QtCore
 from qtpy.QtCore import QCoreApplication, Qt
 from qtpy.QtWidgets import QApplication
+from qtpy.QtGui import QFont
 from src.ui.main_window import MainWindow
 from src.helpers import check_for_binaries, configure_project_paths, initialize_user_preferences, \
     is_tacc, print_exception, register_login, convert_projects_model, addLoggingLevel
@@ -333,6 +334,8 @@ def main():
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
+    font = QFont("Tahoma")
+    app.setFont(font)
     main()
     sys.exit(app.exec())
 
