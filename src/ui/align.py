@@ -52,17 +52,18 @@ class AlignWorker(QObject):
     finished = Signal()
     progress = Signal(int)
     initPbar = Signal(tuple) # (# tasks, description)
-    hudMessage = Signal(str) # (# tasks, description)
+    hudMessage = Signal(str)
     hudWarning = Signal(str)
 
-    def __init__(self, scale, path, indexes, swim_only, renew_od, reallocate_zarr, dm):
+    def __init__(self, scale, path, align_indexes, regen_indexes, align, regenerate, renew_od, reallocate_zarr, dm):
         super().__init__()
         logger.info('')
         self.scale = scale
         self.path = path
-        self.indexes = indexes
-        self._align = True #Temporary
-        self._generate = not swim_only
+        self.align_indexes = align_indexes
+        self.regen_indexes = regen_indexes
+        self._align = align #Temporary
+        self._generate = regenerate
         self._renew_od = renew_od
         self._reallocate_zarr = reallocate_zarr
         self.dm = dm
@@ -87,6 +88,7 @@ class AlignWorker(QObject):
 
 
     def stop(self):
+        logger.critical('Stopping!')
         self._mutex.lock()
         self._running = False
         self._mutex.unlock()
@@ -103,7 +105,7 @@ class AlignWorker(QObject):
         """Long-running task."""
 
         scale = self.scale
-        indexes = self.indexes
+        indexes = self.align_indexes
         dm = self.dm
 
         if scale == dm.coarsest_scale_key():
@@ -157,10 +159,9 @@ class AlignWorker(QObject):
                 scale_prev = dm.scales[dm.scales.index(scale) + 1]
                 prev_scale_val = int(scale_prev[len('scale_'):])
                 upscale = (float(prev_scale_val) / float(scale_val))
-                prev_method = dm['data']['scales'][scale_prev]['stack'][zpos]['alignment']['swim_settings']['method']
-                init_afm = np.array(copy.deepcopy(dm['data']['scales'][scale_prev]['stack'][zpos][
-                                                      'alignment_history'][prev_method]['method_results'][
-                                                      'affine_matrix']))
+                prev_method = dm['stack'][zpos]['levels'][scale_prev]['swim_settings']['method']
+                init_afm = np.array(copy.deepcopy(dm['stack'][zpos]['levels'][scale_prev]['alignment_history'][
+                                                      prev_method]['method_results']['affine_matrix']))
                 # prev_method = scale_prev_dict[zpos]['current_method']
                 # prev_afm = copy.deepcopy(np.array(scale_prev_dict[zpos]['alignment_history'][prev_method]['affine_matrix']))
                 init_afm[0][2] *= upscale
@@ -212,6 +213,7 @@ class AlignWorker(QObject):
                     all_results.append(result)
                     self.progress.emit(i)
                     QApplication.processEvents()
+                    logger.info(f'running? {self.running()}')
                     if not self.running():
                         break
 
@@ -235,15 +237,15 @@ class AlignWorker(QObject):
 
             task_queue = TaskQueue(n_tasks=len(tasks), dest=dest)
             task_queue.taskPrefix = 'Computing Alignment for '
-            task_queue.taskNameList = [os.path.basename(layer['alignment']['swim_settings']['filename']) for
+            task_queue.taskNameList = [os.path.basename(layer['swim_settings']['filename']) for
                                        layer in [dm()[i] for i in indexes]]
             task_queue.start(cpus)
             align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'recipe_maker.py')
             logger.info('adding tasks to the queue...')
             for zpos, sec in [(i, dm()[i]) for i in indexes]:
-                if sec['alignment']['swim_settings']['include'] and (zpos != first_unskipped):
+                if sec['swim_settings']['include'] and (zpos != first_unskipped):
                     # encoded_data = json.dumps(copy.deepcopy(sec))
-                    encoded_data = json.dumps(sec['alignment'])
+                    encoded_data = json.dumps(sec['levels'][scale])
                     task_args = [sys.executable, align_job, encoded_data]
                     task_queue.add_task(task_args)
             dt = task_queue.collect_results()
@@ -272,7 +274,6 @@ class AlignWorker(QObject):
             index = r['swim_settings']['index']
             method = r['swim_settings']['method']
             sec = dm['stack'][index]['levels'][scale]
-            # sec['alignment'] = r
             sec['method_results'] = r['method_results']
             sec['alignment_history'][method]['method_results'] = copy.deepcopy(r['method_results'])
             sec['alignment_history'][method]['swim_settings'] = copy.deepcopy(r['swim_settings'])
@@ -318,11 +319,11 @@ class AlignWorker(QObject):
 
 
     def generate(self):
-        logger.critical('\n\nGenerating Aligned Images...\n')
+        logger.info('\n\nGenerating Aligned Images...\n')
 
         dm = self.dm
         scale = self.scale
-        indexes = self.indexes
+        indexes = self.regen_indexes
 
         scale_val = get_scale_val(scale)
 
@@ -354,22 +355,22 @@ class AlignWorker(QObject):
         if dm.has_bb():
             # Note: now have got new cafm's -> recalculate bounding box
             rect = dm.set_calculate_bounding_rect(s=scale)  # Only after SetStackCafm
-            logger.critical(f'Bounding Box           : ON\nNew Bounding Box  : {str(rect)}')
-            logger.critical(f'Corrective Polynomial  : {dm.default_poly_order} (Polynomial Order: {dm.default_poly_order})')
+            logger.info(f'Bounding Box           : ON\nNew Bounding Box  : {str(rect)}')
+            logger.info(f'Corrective Polynomial  : {dm.default_poly_order} (Polynomial Order: {dm.default_poly_order})')
         else:
-            logger.critical(f'Bounding Box           : OFF')
-            logger.critical(f'Corrective Polynomial  : {dm.default_poly_order}')
+            logger.info(f'Bounding Box           : OFF')
+            logger.info(f'Corrective Polynomial  : {str(dm.default_poly_order)}')
             w, h = dm.image_size(s=scale)
             rect = [0, 0, w, h]  # might need to swap w/h for Zarr
-        logger.critical(f'Aligned Size      : {rect[2:]}')
-        logger.critical(f'Offsets           : {rect[0]}, {rect[1]}')
+        logger.info(f'Aligned Size      : {rect[2:]}')
+        logger.info(f'Offsets           : {rect[0]}, {rect[1]}')
         if is_tacc():
             cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(indexes)), 1)
         else:
             cpus = psutil.cpu_count(logical=False)
 
         dest = dm.location
-        print(f'\n\nGenerating Aligned Images for {indexes}\n')
+        logger.info(f'\n\nGenerating Aligned Images for {indexes}\n')
 
         tasks = []
         for i, sec in enumerate(dm()):
@@ -385,8 +386,7 @@ class AlignWorker(QObject):
                 if cfg.DEV_MODE:
                     sec['levels'][scale]['method_results']['generate_args'] = [base_name, al_name, rect, cafm, 128]
 
-        logger.critical(f"# of tasks: {len(tasks)}")
-
+        logger.info(f"# of tasks: {len(tasks)}")
 
         # pbar = tqdm.tqdm(total=len(tasks), position=0, leave=True, desc="Generating Alignment")
 
@@ -468,7 +468,7 @@ class AlignWorker(QObject):
         t_elapsed = time.time() - t0
         dm.t_generate = t_elapsed
 
-        # dm.register_cafm_hashes(s=scale, indexes=indexes)
+        dm.register_cafm_hashes(s=scale, indexes=indexes)
         # dm.set_image_aligned_size() #Todo upgrade
 
         pbar_text = 'Copy-converting Scale %d Alignment To Zarr (%d Cores)...' % (scale_val, cpus)

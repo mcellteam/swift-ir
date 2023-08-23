@@ -71,11 +71,11 @@ class AbstractEMViewer(neuroglancer.Viewer):
         self.cs_scale = None
         self.created = datetime.datetime.now()
         # self._layer = None
-        # try:
-        #     self._layer = cfg.data.zpos
-        # except:
-        #     self._layer = 0
-        #     print_exception()
+        try:
+            self._layer = cfg.data.zpos
+        except:
+            logger.warning("setting layer to 0")
+            self._layer = 0
         # self.scale = cfg.data.scale_key
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
         self.type = 'AbstractEMViewer'
@@ -152,47 +152,21 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
     @Slot()
     def on_state_changed(self):
+        # caller = inspect.stack()[1].function
 
         if getData('state,blink'):
             return
 
         if self._blockStateChanged:
             return
-        # if getData('state,blink'):
-        #     return
-
-        caller = inspect.stack()[1].function
-
-        # logger.info(f'[caller: {caller}]')
-        # if caller == '<lambda>':
-        #     return
-        # logger.info(f'[{caller}]')
-
-        #CriticalMechanism
-        # if not self.cs_scale:
-        #     if self.state.cross_section_scale:
-        #         if self.state.cross_section_scale > .0001:
-        #             if DEV:
-        #                 logger.info('[DEV] perfect cs_scale captured! - %.3f' % self.state.cross_section_scale)
-        #             self.cs_scale = self.state.cross_section_scale
 
         try:
-            # print('requested layer: %s' % str(self.state.position[0]))
-            # get_loc = floor(self.state.position[0])
             if isinstance(self.state.position, np.ndarray):
                 request_layer = int(self.state.position[0])
-                #ConfirmedOkay
-                # logger.info(f'  request_layer = {request_layer} // self._layer = {self._layer}')
-                if request_layer == self._layer:
-                    logger.debug('[%s] State Changed, But Layer Is The Same - '
-                                 'Suppressing The stateChanged Callback Signal' %self.type)
-                else:
+                if request_layer != self._layer:
+                    # State Changed, But Layer Is The Same. Supress teh callback
                     cfg.data.zpos = request_layer
                     self._layer = request_layer
-                    # if DEV:
-                    #     logger.info(f'[{caller}] (!) emitting get_loc: {request_layer} [cur_method={self.type}]')
-                    # self.signals.zposChanged.emit(request_layer)
-                    # self.signals.zposChanged.emit()
         except:
             print_exception()
 
@@ -226,9 +200,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
         # return self.state.position
 
     def set_position(self, val):
-        if self.type != 'EMViewerStage':  # Critical!
-            with self.txn() as s:
-                s.position = val
+        with self.txn() as s:
+            s.position = val
 
     def moveUpBy(self, val):
         pos = self.position()
@@ -451,7 +424,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
         # del cfg.tensor
         # del cfg.unal_tensor
         # del cfg.al_tensor
-        cfg.mw.hud.post('Loading Zarr asynchronously using Tensorstore...')
+        cfg.mw.tell('Loading Zarr asynchronously using Tensorstore...')
         cfg.tensor = self.tensor = None
         try:
             # cfg.unal_tensor = get_zarr_tensor(unal_path).result()
@@ -512,10 +485,8 @@ class EMViewer(AbstractEMViewer):
 
         # zd = ('img_src.zarr', 'img_aligned.zarr')[cfg.data.is_aligned()] #Todo this is wrong
         if cfg.data.is_aligned():
-            logger.critical("ALIGNED...")
             path = os.path.join(cfg.data.location,'zarr', cfg.data.scale_key)
         else:
-            logger.critical("NOT ALIGNED...")
             path = os.path.join(cfg.data.series['zarr_path'], cfg.data.scale_key)
         if not os.path.exists(os.path.join(path,'.zarray')):
             cfg.main_window.warn('Zarr (.zarray) Not Found: %s' % path)
@@ -599,8 +570,6 @@ class EMViewer(AbstractEMViewer):
                     s.crossSectionBackgroundColor = '#000000'
                 else:
                     s.crossSectionBackgroundColor = '#808080'
-
-
 
 
         with self.config_state.txn() as s:
@@ -730,51 +699,91 @@ class PMViewer(AbstractEMViewer):
         self._example_path = example_zarr()
 
     def initExample(self):
-        logger.critical('')
+        logger.info('')
         self.initViewer(path=self._example_path)
         # self.post_message("No series have been imported yet. This is just an example.")
         with self.config_state.txn() as cs:
             cs.status_messages['message'] = "No series have been imported yet. This is just an example."
 
 
-    def initViewer(self, path=None):
+    def initViewer(self, path_l=None, path_r=None):
         caller = inspect.stack()[1].function
-        logger.critical(f"[{caller}] [{self.type}] path: {path}")
-        if path:
-            self.path = path
-        else:
-            self.path = self._example_path
+        logger.info(f"[{caller}] [{self.type}]\n"
+                        f"path_l: {path_l}\n"
+                        f"path_r: {path_r}")
+        # if path_l:
+        self.path_l = path_l
+        self.path_r = path_r
+        self.tensor_l, self.tensor_r = None, None
+        self.LV_l, self.LV_r = None, None
+        # else:
+        #     self.path_l = self._example_path
         # coordinate_space = ng.CoordinateSpace(names=['z', 'y', 'x'], units=['nm', 'nm', 'nm'], scales=scales, )
         coordinate_space = ng.CoordinateSpace(names=['z', 'y', 'x'], units=['nm', 'nm', 'nm'], scales=[50,2,2])
-        try:
-            self.tensor = get_zarr_tensor(path).result()
-        except:
-            self.tensor = get_zarr_tensor(self._example_path).result()
-            with self.config_state.txn() as cs:
-                cs.status_messages['message'] = "No series have been imported yet. This is just an example."
-            print_exception()
+        # try:
+        #     self.tensor_l = get_zarr_tensor(path_l).result()
+        # except:
+        #     self.tensor_l = get_zarr_tensor(self._example_path).result()
+        #     with self.config_state.txn() as cs:
+        #         cs.status_messages['message'] = "No series have been imported yet. This is just an example."
+        #     print_exception()
 
-        LV = ng.LocalVolume(
-                volume_type='image',
-                data=self.tensor[:, :, :],
-                dimensions=coordinate_space,
-                # max_voxels_per_chunk_log2=1024
-                # downsampling=None, # '3d' to use isotropic downsampling, '2d' to downsample separately in XY, XZ, and YZ,
-                # None to use no downsampling.
-                max_downsampling=cfg.max_downsampling,
-                max_downsampled_size=cfg.max_downsampled_size,
-                # max_downsampling_scales=cfg.max_downsampling_scales #Goes a LOT slower when set to 1
-            )
+        if self.path_l:
+            try:
+                self.tensor_l = get_zarr_tensor(path_l).result()
+                self.LV_l = ng.LocalVolume(
+                    volume_type='image',
+                    data=self.tensor_l[:, :, :],
+                    dimensions=coordinate_space,
+                    # max_voxels_per_chunk_log2=1024
+                    # downsampling=None, # '3d' to use isotropic downsampling, '2d' to downsample separately in XY, XZ, and YZ,
+                    # None to use no downsampling.
+                    max_downsampling=cfg.max_downsampling,
+                    max_downsampled_size=cfg.max_downsampled_size,
+                    # max_downsampling_scales=cfg.max_downsampling_scales #Goes a LOT slower when set to 1
+                )
+            except:
+                print_exception()
+
+        if self.path_r:
+            try:
+                self.tensor_r = get_zarr_tensor(path_r).result()
+                self.LV_r = ng.LocalVolume(
+                    volume_type='image',
+                    data=self.tensor_r[:, :, :],
+                    dimensions=coordinate_space,
+                    # max_voxels_per_chunk_log2=1024
+                    # downsampling=None, # '3d' to use isotropic downsampling, '2d' to downsample separately in XY, XZ, and YZ,
+                    # None to use no downsampling.
+                    max_downsampling=cfg.max_downsampling,
+                    max_downsampled_size=cfg.max_downsampled_size,
+                    # max_downsampling_scales=cfg.max_downsampling_scales #Goes a LOT slower when set to 1
+                )
+            except:
+                print_exception()
 
         with self.txn() as s:
             s.layout.type = 'yz'
-            s.layers['layer'] = ng.ImageLayer(source=LV)
+            if self.LV_l:
+                s.layers['layer0'] = ng.ImageLayer(source=self.LV_l)
+            else:
+                s.layers['layer0'] = ng.ImageLayer()
+            if self.LV_r:
+                s.layers['layer1'] = ng.ImageLayer(source=self.LV_r)
+            else:
+                s.layers['layer1'] = ng.ImageLayer()
             s.crossSectionBackgroundColor = '#222222'
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
             s.show_default_annotations = True
             s.show_axis_lines = True
             s.show_scale_bar = False
+            s.layout = ng.row_layout([
+                ng.LayerGroupViewer(layout='yz', layers=['layer0']),
+                ng.LayerGroupViewer(layout='yz', layers=['layer1'],),
+            ])
+
+
         with self.config_state.txn() as s:
             s.show_ui_controls = False
             s.status_messages = None
@@ -795,7 +804,7 @@ class EMViewerMendenhall(AbstractEMViewer):
         self.type = 'EMViewerMendenhall'
 
     def initViewer(self):
-        logger.critical('Initializing Neuroglancer - Mendenhall...')
+        logger.info('Initializing Neuroglancer - Mendenhall...')
         path = os.path.join(cfg.data.dest(), 'mendenhall.zarr', 'grp')
         scales = [50, 2, 2]
         coordinate_space = ng.CoordinateSpace(names=['z', 'y', 'x'], units=['nm', 'nm', 'nm'], scales=scales, )

@@ -32,8 +32,6 @@ from qtpy.QtWidgets import QApplication
 from qtpy.QtWebEngineWidgets import *
 from src.funcs_zarr import get_zarr_tensor
 from src.helpers import getOpt, getData, setData, print_exception, is_joel, is_tacc, caller_name
-from src.shaders import ann_shader
-from src.ui.timer import Timer
 import src.config as cfg
 
 ng.server.debug = cfg.DEBUG_NEUROGLANCER
@@ -211,11 +209,8 @@ class MAViewer(neuroglancer.Viewer):
     def initViewer(self):
         # caller = inspect.stack()[1].function
         self._blockStateChanged = True #Critical #Always
-
-        if DEV:
-            logger.critical(f'Initializing [{self.type}] [role: {self.role}] [caller: {caller_name()}]...')
-        # if cfg.data.skipped():
-        #     return
+        # if DEV:
+        #     logger.critical(f'Initializing [{self.type}] [role: {self.role}] [caller: {caller_name()}]...')
 
         if self.role == 'ref':
             self.index = cfg.data.get_ref_index()
@@ -229,7 +224,6 @@ class MAViewer(neuroglancer.Viewer):
 
         sf = cfg.data.scale_val(s=cfg.data.scale_key)
         path = os.path.join(cfg.data.series['zarr_path'], cfg.data.scale_key)
-        logger.critical(f"\n\npath: {path}\n")
 
         if not os.path.exists(path):
             cfg.main_window.warn('Data Store Not Found: %s' % path)
@@ -244,7 +238,6 @@ class MAViewer(neuroglancer.Viewer):
             raise e
 
         # logger.critical('Creating Local Volume for %d' %self.index)
-
 
         if is_tacc():
             self.LV = ng.LocalVolume(
@@ -298,10 +291,10 @@ class MAViewer(neuroglancer.Viewer):
         # self.actions.add('swim', self.blinkCallback)
 
         with self.config_state.txn() as s:
-            # s.input_event_bindings.slice_view['shift+click0'] = 'add_manpoint'
+            # s.input_event_bindings.slice_view['dblclick0'] = 'add_manpoint'
+            s.input_event_bindings.slice_view['shift+click0'] = 'add_manpoint'
             # s.input_event_bindings.slice_view['mousedown0'] = 'add_manpoint' #this works
             # s.input_event_bindings.slice_view['at:control+mousedown0'] = 'add_manpoint'
-            s.input_event_bindings.slice_view['dblclick0'] = 'add_manpoint'
             s.input_event_bindings.viewer['keys'] = 'swim'
             s.show_ui_controls = False
             # s.show_ui_controls = True
@@ -429,7 +422,7 @@ class MAViewer(neuroglancer.Viewer):
 
         if self.role == 'ref':
             if floor(self.state.position[0]) != self.index:
-                logger.critical(f"[{self.role}] Illegal state change")
+                logger.warning(f"[{self.role}] Illegal state change")
                 self.signals.badStateChange.emit() #New
                 return
 
@@ -511,7 +504,7 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def add_matchpoint(self, s):
-        logger.critical('\n\nadd_matchpoint\n')
+        # logger.critical('')
         if cfg.data.method() not in ('manual-strict', 'manual-hint'):
             logger.warning('add_matchpoint: User may not select points while aligning with grid.')
             return
@@ -523,10 +516,10 @@ class MAViewer(neuroglancer.Viewer):
         #     cfg.mw.warn('Three points have already been selected for the reference section!')
         #     return
 
-        logger.info('Adding Manual Points to Buffer...')
+        # logger.info('Adding Manual Points to Buffer...')
 
         coords = np.array(s.mouse_voxel_coordinates)
-        logger.info('Coordinates: %s' %str(coords))
+        # logger.info('Coordinates: %s' %str(coords))
         if coords.ndim == 0:
             logger.warning('Coordinates are dimensionless! =%s' % str(coords))
             return
@@ -535,7 +528,7 @@ class MAViewer(neuroglancer.Viewer):
         # z = 0.5
         pt_index = self._selected_index[self.role]
 
-        logger.critical(f'pt_index = {pt_index}')
+        # logger.info(f'pt_index = {pt_index}')
 
 
         props = [self.colors[pt_index],
@@ -543,7 +536,7 @@ class MAViewer(neuroglancer.Viewer):
                  getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'), ]
         # self.pts[self.getNextUnusedColor()] = ng.PointAnnotation(id=repr((z,y,x)), point=(z,y,x), props=props)
         ann = ng.PointAnnotation(id=repr((self.index + 0.5,y,x)), point=(self.index + 0.5,y,x), props=props)
-        logger.critical(ann.to_json())
+        # logger.info(ann.to_json())
         self.pts[self.role][pt_index] = ann
 
         self.setMpData()
@@ -582,18 +575,16 @@ class MAViewer(neuroglancer.Viewer):
 
     def setMpData(self):
         '''Copy local manual points into project dictionary'''
-        logger.critical(f'Storing Manual Points for {self.role}...')
         cfg.main_window.statusBar.showMessage('Manual Correspondence Points Stored!', 3000)
         l = [None,None,None]
-        logger.critical(f"self.pts[self.role] = {self.pts[self.role]}")
         for i,p in enumerate(self.pts[self.role]):
             logger.info(f"p = {p}")
             if p:
                 _, x, y = p.point.tolist()
-                logger.critical(f"x = {x}, y = {y}")
+                logger.info(f"x = {x}, y = {y}")
                 l[i] = (x, y)
 
-        logger.critical(f"Setting manpoints: {l}\n"
+        logger.info(f"Setting manpoints: {l}\n"
                         f"pts: {self.pts}\n")
         cfg.data.set_manpoints(self.role, l)
         # for p in self.pts['ref']:
@@ -832,26 +823,14 @@ class MAViewer(neuroglancer.Viewer):
 
     def restoreManAlignPts(self):
         logger.info(">>>> restoreManAlignPts >>>>")
-        # self.pts = OrderedDict()
         self.pts[self.role] = [None,None,None]
         pts_data = cfg.data.getmpFlat(l=cfg.data.zpos)[self.role]
-        # logger.info(f'[{self.role}] Restoring manual point/region selections...')
         for i, p in enumerate(pts_data):
             if p:
-                # logger.critical(f"Adding {p}...")
                 props = [self.colors[i], getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'),
                          getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'), ]
-                # self.pts[self.getNextUnusedColor()] = ng.PointAnnotation(id=str(p), point=p, props=props)
                 self.pts[self.role][i] = ng.PointAnnotation(id=str(p), point=p, props=props)
         logger.info("<<<< restoreManAlignPts <<<<")
-
-
-
-
-            # logger.critical(f'pts:\n{self.pts}')
-            # json_str = self.state.layers.to_json()
-            # logger.critical('--------------')
-            # logger.critical(json_str[0]['annotations'])
 
 
     def set_brightness(self, val=None):
@@ -895,9 +874,8 @@ class MAViewer(neuroglancer.Viewer):
     def initZoom(self):
         logger.info(f'[{caller_name()}] [{self.role}] Calling initZoom...')
         adjust = 1.12
-        # logger.critical(f'[{self.role}] self.cs_scale = {self.cs_scale}')
         if self.cs_scale:
-            logger.critical(f'[{self.role}] Initializing crossSectionScale to self.cs_scale ({self.cs_scale}) [{self.role}]')
+            logger.info(f'[{self.role}] Initializing crossSectionScale to self.cs_scale ({self.cs_scale})')
             with self.txn() as s:
                 s.crossSectionScale = self.cs_scale
         else:
@@ -912,28 +890,25 @@ class MAViewer(neuroglancer.Viewer):
             else:
                 widget_w = widget_h = cfg.mw.globTabs.height() - 30
 
-
-            # logger.critical(f'[{self.role}] widget_w = {widget_w}, widget_h = {widget_h}')
-
             res_z, res_y, res_x = cfg.data.resolution(s=cfg.data.scale_key) # nm per imagepixel
             # tissue_h, tissue_w = res_y*frame[0], res_x*frame[1]  # nm of sample
             scale_h = ((res_y * tensor_y) / widget_h) * 1e-9  # nm/pixel (subtract height of ng toolbar)
             scale_w = ((res_x * tensor_x) / widget_w) * 1e-9  # nm/pixel (subtract width of sliders)
             cs_scale = max(scale_h, scale_w)
 
-            # logger.critical(f'Setting crossSectionScale to max of {scale_h} and {scale_w}...')
+            # logger.info(f'Setting crossSectionScale to max of {scale_h} and {scale_w}...')
 
-            # logger.critical(f'________{self.role}________')
-            # logger.critical(f'widget_w       = {widget_w}')
-            # logger.critical(f'widget_h       = {widget_h}')
-            # logger.critical(f'tensor_x       = {tensor_x}')
-            # logger.critical(f'tensor_y       = {tensor_y}')
-            # logger.critical(f'res_x          = {res_x}')
-            # logger.critical(f'res_y          = {res_y}')
-            # logger.critical(f'scale_h        = {scale_h}')
-            # logger.critical(f'scale_w        = {scale_w}')
-            # logger.critical(f'cfg.data.scale_key = {cfg.data.scale_key}')
-            # logger.critical(f'cs_scale       = {cs_scale}')
+            # logger.info(f'________{self.role}________')
+            # logger.info(f'widget_w       = {widget_w}')
+            # logger.info(f'widget_h       = {widget_h}')
+            # logger.info(f'tensor_x       = {tensor_x}')
+            # logger.info(f'tensor_y       = {tensor_y}')
+            # logger.info(f'res_x          = {res_x}')
+            # logger.info(f'res_y          = {res_y}')
+            # logger.info(f'scale_h        = {scale_h}')
+            # logger.info(f'scale_w        = {scale_w}')
+            # logger.info(f'cfg.data.scale_key = {cfg.data.scale_key}')
+            # logger.info(f'cs_scale       = {cs_scale}')
 
             # logger.info(f'Initializing crossSectionScale to calculated value times adjust {self.cs_scale} [{self.role}]')
             with self.txn() as s:

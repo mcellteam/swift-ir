@@ -72,11 +72,13 @@ from qtpy.QtCore import QCoreApplication, Qt
 from qtpy.QtWidgets import QApplication
 from src.ui.main_window import MainWindow
 from src.helpers import check_for_binaries, configure_project_paths, initialize_user_preferences, \
-    is_tacc, print_exception, register_login, convert_projects_model
+    is_tacc, print_exception, register_login, convert_projects_model, addLoggingLevel
 import src.config as cfg
 from qtconsole import __version__ as qcv
 
-print("Imports complete.", flush=True)
+global app
+
+print("Imports complete.")
 
 
 
@@ -118,54 +120,8 @@ print("Imports complete.", flush=True)
 # tracefunc.memorized = set()
 # tracefunc.stack_level = 0
 
-def addLoggingLevel(levelName, levelNum, methodName=None):
-    """
-    Comprehensively adds a new logging level to the `logging` module and the
-    currently configured logging class.
 
-    `levelName` becomes an attribute of the `logging` module with the value
-    `levelNum`. `methodName` becomes a convenience method for both `logging`
-    itself and the class returned by `logging.getLoggerClass()` (usually just
-    `logging.Logger`). If `methodName` is not specified, `levelName.lower()` is
-    used.
 
-    To avoid accidental clobberings of existing attributes, this method will
-    raise an `AttributeError` if the level name is already an attribute of the
-    `logging` module or if the method name is already present
-
-    Example
-    -------
-    >>> addLoggingLevel('TRACE', logging.DEBUG - 5)
-    >>> logging.getLogger(__name__).setLevel("TRACE")
-    >>> logging.getLogger(__name__).trace('that worked')
-    >>> logging.trace('so did this')
-    >>> logging.TRACE
-    5
-
-    """
-    if not methodName:
-        methodName = levelName.lower()
-
-    if hasattr(logging, levelName):
-       raise AttributeError('{} already defined in logging module'.format(levelName))
-    if hasattr(logging, methodName):
-       raise AttributeError('{} already defined in logging module'.format(methodName))
-    if hasattr(logging.getLoggerClass(), methodName):
-       raise AttributeError('{} already defined in logger class'.format(methodName))
-
-    # This method is based on answers to Stack Overflow post
-    # http://stackoverflow.com/q/2183233/2988730, especially
-    # http://stackoverflow.com/a/13638084/2988730
-    def logForLevel(self, message, *args, **kwargs):
-        if self.isEnabledFor(levelNum):
-            self._log(levelNum, message, args, **kwargs)
-    def logToRoot(message, *args, **kwargs):
-        logging.log(levelNum, message, *args, **kwargs)
-
-    logging.addLevelName(levelNum, levelName)
-    setattr(logging, levelName, levelNum)
-    setattr(logging.getLoggerClass(), methodName, logForLevel)
-    setattr(logging, methodName, logToRoot)
 
 class CustomFormatter(logging.Formatter):
     # ANSI color codess
@@ -174,6 +130,8 @@ class CustomFormatter(logging.Formatter):
     red = "\x1b[31;20m"
     bold_red = "\x1b[31;1m"
     blue = "\x1b[1;34m"
+    cyan = "\x1b[36m"
+    # blue = "\x1b[44m"
     reset = "\x1b[0m"
     format = '%(asctime)s %(levelname)s [%(module)s.%(funcName)s:%(lineno)d] %(message)s'
     format2 = '%(asctime)s [%(module)s.%(funcName)s:%(lineno)d] %(message)s'
@@ -183,7 +141,7 @@ class CustomFormatter(logging.Formatter):
         logging.WARNING: yellow + format + reset,
         logging.ERROR: red + format + reset,
         # logging.CRITICAL: bold_red + format2 + reset,
-        logging.CRITICAL: blue + format2 + reset,
+        logging.CRITICAL: cyan + format2 + reset,
     }
     def format(self, record):
         log_fmt = self.FORMATS.get(record.levelno)
@@ -224,7 +182,7 @@ def main():
     parser.add_argument('--api', default='pyqt5', help='Python-Qt API (pyqt6|pyqt5|pyside6|pyside2)')
     parser.add_argument('--debug', action='store_true', help='Debug Mode')
     parser.add_argument('--debug_mp', action='store_true', help='Set python multiprocessing debug level to DEBUG')
-    parser.add_argument('--loglevel', type=int, default=cfg.LOG_LEVEL, help='Logging Level (0-4)')
+    parser.add_argument('--loglevel', type=int, default=1, help='Logging Level (0-4)')
     # parser.add_argument('--no_tensorstore', action='store_true', help='Does not use Tensorstore if True')
     parser.add_argument('--headless', action='store_true', help='Do not embed the neuroglancer browser if True')
     parser.add_argument('--no_splash', action='store_true', help='Do not start up with a splash screen')
@@ -236,6 +194,9 @@ def main():
 
     os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt5'
     os.environ["BLOSC_NTHREADS"] = "1"
+    # os.environ["PYTHONWARNINGS"] = 'ignore'
+    logging.getLogger('asyncio').disabled = True
+    logging.getLogger('tornado.access').disabled = True
 
     if logger.hasHandlers():  logger.handlers.clear() #orig
     ch = logging.StreamHandler()
@@ -321,7 +282,9 @@ def main():
 
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--enable-logging --log-level=3' # suppress JS warnings
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=0'
-    os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --no-sandbox --num-raster-threads=%s' % cfg.QTWEBENGINE_RASTER_THREADS
+    os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --no-sandbox --num-raster-threads=%s ' \
+                                               '--enable-logging --log-level=3' % \
+                                               cfg.QTWEBENGINE_RASTER_THREADS
     os.environ['OPENBLAS_NUM_THREADS'] = '1'
     # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
     os.environ['LIBTIFF_STRILE_ARRAY_MAX_RESIZE_COUNT'] = '1000000000'
@@ -348,18 +311,18 @@ def main():
     # configure_project_paths()
 
     # app = QApplication([])
-    app = QApplication(sys.argv)
-
-    app.setStyle('Fusion')
+    # app = QApplication(sys.argv)
+    #
+    # app.setStyle('Fusion')
     # app.setStyle('Breeze')
     # app.setStyle('Oxygen')
     # app.setStyle('Windows')
     cfg.main_window = cfg.mw = MainWindow()
 
-    logger.info('Showing AlignEM-SWiFT...')
+    logger.info('Showing application window')
     cfg.main_window.show()
 
-    sys.exit(app.exec())
+    # sys.exit(app.exec())
 
     # stats = pstats.Stats(profiler).sort_stats('ncalls')
     # stats.print_stats()
@@ -368,8 +331,10 @@ def main():
 
 
 if __name__ == "__main__":
-
+    app = QApplication(sys.argv)
+    app.setStyle('Fusion')
     main()
+    sys.exit(app.exec())
 
 
 

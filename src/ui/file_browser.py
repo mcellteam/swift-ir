@@ -35,8 +35,8 @@ class FileBrowser(QWidget):
         self.treeview.setRootIndex(root)
 
 
-        self.path_scratch = os.getenv('SCRATCH')
-        self.path_work = os.getenv('WORK')
+        self.path_scratch = os.getenv('SCRATCH', "SCRATCH not found")
+        self.path_work = os.getenv('WORK', "WORK not found")
         self.path_special = '/Volumes/3dem_data'
 
         self.treeview.setColumnWidth(0, 600)
@@ -70,6 +70,10 @@ class FileBrowser(QWidget):
 
     def setRootSpecial(self):
         try:    self.treeview.setRootIndex(self.fileSystemModel.index(self.path_special))
+        except: logger.warning('Directory cannot be accessed')
+
+    def setRootCR(self):
+        try:    self.treeview.setRootIndex(self.fileSystemModel.index(cfg.settings['content_root']))
         except: logger.warning('Directory cannot be accessed')
 
     def setRoot_corral_projects(self):
@@ -142,6 +146,12 @@ class FileBrowser(QWidget):
         self.buttonSetRootSpecial.setFixedSize(button_size)
         self.buttonSetRootSpecial.clicked.connect(self.setRootSpecial)
 
+        self.buttonSetRootCR = QPushButton('CR')
+        # self.buttonSetRootSpecial.setStyleSheet(button_gradient_style)
+        self.buttonSetRootCR.setStyleSheet('font-size: 9px;')
+        self.buttonSetRootCR.setFixedSize(button_size)
+        self.buttonSetRootCR.clicked.connect(self.setRootCR)
+
 
         if is_tacc():
             self.buttonSetRoot_corral_projects = QPushButton('Projects_AlignEM')
@@ -174,6 +184,8 @@ class FileBrowser(QWidget):
             hbl.addWidget(self.buttonSetRootScratch)
         if self.path_work:
             hbl.addWidget(self.buttonSetRootWork)
+        if cfg.settings['content_root']:
+            hbl.addWidget(self.buttonSetRootCR)
         if is_tacc():
             hbl.addWidget(self.buttonSetRoot_corral_images)
             hbl.addWidget(self.buttonSetRoot_corral_projects)

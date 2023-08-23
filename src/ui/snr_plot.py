@@ -266,7 +266,7 @@ class SnrPlot(QWidget):
 
     def initSnrPlot(self, s=None):
         caller = inspect.stack()[1].function
-        logger.info(f"[{caller}] Initializing SNR plot...")
+        logger.critical(f"[{caller}] [dock? {self.dock}]")
         sys.stdout.flush()
         t0 = time()
         try:
@@ -365,8 +365,8 @@ class SnrPlot(QWidget):
                 else:
                     x_axis.append(i)
                     y_axis.append(cfg.data.snr(s=s, l=i))
-        logger.info(f"get_everything_comport_axis_data dt={time() - t0:.3g}")
-        logger.info(f"\nx-axis: {x_axis}\ny-axis: {y_axis}")
+        # logger.info(f"get_everything_comport_axis_data dt={time() - t0:.3g}")
+        # logger.info(f"\nx-axis: {x_axis}\ny-axis: {y_axis}")
         sys.stdout.flush()
         return x_axis, y_axis
 
@@ -385,9 +385,9 @@ class SnrPlot(QWidget):
                 else:
                     x_axis.append(i)
                     y_axis.append(cfg.data.snr(s=s, l=i))
-        logger.info(f"get_cafm_no_comport_axis_data dt={time() - t0:.3g}")
-        logger.info(f"\nx-axis: {x_axis}\ny-axis: {y_axis}")
-        sys.stdout.flush()
+        # logger.info(f"get_cafm_no_comport_axis_data dt={time() - t0:.3g}")
+        # logger.info(f"\nx-axis: {x_axis}\ny-axis: {y_axis}")
+        # sys.stdout.flush()
         return x_axis, y_axis
 
     def get_data_no_comport_axis_data(self, s=None) -> tuple:
@@ -413,7 +413,6 @@ class SnrPlot(QWidget):
 
     def plotData(self):
         '''Update SNR plot widget based on checked/unchecked state of checkboxes'''
-
 
         # logger.critical(f"[{self.dock}] {cfg.data.snr_list()}")
         # caller = inspect.stack()[1].function
@@ -489,9 +488,6 @@ class SnrPlot(QWidget):
             # hoverBrush=None,
             # pxMode=False # points transform with zoom
         )
-        # logger.critical(f"Adding to plot, x_axis: {x_axis}")
-        # logger.critical(f"Adding to plot, y_axis: {y_axis}")
-        # logger.critical(f"Adding to plot: {self.ghost_points[s]}")
         self.ghost_points[s].addPoints(x_axis, y_axis)
         self.ghost_points[s].setZValue(0)
         self.plot.addItem(self.ghost_points[s])
@@ -499,14 +495,13 @@ class SnrPlot(QWidget):
 
 
     def plotSingleScale(self, s=None):
-        # logger.critical(f'[{self.dock}] plotSingleScale (scale_key: {s}):')
+        logger.info(f'[{self.dock}] plotSingleScale (scale_key: {s}):')
         if s == None: s = cfg.data.scale
         # x_axis, y_axis = self.get_axis_data(s=s)
         x_axis, y_axis = self.get_everything_comport_axis_data(s=s)
         if not self.dock: x_axis = [x+self._getScaleOffset(s=s) for x in x_axis]
         brush = self._plot_brushes[cfg.data.scales[::-1].index(s)]
 
-        # logger.critical("Plotting everything comports axis data...")
         self.snr_points[s] = pg.ScatterPlotItem(
             size=(11,8)[self.dock],
             # pen=pg.mkPen(None),
@@ -599,7 +594,6 @@ class SnrPlot(QWidget):
             # self.no_comport_cafm_points[s].sigHovered.connect(hoverSlot0)
             # sys.stdout.flush()
 
-            # logger.critical("Plotting data no comports data points...")
             self.no_comport_data_points[s] = pg.ScatterPlotItem(
                 size=9,
                 # pen=pg.mkPen(None),
