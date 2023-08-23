@@ -1254,6 +1254,7 @@ class ProjectTab(QWidget):
             if cfg.mw.dw_snr.isVisible():
                 self.dSnr_plot.initSnrPlot()
 
+            self.updateDetailsPanel()
             self.baseViewer.drawSWIMwindow()
 
         self.bg_method.buttonClicked.connect(method_bg_fn)

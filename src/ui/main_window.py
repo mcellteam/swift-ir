@@ -1150,6 +1150,7 @@ class MainWindow(QMainWindow):
             index = cfg.data.zpos
         self.align(align_indexes=[index], regen_indexes=None, align=True, regenerate=False)
 
+
     @Slot()
     def alignAll(self):
         indexes = list(range(0,len(cfg.data)))
