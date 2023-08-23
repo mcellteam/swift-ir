@@ -181,7 +181,7 @@ class OpenProject(QWidget):
         # self._buttonBrowserPaste.setEnabled(os.path.exists(QApplication.clipboard().text()))
 
         self.bSetContentSources = QPushButton('Set Content Sources')
-        self.bSetContentSources.setFixedSize(QSize(90,18))
+        self.bSetContentSources.setFixedSize(QSize(100,18))
         self.bSetContentSources.setStyleSheet('font-size: 9px; background-color: #222222; color: #f3f6fb;')
         def fn():
             self.w_teContentSources.setVisible(not self.w_teContentSources.isVisible())
