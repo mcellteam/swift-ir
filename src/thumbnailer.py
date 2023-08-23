@@ -82,8 +82,8 @@ class Thumbnailer:
             cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
         else:
             # src = os.path.join(dest, scale, 'signals_raw')
-            src = os.path.join(dest, scale, 'signals')
-            od = os.path.join(dest, scale, 'signals')
+            src = os.path.join(dest, 'signals', scale)
+            od = os.path.join(dest, 'signals', scale)
 
             rmdir = False
 
@@ -91,9 +91,9 @@ class Thumbnailer:
             if not rmdir:
                 #Special handling for corrspot files since they are variable in # and never 1:1 with project files
                 for i in indexes:
-                    basename = os.path.basename(cfg.data.base_image_name(s=cfg.data.scale_key, l=i))
+                    basename = os.path.basename(cfg.data.base_image_name(s=cfg.data.scale, l=i))
                     filename, extension = os.path.splitext(basename)
-                    method = cfg.data.section(l=i)['alignment']['swim_settings']['method']
+                    method = cfg.data.section(s=cfg.data.scale, l=i)['swim_settings']['method']
                     # old_thumbnails = glob(os.path.join(od, '*' + '_' + method + '_' + baseFileNames[i]))
                     search_path = os.path.join(od, '%s_%s_*%s' % (filename, method, extension))
                     # logger.critical(f'\n\n\nSearch Path (Pre-Removal):\n{search_path}\n\n')
@@ -142,17 +142,17 @@ class Thumbnailer:
             cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
         else:
             # src = os.path.join(dest, scale, 'matches_raw')
-            src = os.path.join(dest, scale, 'matches')
-            od = os.path.join(dest, scale, 'matches')
+            src = os.path.join(dest, 'matches', scale)
+            od = os.path.join(dest, 'matches', scale)
 
             rmdir = False
 
             if not rmdir:
                 #Special handling for corrspot files since they are variable in # and never 1:1 with project files
                 for i in indexes:
-                    basename = os.path.basename(cfg.data.base_image_name(s=cfg.data.scale_key, l=i))
+                    basename = os.path.basename(cfg.data.base_image_name(s=cfg.data.scale, l=i))
                     fn, ext = os.path.splitext(basename)
-                    method = cfg.data.section(l=i)['alignment']['swim_settings']['method']
+                    method = cfg.data.section(s=cfg.data.scale, l=i)['swim_settings']['method']
                     pattern = os.path.join(od, '%s_%s_[tk]_%d%s' % (fn, method, i, ext))
 
                     originals = glob(pattern)

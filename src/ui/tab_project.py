@@ -164,7 +164,8 @@ class ProjectTab(QWidget):
             self.updateTimingsWidget()
             self.update_MA_list_widgets()  # 0726+
             self.set_transforming()  # 0802+
-            self.dSnr_plot.initSnrPlot()
+            if cfg.mw.dw_snr.isVisible():
+                self.dSnr_plot.initSnrPlot()
         elif index == 2:
             self.project_table.initTableData()
         elif index == 3:
@@ -192,8 +193,6 @@ class ProjectTab(QWidget):
         if cfg.mw._working:
             logger.warning(f"[{caller}] UNABLE TO INITIALIZE NEUROGLANCER AT THIS TIME... BUSY WORKING!")
             return
-
-
 
         cfg.mw.set_status('Initializing Neuroglancer...')
         if DEV:
@@ -223,6 +222,7 @@ class ProjectTab(QWidget):
             if self._tabs.currentIndex() == 0 or init_all:
                 self.viewer = cfg.emViewer = EMViewer(webengine=self.webengine)
                 self.viewer.initZoom(self.webengine.width(), self.webengine.height())
+                # self.viewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314 #Todo
                 self.viewer.signals.layoutChanged.connect(self.slot_layout_changed)
                 # cfg.emViewer.signals.zoomChanged.connect(self.slot_zoom_changed)
                 logger.info(f"Local Volume:\n{cfg.LV.info()}")
@@ -249,7 +249,7 @@ class ProjectTab(QWidget):
 
     def slot_zoom_changed(self, val):
         caller = inspect.stack()[1].function
-        # logger.info('caller: %s' % caller)
+        logger.info(f'[{caller}]')
         if val > 1000:
             val *= 250000000
         if DEV:
@@ -602,7 +602,7 @@ class ProjectTab(QWidget):
         self.btnQuickSWIM.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.btnQuickSWIM.setFixedHeight(22)
         self.btnQuickSWIM.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.btnQuickSWIM.clicked.connect(lambda: cfg.main_window.alignOne(swim_only=True))
+        self.btnQuickSWIM.clicked.connect(lambda: cfg.main_window.alignOne(regenerate=False))
         # self.btnQuickSWIM.clicked.connect(lambda: cfg.mw.setdw_matches(True))
 
         # self.lw_gb_l = GroupBox("Transforming")
@@ -941,7 +941,7 @@ class ProjectTab(QWidget):
         self.fl_MA_settings = QFormLayout()
         self.fl_MA_settings.setVerticalSpacing(1)
         self.fl_MA_settings.setHorizontalSpacing(2)
-        self.fl_MA_settings.setFormAlignment(Qt.AlignCenter)
+        self.fl_MA_settings.setFormAlignment(Qt.AlignTop)
         self.fl_MA_settings.setContentsMargins(0, 0, 0, 0)
         self.fl_MA_settings.addRow("SWIM 1x1 Window", self.AS_swim_window_widget)
         self.fl_MA_settings.addRow("SWIM 2x2 Window", self.AS_2x2_swim_window_widget)
@@ -1224,10 +1224,7 @@ class ProjectTab(QWidget):
         self.bg_method.addButton(self.rb_method2)
 
         def method_bg_fn():
-            logger.critical(f"Before:\n{cfg.data.swim_settings()}")
-            if DEV:
-                logger.critical(caller_name())
-            # logger.critical(f'\n\n\n\n\n BEFORE:{cfg.data.current_method} \n\n\n\n\n')
+            logger.info(f"Method Changed!")
             cur_index = self.MA_stackedWidget.currentIndex()
             if self.rb_method0.isChecked():
                 logger.info('radiobox 0 is checked')
@@ -1251,8 +1248,6 @@ class ProjectTab(QWidget):
             #     self.MA_stackedWidget.setCurrentIndex(4)
             cfg.mw.updateCorrSignalsDrawer()
 
-            logger.critical(f"AFTER:\n{cfg.data.swim_settings()}")
-
             SetStackCafm(cfg.data, scale=cfg.data.scale,
                          poly_order=cfg.data.default_poly_order)
             if cfg.mw.dw_snr.isVisible():
@@ -1266,7 +1261,7 @@ class ProjectTab(QWidget):
         self.radioboxes_method.layout.setSpacing(2)
         self.radioboxes_method.setMaximumHeight(20)
 
-        self.lab_region_selection = QLabel("Double Click to select 3 matching regions")
+        self.lab_region_selection = QLabel("⇧ + click to select 3 matching regions")
         # self.lab_region_selection = QLabel("")
         self.lab_region_selection.setStyleSheet("font-size: 10px; font-weight: 600; color: #161c20; padding: 1px;")
 
@@ -1398,7 +1393,7 @@ class ProjectTab(QWidget):
                 key = 'swim_out'
             elif self.rb_logs_mir_args.isChecked():
                 key = 'mir_args'
-            args = '\n'.join(cfg.data['data']['scales'][cfg.data.scale_key]['stack'][cfg.data.zpos]['alignment'][key][
+            args = '\n'.join(cfg.data['stack'][cfg.data.zpos]['levels'][cfg.data.scale]['method_results'][key][
                                  'ingredient_0']).split(' ')
             for i, x in enumerate(args):
                 if x and x[0] == '/':
@@ -1417,7 +1412,7 @@ class ProjectTab(QWidget):
                 key = 'swim_out'
             elif self.rb_logs_mir_args.isChecked():
                 key = 'mir_args'
-            args = '\n'.join(cfg.data['data']['scales'][cfg.data.scale_key]['stack'][cfg.data.zpos]['alignment'][key][
+            args = '\n'.join(cfg.data['stack'][cfg.data.zpos]['levels'][cfg.data.scale]['method_results'][key][
                                  'ingredient_1']).split(' ')
             for i, x in enumerate(args):
                 if x and x[0] == '/':
@@ -1436,8 +1431,7 @@ class ProjectTab(QWidget):
                 key = 'swim_out'
             elif self.rb_logs_mir_args.isChecked():
                 key = 'mir_args'
-            args = '\n'.join(cfg.data['data']['scales'][cfg.data.scale_key]['stack'][cfg.data.zpos]['alignment'][key][
-                                 'ingredient_2']).split(' ')
+            args = '\n'.join(cfg.data['stack'][cfg.data.zpos]['levels'][cfg.data.scale]['method_results'][key]['ingredient_2']).split(' ')
             for i, x in enumerate(args):
                 if x and x[0] == '/':
                     args[i] = os.path.basename(x)
@@ -1824,6 +1818,10 @@ class ProjectTab(QWidget):
         self.le_zoom.setValidator(QDoubleValidator())
         self.le_zoom.returnPressed.connect(lambda: setData('state,ng_zoom', float(self.le_zoom.text())))
         self.le_zoom.returnPressed.connect(lambda: self.viewer.set_zoom(float(self.le_zoom.text())))
+        try:
+            self.le_zoom.setText('%.3f' % cfg.data['state']['ng_zoom'])
+        except:
+            print_exception()
 
         self.zoomLab = QLabel('Zoom:')
         self.zoomLab.setStyleSheet("""color: #f3f6fb; font-size: 10px;""")
@@ -2227,15 +2225,22 @@ class ProjectTab(QWidget):
                                                 'longer comports with the displayed alignment.', fixbutton=True,
                                           symbol='○')
 
-        def fn_fix_cafm():
-            first_cafm_false = cfg.data.first_cafm_false()
+        def fn_fix_all():
+
+
+            # first_cafm_false = cfg.data.first_cafm_false()
+
             to_align = cfg.data.data_dn_comport_indexes()
-            cfg.mw.align(scale=cfg.data.scale, indexes=to_align, ignore_bb=True)
             to_regenerate = cfg.data.cafm_dn_comport_indexes()
-            cfg.mw.regenerate(scale=cfg.data.scale_key, indexes=to_regenerate, reallocate_zarr=False)
-            cfg.mw.dataUpdateWidgets()
-            self.dSnr_plot.initSnrPlot()
-        self.warning_cafm.fixbutton.clicked.connect(fn_fix_cafm)
+            logger.critical(f'Indexes to align:\n{to_align}')
+            logger.critical(f'Indexes to regenerate:\n{to_regenerate}')
+            cfg.mw.align(align_indexes=to_align, regen_indexes=to_regenerate, ignore_bb=True)
+            # cfg.mw.regenerate(scale=cfg.data.scale, indexes=to_regenerate, ignore_bb=True)
+            # to_regenerate = cfg.data.cafm_dn_comport_indexes()
+            # cfg.mw.regenerate(scale=cfg.data.scale_key, indexes=to_regenerate, reallocate_zarr=False)
+            # cfg.mw.dataUpdateWidgets()
+            # self.dSnr_plot.initSnrPlot()
+        self.warning_cafm.fixbutton.clicked.connect(fn_fix_all)
         self.warning_cafm.hide()
 
         self.warning_data = WarningNotice(self, 'This alignment has been modified.', fixbutton=True, symbol='×')
@@ -2243,19 +2248,12 @@ class ProjectTab(QWidget):
             #Todo the way previous defaults is being stored is a temp hack to be fixed later
             logger.info('')
             method = cfg.data.method()
-            if method == 'grid-default':
-                sec = cfg.data['data']['scales'][cfg.data.scale]['stack'][cfg.data.zpos]
-                cfg.data.defaults = copy.deepcopy(sec['alignment']['swim_settings']['defaults'])
-            else:
-                sec = cfg.data['data']['scales'][cfg.data.scale]['stack'][cfg.data.zpos]
+            sec = cfg.data['stack'][cfg.data.zpos]['levels'][cfg.data.scale]
 
-                if not sec['alignment_history'][method]['complete']:
-                    sec['alignment']['swim_settings']['method'] = 'grid-default'
-                    method = 'grid-default'
-                try:
-                    sec['alignment']['swim_settings'] = copy.deepcopy(sec['alignment_history'][method]['swim_settings'])
-                except:
-                    print_exception()
+            if sec['alignment_history'][method]['complete']:
+                sec['swim_settings'] = copy.deepcopy(sec['alignment_history'][method]['swim_settings'])
+            else:
+                sec['swim_settings'] = copy.deepcopy(sec['alignment_history']['grid-default']['swim_settings'])
 
             # cfg.main_window.alignOne(swim_only=True)
             SetStackCafm(cfg.data, scale=cfg.data.scale,
@@ -2264,7 +2262,8 @@ class ProjectTab(QWidget):
             cfg.mw.dataUpdateWidgets()
             # cfg.mw.updateDataComportsLabel()
             self.baseViewer.drawSWIMwindow()
-            self.dSnr_plot.initSnrPlot()
+            if cfg.mw.dw_snr.isVisible():
+                self.dSnr_plot.initSnrPlot()
 
         self.warning_data.fixbutton.clicked.connect(fn_revert_data)
         self.warning_data.fixbutton.setText('Revert')
@@ -3167,19 +3166,16 @@ class ProjectTab(QWidget):
 
     def setZoomSlider(self):
         caller = inspect.stack()[1].function
-        logger.info(f'[{caller}]')
         if caller == 'main':
-        # logger.critical(f'Setting Zoom to {cfg.emViewer.zoom() / 1}...')
+            logger.info(f'[{caller}]')
             if self._allow_zoom_change:
                 # caller = inspect.stack()[1].function
                 if cfg.data['state']['current_tab'] == 1:
                     zoom = self.baseViewer.zoom()
                 else:
                     zoom = cfg.emViewer.zoom()
-
                 if zoom == 0:
                     return
-                # logger.critical('Setting slider value (zoom: %g, caller: %s)' % (zoom, caller))
                 # val =
                 # if val in range(-2147483648, 2147483647):
                 try:
@@ -3197,7 +3193,7 @@ class ProjectTab(QWidget):
             if cfg.data['state']['current_tab'] == 1:
                 if abs(self.baseViewer.state.cross_section_scale - val) > .0001:
                     self.baseViewer.set_zoom(val)
-            else:
+            elif cfg.data['state']['current_tab'] == 0:
                 try:
                     if abs(cfg.emViewer.state.cross_section_scale - val) > .0001:
                         cfg.emViewer.set_zoom(val)
@@ -3357,7 +3353,7 @@ class ProjectTab(QWidget):
             scale = cfg.data.scale_key
             self.updateTreeWidget()
 
-            keys = ['data', 'scales', scale, 'stack', section]
+            keys = ['stack', section, 'levels', scale]
 
             opt = self.combo_data_tree.currentText()
             logger.info(f'opt = {opt}')
@@ -3365,30 +3361,12 @@ class ProjectTab(QWidget):
                 try:
                     if opt == 'Section':
                         pass
-                    elif opt == 'Results':
-                        keys.extend(['alignment', 'method_results'])
+                    elif opt == 'Method Results':
+                        keys.extend(['method_results'])
                     elif opt == 'Alignment History':
                         keys.extend(['alignment_history'])
-                    elif opt == 'Method Results':
-                        keys.extend(['alignment', 'method_results'])
-                    # elif opt == 'Ingredient 0':
-                    #     keys.extend(['alignment', 'method_results', 'ingredient_0'])
-                    # elif opt == 'Ingredient 1':
-                    #     keys.extend(['alignment', 'method_results', 'ingredient_1'])
-                    # elif opt == 'Ingredient 2':
-                    #     keys.extend(['alignment', 'method_results', 'ingredient_2'])
                     elif opt == 'SWIM Settings':
-                        keys.extend(['alignment', 'swim_settings'])
-                    # elif opt == 'SWIM Out':
-                    #     keys.extend(['alignment', 'method_results', 'ingredient_2', 'swim_out'])
-                    # elif opt == 'SWIM Err':
-                    #     keys.extend(['alignment', 'method_results', 'ingredient_2', 'swim_err'])
-                    # elif opt == 'SWIM Arguments':
-                    #     keys.extend(['alignment', 'method_results', 'ingredient_2', 'swim_args'])
-                    # elif opt == 'MIR Err':
-                    #     keys.extend(['alignment', 'method_results', 'ingredient_2', 'mir_err_lines'])
-                    # elif opt == 'MIR Out':
-                    #     keys.extend(['alignment', 'method_results', 'ingredient_2', 'mir_out_lines'])
+                        keys.extend(['swim_settings'])
 
                     logger.info(f'keys = {keys}')
                 except:
@@ -3413,7 +3391,7 @@ class ProjectTab(QWidget):
 
         self.combo_data_tree = QComboBox()
         self.combo_data_tree.setFixedWidth(120)
-        items = ['--', 'Results', 'Alignment History', 'Method Results', 'SWIM Settings']
+        items = ['--', 'SWIM Settings', 'Method Results', 'Alignment History']
         self.combo_data_tree.addItems(items)
 
         self.btn_tree_go = QPushButton('Go')
@@ -3648,23 +3626,11 @@ class ProjectTab(QWidget):
         cfg.emViewer.set_state(state)
 
     def focusedViewerChanged(self, focused: str):
-        logger.critical(f'focused: {focused}')
-
+        logger.info(f'Focus Changed! Focus: {focused}')
         if self.focusedViewer == 'ref':
             logger.critical('ref viewer is now in focus!')
-            # pass
         elif self.focusedViewer == 'base':
             logger.critical('base viewer is now in focus!')
-            pass
-
-
-    # def paintEvent(self, pe):
-    #     '''Enables widget to be style-ized'''
-    #     opt = QStyleOption()
-    #     opt.initFrom(self)
-    #     p = QPainter(self)
-    #     s = self.style()
-    #     s.drawPrimitive(QStyle.PE_Widget, opt, p, self)
 
 
     def updateTimingsWidget(self):
@@ -3686,10 +3652,7 @@ class ProjectTab(QWidget):
 
 
     def updateDetailsPanel(self):
-
         if self._tabs.currentIndex() == 1:
-            logger.info('')
-
             caller = inspect.stack()[1].function
             logger.info(f'[{caller}] Updating details panel...')
             self.secName.setText(cfg.data.filename_basename())
@@ -4074,7 +4037,6 @@ class WarningNotice(QWidget):
             }
             """)
             self.fixbutton.setFixedSize(QSize(40,18))
-            # self.fixbutton.setFixedHeight(16)
             self.layout.addWidget(self.fixbutton)
 
         self.setLayout(self.layout)

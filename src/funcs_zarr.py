@@ -54,8 +54,9 @@ def get_zarr_tensor(zarr_path):
     :return: A webengineview into the dataset.
     :rtype: tensorstore.Future
     '''
-    logger.critical('Requested Tensor: %s...' %zarr_path)
-    node = platform.node()
+    # caller = inspect.stack()[1].function
+    logger.info(f'Requested: {zarr_path}')
+    # node = platform.node()
     # total_bytes_limit = 250_000_000_000  # just under 256 GB
     # if '.tacc.utexas.edu' in node:
     #     # Lonestar6: 256 GB (3200 MT/s) DDR4

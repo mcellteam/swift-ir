@@ -25,7 +25,7 @@ def save_bias_analysis(layers, bias_path):
         if True or not layer['skipped']:
             try:
                 atrm = layer['alignment']
-                method = layer['alignment']['swim_settings']['method']
+                method = layer['swim_settings']['method']
                 c_afm = np.array(layer['alignment_history'][method]['method_results']['cumulative_afm'])
                 # snr = np.array(atrm['method_results']['snr_report']) #1205-
                 try:

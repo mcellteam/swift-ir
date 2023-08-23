@@ -304,7 +304,7 @@ class ProjectTable(QWidget):
 
         rowData = []
         dest = cfg.data.dest()
-        method = cfg.data['data']['scales'][s]['stack'][l]['alignment']['swim_settings']['method']
+        method = cfg.data.method(s=s, l=l)
         index = ('%d'%l).zfill(5)
         basename = cfg.data.filename_basename(s=s, l=l)
         snr_avg = cfg.data.snr(s=s, l=l, method=method)
@@ -312,13 +312,13 @@ class ProjectTable(QWidget):
         tn_ref = cfg.data.thumbnail_ref(s=s, l=l)
         tn_aligned = cfg.data.thumbnail_aligned(s=s, l=l)
         fn, extension = os.path.splitext(basename)
-        sig0 = os.path.join(dest, s, 'signals', '%s_%s_0%s' % (fn, method, extension))
-        sig1 = os.path.join(dest, s, 'signals', '%s_%s_1%s' % (fn, method, extension))
-        sig2 = os.path.join(dest, s, 'signals', '%s_%s_2%s' % (fn, method, extension))
-        sig3 = os.path.join(dest, s, 'signals', '%s_%s_3%s' % (fn, method, extension))
+        sig0 = os.path.join(dest, 'signals', s, '%s_%s_0%s' % (fn, method, extension))
+        sig1 = os.path.join(dest, 'signals', s, '%s_%s_1%s' % (fn, method, extension))
+        sig2 = os.path.join(dest, 'signals', s, '%s_%s_2%s' % (fn, method, extension))
+        sig3 = os.path.join(dest, 'signals', s, '%s_%s_3%s' % (fn, method, extension))
         notes = cfg.data.notes(s=s,l=l)
         try:
-            last_aligned = cfg.data['data']['scales'][s]['stack'][l]['alignment']['method_results']['datetime']
+            last_aligned = cfg.data['stack'][l]['levels'][s]['alignment_history'][method]['method_results']['datetime']
         except:
             last_aligned = 'N/A'
         return [index, basename, snr_avg, last_aligned, tn_ref, tn_tra, tn_aligned, sig0, sig1, sig2, sig3, notes]

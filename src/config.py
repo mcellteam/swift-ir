@@ -26,7 +26,6 @@ DEBUG_NEUROGLANCER = 0
 DEV_MODE = 1
 VERBOSE_SWIM = 0
 LOG_RECIPE_TO_FILE = 0
-LOG_LEVEL = 1
 # LOG_RECIPE_TO_FILE = int(getpass.getuser() in ('joelyancey','joely'))
 TACC_MAX_CPUS = 100 # x3 is > 304
 # QTWEBENGINE_RASTER_THREADS = 1024
@@ -75,16 +74,16 @@ is_mendenhall = False
 # WIDTH, HEIGHT = 1380, 900
 # WIDTH, HEIGHT = 1180, 720
 # WIDTH, HEIGHT = 1320, 740
-WIDTH, HEIGHT = 1280, 700
+WIDTH, HEIGHT = 1280, 840
 
 '''Default Alignment Params'''
 
 DEFAULT_CONTENT_ROOT = os.path.join(os.path.expanduser('~'), 'alignem_data')
-try:
-    DEFAULT_CONTENT_ROOT_TACC = os.path.join(os.getenv('SCRATCH'),'alignem_data')
-    # print(f"DEFAULT_CONTENT_ROOT_TACC = {DEFAULT_CONTENT_ROOT_TACC}")
-except  Exception as e:
-    print(e)
+if '.tacc.utexas.edu' in platform.node():
+    try:
+        DEFAULT_CONTENT_ROOT_TACC = os.path.join(os.getenv('SCRATCH', "SCRATCH not found"),'alignem_data')
+    except  Exception as e:
+        print(e)
 
 # DEFAULT_POLY_ORDER            = int(0)
 DEFAULT_NULL_BIAS             = bool(False)

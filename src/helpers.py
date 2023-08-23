@@ -49,7 +49,7 @@ __all__ = ['is_tacc', 'is_linux', 'is_mac', 'create_paged_tiff', 'check_for_bina
            'do_scales_exist', 'make_relative', 'make_absolute', 'are_aligned_images_generated', 'get_img_filenames',           'print_exception', 'get_scale_key', 'get_scale_val', 'print_project_tree',
            'verify_image_file', 'exist_aligned_zarr', 'get_scales_with_generated_alignments', 'handleError',
            'count_widgets', 'find_allocated_widgets', 'absFilePaths', 'validate_file', 'hotkey',
-           'caller_name'
+           'caller_name','addLoggingLevel'
            ]
 
 logger = logging.getLogger(__name__)
@@ -79,44 +79,44 @@ def update_meta():
     pass
 
 
-def check_project_status():
-    iter = cfg.data.get_iter()
-    glob_problem_flag = 0
-    problem_indices = []
-    for i, section in enumerate(iter):
-        local_problem_flag = 0
-
-        if section['alignment']['swim_settings']['method'] in ('manual-hint'):
-            n_ref_pts = len(section['alignment']['swim_settings']['match_points']['ref'])
-            n_base_pts = len(section['alignment']['swim_settings']['match_points']['base'])
-            if n_ref_pts < 3:
-                cfg.mw.warn(f'Fatal! # of match regions for Reference image {i} is fewer than three: [{n_ref_pts}]')
-                glob_problem_flag = 1
-                local_problem_flag = 1
-            if n_base_pts < 3:
-                cfg.mw.warn(f'Fatal! # of match regions for Transforming image {i} is fewer than three: [{n_ref_pts}]')
-                glob_problem_flag = 1
-                local_problem_flag = 1
-        if section['alignment']['swim_settings']['method'] in ('manual-strict'):
-            n_ref_pts = len(section['alignment']['swim_settings']['match_points']['ref'])
-            n_base_pts = len(section['alignment']['swim_settings']['match_points']['base'])
-            if n_ref_pts < 3:
-                cfg.mw.warn(f'Fatal! # of match points for Reference image {i} is fewer than three: [{n_ref_pts}]')
-                glob_problem_flag = 1
-                local_problem_flag = 1
-            if n_base_pts < 3:
-                cfg.mw.warn(f'Fatal! # of match points for Transforming image {i} is fewer than three: [{n_ref_pts}]')
-                glob_problem_flag = 1
-                local_problem_flag = 1
-        if local_problem_flag:
-            problem_indices.append(i)
-
-    if glob_problem_flag:
-        cfg.mw.warn(
-            f"To fix the Match alignment issues with sections {str(problem_indices)}, do one of the following:\n\n"
-            f"        1) complete match selection by adding more matches (3 are necessary),\n"
-            f"        2) change alignment method to Grid Default or Grid Custom or,\n"
-            f"        3) exclude these sections\n")
+# def check_project_status():
+#     iter = cfg.data.get_iter()
+#     glob_problem_flag = 0
+#     problem_indices = []
+#     for i, section in enumerate(iter):
+#         local_problem_flag = 0
+#
+#         if section['alignment']['swim_settings']['method'] in ('manual-hint'):
+#             n_ref_pts = len(section['alignment']['swim_settings']['match_points']['ref'])
+#             n_base_pts = len(section['alignment']['swim_settings']['match_points']['base'])
+#             if n_ref_pts < 3:
+#                 cfg.mw.warn(f'Fatal! # of match regions for Reference image {i} is fewer than three: [{n_ref_pts}]')
+#                 glob_problem_flag = 1
+#                 local_problem_flag = 1
+#             if n_base_pts < 3:
+#                 cfg.mw.warn(f'Fatal! # of match regions for Transforming image {i} is fewer than three: [{n_ref_pts}]')
+#                 glob_problem_flag = 1
+#                 local_problem_flag = 1
+#         if section['alignment']['swim_settings']['method'] in ('manual-strict'):
+#             n_ref_pts = len(section['alignment']['swim_settings']['match_points']['ref'])
+#             n_base_pts = len(section['alignment']['swim_settings']['match_points']['base'])
+#             if n_ref_pts < 3:
+#                 cfg.mw.warn(f'Fatal! # of match points for Reference image {i} is fewer than three: [{n_ref_pts}]')
+#                 glob_problem_flag = 1
+#                 local_problem_flag = 1
+#             if n_base_pts < 3:
+#                 cfg.mw.warn(f'Fatal! # of match points for Transforming image {i} is fewer than three: [{n_ref_pts}]')
+#                 glob_problem_flag = 1
+#                 local_problem_flag = 1
+#         if local_problem_flag:
+#             problem_indices.append(i)
+#
+#     if glob_problem_flag:
+#         cfg.mw.warn(
+#             f"To fix the Match alignment issues with sections {str(problem_indices)}, do one of the following:\n\n"
+#             f"        1) complete match selection by adding more matches (3 are necessary),\n"
+#             f"        2) change alignment method to Grid Default or Grid Custom or,\n"
+#             f"        3) exclude these sections\n")
 
 
 def getOpt(lookup):
@@ -168,18 +168,18 @@ def delete_recursive(dir, keep_core_dirs=False):
         if keep_core_dirs:
             if s == 's1':
                 continue
-        if os.path.exists(os.path.join(dir, s, 'history')):
-            to_delete.append(os.path.join(dir, s, 'history'))
-        if os.path.exists(os.path.join(dir, s, 'signals')):
-            to_delete.append(os.path.join(dir, s, 'signals'))
-        if os.path.exists(os.path.join(dir, s, 'matches')):
-            to_delete.append(os.path.join(dir, s, 'matches'))
-        if os.path.exists(os.path.join(dir, s, 'bias_data')):
-            to_delete.append(os.path.join(dir, s, 'bias_data'))
-        if os.path.exists(os.path.join(dir, s, 'tiff')):
-            to_delete.append(os.path.join(dir, s, 'tiff'))
-        if os.path.exists(os.path.join(dir, s, 'thumbnails')):
-            to_delete.append(os.path.join(dir, s, 'thumbnails'))
+        if os.path.exists(os.path.join(dir, 'history', s)):
+            to_delete.append(os.path.join(dir, 'history', s))
+        if os.path.exists(os.path.join(dir, 'signals', s)):
+            to_delete.append(os.path.join(dir, 'signals', s))
+        if os.path.exists(os.path.join(dir, 'matches', s)):
+            to_delete.append(os.path.join(dir, 'matches', s))
+        if os.path.exists(os.path.join(dir, 'bias_data', s)):
+            to_delete.append(os.path.join(dir, 'bias_data', s))
+        if os.path.exists(os.path.join(dir, 'tiff', s)):
+            to_delete.append(os.path.join(dir, 'tiff', s))
+        if os.path.exists(os.path.join(dir, 'thumbnails', s)):
+            to_delete.append(os.path.join(dir, 'thumbnails', s))
         # if os.path.exists(os.path.join(dir, s, 'img_src')):
         #     to_delete.append(os.path.join(dir, s, 'img_src'))
     to_delete.extend(glob(dir + '/zarr/s*'))
@@ -686,12 +686,12 @@ def show_status_report(results, dt):
         else:
             cfg.main_window.hud(f'  Queued       = {results[1]}')
         cfg.main_window.err(f'  Failed       = {results[2]}')
-        cfg.main_window.hud(f'  Time Elapsed = {dt:.2f}s')
+        cfg.main_window.hud(f'  Time Elapsed = {dt:.4g}s')
     else:
         cfg.main_window.hud(f'  Succeeded    = {results[0]}')
         cfg.main_window.hud(f'  Queued       = {results[1]}')
         cfg.main_window.hud(f'  Failed       = {results[2]}')
-        cfg.main_window.hud(f'  Time Elapsed = {dt:.2f}s')
+        cfg.main_window.hud(f'  Time Elapsed = {dt:.4g}s')
 
 
 def get_scale_key(scale_val) -> str:
@@ -830,6 +830,57 @@ def register_login():
 
 
 
+def addLoggingLevel(levelName, levelNum, methodName=None):
+    """
+    https://stackoverflow.com/questions/2183233/how-to-add-a-custom-loglevel-to-pythons-logging-facility/35804945#35804945
+
+    Comprehensively adds a new logging level to the `logging` module and the
+    currently configured logging class.
+
+    `levelName` becomes an attribute of the `logging` module with the value
+    `levelNum`. `methodName` becomes a convenience method for both `logging`
+    itself and the class returned by `logging.getLoggerClass()` (usually just
+    `logging.Logger`). If `methodName` is not specified, `levelName.lower()` is
+    used.
+
+    To avoid accidental clobberings of existing attributes, this method will
+    raise an `AttributeError` if the level name is already an attribute of the
+    `logging` module or if the method name is already present
+
+    Example
+    -------
+    >>> addLoggingLevel('TRACE', logging.DEBUG - 5)
+    >>> logging.getLogger(__name__).setLevel("TRACE")
+    >>> logging.getLogger(__name__).trace('that worked')
+    >>> logging.trace('so did this')
+    >>> logging.TRACE
+    5
+
+    """
+    if not methodName:
+        methodName = levelName.lower()
+
+    if hasattr(logging, levelName):
+       raise AttributeError('{} already defined in logging module'.format(levelName))
+    if hasattr(logging, methodName):
+       raise AttributeError('{} already defined in logging module'.format(methodName))
+    if hasattr(logging.getLoggerClass(), methodName):
+       raise AttributeError('{} already defined in logger class'.format(methodName))
+
+    # This method is based on answers to Stack Overflow post
+    # http://stackoverflow.com/q/2183233/2988730, especially
+    # http://stackoverflow.com/a/13638084/2988730
+    def logForLevel(self, message, *args, **kwargs):
+        if self.isEnabledFor(levelNum):
+            self._log(levelNum, message, args, **kwargs)
+    def logToRoot(message, *args, **kwargs):
+        logging.log(levelNum, message, *args, **kwargs)
+
+    logging.addLevelName(levelNum, levelName)
+    setattr(logging, levelName, levelNum)
+    setattr(logging.getLoggerClass(), methodName, logForLevel)
+    setattr(logging, methodName, logToRoot)
+
 
 def print_exception(extra=''):
     tstamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -946,7 +997,7 @@ def create_project_directories(destination, scales, gui=True) -> None:
 
     for scale in scales:
         if gui:
-            cfg.mw.hud('Creating directories for %s...' % scale)
+            cfg.mw.tell('Creating directories for %s...' % scale)
         subdir_path = os.path.join(destination, scale)
         src_path = os.path.join(subdir_path, 'img_src')
         aligned_path = os.path.join(subdir_path, 'img_aligned')

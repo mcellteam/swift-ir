@@ -58,7 +58,6 @@ class ScaleWorker(QObject):
 
     def __init__(self, src, out, scales, opts):
         super().__init__()
-        # print("Initializing Worker...", flush=True)
         print("Initializing Worker...")
         self.src = src
         self.out = out
@@ -88,7 +87,7 @@ class ScaleWorker(QObject):
 
     def run(self):
 
-        print(f'\n\n######## Generating Downsampled Images ########\n', flush=True)
+        print(f'\n\n######## Generating Downsampled Images ########\n')
 
         # Todo This should check for source files before doing anything
         if not self.running():

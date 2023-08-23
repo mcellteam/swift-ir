@@ -78,9 +78,8 @@ class DataModel:
     """ Encapsulate datamodel dictionary and wrap with methods for convenience """
     def __init__(self, data=None, name=None, location=None, quietly=False, mendenhall=False):
         self._current_version = cfg.VERSION
-        logger.critical("CREATING DATA MODEL")
         if not quietly:
-            logger.info('>>>> __init__ >>>>')
+            logger.info(f"Initializing DataModel '{name}'...")
         if data:
             self._data = data  # Load project data from file
         else:
@@ -94,11 +93,9 @@ class DataModel:
         self._data['data']['mendenhall'] = mendenhall
         self._data['version'] = cfg.VERSION
         if name:
-            logger.critical('Setting name...')
             self.name = name
 
         if location:
-            logger.critical('Setting location...')
             self.location = location
 
         self._data.setdefault('changelog', [])
@@ -118,8 +115,6 @@ class DataModel:
         self._data[key] = item
 
     def __getitem__(self, key):
-        # caller = inspect.stack()[1].function
-        # logger.critical(f"caller: {caller}, key: {key}")
         return self._data[key]
 
     def __repr__(self):
@@ -188,7 +183,6 @@ class DataModel:
     @property
     def scales(self) -> list[str]:
         '''Return list of scale level keys.'''
-        # return natural_sort([key for key in self._data['data']['scales'].keys()])
         return natural_sort(self['series']['scale_keys'])
 
     @property
@@ -305,9 +299,6 @@ class DataModel:
 
     @property
     def current_method(self):
-        # caller = inspect.stack()[1].function
-        # logger.info(f'caller: {caller}')
-        # self._data['data']['scales'][self.scale_key]['stack'][self.zpos].setdefault('current_method', 'grid-default')
         try:
             return self['stack'][self.zpos]['levels'][self.scale]['swim_settings']['method']
         except:
@@ -348,21 +339,6 @@ class DataModel:
         return self._data['stack'][l]['levels'][s]['swim_settings'][
             'grid_custom_regions']
 
-    @property
-    def karg(self):
-        return self._data['stack'][self.zpos]['levels'][self.scale]['alignment']['karg']
-
-    @karg.setter
-    def karg(self, use):
-        self._data['stack'][self.zpos]['levels'][self.scale]['alignment']['karg'] = use
-
-    @property
-    def targ(self):
-        return self._data['stack'][self.zpos]['levels'][self.scale]['alignment']['targ']
-
-    @targ.setter
-    def targ(self, use):
-        self._data['stack'][self.zpos]['levels'][self.scale]['alignment']['targ'] = use
 
     @property
     def default_poly_order(self):
@@ -434,38 +410,25 @@ class DataModel:
 
     # @cache
     def is_aligned(self, s=None):
-        caller = inspect.stack()[1].function
-        logger.critical(f'[{caller}]')
         if s == None: s = self.scale
-        # if 'aligned' not in self['data']['scales'][s]:
-        #     self['data']['scales'][s]['aligned'] = sum(self.snr_list(s=s)) > 1
-        # return self['data']['scales'][s]['aligned']
         return self['alignment_status'][s]
 
 
 
     def is_alignable(self) -> bool:
         '''Checks if the current scale is able to be aligned'''
-        caller = inspect.stack()[1].function
-        logger.critical(f'[{caller}]')
         try:
             scales_list = self.scales
             cur_scale_key = self.scale
             coarsest_scale = scales_list[-1]
-            logger.critical(f"scales_list   : {scales_list}")
-            logger.critical(f"cur_scale_key : {cur_scale_key}")
-            logger.critical(f"coarsest_scale : {coarsest_scale}")
             if cur_scale_key == coarsest_scale:
                 # logger.info("is cur scale_key alignable? returning True")
                 return True
-
             cur_scale_index = scales_list.index(cur_scale_key)
             next_coarsest_scale_key = scales_list[cur_scale_index + 1]
             if not self.is_aligned(s=next_coarsest_scale_key):
-                # logger.critical(f"is {self.scale_key} alignable? False because previous scale_key is not aligned")
                 return False
             else:
-                # logger.critical(f'is {self.scale_key} alignable? Returning True')
                 return True
         except:
             print_exception()
@@ -495,84 +458,84 @@ class DataModel:
 
     @property
     def t_scaling(self):
-        return self._data['timings']['t_scaling']
+        return self['timings']['t_scaling']
 
     @t_scaling.setter
     def t_scaling(self, dt):
-        self._data['timings']['t_scaling'] = dt
+        self['timings']['t_scaling'] = dt
 
     @property
     def t_scaling_convert_zarr(self):
-        return self._data['timings']['t_scaling_convert_zarr']
+        return self['timings']['t_scaling_convert_zarr']
 
     @t_scaling_convert_zarr.setter
     def t_scaling_convert_zarr(self, dt):
-        self._data['timings']['t_scaling_convert_zarr'] = dt
+        self['timings']['t_scaling_convert_zarr'] = dt
 
     @property
     def t_thumbs(self):
-        return self._data['timings']['t_thumbs']
+        return self['timings']['t_thumbs']
 
     @t_thumbs.setter
     def t_thumbs(self, dt):
-        self._data['timings']['t_thumbs'] = dt
+        self['timings']['t_thumbs'] = dt
 
     @property
     def t_align(self):
-        return self._data['timings']['levels'][self.scale]['t_align']
+        return self['timings']['levels'][self.scale]['t_align']
 
     @t_align.setter
     def t_align(self, dt):
-        self._data['timings']['levels'][self.scale]['t_align'] = dt
+        self['timings']['levels'][self.scale]['t_align'] = dt
 
     @property
     def t_generate(self):
-        return self._data['timings']['levels'][self.scale]['t_generate']
+        return self['timings']['levels'][self.scale]['t_generate']
 
     @t_generate.setter
     def t_generate(self, dt):
-        self._data['timings']['levels'][self.scale]['t_generate'] = dt
+        self['timings']['levels'][self.scale]['t_generate'] = dt
 
     @property
     def t_convert_zarr(self):
-        return self._data['timings']['levels'][self.scale]['t_convert_zarr']
+        return self['timings']['levels'][self.scale]['t_convert_zarr']
 
     @t_convert_zarr.setter
     def t_convert_zarr(self, dt):
-        self._data['timings']['levels'][self.scale]['t_convert_zarr'] = dt
+        self['timings']['levels'][self.scale]['t_convert_zarr'] = dt
 
     @property
     def t_thumbs_aligned(self):
-        return self._data['timings']['levels'][self.scale]['t_thumbs_aligned']
+        return self['timings']['levels'][self.scale]['t_thumbs_aligned']
 
     @t_thumbs_aligned.setter
     def t_thumbs_aligned(self, dt):
-        self._data['timings']['levels'][self.scale]['t_thumbs_aligned'] = dt
+        self['timings']['levels'][self.scale]['t_thumbs_aligned'] = dt
 
     @property
     def t_thumbs_spot(self):
-        return self._data['timings']['levels'][self.scale]['t_thumbs_spot']
+        return self['timings']['levels'][self.scale]['t_thumbs_spot']
 
     @t_thumbs_spot.setter
     def t_thumbs_spot(self, dt):
-        self._data['timings']['levels'][self.scale]['t_thumbs_spot'] = dt
+        self['timings']['levels'][self.scale]['t_thumbs_spot'] = dt
 
     @property
     def t_thumbs_matches(self):
-        return self._data['timings']['levels'][self.scale]['t_thumbs_matches']
+        return self['timings']['levels'][self.scale]['t_thumbs_matches']
 
     @t_thumbs_matches.setter
     def t_thumbs_matches(self, dt):
-        self._data['timings']['levels'][self.scale]['t_thumbs_matches'] = dt
+        self['timings']['levels'][self.scale]['t_thumbs_matches'] = dt
 
     def set_thumb_scaling_factor_source(self, factor:int):
-        self._data['data']['thumb_scaling_factor_source'] = factor
+        self['timings']['thumb_scaling_factor_source'] = factor
 
     def set_thumb_scaling_factor_aligned(self, factor:int, s:str):
-        self._data['data']['scales'][s]['thumb_scaling_factor_aligned'] = factor
+        self['timings']['levels'][s]['thumb_scaling_factor_aligned'] = factor
 
     def set_thumb_scaling_factor_corr_spot(self, factor:int, s:str):
-        self._data['data']['scales'][s]['thumb_scaling_factor_corr_spot'] = factor
+        self['timings']['levels'][s]['thumb_scaling_factor_corr_spot'] = factor
 
     def normalize(self):
         return self._data['rendering']['normalize']
@@ -659,7 +622,8 @@ class DataModel:
     def thumbnail_tra(self, s=None, l=None) -> str:
         if s == None: s = self.scale
         if l == None: l = self.zpos
-        return os.path.join(self.dest(), 'thumbnails', os.path.basename(self._data['stack'][l]['levels'][s]['filename']))
+        return os.path.join(self.dest(), 'thumbnails', os.path.basename(self._data['stack'][l]['levels'][s][
+                                                                            'swim_settings']['filename']))
 
     def thumbnail_aligned(self, s=None, l=None):
         if s == None: s = self.scale
@@ -677,9 +641,9 @@ class DataModel:
         for s in self.finer_scales():
             if glob:
                 for i in range(len(self)):
-                    self._data['data']['scales'][s]['stack'][i]['swim_settings']['clobber_fixed_noise'] = b
+                    self['stack'][i]['levels'][s]['swim_settings']['clobber_fixed_noise'] = b
             else:
-                self._data['stack'][l]['levels'][s]['swim_settings']['clobber_fixed_noise'] = b
+                self['stack'][i]['levels'][s]['swim_settings']['clobber_fixed_noise'] = b
 
     def clobber_px(self):
         return self._data['stack'][self.zpos]['levels'][self.scale]['swim_settings'][
@@ -691,7 +655,7 @@ class DataModel:
         for s in self.finer_scales():
             if glob:
                 for i in range(len(self)):
-                    self._data['data']['scales'][s]['stack'][i]['swim_settings']['clobber_size'] = x
+                    self['stack'][i]['levels'][s]['swim_settings']['clobber_size'] = x
                 self.signals.warning2.emit()
 
             else:
@@ -705,18 +669,22 @@ class DataModel:
     def get_signals_filenames(self, s=None, l=None):
         if s == None: s = self.scale
         if l == None: l = self.zpos
-        dir = os.path.join(self.dest(), s, 'signals')
+        dir = os.path.join(self.dest(), 'signals', s)
+        logger.info(f"dir: {dir}")
         basename = os.path.basename(self.base_image_name(s=s, l=l))
         filename, extension = os.path.splitext(basename)
-        paths = os.path.join(dir, '%s_%s_*%s' % (filename, self.current_method, extension))
-        names = glob(paths)
+        pattern = '%s_%s_*%s' % (filename, self.current_method, extension)
+        logger.info(f"pattern: {pattern}")
+        paths = os.path.join(dir, pattern)
+        names = natural_sort(glob(paths))
         # logger.info(f'Search Path: {paths}\nReturning: {names}')
-        return natural_sort(names)
+        logger.info(f"Returning: {names}")
+        return names
 
     def get_matches_filenames(self, s=None, l=None):
         if s == None: s = self.scale
         if l == None: l = self.zpos
-        dir = os.path.join(self.dest(), s, 'matches')
+        dir = os.path.join(self.dest(), 'matches', s)
         basename = os.path.basename(self.base_image_name(s=s, l=l))
         filename, extension = os.path.splitext(basename)
         paths_t = glob(os.path.join(dir, '%s_%s_t_[012]%s' % (filename, self.current_method, extension)))
@@ -728,7 +696,7 @@ class DataModel:
     def get_grid_custom_filenames(self, s=None, l=None):
         if s == None: s = self.scale
         if l == None: l = self.zpos
-        dir = os.path.join(self.dest(), s, 'signals')
+        dir = os.path.join(self.dest(), 'signals', s)
         basename = os.path.basename(self.base_image_name(s=s, l=l))
         filename, extension = os.path.splitext(basename)
         paths = []
@@ -740,7 +708,7 @@ class DataModel:
         return natural_sort(paths)
 
     def smallest_scale(self):
-        return natural_sort(self._data['data']['scales'].keys())[-1]
+        return self.scales[-1]
 
     def layer_dict(self, s=None, l=None):
         if s == None: s = self.scale
@@ -755,239 +723,6 @@ class DataModel:
             # if not self._data['data']['scales'][self.scale_key]['stack'][l]['cafm_comports']:
             #     return l
         return None
-
-
-    def set_defaults(self):
-        logger.info(f'[{inspect.stack()[1].function}] Setting Defaults')
-
-        initial_zpos = int(len(self)/2)
-        self['data']['zposition'] = initial_zpos
-
-        # self._data.setdefault('alignment_status',{})
-
-        self._data.setdefault('defaults', {})
-        self._data['defaults'].setdefault('signal-whitening', cfg.DEFAULT_WHITENING)
-        self._data['defaults'].setdefault('bounding-box', cfg.DEFAULT_BOUNDING_BOX)
-        self._data['defaults'].setdefault('corrective-polynomial', cfg.DEFAULT_CORRECTIVE_POLYNOMIAL)
-        self._data['defaults'].setdefault('initial-rotation', cfg.DEFAULT_INITIAL_ROTATION)
-        self._data['defaults'].setdefault('swim-iterations', cfg.DEFAULT_SWIM_ITERATIONS)
-        self._data['defaults'].setdefault('levels', {})
-        for s in self.scales:
-            self._data.setdefault(s, False)
-
-        self._data.setdefault('developer_mode', cfg.DEV_MODE)
-        self._data.setdefault('data', {})
-        self._data.setdefault('rendering', {})
-        self._data.setdefault('state', {})
-        self._data.setdefault('system', {})
-        # self._data['system'].setdefault('max_processors', cfg.TACC_MAX_CPUS)
-        # self._data['system'].setdefault('max_qtwebengine_threads', cfg.QTWEBENGINE_RASTER_THREADS)
-        # self._data['system'].setdefault('recipe_logging', cfg.RECIPE_LOGGING)
-        self._data['state'].pop('stage_viewer', None)
-        self._data['state']['mode'] = 'stack-xy' # TEMPORARY FORCE
-        self._data['state']['has_cal_grid'] = False
-        # self._data['state'].setdefault('ng_layout', 'xy')
-        self._data['state'].setdefault('ng_layout','4panel')
-        self._data['state'].setdefault('ng_zoom', 1.0)
-        self._data['state']['current_tab'] =         self._data['state'].setdefault('blink', False)
-        self._data['state'].setdefault('tool_windows', {})
-        # Set default to value from user preferences... Todo: all user preferences should work this way
-
-
-        self._data['state'].setdefault('show_bounds', False)
-        self._data['state'].setdefault('show_axes', True)
-        self._data['state'].setdefault('show_scalebar', True)
-        self._data['state'].setdefault('auto_generate', True)
-
-        self._data['state']['show_ng_controls'] = False
-        self._data['state']['neutral_contrast'] = False
-        self._data['state'].setdefault('region_selection', {})
-        self._data['state']['region_selection'].setdefault('select_by', 'zigzag')  # zigzag, cycle, or sticky
-        self._data['state']['tra_ref_toggle'] = 1 #Force
-        self._data['state']['targ_karg_toggle'] = 1 #Force
-        self._data['state']['tool_windows'].setdefault('python',False)
-        self._data['state']['tool_windows'].setdefault('notes',False)
-        self._data['state']['tool_windows'].setdefault('hud',False)
-        # self._data['state']['tool_windows'].setdefault('flicker',False)
-        self._data['state']['tool_windows'].setdefault('signals',True)
-        self._data['state']['tool_windows'].setdefault('raw_thumbnails',True)
-        self._data['state']['tool_windows'].setdefault('matches',True)
-        self._data['state']['tool_windows'].setdefault('snr_plot',False)
-        self._data['data'].setdefault('shader', cfg.SHADER)
-        self._data['data'].setdefault('cname', cfg.CNAME)
-        self._data['data'].setdefault('clevel', cfg.CLEVEL)
-        # self._data['data'].setdefault('autoalign_flag', False)
-        self._data['data'].setdefault('autoalign_flag', True)
-        self._data['data'].setdefault('chunkshape', (cfg.CHUNK_Z, cfg.CHUNK_Y, cfg.CHUNK_X))
-        self._data['data'].setdefault('benchmarks', {})
-        self._data.setdefault('timings', {})
-        self._data['timings'].setdefault('t_scaling', 0.0)
-        self._data['timings'].setdefault('t_scaling_convert_zarr', 0.0)
-        self._data['timings'].setdefault('t_thumbs', 0.0)
-        self._data['timings'].setdefault('scales', {})
-        self._data['data'].setdefault('t_scaling', 0.0)
-        self._data['data'].setdefault('t_scaling_convert_zarr', 0.0)
-        self._data['data'].setdefault('t_thumbs', 0.0)
-        self._data['rendering'].setdefault('normalize', [1,255])
-        self._data['rendering'].setdefault('brightness', 0)
-        self._data['rendering'].setdefault('contrast', 0)
-        self._data['rendering'].setdefault('shader', '''
-        #uicontrol vec3 color color(default="white")
-        #uicontrol float brightness slider(min=-1, max=1, step=0.01)
-        #uicontrol float contrast slider(min=-1, max=1, step=0.01)
-        void main() { emitRGB(color * (toNormalized(getDataValue()) + brightness) * exp(contrast));}
-        ''')
-        self._data['data'].setdefault('scales', {})
-        for s in self.scales:
-            logger.info('Setting defaults for %s' % self.scale_pretty(s=s))
-            scale = self._data['data']['scales'][s]
-            scale.setdefault('stack', []) #0725+
-            scale.setdefault('aligned', False) #0808+
-            scale.setdefault('use_bounding_rect', cfg.DEFAULT_BOUNDING_BOX)
-            scale.setdefault('has_bounding_rect', cfg.DEFAULT_BOUNDING_BOX) #0512+
-            scale.setdefault('resolution', (cfg.DEFAULT_RESZ, cfg.DEFAULT_RESY, cfg.DEFAULT_RESX))
-            self._data['timings']['levels'].setdefault(s, {})
-            self._data['timings']['levels'][s].setdefault('t_align', 0.0)
-            self._data['timings']['levels'][s].setdefault('t_generate', 0.0)
-            self._data['timings']['levels'][s].setdefault('t_convert_zarr', 0.0)
-            self._data['timings']['levels'][s].setdefault('t_thumbs_aligned', 0.0)
-            self._data['timings']['levels'][s].setdefault('t_thumbs_spot', 0.0)
-            self._data['timings']['levels'][s].setdefault('t_scale_generate', 0.0)
-            self._data['timings']['levels'][s].setdefault('t_scale_convert', 0.0)
-            # self._data['timings']['levels'][s].setdefault('thumb_scaling_factor_aligned', 0.0)
-            self._data['defaults']['scales'].setdefault(s, {})
-            if s == self.coarsest_scale_key():
-                self._data['data']['scales'][s]['isRefinement'] = False
-            else:
-                self._data['data']['scales'][s]['isRefinement'] = True
-            #
-            # for i in range(len(self)):
-            #     layer = scale['stack'][i]
-            #     layer.setdefault('notes', '')
-            #
-            #     layer.pop('selected_method', None)
-            #     layer.setdefault('data_comports', True)
-            #     layer.setdefault('needs_propagation', False)
-            #     layer.setdefault('cafm_hash', '')
-            #
-            #     layer.setdefault('alignment_history', {})
-            #     layer['alignment_history'].setdefault('grid-default', {})
-            #     layer['alignment_history'].setdefault('grid-custom', {})
-            #     layer['alignment_history'].setdefault('manual-hint', {})
-            #     layer['alignment_history'].setdefault('manual-strict', {})
-            #
-            #     layer['alignment_history']['grid-default'].setdefault('method_results', {})
-            #     layer['alignment_history']['grid-custom'].setdefault('method_results', {})
-            #     layer['alignment_history']['manual-hint'].setdefault('method_results', {})
-            #     layer['alignment_history']['manual-strict'].setdefault('method_results', {})
-            #
-            #     layer['alignment_history']['grid-default'].setdefault('swim_settings', {})
-            #     layer['alignment_history']['grid-custom'].setdefault('swim_settings', {})
-            #     layer['alignment_history']['manual-hint'].setdefault('swim_settings', {})
-            #     layer['alignment_history']['manual-strict'].setdefault('swim_settings', {})
-            #
-            #     # if type(layer['alignment_history']['grid-default']) == list:
-            #     #     layer['alignment_history']['grid-default'] = {}
-            #     # if type(layer['alignment_history']['grid-custom']) == list:
-            #     #     layer['alignment_history']['grid-custom'] = {}
-            #     # if type(layer['alignment_history']['manual-hint']) == list:
-            #     #     layer['alignment_history']['manual-hint'] = {}
-            #     # if type(layer['alignment_history']['manual-strict']) == list:
-            #     #     layer['alignment_history']['manual-strict'] = {}
-            #
-            #     layer['alignment_history']['grid-default']['method_results'].setdefault('snr', 0.0)
-            #     layer['alignment_history']['grid-custom']['method_results'].setdefault('snr', 0.0)
-            #     layer['alignment_history']['manual-hint']['method_results'].setdefault('snr', 0.0)
-            #     layer['alignment_history']['manual-strict']['method_results'].setdefault('snr', 0.0)
-            #
-            #     # report = 'SNR: 0.0 (+-0.0 n:1)  <0.0  0.0>'
-            #     layer['alignment_history']['grid-default']['method_results'].setdefault('snr_report', 'SNR: --')
-            #     layer['alignment_history']['grid-custom']['method_results'].setdefault('snr_report', 'SNR: --')
-            #     layer['alignment_history']['manual-hint']['method_results'].setdefault('snr_report', 'SNR: --')
-            #     layer['alignment_history']['manual-strict']['method_results'].setdefault('snr_report', 'SNR: --')
-            #
-            #     init_afm = [[1., 0., 0.], [0., 1., 0.]]
-            #     layer['alignment_history']['grid-default']['method_results'].setdefault('affine_matrix', init_afm)
-            #     layer['alignment_history']['grid-custom']['method_results'].setdefault('affine_matrix', init_afm)
-            #     layer['alignment_history']['manual-hint']['method_results'].setdefault('affine_matrix', init_afm)
-            #     layer['alignment_history']['manual-strict']['method_results'].setdefault('affine_matrix', init_afm)
-            #
-            #     layer['alignment_history']['grid-default']['method_results'].setdefault('cumulative_afm', init_afm)
-            #     layer['alignment_history']['grid-custom']['method_results'].setdefault('cumulative_afm', init_afm)
-            #     layer['alignment_history']['manual-hint']['method_results'].setdefault('cumulative_afm', init_afm)
-            #     layer['alignment_history']['manual-strict']['method_results'].setdefault('cumulative_afm', init_afm)
-            #
-            #     layer['alignment_history']['grid-default']['method_results'].setdefault('cafm_hash', None)
-            #     layer['alignment_history']['grid-custom']['method_results'].setdefault('cafm_hash', None)
-            #     layer['alignment_history']['manual-hint']['method_results'].setdefault('cafm_hash', None)
-            #     layer['alignment_history']['manual-strict']['method_results'].setdefault('cafm_hash', None)
-            #
-            #     layer['alignment_history']['grid-default'].setdefault('complete', False)
-            #     layer['alignment_history']['grid-custom'].setdefault('complete', False)
-            #     layer['alignment_history']['manual-hint'].setdefault('complete', False)
-            #     layer['alignment_history']['manual-strict'].setdefault('complete', False)
-            #
-            #
-            #     try:    layer['alignment_history']['grid-default']['method_results']['snr'] = layer['alignment_history']['grid-default'].pop('snr')
-            #     except: pass
-            #     try:    layer['alignment_history']['grid-custom']['method_results']['snr'] = layer['alignment_history']['grid-custom'].pop('snr')
-            #     except: pass
-            #     try:    layer['alignment_history']['manual-hint']['method_results']['snr'] = layer['alignment_history']['manual-hint'].pop('snr')
-            #     except: pass
-            #     try:    layer['alignment_history']['manual-strict']['method_results']['snr'] = layer['alignment_history']['manual-strict'].pop('snr')
-            #     except: pass
-            #
-            #     try:    layer['alignment_history']['grid-default']['method_results']['snr_report'] = layer['alignment_history']['grid-default'].pop('snr_report')
-            #     except: pass
-            #     try:    layer['alignment_history']['grid-custom']['method_results']['snr_report'] = layer['alignment_history']['grid-custom'].pop('snr_report')
-            #     except: pass
-            #     try:    layer['alignment_history']['manual-hint']['method_results']['snr_report'] = layer['alignment_history']['manual-hint'].pop('snr_report')
-            #     except: pass
-            #     try:    layer['alignment_history']['manual-strict']['method_results']['snr_report'] = layer['alignment_history']['manual-strict'].pop('snr_report')
-            #     except: pass
-            #
-            #     try:    layer['alignment_history']['grid-default']['method_results']['affine_matrix'] = layer['alignment_history']['grid-default'].pop('affine_matrix')
-            #     except: pass
-            #     try:    layer['alignment_history']['grid-custom']['method_results']['affine_matrix'] = layer['alignment_history']['grid-custom'].pop('affine_matrix')
-            #     except: pass
-            #     try:    layer['alignment_history']['manual-hint']['method_results']['affine_matrix'] = layer['alignment_history']['manual-hint'].pop('affine_matrix')
-            #     except: pass
-            #     try:    layer['alignment_history']['manual-strict']['method_results']['affine_matrix'] = layer['alignment_history']['manual-strict'].pop('affine_matrix')
-            #     except: pass
-            #
-            #     layer.setdefault('alignment', {})
-            #     layer['alignment'].pop('dev_mode', None)
-            #     # layer['alignment'].setdefault('meta', {})
-            #     # layer['alignment']['meta'] = {} #<-- might be a good idea, to recreate this from scratch every time
-            #     # layer['alignment']['meta'].setdefault('index', i)
-            #     layer['alignment'].setdefault('swim_settings', {})
-            #
-            #     layer['swim_settings']].setdefault('method', 'grid-default')
-            #     layer['swim_settings']]['index'] = i
-            #     layer['swim_settings']].setdefault('method', 'grid-default')
-            #     layer['swim_settings']].setdefault('clobber_fixed_noise', False)
-            #     layer['swim_settings']].setdefault('clobber_size', cfg.DEFAULT_CLOBBER_PX)
-            #     layer['swim_settings']].setdefault('extra_kwargs', '')
-            #     layer['swim_settings']].setdefault('extra_args', '')
-            #     layer['swim_settings']].setdefault('use_logging', True)
-            #     layer['swim_settings']].setdefault('grid_custom_regions', [1,1,1,1])
-            #     layer['swim_settings']].setdefault('include', True)
-            #     layer['swim_settings']].setdefault('iterations', cfg.DEFAULT_SWIM_ITERATIONS)
-            #     layer['swim_settings']].setdefault('signal-whitening', cfg.DEFAULT_WHITENING)
-            #     layer['swim_settings']].setdefault('grid_custom_px_1x1', None)
-            #     layer['swim_settings']].setdefault('grid_custom_px_2x2', None)
-            #     layer['swim_settings']].setdefault('match_points', {})
-            #     layer['swim_settings']].setdefault('match_points_mir', {})
-            #     layer['swim_settings']]['match_points'].setdefault('ref', [None,None,None])
-            #     layer['swim_settings']]['match_points'].setdefault('base', [None,None,None])
-            #     layer['swim_settings']]['match_points_mir'].setdefault('ref', [None,None,None])
-            #     layer['swim_settings']]['match_points_mir'].setdefault('base', [None,None,None])
-
-        try:
-            self.set_auto_swim_windows_to_default(s_list=self.scales)
-            self.set_manual_swim_windows_to_default(s_list=self.scales)
-        except:
-            print_exception()
 
 
     def isRefinement(self):
@@ -1010,7 +745,7 @@ class DataModel:
         return [x['levels'][self.scale]['swim_settings']['reference'] for x in self.get_iter()]
 
     def transforming_list(self):
-        return [x['self'] for x in self.get_iter()]
+        return [x['levels'][self.scale]['swim_settings']['filename'] for x in self.get_iter()]
 
     def get_index(self, filename):
         # logger.info(f'[{inspect.stack()[1].function}] filename = {filename}')
@@ -1022,21 +757,12 @@ class DataModel:
             l = self.zpos
         return l - self.get_ref_index(l=l)
 
-    def method_results(self, s=None, l=None):
-        if s == None: s = self.scale
-        if l == None: l = self.zpos
-        try:
-            return self._data['stack'][l]['levels'][s][
-                'alignment']['method_results']
-        except:
-            return {}
 
     def datetime(self, s=None, l=None):
         if s == None: s = self.scale
         if l == None: l = self.zpos
         try:
-            return self._data['stack'][l]['levels'][s][
-                'alignment']['method_results']['datetime']
+            return self._data['stack'][l]['levels'][s]['method_results']['datetime']
         except:
             return ''
 
@@ -1135,37 +861,13 @@ class DataModel:
         if l == None: l = self.zpos
         if method == None:
             method = self['stack'][l]['levels'][s]['swim_settings']['method']
-        # logger.critical('')
-        # if l == 0:
-        #     return 0.0
         try:
-            # components = self._data['stack'][l]['levels'][s]['alignment_history'][method][-1]['snr']
-            # components = self._data['stack'][l]['levels'][s]['alignment']['method_results']['snr'] #prev
             components = self['stack'][l]['levels'][s]['alignment_history'][method]['method_results']['snr']
-
-            '''
-            13:55:45 WARNING [helpers.print_exception:731]   [20230526_13:55:45]
-            Error Type : <class 'TypeError'>
-            Error Value : list indices must be integers or slices, not str
-            Traceback (most recent call last):
-              File "/Users/joelyancey/swift-ir/src/data_model.py", line 918, in snr
-                components = self._data['stack'][l]['levels'][s]['alignment_history'][method]['snr']
-            TypeError: list indices must be integers or slices, not str
-            
-            13:55:45 WARNING [data_model.snr:925] Unable to return SNR for layer #18
-            
-            '''
-
-            # value = self.method_results(s=s, l=l)['snr']
-            # return statistics.fmean(map(float, value))
             if type(components) == float:
                 return components
             else:
                 return statistics.fmean(map(float, components))
-                # return statistics.fmean(components)
         except:
-            # print_exception()
-            # logger.warning('Unable to return SNR for layer #%d' %l)
             tstamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             exi = sys.exc_info()
             txt = f" [{tstamp}] Error Type/Value : {exi[0]} / {exi[1]}"
@@ -1195,17 +897,13 @@ class DataModel:
         if l == 0:
             return []
         try:
-            # return self._data['stack'][l]['levels'][s]['alignment_history'][method][-1]['snr']
             components = self._data['stack'][l]['levels'][s]['alignment_history'][method]['method_results']['snr']
             if type(components) == list:
                 return components
             else:
                 return [components]
-            # return self.method_results(s=s, l=l)['snr']
         except:
-            # print_exception()
             logger.warning(f'No SNR components for section {l}, method {method} [caller: {caller}]...\n')
-            # return self._data['stack'][l]['levels'][s]['alignment']['method_results']['snr']
             return []
 
 
@@ -1246,7 +944,7 @@ class DataModel:
         if s == None: s = self.scale
         unavailable = []
         for i,l in enumerate(self.stack(s=s)):
-            if not 'snr' in l['alignment']['method_results']:
+            if not 'snr' in l['method_results']:
                 unavailable.append((i, self.name_base(s=s, l=i)))
         return unavailable
 
@@ -1254,13 +952,10 @@ class DataModel:
     def snr_max_all_scales(self) -> float:
         #Todo refactor, store local copy, this is a bottleneck
         max_snr = []
-        # logger.critical(f'self.scalesAlignedAndGenerated: {self.scalesAlignedAndGenerated}')
         try:
             for s in self.scales:
                 if self.is_aligned(s=s):
-                    # m = max(self.snr_list(s=s))
                     m = max(self.snr_list(s=s)[1:]) #0601+ temp fix for self-alignment high SNR bug on first image
-                    # logger.critical(f'm: {m}')
                     max_snr.append(m)
             return max(max_snr)
         except:
@@ -1288,12 +983,6 @@ class DataModel:
 
 
     def method(self, s=None, l=None):
-        '''Gets the alignment method
-        Returns:
-            str: the alignment method for a single section
-        '''
-        # caller = inspect.stack()[1].function
-        # logger.critical(f'caller: {caller}, s={s}, l={l}')
         if s == None: s = self.scale
         if l == None: l = self.zpos
         try:
@@ -1381,7 +1070,6 @@ class DataModel:
 
 
     def getmpFlat(self, s=None, l=None):
-        # logger.critical('')
         if s == None: s = self.scale
         if l == None: l = self.zpos
         mps = self._data['stack'][l]['levels'][s]['swim_settings']['match_points']
@@ -1483,7 +1171,7 @@ class DataModel:
     def cafm_registered_hash(self, s=None, l=None):
         if s == None: s = self.scale
         if l == None: l = self.zpos
-        return self._data['stack'][l]['levels'][s]['cafm_hash']
+        return self['stack'][l]['levels'][s]['cafm_hash']
 
 
     def cafm_current_hash(self, s=None, l=None):
@@ -1500,7 +1188,7 @@ class DataModel:
         logger.info('Registering cafm hashes...')
         if s == None: s = self.scale
         for i in indexes:
-            self._data['data']['scales'][s]['stack'][i]['cafm_hash'] = self.cafm_current_hash(l=i)
+            self['stack'][i]['levels'][s]['cafm_hash'] = self.cafm_current_hash(l=i)
 
 
     def cafm_hash_comports(self, s=None, l=None):
@@ -1528,8 +1216,9 @@ class DataModel:
         cur = self['stack'][l]['levels'][s]['swim_settings']  # current
         mem = self['stack'][l]['levels'][s]['alignment_history'][method]['swim_settings'] # memory
 
+        #Todo refactor, 'recent_method' key
         try:
-            prev_method = self['stack'][l]['levels'][s]['alignment']['recent_method']
+            prev_method = self['stack'][l]['levels'][s]['method_results']['method']
             if prev_method != cur['method']:
                 problems.append(('Method changed', prev_method, cur['method']))
         except:
@@ -1546,10 +1235,12 @@ class DataModel:
                 problems.append(("Inconsistent data at clobber size in pixels (key: clobber_size)",
                                  cur['clobber_size'], mem['clobber_size']))
 
-
         if method == 'grid-default':
             for key in self.defaults:
                 if key in mem['defaults']:
+                    if key in ('bounding_box', 'corrective-polynomial'):
+                        continue
+
                     if self.defaults[key] != mem['defaults'][key]:
                         if type(mem['defaults'][key]) == dict and len(mem['defaults'][key]) == 1:
                             breadcrumb = 'defaults > %s > %s' % (key, mem['defaults'][key])
@@ -1599,7 +1290,7 @@ class DataModel:
         lst = [(not self.data_comports(s=s, l=l)[0]) and (not self.skipped(s=s, l=l)) for l in range(0, len(self))]
         t1 = time.time()
         indexes = np.array(lst).nonzero()[0].tolist()
-        logger.info(f"data_dn_comport_indexes dt = {time.time() - t0:.3g} ({t1 - t0:.3g}/{time.time() - t1:.3g})")
+        logger.info(f"dt = {time.time() - t0:.3g} ({t1 - t0:.3g}/{time.time() - t1:.3g})")
         return indexes
 
 
@@ -1607,15 +1298,13 @@ class DataModel:
         if s == None: s = self.scale
         t0 = time.time()
         indexes = list(set(range(len(self))) - set(self.cafm_dn_comport_indexes(s=s)) - set(self.data_dn_comport_indexes(s=s)))
-        logger.info(f"all_comports_indexes dt = {time.time() - t0:.3g}")
+        logger.info(f"dt = {time.time() - t0:.3g}")
         return indexes
 
 
     def cafm_comports_indexes(self, s=None):
         if s == None: s = self.scale
         return np.array([self.cafm_hash_comports(s=s, l=l) for l in range(0, len(self))]).nonzero()[0].tolist()
-
-
 
 
     def cafm_dn_comport_indexes(self, s=None):
@@ -1627,13 +1316,12 @@ class DataModel:
                 if not self.skipped(s=s, l=i):
                     indexes.append(i)
 
-        logger.info(f"cafm_dn_comport_indexes dt = {time.time() - t0:.3g}")
+        logger.info(f"dt = {time.time() - t0:.3g}")
         return indexes
 
 
     def resolution(self, s=None):
         if s == None: s = self.scale
-        # logger.info('returning: %s' % str(self._data['data']['scales'][s]['resolution']))
         return self['series']['settings']['levels'][str(self.scale_val())]['resolution']
 
     def set_resolution(self, s, res_x:int, res_y:int, res_z:int):
@@ -1667,14 +1355,6 @@ class DataModel:
 
     def scale_vals(self) -> list[int]:
         return [int(v) for v in sorted([get_scale_val(s) for s in self.scales])]
-
-    def n_scales(self) -> int:
-        '''Returns the number of scales in s pyramid'''
-        try:
-            n_scales = len(self['series']['scale_keys'])
-            return n_scales
-        except:
-            logger.warning('No Scales Found - Returning 0')
 
     def downscales(self) -> list[str]:
         '''Get downscales list (similar to scales() but with scale_1 removed).
@@ -1724,7 +1404,7 @@ class DataModel:
             for i in range(0,len(self)):
                 if not self['stack'][i]['levels'][s]['swim_settings']['include']:
                     indexes.append(i)
-                    names.append(os.path.basename(self['stack'][i]['filename']))
+                    names.append(os.path.basename(self['stack'][i]['levels'][s]['swim_settings']['filename']))
             return list(zip(indexes, names))
         except:
             print_exception()
@@ -1745,7 +1425,7 @@ class DataModel:
         try:
             for i in range(len(self)):
                 if not self.include(s=s,l=i):
-                    f = os.path.basename(self._data['data']['scales'][s]['stack'][i]['filename'])
+                    f = os.path.basename(self['stack'][i]['levels'][s]['swim_settings']['filename'])
                     lst.append(f)
             return lst
         except:
@@ -1783,7 +1463,7 @@ class DataModel:
         # for s in self.scales():
         for s in self.finer_scales():
             for i in range(len(self)):
-                self._data['data']['scales'][s]['stack'][i]['swim_settings']['iterations'] = val
+                self['stack'][i]['levels'][s]['swim_settings']['iterations'] = val
 
     def whitening(self) -> float:
         '''Returns the Signal Whitening Factor for the Current Layer.'''
@@ -1792,7 +1472,6 @@ class DataModel:
 
     def set_whitening(self, f: float) -> None:
         '''Sets the Whitening Factor for the Current Layer.'''
-        # self._data['data']['scales'][self.scale_key]['stack'][self.zpos]['alignment']['method_data']['whitening_factor'] = f
         self._data['stack'][self.zpos]['levels'][self.scale]['swim_settings']['signal-whitening'] = f
         self.signals.warning2.emit()
 
@@ -1861,13 +1540,8 @@ class DataModel:
         if (pixels % 2) == 1:
             pixels -= 1
 
-
         img_w, img_h = self.image_size(s=self.scale)
         pixels_y = (pixels / img_w) * img_h
-        # for s in self.scales():
-
-        # logger.critical(f'[{caller}] pixels: {pixels}, pixels_y: {pixels_y}')
-        # logger.critical(f"    {int(self.swim_1x1_custom_px()[1] / 2 + 0.5)}")
 
         if (2 * pixels) <= self.swim_1x1_custom_px()[0]:
             self._data['stack'][self.zpos]['levels'][self.scale]['swim_settings'][
@@ -1898,13 +1572,8 @@ class DataModel:
                                                                                                         + 0.5), int(pixels[1] * sf + 0.5)]
 
 
-
     #Todo 0612
     def set_auto_swim_windows_to_default(self, s_list=None, factor=None, current_only=False) -> None:
-        logger.critical('')
-        logger.critical(f'len(self) = {len(self)}')
-        import src.config as cfg
-
 
         if s_list == None:
             s_list = self.finer_scales()
@@ -1969,8 +1638,7 @@ class DataModel:
                     int(pixels * sf + 0.5)
 
     def set_manual_swim_windows_to_default(self, s_list=None, current_only=False) -> None:
-        # logger.info('')
-        import src.config as cfg
+        logger.info('')
         if s_list == None:
             s_list = self.finer_scales()
 
@@ -1987,46 +1655,16 @@ class DataModel:
                     self['stack'][i]['levels'][s]['swim_settings']['manual_swim_window_px'] = man_ww
         self.signals.warning2.emit()
 
-
-    def bounding_rect(self, s=None):
-        if s == None: s = self.scale
-        try:
-            return self._data['data']['scales'][s]['bounding_rect']
-        except:
-            try:
-                #Todo validate this
-                self.set_bounding_rect(ComputeBoundingRect(self, scale=s))
-                return self['bounding_box'][s]['size']
-            except:
-                logger.warning('Unable to return a bounding rect (s=%s)' % s)
-                return None
-
     def image_size(self, s=None) -> tuple:
         if s == None: s = self.scale
-        # caller = inspect.stack()[1].function
-        # logger.info('Called by %s, s=%s' % (inspect.stack()[1].function, s))
-        # try:
-        #     return tuple(self._data['data']['scales'][s]['image_src_size'])
-        # except:
-        #     logger.info(f"[{caller}] No key 'image_src_size' found (scale_key:{s}). Adding it now...")
-        #     try:
-        #         self.set_image_size(s=s)
-        #         answer = tuple(self._data['data']['scales'][s]['image_src_size'])
-        #         logger.info(f'Returning {answer}')
-        #         return answer
-        #     except:
-        #         print_exception()
-        #         logger.warning('Unable to return the image size (s=%s)' % s)
-
-        #Must convert scale string
-        return self['series']['levels'][s]['size_xy']
+        return tuple(self['series']['levels'][s]['size_xy'])
 
 
     def name_base(self, s=None, l=None) -> str:
         if s == None: s = self.scale
         if l == None: l = self.zpos
         try:
-            return os.path.basename(self._data['stack'][l]['levels'][s]['filename'])
+            return os.path.basename(self._data['stack'][l]['levels'][s]['swim_settings']['filename'])
         except:
             return ''
 
@@ -2047,8 +1685,6 @@ class DataModel:
     def use_bb(self, s=None) -> bool:
         '''Returns the Use Bounding Rectangle On/Off State for the Current Scale.'''
         if s == None: s = self.scale
-        # return bool(self._data['data']['scales'][s]['use_bounding_rect'])
-        # return bool(self._data['defaults']['bounding-box'])
         return bool(self['bounding_box'][s]['use'])
 
     def set_use_bounding_rect(self, b: bool) -> None:
@@ -2114,29 +1750,22 @@ class DataModel:
 
     def link_reference_sections(self, s_list=None):
         logger.info('')
-        logger.critical(f"LINKING REFERENCE SECTIONS. len(self) = {len(self)}")
         if s_list == None:
             s_list = self.finer_scales()
-
         for s in s_list:
             skip_list = self.skips_indices(s=s)
             first_unskipped = self.first_unskipped(s=s)
             for layer_index in range(len(self)):
-                logger.critical(f"layer: {layer_index}")
-                # base_layer = self._data['data']['scales'][s]['stack'][layer_index]
                 base_layer = self['stack'][layer_index]
-
                 j = layer_index - 1  # Find nearest previous non-skipped l
                 while (j in skip_list) and (j >= 0):
                     j -= 1
                 if (j not in skip_list) and (j >= 0):
-                    # ref = self._data['data']['scales'][s]['stack'][j]['filename']
                     ref = self['stack'][j]['levels'][s]['swim_settings']['filename']
                     # ref = os.path.join(self['series']['tiff_path'], s, ref)
                     # base_layer['images']['ref']['filename'] = ref
                     # base_layer['reference'] = ref
                     self['stack'][layer_index]['levels'][s]['swim_settings']['reference'] = ref
-
             self['stack'][first_unskipped]['levels'][s]['swim_settings']['reference'] = '' #0804
 
 
