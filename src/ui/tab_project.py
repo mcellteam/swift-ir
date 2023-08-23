@@ -3492,7 +3492,7 @@ class ProjectTab(QWidget):
         self._tabs.addTab(VWidget(self.w_ng_extended_toolbar, self.shaderToolbar, self.webengine), 'View Alignment')
         self._tabs.addTab(self.splitterEditAlignment, 'Edit Alignment')
         self._tabs.addTab(self.table_container, ' Table ')
-        self._tabs.addTab(self._wdg_treeview, ' Raw Data ')
+        self._tabs.addTab(self._wdg_treeview, ' JSON ')
         self._tabs.addTab(self.w_snr_plot, ' All SNR Plots ')
         self._tabs.setTabToolTip(0, 'Alignment Visualizer')
         self._tabs.setTabToolTip(1, 'Alignment Editor')
