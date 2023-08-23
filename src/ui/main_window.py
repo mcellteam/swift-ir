@@ -5262,7 +5262,7 @@ class MainWindow(QMainWindow):
     def initPbar(self):
         self.pbar = QProgressBar()
         self.pbar.setFixedWidth(320)
-        self.pbar.setFixedHeight(14)
+        self.pbar.setFixedHeight(13)
         self.pbar.setStyleSheet("font-size: 9px; padding: 0px;")
         self.pbar.setTextVisible(True)
         self.bPbarStop = QPushButton('Stop')
