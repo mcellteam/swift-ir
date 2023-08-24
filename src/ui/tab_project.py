@@ -224,7 +224,7 @@ class ProjectTab(QWidget):
                 self.viewer.initZoom(self.webengine.width(), self.webengine.height())
                 # self.viewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314 #Todo
                 self.viewer.signals.layoutChanged.connect(self.slot_layout_changed)
-                # cfg.emViewer.signals.zoomChanged.connect(self.slot_zoom_changed)
+                cfg.emViewer.signals.zoomChanged.connect(self.slot_zoom_changed)
                 logger.info(f"Local Volume:\n{cfg.LV.info()}")
 
         cfg.mw.set_status('')
@@ -254,16 +254,10 @@ class ProjectTab(QWidget):
             val *= 250000000
         if DEV:
             logger.info(f"[DEV] Zoom changed! passed value: {val:.3f}")
-        setData('state,ng_zoom', val)
-        self.le_zoom.setText("%.2f" % val)
+        self.leZoom.setText("%.2f" % val)
         # setData('state,ng_zoom', self.viewer.state.cross_section_scale)
-        # self.le_zoom.setText(str(self.viewer.state.cross_section_scale))
+        # self.leZoom.setText(str(self.viewer.state.cross_section_scale))
 
-
-    # def delayInitNeuroglancer(self, ms=1000):
-    #     QTimer.singleShot(ms, self.initNeuroglancer)
-
-        # self.updateProjectLabels()
 
     def initUI_Neuroglancer(self):
         '''NG Browser'''
@@ -374,14 +368,11 @@ class ProjectTab(QWidget):
         # self.lw_ref.setFocusPolicy(Qt.NoFocus)
         delegate = ListItemDelegate()
         self.lw_ref.setItemDelegate(delegate)
-        self.lw_ref.setFixedHeight(50)
-        # self.lw_ref.setFixedHeight(48)
-        # self.lw_ref.setMaximumHeight(64)
+        self.lw_ref.setFixedHeight(52)
         self.lw_ref.setIconSize(QSize(12,12))
-        # self.lw_ref.setStyleSheet("""font-size: 10px; background-color: #ede9e8; color: #161c20; border: none;""")
         self.lw_ref.setStyleSheet("""
         QListWidget {
-            font-size: 10px; 
+            font-size: 8px; 
             background-color: #ede9e8; 
             color: #161c20; 
             border: none;
@@ -417,14 +408,11 @@ class ProjectTab(QWidget):
         # self.lw_tra.setFocusPolicy(Qt.NoFocus)
         delegate = ListItemDelegate()
         self.lw_tra.setItemDelegate(delegate)
-        self.lw_tra.setFixedHeight(50)
-        # self.lw_tra.setFixedHeight(48)
-        # self.lw_tra.setMaximumHeight(64)
+        self.lw_tra.setFixedHeight(52)
         self.lw_tra.setIconSize(QSize(12, 12))
-        # self.lw_tra.setStyleSheet("""font-size: 10px; background-color: #ede9e8; color: #161c20; border: none;""")
         self.lw_tra.setStyleSheet("""
         QListWidget {
-            font-size: 10px; 
+            font-size: 8px; 
             background-color: #ede9e8; 
             color: #161c20; 
             border: none;
@@ -550,12 +538,28 @@ class ProjectTab(QWidget):
             self.dataUpdateMA()
             #     layer['alignment']['swim_settings'].setdefault('iterations', cfg.DEFAULT_SWIM_ITERATIONS)
 
-        self.btnResetAllMA = QPushButton('Set All Methods\n'
-                                         'To Default Grid')
-        self.btnResetAllMA.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.btnResetAllMA.setFixedSize(QSize(84, 28))
-        self.btnResetAllMA.clicked.connect(fn)
-        self.btnResetAllMA.setStyleSheet('font-size: 8px;')
+
+        self.bSetDefaultGridDefaults = QPushButton('Apply Default Settings')
+        self.bSetDefaultGridDefaults.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.bSetDefaultGridDefaults.setFixedHeight(14)
+        # self.bSetDefaultGridDefaults.setFixedSize(QSize(84, 28))
+        def set_defaults():
+            cfg.data.set_auto_swim_windows_to_default(s_list=cfg.data.scales)
+            cfg.data['defaults']['signal-whitening'] = cfg.DEFAULT_WHITENING
+            cfg.data['defaults']['swim-iterations'] = cfg.DEFAULT_SWIM_ITERATIONS
+            cfg.data.set_clobber(b=cfg.DEFAULT_USE_CLOBBER, stack=True)
+            cfg.data.set_clobber(x=cfg.DEFAULT_CLOBBER_PX, stack=True)
+            # cfg.data['defaults'].setdefault('initial-rotation', cfg.DEFAULT_INITIAL_ROTATION)
+            self.refreshTab()
+        self.bSetDefaultGridDefaults.clicked.connect(set_defaults)
+        self.bSetDefaultGridDefaults.setStyleSheet('font-size: 8px;')
+
+        self.bSetAllMethodsDefaultGrid = QPushButton('Set All Methods To Default Grid')
+        self.bSetAllMethodsDefaultGrid.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.bSetAllMethodsDefaultGrid.setFixedHeight(14)
+        # self.bSetAllMethodsDefaultGrid.setFixedSize(QSize(84, 28))
+        self.bSetAllMethodsDefaultGrid.clicked.connect(fn)
+        self.bSetAllMethodsDefaultGrid.setStyleSheet('font-size: 8px;')
 
         self.combo_MA_actions = QComboBox(self)
         self.combo_MA_actions.setStyleSheet('font-size: 10px')
@@ -598,14 +602,13 @@ class ProjectTab(QWidget):
         tip = "Perform a quick SWIM alignment to show match signals and SNR values, " \
               "but do not generate any new images"
         self.btnQuickSWIM = QPushButton('Generate Match &Signals')
-        self.btnQuickSWIM.setStyleSheet("font-size: 10px; font-weight: 600; color: #161c20; background-color: #9fdf9f;")
+        self.btnQuickSWIM.setStyleSheet("font-size: 10px; background-color: #9fdf9f; font-weight: 600; ")
         self.btnQuickSWIM.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.btnQuickSWIM.setFixedHeight(22)
         self.btnQuickSWIM.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btnQuickSWIM.clicked.connect(lambda: cfg.main_window.alignOne(regenerate=False))
         # self.btnQuickSWIM.clicked.connect(lambda: cfg.mw.setdw_matches(True))
 
-        # self.lw_gb_l = GroupBox("Transforming")
         self.lw_gb_l = GroupBox("Transforming")
         def fn():
             logger.info('')
@@ -633,7 +636,7 @@ class ProjectTab(QWidget):
         vbl.addWidget(self.refNextColorWidget)
         self.lw_gb_r.setLayout(vbl)
         self.labSlash = QLabel('←/→')
-        self.labSlash.setStyleSheet("""font-size: 11px; font-weight: 600;""")
+        self.labSlash.setStyleSheet("""font-size: 10px; font-weight: 600;""")
         self.MA_sbw = HWidget(self.lw_gb_l, self.labSlash, self.lw_gb_r)
         self.MA_sbw.layout.setSpacing(0)
         # self.msg_MAinstruct = YellowTextLabel("⇧ + Click - Select 3 corresponding points")
@@ -651,19 +654,21 @@ class ProjectTab(QWidget):
         self.btnTranslate.clicked.connect(self.onTranslate)
 
         self.le_x_translate = QLineEdit()
+        self.le_x_translate.setStyleSheet("font-size: 9px;")
         self.le_x_translate.returnPressed.connect(self.onTranslate_x)
         # self.le_x_translate.setFixedSize(QSize(36, 16))
-        self.le_x_translate.setMaximumWidth(36)
-        self.le_x_translate.setMaximumHeight(18)
+        self.le_x_translate.setFixedWidth(36)
+        self.le_x_translate.setFixedHeight(16)
         self.le_x_translate.setValidator(QIntValidator())
         self.le_x_translate.setText('0')
         self.le_x_translate.setAlignment(Qt.AlignCenter)
 
         self.le_y_translate = QLineEdit()
+        self.le_y_translate.setStyleSheet("font-size: 9px;")
         self.le_y_translate.returnPressed.connect(self.onTranslate_y)
         # self.le_y_translate.setFixedSize(QSize(36, 16))
-        self.le_y_translate.setMaximumWidth(36)
-        self.le_y_translate.setMaximumHeight(18)
+        self.le_y_translate.setFixedWidth(36)
+        self.le_y_translate.setFixedHeight(16)
         self.le_y_translate.setValidator(QIntValidator())
         self.le_y_translate.setText('0')
         self.le_y_translate.setAlignment(Qt.AlignCenter)
@@ -710,6 +715,7 @@ class ProjectTab(QWidget):
         self.slider_MA_SWIM_window.valueChanged.connect(fn_slider_MA_SWIM_window)
         self.slider_MA_SWIM_window.setFixedWidth(80)
         self.MA_SWIM_window_le = QLineEdit()
+        self.MA_SWIM_window_le.setAlignment(Qt.AlignCenter)
         self.MA_SWIM_window_le.setFixedSize(QSize(36, 16))
 
         def fn_MA_SWIM_window_le():
@@ -1025,17 +1031,15 @@ class ProjectTab(QWidget):
         self._swimWindowControl.selectionChanged.connect(fn)
         self._swimWindowControl.returnPressed.connect(fn)
 
-
         self.cb_clobber_default = QCheckBox()
-        self.cb_clobber_default.toggled.connect(lambda: cfg.data.set_clobber(b=self.cb_clobber_default.isChecked(),
-                                                                             glob=True))
+        self.cb_clobber_default.toggled.connect(
+            lambda: cfg.data.set_clobber(b=self.cb_clobber_default.isChecked(), stack=True))
         self.sb_clobber_pixels_default = QSpinBox()
         self.sb_clobber_pixels_default.setFixedSize(QSize(50, 18))
         self.sb_clobber_pixels_default.setMinimum(1)
         self.sb_clobber_pixels_default.setMaximum(16)
-        self.sb_clobber_pixels_default.valueChanged.connect(lambda: cfg.data.set_clobber_px(
-            self.sb_clobber_pixels_default.value(), glob=True))
-
+        self.sb_clobber_pixels_default.valueChanged.connect(
+            lambda: cfg.data.set_clobber_px(x=self.sb_clobber_pixels_default.value(), stack=True))
 
         self.fl_swimSettings = QFormLayout()
         self.fl_swimSettings.setContentsMargins(2, 2, 2, 2)
@@ -1046,7 +1050,8 @@ class ProjectTab(QWidget):
         self.fl_swimSettings.addRow('SWIM Iterations:', self.sb_SWIMiterations)
         self.fl_swimSettings.addRow('Clobber Fixed Pattern', self.cb_clobber_default)
         self.fl_swimSettings.addRow('Clobber Amount (px)', self.sb_clobber_pixels_default)
-        self.fl_swimSettings.addWidget(self.btnResetAllMA)
+        self.fl_swimSettings.addWidget(self.bSetDefaultGridDefaults)
+        self.fl_swimSettings.addWidget(self.bSetAllMethodsDefaultGrid)
         # self.fl_swimSettings.setAlignment(Qt.AlignCenter)
         # self.fl_swimSettings.setFormAlignment(Qt.AlignVCenter)
 
@@ -1195,7 +1200,6 @@ class ProjectTab(QWidget):
 
         self.rb_method0 = QRadioButton('Default Grid')
         self.rb_method0.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.rb_method0.setStyleSheet("font-size: 9px; font-weight: 600;")
         self.rb_method0.setStyleSheet("font-size: 9px;")
 
         tip = """Similar to the Default Grid method, but the user is able to avoid image defects 
@@ -1203,20 +1207,15 @@ class ProjectTab(QWidget):
         An affine transformation requires at least 3 regions (quadrants)."""
         self.rb_method1 = QRadioButton('Custom Grid')
         self.rb_method1.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.rb_method1.setStyleSheet("font-size: 9px; font-weight: 600;")
         self.rb_method1.setStyleSheet("font-size: 9px;")
         self.rb_method1.setToolTip(tip)
 
-
         tip = """User provides an alignment hint for SWIM by selecting 3 matching regions (manual correspondence). 
         Note: An affine transformation requires at least 3 correspondence regions."""
-        # self.rb_method2 = QRadioButton('Correspondence Points')
         self.rb_method2 = QRadioButton('Match Regions')
         self.rb_method2.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.rb_method2.setStyleSheet("font-size: 9px; font-weight: 600;")
         self.rb_method2.setStyleSheet("font-size: 9px;")
         self.rb_method2.setToolTip(tip)
-
 
         self.bg_method = QButtonGroup(self)
         self.bg_method.setExclusive(True)
@@ -1259,9 +1258,7 @@ class ProjectTab(QWidget):
 
         self.bg_method.buttonClicked.connect(method_bg_fn)
 
-        self.radioboxes_method = HWidget(self.rb_method0, self.rb_method1, self.rb_method2)
-        self.radioboxes_method.layout.setSpacing(2)
-        self.radioboxes_method.setMaximumHeight(20)
+
 
         self.lab_region_selection = QLabel("⇧ + click to select 3 matching regions")
         # self.lab_region_selection = QLabel("")
@@ -1309,9 +1306,7 @@ class ProjectTab(QWidget):
         self.MA_points_tab = VWidget(
             self.lab_region_selection,
             self.MA_sbw,
-
             self.w_rbs_selection,
-
             # self.lab_region_selection2,
             self.gb_MA_manual_controls,
         )
@@ -1813,22 +1808,22 @@ class ProjectTab(QWidget):
         # ----------------
         # widgets to gain insight into Neuroglancer state
 
-        self.le_zoom = QLineEdit()
-        self.le_zoom.setStyleSheet("font-size: 9px;")
-        self.le_zoom.setFixedWidth(54)
-        self.le_zoom.setFixedHeight(15)
-        self.le_zoom.setValidator(QDoubleValidator())
-        self.le_zoom.returnPressed.connect(lambda: setData('state,ng_zoom', float(self.le_zoom.text())))
-        self.le_zoom.returnPressed.connect(lambda: self.viewer.set_zoom(float(self.le_zoom.text())))
+        self.leZoom = QLineEdit()
+        self.leZoom.setStyleSheet("font-size: 9px;")
+        self.leZoom.setFixedWidth(42)
+        self.leZoom.setFixedHeight(14)
+        self.leZoom.setValidator(QDoubleValidator())
+        self.leZoom.returnPressed.connect(lambda: setData('state,ng_zoom', float(self.leZoom.text())))
+        self.leZoom.returnPressed.connect(lambda: self.viewer.set_zoom(float(self.leZoom.text())))
         try:
-            self.le_zoom.setText('%.3f' % cfg.data['state']['ng_zoom'])
+            self.leZoom.setText('%.3f' % cfg.data['state']['ng_zoom'])
         except:
             print_exception()
 
         self.zoomLab = QLabel('Zoom:')
         self.zoomLab.setStyleSheet("""color: #f3f6fb; font-size: 10px;""")
 
-        self.w_zoom = HWidget(self.zoomLab, self.le_zoom)
+        self.w_zoom = HWidget(self.zoomLab, self.leZoom)
         self.w_zoom.setMaximumWidth(84)
         self.w_zoom.layout.setAlignment(Qt.AlignLeft)
 
@@ -1995,12 +1990,8 @@ class ProjectTab(QWidget):
         self.tn_widget = QTableWidget()
         self.tn_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.tn_widget.setAutoFillBackground(True)
-        # self.tn_widget.setMinimumWidth(160)
-        # self.tn_widget.setMinimumWidth(128)
         self.tn_widget.setMinimumWidth(64)
         self.tn_widget.setContentsMargins(0,0,0,0)
-        # self.tn_widget.setStyleSheet(
-        #     """QLabel{ color: #f3f6fb; background-color: #222222; font-weight: 600; font-size: 9px; }""")
         self.tn_widget.setStyleSheet("""background-color: #222222;""")
         self.tn_widget.horizontalHeader().setHighlightSections(False)
         self.tn_widget.verticalHeader().setHighlightSections(False)
@@ -2271,27 +2262,31 @@ class ProjectTab(QWidget):
         self.warning_data.fixbutton.setText('Revert')
         self.warning_data.hide()
 
-        self.gb_warnings = QGroupBox("Warnings")
-        # self.gb_warnings.setStyleSheet("padding: 2px;")
-        self.gb_warnings.setStyleSheet("margin-top: 4px;")
-        # self.gb_warnings.setFixedHeight(44)
-        self.gb_warnings.setObjectName('gb_cpanel')
+        self.gbWarnings = QGroupBox("Warnings")
+        # self.gbWarnings.setStyleSheet("padding: 2px;")
+        self.gbWarnings.setStyleSheet("margin-top: 4px;")
+        # self.gbWarnings.setFixedHeight(44)
+        self.gbWarnings.setObjectName('gb_cpanel')
         self.vbl_warnings = VBL()
         self.vbl_warnings.setSpacing(0)
         self.vbl_warnings.setAlignment(Qt.AlignBottom)
         self.vbl_warnings.addWidget(self.warning_data, alignment=Qt.AlignBottom)
         self.vbl_warnings.addWidget(self.warning_cafm, alignment=Qt.AlignBottom)
-        self.gb_warnings.setLayout(self.vbl_warnings)
+        self.gbWarnings.setLayout(self.vbl_warnings)
 
-        self.gb_method_selection = QGroupBox("Alignment Method")
-        self.gb_method_selection.setAlignment(Qt.AlignBottom)
-        self.gb_method_selection.setContentsMargins(0,0,0,0)
-        self.gb_method_selection.setObjectName('gb_cpanel')
-        self.gb_method_selection.setFixedHeight(36)
-        vbl = VBL(self.radioboxes_method)
-        vbl.setAlignment(Qt.AlignBottom)
-        self.gb_method_selection.setLayout(vbl)
-        self.gb_method_selection.setStyleSheet('font-size: 11px; padding: 2px;')
+
+
+        self.gbMethodSelect = QGroupBox("Alignment Method")
+        self.gbMethodSelect.setMaximumHeight(20)
+        self.gbMethodSelect.setAlignment(Qt.AlignBottom)
+        self.gbMethodSelect.setContentsMargins(0, 0, 0, 0)
+        self.gbMethodSelect.setObjectName('gb_cpanel')
+        self.gbMethodSelect.setFixedHeight(36)
+        hbl = HBL(self.rb_method0, self.rb_method1, self.rb_method2)
+        hbl.setSpacing(2)
+        hbl.setAlignment(Qt.AlignBottom)
+        self.gbMethodSelect.setLayout(hbl)
+        self.gbMethodSelect.setStyleSheet('font-size: 11px; padding: 2px;')
 
         self.le_tacc_num_cores = QLineEdit()
         self.le_tacc_num_cores.setFixedHeight(18)
@@ -2446,11 +2441,11 @@ class ProjectTab(QWidget):
         self.gb_sideTabs = QGroupBox()
         self.gb_sideTabs.setLayout(VBL(self.sideTabs))
 
-        self.side_controls = VWidget(self.gb_method_selection,
+        self.side_controls = VWidget(self.gbMethodSelect,
                                      self.MA_stackedWidget,
                                      self.gb_sideTabs,
                                      self.gb_outputSettings,
-                                     self.gb_warnings,
+                                     self.gbWarnings,
                                      self.btnQuickSWIM)
         self.side_controls.setMaximumWidth(340)
         self.side_controls.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -2525,11 +2520,14 @@ class ProjectTab(QWidget):
         self.lab_tra_title.setStyleSheet("color: #4d4d4d;")
         self.lab_ref.setStyleSheet("color: #161c20;")
         self.lab_ref_title.setStyleSheet("color: #161c20;")
-        self.lw_gb_r.setStyleSheet("""border-width: 3px; border-color: #339933; font-weight: 600;""")
-        self.lw_gb_l.setStyleSheet("""border-color: #666666; font-weight: 300;""")
+        # self.lw_gb_r.setStyleSheet("""border-width: 3px; border-color: #339933; font-weight: 600;""")
+        # self.lw_gb_l.setStyleSheet("""border-color: #666666; font-weight: 300;""")
+        self.lw_gb_r.setStyleSheet("""QWidget{border-width: 3px; border-color: #339933;} QGroupBox {font-weight: 
+        600;}""")
+        self.lw_gb_l.setStyleSheet("""border-color: #666666; """)
         self.baseViewer.drawSWIMwindow() #redundant
         for i in list(range(0,3)):
-            self.lw_tra.item(i).setForeground(QColor('#444444'))
+            self.lw_tra.item(i).setForeground(QColor('#666666'))
             self.lw_ref.item(i).setForeground(QColor('#141414'))
         logger.info(f"<<<< set_reference <<<<")
 
@@ -2555,12 +2553,16 @@ class ProjectTab(QWidget):
         self.lab_ref_title.setStyleSheet("color: #4d4d4d;")
         self.lab_tra.setStyleSheet("color: #161c20;")
         self.lab_tra_title.setStyleSheet("color: #161c20;")
-        self.lw_gb_l.setStyleSheet("""border-width: 3px; border-color: #339933; font-weight: 600;""")
-        self.lw_gb_r.setStyleSheet("""border-color: #666666; font-weight: 300;""")
+        # self.lw_gb_l.setStyleSheet("""border-width: 3px; border-color: #339933; font-weight: 600;""")
+        # self.lw_gb_r.setStyleSheet("""border-color: #666666; font-weight: 300;""")
+
+        self.lw_gb_l.setStyleSheet("""QWidget{border-width: 3px; border-color: #339933;} QGroupBox {font-weight: 
+        600;}""")
+        self.lw_gb_r.setStyleSheet("""border-color: #666666;""")
         self.baseViewer.drawSWIMwindow() #redundant
         for i in list(range(0,3)):
             self.lw_tra.item(i).setForeground(QColor('#141414'))
-            self.lw_ref.item(i).setForeground(QColor('#444444'))
+            self.lw_ref.item(i).setForeground(QColor('#666666'))
         logger.info(f"<<<< set_transforming <<<<")
 
 
@@ -2822,23 +2824,27 @@ class ProjectTab(QWidget):
 
 
     def updateWarnings(self):
-        self.updateCafmComportsLabel()
-        self.updateDataComportsLabel()
+        logger.info('')
+        if cfg.data.is_aligned():
+            ishidden0 = self.updateCafmComportsLabel()
+            ishidden1 = self.updateDataComportsLabel()
+            self.gbWarnings.setHidden(ishidden0 and ishidden1)
+        else:
+            self.gbWarnings.hide()
 
 
     def updateCafmComportsLabel(self):
-        if cfg.data.is_aligned() and cfg.data.cafm_hash_comports():
-            self.warning_cafm.hide()
-        else:
-            self.warning_cafm.show()
+        #Todo isAlignedAndGenerated
+        hide = cfg.data.is_aligned() and cfg.data.cafm_hash_comports()
+        self.warning_cafm.setHidden(hide)
+        return hide
 
 
     def updateDataComportsLabel(self):
-        # if cfg.data.is_aligned_and_generated() and not cfg.data.data_comports():
-        if cfg.data.is_aligned() and cfg.data.data_comports()[0]:
-            self.warning_data.hide()
-        else:
-            self.warning_data.show()
+        #Todo isAlignedAndGenerated
+        hide = cfg.data.is_aligned() and cfg.data.data_comports()[0]
+        self.warning_data.setHidden(hide)
+        return hide
 
 
 
@@ -2849,6 +2855,10 @@ class ProjectTab(QWidget):
         #     logger.critical(f"[DEV] called by {caller_name()}")
 
         # self.msg_MAinstruct.setVisible(cfg.data.current_method not in ('grid-default', 'grid-custom'))
+
+        self.rb_method1.setEnabled(cfg.data.is_aligned())
+        self.rb_method2.setEnabled(cfg.data.is_aligned())
+        self.btnQuickSWIM.setVisible(cfg.data.is_aligned())
 
         #### previously in cfg.mw.setControlPanelData ####
         self._swimWindowControl.setText(str(getData(f'defaults,{cfg.data.scale_key},swim-window-px')[0]))
@@ -2907,7 +2917,6 @@ class ProjectTab(QWidget):
 
         method = cfg.data.current_method
         if method == 'grid-custom':
-            cfg.mw._btn_alignOne.setEnabled(True)
             grid = cfg.data.grid_custom_regions
             self.Q1.setActivated(grid[0])
             self.Q2.setActivated(grid[1])
@@ -2931,8 +2940,7 @@ class ProjectTab(QWidget):
         if self.te_logs.isVisible():
             self.refreshLogs()
 
-        self.updateCafmComportsLabel()
-        self.updateDataComportsLabel()
+        self.updateWarnings()
 
         # logger.critical('<<<< dataUpdateMA <<<<')
 
@@ -3988,18 +3996,12 @@ class WarningNotice(QWidget):
                                  "border-radius: 4px; font-family: Tahoma, sans-serif; padding: 4px; } ")
         # self.setFixedHeight(16)
         self.layout = QHBoxLayout()
+        self.layout.setSpacing(2)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setAlignment(Qt.AlignBottom)
 
         self.setAutoFillBackground(True)
-        self.setAttribute(Qt.WA_StyledBackground, True)
-
-        # p = self.palette()
-        # p.setColor(self.backgroundRole(), QColor('#f3f6fb'))
-        # self.setPalette(p)
-        # self.setStyleSheet(
-        #     """QWidget{border-color: #161c20; background-color: #dadada; font-size: 11px; border-radius: 4px;}""")
-        # 
+        # self.setAttribute(Qt.WA_StyledBackground, True)
 
         # font = QFont()
         # font.setBold(True)
@@ -4020,18 +4022,6 @@ class WarningNotice(QWidget):
             self.fixbutton = QPushButton('Fix All')
             self.fixbutton.setStyleSheet("font-size: 10px;")
             self.fixbutton.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
-            # self.fixbutton.setStyleSheet("""
-            # QPushButton{
-            #     background-color: #ede9e8;
-            #     border-style: solid;
-            #     border-width: 1px;
-            #     border-radius: 4px;
-            #     border-color: #f3f6fb;
-            #     color: #161c20;
-            #     font-size: 9px;
-            #     font-weight: 600;
-            # }
-            # """)
             self.fixbutton.setStyleSheet("""
             QPushButton{
                 color: #161c20;

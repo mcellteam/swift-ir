@@ -95,7 +95,7 @@ DEV = is_joel()
 class HudOutputFormat(logging.Formatter):
     # ANSI color codess
     grey = "\x1b[38;20m"
-    warn = "\x1b[43m"
+    warn = "\x1b[31m"
     error = "\x1b[41m"
     bold_red = "\x1b[31;1m"
     # blue = "\x1b[1;34m"
@@ -258,9 +258,6 @@ class MainWindow(QMainWindow):
 
         self._mutex = QMutex()
 
-        self.tabChanged.connect(self.stopPlaybackTimer)
-        self.tabChanged.connect(self.reload_scales_combobox)
-
 
 
 
@@ -274,8 +271,6 @@ class MainWindow(QMainWindow):
     #     # if type(cfg.mw.focusWidget()) != QTextEdit:
     #     #     self.focusW = self.focusWidget()
     #     # self.setFocus()
-
-
 
     def pyqtgraph_examples(self):
         pyqtgraph.examples.run()
@@ -424,7 +419,6 @@ class MainWindow(QMainWindow):
             self.hud.done()
         else:
             self.warn('The application is busy')
-            logger.warning('The application is busy')
 
 
     def shutdownNeuroglancer(self):
@@ -940,8 +934,8 @@ class MainWindow(QMainWindow):
         caller = inspect.stack()[1].function
         logger.critical(f'[{caller}] {state}')
         self.a_snr.setText(('Show SNR Plot', 'Hide SNR Plot')[state])
-        self.tbbSnr.setToolTip((f"Show SNR Plot Tool Window ({hotkey('L')})",
-                                 f"Hide SNR Plot Tool Window ({hotkey('L')})")[state])
+        self.tbbSnr.setToolTip((f"Show SNR Plot Tool Window {hotkey('L')}",
+                                 f"Hide SNR Plot Tool Window {hotkey('L')}")[state])
         if self._isProjectTab():
             cfg.data['state']['tool_windows']['snr_plot'] = state
             if state:
@@ -1054,32 +1048,6 @@ class MainWindow(QMainWindow):
             logger.warning('Unable To Present SNR Results')
 
 
-    def onAlignmentStart(self, scale):
-        logger.info('')
-        t0 = time.time()
-        dt = datetime.datetime.now()
-
-        self._btn_alignAll.setEnabled(False)
-        self._btn_alignForward.setEnabled(False)
-        self._btn_alignOne.setEnabled(False)
-        self._btn_alignRange.setEnabled(False)
-        self._btn_regenerate.setEnabled(False)
-
-        self._working = True
-        
-        cfg.project_tab.tn_ms0.set_no_image()
-        cfg.project_tab.tn_ms1.set_no_image()
-        cfg.project_tab.tn_ms2.set_no_image()
-        cfg.project_tab.tn_ms3.set_no_image()
-
-        cfg.project_tab.matches_tn0.set_no_image()
-        cfg.project_tab.matches_tn1.set_no_image()
-        cfg.project_tab.matches_tn2.set_no_image()
-        cfg.project_tab.matches_tn3.set_no_image()
-
-        self._autosave(silently=True)
-
-
     def onAlignmentEnd(self):
         #Todo make this atomic for scale that was just aligned. Cant be current scale.
         QApplication.processEvents()
@@ -1175,7 +1143,6 @@ class MainWindow(QMainWindow):
         self.tell(f'Aligning: {align_indexes}')
         self.tell(f'Regenerating: {regen_indexes}')
 
-        # self.onAlignmentStart(scale=scale) #0811-
         self.tell("%s Affines (%s)..." % (('Initializing', 'Refining')[dm.isRefinement()], dm.scale_pretty(s=scale)))
         # logger.info(f'Aligning indexes:{indexes}, {cfg.data.scale_pretty(scale)}...')
         self._snr_before = cfg.data.snr_list()
@@ -1219,13 +1186,11 @@ class MainWindow(QMainWindow):
         self._alignworker.hudMessage.connect(self.tell)
         self._alignworker.hudWarning.connect(self.warn)
         self._alignworker.finished.connect(lambda: self._btn_alignAll.setEnabled(True))
-        self._alignworker.finished.connect(lambda: self._btn_alignOne.setEnabled(True))
         self._alignworker.finished.connect(self.onAlignmentEnd)
         if dm.is_aligned():
             self._alignworker.finished.connect(lambda: self.present_snr_results(align_indexes))
         self._alignworker.finished.connect(lambda: print(self._alignworker.dm))
         self._btn_alignAll.setEnabled(False)  # Final resets
-        self._btn_alignOne.setEnabled(False)  # Final resets
         self._alignThread.start()  # Step 6: Start the thread
 
 
@@ -1379,10 +1344,6 @@ class MainWindow(QMainWindow):
 
     def enableAllButtons(self):
         self._btn_alignAll.setEnabled(True)
-        self._btn_alignOne.setEnabled(True)
-        self._btn_alignForward.setEnabled(True)
-        self._btn_alignRange.setEnabled(True)
-        self._btn_regenerate.setEnabled(True)
         self._scaleDownButton.setEnabled(True)
         self._scaleUpButton.setEnabled(True)
         # self._ctlpanel_applyAllButton.setEnabled(True)
@@ -1406,6 +1367,7 @@ class MainWindow(QMainWindow):
         logger.info(f'[{caller}]')
 
         if self._isProjectTab():
+            self._btn_alignAll.setStyleSheet(("background-color: #FFFF66;","")[cfg.data.is_aligned()])
 
             # if cfg.data.is_aligned_and_generated(): #0202-
             self.gb_ctlActions.setTitle('%s Multiprocessing Functions' % cfg.data.scale_pretty())
@@ -1424,22 +1386,17 @@ class MainWindow(QMainWindow):
                 # self._btn_alignAll.setText('Re-Align All Sections (%s)' % cfg.data.scale_pretty())
                 # self._btn_alignAll.setText('Align All')
                 self._btn_alignAll.setEnabled(True)
-                self._btn_alignOne.setEnabled(True)
             elif cfg.data.is_alignable():
                 self._btn_alignAll.setEnabled(True)
-                self._btn_alignOne.setEnabled(False)
             else:
                 self._btn_alignAll.setEnabled(False)
-                self._btn_alignOne.setEnabled(False)
             if len(cfg.data.scales) == 1:
                 self._scaleUpButton.setEnabled(False)
                 self._scaleDownButton.setEnabled(False)
                 if cfg.data.is_aligned():
                     self._btn_alignAll.setEnabled(True)
-                    self._btn_alignOne.setEnabled(True)
                 else:
                     self._btn_alignAll.setEnabled(True)
-                    self._btn_alignOne.setEnabled(False)
             else:
                 cur_index = self._changeScaleCombo.currentIndex()
                 if cur_index == 0:
@@ -1457,7 +1414,6 @@ class MainWindow(QMainWindow):
             self._btn_prevSection.setEnabled(False)
             self._btn_nextSection.setEnabled(False)
             self._btn_alignAll.setEnabled(False)
-            self._btn_alignOne.setEnabled(False)
             self._skipCheckbox.setEnabled(False)
             self._sectionSlider.setRange(0,1)
             self._sectionSlider.setValue(0)
@@ -1605,9 +1561,9 @@ class MainWindow(QMainWindow):
         # self.dataUpdateAsync(self)
         # await self._dataUpdateWidgets()
         '''Reads Project Data to Update MainWindow.'''
-        # caller = inspect.stack()[1].function
-        # logger.info(f'[{caller}] [{cfg.data.zpos}] Updating Widgets...')
-        # logger.critical(f"self.sender() = {self.sender()}")
+        if DEV:
+            caller = inspect.stack()[1].function
+            logger.info(f'caller: {caller} sender: {self.sender()}')
 
         if self._working:
             logger.warning("Busy working! Not going to update the entire interface rn.")
@@ -2176,8 +2132,9 @@ class MainWindow(QMainWindow):
         self.setUpdatesEnabled(True)
         self.setFocus()
 
-    def saveUserPreferences(self):
-        logger.info('Saving User Preferences...')
+    def saveUserPreferences(self, silent=False):
+        if not silent:
+            logger.info('Saving User Preferences...')
         self.settings.setValue("geometry", self.saveGeometry())
         self.settings.setValue("windowState", self.saveState())
         # if self._isProjectTab():
@@ -2190,7 +2147,7 @@ class MainWindow(QMainWindow):
             json.dump(cfg.settings, f, indent=2)
             f.close()
         except:
-            logger.warning(f'Unable to save current user preferences. Using defaults')
+            cfg.mw.warn(f'Unable to save current user preferences. Using defaults instead.')
 
     def resetUserPreferences(self):
         logger.info('')
@@ -3362,6 +3319,8 @@ class MainWindow(QMainWindow):
         # cfg.project_tab = None
         # cfg.zarr_tab = None
         self._changeScaleCombo.clear()
+        self.stopPlaybackTimer()
+        self.reload_scales_combobox()
 
         # QApplication.restoreOverrideCursor()
 
@@ -3421,7 +3380,9 @@ class MainWindow(QMainWindow):
             cfg.zarr_tab.viewer.bootstrap()
 
         elif self._getTabType() == 'OpenProject':
+            self.pm.resetView()
             self.pm.refresh()
+
         
         logger.info('Wrapping up...')
         # self.updateMenus()
@@ -4432,6 +4393,7 @@ class MainWindow(QMainWindow):
         tip = """Align and generate all sections for the current scale"""
         # self._btn_alignAll = QPushButton(f"Align All {hotkey('A')}")
         self._btn_alignAll = QPushButton(f"Align All")
+        self._btn_alignAll.setStyleSheet("font-size: 10px;")
         self._btn_alignAll.setMaximumWidth(128)
         self._btn_alignAll.setFixedHeight(20)
         self._btn_alignAll.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -4440,84 +4402,43 @@ class MainWindow(QMainWindow):
         self._btn_alignAll.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self._btn_alignAll.clicked.connect(self.alignAll)
 
-        tip = """Align and generate the current section only"""
-        self._btn_alignOne = QPushButton('Align One')
-        self._btn_alignOne.setMaximumWidth(128)
-        self._btn_alignOne.setFixedHeight(20)
-        self._btn_alignOne.setFixedHeight(20)
-        self._btn_alignOne.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self._btn_alignOne.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        self._btn_alignOne.setEnabled(False)
-        self._btn_alignOne.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self._btn_alignOne.clicked.connect(self.alignGenerateOne) #0802
-        self._btn_alignOne.clicked.connect(self.alignOne)
 
-        tip = """Align and generate current sections from the current through the end of the image stack"""
-        self._btn_alignForward = QPushButton('Align Forward')
-        self._btn_alignForward.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self._btn_alignForward.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        self._btn_alignForward.setEnabled(False)
-        self._btn_alignForward.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self._btn_alignForward.clicked.connect(self.alignForward)
+        # self.startRangeInput = QLineEdit()
+        # self.startRangeInput.setMaximumWidth(64)
+        # # self.startRangeInput.setFixedSize(30, 16)
+        # self.startRangeInput.setAlignment(Qt.AlignCenter)
+        # self.startRangeInput.setEnabled(False)
+        #
+        # self.endRangeInput = QLineEdit()
+        # self.endRangeInput.setMaximumWidth(64)
+        # # self.endRangeInput.setFixedSize(30, 16)
+        # self.endRangeInput.setAlignment(Qt.AlignCenter)
+        # self.endRangeInput.setEnabled(False)
+        #
+        # tip = """The range of sections to align."""
+        # self.rangeInputWidget = HWidget(self.startRangeInput, QLabel(' : '), self.endRangeInput)
+        # self.rangeInputWidget.layout.setAlignment(Qt.AlignHCenter)
+        # self.rangeInputWidget.setMaximumWidth(110)
+        # self.rangeInputWidget.setToolTip(tip)
 
-        self.startRangeInput = QLineEdit()
-        self.startRangeInput.setMaximumWidth(64)
-        # self.startRangeInput.setFixedSize(30, 16)
-        self.startRangeInput.setAlignment(Qt.AlignCenter)
-        self.startRangeInput.setEnabled(False)
-
-        self.endRangeInput = QLineEdit()
-        self.endRangeInput.setMaximumWidth(64)
-        # self.endRangeInput.setFixedSize(30, 16)
-        self.endRangeInput.setAlignment(Qt.AlignCenter)
-        self.endRangeInput.setEnabled(False)
-
-        tip = """The range of sections to align."""
-        self.rangeInputWidget = HWidget(self.startRangeInput, QLabel(' : '), self.endRangeInput)
-        self.rangeInputWidget.layout.setAlignment(Qt.AlignHCenter)
-        self.rangeInputWidget.setMaximumWidth(110)
-        self.rangeInputWidget.setToolTip(tip)
-
-        tip = """Compute alignment and generate new images for range of sections"""
-        self._btn_alignRange = QPushButton('Align Range')
-        self._btn_alignRange.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self._btn_alignRange.setEnabled(False)
-        self._btn_alignRange.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._btn_alignRange.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        # self._btn_alignRange.clicked.connect(self.alignRange)
-
-        tip = """Do NOT align, only generate new output images for all sections based on the cumulative affine and output settings"""
-        self._btn_regenerate = QPushButton('Regenerate All')
-        self._btn_regenerate.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self._btn_regenerate.setEnabled(False)
-        self._btn_regenerate.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        self._btn_regenerate.clicked.connect(lambda: self.regenerate(scale=cfg.data.scale_key))
-        self._btn_regenerate.setEnabled(False)
 
         self.gb_ctlActions = QGroupBox("Scale Actions")
         self.gb_ctlActions.setObjectName("gb_cpanel")
         self.gb_ctlActions.setStyleSheet("font-size: 9px;")
 
-        self.w_range = HWidget(VWidget(QLabel('Range: '), self.rangeInputWidget), self._btn_alignRange)
+        self.w_range = HWidget(VWidget(QLabel('Range: ')))
         self.w_range.layout.setAlignment(Qt.AlignHCenter)
         self.w_range.layout.setSpacing(2)
-
-        self.newActionsWidget = HWidget(self._btn_alignAll, self._btn_alignOne)
-        self.newActionsWidget.layout.setSpacing(2)
-        self.newActionsWidget.setStyleSheet("font-size: 10px;")
 
         self.toolbar_cpanel = QToolBar()
         self.toolbar_cpanel.setObjectName("Main Toolbar")
         self.toolbar_cpanel.setAllowedAreas(Qt.TopToolBarArea | Qt.BottomToolBarArea)
         # self.toolbar_cpanel.setMovable(False)
         self.toolbar_cpanel.setFixedHeight(32)
-        hw = HWidget(self.navControls, self.newActionsWidget)
+        hw = HWidget(self.navControls, self._btn_alignAll)
         hw.layout.setStretch(0,1)
         hw.layout.setStretch(1,0)
-        # self.toolbar_cpanel.addWidget(self.navControls)
-        # self.toolbar_cpanel.addWidget(self.newActionsWidget)
         self.toolbar_cpanel.addWidget(hw)
-        # self.toolbar_cpanel.hide() #0811-
 
     def initUI(self):
         '''Initialize Main UI'''

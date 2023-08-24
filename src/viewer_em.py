@@ -143,7 +143,9 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
         if self.state.cross_section_scale:
             val = (self.state.cross_section_scale, self.state.cross_section_scale * 250000000)[self.state.cross_section_scale < .001]
+            logger.info(f'val = {val:.4f}')
             if round(val, 3) != round(getData('state,ng_zoom'), 3):
+                logger.info('emitting zoomChanged!')
                 setData('state,ng_zoom', val)
                 self.signals.zoomChanged.emit(val)
 
@@ -441,7 +443,6 @@ class AbstractEMViewer(neuroglancer.Viewer):
                 self.tensor = cfg.tensor = cfg.unal_tensor = future.result()
 
         except Exception as e:
-            logger.warning('Failed to acquire Tensorstore view')
             cfg.mw.warn('Failed to acquire Tensorstore view')
             print_exception()
             ### Add funcitonality to recreate Zarr
@@ -772,7 +773,7 @@ class PMViewer(AbstractEMViewer):
                 s.layers['layer1'] = ng.ImageLayer(source=self.LV_r)
             else:
                 s.layers['layer1'] = ng.ImageLayer()
-            s.crossSectionBackgroundColor = '#222222'
+            s.crossSectionBackgroundColor = '#000000'
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
             s.show_default_annotations = True
@@ -785,10 +786,18 @@ class PMViewer(AbstractEMViewer):
 
 
         with self.config_state.txn() as s:
+            # s.status_messages['message'] = ''
             s.show_ui_controls = False
             s.status_messages = None
             s.show_panel_borders = False
             s.show_layer_panel = False
+            # if self.path_l:
+            #     if hasattr(self, 'LV_l'):
+            #         s.status_messages['msg0'] = f'series    : {path_l}'
+            # if self.path_r:
+            #     if hasattr(self, 'LV_r'):
+            #         s.status_messages['msg1'] = f'alignment : {path_r}'
+
 
 
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
@@ -828,6 +837,8 @@ class EMViewerMendenhall(AbstractEMViewer):
             s.crossSectionBackgroundColor = '#808080'
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
+
+
 
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
 

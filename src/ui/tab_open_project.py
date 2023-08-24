@@ -37,8 +37,7 @@ from src.ui.file_browser_tacc import FileBrowserTacc
 from src.thumbnailer import Thumbnailer
 from src.funcs_image import ImageSize
 from src.helpers import list_paths_absolute, get_bytes, absFilePaths, getOpt, setOpt, \
-    print_exception, configure_project_paths, delete_recursive, natural_sort, is_tacc, \
-    is_joel, hotkey, get_appdir, caller_name, initLogFiles, create_project_directories, get_appdir, example_zarr
+    print_exception, natural_sort, is_tacc, is_joel, hotkey, get_appdir, caller_name, initLogFiles, sanitizeSavedPaths
 from src.data_model import DataModel
 from src.ui.tab_project import ProjectTab
 from src.ui.timer import Timer
@@ -62,11 +61,11 @@ class OpenProject(QWidget):
         super().__init__(**kwargs)
         self.setMinimumHeight(100)
         self.filebrowser = FileBrowser(parent=self)
+        self.filebrowser.setContentsMargins(2,2,2,2)
         # self.filebrowsertacc = FileBrowserTacc(parent=self)
         def fn():
             self.selectionReadout.setText(self.filebrowser.getSelectionPath())
         self.filebrowser.treeview.selectionModel().selectionChanged.connect(fn)
-        self.filebrowser.controlsNavigation.show()
         self.filebrowser.navigateTo(cfg.settings['content_root'])
         # self.user_projects = UserProjects(parent=self)
         self.initUI()
@@ -80,14 +79,15 @@ class OpenProject(QWidget):
         #Note: when clipboard changes during app out-of-focus, clipboard changed signal gets emitted
         #once focus is returned. This is the ideal behavior.
 
-        # self.setStyleSheet("font-size: 10px; color: #f3f6fb;")
         self.setStyleSheet("font-size: 10px; color: #161c20;")
 
+        sanitizeSavedPaths()
 
         # configure_project_paths()
 
-        self.installEventFilter(self)
+        # self.installEventFilter(self)
 
+        self.resetView()
         self.refresh()
 
 
@@ -102,21 +102,12 @@ class OpenProject(QWidget):
 
     def initUI(self):
 
-        # self.vbl_projects = QVBoxLayout()
-        # self.vbl_projects.setSpacing(1)
-        # self.vbl_projects.setContentsMargins(2, 2, 2, 2)
-        # self.vbl_projects.addWidget(self.user_projects)
-        # self.vbl_projects.addWidget(self.controls)
-        # # self.userProjectsWidget.setLayout(self.vbl_projects)
-
         # User Files Widget
         self.userFilesWidget = QWidget()
         lab = QLabel('Open AlignEM-SWIFT Project or...\nOpen OME-NGFF Zarr in Neuroglancer or...\nSelect folder of images for new project...')
         lab.setStyleSheet('font-size: 10px; color: #161c20;')
         vbl = QVBoxLayout()
-        # vbl.setContentsMargins(4, 4, 4, 4)
         vbl.setContentsMargins(0,0,0,0)
-        # vbl.addWidget(HWidget(lab))
         vbl.addWidget(self.filebrowser)
         self.userFilesWidget.setLayout(vbl)
 
@@ -180,17 +171,9 @@ class OpenProject(QWidget):
         self._buttonBrowserPaste.setStyleSheet('font-size: 9px;')
         # self._buttonBrowserPaste.setEnabled(os.path.exists(QApplication.clipboard().text()))
 
-        self.bSetContentSources = QPushButton('Set Content Sources')
-        self.bSetContentSources.setFixedSize(QSize(100,18))
-        self.bSetContentSources.setStyleSheet('font-size: 9px; background-color: #222222; color: #f3f6fb;')
-        def fn():
-            self.w_teContentSources.setVisible(not self.w_teContentSources.isVisible())
-            if self.w_teContentSources.isVisible():
-                self.leContentRoot.setText(cfg.settings['content_root'])
-                self.teSearchPaths.setText('\n'.join(cfg.settings['search_paths']))
-            # self.bSetContentSources.setText(('Set Content Sources', 'Hide')[
-            #                                     self.w_teContentSources.isVisible()])
-        self.bSetContentSources.clicked.connect(fn)
+
+
+
         self.lab_path_exists = cfg.lab_path_exists = QLabel('Path Exists')
         self.lab_path_exists.setFixedWidth(80)
         self.lab_path_exists.setAttribute(Qt.WA_TransparentForMouseEvents)
@@ -202,11 +185,11 @@ class OpenProject(QWidget):
 
         self.bImportSeries = HoverButton("Import")
         self.bImportSeries.setIcon(qta.icon('mdi.import', color='#f3f6fb'))
-        self.bImportSeries.setToolTip("Import Series")
         self.bImportSeries.clicked.connect(self.showImportSeriesDialog)
 
         self.lab_project_name = QLabel(' New Project Path: ')
-        self.lab_project_name.setStyleSheet("font-size: 10px; font-weight: 600; color: #ede9e8; background-color: #339933; border-radius: 4px;")
+        self.lab_project_name.setStyleSheet("font-size: 10px; font-weight: 600; color: #f3f6fb; background-color: "
+                                            "#339933; border-radius: 4px;")
         self.lab_project_name.setFixedHeight(18)
         self.le_project_name = QLineEdit()
         self.le_project_name.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -276,7 +259,6 @@ class OpenProject(QWidget):
         # self.selectionReadout.textEdited.connect(self.validateUserEnteredPath)
 
         self.selectionReadout.setFixedHeight(22)
-        # self.selectionReadout.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         self.selectionReadout_w_overlay = QWidget()
         # self.selectionReadout_w_overlay.setAttribute(Qt.WA_TransparentForMouseEvents)
@@ -289,80 +271,74 @@ class OpenProject(QWidget):
         self.selectionReadout_w_overlay.setLayout(gl)
 
         self.comboLevel = QComboBox()
-        self.comboLevel.setFixedHeight(18)
+        self.comboLevel.setFixedHeight(20)
         self.comboLevel.setStyleSheet("background-color: #222222; color: #f3f6fb;")
         self.comboLevel.setFixedWidth(44)
-        self.comboLevel.currentIndexChanged.connect(self.onComboLevel)
         self.comboLevel.setFocusPolicy(Qt.NoFocus)
+        self.comboLevel.currentIndexChanged.connect(self.onComboLevel)
 
         self.comboSelectAlignment = QComboBox()
-        self.comboSelectAlignment.setFixedHeight(18)
-        self.comboSelectAlignment.setFocusPolicy(Qt.NoFocus)
+        self.comboSelectAlignment.setStyleSheet("background-color: #222222; color: #f3f6fb;")
+        self.comboSelectAlignment.setFixedHeight(20)
+        self.comboSelectAlignment.setMaximumWidth(240)
         self.comboSelectAlignment.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.comboSelectAlignment.setFocusPolicy(Qt.NoFocus)
         self.comboSelectAlignment.addItems(["Null"])
 
         self.comboSelectSeries = QComboBox()
-        self.comboSelectSeries.setFixedHeight(18)
+        self.comboSelectSeries.setStyleSheet("background-color: #222222; color: #f3f6fb;")
+        self.comboSelectSeries.setFixedHeight(20)
+        self.comboSelectSeries.setMaximumWidth(240)
         self.comboSelectSeries.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.comboSelectSeries.setFocusPolicy(Qt.NoFocus)
         self.loadSeriesCombo()
         self.comboSelectSeries.currentIndexChanged.connect(self.onSelectSeriesCombo)
 
         self.bPlusAlignment = HoverButton('New')
+        self.bPlusAlignment.setToolTip("Save path")
         self.bPlusAlignment.setIcon(qta.icon('fa.plus', color='#f3f6fb'))
-        self.bPlusAlignment.setToolTip("New Alignment")
         self.bPlusAlignment.clicked.connect(self.onPlusAlignment)
 
         self.bMinusAlignment = HoverButton('Delete')
+        self.bMinusAlignment.setToolTip("Remove saved path")
         self.bMinusAlignment.setIcon(qta.icon('fa.minus', color='#f3f6fb'))
-        self.bMinusAlignment.setToolTip("Delete Alignment")
         self.bMinusAlignment.clicked.connect(self.onMinusAlignment)
 
         self.bOpenAlignment = HoverButton('Open')
         self.bOpenAlignment.setIcon(qta.icon('fa.folder-open', color='#f3f6fb'))
-        self.bOpenAlignment.setToolTip("Open Alignment")
         self.bOpenAlignment.clicked.connect(self.onOpenAlignment)
 
-        # self.alignButtons = HWidget(self.bOpenAlignment, self.bPlusAlignment, self.bMinusAlignment, ExpandingHWidget(self))
-        self.alignButtons = HWidget(self.bOpenAlignment, self.bPlusAlignment, self.bMinusAlignment)
-
         self.l0 = QLabel('Series: ')
+        self.l0.setFixedHeight(20)
+        self.l0.setFixedWidth(58)
         self.l0.setAutoFillBackground(True)
-        self.l0.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
-        self.l0.setStyleSheet("padding: 2px; font-weight: 600; color: #f3f6fb; border-bottom-left-radius: 8px; "
-                              "border-top-left-radius: 8px;")
+        self.l0.setStyleSheet("background-color: rgba(255, 255, 255, 80); padding: 2px; font-weight: 600; color: "
+                              "#f3f6fb; border-bottom-left-radius: 8px; border-top-left-radius: 8px;")
         self.l1 = QLabel('Alignment: ')
-        self.l1.setMaximumWidth(100)
+        self.l1.setFixedHeight(20)
+        self.l1.setFixedWidth(72)
         self.l1.setAutoFillBackground(True)
-        self.l1.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
-        self.l1.setStyleSheet("padding: 2px; font-weight: 600; color: #f3f6fb; border-bottom-left-radius: 8px; "
-                              "border-top-left-radius: 8px;")
+        self.l1.setStyleSheet("background-color: rgba(255, 255, 255, 80); padding: 2px; font-weight: 600; color: "
+                              "#f3f6fb; border-bottom-left-radius: 8px; border-top-left-radius: 8px;")
 
-        # self.combo1 = HWidget(self.l0, self.comboSelectSeries, self.bImportSeries, ExpandingHWidget(self))
         self.combo1 = HWidget(self.l0, self.comboSelectSeries, self.comboLevel, self.bImportSeries)
-        self.combo1.setAutoFillBackground(True)
-        self.combo1.setStyleSheet("background-color: #222222; color: #f3f6fb;")
-        self.comboSelectSeries.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.combo1.layout.setAlignment(Qt.AlignCenter)
+        self.combo1.layout.setContentsMargins(10,0,2,0)
+        self.combo1.setStyleSheet("color: #f3f6fb; border: 1px solid #f3f6fb;")
 
-        self.combo2 = HWidget(self.l1, self.comboSelectAlignment, self.alignButtons)
-        self.alignButtons.layout.setAlignment(Qt.AlignRight)
-        self.combo2.setAutoFillBackground(True)
-        self.combo2.setStyleSheet("background-color: #222222; color: #f3f6fb;")
-        self.comboSelectAlignment.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.combo2 = HWidget(self.l1, self.comboSelectAlignment, self.bOpenAlignment, self.bPlusAlignment,
+                              self.bMinusAlignment)
+        self.combo2.layout.setAlignment(Qt.AlignCenter)
+        self.combo2.layout.setContentsMargins(10,0,2,0)
+        self.combo2.setStyleSheet("color: #f3f6fb; border: 1px solid #f3f6fb;")
 
         # self.l1.setFixedWidth(74)
         # self.wCombos = HWidget(self.combo1, QLabel(' '), self.combo2)
-        self.wCombos = QWidget()
+        self.wCombos = HWidget(self.combo1, QLabel('        '), self.combo2)
         self.wCombos.setAutoFillBackground(False)
         self.setFocusPolicy(Qt.NoFocus)
         lab.setAutoFillBackground(False)
-        hbl = HBL()
-        hbl.addWidget(self.combo1)
-        hbl.addWidget(QLabel('        '))
-        hbl.addWidget(self.combo2)
-        # hbl.setStretch(1,9)
-        self.wCombos.setLayout(hbl)
-        self.wCombos.setMaximumHeight(20)
+        # self.wCombos.setFixedHeight(22)
 
         self.webengine = WebEngine(ID='pmViewer')
         self.webengine.setFocusPolicy(Qt.StrongFocus)
@@ -380,37 +356,41 @@ class OpenProject(QWidget):
 
         self.labTitle = QLabel("Series Manager")
         self.labTitle.setAutoFillBackground(False)
-        self.labTitle.setFixedWidth(100)
-        self.labTitle.setAlignment(Qt.AlignCenter)
+        self.labTitle.setAttribute(Qt.WA_TransparentForMouseEvents)
+        # self.labTitle.setFixedWidth(100)
+        # self.labTitle.setFixedHeight(30)
+        self.labTitle.setAlignment(Qt.AlignLeft)
         self.labTitle.setStyleSheet("color: #f3f6fb; font-size: 11px; font-weight: 600; padding: 2px;")
 
-        self.leAlignmentName = QLineEdit()
-        self.leAlignmentName.setFixedHeight(18)
-        self.leAlignmentName.returnPressed.connect(self.onConfirmAlignment)
-        self.leAlignmentName.setStyleSheet("border-color: #339933;")
-        self.leAlignmentName.setReadOnly(False)
-        self.leAlignmentName.setPlaceholderText("<New alignment name>")
+        self.leNameAlignment = QLineEdit()
+        self.leNameAlignment.setFixedHeight(20)
+        self.leNameAlignment.returnPressed.connect(self.createAlignment)
+
+        self.leNameAlignment.setReadOnly(False)
+        self.leNameAlignment.setPlaceholderText("<New alignment name>")
         f = QFont()
-        # f.set
         f.setItalic(True)
-        self.leAlignmentName.setFont(f)
+        self.leNameAlignment.setFont(f)
         def onTextChanged():
-            self.bConfirmNewAlignment.setEnabled(bool(self.leAlignmentName.text()))
-            self.leAlignmentName.setStyleSheet(("border-color: #339933;", "border-color: #ede9e8;")[bool(self.leAlignmentName.text())])
-            self.bConfirmNewAlignment.setStyleSheet(("background-color: #222222;", "background-color: #339933;")[bool(self.leAlignmentName.text())])
+            self.bConfirmNewAlignment.setEnabled(bool(self.leNameAlignment.text()))
+            self.leNameAlignment.setStyleSheet(("border-color: #339933; border-width: 2px;", "border-color: #f3f6fb;")[
+                                                   bool(
+                self.leNameAlignment.text())])
+            self.bConfirmNewAlignment.setStyleSheet(("background-color: #222222;", "background-color: #339933; border-color: #f3f6fb;")[
+                                                        bool(self.leNameAlignment.text())])
             f = QFont()
-            f.setItalic(not len(self.leAlignmentName.text()))
-            self.leAlignmentName.setFont(f)
-        self.leAlignmentName.textChanged.connect(onTextChanged)
+            f.setItalic(not len(self.leNameAlignment.text()))
+            self.leNameAlignment.setFont(f)
+        self.leNameAlignment.textChanged.connect(onTextChanged)
 
         self.bConfirmNewAlignment = QPushButton('Create')
-        self.bConfirmNewAlignment.setFixedSize(QSize(44, 18))
+        self.bConfirmNewAlignment.setFixedSize(QSize(44, 20))
         self.bConfirmNewAlignment.setFocusPolicy(Qt.NoFocus)
-        self.bConfirmNewAlignment.clicked.connect(self.onConfirmAlignment)
+        self.bConfirmNewAlignment.clicked.connect(self.createAlignment)
 
         self.bCancelNewAligment = QPushButton()
         self.bCancelNewAligment.setIcon(qta.icon('fa.close', color='#f3f6fb'))
-        self.bCancelNewAligment.setFixedSize(QSize(18, 18))
+        self.bCancelNewAligment.setFixedSize(QSize(20, 20))
         self.bCancelNewAligment.setIconSize(QSize(12,12))
         self.bCancelNewAligment.setFocusPolicy(Qt.NoFocus)
         self.bCancelNewAligment.clicked.connect(lambda: self.wNameAlignment.hide())
@@ -418,15 +398,12 @@ class OpenProject(QWidget):
 
         newAlignmentLab = QLabel("Alignment Name:")
         newAlignmentLab.setStyleSheet(f"border-bottom-left-radius: 2px; border-top-left-radius: 2px;")
-        # self.wNameAlignment = HWidget(newAlignmentLab, self.leAlignmentName, self.bConfirmNewAlignment,
-        #                               self.bCancelNewAligment)
-        self.wNameAlignment = HWidget(self.leAlignmentName, self.bConfirmNewAlignment,
+        self.wNameAlignment = HWidget(self.leNameAlignment, self.bConfirmNewAlignment,
                                       self.bCancelNewAligment)
-        self.wNameAlignment.setFixedHeight(18)
-        # self.wNameAlignment.layout.setSpacing(2)
+        self.wNameAlignment.setFixedHeight(20)
+        self.wNameAlignment.layout.setSpacing(4)
         newAlignmentLab.setAutoFillBackground(True)
-        # self.wNameAlignment.setStyleSheet("background-color: #222222; color: #f3f6fb; padding: 2px; border-radius: 4px;")
-        self.wNameAlignment.setStyleSheet("background-color: #222222; color: #f3f6fb; ")
+        self.wNameAlignment.setStyleSheet("background-color: #222222; color: #f3f6fb;")
         self.wNameAlignment.hide()
 
         '''Step 1/3'''
@@ -489,7 +466,7 @@ class OpenProject(QWidget):
         # self.iid_dialog.fileSelected.connect(self.updateImportSeriesUI)
         self.iid_dialog.filesSelected.connect(self.updateImportSeriesUI)
         self.iid_dialog.setAutoFillBackground(True)
-        self.iid_dialog.setStyleSheet("background-color: #222222; color: #f3f6fb;")
+        # self.iid_dialog.setStyleSheet("background-color: #222222; color: #f3f6fb;")
         # self.iid_dialog.setStyleSheet("""
         # QLabel{color: color: #f3f6fb; }
         # QFileDialog{background-color: #222222; color: #f3f6fb;
@@ -498,58 +475,7 @@ class OpenProject(QWidget):
         # self.iid_dialog.setMinimumWidth(500)
         # self.iid_dialog.setMinimumHeight(500)
 
-        self.leContentRoot = QLineEdit()
-        self.leContentRoot.setFixedHeight(18)
-        self.leContentRoot.setReadOnly(False)
 
-        self.teSearchPaths = QTextEdit()
-        # self.teSearchPaths.setMaximumHeight(100)
-        self.teSearchPaths.setReadOnly(False)
-        # self.teSearchPaths.setMaximumHeight(140)
-        # self.teSearchPaths.setMinimumHeight(40)
-
-        self.bSaveCancelSources = QPushButton('Cancel')
-        self.bSaveCancelSources.setFixedSize(QSize(60,18))
-        self.bSaveCancelSources.setIconSize(QSize(12,12))
-        self.bSaveCancelSources.clicked.connect(lambda: self.w_teContentSources.hide())
-        self.bSaveCancelSources.clicked.connect(lambda: self.iid_dialog.hide())
-        self.bSaveCancelSources.clicked.connect(lambda: self.webengine.setFocus())
-
-        self.bSaveContentSources = QPushButton('Save')
-        self.bSaveContentSources.setFixedSize(QSize(60,18))
-        def fn():
-            logger.info(f'Saving search paths and content roots...')
-            cfg.settings['search_paths'] = self.teSearchPaths.toPlainText().split('\n')
-            cfg.settings['content_root'] = self.leContentRoot.text()
-            makedirs_exist_ok(cfg.settings['content_root'], exist_ok=True)
-            p = os.path.join(cfg.settings['content_root'], 'series')
-            if not os.path.exists(p):
-                logger.info(f'Creating directory! {p}')
-                os.makedirs(p, exist_ok=True)
-            p = os.path.join(cfg.settings['content_root'], 'projects')
-            if not os.path.exists(p):
-                logger.info(f'Creating directory! {p}')
-                os.makedirs(p, exist_ok=True)
-            cfg.mw._autosave()
-            self.w_teContentSources.hide()
-            self.bSetContentSources.setText('Set Content Sources')
-            cfg.mw.statusBar.showMessage('Content roots saved!', 3000)
-        self.bSaveContentSources.clicked.connect(fn)
-
-        self.w_teContentSources = QWidget()
-        self.w_teContentSources.setAutoFillBackground(True)
-        self.flContentAndSearch = QFormLayout()
-        self.flContentAndSearch.setContentsMargins(2,2,2,2)
-        self.flContentAndSearch.setSpacing(2)
-        self.flContentAndSearch.addRow('Content Root', self.leContentRoot)
-        self.flContentAndSearch.addRow('Search Paths', self.teSearchPaths)
-        self.flContentAndSearch.addWidget(HWidget(self.bSaveContentSources, self.bSaveCancelSources,
-                                                  ExpandingHWidget(self)))
-        # self.w_teContentSources.setMaximumHeight(140)
-        self.w_teContentSources.setLayout(self.flContentAndSearch)
-        self.w_teContentSources.setMinimumHeight(50)
-        self.w_teContentSources.setMaximumHeight(150)
-        self.w_teContentSources.hide()
 
         self.leNameSeries = QLineEdit()
         f = QFont()
@@ -558,23 +484,20 @@ class OpenProject(QWidget):
         self.leNameSeries.setFont(f)
         self.placeholderText = '<short, descriptive name>'
         self.leNameSeries.setPlaceholderText(self.placeholderText)
-        self.leNameSeries.setFixedHeight(18)
+        self.leNameSeries.setFixedHeight(20)
         self.leNameSeries.setReadOnly(False)
         pal = self.leNameSeries.palette()
         pal.setColor(QPalette.PlaceholderText, QColor("#dadada"))
         self.leNameSeries.setPalette(pal)
         self.leNameSeries.textChanged.connect(self.updateImportSeriesUI)
 
-        lab = QLabel('Series Name:')
-        lab.setStyleSheet("font-size: 10px;")
-        # self.bSelect = QPushButton("Select Images")
         self.bSelect = QPushButton("Select Images")
-        self.bSelect.setStyleSheet("background-color: #339933;")
         self.bSelect.clicked.connect(self.selectImages)
 
         self.bCancel = QPushButton()
-        self.bCancel.setFixedSize(QSize(18,18))
-        self.bCancel.setIcon(qta.icon('fa.close', color='#f3f6fb'))
+        self.bCancel.setFixedSize(QSize(20,20))
+        # self.bCancel.setIcon(qta.icon('fa.close', color='#f3f6fb'))
+        self.bCancel.setIcon(qta.icon('fa.close', color='#161c20'))
         def fn():
             self.gbImportSeries.hide()
             self.iid_dialog.hide()
@@ -586,16 +509,14 @@ class OpenProject(QWidget):
         self.bConfirmImport = QPushButton("Create")
         self.bConfirmImport.clicked.connect(self.importSeries)
         self.bConfirmImport.setEnabled(False)
-        self.wNameSeries = HWidget(lab, self.leNameSeries, self.bSelect, self.bConfirmImport, self.bCancel)
-        # self.wNameSeries = HWidget(lab, self.leNameSeries, self.bSelect, self.bConfirmImport)
+        self.wNameSeries = HWidget(QLabel('Series Name:'), self.leNameSeries, self.bSelect, self.bConfirmImport, self.bCancel)
+        self.wNameSeries.setStyleSheet("QLabel {color: #f3f6fb;} ")
         self.wNameSeries.layout.setSpacing(2)
         self.wNameSeries.layout.setContentsMargins(0,0,0,0)
 
-        # bs = [self.bSelect, self.bConfirmImport, self.bCancel]
         bs = [self.bSelect, self.bConfirmImport]
         for b in bs:
-            # b.setStyleSheet("font-size: 10px; ")
-            b.setFixedSize(QSize(78,18))
+            b.setFixedSize(QSize(78,20))
 
         self.wSeriesConfig = SeriesConfig(parent=self)
 
@@ -604,40 +525,38 @@ class OpenProject(QWidget):
         self.labImgCount.hide()
 
         vbl = VBL(self.wNameSeries, self.labImgCount, self.wSeriesConfig)
-        vbl.setContentsMargins(0,0,0,0)
+        vbl.setSpacing(4)
         self.gbImportSeries = QGroupBox()
-        self.gbImportSeries.setAutoFillBackground(True)
-        self.gbImportSeries.setStyleSheet("padding: 2px; background-color: #222222; color: #f3f6fb;")
+        # self.gbImportSeries.setStyleSheet("QGroupBox{color: #f3f6fb; background-color: rgba(255, 255, 255, "
+        #                                   "160); border: 1px solid #f3f6fb; border-radius: 1px;} QLabel{color: "
+        #                                   "#f3f6fb;}")
+        self.gbImportSeries.setStyleSheet("QGroupBox{color: #f3f6fb; background-color: rgba(255, 255, 255, "
+                                          "160);} QLabel{color: #161c20;}")
+        # self.gbImportSeries.setAutoFillBackground(True)
         self.gbImportSeries.setLayout(vbl)
-        # self.gbImportSeries.setFixedHeight(64)
         self.gbImportSeries.hide()
 
-        # self.wTitle = HWidget(self.labTitle, ExpandingHWidget(self), self.bSetContentSources)
-        self.wTitle = HWidget(self.labTitle, ExpandingHWidget(self))
-        # self.wTitle.setStyleSheet("background-color: #222222; color: #f3f6fb;")
-        self.wTitle.setFixedHeight(18)
-
-        # self.topWidget = VWidget(self.wTitle, self.wCombos, self.gbImportSeries, self.wNameAlignment,
-        #                          self.w_teContentSources, self.iid_dialog)
-        self.topWidget = VWidget(self.wTitle, self.wCombos, self.gbImportSeries, self.wNameAlignment, self.iid_dialog)
-        self.topWidget.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
-        self.topWidget.layout.setAlignment(Qt.AlignTop)
-        self.topWidget.adjustSize()
+        self.wTop = VWidget(self.labTitle, self.wCombos, self.gbImportSeries, self.wNameAlignment, self.iid_dialog)
+        self.wTop.layout.setContentsMargins(18, 12, 18, 18)
+        self.wTop.layout.setSpacing(4)
+        self.wTop.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+        self.wTop.layout.setAlignment(Qt.AlignTop)
+        self.wTop.adjustSize()
 
         # laba = QLabel('      ')
         # laba.setAttribute(Qt.WA_TransparentForMouseEvents)
         # labb = QLabel('      ')
         # labb.setAttribute(Qt.WA_TransparentForMouseEvents)
-        # self.hsplitter_topWidget = HSplitter(laba, self.topWidget, labb)
+        # self.hsplitter_wTop = HSplitter(laba, self.wTop, labb)
 
 
         # self.spacerlab = QLabel()
         # self.spacerlab.setAttribute(Qt.WA_TransparentForMouseEvents)
-        # self.vsplitter_topWidget = VSplitter(self.hsplitter_topWidget)
+        # self.vsplitter_wTop = VSplitter(self.hsplitter_wTop)
 
-        self.topWidget.layout.setAlignment(Qt.AlignTop)
+        self.wTop.layout.setAlignment(Qt.AlignTop)
         self.setAttribute(Qt.WA_TranslucentBackground)
-        # self.topWidget.setFocusPolicy(Qt.NoFocus)
+        # self.wTop.setFocusPolicy(Qt.NoFocus)
 
         # self.splitter_webengine = HSplitter(self.webengine, self.webengine_r)
         # self.splitter_webengine = HSplitter(self.webengine)
@@ -645,19 +564,15 @@ class OpenProject(QWidget):
         self.glMain = QGridLayout()
         self.glMain.setContentsMargins(0,0,0,0)
         # self.glMain.addWidget(self.webengine, 0, 0, 20, 3)
-        self.glMain.addWidget(self.webengine, 0, 0, 10, 3)
-        self.glMain.addWidget(self.topWidget, 0, 0, 1, 3)
-        self.glMain.setRowStretch(0,0)
+        self.glMain.addWidget(self.webengine, 0, 0, 4, 3)
+        self.glMain.addWidget(self.wTop, 0, 0, 1, 3)
+        # self.glMain.setRowStretch(0,0)
         self.glMain.setRowStretch(1,9)
         # self.glMain.setColumnStretch(0,1)
         # self.glMain.setColumnStretch(1,3)
         # self.glMain.setColumnStretch(2,1)
-        # self.glMain.addWidget(self.topWidget, 0, 0, 1, 3)
+        # self.glMain.addWidget(self.wTop, 0, 0, 1, 3)
         # self.glMain.addWidget(self.comboLevel, 19, 2, 1, 1)
-
-        # hw = HWidget(ExpandingHWidget(self), self.bSetContentSources)
-        # self.bottomWidget = VWidget(self.w_teContentSources, hw)
-        # self.bottomWidget.layout.setAlignment(Qt.AlignBottom | Qt.AlignRight)
 
         # labc = QLabel('      ')
         # labc.setAttribute(Qt.WA_TranslucentBackground)
@@ -667,8 +582,7 @@ class OpenProject(QWidget):
         # labd.setAttribute(Qt.WA_TransparentForMouseEvents)
         # self.hsplitter_bottomWidget = HSplitter(labc, self.w_teContentSources, labd)
 
-        self.glMain.addWidget(self.w_teContentSources, 8, 1, 1, 1)
-        self.glMain.addWidget(self.bSetContentSources, 9, 2, 1, 1)
+        # self.glMain.addWidget(self.w_teContentSources, 8, 1, 1, 1)
 
         self.wProjects = QWidget()
         self.wProjects.setContentsMargins(0,0,0,0)
@@ -677,7 +591,7 @@ class OpenProject(QWidget):
         self._hsplitter = QSplitter()
         self._hsplitter.addWidget(self.wProjects)
         self._hsplitter.addWidget(self.userFilesWidget)
-        # self._hsplitter.setSizes([700, 300])
+        self._hsplitter.setSizes([int(cfg.WIDTH * (4/5)), int(200 * (1/5))])
 
         self.vbl_main = VBL()
         self._vw = VWidget(self._hsplitter)
@@ -690,6 +604,19 @@ class OpenProject(QWidget):
         self.setLayout(self.vbl_main)
 
         self._NEW_SERIES_PATHS = []
+
+    def resetView(self):
+        self._NEW_SERIES_PATHS = []
+        self.leNameSeries.setText('')
+        self.leNameSeries.setStyleSheet("border-color: #339933; border-width: 2px;")
+        self.bSelect.setStyleSheet("background-color: #339933; color: #f3f6fb; border-color: #f3f6fb;")
+        self.bConfirmImport.setStyleSheet("")
+        self.leNameAlignment.setText('')
+        self.leNameAlignment.setStyleSheet("border-color: #339933; color: #f3f6fb; border-width: 2px;")
+        self.gbImportSeries.hide()
+        self.labImgCount.hide()
+        self.iid_dialog.hide()
+        self.wNameAlignment.hide()
 
 
     def getDict(self, path):
@@ -732,13 +659,14 @@ class OpenProject(QWidget):
 
 
     #importalignment
-    def onConfirmAlignment(self):
-        name = self.leAlignmentName.text()
+    def createAlignment(self):
+        name = self.leNameAlignment.text()
         if name == '':
-            logger.warning("Please input a name for the new alignment.")
             cfg.mw.warn("Please input a name for the new alignment.")
             return
 
+        self.leNameAlignment.setText('')
+        self.wNameAlignment.hide()
         cr = cfg.settings['content_root']
         series_path = os.path.join(cr, 'series', self.comboSelectSeries.currentText())
         series_name = self.comboSelectSeries.currentText()
@@ -863,7 +791,7 @@ class OpenProject(QWidget):
                 level['swim_settings']['method'] = 'grid-default'
                 level['swim_settings']['index'] = i
                 level['swim_settings']['method'] = 'grid-default'
-                level['swim_settings']['clobber_fixed_noise'] = False
+                level['swim_settings']['clobber_fixed_noise'] = cfg.DEFAULT_USE_CLOBBER
                 level['swim_settings']['clobber_size'] = cfg.DEFAULT_CLOBBER_PX
                 level['swim_settings']['extra_kwargs'] = ''
                 level['swim_settings']['extra_args'] = ''
@@ -928,7 +856,7 @@ class OpenProject(QWidget):
         logger.info(f"series path    : {series_path}")
         logger.info(f"alignment path : {out}")
 
-
+        cfg.mw._saveProjectToFile()
         cfg.mw.onStartProject(dm, switch_to=True)
 
     def refresh(self):
@@ -949,10 +877,10 @@ class OpenProject(QWidget):
         if self.comboSelectSeries.currentText() != 'null':
             path_l, path_r = self.get_pmviewer_paths()
             self.viewer.initViewer(path_l=path_l, path_r=path_r)
-            self.viewer.initZoom(w=w, h=h)
+            # self.viewer.initZoom(w=w, h=h)
         else:
             self.viewer.initViewer(path_l=None, path_r=None)
-            self.viewer.initZoom(w=w, h=h)
+            # self.viewer.initZoom(w=w, h=h)
 
 
 
@@ -966,12 +894,11 @@ class OpenProject(QWidget):
         logger.info(f"series path {series_path}")
         if not os.path.exists(series_path):
             cfg.mw.warn('Not a valid series.')
-            logger.warning('Not a valid series.')
             cfg.mw.set_status('Not a valid series.', 3000)
             return
 
         self.wNameAlignment.setVisible(not self.wNameAlignment.isVisible())
-        self.leAlignmentName.setFocus()
+        self.leNameAlignment.setFocus()
 
 
 
@@ -997,7 +924,6 @@ class OpenProject(QWidget):
                     self.refresh()
         else:
             cfg.mw.warn('No series selected.')
-            logger.warning('No series selected.')
 
 
     def onOpenAlignment(self):
@@ -1007,36 +933,33 @@ class OpenProject(QWidget):
         alignment_name = self.comboSelectAlignment.currentText()
         requested_dir = os.path.join(cr, 'alignments', series_name, alignment_name)
         requested_file = requested_dir + '.swiftir'
-        print(f"requested_dir = {requested_dir}")
-        print(f"requested file = {requested_file}")
-        assert os.path.isdir(requested_dir)
-        assert os.path.exists(requested_file)
-
-        self.open_project_selected(path=requested_file)
+        if os.path.isdir(requested_dir):
+            if os.path.exists(requested_file):
+                cfg.mw.tell(f"Opening:\n{requested_file}...")
+                self.open_project_selected(path=requested_file)
+            else:
+                cfg.mw.warn(f"File does not exist: {requested_file}\nTo get rid of this warning, remove the "
+                                       f"following directory:\n{requested_dir}'")
+        else:
+            cfg.mw.err(f"Directory does not exist:\n{requested_dir}")
 
 
     def loadSeriesCombo(self):
         '''Loading this combobox triggers the loading of the alignment and scales comboboxes'''
         caller = inspect.stack()[1].function
         logger.info(f'[{caller}]')
-        # self.comboSelectSeries.disconnect()
         self.comboSelectSeries.clear()
         cr = cfg.settings['content_root'] # content root full path
         d = os.path.join(cr, 'series')
-        # series_list = ['./' + crn + '/series/' + name for name in os.listdir(d) if os.path.isdir(os.path.join(d, name)) ]
-        # self._all_series = [d + '/' + name for name in os.listdir(d) if os.path.isdir(os.path.join(d, name)) ]
-        # series_list = [name for name in os.listdir(d) if os.path.isdir(os.path.join(d, name))]
 
         self.valid_series_list = []
         dir_contents = os.listdir(d)
         for name in dir_contents:
             path = os.path.join(d, name)
             if os.path.isdir(path):
-                logger.info(f"Directory found: {path}")
                 info_file = os.path.join(path, 'info.json')
                 if os.path.exists(info_file):
-                    logger.info(f"Info file found: {info_file}")
-                    logger.info(f"Appending '{name}' to valid series list")
+                    logger.info(f"Info file found: {info_file}\nAppending '{name}' to valid series list")
                     self.valid_series_list.append(name)
 
 
@@ -1105,7 +1028,7 @@ class OpenProject(QWidget):
                 self.viewer = cfg.pmViewer = PMViewer(webengine=self.webengine)
                 path_l, path_r = self.get_pmviewer_paths()
                 self.viewer.initViewer(path_l=path_l, path_r=path_r)
-                self.viewer.initZoom(w=w, h=h)
+                # self.viewer.initZoom(w=w, h=h)
             else:
                 self.viewer.initExample()
             try:
@@ -1125,15 +1048,23 @@ class OpenProject(QWidget):
         if not d.endswith('null') and os.path.exists(d):
             l = []
             for name in os.listdir(d):
-                if os.path.isdir(os.path.join(d, name)):
-                    # l.append(d + '/' + name)
-                    l.append(name)
+                dir = os.path.join(d, name)
+                if os.path.isdir(dir):
+                    info_file = dir + '.swiftir'
+                    if os.path.exists(info_file):
+                        # l.append(d + '/' + name)
+                        l.append(name)
+                    else:
+                        logger.warning(f"File does not exist: {info_file}\nTo get rid of this warning, remove the "
+                                       f"following directory:\n{dir}'")
 
             self.comboSelectAlignment.addItems(l)
+            self._alignment = self.comboSelectAlignment.currentText()
         else:
             self.comboSelectAlignment.addItems(["null"])
+            self._alignment = None
 
-        self._alignment = self.comboSelectAlignment.currentText()
+
 
 
     def onSelectAlignmentCombo(self):
@@ -1229,12 +1160,11 @@ class OpenProject(QWidget):
 
     def showImportSeriesDialog(self):
         self.setUpdatesEnabled(False)
-        self.bSelect.setStyleSheet("background-color: #339933;")
-        # self.bConfirmImport.setStyleSheet(("background-color: #222222;","background-color: #339933;")[
-        #                                     bool(self.leNameSeries.text())])
-        self.leNameSeries.setStyleSheet(("border-color: #339933;", "border-color: #ede9e8;")[bool(self.leNameSeries.text())])
-        self.labImgCount.hide()
-        self._NEW_SERIES_PATHS = []
+        self.resetView()
+        self.leNameSeries.setStyleSheet(("border-color: #339933; border-width: 2px;", "border-color: #f3f6fb;")[bool(
+            self.leNameSeries.text(
+
+        ))])
         self.gbImportSeries.setVisible(not self.gbImportSeries.isVisible())
         if self.gbImportSeries.isVisible():
             self.wSeriesConfig.le_res_x.setText(str(cfg.DEFAULT_RESX))
@@ -1244,17 +1174,8 @@ class OpenProject(QWidget):
             self.wSeriesConfig.le_chunk_y.setText(str(cfg.CHUNK_Y))
             self.wSeriesConfig.le_chunk_z.setText(str(cfg.CHUNK_Z))
             self.wSeriesConfig.cname_combobox.setCurrentText(str(cfg.CNAME))
-        # self.bImportSeries.setText(('Import Series', 'Hide')[self.gbImportSeries.isVisible()])
         self.setUpdatesEnabled(True)
         self.leNameSeries.setFocus(True)
-
-
-        # response = self.iid_dialog.exec()
-        # self.showMainUI()
-        # cfg.mw.set_status('')
-        # if response == QDialog.Rejected:
-        #     logger.warning("Dialog was rejected")
-        #     return
 
 
     def updateImportSeriesUI(self):
@@ -1264,9 +1185,12 @@ class OpenProject(QWidget):
         f.setItalic(not len(self.leNameSeries.text()))
         self.leNameSeries.setFont(f)
         isAllowedImport = bool(self.leNameSeries.text() and bool(len(self._NEW_SERIES_PATHS)))
-        self.bConfirmImport.setStyleSheet(("background-color: #222222;", "background-color: #339933;")[isAllowedImport])
+        self.bConfirmImport.setStyleSheet(("", "background-color: #339933; color: #f3f6fb;")[isAllowedImport])
         self.bConfirmImport.setEnabled(isAllowedImport)
-        self.leNameSeries.setStyleSheet(("border-color: #339933;", "border-color: #ede9e8;")[bool(self.leNameSeries.text())])
+        self.leNameSeries.setStyleSheet(("border-color: #339933; border-width: 2px;", "border-color: #f3f6fb;")[bool(
+        self.leNameSeries.text(
+
+        ))])
         QApplication.processEvents()
         filenames = self.iid_dialog.selectedFiles()
         self.labImgCount.setVisible(len(filenames))
@@ -1277,8 +1201,8 @@ class OpenProject(QWidget):
         # self.iid_dialog = ImportImagesDialog()
         # self.iid_dialog.resize(QSize(820,480))
 
-        self.bSelect.setStyleSheet("background-color: #339933;")
-        self.bConfirmImport.setStyleSheet("background-color: #222222;")
+        self.bSelect.setStyleSheet("background-color: #339933; color: #f3f6fb; border-color: #f3f6fb;")
+        self.bConfirmImport.setStyleSheet("")
 
         if self.iid_dialog.isVisible():
             return
@@ -1299,20 +1223,18 @@ class OpenProject(QWidget):
                 # self.labImgCount.setText(f"{len(filenames)} images selected from {os.path.dirname(filenames[0])}")
                 self.labImgCount.setText(f"{len(filenames)} images selected")
                 self.labImgCount.show()
-                self.bSelect.setStyleSheet("background-color: #222222;")
+                self.bSelect.setStyleSheet("")
                 if self.leNameSeries.text():
-                    self.bConfirmImport.setStyleSheet("background-color: #339933;")
+                    self.bConfirmImport.setStyleSheet("background-color: #339933; color: #f3f6fb; border-color: #f3f6fb;")
 
             self.iid_dialog.pixmap = None
         else:
-            logger.warning('Import images dialog did not return a valid file list')
             cfg.mw.warn('Import images dialog did not return a valid file list')
             self.showMainUI()
             self.iid_dialog.pixmap = None
             return 1
 
         if filenames == 1:
-            logger.warning('New Project Canceled')
             cfg.mw.warn('No Project Canceled')
             self.showMainUI()
             return 1
@@ -1327,8 +1249,8 @@ class OpenProject(QWidget):
         logger.info("")
         self.gbImportSeries.hide()
         self.bConfirmImport.setEnabled(False)
-        self.bConfirmImport.setStyleSheet("background-color: #222222;")
-        self.bSelect.setStyleSheet("background-color: #222222;")
+        self.bConfirmImport.setStyleSheet("")
+        self.bSelect.setStyleSheet("")
         cr = cfg.settings['content_root']
 
         name = self.leNameSeries.text()
@@ -1517,7 +1439,6 @@ class OpenProject(QWidget):
             if cfg.mw.isProjectOpen(path):
                 cfg.mw.globTabs.setCurrentIndex(cfg.mw.getProjectIndex(path))
                 cfg.mw.warn(f'Project {os.path.basename(path)} is already open.')
-                logger.warning(f'Project {os.path.basename(path)} is already open.')
                 return
 
             fn, ext = os.path.splitext(path)
@@ -1553,7 +1474,6 @@ class OpenProject(QWidget):
                 cfg.mw._autosave()
             except:
                 cfg.mw.warn(f'No Such File Found: {path}')
-                logger.warning(f'No Such File Found: {path}')
                 print_exception()
                 return
             else:
@@ -1568,16 +1488,15 @@ class OpenProject(QWidget):
             cfg.mw.onStartProject(dm, switch_to=True)
 
         else:
-            logger.warning("Invalid Path")
             cfg.mw.warn("Invalid Path")
 
-    def getSelectedRows(self):
-        logger.info(f"{[x.row() for x in self.user_projects.table.selectionModel().selectedRows()]}")
-        return [x.row() for x in self.user_projects.table.selectionModel().selectedRows()]
-
-    def getSelectedProjects(self):
-        logger.info(f"{[self.user_projects.table.item(r, 0).text() for r in self.getSelectedRows()]}")
-        return [self.user_projects.table.item(r, 0).text() for r in self.getSelectedRows()]
+    # def getSelectedRows(self):
+    #     logger.info(f"{[x.row() for x in self.user_projects.table.selectionModel().selectedRows()]}")
+    #     return [x.row() for x in self.user_projects.table.selectionModel().selectedRows()]
+    #
+    # def getSelectedProjects(self):
+    #     logger.info(f"{[self.user_projects.table.item(r, 0).text() for r in self.getSelectedRows()]}")
+    #     return [self.user_projects.table.item(r, 0).text() for r in self.getSelectedRows()]
 
     def getNumRowsSelected(self):
         return len(self.getSelectedProjects())
@@ -1630,7 +1549,6 @@ class OpenProject(QWidget):
 
 
 
-                    logger.info(f'Deleting project file {project_file}...')
                     cfg.mw.warn(f'Deleting project file {project_file}...')
                     cfg.mw.set_status(f'Deleting {project_file}...')
 
@@ -1644,7 +1562,6 @@ class OpenProject(QWidget):
                     # configure_project_paths()
                     # self.user_projects.set_data()
 
-                    logger.info(f'Deleting project directory {project}...')
                     cfg.mw.warn(f'Deleting project directory {project}...')
                     cfg.mw.set_status(f'Deleting {project_file}...')
                     try:
@@ -1676,30 +1593,32 @@ class OpenProject(QWidget):
                     logger.warning('(!) Invalid target for deletion: %s' % project_file)
 
 
-    def eventFilter(self, source, event):
-        if event.type() == QEvent.ContextMenu:
-            logger.info('')
-            menu = QMenu()
-
-            openContextAction = QAction('Open')
-            openContextAction.triggered.connect(self.openContextMethod)
-            menu.addAction(openContextAction)
-
-            if self.getNumRowsSelected() == 1:
-                # copyPathAction = QAction('Copy Path')
-                # path = self.getSelectedProjects()[0]
-                path = self.getSelectedProjects()[0]
-                copyPathAction = QAction(f"Copy Path '{self.getSelectedProjects()[0]}'")
-                logger.info(f"Added to Clipboard: {QApplication.clipboard().text()}")
-                menu.addAction(copyPathAction)
-
-            deleteContextAction = QAction('Delete')
-            deleteContextAction.triggered.connect(self.deleteContextMethod)
-            menu.addAction(deleteContextAction)
-
-            menu.exec_(event.globalPos())
-            return True
-        return super().eventFilter(source, event)
+    # def eventFilter(self, source, event):
+    #     if event.type() == QEvent.ContextMenu:
+    #         logger.info('')
+    #         menu = QMenu()
+    #
+    #         openContextAction = QAction('Open')
+    #         openContextAction.triggered.connect(self.openContextMethod)
+    #         menu.addAction(openContextAction)
+    #
+    #         deleteContextAction = QAction('Delete')
+    #         deleteContextAction.triggered.connect(self.deleteContextMethod)
+    #         menu.addAction(deleteContextAction)
+    #
+    #         # if self.getNumRowsSelected() == 1:
+    #         #     # copyPathAction = QAction('Copy Path')
+    #         #     # path = self.getSelectedProjects()[0]
+    #         #     path = self.getSelectedProjects()[0]
+    #         #     copyPathAction = QAction(f"Copy Path '{self.getSelectedProjects()[0]}'")
+    #         #     logger.info(f"Added to Clipboard: {QApplication.clipboard().text()}")
+    #         #     menu.addAction(copyPathAction)
+    #
+    #
+    #
+    #         menu.exec_(event.globalPos())
+    #         return True
+    #     return super().eventFilter(source, event)
 
 
     def keyPressEvent(self, event):
@@ -2172,7 +2091,8 @@ class SeriesConfig(QWidget):
         self.parent = parent
         self._settings = {}
         self.initUI()
-        # self.setStyleSheet("""font-size: 10px;""")
+        # self.setStyleSheet("""font-size: 10px; color: #f3f6fb;""")
+
 
 
     def getSettings(self):
@@ -2205,7 +2125,7 @@ class SeriesConfig(QWidget):
         self.scales_input = QLineEdit(self)
         self.scales_input.setMaximumWidth(80)
         self.scales_input.setMinimumWidth(50)
-        self.scales_input.setFixedHeight(18)
+        self.scales_input.setFixedHeight(20)
         self.scales_input.setText('24 6 2 1')
         self.scales_input.setAlignment(Qt.AlignCenter)
         tip = "Scale levels, space-delimited.\nThis would generate a 4x 2x and 1x scale_key hierarchy:\n\n4 2 1"
@@ -2221,9 +2141,9 @@ class SeriesConfig(QWidget):
         self.le_res_x = QLineEdit(self)
         self.le_res_y = QLineEdit(self)
         self.le_res_z = QLineEdit(self)
-        self.le_res_x.setFixedSize(QSize(24, 18))
-        self.le_res_y.setFixedSize(QSize(24, 18))
-        self.le_res_z.setFixedSize(QSize(24, 18))
+        self.le_res_x.setFixedSize(QSize(24, 20))
+        self.le_res_y.setFixedSize(QSize(24, 20))
+        self.le_res_z.setFixedSize(QSize(24, 20))
         self.le_res_x.setValidator(QIntValidator())
         self.le_res_y.setValidator(QIntValidator())
         self.le_res_z.setValidator(QIntValidator())
@@ -2231,6 +2151,7 @@ class SeriesConfig(QWidget):
                                          QLabel("y:"), self.le_res_y,
                                          QLabel("z:"), self.le_res_z)
         # self.resolution_widget.layout.setSpacing(4)
+        self.resolution_widget.layout.setSpacing(4)
         self.resolution_widget.setToolTip(tip)
 
         wVoxelSize = HWidget(QLabel('Voxel Size (nm): '), self.resolution_widget)
@@ -2241,7 +2162,7 @@ class SeriesConfig(QWidget):
         self.clevel_input.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.clevel_input.setAlignment(Qt.AlignCenter)
         self.clevel_input.setText(str(cfg.CLEVEL))
-        self.clevel_input.setFixedSize(QSize(24,18))
+        self.clevel_input.setFixedSize(QSize(24,20))
         self.clevel_valid = QIntValidator(1, 9, self)
         self.clevel_input.setValidator(self.clevel_valid)
 
@@ -2250,26 +2171,28 @@ class SeriesConfig(QWidget):
         self.cname_label.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.cname_combobox = QComboBox(self)
         self.cname_combobox.addItems(["none", "zstd", "zlib"])
-        self.cname_combobox.setFixedSize(QSize(58,18))
+        self.cname_combobox.setFixedSize(QSize(58,20))
 
         labType = QLabel('Compress: ')
         labLevel = QLabel('Level (1-9): ')
         wCompression = HWidget(labType, self.cname_combobox, QLabel(' '), labLevel, self.clevel_input)
+        wCompression.layout.setSpacing(4)
         wCompression.layout.setAlignment(Qt.AlignCenter)
 
         '''Chunk Shape'''
         self.le_chunk_x = QLineEdit(self)
         self.le_chunk_y = QLineEdit(self)
         self.le_chunk_z = QLineEdit(self)
-        self.le_chunk_x.setFixedSize(QSize(40, 18))
-        self.le_chunk_y.setFixedSize(QSize(40, 18))
-        self.le_chunk_z.setFixedSize(QSize(20, 18))
+        self.le_chunk_x.setFixedSize(QSize(40, 20))
+        self.le_chunk_y.setFixedSize(QSize(40, 20))
+        self.le_chunk_z.setFixedSize(QSize(20, 20))
         self.le_chunk_x.setValidator(QIntValidator())
         self.le_chunk_y.setValidator(QIntValidator())
         self.le_chunk_z.setValidator(QIntValidator())
         self.chunk_shape_widget = HWidget(QLabel("x:"), self.le_chunk_x,
                                           QLabel("y:"), self.le_chunk_y,
                                           QLabel("z:"), self.le_chunk_z)
+        self.chunk_shape_widget.layout.setSpacing(4)
         # self.chunk_shape_widget.layout.setSpacing(4)
         txt = "The way volumetric data will be stored. Zarr is an open-source " \
               "format for the storage of chunked, compressed, N-dimensional " \
@@ -2288,6 +2211,7 @@ class SeriesConfig(QWidget):
                   wChunk,
                   ExpandingHWidget(self))
 
+        hbl.setSpacing(4)
         self.setLayout(hbl)
 
 
@@ -2374,20 +2298,20 @@ class HoverButton(QPushButton):
        self.text = text
        self.setCursor(QCursor(Qt.PointingHandCursor))
        self.installEventFilter(self)
-       self.setFixedSize(QSize(18,18))
+       self.setFixedSize(QSize(20,20))
        self.setIconSize(QSize(12,12))
 
 
 
    def eventFilter(self, source, event):
        if event.type() == QEvent.HoverEnter:
-           self.setFixedSize(QSize(52,18))
+           self.setFixedSize(QSize(52,20))
            self.setText(self.text)
            self.update()
 
        elif event.type() == QEvent.HoverLeave:
            self.setText('')
-           self.setFixedSize(QSize(18,18))
+           self.setFixedSize(QSize(20,20))
            self.update()
 
 

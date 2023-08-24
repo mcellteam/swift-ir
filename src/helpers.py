@@ -49,7 +49,7 @@ __all__ = ['is_tacc', 'is_linux', 'is_mac', 'create_paged_tiff', 'check_for_bina
            'do_scales_exist', 'make_relative', 'make_absolute', 'are_aligned_images_generated', 'get_img_filenames',           'print_exception', 'get_scale_key', 'get_scale_val', 'print_project_tree',
            'verify_image_file', 'exist_aligned_zarr', 'get_scales_with_generated_alignments', 'handleError',
            'count_widgets', 'find_allocated_widgets', 'absFilePaths', 'validate_file', 'hotkey',
-           'caller_name','addLoggingLevel'
+           'caller_name','addLoggingLevel', 'sanitizeSavedPaths'
            ]
 
 logger = logging.getLogger(__name__)
@@ -159,6 +159,19 @@ def count_widgets(name_or_type) -> int:
     return sum(name_or_type in s for s in map(str, QApplication.allWidgets()))
 
 
+def sanitizeSavedPaths():
+    logger.info("Sanitizing paths...")
+    paths = cfg.settings['saved_paths']
+    n_start = len(paths)
+    sanitized = []
+    for path in paths:
+        if os.path.exists(path) and os.path.isdir(path):
+            sanitized.append(path)
+    n_end = len(sanitized)
+    if n_start != n_end:
+        logger.warning(f"{n_start - n_end} saved paths were found to be invalid and will be forgotten")
+    cfg.settings['saved_paths'] = sanitized
+
 def delete_recursive(dir, keep_core_dirs=False):
     # chunks = glob(dir + '/img_aligned.zarr/**/*', recursive=True) + glob(dir + '/img_src.zarr/**/*', recursive=True)
     # cfg.main_window.showZeroedPbar(set_n_processes=False)
@@ -208,6 +221,7 @@ def update_preferences_model():
     # caller = inspect.stack()[1].function
     logger.info(f'Updating user preferences model...')
     cfg.settings.setdefault('locations', [])
+    cfg.settings.setdefault('saved_paths', [])
     cfg.settings.setdefault('neuroglancer', {})
     cfg.settings['neuroglancer'].setdefault('SHOW_UI_CONTROLS', False)
     cfg.settings['neuroglancer'].setdefault('USE_CUSTOM_BACKGROUND', False)

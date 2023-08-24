@@ -74,7 +74,7 @@ is_mendenhall = False
 # WIDTH, HEIGHT = 1380, 900
 # WIDTH, HEIGHT = 1180, 720
 # WIDTH, HEIGHT = 1320, 740
-WIDTH, HEIGHT = 1240, 760
+WIDTH, HEIGHT = 1200, 720
 
 '''Default Alignment Params'''
 
@@ -96,6 +96,7 @@ DEFAULT_AUTO_SWIM_WINDOW_PERC   = float(0.8125)
 # DEFAULT_AUTO_SWIM_WINDOW_PERC   = float(0.9000) #new default
 # DEFAULT_MANUAL_WHITENING      = float(-0.6800)
 DEFAULT_CLOBBER_PX            = 3
+DEFAULT_USE_CLOBBER           = False
 DEFAULT_SWIM_ITERATIONS       = 3 # in pixels
 
 DEFAULT_WHITENING             = float(-0.6800)
