@@ -635,32 +635,29 @@ class DataModel:
     def clobber(self):
         return self._data['stack'][self.zpos]['levels'][self.scale]['swim_settings']['clobber_fixed_noise']
 
-    def set_clobber(self, b, l=None, glob=False):
-        if l == None: l = self.zpos
-        # for s in self.scales():
-        for s in self.finer_scales():
-            if glob:
+    def set_clobber(self, b, scales=None, stack=False):
+        if scales == None: scales = self.finer_scales()
+        for s in scales:
+            if stack:
                 for i in range(len(self)):
                     self['stack'][i]['levels'][s]['swim_settings']['clobber_fixed_noise'] = b
             else:
-                self['stack'][i]['levels'][s]['swim_settings']['clobber_fixed_noise'] = b
+                self['stack'][self.zpos]['levels'][s]['swim_settings']['clobber_fixed_noise'] = b
 
     def clobber_px(self):
-        return self._data['stack'][self.zpos]['levels'][self.scale]['swim_settings'][
-            'clobber_size']
+        return self._data['stack'][self.zpos]['levels'][self.scale]['swim_settings']['clobber_size']
 
-    def set_clobber_px(self, x, l=None, glob=False):
-        if l == None: l = self.zpos
-        # for s in self.scales():
-        for s in self.finer_scales():
-            if glob:
+    def set_clobber_px(self, x, scales=None, stack=False):
+        if scales == None: scales = self.finer_scales()
+        for s in scales:
+            if stack:
                 for i in range(len(self)):
                     self['stack'][i]['levels'][s]['swim_settings']['clobber_size'] = x
                 self.signals.warning2.emit()
 
             else:
-                cur = self._data['stack'][l]['levels'][s]['swim_settings']['clobber_size']
-                self._data['stack'][l]['levels'][s]['swim_settings']['clobber_size'] = x
+                cur = self._data['stack'][self.zpos]['levels'][s]['swim_settings']['clobber_size']
+                self._data['stack'][self.zpos]['levels'][s]['swim_settings']['clobber_size'] = x
                 if cur != x:
                     self.signals.warning2.emit()
 
