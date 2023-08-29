@@ -479,7 +479,7 @@ class OpenProject(QWidget):
             keys = natural_sort(list(data['series']['levels'])) #Todo fix this
             for key in keys:
                 try:
-                    if data['level_data'][key]['alignment_status']:
+                    if cfg.data.is_aligned(s=key):
                         logger.info(f"returning: {key}")
                         return key
                 except:

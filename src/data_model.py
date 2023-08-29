@@ -436,7 +436,6 @@ class DataModel:
     def is_aligned(self, s=None):
         if s == None: s = self.level
         return sum(self.snr_list()) > 1.0 #Todo make this better
-        # return self['level_data'][s]['alignment_status']
 
 
     def is_alignable(self) -> bool:
@@ -1966,7 +1965,6 @@ class DataModel:
         for level in levels:
             self['level_data'][level].update(
                 initial_snr = None,
-                alignment_status = False,
                 output_settings = {
                     'bounding_box': {
                         'use': False,

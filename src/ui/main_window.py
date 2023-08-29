@@ -1152,9 +1152,6 @@ class MainWindow(QMainWindow):
         if self.dw_matches.isVisible():
             self.updateCorrSignalsDrawer()
             self.setTargKargPixmaps()
-        if not cfg.data['level_data'][cfg.data.scale]['alignment_status']:
-            cfg.data['level_data'][cfg.data.scale]['initial_snr'] = cfg.data.snr_list()
-            cfg.data['level_data'][cfg.data.scale]['alignment_status'] = True
         # cfg.data['data']['scales'][cfg.data.scale]['aligned'] = True
         logger.info(f"SNR: {cfg.data.snr()}")
         # if cfg.data.snr() > 0: #WHY SNR NOT UPDATED ?
@@ -1208,20 +1205,22 @@ class MainWindow(QMainWindow):
                 self.alignAll()
 
 
-    def alignOne(self, index=None, regenerate=True):
+    def alignOne(self, index=None, regenerate=False, align=True):
         logger.critical('Aligning One...')
         self.tell('Re-aligning Section #%d (%s)...' % (cfg.data.zpos, cfg.data.level_pretty()))
         if index == None:
             index = cfg.data.zpos
-        self.align(align_indexes=[index], regen_indexes=None, align=True, regenerate=False)
+        self.align(
+            align_indexes=[index],
+            regen_indexes=[index],
+            align=align, regenerate=regenerate
+        )
 
 
     @Slot()
     def alignAll(self):
         indexes = list(range(0,len(cfg.data)))
         self.align(align_indexes=indexes, regen_indexes=indexes, reallocate_zarr=True)
-        if cfg.data.snr() > 0:
-            cfg.data['level_data'][cfg.data.scale]['alignment_status'] = True
 
 
 
