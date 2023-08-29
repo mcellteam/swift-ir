@@ -609,7 +609,7 @@ class ProjectTab(QWidget):
 
         tip = "Perform a quick SWIM alignment to show match signals and SNR values, " \
               "but do not generate any new images"
-        self.bSWIM = QPushButton('Align Only (Generates Match Signals)')
+        self.bSWIM = QPushButton('Align Only (Affine, Match Signals, SNR)')
         self.bSWIM.setStyleSheet("font-size: 10px; background-color: #9fdf9f; font-weight: 600; ")
         self.bSWIM.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.bSWIM.setFixedHeight(22)
@@ -617,15 +617,13 @@ class ProjectTab(QWidget):
         self.bSWIM.clicked.connect(lambda: cfg.main_window.alignOne(regenerate=False))
         # self.bSWIM.clicked.connect(lambda: cfg.mw.setdw_matches(True))
 
-        tip = "Perform a quick SWIM alignment to show match signals and SNR values, " \
-              "but do not generate any new images"
-        self.bRegenerate = QPushButton('Align Only (Generates Match Signals)')
-        self.bSWIM.setStyleSheet("font-size: 10px; background-color: #9fdf9f; font-weight: 600; ")
-        self.bSWIM.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        self.bSWIM.setFixedHeight(22)
-        self.bSWIM.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.bSWIM.clicked.connect(lambda: cfg.main_window.alignOne(regenerate=False))
-        # self.bSWIM.clicked.connect(lambda: cfg.mw.setdw_matches(True))
+        tip = "Apply the affine transformation from SWIM to the images."
+        self.bTransform = QPushButton('Transform (Generates Images)')
+        self.bTransform.setStyleSheet("font-size: 10px; background-color: #9fdf9f; font-weight: 600; ")
+        self.bTransform.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+        self.bTransform.setFixedHeight(22)
+        self.bTransform.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.bTransform.clicked.connect(lambda: cfg.main_window.alignOne(regenerate=True, align=False))
 
         self.lw_gb_l = GroupBox("Transforming")
         def fn():
@@ -851,7 +849,7 @@ class ProjectTab(QWidget):
         # hbl.addWidget(self.radioboxes_MA)
         # lab = QLabel('Window Width:')
         # lab.setStyleSheet('font-weight: 600;')
-        hbl.addWidget(BoldLabel('Window Width:'))
+        hbl.addWidget(QLabel('Window Width:'))
         hbl.addWidget(ExpandingWidget(self))
         hbl.addWidget(self.sliderMatch)
         hbl.addWidget(self.leMatch)
@@ -860,12 +858,14 @@ class ProjectTab(QWidget):
         w.setLayout(hbl)
 
         vbl = VBL()
-        vbl.addWidget(HWidget(BoldLabel('Method:'), ExpandingWidget(self), self.radioboxes_MA))
-        vbl.addWidget(HWidget(BoldLabel('Move Selection:'), ExpandingWidget(self), self.translatePointsWidget))
+        vbl.addWidget(HWidget(QLabel('Method:'), ExpandingWidget(self), self.radioboxes_MA))
+        vbl.addWidget(HWidget(QLabel('Move Selection:'), ExpandingWidget(self), self.translatePointsWidget))
         vbl.addWidget(w)
         self.gbMatch = QGroupBox()
+        self.gbMatch.setFixedHeight(76)
         self.gbMatch.setObjectName('gb_cpanel')
         self.gbMatch.setLayout(vbl)
+        self.gbMatch.setStyleSheet("font-size:10px;")
 
         self.w1x1 = HWidget(self.le1x1, self.slider1x1)
         self.w1x1.layout.setAlignment(Qt.AlignLeft)
@@ -1174,9 +1174,9 @@ class ProjectTab(QWidget):
         bg.addButton(self.rbCycle)
         bg.addButton(self.rbZigzag)
         bg.addButton(self.rbSticky)
-        self.rbSticky.setChecked(True) #Todo
+        self.rbCycle.setChecked(True) #Todo
 
-        self.w_rbs_selection = HWidget(ExpandingWidget(self), self.rbZigzag, self.rbCycle, self.rbSticky,
+        self.w_rbs_selection = HWidget(ExpandingWidget(self), self.rbCycle, self.rbZigzag, self.rbSticky,
                                        self.btn_clrAllPts)
 
 
@@ -1190,7 +1190,8 @@ class ProjectTab(QWidget):
             # self.lab_region_selection2,
             self.gbMatch,
         )
-        self.gbMethodMatch.setMaximumHeight(200)
+        self.gbMethodMatch.setMaximumHeight(220)
+        self.gbMethodMatch.setMinimumHeight(190)
         self.gbMethodMatch.layout.setSpacing(1)
 
 
@@ -2202,7 +2203,8 @@ class ProjectTab(QWidget):
             self.swMethod,
             self.gifPlayer,
             # self.gbOutputSettings,
-            self.bSWIM
+            self.bSWIM,
+            self.bTransform
             )
         self.side_controls.setMaximumWidth(340)
         self.side_controls.setFocusPolicy(Qt.FocusPolicy.NoFocus)
