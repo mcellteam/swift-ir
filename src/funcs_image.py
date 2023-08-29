@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import copy, time
-import os, struct, logging
+import os, struct, logging, inspect
 from dataclasses import dataclass
 import imageio.v3 as iio
 import imagecodecs
@@ -442,7 +442,7 @@ def InitCafm(bias_funcs):
     return c_afm_init
 
 
-def SetSingleCafm(layer_dict, scale, c_afm, bias_mat=None, method='grid-default'):
+def SetSingleCafm(layer_dict, scale, c_afm, bias_mat=None, method='grid_default'):
     '''Calculate and set the value of the cafm (with optional bias) for a single layer_dict item'''
     # atrm = layer_dict['alignment']
     try:
@@ -451,7 +451,7 @@ def SetSingleCafm(layer_dict, scale, c_afm, bias_mat=None, method='grid-default'
         else:
             afm = identityAffine()
     except:
-        logger.warning('SetSingleCafm triggered an exception, skipping: %s' % (layer_dict['filename']))
+        logger.warning('SetSingleCafm triggered an exception, skipping: %s' % (layer_dict['path']))
         afm = identityAffine()
         # atrm['method_results']['affine_matrix'] = afm.tolist() #0802-
     c_afm = np.array(c_afm)
@@ -466,15 +466,16 @@ def SetSingleCafm(layer_dict, scale, c_afm, bias_mat=None, method='grid-default'
     return c_afm
 
 
-# def SetStackCafm(iterator, scale_key, poly_order=None):
+# def SetStackCafm(iterator, level, poly_order=None):
 def SetStackCafm(dm, scale, poly_order=None):
     '''Calculate cafm across the whole stack with optional bias correction'''
-    logger.info(f'Setting Stack CAFM (polynoial: {poly_order})...')
-    # logger.info(f'Setting Stack CAFM (iterator={str(iterator)}, scale_key={scale_key}, poly_order={poly_order})...')
+    caller = inspect.stack()[1].function
+    logger.info(f'[{caller}] Propagating Cumulative Affine (bias: {poly_order})...')
+    # logger.info(f'Setting Stack CAFM (iterator={str(iterator)}, level={level}, poly_order={poly_order})...')
     cfg.mw.tell('<span style="color: #FFFF66;"><b>Setting Stack CAFM...</b></span>')
     use_poly = (poly_order != None)
     if use_poly:
-        SetStackCafm(dm, scale=scale, poly_order=None) # first initialize Cafms without bias correction
+        SetStackCafm(dm, scale=scale, poly_order=None) # first initializeStack Cafms without bias correction
     bias_mat = None
     if use_poly:
         # If null_biases==True, Iteratively determine and null out bias in cafm
@@ -628,13 +629,13 @@ array([[   0,    0],
        [ 997,  580]], dtype=int32)
     '''
     logger.info('Computing Bounding Rect...')
-    if scale == None: scale = cfg.data.scale_key
+    if scale == None: scale = cfg.data.level
 
     if cfg.SUPPORT_NONSQUARE:
         '''Non-square'''
         # model_bounds = None
         # al_stack = cfg.datamodel.stack()
-        model_bounds = [[0,0]] #Todo initialize this better
+        model_bounds = [[0,0]] #Todo initializeStack this better
         siz = cfg.data.image_size(s=scale)
         for item in dm():
             method = item['levels'][scale]['swim_settings']['method']

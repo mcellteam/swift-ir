@@ -27,41 +27,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 For more information, please refer to [http://unlicense.org]
 
-QtPy provides cross-compatibility for PySide2, PySide6, PyQt5, PyQt6
-
-Environment variable QT_API can take the following values:
-    pyqt5 (to use PyQt5).
-    pyside2 (to use PySide2).
-    pyqt6 (to use PyQt6).
-    pyside6 (to use PySide6).
-
-To output a string of Mypy CLI args that will reflect the currently selected src API:
-$ qtpy mypy-args
-
-~ ❯ pip show alignem
-Name: alignEM
-Version: 0.0.1
-Summary: AlignEM-SWIFT is a graphical tool for aligning serial section electron micrographs using SWiFT-IR.
-Home-page: https://github.com/mcellteam/swift-ir/tree/development_ng
-Author: Joel Yancey,
-Author-email: Joel Yancey <joelgyancey@ucla.edu>, Tom Bartol <bartol@salk.edu>, Arthur Wetzel <awetzel@psc.edu>
-License: Mozilla Public License Version 2.0
-Location: /Users/joelyancey/miniconda3/envs/test_alignem/lib/python3.9/site-packages
-Requires: imagecodecs, neuroglancer, numpy, opencv-python-headless, pillow, psutil, PyQt5, pyqtgraph,
-pyqtwebengine, qtawesome, qtconsole, qtpy, tifffile, tqdm, zarr
-Required-by:
-
-
-NOTES
-https://github.com/nexpy/nexpy/issues/398
-
 """
 print('(Hang tight. The application will launch shortly...)')
 import os
 import subprocess as sp
 import qtpy
-# os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt5'
-# os.environ["BLOSC_NTHREADS"] = "1"
 import sys, signal, logging, argparse
 import faulthandler
 from concurrent.futures import ThreadPoolExecutor
@@ -69,8 +39,8 @@ from concurrent.futures import ThreadPoolExecutor
 from qtpy.QtWebEngineWidgets import *
 from qtpy import QtCore
 from qtpy.QtCore import QCoreApplication, Qt
-from qtpy.QtWidgets import QApplication
 from qtpy.QtGui import QFont
+from qtpy.QtWidgets import QApplication
 from src.ui.main_window import MainWindow
 from src.helpers import check_for_binaries, configure_project_paths, initialize_user_preferences, \
     is_tacc, print_exception, register_login, convert_projects_model, addLoggingLevel
@@ -180,7 +150,7 @@ def main():
     check_for_binaries()
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--api', default='pyqt5', help='Python-Qt API (pyqt6|pyqt5|pyside6|pyside2)')
+    # parser.add_argument('--api', default='pyqt5', help='Python-Qt API (pyqt6|pyqt5|pyside6|pyside2)')
     parser.add_argument('--debug', action='store_true', help='Debug Mode')
     parser.add_argument('--debug_mp', action='store_true', help='Set python multiprocessing debug level to DEBUG')
     parser.add_argument('--loglevel', type=int, default=1, help='Logging Level (0-4)')
@@ -190,11 +160,7 @@ def main():
     parser.add_argument('--dummy', action='store_true', help='Start the application using a dummy project')
     parser.add_argument('--profile', action='store_true', help='Profile performance of memory and multiprocessing')
     args = parser.parse_args()
-    os.environ['QT_API'] = args.api  # This env setting is ingested by qtpy
-    # os.environ['PYQTGRAPH_QT_LIB'] = args.api #do not set!
 
-    os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt5'
-    os.environ["BLOSC_NTHREADS"] = "1"
     # os.environ["PYTHONWARNINGS"] = 'ignore'
     logging.getLogger('asyncio').disabled = True
     logging.getLogger('tornado.access').disabled = True
@@ -271,28 +237,7 @@ def main():
     # if cfg.PROFILING_MODE:
     #     sys.setprofile(tracefunc)
 
-    os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
-    # logger.info('Setting OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES')
-    # logger.info('Setting QTWEBENGINE_CHROMIUM_FLAGS')
-    os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
-    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
 
-    # ***************
-    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--no-sandbox -disable-web-security --enable-logging'
-    # ***************
-
-    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--enable-logging --log-level=3' # suppress JS warnings
-    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=0'
-    os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --no-sandbox --num-raster-threads=%s ' \
-                                               '--enable-logging --log-level=3' % \
-                                               cfg.QTWEBENGINE_RASTER_THREADS
-    os.environ['OPENBLAS_NUM_THREADS'] = '1'
-    # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
-    os.environ['LIBTIFF_STRILE_ARRAY_MAX_RESIZE_COUNT'] = '1000000000'
-
-    # PYTHONHASHSEED must be "random" or an integer in range [0; 4294967295]
-    # os.environ['PYTHONHASHSEED'] = '98247985'
-    # os.environ['PYTHONHASHSEED'] = '0'
 
 
     if qtpy.QT5:
@@ -323,9 +268,6 @@ def main():
     logger.info('Showing application window')
     cfg.main_window.show()
 
-
-
-
     sys.exit(app.exec())
 
     # sys.exit(app.exec())
@@ -341,10 +283,39 @@ if __name__ == "__main__":
     # app.setStyle('Fusion')
     # font = QFont("Tahoma")
     # app.setFont(font)
+    # os.environ['PYQTGRAPH_QT_LIB'] = args.api #do not set!
+
+    os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt5'
+    os.environ["BLOSC_NTHREADS"] = "1"
+    os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
+    # logger.info('Setting OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES')
+    # logger.info('Setting QTWEBENGINE_CHROMIUM_FLAGS')
+    os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
+    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
+
+    # ***************
+    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--no-sandbox -disable-web-security --enable-logging'
+    # ***************
+
+    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--enable-logging --log-level=3' # suppress JS warnings
+    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=0'
+    os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --no-sandbox --num-raster-threads=%s ' \
+                                               '--enable-logging --log-level=3' % \
+                                               cfg.QTWEBENGINE_RASTER_THREADS
+    os.environ['OPENBLAS_NUM_THREADS'] = '1'
+    # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
+    os.environ['LIBTIFF_STRILE_ARRAY_MAX_RESIZE_COUNT'] = '1000000000'
+
+    # PYTHONHASHSEED must be "random" or an integer in range [0; 4294967295]
+    # os.environ['PYTHONHASHSEED'] = '98247985'
+    # os.environ['PYTHONHASHSEED'] = '0'
+
+    # os.environ["QT_DEBUG_PLUGINS"] = "1"
+
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
-    # font = QFont("Tahoma")
-    # app.setFont(font)
+    font = QFont("Tahoma")
+    app.setFont(font)
     main()
     # sys.exit(app.exec())
 

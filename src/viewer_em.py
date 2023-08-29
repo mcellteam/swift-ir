@@ -25,7 +25,6 @@ from qtpy.QtWebEngineWidgets import *
 from src.funcs_zarr import get_zarr_tensor
 from src.helpers import getOpt, getData, setData, obj_to_string, print_exception, is_joel, is_tacc, caller_name, \
     example_zarr
-from src.shaders import ann_shader
 import src.config as cfg
 
 
@@ -76,7 +75,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
         except:
             logger.warning("setting layer to 0")
             self._layer = 0
-        # self.scale = cfg.data.scale_key
+        # self.scale = cfg.data.level
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
         self.type = 'AbstractEMViewer'
         self._zmag_set = 0
@@ -104,14 +103,14 @@ class AbstractEMViewer(neuroglancer.Viewer):
         return ng.CoordinateSpace(
             names=['z', 'y', 'x'],
             units=['nm', 'nm', 'nm'],
-            scales=list(cfg.data.resolution(s=cfg.data.scale_key)),
+            scales=list(cfg.data.resolution(s=cfg.data.level)),
         )
 
     def getCoordinateSpacePlanar(self):
         return ng.CoordinateSpace(
             names=['z', 'y', 'x'],
             units=['nm', 'nm', 'nm'],
-            scales=list(cfg.data.resolution(s=cfg.data.scale_key)),
+            scales=list(cfg.data.resolution(s=cfg.data.level)),
         )
 
 
@@ -129,25 +128,16 @@ class AbstractEMViewer(neuroglancer.Viewer):
         if self._blockStateChanged:
             return
 
-        # if cfg.data.scale_val() > 2:
-        #     if self.state.relative_display_scales == None:
-        #         self.set_zmag()
-
-        if self.rev_mapping[self.state.layout.type] != getData('state,ng_layout'):
+        if self.rev_mapping[self.state.layout.type] != getData('state,neuroglancer,layout'):
             self.signals.layoutChanged.emit()
-            # logger.info(f'Setting layout to: {self.state.layout.type}')
-            # setData('state,ng_layout', self.state.layout.type)
-
-        # if self.state.cross_section_scale == None:
-        #     self.signals.zoomChanged.emit(1.0)
 
         if self.state.cross_section_scale:
             val = (self.state.cross_section_scale, self.state.cross_section_scale * 250000000)[self.state.cross_section_scale < .001]
-            logger.info(f'val = {val:.4f}')
-            if round(val, 3) != round(getData('state,ng_zoom'), 3):
-                logger.info('emitting zoomChanged!')
-                setData('state,ng_zoom', val)
-                self.signals.zoomChanged.emit(val)
+            if round(val, 2) != round(getData('state,neuroglancer,zoom'), 2):
+                if getData('state,neuroglancer,zoom') != val:
+                    logger.info(f'emitting zoomChanged! val = {val:.4f}')
+                    setData('state,neuroglancer,zoom', val)
+                    self.signals.zoomChanged.emit(val)
 
         # self.post_message(f"Voxel Coordinates: {str(self.state.voxel_coordinates)}")
 
@@ -156,7 +146,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
     def on_state_changed(self):
         # caller = inspect.stack()[1].function
 
-        if getData('state,blink'):
+        if getData('state,neuroglancer,blink'):
             return
 
         if self._blockStateChanged:
@@ -189,13 +179,6 @@ class AbstractEMViewer(neuroglancer.Viewer):
     def invalidateAlignedLayers(self):
         cfg.alLV.invalidate()
 
-    def updateHighContrastMode(self):
-        with self.txn() as s:
-            if getData('state,neutral_contrast'):
-                s.crossSectionBackgroundColor = '#808080'
-            else:
-                # s.crossSectionBackgroundColor = '#222222'
-                s.crossSectionBackgroundColor = '#000000'
 
     def position(self):
         return copy.deepcopy(self.state.position)
@@ -235,8 +218,6 @@ class AbstractEMViewer(neuroglancer.Viewer):
         state.help_panel.visible = bool(b)
         self.set_state(state)
 
-
-
     def zoom(self):
         return copy.deepcopy(self.state.crossSectionScale)
         # return self.state.crossSectionScale
@@ -268,23 +249,19 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
 
 
-    def set_brightness(self, val=None):
+    def set_brightness(self):
         state = copy.deepcopy(self.state)
         for layer in state.layers:
-            if val:
-                layer.shaderControls['brightness'] = val
-            else:
-                layer.shaderControls['brightness'] = cfg.data.brightness
+            logger.critical(f"Setting brightness: {cfg.data.brightness}")
+            layer.shaderControls['brightness'] = cfg.data.brightness
             # layer.volumeRendering = True
         self.set_state(state)
 
-    def set_contrast(self, val=None):
+    def set_contrast(self):
         state = copy.deepcopy(self.state)
         for layer in state.layers:
-            if val:
-                layer.shaderControls['contrast'] = val
-            else:
-                layer.shaderControls['contrast'] = cfg.data.contrast
+            logger.critical(f"Setting contrast: {cfg.data.contrast}")
+            layer.shaderControls['contrast'] = cfg.data.contrast
             #layer.volumeRendering = True
         self.set_state(state)
 
@@ -321,21 +298,21 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
     def updateScaleBar(self):
         with self.txn() as s:
-            s.show_scale_bar = cfg.data['state']['show_scalebar']
+            s.show_scale_bar = cfg.data['state']['neuroglancer']['show_scalebar']
 
     def updateAxisLines(self):
         with self.txn() as s:
-            s.show_axis_lines = cfg.data['state']['show_bounds']
+            s.show_axis_lines = cfg.data['state']['neuroglancer']['show_bounds']
 
 
     def updateDisplayAccessories(self):
         with self.txn() as s:
-            s.show_default_annotations = cfg.data['state']['show_bounds']
-            s.show_axis_lines = cfg.data['state']['show_axes']
-            s.show_scale_bar = cfg.data['state']['show_scalebar']
+            s.show_default_annotations = cfg.data['state']['neuroglancer']['show_bounds']
+            s.show_axis_lines = cfg.data['state']['neuroglancer']['show_axes']
+            s.show_scale_bar = cfg.data['state']['neuroglancer']['show_scalebar']
 
         with self.config_state.txn() as s:
-            s.show_ui_controls = getData('state,show_ng_controls')
+            s.show_ui_controls = getData('state,neuroglancer,show_controls')
 
 
     def setBackground(self):
@@ -351,7 +328,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
     def updateUIControls(self):
         with self.config_state.txn() as s:
-            s.show_ui_controls = getData('state,show_ng_controls')
+            s.show_ui_controls = getData('state,neuroglancer,show_controls')
 
 
     # def set_zmag(self):
@@ -402,7 +379,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
             return
         _, tensor_y, tensor_x = self.tensor.shape
         try:
-            res_z, res_y, res_x = cfg.data.resolution(s=cfg.data.scale_key)  # nm per imagepixel
+            res_z, res_y, res_x = cfg.data.resolution(s=cfg.data.levey)  # nm per imagepixel
         except:
             res_z, res_y, res_x = [50,2,2]
             logger.warning("Fell back to default resolution settings (cfg.data may not exist)")
@@ -430,14 +407,14 @@ class AbstractEMViewer(neuroglancer.Viewer):
         cfg.tensor = self.tensor = None
         try:
             # cfg.unal_tensor = get_zarr_tensor(unal_path).result()
-            sf = cfg.data.scale_val(s=cfg.data.scale_key)
+            sf = cfg.data.lvl(s=cfg.data.level)
             if cfg.data.is_aligned():
-                path = os.path.join(cfg.data.dest(), 'zarr', 's' + str(sf))
+                path = os.path.join(cfg.data.location, 'zarr', 's' + str(sf))
                 future = get_zarr_tensor(path)
                 future.add_done_callback(lambda f: print(f'Callback: {f.result().domain}'))
                 self.tensor = cfg.tensor = cfg.al_tensor = future.result()
             else:
-                path = os.path.join(cfg.data.dest(), 'zarr', 's' + str(sf))
+                path = os.path.join(cfg.data['series']['location'], 'zarr', 's' + str(sf))
                 future = get_zarr_tensor(path)
                 future.add_done_callback(lambda f: print(f'Callback: {f.result().domain}'))
                 self.tensor = cfg.tensor = cfg.unal_tensor = future.result()
@@ -479,16 +456,16 @@ class EMViewer(AbstractEMViewer):
         self._blockStateChanged = False
 
         if not nglayout:
-            requested = getData('state,ng_layout')
+            requested = getData('state,neuroglancer,layout')
             mapping = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
               'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
             nglayout = mapping[requested]
 
         # zd = ('img_src.zarr', 'img_aligned.zarr')[cfg.data.is_aligned()] #Todo this is wrong
         if cfg.data.is_aligned():
-            path = os.path.join(cfg.data.location,'zarr', cfg.data.scale_key)
+            path = os.path.join(cfg.data.location,'zarr', cfg.data.level)
         else:
-            path = os.path.join(cfg.data.series['zarr_path'], cfg.data.scale_key)
+            path = os.path.join(cfg.data['series']['location'], 'zarr', cfg.data.level)
         if not os.path.exists(os.path.join(path,'.zarray')):
             cfg.main_window.warn('Zarr (.zarray) Not Found: %s' % path)
             logger.warning('Zarr (.zarray) Not Found: %s' % path)
@@ -555,13 +532,13 @@ class EMViewer(AbstractEMViewer):
             # s.gpu_memory_limit = -1
             # s.system_memory_limit = -1
             # s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
-            # if cfg.data.scale_val() < 6:
+            # if cfg.data.lvl() < 6:
             #     s.show_scale_bar = True
             s.show_scale_bar = True
-            s.show_axis_lines = getData('state,show_axes')
+            s.show_axis_lines = getData('state,neuroglancer,show_axes')
             s.position=[cfg.data.zpos + 0.5, self.tensor.shape[1]/2, self.tensor.shape[2]/2]
             s.layers['layer'] = ng.ImageLayer( source=cfg.LV, shader=cfg.data['rendering']['shader'], )
-            s.show_default_annotations = getData('state,show_bounds')
+            s.show_default_annotations = getData('state,neuroglancer,show_bounds')
             s.projectionScale = 1
             if getOpt('neuroglancer,USE_CUSTOM_BACKGROUND'):
                 s.crossSectionBackgroundColor = getOpt('neuroglancer,CUSTOM_BACKGROUND_COLOR')
@@ -574,7 +551,7 @@ class EMViewer(AbstractEMViewer):
 
 
         with self.config_state.txn() as s:
-            s.show_ui_controls = getData('state,show_ng_controls')
+            s.show_ui_controls = getData('state,neuroglancer,show_controls')
             s.show_panel_borders = False
             s.show_layer_panel = False
             # s.viewer_size = [100,100]
@@ -596,8 +573,8 @@ class EMViewer(AbstractEMViewer):
 
         if self.state.cross_section_scale:
             val = (self.state.cross_section_scale, self.state.cross_section_scale * 250000000)[self.state.cross_section_scale < .001]
-            if round(val, 3) != round(getData('state,ng_zoom'), 3):
-                setData('state,ng_zoom', val)
+            if round(val, 3) != round(getData('state,neuroglancer,zoom'), 3):
+                setData('state,neuroglancer,zoom', val)
                 self.signals.zoomChanged.emit(val)
 
 
@@ -620,11 +597,11 @@ class EMViewer(AbstractEMViewer):
 #         self.coordinate_space = self.getCoordinateSpace()
 #
 #         self.get_tensors()
-#         sf = cfg.data.scale_val(s=cfg.data.scale_key)
+#         sf = cfg.data.lvl(s=cfg.data.level_key)
 #         path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(sf))
 #
 #         self.index = cfg.data.zpos
-#         # dir_staged = os.path.join(cfg.data.dest(), self.scale_key, 'zarr_staged', str(self.index), 'staged')
+#         # dir_staged = os.path.join(cfg.data.dest(), self.level_key, 'zarr_staged', str(self.index), 'staged')
 #         # self.tensor = cfg.stageViewer = get_zarr_tensor(dir_staged).result()
 #
 #         tensor = get_zarr_tensor(path).result()
@@ -644,7 +621,7 @@ class EMViewer(AbstractEMViewer):
 #
 #         logger.info(f'Tensor Shape: {tensor.shape}')
 #
-#         sf = cfg.data.scale_val(s=cfg.data.scale_key)
+#         sf = cfg.data.lvl(s=cfg.data.level_key)
 #         self.ref_l, self.base_l, self.aligned_l = 'ref_%d' % sf, 'base_%d' % sf, 'aligned_%d' % sf
 #         with self.txn() as s:
 #             '''other settings:
@@ -961,7 +938,7 @@ ViewerState({
         "cur_method": "image",
         "source": "python://volume/cef5a1ec1ac2735310e4b0eac0f6c086399351cf.bc644314f0d66472a635e053ba4a78252a6a4262",
         "tab": "source",
-        "shader": "\n        #uicontrol vec3 color color(default=\"white\")\n        #uicontrol float brightness slider(min=-1, max=1, step=0.01)\n        #uicontrol float contrast slider(min=-1, max=1, step=0.01)\n        void main() { emitRGB(color * (toNormalized(getDataValue()) + brightness) * exp(contrast));}\n        ",
+        "shader": "\n        #uicontrol vec3 color color(default=\"white\")\n        #uicontrol float brightness wSlider(min=-1, max=1, step=0.01)\n        #uicontrol float contrast wSlider(min=-1, max=1, step=0.01)\n        void main() { emitRGB(color * (toNormalized(getDataValue()) + brightness) * exp(contrast));}\n        ",
         "name": "layer"
     }],
     "crossSectionBackgroundColor": "#808080",

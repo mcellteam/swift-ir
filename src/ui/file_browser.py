@@ -3,9 +3,10 @@
 import os, sys, logging
 from qtpy.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTreeView, QFileSystemModel, \
     QPushButton, QSizePolicy, QAbstractItemView, QLineEdit, QAction, QMenu, QComboBox, QTextEdit, QFormLayout, \
-    QButtonGroup, QLabel
-import qtawesome as qta
+    QButtonGroup, QLabel, QCompleter
 from qtpy.QtCore import Slot, Qt, QSize, QDir
+from qtpy.QtGui import QCursor
+import qtawesome as qta
 from src.helpers import is_joel, is_tacc, sanitizeSavedPaths
 from src.ui.layouts import HWidget, VWidget, VBL, HBL
 import src.config as cfg
@@ -186,6 +187,9 @@ class FileBrowser(QWidget):
         self.wTreeviewButtons = VWidget(hw1, hw2)
 
         self.combobox = QComboBox()
+        self.combobox.setEditable(True)
+        self.combobox.completer().setCompletionMode(QCompleter.PopupCompletion)
+        self.combobox.setCursor(QCursor(Qt.PointingHandCursor))
         self.combobox.setStyleSheet('font-size: 9px;')
         self.combobox.setFixedHeight(16)
         # self.combobox.currentTextChanged.connect(self.onComboChanged)
@@ -202,6 +206,7 @@ class FileBrowser(QWidget):
         self.bGo.setStyleSheet('font-size: 9px;')
         self.bGo.setFixedSize(QSize(24, 16))
         def fn_bGo():
+            logger.info('')
             cur = self.lePath.text()
             if os.path.exists(cur):
                 self.navigateTo(cur)
@@ -306,6 +311,7 @@ class FileBrowser(QWidget):
 
 
     def onComboChanged(self):
+        logger.info('')
         cur = self.combobox.currentText()
         if os.path.exists(cur):
             self.navigateTo(cur)

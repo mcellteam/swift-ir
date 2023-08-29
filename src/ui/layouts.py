@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
 import inspect
-from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QSplitter, QLabel, QPushButton
+from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QSplitter, QLabel, QPushButton, QFrame
 from qtpy.QtCore import Qt, Signal
 
-__all__ = ['HBL', 'VBL', 'GL', 'HWidget', 'VWidget', 'HSplitter', 'VSplitter', 'YellowTextLabel']
+__all__ = ['HBL', 'VBL', 'GL', 'HWidget', 'VWidget', 'HSplitter', 'VSplitter', 'YellowTextLabel', 'QVLine', 'QHLine']
 
 class HBL(QHBoxLayout):
     def __init__(self, *args):
@@ -77,6 +77,19 @@ class VSplitter(QSplitter):
         self.setHandleWidth(4)
         for w in args:
             self.addWidget(w)
+
+class QHLine(QFrame):
+    def __init__(self):
+        super(QHLine, self).__init__()
+        self.setFrameShape(QFrame.HLine)
+        self.setFrameShadow(QFrame.Sunken)
+
+
+class QVLine(QFrame):
+    def __init__(self):
+        super(QVLine, self).__init__()
+        self.setFrameShape(QFrame.VLine)
+        self.setFrameShadow(QFrame.Sunken)
 
 
 class YellowTextLabel(QLabel):

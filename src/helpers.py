@@ -46,10 +46,11 @@ except:
     from utils.treeview import Treeview
 
 __all__ = ['is_tacc', 'is_linux', 'is_mac', 'create_paged_tiff', 'check_for_binaries', 'delete_recursive',
-           'do_scales_exist', 'make_relative', 'make_absolute', 'are_aligned_images_generated', 'get_img_filenames',           'print_exception', 'get_scale_key', 'get_scale_val', 'print_project_tree',
+           'do_scales_exist', 'make_relative', 'make_absolute', 'get_img_filenames', 'print_exception',
+           'get_scale_key', 'get_scale_val', 'print_project_tree',
            'verify_image_file', 'exist_aligned_zarr', 'get_scales_with_generated_alignments', 'handleError',
            'count_widgets', 'find_allocated_widgets', 'absFilePaths', 'validate_file', 'hotkey',
-           'caller_name','addLoggingLevel', 'sanitizeSavedPaths'
+           'caller_name','addLoggingLevel', 'sanitizeSavedPaths', 'recursive_key_values'
            ]
 
 logger = logging.getLogger(__name__)
@@ -78,45 +79,6 @@ def run_command(cmd, arg_list=None, cmd_input=None):
 def update_meta():
     pass
 
-
-# def check_project_status():
-#     iter = cfg.data.get_iter()
-#     glob_problem_flag = 0
-#     problem_indices = []
-#     for i, section in enumerate(iter):
-#         local_problem_flag = 0
-#
-#         if section['alignment']['swim_settings']['method'] in ('manual-hint'):
-#             n_ref_pts = len(section['alignment']['swim_settings']['match_points']['ref'])
-#             n_base_pts = len(section['alignment']['swim_settings']['match_points']['base'])
-#             if n_ref_pts < 3:
-#                 cfg.mw.warn(f'Fatal! # of match regions for Reference image {i} is fewer than three: [{n_ref_pts}]')
-#                 glob_problem_flag = 1
-#                 local_problem_flag = 1
-#             if n_base_pts < 3:
-#                 cfg.mw.warn(f'Fatal! # of match regions for Transforming image {i} is fewer than three: [{n_ref_pts}]')
-#                 glob_problem_flag = 1
-#                 local_problem_flag = 1
-#         if section['alignment']['swim_settings']['method'] in ('manual-strict'):
-#             n_ref_pts = len(section['alignment']['swim_settings']['match_points']['ref'])
-#             n_base_pts = len(section['alignment']['swim_settings']['match_points']['base'])
-#             if n_ref_pts < 3:
-#                 cfg.mw.warn(f'Fatal! # of match points for Reference image {i} is fewer than three: [{n_ref_pts}]')
-#                 glob_problem_flag = 1
-#                 local_problem_flag = 1
-#             if n_base_pts < 3:
-#                 cfg.mw.warn(f'Fatal! # of match points for Transforming image {i} is fewer than three: [{n_ref_pts}]')
-#                 glob_problem_flag = 1
-#                 local_problem_flag = 1
-#         if local_problem_flag:
-#             problem_indices.append(i)
-#
-#     if glob_problem_flag:
-#         cfg.mw.warn(
-#             f"To fix the Match alignment issues with sections {str(problem_indices)}, do one of the following:\n\n"
-#             f"        1) complete match selection by adding more matches (3 are necessary),\n"
-#             f"        2) change alignment method to Grid Default or Grid Custom or,\n"
-#             f"        3) exclude these sections\n")
 
 
 def getOpt(lookup):
@@ -174,7 +136,6 @@ def sanitizeSavedPaths():
 
 def delete_recursive(dir, keep_core_dirs=False):
     # chunks = glob(dir + '/img_aligned.zarr/**/*', recursive=True) + glob(dir + '/img_src.zarr/**/*', recursive=True)
-    # cfg.main_window.showZeroedPbar(set_n_processes=False)
     to_delete = []
     scales = glob(dir + '/scale_*')
     for s in scales:
@@ -221,6 +182,8 @@ def update_preferences_model():
     # caller = inspect.stack()[1].function
     logger.info(f'Updating user preferences model...')
     cfg.settings.setdefault('locations', [])
+    cfg.settings.setdefault('series_combo_text', None)
+    cfg.settings.setdefault('alignment_combo_text', None)
     cfg.settings.setdefault('saved_paths', [])
     cfg.settings.setdefault('neuroglancer', {})
     cfg.settings['neuroglancer'].setdefault('SHOW_UI_CONTROLS', False)
@@ -773,22 +736,11 @@ def exist_aligned_zarr(scale: str) -> bool:
             result = False
         else:
             result = True
-        logger.critical('Returning Result %r for scale_key %s' % (result, scale))
+        logger.critical('Returning Result %r for level %s' % (result, scale))
         return result
     else:
         logger.warning(f'called by {caller} but there is no cfg.data!')
 
-
-def are_aligned_images_generated(dir, scale) -> bool:
-    '''Returns True or False dependent on whether aligned images have been generated for the current s.'''
-    path = os.path.join(dir, tiff, scale)
-    files = glob(path + '/*.tif')
-    if len(files) < 1:
-        logger.debug('Zero aligned TIFs were found at this s - Returning False')
-        return False
-    else:
-        logger.debug('One or more aligned TIFs were found at this s - Returning True')
-        return True
 
 
 def reorder_tasks(task_list, z_stride) -> list:
@@ -960,7 +912,7 @@ def rename_layers(use_scale, al_dict):
         if 'base' in layer['images'].keys():
             image = layer['images']['base']
             try:
-                image_name = os.path.basename(image['filename'])
+                image_name = os.path.basename(image['path'])
                 destination_image_name = os.path.join(source_dir, image_name)
                 shutil.copyfile(image.image_file_name, destination_image_name)
             except:
@@ -992,9 +944,9 @@ def make_absolute(file_path, proj_path):
     return abs_path
 
 
-def initLogFiles(dm):
+def initLogFiles(location):
     try:
-        logpath = os.path.join(dm.dest(), 'logs')
+        logpath = os.path.join(location, 'logs')
         os.makedirs(logpath, exist_ok=True)
         open(os.path.join(logpath, 'exceptions.log'), 'a').close()
         open(os.path.join(logpath, 'thumbnails.log'), 'a').close()
@@ -1002,7 +954,8 @@ def initLogFiles(dm):
         open(os.path.join(logpath, 'swim.log'), 'a').close()
         open(os.path.join(logpath, 'multiprocessing.log'), 'a').close()
     except:
-        print_exception()
+        exi = sys.exc_info()
+        logger.warning(f"[{exi[0]} / {exi[1]}] Initializing log files triggered an exception")
 
 
 def create_project_directories(destination, scales, gui=True) -> None:
@@ -1183,6 +1136,36 @@ def caller_name(skip=2):
     return ".".join(name)
 
 
+def recursive_key_values(dictionary):
+    """recursive_key_values.
+        Print all keys and values anywhere in a dictionary
+    Args:
+        dictionary: any dictionary
+    Returns:
+        tuple:
+    """
+    for key, value in dictionary.items():
+        i = 0
+        if type(value) is str:
+            yield (key, value)
+        elif type(value) is dict:
+            yield from recursive_key_values(value)
+        elif type(value) in (list, tuple, set):
+            for seq_item in value:
+                yield from recursive_key_values({f"{key}_{str(i)}": seq_item})
+                i = i + 1
+        else:
+            yield (key, str(value))
+
+
+def dict_from_two_lists(keys: list, values: list) -> dict:
+    if not len(keys) == len(values):
+        raise ValueError("List of keys must have the same length as the list of values!")
+
+    return dict(zip(keys, values))
+
+
+
 from typing import Dict, Any
 import hashlib
 import json
@@ -1352,14 +1335,14 @@ def file_hash(file_path):
 #     logger.info("Exiting update_skips_callback(new_state)")
 
 
-# def mouse_down_callback(role, screen_coords, image_coords, button):
+# def mouse_down_callback(role, screen_coords, image_coords, bBlink):
 #     # global match_pt_mode
 #     # if match_pt_mode.get_value():
 #     # logger.info("mouse_down_callback was called but there is nothing to do.")
 #     return  # monkeypatch
 #
 #
-# def mouse_move_callback(role, screen_coords, image_coords, button):
+# def mouse_move_callback(role, screen_coords, image_coords, bBlink):
 #     # global match_pt_mode
 #     # if match_pt_mode.get_value():
 #     return #monkeypatch #jy
@@ -1373,7 +1356,7 @@ def file_hash(file_path):
 # def notyet():
 #     logger.info('notyet() was called')
 #     # interface.print_debug(0, "Function not implemented yet. Skip = " + str(skipped.value)) #skipped
-#     # interface.print_debug(0, "Function not implemented yet. Skip = " + main_window._skipCheckbox.isChecked())
+#     # interface.print_debug(0, "Function not implemented yet. Skip = " + main_window.cbSkip.isChecked())
 
 # def crop_mode_callback():
 #     return
@@ -1382,12 +1365,12 @@ def file_hash(file_path):
 
 # def print_dat_files() -> None:
 #     '''Prints the .dat files for the current s, if they exist .'''
-#     bias_data_path = os.path.join(cfg.datamodel['data']['destination_path'], cfg.datamodel.scale_key, 'bias_data')
+#     bias_data_path = os.path.join(cfg.datamodel['data']['destination_path'], cfg.datamodel.level, 'bias_data')
 #     if are_images_imported():
 #         logger.info('Printing .dat Files')
 #         try:
 #             logger.info("_____________________BIAS DATA_____________________")
-#             logger.info("Scale %d____________________________________________" % get_scale_val(cfg.datamodel.scale_key))
+#             logger.info("Scale %d____________________________________________" % get_scale_val(cfg.datamodel.level))
 #             with open(os.path.join(bias_data_path, 'snr_1.dat'), 'r') as f:
 #                 snr_1 = f.read()
 #                 logger.info('snr_1               : %s' % snr_1)

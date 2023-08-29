@@ -10,6 +10,7 @@ import time
 import shutil
 import psutil
 import logging
+import imageio
 from pathlib import Path
 from multiprocessing import Pool
 from multiprocessing.pool import ThreadPool
@@ -78,7 +79,6 @@ class AlignWorker(QObject):
             self._tasks.append(self.generate)
 
 
-
     def running(self):
         try:
             self._mutex.lock()
@@ -109,13 +109,13 @@ class AlignWorker(QObject):
         dm = self.dm
 
         if scale == dm.coarsest_scale_key():
-            print(f'\n\nInitializing Alignment for {indexes}\n')
+            logger.critical(f'\nInitializing affine for {len(indexes)} alignment pairs\n')
         else:
-            print(f'\n\nRefining Alignment for {indexes}\n')
+            logger.critical(f'\nRefining affine for {len(indexes)} alignment pairs\n')
 
         # cfg.mw._autosave()
 
-        scratchpath = os.path.join(dm.dest(), 'logs', 'scratch.log')
+        scratchpath = os.path.join(dm.location, 'logs', 'scratch.log')
         if os.path.exists(scratchpath):
             os.remove(scratchpath)
 
@@ -123,10 +123,10 @@ class AlignWorker(QObject):
 
         first_unskipped = dm.first_unskipped(s=scale)
 
-        scale_val = dm.scale_val(scale)
+        scale_val = dm.lvl(scale)
         tasks = []
         for zpos, sec in [(i, dm()[i]) for i in indexes]:
-            # zpos = sec['alignment']['meta']['index']
+            # zpos = sec['alignment']['ss']['index']
             # if not sec['skipped'] and (zpos != first_unskipped):
             zpos = dm().index(sec)
             sec['levels'][scale].setdefault('method_results', {})
@@ -136,28 +136,18 @@ class AlignWorker(QObject):
             ss = sec['levels'][scale]['swim_settings']
             mr = sec['levels'][scale]['method_results']
             ss['index'] = zpos
-            # ss['scale_val'] = scale_val
-            ss['scale_key'] = scale
             ss['isRefinement'] = dm.isRefinement()
             ss['location'] = dm.location
-            ss['defaults'] = dm['defaults']
             ss['img_size'] = dm.series['levels'][scale]['size_xy']
             # ss['include'] = not sec['skipped']
             ss['dev_mode'] = cfg.DEV_MODE
             ss['log_recipe_to_file'] = cfg.LOG_RECIPE_TO_FILE
             ss['target_thumb_size'] = cfg.TARGET_THUMBNAIL_SIZE
             ss['verbose_swim'] = cfg.VERBOSE_SWIM
-            # ss['filename'] = ss['filename']
-            # ss['fn_reference'] = ss['reference']
-            if ss['method'] == 'grid-default':
-                ss['whiten'] = dm['defaults']['signal-whitening']
-                ss['swim_iters'] = dm['defaults']['swim-iterations']
-            else:
-                ss['whiten'] = ss['signal-whitening']
-                ss['swim_iters'] = ss['iterations']
+
             if dm.isRefinement():
                 scale_prev = dm.scales[dm.scales.index(scale) + 1]
-                prev_scale_val = int(scale_prev[len('scale_'):])
+                prev_scale_val = int(scale_prev[1:])
                 upscale = (float(prev_scale_val) / float(scale_val))
                 prev_method = dm['stack'][zpos]['levels'][scale_prev]['swim_settings']['method']
                 init_afm = np.array(copy.deepcopy(dm['stack'][zpos]['levels'][scale_prev]['alignment_history'][
@@ -205,17 +195,19 @@ class AlignWorker(QObject):
             #initPbar
             desc = f"Computing Affines ({len(tasks)} tasks)"
             self.initPbar.emit((len(tasks), desc))
-            QApplication.processEvents()
+            # QApplication.processEvents()
             all_results = []
+            logger.info(f'# Processes: {cpus}')
             with ctx.Pool(processes=cpus) as pool:
                 for i, result in enumerate(tqdm.tqdm(pool.imap_unordered(run_recipe, tasks),
                                         total=len(tasks), desc=desc, position=0, leave=True)):
                     all_results.append(result)
                     self.progress.emit(i)
-                    QApplication.processEvents()
+                    # QApplication.processEvents()
                     # logger.info(f'running? {self.running()}')
                     if not self.running():
                         break
+
 
             logger.critical(f"# Completed Alignment Tasks: {len(all_results)}")
 
@@ -237,7 +229,7 @@ class AlignWorker(QObject):
 
             task_queue = TaskQueue(n_tasks=len(tasks), dest=dest)
             task_queue.taskPrefix = 'Computing Alignment for '
-            task_queue.taskNameList = [os.path.basename(layer['swim_settings']['filename']) for
+            task_queue.taskNameList = [os.path.basename(layer['swim_settings']['path']) for
                                        layer in [dm()[i] for i in indexes]]
             task_queue.start(cpus)
             align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'recipe_maker.py')
@@ -259,12 +251,10 @@ class AlignWorker(QObject):
 
             all_results = []
             for tnum in range(len(tq_results)):
-                # logger.critical(f"------------------------------------------------------")
                 # Get the updated datamodel previewmodel from stdout for the task
                 parts = tq_results[tnum]['stdout'].split('---JSON-DELIMITER---')
                 dm_text = None
                 for p in parts:
-                    # logger.critical(f"\n\n\np = {p}\n\n")
                     ps = p.strip()
                     if ps.startswith('{') and ps.endswith('}'):
                         all_results.append(json.loads(p))
@@ -285,16 +275,17 @@ class AlignWorker(QObject):
                 logger.warning(f"Task failed at index: {index}")
 
 
-        SetStackCafm(cfg.data, scale=scale, poly_order=dm.default_poly_order)
+        SetStackCafm(cfg.data, scale=scale, poly_order=dm.poly_order)
 
         #Todo
         # try:
-        #     shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale_key, 'matches_raw'), ignore_errors=True)
-        #     shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale_key, 'matches_raw'), ignore_errors=True)
+        #     shutil.rmtree(os.path.join(cfg.data.location, cfg.data.level, 'matches_raw'), ignore_errors=True)
+        #     shutil.rmtree(os.path.join(cfg.data.location, cfg.data.level, 'matches_raw'), ignore_errors=True)
         # except:
         #     print_exception()
 
         if not self.running():
+            self.finished.emit()
             return
 
         t_elapsed = time.time() - t0
@@ -310,16 +301,27 @@ class AlignWorker(QObject):
         #     cfg.mw.updateCorrSignalsDrawer()
         #     cfg.mw.setTargKargPixmaps()
 
-        save2file(dm=dm._data, name=dm.dest())
+        # save2file(dm=dm._data, name=dm.location)
 
         # initPbar
         # thumbnailer = Thumbnailer()
         # thumbnailer.reduce_matches(indexes=indexes, dest=dm['data']['series_path'], scale=scale)
 
 
-
     def generate(self):
-        logger.info('\n\nGenerating Aligned Images...\n')
+        if not self.running():
+            logger.warning('Canceling transformation process...')
+            self.finished.emit()
+            return
+
+        if not self.dm.is_aligned():
+            print('\n\n')
+            logger.error("Series FAILED to align!")
+            print('\n\n')
+            self.finished.emit()
+            return
+
+        logger.critical('\n\nTransforming images...\n')
 
         dm = self.dm
         scale = self.scale
@@ -328,25 +330,26 @@ class AlignWorker(QObject):
         scale_val = get_scale_val(scale)
 
         if not self.running():
-            logger.warning('Canceling Generate Alignment')
+            logger.warning('Canceling transformation process...')
+            self.finished.emit()
             return
 
-        tryRemoveDatFiles(dm, scale, dm.dest())
+        tryRemoveDatFiles(dm, scale, dm.location)
 
-        SetStackCafm(cfg.data, scale=scale, poly_order=dm.default_poly_order)
+        SetStackCafm(dm, scale=scale, poly_order=dm.poly_order)
 
         dm.propagate_swim_1x1_custom_px(indexes=indexes)
         dm.propagate_swim_2x2_custom_px(indexes=indexes)
         dm.propagate_manual_swim_window_px(indexes=indexes)
 
-        od = os.path.join(dm.dest(), 'tiff', scale)
+        od = os.path.join(dm.location, 'tiff', scale)
         if self._renew_od:
             renew_directory(directory=od)
         # print_example_cafms(scale_dict)
 
         # try:
-        #     bias_path = os.path.join(dm.dest(), scale_key, 'bias_data')
-        #     save_bias_analysis(layers=dm.get_iter(s=scale_key), bias_path=bias_path)
+        #     bias_path = os.path.join(dm.location, level, 'bias_data')
+        #     save_bias_analysis(layers=dm.get_iter(s=level), bias_path=bias_path)
         # except:
         #     print_exception()
 
@@ -355,36 +358,31 @@ class AlignWorker(QObject):
         if dm.has_bb():
             # Note: now have got new cafm's -> recalculate bounding box
             rect = dm.set_calculate_bounding_rect(s=scale)  # Only after SetStackCafm
-            logger.info(f'Bounding Box           : ON\nNew Bounding Box  : {str(rect)}')
-            logger.info(f'Corrective Polynomial  : {dm.default_poly_order} (Polynomial Order: {dm.default_poly_order})')
         else:
-            logger.info(f'Bounding Box           : OFF')
-            logger.info(f'Corrective Polynomial  : {str(dm.default_poly_order)}')
             w, h = dm.image_size(s=scale)
             rect = [0, 0, w, h]  # might need to swap w/h for Zarr
-        logger.info(f'Aligned Size      : {rect[2:]}')
-        logger.info(f'Offsets           : {rect[0]}, {rect[1]}')
-        if is_tacc():
-            cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(indexes)), 1)
-        else:
-            cpus = psutil.cpu_count(logical=False)
+        logger.info(f'\n'
+                    f'Bounding Box       : {dm.has_bb()}\n'
+                    f'Polynomial Bias    : {dm.poly_order}\n'
+                    f'Aligned Size       : {rect[2]} x {rect[3]}\n'
+                    f'Offsets            : {rect[0]}, {rect[1]}')
 
         dest = dm.location
-        logger.info(f'\n\nGenerating Aligned Images for {indexes}\n')
+        logger.info(f'Transforming {len(indexes)} images...')
 
         tasks = []
         for i, sec in enumerate(dm()):
             if i in indexes:
-                base_name = sec['levels'][scale]['swim_settings']['filename']
+                base_name = sec['levels'][scale]['swim_settings']['path']
                 _, fn = os.path.split(base_name)
                 al_name = os.path.join(dest, 'tiff', scale, fn)
                 method = sec['levels'][scale]['swim_settings']['method']  # 0802+
                 cafm = sec['levels'][scale]['alignment_history'][method]['method_results']['cumulative_afm']
                 tasks.append([base_name, al_name, rect, cafm, 128])
-                if i in [1,2,3]:
-                    print(f"Example args:\n {[base_name, al_name, rect, cafm, 128]}")
-                if cfg.DEV_MODE:
-                    sec['levels'][scale]['method_results']['generate_args'] = [base_name, al_name, rect, cafm, 128]
+                # if i in [1,2,3]:
+                #     print(f"Example args:\n {[base_name, al_name, rect, cafm, 128]}")
+                # if cfg.DEV_MODE:
+                #     sec['levels'][scale]['method_results']['generate_args'] = [base_name, al_name, rect, cafm, 128]
 
         logger.info(f"# of tasks: {len(tasks)}")
 
@@ -421,12 +419,13 @@ class AlignWorker(QObject):
         """Blocking"""
         ctx = mp.get_context('forkserver')
         #initPbar
-        desc = f"Generating Alignment ({len(tasks)} tasks)"
+        desc = f"Transforming images ({len(tasks)} tasks)"
         self.initPbar.emit((len(tasks), desc))
-        QApplication.processEvents()
+        # QApplication.processEvents()
         all_results = []
         i = 0
         cpus = (psutil.cpu_count(logical=False) - 2, 104)[is_tacc()]
+        logger.info(f'# Processes: {cpus}')
         with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
             for result in tqdm.tqdm(
                     pool.imap_unordered(run_mir, tasks),
@@ -437,7 +436,7 @@ class AlignWorker(QObject):
                 all_results.append(result)
                 i += 1
                 self.progress.emit(i)
-                QApplication.processEvents()
+                # QApplication.processEvents()
                 if not self.running():
                     break
 
@@ -447,23 +446,31 @@ class AlignWorker(QObject):
         #                    leave=True))
         #     pool.close()
 
-        logger.info("Generate Alignment Finished")
+        logger.critical("Transformations finished")
 
+        if not self.running():
+            self.finished.emit()
+            return
 
         nFilesFound = len(os.listdir(os.path.join(dest, 'tiff', scale)))
         logger.critical(f"# Files Found: {nFilesFound}")
         if nFilesFound == 0:
             logger.warning(f"No Files Found. Nothing to convert.")
-            return
-
-        if not self.running():
+            self.finished.emit()
             return
 
         #initPbar
         thumbnailer = Thumbnailer()
         thumbnailer.reduce_aligned(indexes, dest=dest, scale=scale)
 
+        t0 = time.time()
+        generateAnimations(dm=dm, indexes=indexes)
+        t1 = time.time()
+        dt = t1 - t0
+        logger.critical(f"Time Elapsed (generate animated gifs): {dt:.3g}s")
+
         if not self.running():
+            self.finished.emit()
             return
 
         t_elapsed = time.time() - t0
@@ -475,6 +482,7 @@ class AlignWorker(QObject):
         pbar_text = 'Copy-converting Scale %d Alignment To Zarr (%d Cores)...' % (scale_val, cpus)
         if not self.running():
             logger.warning('Canceling Tasks: %s' % pbar_text)
+            self.finished.emit()
             return
         if self._reallocate_zarr:
             preallocate_zarr(dm=dm,
@@ -484,13 +492,13 @@ class AlignWorker(QObject):
                              dtype='|u1',
                              overwrite=True)
 
-        print(f'\n\nCopy-convert Alignment To Zarr for {indexes}\n')
+        logger.info(f'Copy-converting {len(indexes)} images to Zarr...')
 
         tasks = []
         for i in indexes:
-            _, fn = os.path.split(dm()[i]['levels'][scale]['swim_settings']['filename'])
-            al_name = os.path.join(dm.dest(), 'tiff', scale, fn)
-            zarr_group = os.path.join(dm.dest(), 'zarr', 's%d' % scale_val)
+            _, fn = os.path.split(dm()[i]['levels'][scale]['swim_settings']['path'])
+            al_name = os.path.join(dm.location, 'tiff', scale, fn)
+            zarr_group = os.path.join(dm.location, 'zarr', 's%d' % scale_val)
             task = [i, al_name, zarr_group]
             tasks.append(task)
         # shuffle(tasks)
@@ -508,7 +516,7 @@ class AlignWorker(QObject):
         #     [p.get() for p in results]
         #     # pool.join()
 
-        desc = f"Convert Alignment to Zarr ({len(tasks)} tasks)"
+        desc = f"Copy-convert to Zarr ({len(tasks)} tasks)"
         # with ThreadPoolExecutor(max_workers=10) as executor:
         #     list(executor.map(convert_zarr,
         #                       tqdm.tqdm(tasks, total=len(tasks), desc=desc, position=0,
@@ -516,10 +524,11 @@ class AlignWorker(QObject):
 
         ctx = mp.get_context('forkserver')
         self.initPbar.emit((len(tasks), desc))
-        QApplication.processEvents()
+        # QApplication.processEvents()
         all_results = []
         i = 0
         cpus = (psutil.cpu_count(logical=False) - 2, 104)[is_tacc()]
+        logger.info(f"# Processes: {cpus}")
         with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
             for result in tqdm.tqdm(
                     pool.imap_unordered(convert_zarr, tasks),
@@ -530,16 +539,38 @@ class AlignWorker(QObject):
                 all_results.append(result)
                 i += 1
                 self.progress.emit(i)
-                QApplication.processEvents()
+                # QApplication.processEvents()
                 if not self.running():
                     break
-
-
-        logger.info("Convert Alignment to Zarr Finished")
 
         t_elapsed = time.time() - t0
         dm.t_convert_zarr = t_elapsed
 
+        logger.info("Zarr conversion complete.")
+        logger.info(f"Elapsed Time: {t_elapsed:.3g}s")
+
+
+def generateAnimations(dm, indexes):
+    # https://stackoverflow.com/questions/753190/programmatically-generate-video-or-animated-gif-in-python
+
+    src = os.path.join(dm.location, 'thumbnails', dm.scale)
+    out = os.path.join(dm.location,'gif', dm.scale)
+    logger.info(f"Generating {len(indexes)} transformation animations... destination:\n{out}")
+    # os.makedirs(out, exist_ok=True)
+
+    for i in indexes:
+        name = os.path.basename(dm['stack'][i]['levels'][dm.scale]['swim_settings']['path'])
+        refname = os.path.basename(dm['stack'][i]['levels'][dm.scale]['swim_settings']['reference'])
+        im0 = os.path.join(src, refname)
+        im1 = os.path.join(src, name)
+        logger.info(f'im0 = {im0}')
+        logger.info(f'im1 = {im1}')
+        if refname == '':
+            im0 = im1
+        images = []
+        [images.append(imageio.imread(filename)) for filename in [im0, im1]]
+        _name, _ = os.path.splitext(name)
+        imageio.mimsave(os.path.join(out, _name) + '.gif', images)
 
 
 def run_subprocess(task):
@@ -637,11 +668,10 @@ def tryRemoveFile(directory):
 
 def tryRemoveDatFiles(dm, scale, path):
     # bb_str = str(dm.has_bb())
-    # poly_order_str = str(cfg.data.default_poly_order)
     bias_data_path = os.path.join(path, scale, 'bias_data')
-    # tryRemoveFile(os.path.join(path, scale_key,
+    # tryRemoveFile(os.path.join(path, level,
     #                            'swim_log_' + bb_str + '_' + null_cafm_str + '_' + poly_order_str + '.dat'))
-    # tryRemoveFile(os.path.join(path, scale_key,
+    # tryRemoveFile(os.path.join(path, level,
     #                            'mir_commands_' + bb_str + '_' + null_cafm_str + '_' + poly_order_str + '.dat'))
     tryRemoveFile(os.path.join(path, scale, 'swim_log.dat'))
     tryRemoveFile(os.path.join(path, scale, 'mir_commands.dat'))

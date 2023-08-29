@@ -33,30 +33,27 @@ class Thumbnailer:
         self.iscale2_c = os.path.join(get_appdir(), 'lib', get_bindir(), 'iscale2')
 
     def reduce_main(self, src, od):
-        print(f'\n\n######## Reducing: Source Images ########\n')
-
-        pbar_text = 'Generating %s Source Image Thumbnails...' % cfg.data.scale_pretty()
-        coarsest_scale = cfg.data.smallest_scale()
-        logger.info(f"coarsest_scale = {coarsest_scale}\n"
-                        f"src            = {src}\n"
-                        f"od             = {od}")
-        dt = self.reduce(
-            src=src, od=od, rmdir=True, prefix='', start=0, end=None, pbar_text=pbar_text)
+        print(f'\n######## Reducing: Source Images ########\n')
+        # coarsest_scale = cfg.data.smallest_scale()
+        # logger.info(f"coarsest_scale = {coarsest_scale}\n"
+        #                 f"src            = {src}\n"
+        #                 f"od             = {od}")
+        d = os.path.dirname(od) #Needed for logging
+        dt = self.reduce(src=src, od=od, dest=d, rmdir=True, prefix='', start=0, end=None)
         return dt
 
 
     def reduce_aligned(self, indexes, dest, scale):
-        print(f'\n\n######## Reducing: Aligned Images ########\n')
+        print(f'\n######## Reducing: Aligned Images ########\n')
         src = os.path.join(dest, 'tiff', scale)
         od = os.path.join(dest, 'thumbnails', scale)
-
 
         files = []
         baseFileNames = cfg.data.basefilenames()
         for name in [baseFileNames[i] for i in indexes]:
             files.append(os.path.join(src,name))
 
-        pbar_text = 'Generating %s Aligned Image Thumbnails...' % cfg.data.scale_pretty()
+        pbar_text = 'Generating %s Aligned Image Thumbnails...' % cfg.data.level_pretty()
         if cfg.CancelProcesses:
             cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
         else:
@@ -75,9 +72,9 @@ class Thumbnailer:
 
     def reduce_signals(self, indexes, dest, scale):
 
-        print(f'\n\n######## Reducing: Correlation Signals ########\n')
+        print(f'\n######## Reducing: Correlation Signals ########\n')
 
-        pbar_text = 'Generating %s Signal Spot Thumbnails...' % cfg.data.scale_pretty()
+        pbar_text = 'Generating %s Signal Spot Thumbnails...' % cfg.data.level_pretty()
         if cfg.CancelProcesses:
             cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
         else:
@@ -135,9 +132,9 @@ class Thumbnailer:
 
     def reduce_matches(self, indexes, dest, scale):
 
-        print(f'\n\n######## Reducing: Matches ########\n')
+        print(f'\n######## Reducing: Matches ########\n')
 
-        pbar_text = 'Reducing %s Matches...' % cfg.data.scale_pretty()
+        pbar_text = 'Reducing %s Matches...' % cfg.data.level_pretty()
         if cfg.CancelProcesses:
             cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
         else:
@@ -187,8 +184,8 @@ class Thumbnailer:
 
             cfg.main_window.tell('Discarding Raw (Full Size) Matches...')
             try:
-                shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale_key, 'matches_raw'), ignore_errors=True)
-                shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.scale_key, 'matches_raw'), ignore_errors=True)
+                shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.level, 'matches_raw'), ignore_errors=True)
+                shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.level, 'matches_raw'), ignore_errors=True)
             except:
                 print_exception()
 
@@ -209,24 +206,25 @@ class Thumbnailer:
                dest='',
                ):
 
-        logpath = os.path.join(dest, 'logs', 'thumbnails.log')
-        file = open(logpath, 'a+')
-        file.close()
-        fh = logging.FileHandler(logpath)
-        fh.setLevel(logging.DEBUG)
-        tnLogger.handlers.clear()
-        tnLogger.addHandler(fh)
+        # if dest:
+        #     logpath = os.path.join(dest, 'logs', 'thumbnails.log')
+        #     file = open(logpath, 'a+')
+        #     file.close()
+        #     fh = logging.FileHandler(logpath)
+        #     fh.setLevel(logging.DEBUG)
+        #     tnLogger.handlers.clear()
+        #     tnLogger.addHandler(fh)
 
         # if cpus == None:
         #     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
 
         if not os.path.isdir(src):
-            logger.error(f"The directory '{src}' does not exist, nothing to thumbnail...")
+            logger.error(f"Directory '{src}' not found, nothing to thumbnail...")
             return
 
 
         if os.listdir(src) == []:
-            logger.error(f"The directory '{src}' is empty, nothing to thumbnail...")
+            logger.error(f"Directory '{src}' is empty, nothing to thumbnail...")
             return
 
         try:
@@ -259,18 +257,13 @@ class Thumbnailer:
 
 
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S")
-        tnLogger.info(f'\n==== {timestamp} ====\n'
+        logger.info(f'\n==== {timestamp} ====\n'
                       f'Generating Thumbnails...\n'
-                      f'src        : {src}\n'
-                      f'od         : {od}\n'
-                      f'rmdir      : {rmdir}\n'
-                      f'prefix     : {prefix}\n'
-                      f'pbar       : {pbar_text}\n'
-                      f'cpus       : {cpus}\n'
-                      f'# files    : {len(filenames)}'
+                      f'src             : {src}\n'
+                      f'od              :  └ {os.path.basename(od)} ({len(filenames)} files)\n'
+                      f'overwrite dir?  : {rmdir}\n'
                       )
-        tnLogger.info('filenames : \n' + '\n'.join(filenames))
-        # logger.info('Removing up to %d files...' %len(filenames))
+        # tnLogger.info('filenames : \n' + '\n'.join(filenames))
         tasks = []
         for i, fn in enumerate(filenames):
             ofn = os.path.join(od, os.path.basename(fn))
@@ -285,6 +278,7 @@ class Thumbnailer:
             tasks.append([self.iscale2_c, '+%d' % scale_factor, 'of=%s' % ofn, '%s' % fn])
 
         t0 = time.time()
+        logger.info(f"# Processes: {cpus}")
         with ThreadPool(processes=cpus) as pool:
             pool.map(run_subprocess, tqdm.tqdm(tasks, total=len(tasks), desc="Generating Thumbnails", position=0, leave=True))
             pool.close()

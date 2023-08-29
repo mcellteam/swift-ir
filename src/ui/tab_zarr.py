@@ -31,8 +31,8 @@ class ZarrTab(QWidget):
         self.chunkshape = self.zarray['chunks']
         self.zdim       = self.shape[0]
 
-        cfg.main_window._sectionSlider.setRange(0, self.zdim - 1)
-        cfg.main_window._jumpToLineedit.setText('0')
+        cfg.main_window.sldrZpos.setRange(0, self.zdim - 1)
+        cfg.main_window.leJump.setText('0')
         # cfg.main_window.comboboxNgLayout.setCurrentText('4panel')
 
         self.initUI()

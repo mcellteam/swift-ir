@@ -32,7 +32,7 @@ import pyqtgraph as pg
 from qtpy.QtWidgets import QMainWindow, QApplication, QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QCheckBox, QLabel
 from qtpy.QtGui import QFont
 from qtpy.QtCore import Qt, QSize
-from src.helpers import print_exception
+from src.helpers import print_exception, caller_name
 import src.config as cfg
 
 logger = logging.getLogger(__name__)
@@ -184,7 +184,7 @@ class SnrPlot(QWidget):
             if self.dock:
                 offset = 0
             else:
-                offset = self._getScaleOffset(s=cfg.data.scale_key)
+                offset = self._getScaleOffset(s=cfg.data.level)
             pos = [cfg.data.zpos + offset, 1]
             # logger.info(f'pos = {pos}')
             self._curLayerLine.setPos(pos)
@@ -193,7 +193,7 @@ class SnrPlot(QWidget):
                 if self.dock:
                     lab = 'SNR: %.2g' % cfg.data.snr()
                 else:
-                    lab = 'SNR: %.3g\n%s' % (cfg.data.snr(), cfg.data.scale_pretty())
+                    lab = 'SNR: %.3g\n%s' % (cfg.data.snr(), cfg.data.level_pretty())
                 self._snr_label.setText(lab)
 
             if not self.dock:
@@ -211,7 +211,7 @@ class SnrPlot(QWidget):
         if self.dock:
             offset = 0
         else:
-            offset = self._getScaleOffset(s=cfg.data.scale_key)
+            offset = self._getScaleOffset(s=cfg.data.level)
 
         # layers_mp = cfg.data.find_layers_with_manpoints()
         # for line in self._mp_lines:   self.plot.removeItem(line)
@@ -265,9 +265,14 @@ class SnrPlot(QWidget):
 
 
     def initSnrPlot(self, s=None):
+
         caller = inspect.stack()[1].function
-        logger.critical(f"[{caller}] [dock? {self.dock}]")
-        sys.stdout.flush()
+        logger.critical(f"[{caller_name}] Initializing Plot...")
+
+        if cfg.mw.dw_snr.isHidden():
+            logger.warning("Dock widget SNR is hidden!")
+            return
+
         t0 = time()
         try:
             if caller != 'initUI_plot':
@@ -279,7 +284,6 @@ class SnrPlot(QWidget):
                     if cfg.data.is_aligned(s=s):
                         n_aligned += 1
                 if n_aligned == 0:
-                    logger.info('0 scales are aligned, Nothing to Plot - Returning')
                     return
 
                 self._snr_checkboxes = dict()
@@ -290,13 +294,12 @@ class SnrPlot(QWidget):
                     if cfg.data.is_aligned(s=s):
                         color = self._plot_colors[cfg.data.scales[::-1].index(s)]
                         self._snr_checkboxes[s] = QCheckBox()
-                        self._snr_checkboxes[s].setText(cfg.data.scale_pretty(s=s))
+                        self._snr_checkboxes[s].setText(cfg.data.level_pretty(s=s))
                         self.checkboxes_hlayout.addWidget(self._snr_checkboxes[s],
                                                           alignment=Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
                         self._snr_checkboxes[s].setChecked(True)
                         self._snr_checkboxes[s].clicked.connect(self.plotData)
-                        self._snr_checkboxes[s].setStatusTip('On/Off SNR Plot %s' % cfg.data.scale_pretty(s=s))
-
+                        self._snr_checkboxes[s].setStatusTip('On/Off SNR Plot %s' % cfg.data.level_pretty(s=s))
                         self._snr_checkboxes[s].setStyleSheet(
                             f'color: #f3f6fb;'
                             f'background-color: #161c20;'
@@ -315,7 +318,6 @@ class SnrPlot(QWidget):
         finally:
             sys.stdout.flush()
 
-
         if self.dock:
             if cfg.data.is_aligned():
                 try:
@@ -326,8 +328,9 @@ class SnrPlot(QWidget):
                 logger.info("Scale is not aligned, no ghost data to plot...")
         self.plotData()
         self.updateLayerLinePos()
-        logger.info(f"initSnrPlot dt={time() - t0:.3g}")
+        logger.info(f"Time Elapsed: {time() - t0:.3g}")
         sys.stdout.flush()
+        logger.info('<<')
 
 
 
@@ -346,7 +349,7 @@ class SnrPlot(QWidget):
                     x_axis.append(i)
                     y_axis.append(snr)
 
-        logger.info(f"\nx-axis: {x_axis}\ny-axis: {y_axis}")
+        # logger.info(f"\nx-axis: {x_axis}\ny-axis: {y_axis}")
         sys.stdout.flush()
         return x_axis, y_axis
 
@@ -365,7 +368,7 @@ class SnrPlot(QWidget):
                 else:
                     x_axis.append(i)
                     y_axis.append(cfg.data.snr(s=s, l=i))
-        # logger.info(f"get_everything_comport_axis_data dt={time() - t0:.3g}")
+        logger.info(f"get_everything_comport_axis_data dt={time() - t0:.3g}")
         # logger.info(f"\nx-axis: {x_axis}\ny-axis: {y_axis}")
         sys.stdout.flush()
         return x_axis, y_axis
@@ -385,7 +388,7 @@ class SnrPlot(QWidget):
                 else:
                     x_axis.append(i)
                     y_axis.append(cfg.data.snr(s=s, l=i))
-        # logger.info(f"get_cafm_no_comport_axis_data dt={time() - t0:.3g}")
+        logger.info(f"get_cafm_no_comport_axis_data dt={time() - t0:.3g}")
         # logger.info(f"\nx-axis: {x_axis}\ny-axis: {y_axis}")
         # sys.stdout.flush()
         return x_axis, y_axis
@@ -413,8 +416,8 @@ class SnrPlot(QWidget):
 
     def plotData(self):
         '''Update SNR plot widget based on checked/unchecked state of checkboxes'''
-
-        # logger.critical(f"[{self.dock}] {cfg.data.snr_list()}")
+        # logger.info('Plotting data...')
+        # logger.info(f"[{self.dock}] {cfg.data.snr_list()}")
         # caller = inspect.stack()[1].function
         t0 = time()
         if cfg.data:
@@ -452,7 +455,8 @@ class SnrPlot(QWidget):
                     maxYRange=yMax,
                 )
 
-        logger.info(f"plotData dt={time() - t0:.3g}")
+        # logger.info(f"plotData dt={time() - t0:.3g}")
+        # logger.critical('<<<< plotData <<<<')
 
 
 
@@ -462,13 +466,13 @@ class SnrPlot(QWidget):
 
 
     def plotGhostScaleData(self, s=None):
-        logger.info('')
+        logger.critical('Plotting ghost data...')
         if s == None: s = cfg.data.scale
         x_axis, y_axis = [], []
         # for layer, snr in enumerate(cfg.data.snr_list(s=s)):
         # for layer, snr in enumerate(cfg.data.snr_list(s=s)[1:]): #0601+ #Todo
         first_unskipped = cfg.data.first_unskipped(s=s)
-        data = cfg.data['initial_snr'][s]
+        data = cfg.data['level_data'][s]['initial_snr']
         for i in range(0, len(cfg.data)): #0601+
             if i != first_unskipped:
                 x_axis.append(i)
@@ -491,11 +495,13 @@ class SnrPlot(QWidget):
         self.ghost_points[s].addPoints(x_axis, y_axis)
         self.ghost_points[s].setZValue(0)
         self.plot.addItem(self.ghost_points[s])
+        logger.critical('<<<< plotGhostScaleData <<<<')
         sys.stdout.flush()
 
 
     def plotSingleScale(self, s=None):
-        logger.info(f'[{self.dock}] plotSingleScale (scale_key: {s}):')
+        logger.critical(f'Plotting scale level {s}...')
+        # logger.info(f'[{self.dock}] plotSingleScale (level_key: {s}):')
         if s == None: s = cfg.data.scale
         # x_axis, y_axis = self.get_axis_data(s=s)
         x_axis, y_axis = self.get_everything_comport_axis_data(s=s)
@@ -630,10 +636,9 @@ class SnrPlot(QWidget):
             #
             # self.no_comport_data_points[s].sigHovered.connect(hoverSlot1)
 
-
         # if not self.dock:
         self.updateErrBars(s=s)
-        sys.stdout.flush()
+        logger.info('<<')
 
 
     def updateErrBars(self, s):
@@ -676,6 +681,7 @@ class SnrPlot(QWidget):
                                   pen={'color': '#ff0000', 'width': 1})
         self._error_bars[s] = err_bar
         self.plot.addItem(err_bar)
+        logger.info('<<')
 
 
     def wipePlot(self):
@@ -690,6 +696,7 @@ class SnrPlot(QWidget):
         except:
             print_exception()
             logger.warning('Unable To Wipe SNR Plot')
+        logger.info('<<')
 
 
     def mouse_clicked(self, mouseClickEvent):
@@ -710,9 +717,9 @@ class SnrPlot(QWidget):
 
 
     def onSnrClick2(self, scale):
-        # logger.info(f'onSnrClick2 ({scale_key}):')
+        # logger.info(f'onSnrClick2 ({level_key}):')
         self.selected_scale = scale
-        cfg.main_window._changeScaleCombo.setCurrentText(scale)
+        cfg.main_window.boxScale.setCurrentText(scale)
 
 
     def sizeHint(self):

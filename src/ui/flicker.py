@@ -67,7 +67,7 @@ class Flicker(QLabel):
 
         self.a = cfg.data.thumbnail_aligned(l=p)
 
-        reference = cfg.data['data']['scales'][cfg.data.scale_key]['stack'][cfg.data.zpos]['reference']
+        reference = cfg.data['data']['scales'][cfg.data.level]['stack'][cfg.data.zpos]['reference']
         ind_reference = cfg.data.get_index(reference)
 
         # self.b = cfg.data.thumbnail_aligned(l=max(0, p - 1))

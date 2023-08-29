@@ -21,7 +21,7 @@ def generate_multiscale_zarr(src, out):
     logger.info('src : %s\nout: %s' % (src, out))
     # Todo conditional handling of skips
     tasks_ = []
-    imgs = sorted(get_img_filenames(os.path.join(src, 'tiff', cfg.data.scale_key)))
+    imgs = sorted(get_img_filenames(os.path.join(src, 'tiff', cfg.data.level)))
     logger.info('# images: %d' % len(imgs))
     chunkshape = cfg.data.chunkshape
     for ID, img in enumerate(imgs):
