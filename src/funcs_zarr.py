@@ -110,7 +110,7 @@ def get_zarr_array_layer_view(zarr_path:str, l=None):
 
 
 def get_tensor_from_tiff(dir=None, s=None, l=None):
-    if s == None: s = cfg.data.scale_key
+    if s == None: s = cfg.data.level
     if l == None: l = cfg.data.zpos
     fn = os.path.basename(cfg.data.base_image_name(s=s, l=l))
     path = os.path.join(cfg.data.dest(), s, 'img_src', fn)
@@ -278,8 +278,7 @@ def write_metadata_zarr_aligned(name='img_aligned.zarr'):
     zarr_path = os.path.join(cfg.data.dest(), name)
     root = zarr.group(store=zarr_path)
     datasets = []
-    # scale_factor = scale_val(cfg.datamodel.s())
-    scale_factor = cfg.data.scale_val()
+    scale_factor = cfg.data.lvl()
     name = 's' + str(scale_factor)
     metadata = {
         "path": name,
@@ -325,7 +324,7 @@ def write_metadata_zarr_aligned(name='img_aligned.zarr'):
 #     # write_metadata_zarr_multiscale(path=zarr_path)
 #     write_metadata_zarr_aligned(name='img_src.zarr')
 #
-#     # scale_factor = cfg.datamodel.scale_val()
+#     # scale_factor = cfg.datamodel.lvl()
 #
 #     # z.attrs['_ARRAY_DIMENSIONS'] = [ "z", "y", "x" ]
 #     # z.attrs['offset'] = [ "0", "0", "0" ]

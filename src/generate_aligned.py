@@ -50,7 +50,7 @@ def GenerateAligned(dm, scale, indexes, renew_od=False, reallocate_zarr=False):
 
     tryRemoveDatFiles(dm, scale,dm.dest())
 
-    SetStackCafm(cfg.data, scale=scale, poly_order=dm.default_poly_order)
+    SetStackCafm(cfg.data, scale=scale, poly_order=dm.poly_order)
 
     dm.propagate_swim_1x1_custom_px(indexes=indexes)
     dm.propagate_swim_2x2_custom_px(indexes=indexes)
@@ -61,8 +61,8 @@ def GenerateAligned(dm, scale, indexes, renew_od=False, reallocate_zarr=False):
         renew_directory(directory=od)
 
     # try:
-    #     bias_path = os.path.join(dm.dest(), scale_key, 'bias_data')
-    #     save_bias_analysis(layers=dm.get_iter(s=scale_key), bias_path=bias_path)
+    #     bias_path = os.path.join(dm.dest(), level, 'bias_data')
+    #     save_bias_analysis(layers=dm.get_iter(s=level), bias_path=bias_path)
     # except:
     #     print_exception()
 
@@ -72,7 +72,7 @@ def GenerateAligned(dm, scale, indexes, renew_od=False, reallocate_zarr=False):
         # Note: now have got new cafm's -> recalculate bounding box
         rect = dm.set_calculate_bounding_rect(s=scale) # Only after SetStackCafm
         logger.info(f'Bounding Box           : ON\nNew Bounding Box  : {str(rect)}')
-        logger.info(f'Corrective Polynomial  : {dm.default_poly_order} (Polynomial Order: {dm.default_poly_order})')
+        logger.info(f'Corrective Polynomial  : {dm.poly_order} (Polynomial Order: {dm.poly_order})')
     else:
         logger.info(f'Bounding Box      : OFF')
         w, h = dm.image_size(s=scale)
@@ -85,7 +85,7 @@ def GenerateAligned(dm, scale, indexes, renew_od=False, reallocate_zarr=False):
         cpus = psutil.cpu_count(logical=False)
 
     dest = dm['data']['destination_path']
-    print(f'\n\nGenerating Aligned Images for {indexes}\n')
+    print(f'\nGenerating Aligned Images for {indexes}\n')
 
     tasks = []
     for sec in [dm()[i] for i in indexes]:
@@ -162,7 +162,7 @@ def GenerateAligned(dm, scale, indexes, renew_od=False, reallocate_zarr=False):
                          dtype='|u1',
                          overwrite=True)
 
-    print(f'\n\nCopy-convert Alignment To Zarr for {indexes}\n')
+    print(f'\nCopy-convert Alignment To Zarr for {indexes}\n')
 
     tasks = []
     for i in indexes:
@@ -230,11 +230,11 @@ def tryRemoveFile(directory):
 
 def tryRemoveDatFiles(dm, scale, path):
     # bb_str = str(dm.has_bb())
-    # poly_order_str = str(cfg.data.default_poly_order)
+    # poly_order_str = str(cfg.data.poly_order)
     bias_data_path = os.path.join(path, scale, 'bias_data')
-    # tryRemoveFile(os.path.join(path, scale_key,
+    # tryRemoveFile(os.path.join(path, level,
     #                            'swim_log_' + bb_str + '_' + null_cafm_str + '_' + poly_order_str + '.dat'))
-    # tryRemoveFile(os.path.join(path, scale_key,
+    # tryRemoveFile(os.path.join(path, level,
     #                            'mir_commands_' + bb_str + '_' + null_cafm_str + '_' + poly_order_str + '.dat'))
     tryRemoveFile(os.path.join(path, scale, 'swim_log.dat'))
     tryRemoveFile(os.path.join(path, scale, 'mir_commands.dat'))

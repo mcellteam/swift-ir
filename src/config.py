@@ -51,15 +51,12 @@ pt = None
 zarr_tab = None
 thumb = None
 emViewer = None
-baseViewer = None
-stageViewer = None
-snrViewer = None
+editorViewer = None
 selected = None
 dms = {}
 refLV = None
 baseLV = None
 alLV = None
-menLV = None
 LV = None
 tensor = None
 unal_tensor = None
@@ -85,6 +82,7 @@ if '.tacc.utexas.edu' in platform.node():
     except  Exception as e:
         print(e)
 
+DEFAULT_METHOD                = 'grid_default'
 # DEFAULT_POLY_ORDER            = int(0)
 DEFAULT_NULL_BIAS             = bool(False)
 DEFAULT_BOUNDING_BOX          = bool(False)
@@ -98,6 +96,11 @@ DEFAULT_AUTO_SWIM_WINDOW_PERC   = float(0.8125)
 DEFAULT_CLOBBER_PX            = 3
 DEFAULT_USE_CLOBBER           = False
 DEFAULT_SWIM_ITERATIONS       = 3 # in pixels
+ALIGNMENT_METHODS             = [
+    'grid_default',
+    'grid_custom',
+    'manual_hint',
+    'manual_strict']
 
 DEFAULT_WHITENING             = float(-0.6800)
 # DEFAULT_WHITENING             = float(-0.6500)
@@ -160,11 +163,11 @@ ignore_pbar = False
 glob_colors = ['#ffffe4', '#ffe135', '#42d4f4', '#b2996e', '#FFFF66', '#a8ff04',]
 
 SHADER = shader_default_ = '''#uicontrol vec3 color color(default="white")
-#uicontrol float brightness slider(min=-1, max=1, step=0.01)
-#uicontrol float contrast slider(min=-1, max=1, step=0.01)
+#uicontrol float brightness wSlider(min=-1, max=1, step=0.01)
+#uicontrol float contrast wSlider(min=-1, max=1, step=0.01)
 void main() {
   emitRGB(color *
-          (toNormalized(getDataValue()) + brightness) *
+          (brightness) *
           exp(contrast));
 }
 '''

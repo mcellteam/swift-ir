@@ -16,9 +16,9 @@ from typing import Dict, Any
 import hashlib
 import json
 import psutil
-import shutil
-from src.funcs_image import ImageSize
-import src.config as cfg
+# import shutil
+# from src.funcs_image import ImageSize
+# import src.config as cfg
 
 __all__ = ['run_recipe']
 
@@ -37,15 +37,14 @@ class align_recipe:
 
     def __init__(self, data):
         self.data = data
-        # self.meta = self.data['meta']
-        self.meta = self.data['swim_settings']
-        self.defaults = self.meta['defaults']
+        # self.ss = self.data['ss']
+        self.ss = self.data['swim_settings']
         self.configure_logging()
-        self.method = self.meta['method']
-        self.index = self.meta['index']
-        self.grid_regions  = self.data['swim_settings']['grid_custom_regions']
+        self.method = self.ss['method']
+        self.index = self.ss['index']
+        self.grid_regions  = self.ss['grid']['quadrants']
         self.ingredients = []
-        self.initial_rotation = float(self.defaults['initial-rotation'])
+        self.initial_rotation = float(self.ss['initial_rotation'])
         # self.afm = np.array([[1., 0., 0.], [0., 1., 0.]])
         # Configure platform-specific path to executables for C SWiFT-IR
         slug = (('linux', 'darwin')[platform.system() == 'Darwin'], 'tacc')[
@@ -54,9 +53,9 @@ class align_recipe:
         self.swim_c = '%s/lib/bin_%s/swim' % (p, slug)
         self.mir_c = '%s/lib/bin_%s/mir' % (p, slug)
         self.iscale2_c = '%s/lib/bin_%s/iscale2' % (p, slug)
-        self.signals_dir = os.path.join(self.meta['location'], 'signals', self.meta['scale_key'])
-        self.matches_dir = os.path.join(self.meta['location'], 'matches', self.meta['scale_key'])
-        self.tmp_dir = os.path.join(self.meta['location'], 'tmp', self.meta['scale_key'])
+        self.signals_dir = os.path.join(self.ss['location'], 'signals', self.ss['level'])
+        self.matches_dir = os.path.join(self.ss['location'], 'matches', self.ss['level'])
+        self.tmp_dir = os.path.join(self.ss['location'], 'tmp', self.ss['level'])
 
 
     def configure_logging(self):
@@ -67,16 +66,16 @@ class align_recipe:
         tnLogger = logging.getLogger('tnLogger')
         tnLogger = logging.getLogger('tnLogger')
 
-        if self.meta['log_recipe_to_file']:
-            Exceptlogger.addHandler(logging.FileHandler(os.path.join(self.meta['location'],
+        if self.ss['log_recipe_to_file']:
+            Exceptlogger.addHandler(logging.FileHandler(os.path.join(self.ss['location'],
                                              'logs', 'exceptions.log')))
 
             MAlogger.addHandler(logging.FileHandler(os.path.join(
-                self.meta['location'], 'logs', 'manual_align.log')))
+                self.ss['location'], 'logs', 'manual_align.log')))
             RMlogger.addHandler(logging.FileHandler(os.path.join(
-                self.meta['location'], 'logs', 'recipemaker.log')))
+                self.ss['location'], 'logs', 'recipemaker.log')))
             tnLogger.addHandler(logging.FileHandler(os.path.join(
-                self.meta['location'], 'logs', 'thumbnails.log')))
+                self.ss['location'], 'logs', 'thumbnails.log')))
         else:
             MAlogger.disabled = True
             RMlogger.disabled = True
@@ -96,79 +95,82 @@ class align_recipe:
 
         # Set up 1x1 point and window
         pa = np.zeros((2, 1))  # Point Array for one point
-        pa[0, 0] = int(self.meta['img_size'][0] / 2.0)  # Window Center x
-        pa[1, 0] = int(self.meta['img_size'][1] / 2.0)  # Window Center y
+        pa[0, 0] = int(self.ss['img_size'][0] / 2.0)  # Window Center x
+        pa[1, 0] = int(self.ss['img_size'][1] / 2.0)  # Window Center y
         psta_1 = pa
 
         # Example: psta_2x2 = [[256. 768. 256. 768.] [256. 256. 768. 768.]]
 
-        if self.method == 'grid-default':
-            nx, ny = 2, 2
-            pa = np.zeros((2, nx * ny))  # Point Array (2x4) points
-            sx = int(self.meta['img_size'][0] / 2.0) #init window size
-            sy = int(self.meta['img_size'][1] / 2.0)
-            for x in range(nx):
-                for y in range(ny):
-                    pa[0, x + nx * y] = int(0.5 * sx + sx * x)  # Pt Array 2x4
-                    pa[1, x + nx * y] = int(0.5 * sy + sy * y)  # Pt Array 2x4
-            psta_2x2 = pa
-            ww_1x1 = self.defaults[self.meta['scale_key']]['swim-window-px']
-            ww_2x2 = [int(ww_1x1[0]/2), int(ww_1x1[1]/2)]
-
-            if self.meta['isRefinement']:
-                '''Perform affine refinement'''
-                # if self.meta['scale_key'] == 'scale_1':
-                #     self.add_ingredients([
-                #         align_ingredient(
-                #             mode='SWIM-Grid',
-                #             ww=ww_2x2,
-                #             psta=psta_2x2,
-                #             ID='g2x2',
-                #             last=True)])
-                # else:
-                self.add_ingredients([
-                    align_ingredient(
-                        mode='SWIM-Grid',
-                        ww=ww_2x2,
-                        psta=psta_2x2,
-                        ID='g2x2-a'),
-                    align_ingredient(
-                        mode='SWIM-Grid',
-                        ww=ww_2x2,
-                        psta=psta_2x2,
-                        ID='g2x2-b',
-                        last=True)])
-            else:
-                '''Perform affine initialization'''
-                self.add_ingredients([
-                    align_ingredient(
-                        mode='SWIM-Grid',
-                        ww=ww_1x1,
-                        psta=psta_1,
-                        ID='g1x1'),
-                    align_ingredient(
-                        mode='SWIM-Grid',
-                        ww=ww_2x2,
-                        psta=psta_2x2,
-                        ID='g2x2-a'),
-                    align_ingredient(
-                        mode='SWIM-Grid',
-                        ww=ww_2x2,
-                        psta=psta_2x2,
-                        ID='g2x2-c'),
-                    align_ingredient(
-                        mode='SWIM-Grid',
-                        ww=ww_2x2,
-                        psta=psta_2x2,
-                        ID='g2x2-d',
-                        last=True)])
-        elif self.method == 'grid-custom':
-            ww_1x1 = self.data['swim_settings']['grid_custom_px_1x1']
-            ww_2x2 = self.data['swim_settings']['grid_custom_px_2x2']
-            x1 = ((self.meta['img_size'][0] - ww_1x1[0]) / 2) + (ww_2x2[0] / 2)
-            x2 = self.meta['img_size'][0] - x1
-            y1 = ((self.meta['img_size'][1] - ww_1x1[1]) / 2) + (ww_2x2[1] / 2)
-            y2 = self.meta['img_size'][1] - y1
+        # if self.method == 'grid_default':
+        # if 'grid' in self.method:
+        #     nx, ny = 2, 2
+        #     pa = np.zeros((2, nx * ny))  # Point Array (2x4) points
+        #     sx = int(self.ss['img_size'][0] / 2.0) #init window size
+        #     sy = int(self.ss['img_size'][1] / 2.0)
+        #     for x in range(nx):
+        #         for y in range(ny):
+        #             pa[0, x + nx * y] = int(0.5 * sx + sx * x)  # Pt Array 2x4
+        #             pa[1, x + nx * y] = int(0.5 * sy + sy * y)  # Pt Array 2x4
+        #     psta_2x2 = pa
+        #     ww_1x1 = self.ss['grid']['size_1x1']
+        #     # ww_2x2 = [int(ww_1x1[0]/2), int(ww_1x1[1]/2)]
+        #     ww_2x2 = self.ss['grid']['size_1x1']
+        #
+        #     if self.ss['isRefinement']:
+        #         '''Perform affine refinement'''
+        #         # if self.ss['level'] == 'scale_1':
+        #         #     self.add_ingredients([
+        #         #         align_ingredient(
+        #         #             mode='SWIM-Grid',
+        #         #             ww=ww_2x2,
+        #         #             psta=psta_2x2,
+        #         #             ID='g2x2',
+        #         #             last=True)])
+        #         # else:
+        #         self.add_ingredients([
+        #             align_ingredient(
+        #                 mode='SWIM-Grid',
+        #                 ww=ww_2x2,
+        #                 psta=psta_2x2,
+        #                 ID='g2x2-a'),
+        #             align_ingredient(
+        #                 mode='SWIM-Grid',
+        #                 ww=ww_2x2,
+        #                 psta=psta_2x2,
+        #                 ID='g2x2-b',
+        #                 last=True)])
+        #     else:
+        #         '''Perform affine initialization'''
+        #         self.add_ingredients([
+        #             align_ingredient(
+        #                 mode='SWIM-Grid',
+        #                 ww=ww_1x1,
+        #                 psta=psta_1,
+        #                 ID='g1x1'),
+        #             align_ingredient(
+        #                 mode='SWIM-Grid',
+        #                 ww=ww_2x2,
+        #                 psta=psta_2x2,
+        #                 ID='g2x2-a'),
+        #             align_ingredient(
+        #                 mode='SWIM-Grid',
+        #                 ww=ww_2x2,
+        #                 psta=psta_2x2,
+        #                 ID='g2x2-c'),
+        #             align_ingredient(
+        #                 mode='SWIM-Grid',
+        #                 ww=ww_2x2,
+        #                 psta=psta_2x2,
+        #                 ID='g2x2-d',
+        #                 last=True)])
+        if 'grid' in self.method:
+        # elif self.method == 'grid_custom':
+            ww_1x1 = self.data['swim_settings']['grid']['size_1x1']
+            ww_2x2 = self.data['swim_settings']['grid']['size_2x2']
+            x1 = ((self.ss['img_size'][0] - ww_1x1[0]) / 2) + (ww_2x2[0] / 2)
+            x2 = self.ss['img_size'][0] - x1
+            y1 = ((self.ss['img_size'][1] - ww_1x1[1]) / 2) + (ww_2x2[1] / 2)
+            y2 = self.ss['img_size'][1] - y1
             cps = [(x1, y1), (x2, y1), (x1, y2), (x2, y2)]
             nx, ny = 2, 2
             pa = np.zeros((2, nx * ny))  # Point Array (2x4) points
@@ -200,14 +202,15 @@ class align_recipe:
                     last=True),
             ])
         else:
-            ww = self.data['swim_settings']['manual_swim_window_px']
+            ww = self.ss['manual']['size_region']
             #sanitize lists of None elements
-            pts = self.data['swim_settings']['match_points_mir']['base']
+            # pts = self.ss['match_points_mir']['base']
+            pts = self.ss['manual']['points']['mir_coords']['tra']
             man_pmov = np.array([p for p in pts if p]).transpose()
-            pts = self.data['swim_settings']['match_points_mir']['ref']
+            pts = self.ss['manual']['points']['mir_coords']['ref']
             man_psta = np.array([p for p in pts if p]).transpose()
             self.clr_indexes = [i for i,p in enumerate(pts) if p]
-            if self.method == 'manual-hint':
+            if self.method == 'manual_hint':
                 self.add_ingredients([
                     align_ingredient(
                         mode='MIR',
@@ -227,7 +230,7 @@ class align_recipe:
                         pmov=man_pmov,
                         ID='Manual-b',
                         last=True)])
-            elif self.method == 'manual-strict':
+            elif self.method == 'manual_strict':
                 self.add_ingredients([
                     align_ingredient(
                         mode='MIR',
@@ -246,10 +249,10 @@ class align_recipe:
         if not os.path.exists(self.tmp_dir):
             os.mkdir(self.tmp_dir)
 
-        self.afm = np.array(self.meta['init_afm'])
+        self.afm = np.array(self.ss['init_afm'])
 
-        if (self.meta['reference'] == self.meta['filename']) \
-                or (self.meta['reference'] == ''):
+        if (self.ss['reference'] == self.ss['path']) \
+                or (self.ss['reference'] == ''):
             print_exception(extra=f'Image #{self.index} Has No Reference!')
             return
 
@@ -294,16 +297,16 @@ class align_recipe:
             mr['affine_matrix'] = afm.tolist()
         except:
             print_exception(f"\nindex = {self.index}\ntype(afm) = {afm}\nafm={afm}")
-        mr['init_afm'] = self.meta['init_afm']
+        mr['init_afm'] = self.ss['init_afm']
         mr['swim_pos'] = self.ingredients[-1].psta.tolist()
         mr['datetime'] = time
-        # mr['whiten'] = self.meta['whiten']
-        # mr['swim_iters'] = self.meta['swim_iters']
+        # mr['whiten'] = self.ss['whiten']
+        # mr['swim_iters'] = self.ss['swim_iters']
         mr['method'] = self.method
         mr['memory_mb'] = self.megabytes()
         mr['memory_gb'] = self.gigabytes()
 
-        if self.method == 'grid-custom':
+        if self.method == 'grid_custom':
             mr['grid_regions'] = self.grid_regions
 
         mr['swim_args'] = {} #Temporary
@@ -330,7 +333,7 @@ class align_recipe:
             try: mr['ing%d' % i]['t_mir'] = ing.t_mir
             except: mr['ing%d' % i]['t_mir'] = 'Null'
 
-        if self.meta['dev_mode']:
+        if self.ss['dev_mode']:
             mr['swim_args'] = {}
             mr['swim_out'] = {}
             mr['swim_err'] = {}
@@ -339,8 +342,8 @@ class align_recipe:
             mr['mir_out'] = {}
             mr['mir_err'] = {}
             for i,ing in enumerate(self.ingredients):
-                # try: mr['swim_args']['ing%d' % i] = ing.multi_swim_arg_str()
-                # except: mr['swim_args']['ing%d' % i] = 'Null'
+                try: mr['swim_args']['ing%d' % i] = ing.multi_swim_arg_str()
+                except: mr['swim_args']['ing%d' % i] = 'Null'
                 try: mr['swim_out']['ing%d' % i] = ing.swim_output
                 except: mr['swim_out']['ing%d' % i] = 'Null'
                 try: mr['swim_err']['ing%d' % i] = ing.swim_err_lines
@@ -372,7 +375,7 @@ class align_ingredient:
     3)  If mode is 'SWIM' then perform a SWIM region matching ingredient using
         ww and psta specify the size and location of windows in im_sta.
         Corresponding windows (pmov) are contructed from psta and projected
-        onto im_mov. Then perform matching to initialize or refine the afm.
+        onto im_mov. Then perform matching to initializeStack or refine the afm.
         If psta contains only one point then return a translation matrix.
     TODO:
     4) If align_mode is 'check_align' then use swim to check the SNR achieved
@@ -425,14 +428,17 @@ class align_ingredient:
 
     def execute_ingredient(self):
         # Returns an affine matrix
-        if self.recipe.method in ('manual-hint','manual-strict'):
+        # if self.recipe.method in ('manual','manual_strict'):
+        if self.recipe.method == 'manual_hint':
             self.clr_indexes = copy.deepcopy(self.recipe.clr_indexes)
         if self.mode == 'MIR':
             self.afm = self.run_manual_mir()
         else:
             swim_output = self.run_swim()
             if swim_output == ['']:
-                raise ValueError(f"[{self.recipe.index}] SWIM Out is empty "
+                # raise ValueError(f"[{self.recipe.index}] SWIM Out is empty "
+                #                  f"string! Err:\n{self.swim_err_lines}")
+                logger.warning(f"[{self.recipe.index}] SWIM Out is empty "
                                  f"string! Err:\n{self.swim_err_lines}")
                 self.snr = np.zeros(len(self.psta[0]))
                 self.snr_report = snr_report(self.snr)
@@ -448,28 +454,27 @@ class align_ingredient:
 
 
     def get_swim_args(self):
-        self.cx = int(self.recipe.meta['img_size'][0] / 2.0)
-        self.cy = int(self.recipe.meta['img_size'][1] / 2.0)
-        basename = os.path.basename(self.recipe.meta['filename'])
+        self.cx = int(self.recipe.ss['img_size'][0] / 2.0)
+        self.cy = int(self.recipe.ss['img_size'][1] / 2.0)
+        basename = os.path.basename(self.recipe.ss['path'])
         fn, ext = os.path.splitext(basename)
         multi_arg_str = ArgString(sep='\n')
-        dir_scale = os.path.join(
-            self.recipe.meta['location'], self.recipe.meta['scale_key'])
+        dir_scale = os.path.join(self.recipe.ss['location'], self.recipe.ss['level'])
         self.ms_paths = []
         m = self.recipe.method
-        iters = str(self.recipe.meta['swim_iters'])
-        whiten = str(self.recipe.meta['whiten'])
-        use_clobber = self.recipe.data['swim_settings']['clobber_fixed_noise']
-        clobber_px = self.recipe.data['swim_settings']['clobber_size']
+        iters = str(self.recipe.ss['iterations'])
+        whiten = str(self.recipe.ss['whitening'])
+        use_clobber = self.recipe.ss['clobber_fixed_noise']
+        clobber_px = self.recipe.ss['clobber_size']
         afm = '%.6f %.6f %.6f %.6f' % (
                 self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
 
         for i in range(len(self.psta[0])):
-            if m == 'grid-custom':
+            if m == 'grid_custom':
                 if self.ID != 'g1x1':
                     if not self.recipe.grid_regions[i]:
                         continue
-            if m == 'manual-hint':
+            if m == 'manual_hint':
                 ind = self.clr_indexes.pop(0)
             else:
                 ind = i
@@ -478,13 +483,13 @@ class align_ingredient:
             self.ms_paths.append(b_arg)
             args = ArgString(sep=' ')
             args.append("%dx%d" % (self.ww[0], self.ww[1]))
-            if self.recipe.meta['verbose_swim']:
+            if self.recipe.ss['verbose_swim']:
                 args.append("-v")
             if use_clobber:
                 args.append('-f%d' % clobber_px)
             args.add_flag(flag='-i', arg=iters)
             args.add_flag(flag='-w', arg=whiten)
-            if m in ('grid-default', 'grid-custom'):
+            if m in ('grid_default', 'grid_custom'):
                 self.offx = int(self.psta[0][i] - self.cx)
                 self.offy = int(self.psta[1][i] - self.cy)
                 args.add_flag(flag='-x', arg='%d' % self.offx)
@@ -497,21 +502,20 @@ class align_ingredient:
                 k_arg_path = os.path.join(self.recipe.tmp_dir, k_arg_name)
                 args.add_flag(flag='-k', arg=k_arg_path)
                 self.matches_filenames.append(k_arg_path)
-
                 t_arg_name = '%s_%s_t_%d%s' % (fn, m, ind, ext)
                 # t_arg_path = os.path.join(dir_scale, 'matches_raw', t_arg_name)
                 # t_arg_path = os.path.join(dir_scale, 'matches', t_arg_name)
                 t_arg_path = os.path.join(self.recipe.tmp_dir, t_arg_name)
                 args.add_flag(flag='-t', arg=t_arg_path)
                 self.matches_filenames.append(t_arg_path)
-            args.append(self.recipe.data['swim_settings']['extra_kwargs'])
-            args.append(self.recipe.meta['reference'])
-            if m in ('manual-hint'):
+            # args.append(self.recipe.ss['extra_kwargs'])
+            args.append(self.recipe.ss['reference'])
+            if m in ('manual_hint'):
                 args.append('%s %s' % (self.psta[0][i], self.psta[1][i]))
             else:
                 args.append('%s %s' % (self.cx, self.cy))
-            args.append(self.recipe.meta['filename'])
-            if m in ('manual-hint'):
+            args.append(self.recipe.ss['path'])
+            if m in ('manual_hint'):
                 args.append('%s %s' % (self.pmov[0][i], self.pmov[1][i]))
             else:
                 self.adjust_x = '%.6f' % (self.cx + self.afm[0, 2])
@@ -521,8 +525,10 @@ class align_ingredient:
             if abs(r) > 0:
                 args.append(convert_rotation(r))
             args.append(afm)
-            args.append(self.recipe.data['swim_settings']['extra_args'])
+            # args.append(self.recipe.ss['extra_args'])
             multi_arg_str.append(args())
+
+        print(f"{multi_arg_str()}")
         return multi_arg_str
 
 
@@ -601,7 +607,7 @@ class align_ingredient:
                     mir_toks = [toks[k] for k in [2, 3, 5, 6]]
                 except:
                     print_exception(
-                        extra=f"#{self.recipe.meta['index']}\n"
+                        extra=f"#{self.recipe.index}\n"
                               f"mir toks are: {str(toks)}\n"
                               f"swim_output: {swim_output}"
                     )
@@ -680,9 +686,9 @@ class align_ingredient:
         od = self.recipe.matches_dir
 
         #Special handling since they are variable in # and never 1:1 with project files
-        fn, ext = os.path.splitext(self.recipe.meta['filename'])
+        fn, ext = os.path.splitext(self.recipe.ss['path'])
         method = self.recipe.method
-        od_pattern = os.path.join(od, '%s_%s_[tk]_%d%s' % (fn, method, self.recipe.meta['index'], ext))
+        od_pattern = os.path.join(od, '%s_%s_[tk]_%d%s' % (fn, method, self.recipe.index, ext))
 
 
         logger.critical(f"src         = {src}")
@@ -703,8 +709,9 @@ class align_ingredient:
 
 
         try:
-            siz_x, siz_y = ImageSize(next(absFilePaths(src)))
-            scale_factor = int(max(siz_x, siz_y) / self.recipe.meta['target_thumb_size'])
+            # siz_x, siz_y = ImageSize(next(absFilePaths(src)))
+            siz_x, siz_y = self.ww
+            scale_factor = int(max(siz_x, siz_y) / self.recipe.ss['target_thumb_size'])
             if scale_factor == 0:
                 scale_factor = 1
         except Exception as e:

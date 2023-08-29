@@ -14,73 +14,13 @@ from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QChec
 from qtpy.QtCore import Qt, QRect, QRectF, QSize, QPoint, QEvent, QPointF, QSizeF, Signal
 from qtpy.QtGui import QPixmap, QPainter, QColor, QBrush, QFont, QPen, QMouseEvent, QImage
 from src.helpers import absFilePaths
-from src.helpers import print_exception, get_appdir
+from src.helpers import print_exception, get_appdir, caller_name
 from src.funcs_image import ImageSize, ImageIOSize
 
 import src.config as cfg
 
 logger = logging.getLogger(__name__)
 
-
-class SnrThumbnail(QWidget):
-
-    def __init__(self, parent=None, path='', snr=0.0):
-        super().__init__(parent)
-        # thumbnail = QLabel(self)
-        self.path = path
-        self.snr = snr
-        self.thumbnail = CorrSignalThumbnail(self)
-        self.thumbnail.setScaledContents(True)
-        self.label = QLabel('%.3g' % self.snr)
-        self.label.setStyleSheet('color: #ff0000')
-        self.no_image_path = os.path.join(get_appdir(), 'resources', 'no-image.png')
-        # layout = QGridLayout()
-        # layout.setContentsMargins(1, 1, 1, 1)
-        # layout.addWidget(self.thumbnail, 0, 0)
-        # layout.addWidget(self.label, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignBottom)
-        # self.setLayout(layout)
-
-        if path:
-            self.set_data(path=self.path, snr=self.snr)
-
-    def set_data(self, path, snr):
-        self.path = path
-        self.snr = snr
-        self.thumbnail.snr = snr
-        try:
-            self.thumbnail.setPixmap(QPixmap(self.path))
-            # self.label.setText('%.3f' % self.snr)
-        except:
-            print_exception()
-            logger.warning(f'WARNING path={self.path}, label={self.snr}')
-
-    def set_no_image(self):
-        try:
-            self.thumbnail.setPixmap(QPixmap(self.no_image_path))
-            self.label.setText('')
-        except:
-            print_exception()
-            logger.warning(f'WARNING path={self.no_image_path}, label={self.snr}')
-        finally:
-            self.update()
-
-    # def sizeHint(self):
-    #     return QSize(200, 200)
-
-
-class Thumbnail(QWidget):
-
-    def __init__(self, parent, path):
-        super().__init__(parent)
-        self.thumbnail = CorrSignalThumbnail(self)
-        self.pixmap = QPixmap(path)
-        self.thumbnail.setPixmap(self.pixmap)
-        self.thumbnail.setScaledContents(True)
-        self.layout = QGridLayout()
-        self.layout.setContentsMargins(1, 1, 1, 1)
-        self.layout.addWidget(self.thumbnail, 0, 0)
-        self.setLayout(self.layout)
-        self.setWidgetResizable(True)
 
 
 class ThumbnailFast(QLabel):
@@ -92,21 +32,17 @@ class ThumbnailFast(QLabel):
         self.setScaledContents(True)
         self._noImage = 0
         self.path = path
-        pixmap = QPixmap(32, 32)
-        self.setPixmap(pixmap)
-
+        self.setPixmap(QPixmap(32, 32))
         if self.path:
-            image = QImage(path)
-            # self.setPixmap(QPixmap.fromImage(image).scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation))
-            if os.path.exists(path):
-                self.setPixmap(QPixmap.fromImage(QImage(path)))
-            else:
+            try:
+                # self.setPixmap(QPixmap.fromImage(QImage(path)))
+                self.setPixmap(QPixmap(path))
+            except:
+                logger.warning(f"Failed to load: {path}")
                 self.set_no_image()
-
-
-            # self.setPixmap(QPixmap(self.path))
         else:
-            self.set_no_image()
+            pixmap = QPixmap(32, 32)
+            self.setPixmap(pixmap)
 
         self.extra = extra
         self.name = name
@@ -119,75 +55,48 @@ class ThumbnailFast(QLabel):
              'match2': cfg.glob_colors[2],
              'match3': cfg.glob_colors[3]
         }
+        self.setStyleSheet("background-color: #dadada;")
 
-        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-
-        # self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+        #0826-
+        # self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # policy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-        # policy.setHeightForWidth(True)
-        # self.setSizePolicy(policy)
 
 
-    def mousePressEvent(self, e):
-        x, y, = (
-            e.x(),
-            e.y(),
-        )
-        print(f"{x} , {y}")
-        # if self.pixmap:
-        #     r = self.pixmap().rect()
-        #     x0, y0 = r.x(), r.y()
-            # x1, y1 = x0 + r.width(), y0 + r.height()
-            # if x >= x0 and x < x1 and y >= y0 and y < y1:
-            #     x_relative = (x - x0) / (x1 - x0)
-            #     y_relative = (y - y0) / (y1 - y0)
-            #     self.left_click.emit(x_relative, y_relative)
-            #     print(f"{x_relative} , {x_relative}")
-
-        super().mousePressEvent(e)
+    # def mousePressEvent(self, e):
+    #     x, y, = (
+    #         e.x(),
+    #         e.y(),
+    #     )
+    #     print(f"{x} , {y}")
+    #     # if self.pixmap:
+    #     #     r = self.pixmap().rect()
+    #     #     x0, y0 = r.x(), r.y()
+    #         # x1, y1 = x0 + r.width(), y0 + r.height()
+    #         # if x >= x0 and x < x1 and y >= y0 and y < y1:
+    #         #     x_relative = (x - x0) / (x1 - x0)
+    #         #     y_relative = (y - y0) / (y1 - y0)
+    #         #     self.left_click.emit(x_relative, y_relative)
+    #         #     print(f"{x_relative} , {x_relative}")
+    #
+    #     super().mousePressEvent(e)
 
     def showPixmap(self):
         self._noImage = 0
         # self.setPixmap(QPixmap(self.path))
         self.setPixmap(QPixmap.fromImage(QImage(self.path)))
-        self.update()
+        # self.update()
 
-    # def selectPixmap(self, path:str):
-    #     if os.path.isdir(path):
-    #         self.set_no_image()
-    #     else:
-    #         self._noImage = 0
-    #         try:
-    #             self.path = path
-    #             self.setPixmap(QPixmap(self.path))
-    #         except:
-    #             print_exception()
-    #             self.set_no_image()
-    #         finally:
-    #             self.update()
-
-    #From CorrSignalThumbnail
     def set_data(self, path):
         # logger.critical('')
         self._noImage = 0
         self.path = path
         try:
-            # self.setPixmap(QPixmap(self.path))
-            # self.label.setText('%.3f' % self.snr)
-
-            if os.path.exists(path):
-                self.setPixmap(QPixmap.fromImage(QImage(path)))
-            else:
-                self.set_no_image()
-
+            self.setPixmap(QPixmap.fromImage(QImage(path)))
         except:
             print_exception(extra=f'WARNING path={self.path}')
             self.set_no_image()
-        finally:
-            self.update()
+        # finally:
+        #     self.update()
 
     #Prev
     # def set_no_image(self):
@@ -232,7 +141,7 @@ class ThumbnailFast(QLabel):
         # finally:
         #     self.update()
         self.pixmap().fill(QColor('#dadada'))
-        self.update()
+        # self.update()
 
 
     def paintEvent(self, event):
@@ -243,6 +152,8 @@ class ThumbnailFast(QLabel):
 
                 # pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                # if (pm.width() == 0) or (pm.height() == 0):
+                #     return
 
                 self.r = QRect(0, 0, pm.width(), pm.height())
                 self.r.moveCenter(self.rect().center())
@@ -257,8 +168,11 @@ class ThumbnailFast(QLabel):
 
 
                 if self.name in self.map_border_color:
-                    qp.setPen(QPen(QColor(self.map_border_color[self.name]), 3, Qt.SolidLine))
-                    qp.drawLines(p1, p2, p1, p3, p4, p2, p4, p3)
+                    if cfg.data['state']['annotate_match_signals']:
+                        qp.setPen(QPen(QColor(self.map_border_color[self.name]), 0, Qt.SolidLine))
+                        qp.setBrush(QBrush(QColor(self.map_border_color[self.name])))
+                        # qp.drawLines(p1,p2 , p1,p3,  p4,p2 , p4,p3)
+                        qp.drawRect(0,0,20,20)
 
                 if self._noImage:
                     try:
@@ -280,36 +194,35 @@ class ThumbnailFast(QLabel):
                         l = self.l
                     else:
                         method = cfg.data.current_method
-                        s = cfg.data.scale_key
+                        s = cfg.data.level_
                         l = cfg.data.zpos
 
                     img_size = cfg.data.image_size()
-                    # sf = self.r.getCoords()[2] / img_size[0]  # scale_key factor
-                    sf = (self.r.getCoords()[2] - self.r.getCoords()[0]) / img_size[0]  # scale_key factor
+                    # sf = self.r.getCoords()[2] / img_size[0]  # level_key factor
+                    sf = (self.r.getCoords()[2] - self.r.getCoords()[0]) / img_size[0]  # level_key factor
 
-                    if method == 'grid-default':
-                        # cp = QPoint(self.r.center())  # center point
-                        # ww = tuple(cfg.data['defaults'][cfg.data.scale_key]['swim-window-px'])
-                        # for i,r in enumerate(get_default_grid_rects(sf, img_size, ww, cp.x(), cp.y(), self.r.getCoords())):
-                        #     qp.setPen(QPen(QColor(cfg.glob_colors[i]), 2, Qt.DotLine))
-                        #     qp.drawRect(r)
+                    # if method == 'grid_default':
+                    #     # cp = QPoint(self.r.center())  # center point
+                    #     # for i,r in enumerate(get_default_grid_rects(sf, img_size, ww, cp.x(), cp.y(), self.r.getCoords())):
+                    #     #     qp.setPen(QPen(QColor(cfg.glob_colors[i]), 2, Qt.DotLine))
+                    #     #     qp.drawRect(r)
+                    #
+                    #     ww1x1 = cfg.data['defaults'][cfg.data.level]['window_size']
+                    #     ww2x2 = [x / 2 for x in ww1x1]
+                    #
+                    #     a = [(img_size[0] - ww1x1[0])/2 + ww2x2[0]/2, (img_size[1] - ww1x1[1])/2 + ww2x2[1]/2]
+                    #     b = [img_size[0] - a[0], img_size[1] - a[1]]
+                    #
+                    #     qp.setPen(QPen(QColor(cfg.glob_colors[0]), 2, Qt.DotLine))
+                    #     qp.drawRect(get_rect(sf, a[0], a[1], ww2x2[0], self.r.getCoords()))
+                    #     qp.setPen(QPen(QColor(cfg.glob_colors[1]), 2, Qt.DotLine))
+                    #     qp.drawRect(get_rect(sf, b[0], a[1], ww2x2[0], self.r.getCoords()))
+                    #     qp.setPen(QPen(QColor(cfg.glob_colors[2]), 2, Qt.DotLine))
+                    #     qp.drawRect(get_rect(sf, a[0], b[1], ww2x2[0], self.r.getCoords()))
+                    #     qp.setPen(QPen(QColor(cfg.glob_colors[3]), 2, Qt.DotLine))
+                    #     qp.drawRect(get_rect(sf, b[0], b[1], ww2x2[0], self.r.getCoords()))
 
-                        ww1x1 = cfg.data['defaults'][cfg.data.scale_key]['swim-window-px']
-                        ww2x2 = [x / 2 for x in ww1x1]
-
-                        a = [(img_size[0] - ww1x1[0])/2 + ww2x2[0]/2, (img_size[1] - ww1x1[1])/2 + ww2x2[1]/2]
-                        b = [img_size[0] - a[0], img_size[1] - a[1]]
-
-                        qp.setPen(QPen(QColor(cfg.glob_colors[0]), 2, Qt.DotLine))
-                        qp.drawRect(get_rect(sf, a[0], a[1], ww2x2[0], self.r.getCoords()))
-                        qp.setPen(QPen(QColor(cfg.glob_colors[1]), 2, Qt.DotLine))
-                        qp.drawRect(get_rect(sf, b[0], a[1], ww2x2[0], self.r.getCoords()))
-                        qp.setPen(QPen(QColor(cfg.glob_colors[2]), 2, Qt.DotLine))
-                        qp.drawRect(get_rect(sf, a[0], b[1], ww2x2[0], self.r.getCoords()))
-                        qp.setPen(QPen(QColor(cfg.glob_colors[3]), 2, Qt.DotLine))
-                        qp.drawRect(get_rect(sf, b[0], b[1], ww2x2[0], self.r.getCoords()))
-
-                    elif method == 'grid-custom':
+                    if 'grid' in method:
                         regions = cfg.data.get_grid_custom_regions(s=s, l=l)
                         ww1x1 = cfg.data.swim_1x1_custom_px(s=s, l=l)
                         ww2x2 = cfg.data.swim_2x2_custom_px(s=s, l=l)
@@ -334,7 +247,7 @@ class ThumbnailFast(QLabel):
                             rect = get_rect(sf, b[0], b[1], ww2x2[0], self.r.getCoords())
                             qp.drawRect(rect)
 
-                    elif method == 'manual-hint':
+                    elif method == 'manual_hint':
                         pts = []
                         ww = cfg.data.manual_swim_window_px(s=s, l=l)
                         if self.name in ('reference','reference-table'):
@@ -363,11 +276,9 @@ class ThumbnailFast(QLabel):
                         qp.drawText(loc, self.extra)
                 return
 
-
-
-            except ZeroDivisionError:
+            except:
                 # logger.warning('Cannot divide by zero')
-                # print_exception()
+                print_exception()
                 self.set_no_image()
         super().paintEvent(event)
 
@@ -381,22 +292,16 @@ class ThumbnailFast(QLabel):
 
 @cache
 def get_rect(sf, x, y, ww, coords):
-    # rect = QRect(QPoint(int(x*sf), int(y*sf)), QSize(int(ww*sf), int(ww*sf)))
-    # rect.moveCenter(QPoint(int(x*sf), int(y*sf)))
     rect = QRect(QPoint(int(x*sf), int(y*sf)), QSize(int(ww*sf), int(ww*sf)))
-    rect.moveCenter(QPoint(int(x*sf), int(y*sf)) + QPoint(coords[0], coords[1])) #0716 + QPoint(coords[0], coords[1]) provides translation correction
+    rect.moveCenter(QPoint(int(x*sf), int(y*sf)) + QPoint(coords[0], coords[1]))
+    #0716 + QPoint(coords[0], coords[1]) provides translation correction
     return rect
-
-
-    # return QRect(QPointF(x*sf, y*sf), QSizeF(ww*sf, ww*sf))
 
 
 
 @cache
 def get_default_grid_rects(sf, img_size, ww, cp_x, cp_y, coords):
     # half_ww = [int(ww[0] / 2), int(ww[1] / 2)]
-
-
     logger.warning(f'coords = {coords}')
     logger.warning(f'x = {coords[0]}')
     logger.warning(f'y = {coords[1]}')
@@ -424,9 +329,6 @@ def get_default_grid_rects(sf, img_size, ww, cp_x, cp_y, coords):
     # ry2 = int((a[1] + ww[1]) * sf)  # ratio y3 (long)
 
     cp = QPoint(cp_x, cp_y)
-
-
-
     # logger.critical('self.r: ' + str(self.r))
     # logger.critical('cp: ' + str(cp))
     # logger.critical('cp.x(): ' + str(cp.x()))
@@ -447,52 +349,44 @@ def get_default_grid_rects(sf, img_size, ww, cp_x, cp_y, coords):
     p2 = QPoint(rx2, ry1)
     p3 = QPoint(rx2, ry2)
     p4 = QPoint(rx1, ry2)
-
-
     # logger.critical(f"rx1={rx1}, ry1={ry1}, rx2={rx2}, ry2={ry2}")
     # logger.critical(f"a={a}, cp={cp}")
     # logger.critical(f"p1={p1}, p2={p2}, p3={p3}, p4={p4}")
-
     # yield QRect(p1, cp)
     # yield QRect(p2, cp)
     # yield QRect(p3, cp)
     # yield QRect(p4, cp)
-
     return (QRect(p1, cp + QPoint(-1,-1)), QRect(p2, cp + QPoint(1,-1)), QRect(p4, cp + QPoint(-1,1)), QRect(p3, cp + QPoint(1,1)))
 
 
 
 class CorrSignalThumbnail(QLabel):
     # def __init__(self, parent, path='', snr='', extra='', name=''):
-    def __init__(self, parent, path='', snr='', extra='', name=''):
+    def __init__(self, parent, path='', snr='', extra='', name='', annotations=True):
         super().__init__(parent)
         self.setScaledContents(True)
         self._noImage = 0
         self.path = path
-        pixmap = QPixmap(32, 32)
-        pixmap.fill(QColor('#dadada'))  # fill the map with black
-        self.setPixmap(pixmap)
+        self.annotations = annotations
+        self.setPixmap(QPixmap(32, 32))
+        self.siz = None
         if self.path:
-            # image = QImage(path)
-            # self.setPixmap(QPixmap.fromImage(image).scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation))
-            if os.path.exists(path):
+            try:
+                # self.setPixmap(QPixmap(path))
                 self.setPixmap(QPixmap.fromImage(QImage(path)))
-            else:
+                self.siz = ImageSize(path)
+            except:
+                logger.warning(f"Failed to load: {path}")
                 self.set_no_image()
-
-            # self.setPixmap(QPixmap(self.path))
         else:
-            # pixmap = QPixmap(16, 16)
-            # pixmap.fill(QColor('#141414'))  # fill the map with black
-            # self.setPixmap(pixmap)
-            self.set_no_image()
+            pixmap = QPixmap(32, 32)
+            self.setPixmap(pixmap)
+
 
         # self.snr = snr
         self.snr = 0.0
         self.extra = extra
         self.name = name
-        self.no_image_path = os.path.join(get_appdir(), 'resources', 'no-image.png')
-        # self.setStyleSheet("""border: 0px solid #ffe135;""")
         self.setContentsMargins(0,0,0,0)
 
         self.map_border_color = {
@@ -501,28 +395,37 @@ class CorrSignalThumbnail(QLabel):
              'ms2': cfg.glob_colors[2],
              'ms3': cfg.glob_colors[3]
         }
+        # self.setStyleSheet("background-color: #dadada;")
+        # self.setStyleSheet("background-color: #3d1f05;")
+        self.setStyleSheet("background-color: #f3e9df;")
 
-        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.setAutoFillBackground(True)
 
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        #0826-
+        # self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
 
     def paintEvent(self, event):
+        # logger.info(f"[{caller_name()}]")
 
         if self.pixmap():
             try:
                 # originalRatio = pm.width() / pm.height()
                 # currentRatio = self.width() / self.height()s
                 # if originalRatio != currentRatio:
-
                 qp = QPainter(self)
                 # pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation)
-
                 self.r = QRect(0, 0, pm.width(), pm.height())
                 self.r.moveCenter(self.rect().center())
                 qp.drawPixmap(self.r, pm)
                 # if (pm.width() == 0) or (pm.height() == 0):
+                #     return
+                if not self.annotations:
+                    return
+                if not cfg.data['state']['annotate_match_signals']:
+                    return
 
                 coords = self.r.getCoords()
 
@@ -532,8 +435,10 @@ class CorrSignalThumbnail(QLabel):
                 p4 = QPoint(coords[2], coords[3])
 
                 if self.name in self.map_border_color:
-                    qp.setPen(QPen(QColor(self.map_border_color[self.name]), 3, Qt.SolidLine))
-                    qp.drawLines(p1,p2 , p1,p3,  p4,p2 , p4,p3)
+                    qp.setPen(QPen(QColor(self.map_border_color[self.name]), 0, Qt.SolidLine))
+                    qp.setBrush(QBrush(QColor(self.map_border_color[self.name])))
+                    # qp.drawLines(p1,p2 , p1,p3,  p4,p2 , p4,p3)
+                    qp.drawRect(0,0,20,20)
 
                 if self._noImage or self.extra == 'reticle':
                     self.pixmap().fill(QColor('#dadada'))
@@ -550,7 +455,7 @@ class CorrSignalThumbnail(QLabel):
                     cp = QPointF(self.r.center())  # center point
 
                     # qp.setPen(QPen(Qt.red, 1, Qt.DashLine))
-                    qp.setPen(QPen(QColor('#339933'), 1, Qt.DashLine))
+                    qp.setPen(QPen(QColor('#fd411e'), 1, Qt.DashLine))
 
                     # x = 12
                     x = int((pm.width() / 10) + .5)
@@ -560,7 +465,7 @@ class CorrSignalThumbnail(QLabel):
                                  p3, cp + QPoint(-x, x),
                                  p4, cp + QPoint(x, x))
 
-                    qp.setPen(QPen(QColor('#339933'), 1, Qt.SolidLine))
+                    qp.setPen(QPen(QColor('#fd411e'), 1, Qt.SolidLine))
 
                     d = float(sqrt(x ** 2 + x ** 2)) * 2
 
@@ -572,24 +477,42 @@ class CorrSignalThumbnail(QLabel):
                     qp.drawArc(arcRect, 30*16 + 90*16, spanAngle*16)
                     qp.drawArc(arcRect, 30*16 + 270*16, spanAngle*16)
 
+
+
+
                     font = QFont()
-                    size = max(min(int(11 * (max(pm.height(), 1) / 60)), 14), 5)
-                    font.setPointSize(size)
-                    font.setBold(True)
+                    font.setFamily('Ubuntu')
+                    fsize = max(int(pm.height() / 10 + 0.5), 5)
+                    font.setPointSize(fsize)
+                    font.setWeight(10)
                     qp.setFont(font)
-                    qp.setPen(QColor('#141414'))
+                    # qp.setPen(QColor('#d0342c'))
+                    qp.setPen(QColor('#fd411e'))
+                    # qp.setBrush(QColor('#2774ae'))
+
+                    # coords: x, y, w, h
+                    # lower left
+                    p0_x = coords[0] + 10
+                    p0_y = coords[3]
+                    # upper right
+                    p1_x = int(pm.width()/2 + 0.5)
+                    p1_y = coords[1] + fsize
+
+
+
+                    textFill = QColor('#ffffff')
+                    textFill.setAlpha(128)
+                    qp.fillRect(QRect(QPoint(p0_x-2,p0_y-fsize), QSize(int(fsize*5),fsize)), QBrush(textFill))
+                    qp.fillRect(QRect(QPoint(p1_x-2,p1_y-fsize), QSize(int(fsize*6),int(fsize*1.2))), QBrush(textFill))
+
+                    if self.siz:
+                        self.extra = f"{self.siz[0]}x{self.siz[1]}px"
 
                     if self.snr:
-                        # loc = QPoint(0, self.rect().height() - 4)
-                        # loc = QPoint(16, self.rect().height() - 6)
-                        loc = QPointF(coords[0] + pm.width()/2 - size, coords[3] - 2)
-                        try:
-                            if self.extra:
-                                qp.drawText(loc, '%.3g' %float(self.snr) + '\n' + self.extra)
-                            else:
-                                qp.drawText(loc, '%.3g' %float(self.snr))
-                        except:
-                            print_exception()
+                        # qp.drawRect(p0_x-2,p0_y-12,60,16)
+                        qp.drawText(QPointF(p0_x, p0_y), 'SNR: %.3g' %float(self.snr))
+                        if self.extra:
+                            qp.drawText(QPointF(p1_x, p1_y), self.extra)
                 return
             # except ZeroDivisionError:
             except:
@@ -609,6 +532,7 @@ class CorrSignalThumbnail(QLabel):
             # self.label.setText('%.3f' % self.snr)
             if os.path.exists(path):
                 self.setPixmap(QPixmap.fromImage(QImage(path)))
+                self.siz = ImageSize(self.path)
             else:
                 self.set_no_image()
 
@@ -616,28 +540,14 @@ class CorrSignalThumbnail(QLabel):
             print_exception()
             self.set_no_image()
             logger.warning(f'WARNING path={self.path}, label={self.snr}')
-        finally:
-            self.update()
-
-    def set_no_image(self):
-        self.snr = None
-        self._noImage = 1
-        # try:
-        #     self.pixmap().fill(QColor('#141414'))
-        # except:
-        #     # print_exception()
-        #     logger.warning('Unable to set no image...')
         # finally:
         #     self.update()
-        self.pixmap().fill(QColor('#dadada'))
-        self.update()
 
-        # try:
-        #     # self.setPixmap(QPixmap(self.no_image_path))
-        #     # self.update()
-        # except:
-        #     print_exception()
-        #     logger.warning(f'WARNING path={self.no_image_path}, label={self.snr}')
+    def set_no_image(self):
+        # self.snr = None #0826-
+        self.snr = 0.0
+        self._noImage = 1
+        self.pixmap().fill(QColor('#dadada'))
 
 
 def convert_rotation(degrees):

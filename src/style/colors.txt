@@ -23,7 +23,8 @@
 #380282 - indigo
 #ebecf0 - "bright" grey
 #ffcccb - very light red
-#d0342c = pantone (Red Alert)
+#d0342c - pantone (Red Alert)
+#ffcccb - very light red
 #708090 - (light) slate grey
 #39ff14 - neon green
 #00BF00 - pure green

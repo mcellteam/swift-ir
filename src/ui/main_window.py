@@ -27,6 +27,7 @@ import platform
 from math import floor
 import multiprocessing
 import subprocess
+from collections import OrderedDict
 import asyncio
 import numpy as np
 # from guppy import hpy; h=hpy()
@@ -34,7 +35,7 @@ import neuroglancer as ng
 import qtawesome as qta
 # from rechunker import rechunk
 from qtpy.QtWebEngineWidgets import *
-# from src.ui.webpage import QuickWebPage
+from src.ui.webpage import QuickWebPage
 from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
@@ -73,8 +74,8 @@ from src.ui.toggle_switch import ToggleSwitch
 from src.ui.tab_browser import WebBrowser
 from src.ui.tab_project import ProjectTab
 from src.ui.tab_open_project import OpenProject
-from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter, YellowTextLabel, Button
-from src.autoscale import autoscale
+from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter, YellowTextLabel, Button, \
+    QVLine, QHLine
 from src.funcs_image import SetStackCafm
 
 # from src.ui.components import AutoResizingTextEdit
@@ -174,7 +175,11 @@ class MainWindow(QMainWindow):
         self.initPbar()
         self.initControlPanel()
         self.initMenu()
+        self.initAdvancedMenu() #self.wAdvanced
+        self.initLowest8Widget()
+        self.initEditorStats()
         self.initToolbar()
+
 
         self.initUI()
 
@@ -268,7 +273,7 @@ class MainWindow(QMainWindow):
     # def focusOutEvent(self, event):
     #     logger.warning(f"\nFocus LOST - reason : ({event.reason()}) {self.focusreasons[event.reason()]}"
     #                    f"\nFocus belongs to    : {self.focusWidget()}")
-    #     # if type(cfg.mw.focusWidget()) != QTextEdit:
+    #     # if type(self.focusWidget()) != QTextEdit:
     #     #     self.focusW = self.focusWidget()
     #     # self.setFocus()
 
@@ -394,13 +399,12 @@ class MainWindow(QMainWindow):
         if cfg.USE_DELAY:
             time.sleep(cfg.DELAY_AFTER)
 
-    def refreshTab(self):
+    def _refresh(self):
         caller = inspect.stack()[1].function
         logger.info(f'')
         self.setUpdatesEnabled(True)
         if not self._working:
             self.tell('Refreshing...')
-            logger.info('Refreshing...')
             if self._isProjectTab():
                 cfg.project_tab.refreshTab()
                 # self.updateEnabledButtons()  #0301+ #0803-
@@ -477,7 +481,6 @@ class MainWindow(QMainWindow):
         self._unsaved_changes = False
         self._working = False
         self._scales_combobox_switch = 0  # 1125
-        self._isPlayingBack = 0
         self._isProfiling = 0
         self.detachedNg = None
         self.count_calls = {}
@@ -544,8 +547,153 @@ class MainWindow(QMainWindow):
             # logger.critical(f'cfg.dataById = {str(cfg.dataById)}')
             logger.critical(f'cfg.data == cfg.dataById[{id(cfg.pt)}]? {cfg.data == cfg.dataById[id(cfg.pt)]}')
 
+
+    def initEditorStats(self):
+
+        self.flStats = QFormLayout()
+        self.flStats.setVerticalSpacing(2)
+        self.flStats.setContentsMargins(0, 0, 0, 0)
+        self.results0 = QLabel()  # Image dimensions
+        self.results1 = QLabel()  # # of images
+        self.results2 = QLabel()  # SNR average
+        self.results3 = QWidget()
+        self.results3_fl = QFormLayout()
+        self.results3_fl.setContentsMargins(0, 0, 0, 0)
+        self.results3_fl.setVerticalSpacing(2)
+        self.results3.setLayout(self.results3_fl)
+        self.flStats.addRow('Image Dimensions', self.results0)
+        self.flStats.addRow('# Images', self.results1)
+        self.flStats.addRow('SNR (average)', self.results2)
+        self.secDetails_fl = QFormLayout()
+        self.secDetails_fl.setVerticalSpacing(2)
+        self.secDetails_fl.setHorizontalSpacing(4)
+        self.secDetails_fl.setContentsMargins(0, 0, 0, 0)
+        secStyle = """ font-weight: 300; background-color: #dedede; """
+        self.secName = QLabel()
+        self.secReference = QLabel()
+        self.secExcluded = QLabel()
+        self.secHasBB = QLabel()
+        self.secUseBB = QLabel()
+        self.secAlignmentMethod = QLabel()
+        self.secSrcImageSize = QLabel()
+        self.secAlignedImageSize = QLabel()
+        self.secSNR = QLabel()
+        self.secDefaults = QLabel()
+        self.secName.setStyleSheet(secStyle)
+        self.secReference.setStyleSheet(secStyle)
+        self.secExcluded.setStyleSheet(secStyle)
+        self.secHasBB.setStyleSheet(secStyle)
+        self.secUseBB.setStyleSheet(secStyle)
+        self.secAlignmentMethod.setStyleSheet(secStyle)
+        self.secSrcImageSize.setStyleSheet(secStyle)
+        self.secAlignedImageSize.setStyleSheet(secStyle)
+        self.secSNR.setStyleSheet(secStyle)
+        self.secDefaults.setStyleSheet(secStyle)
+        self.secAffine = QLabel()
+        self.gb_affine = QGroupBox("Affine")
+        self.gb_affine.setLayout(VBL(self.secAffine))
+        wids = [self.secName, self.secReference, self.secSNR, self.secAlignmentMethod, self.secSrcImageSize,
+                self.secAlignedImageSize, self.secExcluded, self.secHasBB, self.secUseBB, self.gb_affine]
+        for w in wids:
+            w.setStyleSheet("""background-color: #161c20; color: #f3f6fb;""")
+
+        self.secDetails = OrderedDict({
+            'Name': self.secName,
+            'Reference': self.secReference,
+            'SNR': self.secSNR,
+            'Alignment Method': self.secAlignmentMethod,
+            'Source Image Size': self.secSrcImageSize,
+            'Aligned Image Size': self.secAlignedImageSize,
+            'Excluded Sections': self.secExcluded,
+            'Has Bounding Box': self.secHasBB,
+            'Use Bounding Box': self.secUseBB,
+            'Affine': self.gb_affine,
+            # 'Changes': self.secDefaults,
+        })
+        for i in range(len(self.secDetails)):
+            self.secDetails_fl.addRow(list(self.secDetails.items())[i][0], list(self.secDetails.items())[i][1])
+
+        self.wStats = QWidget()
+        self.wStats.setStyleSheet("""background-color: #161c20; color: #f3f6fb; font-size: 10px; font-weight: 600;""")
+        self.wStats.setContentsMargins(0, 0, 0, 0)
+        # self.secDetails_fl.addWidget(self.gb_affine)
+        self.wStats.setLayout(self.secDetails_fl)
+        self.wStats.setFixedSize(QSize(300,240))
+        self.wStats.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # self.saStats.setWidget(VWidget(self.wStats, self.gb_affine))
+        # self.saStats = QScrollArea()
+        # self.saStats.setStyleSheet("QScrollArea {border: none;}")
+        # self.saStats.setWidgetResizable(True)
+        # self.saStats.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        # self.saStats.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        # self.saStats.setWidget(self.wStats)
+        # self.saStats.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        # self.saStats.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+
+
+
+    def updateStats(self):
+        logger.info('')
+        if self._isProjectTab():
+            caller = inspect.stack()[1].function
+            logger.info(f'[{caller}] Updating stats widget...')
+            self.secName.setText(cfg.data.filename_basename())
+            ref = cfg.data.reference_basename()
+            if ref == '':
+                ref = 'None'
+            self.secReference.setText(ref)
+            self.secAlignmentMethod.setText(cfg.data.method_pretty())
+            # self.secSNR.setText(cfg.data.snr_report()[5:])
+            # self.secSNR.setText('<span style="font-color: red;"><b>%.2f</b></span>' % cfg.data.snr())
+            # self.secDetails[2][1].setText(str(cfg.data.skips_list()))
+            skips = cfg.data.skips_list()
+            if skips == []:
+                self.secExcluded.setText('None')
+            else:
+                self.secExcluded.setText('\n'.join([f'z-index: {a}, name: {b}' for a, b in skips]))
+            self.secHasBB.setText(str(cfg.data.has_bb()))
+            self.secUseBB.setText(str(cfg.data.use_bb()))
+            siz = cfg.data.image_size()
+            self.secSrcImageSize.setText('%dx%d pixels' % (siz[0], siz[1]))
+            if cfg.data.is_aligned():
+                #Todo come back and upgrade this
+                # try:
+                #     self.secAlignedImageSize.setText('%dx%d pixels' % cfg.data.image_size_aligned())
+                # except:
+                #     print_exception()
+                if cfg.data.zpos <= cfg.data.first_unskipped():
+                    self.secSNR.setText('--')
+                else:
+                    try:
+                        self.secSNR.setText(
+                            '<span style="color: #a30000;"><b>%.2f</b></span><span>&nbsp;&nbsp;(%s)</span>' % (
+                                cfg.data.snr(), ",  ".join(["%.2f" % x for x in cfg.data.snr_components()])))
+                    except:
+                        print_exception()
+            else:
+                self.secAlignedImageSize.setText('--')
+                self.secSNR.setText('--')
+            # self.secDefaults.setText(cfg.data.defaults_pretty)
+            # self.secDefaults.setText(str([list(map(str,a)) for a in cfg.data.data_comports()[1]]))
+            self.secAffine.setText(make_affine_widget_HTML(cfg.data.afm(), cfg.data.cafm()))
+        else:
+            self.secName.setText('')
+            self.secReference.setText('')
+            self.secAlignmentMethod.setText('')
+            self.secExcluded.setText('')
+            self.secHasBB.setText('')
+            self.secUseBB.setText('')
+            self.secSrcImageSize.setText('')
+            self.secAlignedImageSize.setText('')
+            self.secSNR.setText('')
+
+
+
     def updateCorrSignalsDrawer(self, z=None):
         logger.critical('--------- START : updateCorrSignalsDrawer ---------')
+
+        if not hasattr(cfg, 'data'):
+            return
 
         if self.dw_matches.isVisible():
 
@@ -577,21 +725,12 @@ class MainWindow(QMainWindow):
                 if not cfg.pt.msList[i]._noImage:
                     cfg.pt.msList[i].set_no_image()
 
-            # #Critical0601-
-            # if not cfg.data.is_aligned_and_generated():
-            #     for i in range(4):
-            #         if not cfg.pt.msList[i]._noImage:
-            #             cfg.pt.msList[i].set_no_image()
-            #
-            #     return #0610+
-
-
             # logger.critical('thumbs: %s' % str(thumbs))
             # logger.info(f"[{caller}] snr_vals: {str(snr_vals)}")
             method = cfg.data.method(l=z)
-            logger.critical(f"method: {method}")
-            if method == 'grid-custom':
-                regions = cfg.data.grid_custom_regions
+            logger.info(f"method: {method}")
+            if method == 'grid_custom':
+                regions = cfg.data.quadrants
                 names = cfg.data.get_grid_custom_filenames(l=z)
                 # logger.info('names: %s' % str(names))
                 for i in range(4):
@@ -617,13 +756,13 @@ class MainWindow(QMainWindow):
 
             # elif cfg.data.current_method == 'manual-hint':
             #     cfg.data.snr_components()
-            elif method == 'manual-strict':
+            elif method == 'manual_strict':
                 for i in range(4):
                     if not cfg.pt.msList[i]._noImage:
                         cfg.pt.msList[i].set_no_image()
                         # cfg.pt.msList[i].update()
-            elif method == 'grid-default':
-                logger.info('grid-default...')
+            elif method == 'grid_default':
+                logger.info('grid_default...')
                 for i in range(4):
                     logger.info(f'i = {i}, n = {n}')
                     if i < n:
@@ -634,7 +773,7 @@ class MainWindow(QMainWindow):
                                 snr = snr_vals[i]
                                 logger.info(f'snr: {snr}')
                                 assert snr > 0.0
-                                if method == 'manual-hint':
+                                if method == 'manual_hint':
                                     n_ref = len(cfg.data.manpoints()['ref'])
                                     n_base = len(cfg.data.manpoints()['base'])
                                     assert n_ref > i
@@ -657,7 +796,7 @@ class MainWindow(QMainWindow):
                         cfg.pt.msList[i].set_no_image()
                         # cfg.pt.msList[i].update()
 
-            elif method == 'manual-hint':
+            elif method == 'manual_hint':
                 indexes = []
                 for n in thumbs:
                     fn, _ = os.path.splitext(n)
@@ -703,6 +842,9 @@ class MainWindow(QMainWindow):
 
     def setTargKargPixmaps(self, z=None):
 
+        if not hasattr(cfg, 'data'):
+            return
+
         if self.dw_matches.isVisible():
             if z == None:
                 z = cfg.data.zpos
@@ -735,23 +877,21 @@ class MainWindow(QMainWindow):
             files = []
             for i in range(0, 4):
                 name = '%s_%s_%s_%d%s' % (filename, method, tkarg, i, extension)
-                files.append((i, os.path.join(cfg.data.dest(), 'matches', cfg.data.scale, name)))
-
-
+                files.append((i, os.path.join(cfg.data.location, 'matches', cfg.data.scale, name)))
 
             # logger.info(f'Files:\n{files}')
 
-            if method in ('grid-custom', 'grid-default'):
+            if method in ('grid_custom', 'grid_default'):
                 # for i in range(n_cutouts):
                 for i in range(0, 4):
                     use = True
-                    if method == 'grid-custom':
-                        use = cfg.data.grid_custom_regions[i]
-                    elif method == 'grid-default':
+                    if method == 'grid_custom':
+                        use = cfg.data.quadrants[i]
+                    elif method == 'grid_default':
                         use = [1,1,1,1]
 
                     # logger.info(f'file  : {files[i]}  exists? : {os.path.exists(files[i])}  use? : {use}')
-                    path = os.path.join(cfg.data.dest(), 'matches', cfg.data.scale, files[i][1])
+                    path = os.path.join(cfg.data.location, 'matches', cfg.data.scale, files[i][1])
                     if use and os.path.exists(path):
                         cfg.pt.match_thumbnails[i].path = path
                         try:
@@ -763,10 +903,10 @@ class MainWindow(QMainWindow):
                         cfg.pt.match_thumbnails[i].set_no_image()
                     cfg.pt.match_thumbnails[i].show()
 
-            if cfg.data.current_method == 'manual-hint':
+            if cfg.data.current_method == 'manual_hint':
                 # cfg.pt.match_thumbnails[3].hide()
                 for i in range(0, 3):
-                    path = os.path.join(cfg.data.dest(), 'matches', cfg.data.scale, files[i][1])
+                    path = os.path.join(cfg.data.location, 'matches', cfg.data.scale, files[i][1])
                     if os.path.exists(path):
                         cfg.pt.match_thumbnails[i].path = path
                         cfg.pt.match_thumbnails[i].set_data(path)
@@ -795,13 +935,6 @@ class MainWindow(QMainWindow):
     def callbackDwVisibilityChanged(self):
         caller = inspect.stack()[1].function
         logger.info(f'[{caller}] [{caller_name()}] {self.dw_python.isVisible()} {self.dw_hud.isVisible()} {self.dw_notes.isVisible()}')
-        if self._isProjectTab():
-            cfg.data['state']['tool_windows']['python'] = self.dw_python.isVisible()
-            cfg.data['state']['tool_windows']['hud'] = self.dw_hud.isVisible()
-            cfg.data['state']['tool_windows']['notes'] = self.dw_notes.isVisible()
-            # cfg.data['state']['tool_windows']['raw_thumbnails'] = self.dw_thumbs.isVisible()
-            cfg.data['state']['tool_windows']['signals'] = self.dw_matches.isVisible()
-            cfg.data['state']['tool_windows']['snr_plot'] = self.dw_snr.isVisible()
         self.tbbPython.setChecked(self.dw_python.isVisible())
         self.tbbHud.setChecked(self.dw_hud.isVisible())
         self.tbbNotes.setChecked(self.dw_notes.isVisible())
@@ -827,10 +960,12 @@ class MainWindow(QMainWindow):
         self.resizeDocks((self.dw_hud, self.dw_snr, self.dw_python, self.dw_notes), (fourth_w, fourth_w, fourth_w,
                                                                                      fourth_w), Qt.Horizontal)
         self.setUpdatesEnabled(True)
+        logger.info('<<')
 
 
     def setdw_python(self, state):
-        caller = inspect.stack()[1].function
+        logger.info('')
+        # caller = inspect.stack()[1].function
         # logger.info(f'[{caller}], state={state}')
         self.setUpdatesEnabled(False)
 
@@ -838,36 +973,35 @@ class MainWindow(QMainWindow):
         self.a_python.setText(('Show Python Console', 'Hide Python Console')[state])
         self.tbbPython.setToolTip((f"Show Python Console Tool Window ({hotkey('P')})",
                                   f"Hide Python Console Tool Window ({hotkey('P')})")[state])
-        if self._isProjectTab():
-            cfg.data['state']['tool_windows']['python'] = state
 
         self.setUpdatesEnabled(True)
 
 
     def setdw_hud(self, state):
+        logger.info('')
+        self.tbbHud.setChecked(state)
         self.setUpdatesEnabled(False)
         self.dw_hud.setVisible(state)
         self.a_monitor.setText(('Show Process Monitor', 'Hide Process Monitor')[state])
         tip1 = '\n'.join(f"Show Python Console Tool Window ({hotkey('H')})")
         tip2 = '\n'.join(f"Hide Python Console Tool Window ({hotkey('H')})")
         self.tbbHud.setToolTip((tip1, tip2)[state])
-        if self._isProjectTab():
-            cfg.data['state']['tool_windows']['hud'] = state
         self.setUpdatesEnabled(True)
 
 
     def setdw_thumbs(self, state):
+        logger.info('')
         # caller = inspect.stack()[1].function
         # logger.info(f"[{caller}]")
+        if not self._isProjectTab():
+            state = False
+
+        self.tbbThumbnails.setChecked(state)
         self.dw_thumbs.setVisible(state)
-        self.dw_thumbs.setVisible(self.tbbThumbnails.isChecked())
         self.a_thumbs.setText(('Show SWIM Region &Thumbnails', 'Hide SWIM Region &Thumbnails')[state])
         tip1 = '\n'.join(f"Show Raw Thumbnails Tool Window ({hotkey('T')})")
         tip2 = '\n'.join(f"Hide Raw Thumbnails Tool Window ({hotkey('T')})")
         self.tbbThumbnails.setToolTip((tip1, tip2)[state])
-
-        if self._isProjectTab():
-            cfg.data['state']['tool_windows']['raw_thumbnails'] = state
 
         if state:
             self.updateCorrSignalsDrawer()
@@ -875,101 +1009,67 @@ class MainWindow(QMainWindow):
             QApplication.processEvents()
             h = self.dw_thumbs.height() - cfg.pt.tn_ref_lab.height() - cfg.pt.tn_tra_lab.height()
             w = int(h / 2 + .5) - 10
-            # self.dw_thumbs.setMaximumWidth(w)
             cfg.pt.tn_widget.setMaximumWidth(w)
-            # cfg.pt.tn_widget.resize(w, h)
-            # cfg.pt.tn_widget.resize(QSize(w-6, cfg.pt.tn_widget.height()))
-
-            # cfg.pt.tn_ref.resize(w,w)
-            # cfg.pt.tn_tra_lab.resize(w,w)
-
 
 
     def setdw_matches(self, state):
-        caller = inspect.stack()[1].function
+        logger.info('')
+        # caller = inspect.stack()[1].function
         # logger.info(f"[{caller}]")
+        if not self._isProjectTab():
+            state = False
+
+        self.tbbMatches.setChecked(state)
         self.dw_matches.setVisible(state)
-        self.dw_matches.setVisible(self.tbbMatches.isChecked())
         self.a_matches.setText(('Show &Match Signals', 'Hide &Match Signals')[state])
         tip1 = '\n'.join(f"Show Matches and Signals Tool Window ({hotkey('M')})")
         tip2 = '\n'.join(f"Hide Matches and Signals Tool Window ({hotkey('M')})")
         self.tbbMatches.setToolTip((tip1, tip2)[state])
 
-        if self._isProjectTab():
-            cfg.data['state']['tool_windows']['signals'] = state
-
-            setData('state,blink', False)
-            cfg.pt.blinkTimer.stop()
-            cfg.pt.tbbBlinkToggle.setIcon(qta.icon('mdi.toggle-switch-off-outline', color='#f3f6fb'))
-            cfg.pt.tbbBlinkToggle.setChecked(False)
-
         if state:
-            # cfg.pt.match_widget.adjustSize() #MUCH BETTER OFF
-            # self.setUpdatesEnabled(True)
             self.updateCorrSignalsDrawer()
             self.setTargKargPixmaps()
             QApplication.processEvents()
-
             h = self.dw_matches.height() - cfg.pt.mwTitle.height()
-            # self.dw_matches.setMaximumWidth(int(h /2 + .5) - 4)
             cfg.pt.match_widget.setMaximumWidth(int(h /2 + .5) - 4)
 
 
-
-
-
     def setdw_notes(self, state):
-        logger.info(f'state={state}')
+        logger.info('')
         self.setUpdatesEnabled(False)
         self.dw_notes.setVisible(state)
         self.a_notes.setText(('Show Notes', 'Hide Notes')[state])
         self.tbbNotes.setToolTip(("Show Notes Tool Window (" + ('^', '⌘')[is_mac()] + "N)",
                                  "Hide Notes Tool Window (" + ('^', '⌘')[is_mac()] + "N)")[state])
-        if self._isProjectTab():
-            cfg.data['state']['tool_windows']['notes'] = state
         self.updateNotes()
         self.setUpdatesEnabled(True)
 
+
     def setdw_snr(self, state):
-        caller = inspect.stack()[1].function
-        logger.critical(f'[{caller}] {state}')
-        self.a_snr.setText(('Show SNR Plot', 'Hide SNR Plot')[state])
-        self.tbbSnr.setToolTip((f"Show SNR Plot Tool Window {hotkey('L')}",
-                                 f"Hide SNR Plot Tool Window {hotkey('L')}")[state])
+        logger.info('')
+        if not self._isProjectTab():
+            state = False
+
+        self.tbbSnr.setChecked(state)
+        self.dw_snr.setVisible(state)
         if self._isProjectTab():
-            cfg.data['state']['tool_windows']['snr_plot'] = state
             if state:
                 cfg.pt.dSnr_plot.initSnrPlot()
-        self.dw_snr.setVisible(state)
 
-    # def _callbk_showHidePython(self):
-    #     # self.dw_python.setHidden(not self.dw_python.isHidden())
-    #     self.dw_python.setVisible(self.tbbPython.isChecked())
-    #     self.tbbPython.setToolTip(("Hide Python Console Tool Window (" + ('^', '⌘')[is_mac()] + "P)",
-    #                               "Show Python Console Tool Window (" + ('^', '⌘')[is_mac()] + "P)")[
-    #                                  self.dw_python.isHidden()])
+        self.a_snr.setText(('Show SNR Plot', 'Hide SNR Plot')[state])
+        self.tbbSnr.setToolTip((f"Show SNR Plot Tool Window {hotkey('L')}",
+                                f"Hide SNR Plot Tool Window {hotkey('L')}")[state])
 
-    # def _callbk_showHideNotes(self):
-    #     # self.dw_notes.setHidden(not self.dw_notes.isHidden())
-    #     self.dw_notes.setVisible(self.tbbNotes.isChecked())
-    #     self.updateNotes()
-
-    # def _callbk_showHideHud(self):
-    #     # self.dw_hud.setHidden(not self.dw_hud.isHidden())
-    #     self.dw_hud.setVisible(self.tbbHud.isChecked())
-    #     tip1 = '\n'.join(textwrap.wrap('Hide Head-up Display (Process Monitor) Tool Window', width=35))
-    #     tip2 = '\n'.join(textwrap.wrap('Show Head-up Display (Process Monitor) Tool Window', width=35))
-    #     self.tbbHud.setToolTip((tip1, tip2)[self.dw_hud.isHidden()])
 
     def _showSNRcheck(self, s=None):
         # logger.info('')
         # caller = inspect.stack()[1].function
-        if s == None: s = cfg.data.scale_key
+        if s == None: s = cfg.data.level
         if cfg.data.is_aligned():
-            # logger.info('Checking SNR data for %s...' % cfg.data.scale_pretty(s=s))
+            # logger.info('Checking SNR data for %s...' % cfg.data.level_pretty(s=s))
             failed = cfg.data.check_snr_status()
             if len(failed) == len(cfg.data):
-                self.warn('No SNR Data Available for %s' % cfg.data.scale_pretty(s=s))
+                self.warn('No SNR Data Available for %s' % cfg.data.level_pretty(s=s))
             elif failed:
                 indexes, names = zip(*failed)
                 lst_names = ''
@@ -977,22 +1077,18 @@ class MainWindow(QMainWindow):
                     lst_names += f'\n  Section: {name}'
                 self.warn(f'No SNR Data For Sections: {", ".join(map(str, indexes))}')
 
+    # def regenerateOne(self):
+    #     self.regenerateAll(scale=cfg.data.level, indexes=[cfg.data.zpos])
 
 
-        # range(10, 0, -1)
-
-
-    def regenerateOne(self):
-        self.regenerate(scale=cfg.data.scale_key, indexes=[cfg.data.zpos])
-
-
-    def regenerate(self, scale=None, indexes=None, ignore_bb=True) -> None:
+    def regenerateAll(self, scale=None, indexes=None, ignore_bb=True) -> None:
         '''Note: For now this will always reallocate Zarr, i.e. expects arguments for full stack'''
-        if indexes == None:
-            indexes = [cfg.data.zpos]
+        logger.info(f'scale: {scale}')
+        logger.info(f'cfg.data.scale: {cfg.data.scale}')
         if scale == None:
             scale = cfg.data.scale
-        self.align(scale=scale, indexes=indexes, align=False, regenerate=True, ignore_bb=ignore_bb)
+        if indexes == None: indexes = list(range(0,len(cfg.data)))
+        self.align(scale=scale, regen_indexes=indexes, align=False, regenerate=True, ignore_bb=ignore_bb)
 
 
     def verify_alignment_readiness(self) -> bool:
@@ -1013,7 +1109,6 @@ class MainWindow(QMainWindow):
     def present_snr_results(self, indexes):
         snr_before = self._snr_before
         snr_after = cfg.data.snr_list()
-
         try:
             import statistics
             if cfg.data.is_aligned():
@@ -1050,8 +1145,6 @@ class MainWindow(QMainWindow):
 
     def onAlignmentEnd(self):
         #Todo make this atomic for scale that was just aligned. Cant be current scale.
-        QApplication.processEvents()
-
         logger.critical('\n\nRunning Post-Alignment Tasks...\n')
         t0 = time.time()
         self._working = False
@@ -1059,32 +1152,36 @@ class MainWindow(QMainWindow):
         if self.dw_matches.isVisible():
             self.updateCorrSignalsDrawer()
             self.setTargKargPixmaps()
-        if cfg.data.scale not in cfg.data['initial_snr']:
-            cfg.data['initial_snr'][cfg.data.scale] = cfg.data.snr_list()
+        if not cfg.data['level_data'][cfg.data.scale]['alignment_status']:
+            cfg.data['level_data'][cfg.data.scale]['initial_snr'] = cfg.data.snr_list()
+            cfg.data['level_data'][cfg.data.scale]['alignment_status'] = True
         # cfg.data['data']['scales'][cfg.data.scale]['aligned'] = True
         logger.info(f"SNR: {cfg.data.snr()}")
         # if cfg.data.snr() > 0: #WHY SNR NOT UPDATED ?
-        cfg.data['alignment_status'][cfg.data.scale] = True
+
         self.updateEnabledButtons()
+        self.updateLowest8widget()
         # self.dataUpdateWidgets()
         if self._isProjectTab():
             # self._showSNRcheck()
             cfg.pt.updateTimingsWidget()
-            # cfg.pt.updateTreeWidget() #0603-
-            cfg.pt._bbToggle.setChecked(cfg.data.has_bb())
-            cfg.pt.updateDetailsPanel()
-        self._autosave()
-        self._changeScaleCombo.setEnabled(True)
+            self.cbBB.setChecked(cfg.data.has_bb())
+        self.boxScale.setEnabled(True)
         cfg.project_tab.initNeuroglancer()
-        if self._isProjectTab():
-            self.setdw_snr(True)  # Also initializes
-            cfg.pt.dSnr_plot.initSnrPlot() #Todo #Redundant #Why is this needed?? Race conditino?
-            if cfg.pt._tabs.currentIndex() == 4:
-                cfg.pt.snr_plot.initSnrPlot()
+        if cfg.data.is_aligned():
+            if self._isProjectTab():
+                if cfg.pt.wTabs.currentIndex() == 1:
+                    cfg.pt.gifPlayer.set(path=cfg.data.gif)
+                self.setdw_snr(True)  # Also initializes
+                cfg.pt.dSnr_plot.initSnrPlot() #Todo #Redundant #Why is this needed?? Race conditino?
+                if cfg.pt.wTabs.currentIndex() == 2:
+                    cfg.pt.snr_plot.initSnrPlot()
         dt = time.time() - t0
         logger.info(f'  Elapsed Time         : {dt:.2f}s')
+        self._autosave()
         self.setFocus()
         self.set_status("Alignment Complete!")
+        logger.critical("Alignment Complete!")
 
 
     def onFixAll(self):
@@ -1104,7 +1201,7 @@ class MainWindow(QMainWindow):
             self.tell(f'# Scales Unaligned: {len(alignThese)}. Aligning now...')
             ntasks = 4 * len(alignThese)
             for s in alignThese:
-                cfg.data.scale_key = s
+                cfg.data.level = s
                 # cfg.project_tab.initNeuroglancer()
                 cfg.project_tab.refreshTab()
                 self.dataUpdateWidgets()
@@ -1113,7 +1210,7 @@ class MainWindow(QMainWindow):
 
     def alignOne(self, index=None, regenerate=True):
         logger.critical('Aligning One...')
-        self.tell('Re-aligning Section #%d (%s)...' % (cfg.data.zpos, cfg.data.scale_pretty()))
+        self.tell('Re-aligning Section #%d (%s)...' % (cfg.data.zpos, cfg.data.level_pretty()))
         if index == None:
             index = cfg.data.zpos
         self.align(align_indexes=[index], regen_indexes=None, align=True, regenerate=False)
@@ -1124,11 +1221,12 @@ class MainWindow(QMainWindow):
         indexes = list(range(0,len(cfg.data)))
         self.align(align_indexes=indexes, regen_indexes=indexes, reallocate_zarr=True)
         if cfg.data.snr() > 0:
-            cfg.data['alignment_status'][cfg.data.scale] = True
+            cfg.data['level_data'][cfg.data.scale]['alignment_status'] = True
+
 
 
     @Slot()
-    def align(self, align_indexes, regen_indexes, scale=None, renew_od=False, reallocate_zarr=False,
+    def align(self, align_indexes=(), regen_indexes=(), scale=None, renew_od=False, reallocate_zarr=False,
               align=True, regenerate=True, ignore_bb=False):
         self.set_status('Aligning...')
         logger.critical('')
@@ -1140,25 +1238,19 @@ class MainWindow(QMainWindow):
             self.warn('Another Process is Already Running')
             return
 
-        self.tell(f'Aligning: {align_indexes}')
-        self.tell(f'Regenerating: {regen_indexes}')
-
-        self.tell("%s Affines (%s)..." % (('Initializing', 'Refining')[dm.isRefinement()], dm.scale_pretty(s=scale)))
-        # logger.info(f'Aligning indexes:{indexes}, {cfg.data.scale_pretty(scale)}...')
+        self.tell(f'Aligning {len(align_indexes)} pairs')
+        self.tell(f'Regenerating {len(regen_indexes)} images')
+        self.tell("%s Affines (%s)..." % (('Initializing', 'Refining')[dm.isRefinement()], dm.level_pretty(s=scale)))
+        # logger.info(f'Aligning indexes:{indexes}, {cfg.data.level_pretty(scale)}...')
         self._snr_before = cfg.data.snr_list()
 
         # self.shutdownNeuroglancer()
-        # self.showZeroedPbar(pbar_max=len(indexes))
         logger.info("Setting mp debugging...")
         if cfg.DEBUG_MP:
             # if 1:
             logger.warning('Multiprocessing Module Debugging is Enabled!')
             mpl = multiprocessing.log_to_stderr()
             mpl.setLevel(logging.DEBUG)
-
-        logger.info("Setting bb stuff...")
-        if not ignore_bb:
-            dm.set_use_bounding_rect(cfg.pt._bbToggle.isChecked())
 
         logger.info("Instantiating Thread...")
         self._alignThread = QThread()  # Step 2: Create a QThread object
@@ -1174,7 +1266,7 @@ class MainWindow(QMainWindow):
             reallocate_zarr=reallocate_zarr,
             dm=dm
         )  # Step 3: Create a worker object
-        logger.info("Connecting things...")
+        logger.info("Connecting worker signals...")
         self._alignworker.moveToThread(self._alignThread)  # Step 4: Move worker to the thread
         self._alignThread.started.connect(self._alignworker.run)  # Step 5: Connect signals and slots
         self._alignworker.finished.connect(self._alignThread.quit)
@@ -1185,88 +1277,27 @@ class MainWindow(QMainWindow):
         self._alignworker.initPbar.connect(self.resetPbar)
         self._alignworker.hudMessage.connect(self.tell)
         self._alignworker.hudWarning.connect(self.warn)
-        self._alignworker.finished.connect(lambda: self._btn_alignAll.setEnabled(True))
+        self._alignworker.finished.connect(lambda: self.bAlign.setEnabled(True))
+        self._alignworker.finished.connect(lambda: cfg.data.updateComportsKeys(
+            indexes=list(set().union(align_indexes,regen_indexes)))) #BEFORE onAlignmentEnd
         self._alignworker.finished.connect(self.onAlignmentEnd)
+
         if dm.is_aligned():
             self._alignworker.finished.connect(lambda: self.present_snr_results(align_indexes))
         self._alignworker.finished.connect(lambda: print(self._alignworker.dm))
-        self._btn_alignAll.setEnabled(False)  # Final resets
+        self.bAlign.setEnabled(False)  # Final resets
         self._alignThread.start()  # Step 6: Start the thread
 
 
     @Slot()
-    def autoscale(self, dm, new_tab=False):
-        logger.info('autoscaling...')
-        self.tell('Generating scale pyramid...')
-        # try:
-        #     self.pythonConsole.pyconsole.kernel_client.stop_channels()
-        #     self.pythonConsole.pyconsole.kernel_manager.shutdown_kernel()
-        # except:
-        #     print_exception()
-
-
-        if self._working == True:
-            self.warn('Another Process is Already Running')
-            return
-
-        dm.link_full_resolution()
-
-        logger.info('instantiating thread...')
-        self._scaleThread = QThread()  # Step 2: Create a QThread object
-        logger.info('instantiating autoscale worker...')
-        self._scaleworker = ScaleWorker(dm=cfg.data)  # Step 3: Create a worker object
-        self._scaleworker.moveToThread(self._scaleThread)  # Step 4: Move worker to the thread
-        self._scaleThread.started.connect(self._scaleworker.run)  # Step 5: Connect signals and slots
-        self._scaleThread.finished.connect(self._scaleThread.deleteLater)
-
-        self._scaleworker.finished.connect(self._scaleThread.quit)
-        self._scaleworker.finished.connect(self._scaleworker.deleteLater)
-        self._scaleworker.finished.connect(self.hidePbar)
-        self._scaleworker.finished.connect(self.refreshTab)
-
-        # self._scaleworker.finished.connect(self.pm.user_projects.set_data)
-        self._scaleworker.progress.connect(self.setPbar)
-        self._scaleworker.initPbar.connect(self.resetPbar)
-        self._scaleworker.hudMessage.connect(self.tell)
-        self._scaleworker.hudWarning.connect(self.warn)
-        self._scaleworker.refresh.connect(self.refreshTab)
-        if new_tab:
-            logger.info('')
-            dm.scale = dm.coarsest_scale_key()
-            name,_ = os.path.splitext(os.path.basename(dm.location))
-            self._scaleworker.coarsestDone.connect(lambda: self.addGlobTab(cfg.project_tab, name, switch_to=True))
-        # if dm['data']['autoalign_flag']:
-        #     self._scaleworker.finished.connect(self.alignAll)
-        self._scaleThread.start()  # Step 6: Start the thread
-
-
-
-
-    @Slot()
     def autoscaleSeries(self, src, out, opts):
-        logger.info('autoscaling...')
-        self.tell('Generating scale pyramid...')
-        # try:
-        #     self.pythonConsole.pyconsole.kernel_client.stop_channels()
-        #     self.pythonConsole.pyconsole.kernel_manager.shutdown_kernel()
-        # except:
-        #     print_exception()
-
-
         if self._working == True:
             self.warn('Another Process is Already Running')
             return
-
-        logger.critical(f"out: {out}")
-        # dm.link_full_resolution() # must create directories first
-
-        logger.info('instantiating thread...')
+        logger.info('\n\nAutoscaling...\n')
         self._scaleThread = QThread()  # Step 2: Create a QThread object
-        logger.info('instantiating autoscale worker...')
-        scale_keys = opts['scale_keys']
-        logger.critical(f"scale_keys: {scale_keys}")
+        scale_keys = opts['levels']
         scales = zip(scale_keys, [opts['levels'][s]['size_xy'] for s in scale_keys])
-        # opts['levels'][key]['size_xy']
         self._scaleworker = ScaleWorker(src=src, out=out, scales=scales, opts=opts)
         self._scaleworker.moveToThread(self._scaleThread)  # Step 4: Move worker to the thread
         self._scaleThread.started.connect(self._scaleworker.run)  # Step 5: Connect signals and slots
@@ -1275,9 +1306,8 @@ class MainWindow(QMainWindow):
         self._scaleworker.finished.connect(self._scaleThread.quit)
         self._scaleworker.finished.connect(self._scaleworker.deleteLater)
         self._scaleworker.finished.connect(self.hidePbar)
-        self._scaleworker.finished.connect(self.refreshTab)
+        self._scaleworker.finished.connect(self._refresh)
         self._scaleworker.finished.connect(lambda: self.pm.bConfirmImport.setEnabled(True))
-        # self._scaleworker.finished.connect(self.pm.user_projects.set_data)
         self._scaleworker.progress.connect(self.setPbar)
         self._scaleworker.initPbar.connect(self.resetPbar)
         self._scaleworker.hudMessage.connect(self.tell)
@@ -1286,149 +1316,74 @@ class MainWindow(QMainWindow):
         self._scaleThread.start()  # Step 6: Start the thread
 
 
-
-    def rescale(self):
-        if self._isProjectTab():
-
-            msg = 'Warning: Rescaling clears project data.\nProgress will be lost. Continue?'
-            dlg = AskContinueDialog(title='Confirm Rescale', msg=msg)
-            if dlg.exec():
-                recipe_dialog = NewConfigureProjectDialog(parent=self)
-                if recipe_dialog.exec():
-
-                    # self.stopNgServer()  # 0202-
-                    self.tell('Clobbering the Project Directory %s...')
-                    try:
-                        delete_recursive(dir=cfg.data.dest(), keep_core_dirs=True)
-                    except:
-                        print_exception()
-                        self.err('The Above Error Was Encountered During Clobber of the Project Directory')
-                    else:
-                        self.hud.done()
-
-                    try:
-                        # self.pbarLabel.setText('')
-                        # self.autoscale_(make_thumbnails=False)
-                        autoscale(dm=cfg.data)
-                    except:
-                        print_exception()
-                    else:
-                        self._autosave()
-                        self.tell('Rescaling Successful')
-
-    # def generate_multiscale_zarr(self):
-    #     pass
-
-    # def export(self):
-    #     if self._working == True:
-    #         self.warn('Another Process is Already Running')
-    #         return
-    #     logger.critical('Exporting To Zarr...')
-    #     self.tell('Exporting...')
-    #     self.tell('Generating Neuroglancer-Compatible Zarr...')
-    #     src = os.path.abspath(cfg.data['data']['destination_path'])
-    #     out = os.path.abspath(os.path.join(src, 'img_aligned.zarr'))
-    #     try:
-    #         if cfg.USE_EXTRA_THREADING:
-    #             self.worker = BackgroundWorker(fn=GenerateScalesZarr())
-    #             QThreadPool.globalInstance().start(self.worker)
-    #         else:
-    #             GenerateScalesZarr()
-    #     except:
-    #         print_exception()
-    #         logger.error('Zarr Export Encountered an Exception')
-    #
-    #     self._callbk_unsavedChanges()
-    #     self.tell('Process Finished')
-
-
     def enableAllButtons(self):
-        self._btn_alignAll.setEnabled(True)
-        self._scaleDownButton.setEnabled(True)
-        self._scaleUpButton.setEnabled(True)
-        # self._ctlpanel_applyAllButton.setEnabled(True)
-        self._skipCheckbox.setEnabled(True)
-        # cfg.pt.sb_whiteningControl.setEnabled(True)
-        # cfg.pt._swimWindowControl.setEnabled(True)
-        cfg.pt._toggleAutogenerate.setEnabled(True)
-        cfg.pt._bbToggle.setEnabled(True)
-        cfg.pt._polyBiasCombo.setEnabled(True)
+        self.bAlign.setEnabled(True)
+        self.bArrowDown.setEnabled(True)
+        self.bArrowUp.setEnabled(True)
+        self.cbSkip.setEnabled(True)
+        self.cbBB.setEnabled(True)
+        self.boxBias.setEnabled(True)
         self.startRangeInput.setEnabled(True)
         self.endRangeInput.setEnabled(True)
         
 
     
     def updateEnabledButtons(self) -> None:
-        '''This method does three things:
-        (1) Update the visibility of next/prev s buttons depending on current s.
-        (2) Set the enabled/disabled state of the align_all-all button
-        (3) Sets the input validator on the jump-to lineedit widget'''
         caller = inspect.stack()[1].function
         logger.info(f'[{caller}]')
 
         if self._isProjectTab():
-            self._btn_alignAll.setStyleSheet(("background-color: #FFFF66;","")[cfg.data.is_aligned()])
+            # self.bAlign.setStyleSheet(("background-color: #FFFF66;", "")[cfg.data.is_aligned()])
+            self.cbSkip.setEnabled(True)
+            self.boxScale.setEnabled(True)
+            self.bLeftArrow.setEnabled(True)
+            self.bRightArrow.setEnabled(True)
+            self.sldrZpos.setEnabled(True)
+            self.bPlayback.setEnabled(True)
+            self.sbFPS.setEnabled(True)
+            self.wToggleExclude.setEnabled(True)
+            self.leJump.setEnabled(True)
+            self.boxScale.setEnabled(True)
+            # self.bAlign.setEnabled(not cfg.data.is_aligned())
+            self.wAlign.setVisible(not cfg.data.is_aligned() and cfg.data.is_alignable())
 
-            # if cfg.data.is_aligned_and_generated(): #0202-
-            self.gb_ctlActions.setTitle('%s Multiprocessing Functions' % cfg.data.scale_pretty())
-            self._skipCheckbox.setEnabled(True)
-            self._changeScaleCombo.setEnabled(True)
-            self._btn_prevSection.setEnabled(True)
-            self._btn_nextSection.setEnabled(True)
-            self._sectionSlider.setEnabled(True)
-            self._btn_automaticPlayTimer.setEnabled(True)
-            self.spinbox_fps.setEnabled(True)
-            self._w_skipCheckbox.setEnabled(True)
-            self._jumpToLineedit.setEnabled(True)
-            self._changeScaleCombo.setEnabled(True)
-
-            if cfg.data.is_aligned():
-                # self._btn_alignAll.setText('Re-Align All Sections (%s)' % cfg.data.scale_pretty())
-                # self._btn_alignAll.setText('Align All')
-                self._btn_alignAll.setEnabled(True)
-            elif cfg.data.is_alignable():
-                self._btn_alignAll.setEnabled(True)
-            else:
-                self._btn_alignAll.setEnabled(False)
             if len(cfg.data.scales) == 1:
-                self._scaleUpButton.setEnabled(False)
-                self._scaleDownButton.setEnabled(False)
-                if cfg.data.is_aligned():
-                    self._btn_alignAll.setEnabled(True)
-                else:
-                    self._btn_alignAll.setEnabled(True)
+                self.bArrowUp.setEnabled(False)
+                self.bArrowDown.setEnabled(False)
+                self.bAlign.setEnabled(True)
             else:
-                cur_index = self._changeScaleCombo.currentIndex()
+                cur_index = self.boxScale.currentIndex()
                 if cur_index == 0:
-                    self._scaleDownButton.setEnabled(True)
-                    self._scaleUpButton.setEnabled(False)
-                elif len(cfg.data['series']['scale_keys']) == cur_index + 1:
-                    self._scaleDownButton.setEnabled(False)
-                    self._scaleUpButton.setEnabled(True)
+                    self.bArrowDown.setEnabled(True)
+                    self.bArrowUp.setEnabled(False)
+                    self.bAlign.setEnabled(True)
+                elif len(cfg.data['series']['levels']) == cur_index + 1:
+                    self.bArrowDown.setEnabled(False)
+                    self.bArrowUp.setEnabled(True)
                 else:
-                    self._scaleDownButton.setEnabled(True)
-                    self._scaleUpButton.setEnabled(True)
+                    self.bArrowDown.setEnabled(True)
+                    self.bArrowUp.setEnabled(True)
         else:
-            self._scaleUpButton.setEnabled(False)
-            self._scaleDownButton.setEnabled(False)
-            self._btn_prevSection.setEnabled(False)
-            self._btn_nextSection.setEnabled(False)
-            self._btn_alignAll.setEnabled(False)
-            self._skipCheckbox.setEnabled(False)
-            self._sectionSlider.setRange(0,1)
-            self._sectionSlider.setValue(0)
-            self._sectionSlider.setEnabled(False)
-            self._btn_automaticPlayTimer.setEnabled(False)
-            self.spinbox_fps.setEnabled(False)
-            self._w_skipCheckbox.setEnabled(False)
-            self._jumpToLineedit.setEnabled(False)
-            self._changeScaleCombo.setEnabled(False)
+            self.bArrowUp.setEnabled(False)
+            self.bArrowDown.setEnabled(False)
+            self.bLeftArrow.setEnabled(False)
+            self.bRightArrow.setEnabled(False)
+            # self.bAlign.setEnabled(False)
+            self.cbSkip.setEnabled(False)
+            self.sldrZpos.setRange(0, 1)
+            self.sldrZpos.setValue(0)
+            self.sldrZpos.setEnabled(False)
+            self.bPlayback.setEnabled(False)
+            self.sbFPS.setEnabled(False)
+            self.wToggleExclude.setEnabled(False)
+            self.leJump.setEnabled(False)
+            self.boxScale.setEnabled(False)
 
 
 
     def layer_left(self):
         if self._isProjectTab():
-            if cfg.pt._tabs.currentIndex() == 1:
+            if cfg.pt.wTabs.currentIndex() == 1:
                 if cfg.data['state']['tra_ref_toggle'] == 0:
                     self.set_transforming()
 
@@ -1436,38 +1391,36 @@ class MainWindow(QMainWindow):
             logger.info(f'requested: {requested}')
             if requested >= 0:
                 cfg.data.zpos = requested
-            # if cfg.pt._tabs.currentIndex() == 1:
-            #     cfg.baseViewer.set_layer()
+            # if cfg.pt.wTabs.currentIndex() == 1:
+            #     cfg.editorViewer.set_layer()
 
     def layer_right(self):
         if self._isProjectTab():
-            # if cfg.pt._tabs.currentIndex() == 1:
+            # if cfg.pt.wTabs.currentIndex() == 1:
             #     if cfg.data['state']['tra_ref_toggle'] == 0:
             #         cfg.pt.set_transforming()
             #         return
-            if cfg.pt._tabs.currentIndex() == 1:
+            if cfg.pt.wTabs.currentIndex() == 1:
                 if cfg.data['state']['tra_ref_toggle'] == 0:
                     self.set_transforming()
 
             requested = cfg.data.zpos + 1
             if requested < len(cfg.data):
                 cfg.data.zpos = requested
-            # if cfg.pt._tabs.currentIndex() == 1:
-            #     cfg.baseViewer.set_layer()
+            # if cfg.pt.wTabs.currentIndex() == 1:
+            #     cfg.editorViewer.set_layer()
 
     def scale_down(self) -> None:
-        '''Callback function for the Previous Scale button.'''
         logger.info('')
         if not self._working:
-            if self._scaleDownButton.isEnabled():
-                self._changeScaleCombo.setCurrentIndex(self._changeScaleCombo.currentIndex() + 1)  # Changes Scale
+            if self.bArrowDown.isEnabled():
+                self.boxScale.setCurrentIndex(self.boxScale.currentIndex() + 1)  # Changes Scale
 
     def scale_up(self) -> None:
-        '''Callback function for the Next Scale button.'''
         logger.info('')
         if not self._working:
-            if self._scaleUpButton.isEnabled():
-                self._changeScaleCombo.setCurrentIndex(self._changeScaleCombo.currentIndex() - 1)  # Changes Scale
+            if self.bArrowUp.isEnabled():
+                self.boxScale.setCurrentIndex(self.boxScale.currentIndex() - 1)  # Changes Scale
                 if not cfg.data.is_alignable():
                     self.warn('Lower scales have not been aligned yet')
 
@@ -1526,7 +1479,7 @@ class MainWindow(QMainWindow):
     #
     #         # w = QWidget()
     #         # w.setLayout(self.fl_main_results)
-    #         # self.sa_details.setWidget(w)
+    #         # self.saStats.setWidget(w)
 
 
     @staticmethod
@@ -1535,21 +1488,23 @@ class MainWindow(QMainWindow):
 
 
     @Slot()
-    def _updateZposWidgets(self):
+    def updateSlidrZpos(self):
         caller = inspect.stack()[1].function
         logger.info(f'[{caller}]')
         if self._isProjectTab():
             cur = cfg.data.zpos
-            self._jumpToLineedit.setText(str(cur))
-            self._sectionSlider.setValue(cur)
-            self._skipCheckbox.setChecked(not cfg.data.skipped())
-            self._btn_prevSection.setEnabled(cur > 0)
-            self._btn_nextSection.setEnabled(cur < len(cfg.data) - 1)
+            self.leJump.setText(str(cur))
+            self.sldrZpos.setValue(cur)
+            self.cbSkip.setChecked(not cfg.data.skipped())
+            self.bLeftArrow.setEnabled(cur > 0)
+            self.bRightArrow.setEnabled(cur < len(cfg.data) - 1)
             if self.dw_snr.isVisible():
                 cfg.project_tab.dSnr_plot.updateLayerLinePos()
             if cfg.emViewer:
                 cfg.emViewer.set_layer(cfg.data.zpos)
             self.dataUpdateWidgets()
+            if cfg.pt.wTabs.currentIndex() == 1:
+                cfg.pt.gifPlayer.set(path=cfg.data.gif)
 
 
 
@@ -1558,12 +1513,13 @@ class MainWindow(QMainWindow):
     # def dataUpdateWidgets(self, ng_layer=None, silently=False) -> None:
     @Slot(name='dataUpdateWidgets-slot-name')
     def dataUpdateWidgets(self) -> None:
+        '''Reads Project Data to Update MainWindow.'''
         # self.dataUpdateAsync(self)
         # await self._dataUpdateWidgets()
-        '''Reads Project Data to Update MainWindow.'''
-        if DEV:
-            caller = inspect.stack()[1].function
-            logger.info(f'caller: {caller} sender: {self.sender()}')
+
+        # if DEV:
+        #     caller = inspect.stack()[1].function
+        #     logger.info(f'caller: {caller} sender: {self.sender()}')
 
         if self._working:
             logger.warning("Busy working! Not going to update the entire interface rn.")
@@ -1618,19 +1574,21 @@ class MainWindow(QMainWindow):
                 self.setTargKargPixmaps()
 
 
-            if cfg.pt._tabs.currentIndex() == 0:
-                if cfg.data.skipped():
-                    cfg.project_tab._overlayLab.show()  # Todo find/fix cfg.project_tab._overlayLab
+            if cfg.pt.wTabs.currentIndex() == 0:
+                cfg.project_tab._overlayLab.setVisible(cfg.data.skipped()) #Todo find/fix
+                if hasattr(cfg, 'emViewer'):
+                    try:
+                        if floor(cfg.emViewer.state.voxel_coordinates[0]) != cfg.data.zpos:
+                            cfg.emViewer.set_layer(cfg.data.zpos)
+                    except:
+                        print_exception()
                 else:
-                    cfg.project_tab._overlayLab.hide()
-                if cfg.emViewer:
-                    if floor(cfg.emViewer.state.voxel_coordinates[0]) != cfg.data.zpos:
-                        cfg.emViewer.set_layer(cfg.data.zpos)
+                    logger.warning("no attribute: 'emViewer'!")
 
 
-            elif cfg.pt._tabs.currentIndex() == 1:
+            elif cfg.pt.wTabs.currentIndex() == 1:
 
-                cfg.baseViewer.set_layer()
+                cfg.editorViewer.set_layer()
 
                 # cfg.pt.set_transforming()
 
@@ -1639,7 +1597,7 @@ class MainWindow(QMainWindow):
                 # else:
                 #     cfg.pt.set_reference()
 
-                cfg.pt.lab_filename.setText(f"[{cfg.data.zpos}] Name: {cfg.data.filename_basename()} - {cfg.data.scale_pretty()}")
+                cfg.pt.lab_filename.setText(f"[{cfg.data.zpos}] Name: {cfg.data.filename_basename()} - {cfg.data.level_pretty()}")
                 cfg.pt.cl_tra.setText(f'[{cfg.data.zpos}] {cfg.data.filename_basename()} (Transforming)')
                 if cfg.data.skipped():
                     cfg.pt.cl_tra.setText(f'[{cfg.data.zpos}] {cfg.data.filename_basename()} (Transforming)')
@@ -1652,29 +1610,16 @@ class MainWindow(QMainWindow):
                 cfg.project_tab.dataUpdateMA()
 
 
-                if cfg.pt.secDetails_w.isVisible():
-                    cfg.pt.secName.setText(cfg.data.filename_basename())
-                    ref = cfg.data.reference_basename()
-                    if ref == '':
-                        ref = 'None'
-                    cfg.pt.secReference.setText(ref)
-                    cfg.pt.secAlignmentMethod.setText(cfg.data.method_pretty())
-                    if cfg.data.snr() == 0:
-                        cfg.pt.secSNR.setText('--')
-                    else:
-                        cfg.pt.secSNR.setText(
-                            '<span style="color: #a30000;"><b>%.2f</b></span><span>&nbsp;&nbsp;(%s)</span>' % (
-                                cfg.data.snr(), ",  ".join(["%.2f" % x for x in cfg.data.snr_components()])))
-                    cfg.pt.secAffine.setText(make_affine_widget_HTML(cfg.data.afm(), cfg.data.cafm()))
-
-            elif cfg.pt._tabs.currentIndex() == 3:
-                cfg.project_tab.treeview_model.jumpToLayer()
-
-            elif cfg.pt._tabs.currentIndex() == 4:
+            elif cfg.pt.wTabs.currentIndex() == 2:
                 cfg.project_tab.snr_plot.updateLayerLinePos()
 
+            elif cfg.pt.wTabs.currentIndex() == 4:
+                cfg.project_tab.treeview_model.jumpToLayer()
+
+
+
             #Todo come back to how to make this work without it getting stuck in a loop
-            # if cfg.project_tab._tabs.currentIndex() == 2:
+            # if cfg.project_tab.wTabs.currentIndex() == 2:
             #     cfg.project_tab.project_table.table.selectRow(cur)
 
         self.setFocus()
@@ -1734,9 +1679,9 @@ class MainWindow(QMainWindow):
             self.notes.clear()
             if self._isProjectTab():
                 self.notes.setPlaceholderText('Enter notes about %s here...'
-                                              % cfg.data.base_image_name(s=cfg.data.scale_key, l=cfg.data.zpos))
-                if cfg.data.notes(s=cfg.data.scale_key, l=cfg.data.zpos):
-                    self.notes.setPlainText(cfg.data.notes(s=cfg.data.scale_key, l=cfg.data.zpos))
+                                              % cfg.data.base_image_name(s=cfg.data.level, l=cfg.data.zpos))
+                if cfg.data.notes(s=cfg.data.level, l=cfg.data.zpos):
+                    self.notes.setPlainText(cfg.data.notes(s=cfg.data.level, l=cfg.data.zpos))
             else:
                 self.notes.clear()
                 self.notes.setPlaceholderText('Notes are stored automatically...')
@@ -1756,10 +1701,10 @@ class MainWindow(QMainWindow):
             self.tell(f'Automatic playback speed set to {new_speed}fps')
 
     def updateHistoryListWidget(self, s=None):
-        if s == None: s = cfg.data.scale_key
+        if s == None: s = cfg.data.level
         self.history_label = QLabel('<b>Saved Alignments (Scale %d)</b>' % get_scale_val(s))
         self._hstry_listWidget.clear()
-        dir = os.path.join(cfg.data.dest(), s, 'history')
+        dir = os.path.join(cfg.data.location, s, 'history')
         try:
             self._hstry_listWidget.addItems(os.listdir(dir))
         except:
@@ -1770,18 +1715,18 @@ class MainWindow(QMainWindow):
         name = self._hstry_listWidget.currentItem().text()
         if cfg.project_tab:
             if name:
-                path = os.path.join(cfg.data.dest(), cfg.data.scale_key, 'history', name)
+                path = os.path.join(cfg.data.location, cfg.data.level, 'history', name)
                 with open(path, 'r') as f:
                     project = json.load(f)
                 self.projecthistory_model.load(project)
-                self.globTabs.addTab(self.historyview_widget, cfg.data.scale_pretty())
+                self.globTabs.addTab(self.historyview_widget, cfg.data.level_pretty())
         self._setLastTab()
 
     def rename_historical_alignment(self):
         new_name, ok = QInputDialog.getText(self, 'Rename', 'New Name:')
         if not ok: return
         old_name = self._hstry_listWidget.currentItem().text()
-        dir = os.path.join(cfg.data.dest(), cfg.data.scale_key, 'history')
+        dir = os.path.join(cfg.data.location, cfg.data.level, 'history')
         old_path = os.path.join(dir, old_name)
         new_path = os.path.join(dir, new_name)
         try:
@@ -1794,7 +1739,7 @@ class MainWindow(QMainWindow):
         logger.info('Loading History File...')
         name = self._hstry_listWidget.currentItem().text()
         if name is None: return
-        path = os.path.join(cfg.data.dest(), cfg.data.scale_key, 'history', name)
+        path = os.path.join(cfg.data.location, cfg.data.level, 'history', name)
         logger.info('Removing archival alignment %s...' % path)
         try:
             os.remove(path)
@@ -1806,7 +1751,7 @@ class MainWindow(QMainWindow):
     def historyItemClicked(self, qmodelindex):
         item = self._hstry_listWidget.currentItem()
         logger.info(f"Selected {item.text()}")
-        path = os.path.join(cfg.data.dest(), cfg.data.scale_key, 'history', item.text())
+        path = os.path.join(cfg.data.location, cfg.data.level, 'history', item.text())
         with open(path, 'r') as f:
             scale = json.load(f)
 
@@ -1826,25 +1771,15 @@ class MainWindow(QMainWindow):
         try:
             if self._isProjectTab() or self._isZarrTab():
                 logger.info('')
-                self._jumpToLineedit.setValidator(QIntValidator(0, len(cfg.data) - 1))
-                self._sectionSlider.setRange(0, len(cfg.data) - 1)
-                self._sectionSlider.setValue(cfg.data.zpos)
-                self.startRangeInput.setValidator(QIntValidator(0, len(cfg.data) - 1))
-                self.endRangeInput.setValidator(QIntValidator(0, len(cfg.data) - 1))
-                # if cfg.zarr_tab:
-                #     if not cfg.tensor:
-                #         logger.warning('No tensor!')
-                #         return
-                #     self._jumpToLineedit.setValidator(QIntValidator(0, cfg.tensor.shape[0] - 1))
-                #     self._jumpToLineedit.setText(str(0))
-                #     self._sectionSlider.setRange(0, cfg.tensor.shape[0] - 1)
-                #     self._sectionSlider.setValue(0)
-                self._updateZposWidgets()
+                self.leJump.setValidator(QIntValidator(0, len(cfg.data) - 1))
+                self.sldrZpos.setRange(0, len(cfg.data) - 1)
+                self.sldrZpos.setValue(cfg.data.zpos)
+                self.updateSlidrZpos()
                 self.update()
             else:
-                self._jumpToLineedit.clear()
-                self._sectionSlider.setValue(0)
-                self._sectionSlider.setRange(0, 0)
+                self.leJump.clear()
+                self.sldrZpos.setValue(0)
+                self.sldrZpos.setRange(0, 0)
         except:
             print_exception()
 
@@ -1857,102 +1792,64 @@ class MainWindow(QMainWindow):
         self.tell(f'Current Thread   : {threading.current_thread()}')
         self.tell(f'All Threads      : \n{threads}')
 
-    # @Slot()
-    # def jump_to_manual(self, requested) -> None:
-    #     logger.info(f'requested: {requested}')
-    #     if self._isProjectTab():
-    #         if requested in range(len(cfg.data)):
-    #             self.setZpos(requested)
-    #             cfg.pt._tabs.setCurrentIndex(1)
-    #         else:
-    #             logger.warning('Requested layer is not a valid layer')
+
+    @Slot()
+    def jump_to_index(self, requested) -> None:
+        '''Connected to leJump. Calls jump_to_slider directly.'''
+        if self._isProjectTab():
+            logger.info('')
+            cfg.data.zpos = requested
+
 
     @Slot()
     def jump_to_layer(self) -> None:
-        '''Connected to _jumpToLineedit. Calls jump_to_slider directly.'''
-        # logger.info('')
+        '''Connected to leJump. Calls jump_to_slider directly.'''
         if self._isProjectTab():
             logger.info('')
-            requested = int(self._jumpToLineedit.text())
+            requested = int(self.leJump.text())
             cfg.data.zpos = requested
-
-            # if requested in range(len(cfg.data)):
-            #     self.setZpos(requested)
-            #     cfg.project_tab.project_table.table.selectRow(requested)
-            #     self._sectionSlider.setValue(requested)
 
 
     def jump_to_slider(self):
         if self._isProjectTab():
             if inspect.stack()[1].function == 'main':
-                # logger.info('')
-                cfg.data.zpos = self._sectionSlider.value()
-            # caller = inspect.stack()[1].function
-            # if caller == 'main':
-            #     #0601 this seems to work as intended with no time lag
-            #     logger.info('')
-            #     # if caller in ('main', 'onTimer','jump'):
-            #     requested = self._sectionSlider.value()
-            #     if self._isProjectTab():
-            #         logger.info('Jumping To Section #%d' % requested)
-            #         self.setZpos(requested)
-            #     try:
-            #         self._jumpToLineedit.setText(str(requested))
-            #     except:
-            #         logger.warning('Current Section Widget Failed to Update')
-            #         print_exception()
-            #
-            #     # logger.critical('<<<< jump_to_slider <<<<')
+                logger.info('')
+                cfg.data.zpos = self.sldrZpos.value()
 
     @Slot()
-    def reload_scales_combobox(self) -> None:
+    def reloadComboScale(self) -> None:
         caller = inspect.stack()[1].function
         logger.info(f'[{caller}]')
-        self._changeScaleCombo.clear()
+        self.boxScale.clear()
         if self._isProjectTab():
             if hasattr(cfg, 'data'):
                 # logger.info('Reloading Scale Combobox (caller: %s)' % caller)
                 self._scales_combobox_switch = 0
-                # def pretty_scales():
-                    # lst = []
-                    # for s in cfg.data.scales:
-                    #     # siz = cfg.data.image_size(s=s)
-                    #     lst.append('%d / %d x %dpx' % (cfg.data.scale_val(s=s), *cfg.data.image_size(s=s)))
-                    # return lst
-                lst = ['%d / %d x %dpx' % (cfg.data.scale_val(s=s), *cfg.data.image_size(s=s)) for s in cfg.data.scales]
-                self._changeScaleCombo.addItems(lst)
-                self._changeScaleCombo.setCurrentIndex(cfg.data.scales.index(cfg.data.scale_key))
+                lst = ['%d / %d x %dpx' % (cfg.data.lvl(s=s), *cfg.data.image_size(s=s)) for s in cfg.data.scales]
+                self.boxScale.addItems(lst)
+                self.boxScale.setCurrentIndex(cfg.data.scales.index(cfg.data.level))
                 self._scales_combobox_switch = 1
 
-    def fn_scales_combobox(self) -> None:
+    def onScaleChange(self) -> None:
         caller = inspect.stack()[1].function
         if self._scales_combobox_switch == 0:
-            # logger.warning(f"[{caller}] scale_key change blocked by _scales_combobox_switch switch")
+            # logger.warning(f"[{caller}] level change blocked by _scales_combobox_switch switch")
             return
         if not self._working:
             if caller in ('main', 'scale_down', 'scale_up'):
                 if self._isProjectTab():
                     # logger.info(f'[{caller}]')
-                    requested_scale = cfg.data.scales[self._changeScaleCombo.currentIndex()]
-                    cfg.pt.warning_cafm.hide()
-                    cfg.pt.warning_data.hide()
-                    cfg.pt.project_table.wTable.hide()
-                    cfg.pt.project_table.btn_splash_load_table.show()
-                    cfg.data.scale_key = requested_scale
+                    requested = cfg.data.scales[self.boxScale.currentIndex()]
+                    cfg.data.scale = requested
+                    cfg.pt.updateWarnings()
+                    cfg.pt.project_table.veil()
+                    self.alignAllAction.setText(f"Align + Generate All: Level {cfg.data.scale}")
                     self.updateEnabledButtons()
                     self.dataUpdateWidgets()
                     cfg.pt.dataUpdateMA()
-                    if self.globTabs.currentIndex() == 1:
-                        if cfg.pt.secDetails_w.isVisible():
-                            cfg.pt.updateDetailsPanel()
-                    # self._showSNRcheck()
                     cfg.project_tab.refreshTab()
-                    # if cfg.pt._tabs.currentIndex() == 0:
-                    #     self.setdw_thumbs(cfg.data.is_aligned())
                     if self.dw_snr.isVisible():
                         cfg.pt.dSnr_plot.initSnrPlot()
-
-
             else:
                 logger.warning(f"[{caller}] scale change disallowed")
 
@@ -1973,7 +1870,7 @@ class MainWindow(QMainWindow):
                 self.tell('Exported: %s' % file)
                 self.tell(f"AFMs exported successfully to '{file}'")
             else:
-                self.warn('Current scale_key is not aligned. Nothing to export.')
+                self.warn('Current level is not aligned. Nothing to export.')
         else:
             self.warn('No open projects. Nothing to export.')
 
@@ -1995,69 +1892,6 @@ class MainWindow(QMainWindow):
     def show_warning(self, title, text):
         QMessageBox.warning(None, title, text)
 
-    # def delete_projects(self):
-    #     logger.critical('')
-    #     project_file = cfg.selected_file
-    #     project = os.path.splitext(project_file)[0]
-    #     if not validate_project_selection():
-    #         logger.warning('Invalid Project For Deletion (!)\n%s' % project)
-    #         return
-    #     self.warn("Delete the following project?\nProject: %s" % project)
-    #     txt = "Are you sure you want to PERMANENTLY DELETE " \
-    #           "the following project?\n\n" \
-    #           "Project: %s" % project
-    #     msgbox = QMessageBox(QMessageBox.Warning, 'Confirm Delete Project', txt,
-    #                       buttons=QMessageBox.Abort | QMessageBox.Yes)
-    #     msgbox.setIcon(QMessageBox.Critical)
-    #     msgbox.setMaximumWidth(350)
-    #     msgbox.setDefaultButton(QMessageBox.Cancel)
-    #     reply = msgbox.exec_()
-    #     if reply == QMessageBox.Abort:
-    #         self.tell('Aborting Delete Project Permanently Instruction...')
-    #         logger.warning('Aborting Delete Project Permanently Instruction...')
-    #         return
-    #     if reply == QMessageBox.Ok:
-    #         logger.info('Deleting Project File %s...' % project_file)
-    #         self.tell('Reclaiming Disk Space. Deleting Project File %s...' % project_file)
-    #         logger.warning('Executing Delete Project Permanently Instruction...')
-    #
-    #     logger.critical(f'Deleting Project File: {project_file}...')
-    #     self.warn(f'Deleting Project File: {project_file}...')
-    #     try:
-    #         os.remove(project_file)
-    #     except:
-    #         print_exception()
-    #     else:
-    #         self.hud.done()
-    #
-    #     logger.info('Deleting Project Directory %s...' % project)
-    #     self.warn('Deleting Project Directory %s...' % project)
-    #     try:
-    #
-    #         delete_recursive(dir=project)
-    #         # shutil.rmtree(project, ignore_errors=True, onerror=handleError)
-    #         # shutil.rmtree(project, ignore_errors=True, onerror=handleError)
-    #     except:
-    #         self.warn('An Error Was Encountered During Deletion of the Project Directory')
-    #         print_exception()
-    #     else:
-    #         self.hud.done()
-    #
-    #     self.tell('Wrapping up...')
-    #     configure_project_paths()
-    #     if self.globTabs.currentWidget().__class__.__name__ == 'OpenProject':
-    #         logger.critical('Reloading table of projects data...')
-    #         try:
-    #             self.globTabs.currentWidget().user_projects.set_data()
-    #         except:
-    #             logger.warning('There was a problem updating the project list')
-    #             print_exception()
-    #
-    #     self.clearSelectionPathText()
-    #
-    #     self.tell('Deletion Complete!')
-    #     logger.info('Deletion Complete')
-
     def open_project_new(self):
 
         for i in range(self.globTabs.count()):
@@ -2068,21 +1902,11 @@ class MainWindow(QMainWindow):
 
     def detachNeuroglancer(self):
         logger.info('')
-        # if self._isProjectTab() or self._isZarrTab():
-        #     try:
-        #         self.detachedNg = QuickWebPage(url=cfg.emViewer.url())
-        #     except:
-        #         logger.info('Cannot open detached neuroglancer view')
-
-    def openDetatchedZarr(self):
-        logger.info('')
-        # if self._isProjectTab() or self._isZarrTab():
-        #     self.detachedNg = QuickWebPage()
-        #     self.detachedNg.open(url=str(cfg.emViewer.url()))
-        #     self.detachedNg.show()
-        # else:
-        #     if not ng.server.is_server_running():
-        #         self.warn('Neuroglancer is not running.')
+        if self._isProjectTab() or self._isZarrTab():
+            try:
+                self.detachedNg = QuickWebPage(url=cfg.emViewer.url())
+            except:
+                logger.info('Cannot open detached neuroglancer view')
 
 
     def onStartProject(self, dm, switch_to=False):
@@ -2090,44 +1914,20 @@ class MainWindow(QMainWindow):
                 Do not automatically save, there is nothing to save yet'''
         logger.info('')
         cfg.data = dm
+        cfg.settings['last_alignment_opened'] = dm.location
         dm.scale = dm.coarsest_scale_key()
         name,_ = os.path.splitext(os.path.basename(dm.location))
-        cfg.project_tab = cfg.pt = ProjectTab(self, path=dm.name, datamodel=dm)
+        cfg.project_tab = cfg.pt = ProjectTab(self, path=dm.location, datamodel=dm)
         cfg.dataById[id(cfg.project_tab)] = dm
         self.addGlobTab(cfg.project_tab, name, switch_to=switch_to)
-        logger.info(f'\n\nLoading project:\n%s\n' % os.path.basename(cfg.data.dest()))
-        self.tell("Loading Project '%s'..." % cfg.data.dest())
-        # initLogFiles(cfg.data)
+        logger.info(f'\n\nLoading project:\n%s\n' % os.path.basename(cfg.data.location))
+        self.tell("Loading Project '%s'..." % cfg.data.location)
         self.setUpdatesEnabled(False)
-
-        #Critical this might be critical for now
-        # cfg.data['data']['current_scale'] = cfg.data.coarsest_scale_key() #0720-
-        # if not cfg.data.is_aligned(s=cfg.data['data']['current_scale']):
-        #     cfg.data['data']['current_scale'] = cfg.data.coarsest_scale_key()
-        # cfg.data.set_defaults()  # 0.5357 -> 0.5438, ~.0081s
-
-        # cfg.project_tab.updateTreeWidget()  #TimeConsuming dt = 0.001 -> dt = 0.535 ~1/2 second
-        # cfg.project_tab.updateTreeWidget() #TimeConsuming!! dt = 0.58 - > dt = 1.10
-        
-        
-        
-        # self.spinbox_fps.setValue(float(cfg.DEFAULT_PLAYBACK_SPEED))
-        # self.reload_scales_combobox()  # fast
-        # self.updateEnabledButtons()
-        # self.reload_zpos_slider_and_lineedit()  # fast
-        # self.enableAllTabs()  # fast
-        # cfg.project_tab.updateTimingsWidget()
-        # cfg.project_tab.dataUpdateMA() #Important must come after initNeuroglancer
-
-
-        # check_project_status() #0816-
-
+        self.alignAllAction.setText(f"Align + Generate All: Level {cfg.data.scale}")
         if switch_to:
-            cfg.mw.setdw_snr(True)
-            # cfg.mw.setdw_thumbs(True)
-            # cfg.mw.setdw_matches(False)
-        # self.dataUpdateWidgets()
-
+            self.setdw_snr(True)
+            # self.setdw_thumbs(True)
+            # self.setdw_matches(False)
         self.hud.done()
         self.setUpdatesEnabled(True)
         self.setFocus()
@@ -2147,7 +1947,7 @@ class MainWindow(QMainWindow):
             json.dump(cfg.settings, f, indent=2)
             f.close()
         except:
-            cfg.mw.warn(f'Unable to save current user preferences. Using defaults instead.')
+            self.warn(f'Unable to save current user preferences. Using defaults instead.')
 
     def resetUserPreferences(self):
         logger.info('')
@@ -2161,7 +1961,7 @@ class MainWindow(QMainWindow):
     def rename_project(self):
         new_name, ok = QInputDialog.getText(self, 'Input Dialog', 'Project Name:')
         if ok:
-            dest_orig = Path(cfg.data.dest())
+            dest_orig = Path(cfg.data.location)
             print(dest_orig)
             parent = dest_orig.parents[0]
             new_dest = os.path.join(parent, new_name)
@@ -2200,25 +2000,25 @@ class MainWindow(QMainWindow):
                     print_exception()
 
     def _saveProjectToFile(self, saveas=None, silently=False):
-        if hasattr(cfg,'data'):
+        if cfg.data:
             try:
-                # self._mutex.lock()
                 if saveas is not None:
                     cfg.data.location = saveas
-                data_cp = copy.deepcopy(cfg.data._data)
-                # data_cp.make_paths_relative(start=cfg.data.dest())
-                # data_cp_json = data_cp.to_dict()
-                location = cfg.data.location
-                if not silently:
-                    logger.info(f'---- SAVING TO FILE ----\n{location}')
-                jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
+                # data_cp = copy.deepcopy(cfg.data._data) #0828-
 
-                name = copy.deepcopy(location)
+                # data_cp.make_paths_relative(start=cfg.data.location)
+                # data_cp_json = data_cp.to_dict()
+                name = copy.deepcopy(cfg.data.location)
+                if not silently:
+                    logger.info(f'Saving:\n{name}')
 
                 if not name.endswith('.swiftir'):
                     name += ".swiftir"
+
                 with open(name, 'w') as f:
-                    f.write(jde.encode(data_cp))
+                    jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
+                    # f.write(jde.encode(data_cp)) #0828-
+                    f.write(jde.encode(cfg.data._data))
 
                 # if is_tacc():
                 #     node = platform.node()
@@ -2230,14 +2030,9 @@ class MainWindow(QMainWindow):
                 #     with open(of, 'w') as f:
                 #         f.write(jde.encode(data_cp))
 
-                # self.globTabs.setTabText(self.globTabs.currentIndex(), os.path.basename(name))
-
                 # self.saveUserPreferences()
-                if not silently:
-                    self.statusBar.showMessage('Project Saved!', 3000)
-
-                # self._mutex.unlock()
-                logger.info("<<<<")
+                # if not silently:
+                #     self.statusBar.showMessage('Project Saved!', 3000)
 
             except:
                 print_exception()
@@ -2254,7 +2049,7 @@ class MainWindow(QMainWindow):
                 # self.tell('You have unsaved changes.')
                 # logger.critical("caller: " + inspect.stack()[1].function)
                 self._unsaved_changes = True
-                name = os.path.basename(cfg.data.dest())
+                name = os.path.basename(cfg.data.location)
                 self.globTabs.setTabText(self.globTabs.currentIndex(), name + '.swiftir' + ' *')
 
 
@@ -2323,22 +2118,17 @@ class MainWindow(QMainWindow):
     def shutdownInstructions(self):
         logger.info('Performing Shutdown Instructions...')
 
+        self._autosave(silently=True)
+
         self.settings.setValue("geometry", self.saveGeometry())
         self.settings.setValue("windowState", self.saveState())
 
-        # if ng.server.is_server_running():
-        #     try:
-        #         logger.info('Stopping Neuroglancer Client...')
-        #         self.tell('Stopping Neuroglancer Client...')
-        #         self.shutdownNeuroglancer()
-        #     except:
-        #         sys.stdout.flush()
-        #         logger.warning('Having trouble shutting down neuroglancer')
-        #         self.warn('Having trouble shutting down neuroglancer')
-        #     finally:
-        #         time.sleep(.3)
-
-        self._autosave(silently=True)
+        if ng.server.is_server_running():
+            try:
+                self.tell('Stopping Neuroglancer Client...')
+                self.shutdownNeuroglancer()
+            except:
+                self.warn('Having trouble shutting down neuroglancer')
 
         if cfg.USE_EXTRA_THREADING:
             try:
@@ -2419,7 +2209,7 @@ class MainWindow(QMainWindow):
 
     def invalidate_all(self, s=None):
         if ng.is_server_running():
-            if s == None: s = cfg.data.scale_key
+            if s == None: s = cfg.data.level
             if cfg.data.is_mendenhall():
                 cfg.emViewer.menLV.invalidate()
             else:
@@ -2428,38 +2218,22 @@ class MainWindow(QMainWindow):
                 if exist_aligned_zarr(s):
                     cfg.alLV.invalidate()
 
-    #
-    # def stopNgServer(self):
-    #     # caller = inspect.stack()[1].function
-    #     # logger.critical(caller)
-    #     if ng.is_server_running():
-    #         logger.info('Stopping Neuroglancer...')
-    #         try:    ng.stop()
-    #         except: print_exception()
-    #     else:
-    #         logger.info('Neuroglancer Is Not Running')
 
     def startStopTimer(self):
         logger.info('')
-        if self._isProjectTab():
-            if self._isPlayingBack:
-                self.automaticPlayTimer.stop()
-                self._btn_automaticPlayTimer.setIcon(qta.icon('fa.play', color=cfg.ICON_COLOR))
-                # self._btn_automaticPlayTimer.setIcon(QIcon('src/resources/play-button.png'))
-            elif cfg.project_tab or cfg.zarr_tab:
-                # self.automaticPlayTimer.setInterval(1000 / cfg.DEFAULT_PLAYBACK_SPEED)
-                self.automaticPlayTimer.start()
-                self._btn_automaticPlayTimer.setIcon(qta.icon('fa.pause', color=cfg.ICON_COLOR))
-                # self._btn_automaticPlayTimer.setIcon(QIcon('src/resources/pause-button.png'))
-            self._isPlayingBack = not self._isPlayingBack
+        if self.timerPlayback.isActive():
+            self.timerPlayback.stop()
+            self.bPlayback.setIcon(qta.icon('fa.play', color=cfg.ICON_COLOR))
+        elif self._isProjectTab() or self._isZarrTab():
+            self.timerPlayback.start()
+            self.bPlayback.setIcon(qta.icon('fa.pause', color=cfg.ICON_COLOR))
 
     def stopPlaybackTimer(self):
-        if self._isPlayingBack:
-            logger.info('')
-            self.automaticPlayTimer.stop()
-            self._btn_automaticPlayTimer.setIcon(qta.icon('fa.play', color=cfg.ICON_COLOR))
-            # self._btn_automaticPlayTimer.setIcon(QIcon('src/resources/play-button.png'))
-            self._isPlayingBack = 0
+        if self.timerPlayback.isActive():
+            logger.warning('Timer was active!')
+            self.timerPlayback.stop()
+            self.bPlayback.setIcon(qta.icon('fa.play', color=cfg.ICON_COLOR))
+            # self.bPlayback.setIcon(QIcon('src/resources/play-bBlink.png'))
 
     def incrementZoomOut(self):
         if ('QTextEdit' or 'QLineEdit') in str(self.focusWidget()):
@@ -2467,12 +2241,13 @@ class MainWindow(QMainWindow):
 
         # logger.info('')
         if self._isProjectTab():
-            if cfg.data['state']['current_tab'] == 1:
-                new_cs_scale = cfg.baseViewer.zoom() * 1.1
+            cur = cfg.project_tab.wTabs.currentIndex()
+            if cur == 1:
+                new_cs_scale = cfg.editorViewer.zoom() * 1.1
                 logger.info(f'new_cs_scale: {new_cs_scale}')
-                cfg.baseViewer.set_zoom(new_cs_scale)
+                cfg.editorViewer.set_zoom(new_cs_scale)
                 cfg.project_tab.zoomSlider.setValue(1 / new_cs_scale)
-            elif cfg.data['state']['current_tab'] == 0:
+            elif cur == 0:
                 new_cs_scale = cfg.emViewer.zoom() * 1.1
                 logger.info(f'new_cs_scale: {new_cs_scale}')
                 cfg.emViewer.set_zoom(new_cs_scale)
@@ -2484,12 +2259,13 @@ class MainWindow(QMainWindow):
             return
 
         if self._isProjectTab():
-            if cfg.data['state']['current_tab'] == 1:
-                new_cs_scale = cfg.baseViewer.zoom() * 0.9
+            cur = cfg.project_tab.wTabs.currentIndex()
+            if cur == 1:
+                new_cs_scale = cfg.editorViewer.zoom() * 0.9
                 logger.info(f'new_cs_scale: {new_cs_scale}')
-                cfg.baseViewer.set_zoom(new_cs_scale)
+                cfg.editorViewer.set_zoom(new_cs_scale)
                 cfg.project_tab.zoomSlider.setValue(1 / new_cs_scale)
-            elif cfg.data['state']['current_tab'] == 0:
+            elif cur == 0:
                 new_cs_scale = cfg.emViewer.zoom() * 0.9
                 logger.info(f'new_cs_scale: {new_cs_scale}')
                 cfg.emViewer.set_zoom(new_cs_scale)
@@ -2639,30 +2415,15 @@ class MainWindow(QMainWindow):
         self.viewer_stack_widget.setCurrentIndex(self.temp_img_panel_index)
         self.splashlabel.hide()
 
-
-    def _callbk_bnding_box(self, state):
-        caller = inspect.stack()[1].function
-        logger.info(f'Bounding Box Toggle Callback (caller: {caller})')
-
-        if caller == 'main':
-            state = cfg.pt._bbToggle.isChecked()
-            # cfg.pt._bbToggle.setEnabled(state)
-            if state:
-                self.warn('Bounding Box is ON. Warning: Output dimensions may grow larger than source.')
-                cfg.data['defaults']['bounding-box'] = True
-            else:
-                self.tell('Bounding Box is OFF. Output dimensions will match source.')
-                cfg.data['defaults']['bounding-box'] = False
-
     def _callbk_skipChanged(self, state: int):  # 'state' is connected to skipped toggle
         '''Callback Function for Skip Image Toggle'''
         #Todo refactor
         caller = inspect.stack()[1].function
         # if caller == 'main':
         if self._isProjectTab():
-            if caller != '_updateZposWidgets':
+            if caller != 'updateSlidrZpos':
                 logger.critical(f'[{caller}]')
-                skip_state = not self._skipCheckbox.isChecked()
+                skip_state = not self.cbSkip.isChecked()
                 layer = cfg.data.zpos
                 for s in cfg.data.finer_scales():
                     if layer < len(cfg.data):
@@ -2682,7 +2443,7 @@ class MainWindow(QMainWindow):
                 SetStackCafm( #Critical0802+
                     cfg.data,
                     scale=cfg.data.scale,
-                    poly_order=cfg.data.default_poly_order
+                    poly_order=cfg.data.poly_order
                 )
 
                 cfg.pt.project_table.set_row_data(row=layer)
@@ -2692,25 +2453,25 @@ class MainWindow(QMainWindow):
                     if layer + x in range(0,len(cfg.data)):
                         cfg.pt.project_table.set_row_data(row=layer + x)
 
-                if cfg.project_tab._tabs.currentIndex() == 4:
+                if cfg.project_tab.wTabs.currentIndex() == 4:
                     cfg.project_tab.snr_plot.initSnrPlot()
 
                 if self.dw_snr.isVisible():
                     cfg.project_tab.dSnr_plot.initSnrPlot()
 
-                cfg.mw.dataUpdateWidgets()
+                self.dataUpdateWidgets()
 
 
     def skip_change_shortcut(self):
         logger.info('')
         if cfg.data:
-            self._skipCheckbox.setChecked(not self._skipCheckbox.isChecked())
+            self.cbSkip.setChecked(not self.cbSkip.isChecked())
 
 
     def onMAsyncTimer(self):
         logger.critical("")
         logger.critical(f"cfg.data.zpos         = {cfg.data.zpos}")
-        logger.critical(f"cfg.baseViewer.index  = {cfg.baseViewer.index}")
+        logger.critical(f"cfg.editorViewer.index  = {cfg.editorViewer.index}")
 
 
     def print_all_matchpoints(self):
@@ -2749,17 +2510,17 @@ class MainWindow(QMainWindow):
 
     def show_zarr_info(self) -> None:
         if cfg.project_tab:
-            z = zarr.open(os.path.join(cfg.data.dest(), 'img_aligned.zarr'))
+            z = zarr.open(os.path.join(cfg.data.location, 'img_aligned.zarr'))
             self.tell('\n' + str(z.tree()) + '\n' + str(z.info))
 
     def show_zarr_info_aligned(self) -> None:
         if cfg.project_tab:
-            z = zarr.open(os.path.join(cfg.data.dest(), 'img_aligned.zarr'))
+            z = zarr.open(os.path.join(cfg.data.location, 'img_aligned.zarr'))
             self.tell('\n' + str(z.info) + '\n' + str(z.tree()))
 
     def show_zarr_info_source(self) -> None:
         if cfg.project_tab:
-            z = zarr.open(os.path.join(cfg.data.dest(), 'img_src.zarr'))
+            z = zarr.open(os.path.join(cfg.data.location, 'img_src.zarr'))
             self.tell('\n' + str(z.info) + '\n' + str(z.tree()))
 
     def show_hide_developer_console(self):
@@ -2813,6 +2574,151 @@ class MainWindow(QMainWindow):
         # print(f'# of widgets : {num_widgets}')
         # print(h.heap())
 
+
+
+    def initAdvancedMenu(self):
+
+        self.le_tacc_num_cores = QLineEdit()
+        self.le_tacc_num_cores.setFixedHeight(18)
+        self.le_tacc_num_cores.setFixedWidth(30)
+        self.le_tacc_num_cores.setValidator(QIntValidator(1,128))
+        def update_tacc_max_cores():
+            logger.info('')
+            n = int(self.le_tacc_num_cores.text())
+            cfg.TACC_MAX_CPUS = int(n)
+            self.tell(f"Maximum # of cores is now set to: {n}")
+        self.le_tacc_num_cores.setText(str(cfg.TACC_MAX_CPUS))
+        self.le_tacc_num_cores.textEdited.connect(update_tacc_max_cores)
+        self.le_tacc_num_cores.returnPressed.connect(update_tacc_max_cores)
+
+        self.le_max_downsampling = QLineEdit()
+        self.le_max_downsampling.setFixedHeight(18)
+        self.le_max_downsampling.setFixedWidth(30)
+        self.le_max_downsampling.setValidator(QIntValidator())
+        def update_le_max_downsampling():
+            logger.info('')
+            n = int(self.le_max_downsampling.text())
+            cfg.max_downsampling = int(n)
+        self.le_max_downsampling.setText(str(cfg.max_downsampling))
+        self.le_max_downsampling.textEdited.connect(update_le_max_downsampling)
+        self.le_max_downsampling.returnPressed.connect(update_le_max_downsampling)
+
+        self.le_max_downsampled_size = QLineEdit()
+        self.le_max_downsampled_size.setFixedHeight(18)
+        self.le_max_downsampled_size.setFixedWidth(30)
+        self.le_max_downsampled_size.setValidator(QIntValidator())
+        def update_le_max_downsampled_size():
+            logger.info('')
+            n = int(self.le_max_downsampled_size.text())
+            cfg.max_downsampled_size = int(n)
+        self.le_max_downsampled_size.setText(str(cfg.max_downsampled_size))
+        self.le_max_downsampled_size.textEdited.connect(update_le_max_downsampled_size)
+        self.le_max_downsampled_size.returnPressed.connect(update_le_max_downsampled_size)
+
+        # self.le_max_downsampling_scales = QLineEdit()
+        # self.le_max_downsampling_scales.setFixedHeight(18)
+        # self.le_max_downsampling_scales.setFixedWidth(30)
+        # self.le_max_downsampling_scales.setValidator(QIntValidator())
+        # def update_le_max_downsampling_scales():
+        #     logger.info('')
+        #     n = int(self.le_max_downsampling_scales.text())
+        #     cfg.max_downsampling_scales = int(n)
+        # self.le_max_downsampling_scales.setText(str(cfg.max_downsampling_scales))
+        # self.le_max_downsampling_scales.textEdited.connect(update_le_max_downsampling_scales)
+        # self.le_max_downsampling_scales.returnPressed.connect(update_le_max_downsampling_scales)
+
+        self.le_tacc_num_scale1_cores = QLineEdit()
+        self.le_tacc_num_scale1_cores.setFixedHeight(18)
+        self.le_tacc_num_scale1_cores.setFixedWidth(30)
+        self.le_tacc_num_scale1_cores.setValidator(QIntValidator(1,128))
+        def update_tacc_max_scale1_cores():
+            logger.info('')
+            n = int(self.le_tacc_num_scale1_cores.text())
+            cfg.SCALE_1_CORES_LIMIT = int(n)
+            self.tell(f"Maximum # of cores is now set to: {n}")
+        self.le_tacc_num_scale1_cores.setText(str(cfg.SCALE_1_CORES_LIMIT))
+        self.le_tacc_num_scale1_cores.textEdited.connect(update_tacc_max_scale1_cores)
+        self.le_tacc_num_scale1_cores.returnPressed.connect(update_tacc_max_scale1_cores)
+
+        self.le_qtwebengine_raster_threads = QLineEdit()
+        self.le_qtwebengine_raster_threads.setFixedHeight(18)
+        self.le_qtwebengine_raster_threads.setFixedWidth(30)
+        self.le_qtwebengine_raster_threads.setValidator(QIntValidator())
+        def update_raster_threads():
+            logger.info('')
+            n = int(self.le_qtwebengine_raster_threads.text())
+            cfg.QTWEBENGINE_RASTER_THREADS = n
+            self.tell(f"# QtWebengine raster threads is now set to: {n}")
+        self.le_qtwebengine_raster_threads.setText(str(cfg.QTWEBENGINE_RASTER_THREADS))
+        self.le_qtwebengine_raster_threads.textEdited.connect(update_raster_threads)
+        self.le_qtwebengine_raster_threads.returnPressed.connect(update_raster_threads)
+
+        self.cb_recipe_logging = QCheckBox()
+        self.cb_recipe_logging.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        def update_recipe_logging():
+            logger.info('')
+            b = self.cb_recipe_logging.isChecked()
+            cfg.LOG_RECIPE_TO_FILE = int(b)
+            self.tell(f"Recipe logging is now set to: {b}")
+        self.cb_recipe_logging.setChecked(cfg.LOG_RECIPE_TO_FILE)
+        self.cb_recipe_logging.toggled.connect(update_recipe_logging)
+
+        self.cb_verbose_swim = QCheckBox()
+        self.cb_verbose_swim.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        def update_swim_verbosity():
+            logger.info('')
+            b = self.cb_verbose_swim.isChecked()
+            cfg.VERBOSE_SWIM = int(b)
+            self.tell(f"Recipe logging is now set to: {b}")
+        self.cb_verbose_swim.setChecked(cfg.VERBOSE_SWIM)
+        self.cb_verbose_swim.toggled.connect(update_swim_verbosity)
+
+        self.cb_dev_mode = QCheckBox()
+        self.cb_dev_mode.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        def update_dev_mode():
+            logger.info('')
+            b = self.cb_dev_mode.isChecked()
+            cfg.DEV_MODE = int(b)
+            self.tell(f"Dev mode is now set to: {b}")
+        self.cb_dev_mode.setChecked(cfg.DEV_MODE)
+        self.cb_dev_mode.toggled.connect(update_dev_mode)
+
+        self.cb_use_pool = QCheckBox()
+        self.cb_use_pool.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        def update_mp_mode():
+            logger.info('')
+            b = self.cb_use_pool.isChecked()
+            cfg.USE_POOL_FOR_SWIM = int(b)
+            self.tell(f"Multiprocessing mode is now set to: "
+                                 f"{('task queue', 'pool')[b]}")
+        self.cb_use_pool.setChecked(cfg.USE_POOL_FOR_SWIM)
+        self.cb_use_pool.toggled.connect(update_mp_mode)
+
+        self.w_tacc = QWidget()
+        self.w_tacc.setContentsMargins(2,2,2,2)
+        self.fl_tacc = QFormLayout()
+        self.fl_tacc.setContentsMargins(0,0,0,0)
+        self.fl_tacc.setSpacing(0)
+        self.w_tacc.setLayout(self.fl_tacc)
+        self.fl_tacc.addRow(f"Local Vol., max_downsampling", self.le_max_downsampling)
+        self.fl_tacc.addRow(f"Local Vol., max_downsampled_size", self.le_max_downsampled_size)
+        # self.fl_tacc.addRow(f"Local Vol., max_downsampling_scales", self.le_max_downsampling_scales)
+        self.fl_tacc.addRow(f"Max # cores (downsampled scales)", self.le_tacc_num_cores)
+        self.fl_tacc.addRow(f"Max # cores (scale 1)", self.le_tacc_num_scale1_cores)
+        self.fl_tacc.addRow(f"Use mp.Pool (vs task queue)", self.cb_use_pool)
+        self.fl_tacc.addRow(f"QtWebengine # raster threads", self.le_qtwebengine_raster_threads)
+        self.fl_tacc.addRow(f"Log recipe to file", self.cb_recipe_logging)
+        self.fl_tacc.addRow(f"Verbose SWIM (-v)", self.cb_verbose_swim)
+        self.fl_tacc.addRow(f"DEV_MODE", self.cb_dev_mode)
+
+        self.wAdvanced = QScrollArea()
+        self.wAdvanced.setStyleSheet("background-color: #161c20; color: #f3f6fb;")
+        self.wAdvanced.setWidget(self.w_tacc)
+        self.wAdvanced.setWidgetResizable(True)
+        self.wAdvanced.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.wAdvanced.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+
+
     def initToolbar(self):
         logger.info('')
 
@@ -2843,7 +2749,7 @@ class MainWindow(QMainWindow):
 
         self.tbbRefresh = QToolButton()
         self.tbbRefresh.setToolTip(f"Refresh View {hotkey('R')}")
-        self.tbbRefresh.clicked.connect(self.refreshTab)
+        self.tbbRefresh.clicked.connect(self._refresh)
         self.tbbRefresh.setIcon(qta.icon("fa.refresh", color='#161c20'))
 
         def fn_view_faq():
@@ -3041,7 +2947,6 @@ class MainWindow(QMainWindow):
         self.tbbProjects.setIcon(qta.icon("fa.folder", color='#161c20'))
 
         self.tbbMenu = QToolButton()
-        self.tbbMenu.setToolTip("Menu")
         self.tbbMenu.setMenu(self.menu)
         self.tbbMenu.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.tbbMenu.setPopupMode(QToolButton.InstantPopup)
@@ -3052,6 +2957,49 @@ class MainWindow(QMainWindow):
         # self.tbbTestThread = QToolButton()
         # self.tbbTestThread.pressed.connect(self.runLongTask)
         # self.tbbTestThread.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+
+
+        self.tbbStats = QToolButton()
+        menu = QMenu()
+        menu.aboutToShow.connect(self.updateStats)
+        menu.setFocusPolicy(Qt.NoFocus)
+        self.tbbStats.setMenu(menu)
+        self.tbbStats.setFocusPolicy(Qt.NoFocus)
+        self.tbbStats.setPopupMode(QToolButton.InstantPopup)
+        action = QWidgetAction(self)
+        action.setDefaultWidget(self.wStats)
+        menu.addAction(action)
+
+
+        self.tbbLow8 = QToolButton()
+        menu = QMenu()
+        menu.aboutToShow.connect(self.updateLowest8widget)
+        menu.setFocusPolicy(Qt.NoFocus)
+        self.tbbLow8.setMenu(menu)
+        self.tbbLow8.setFocusPolicy(Qt.NoFocus)
+        self.tbbLow8.setPopupMode(QToolButton.InstantPopup)
+        action = QWidgetAction(self)
+        action.setDefaultWidget(self.sa8)
+        menu.addAction(action)
+
+        self.tbbAdvanced = QToolButton()
+        menu = QMenu()
+        menu.setFocusPolicy(Qt.NoFocus)
+        self.tbbAdvanced.setMenu(menu)
+        self.tbbAdvanced.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.tbbAdvanced.setPopupMode(QToolButton.InstantPopup)
+        action = QWidgetAction(self)
+        action.setDefaultWidget(self.wAdvanced)
+        menu.addAction(action)
+
+        # menu = debugMenu.addMenu('Active Threads')
+        # self.menuTextActiveThreads = QTextEdit(self)
+        # self.menuTextActiveThreads.setReadOnly(True)
+        # action = QWidgetAction(self)
+        # action.setDefaultWidget(self.menuTextActiveThreads)
+        # menu.hovered.connect(fn)
+        # debugMenu.hovered.connect(fn)
+        # menu.addAction(action)
 
 
 
@@ -3071,11 +3019,15 @@ class MainWindow(QMainWindow):
             self.tbbNotes,
             self.tbbPython,
             self.tbbDetachNgButton,
+            self.tbbStats,
+            self.tbbLow8,
+            self.tbbAdvanced
             # self.tbbTestThread,
         ]
 
         names = ['Menu', 'Projects', ' &Refresh','Getting\nStarted',' FAQ','Glossary','Issue\nTracker','3DEM\nData',
-                 'SWIM\nRegions', ' &Matches', 'SNR P&lot', '  &HUD', '  &Notes', '&Python\nConsole', '&Detach\nNG']
+                 'SWIM\nRegions', ' &Matches', 'SNR P&lot', '  &HUD', '  &Notes', '&Python\nConsole', '&Detach\nNG',
+                 'Quick Stats','Lowest 8\nSNR', 'Advanced\nOptions']
         for b,n in zip(toolbuttons,names):
             b.setText(n)
             b.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
@@ -3091,8 +3043,6 @@ class MainWindow(QMainWindow):
             """)
 
             # b.setLayoutDirection(Qt.RightToLeft)
-
-
 
 
         # self.newLabel = QLabel(' ← New! ')
@@ -3122,9 +3072,23 @@ class MainWindow(QMainWindow):
         self.toolbar.addWidget(self.tbbPython)
         self.toolbar.addWidget(self.tbbNotes)
         self.toolbar.addWidget(self.tbbDetachNgButton)
+        self.toolbar.addWidget(self.tbbStats)
+        self.toolbar.addWidget(self.tbbLow8)
+        self.toolbar.addWidget(self.tbbAdvanced)
         # self.toolbar.addWidget(self.tbbTestThread)
 
         self.toolbar.setStyleSheet('font-size: 10px; font-weight: 600; color: #161c20;')
+
+
+    def updateOutputSettings(self):
+        if self.wOutputSettings.isVisible():
+            poly = cfg.data['defaults'][cfg.data.scale]['polynomial_bias']
+            if (poly == None) or (poly == 'None'):
+                self.boxBias.setCurrentIndex(0)
+            else:
+                self.boxBias.setCurrentIndex(int(poly) + 1)
+            self.cbBB.setChecked(cfg.data.has_bb())
+
 
     def resizeEvent(self, e):
         logger.info('')
@@ -3162,7 +3126,7 @@ class MainWindow(QMainWindow):
                 logger.info("(!) window maximized")
                 self.fullScreenAction.setIcon(qta.icon('mdi.fullscreen-exit', color='#ede9e8'))
             if self._isProjectTab():
-                if cfg.pt._tabs.currentIndex() in (0, 1):
+                if cfg.pt.wTabs.currentIndex() in (0, 1):
                     cfg.project_tab.initNeuroglancer()
 
 
@@ -3191,7 +3155,7 @@ class MainWindow(QMainWindow):
             self.globTabs.setTabEnabled(i, True)
         if cfg.project_tab:
             for i in range(0, 5):
-                cfg.project_tab._tabs.setTabEnabled(i, True)
+                cfg.project_tab.wTabs.setTabEnabled(i, True)
         # self._btn_refreshTab.setEnabled(True)
 
     def lookForTabID(self, search):
@@ -3221,13 +3185,6 @@ class MainWindow(QMainWindow):
             return False
 
 
-    def _closeOpenProjectTab(self):
-        for i in range(self.globTabs.count()):
-            if self.globTabs.widget(i).__class__.__name__ == 'OpenProject':
-                logger.info(f"Removing tab {i}...")
-                self.globTabs.removeTab(i)
-                return
-
     def _switchtoOpenProjectTab(self):
         for i in range(self.globTabs.count()):
             if self.globTabs.widget(i).__class__.__name__ == 'OpenProject':
@@ -3245,7 +3202,7 @@ class MainWindow(QMainWindow):
         projects = []
         for i in range(self.globTabs.count()):
             if 'ProjectTab' in str(self.globTabs.widget(i)):
-                projects.append(self.globTabs.widget(i).datamodel.dest())
+                projects.append(self.globTabs.widget(i).datamodel.location)
         return projects
 
     def getOpenProjectNames(self):
@@ -3260,7 +3217,7 @@ class MainWindow(QMainWindow):
     def getProjectIndex(self, search):
         for i in range(self.globTabs.count()):
             if 'ProjectTab' in str(self.globTabs.widget(i)):
-                if self.globTabs.widget(i).datamodel.dest() == os.path.splitext(search)[0]:
+                if self.globTabs.widget(i).datamodel.location == os.path.splitext(search)[0]:
                     return i
 
     def closeAlignment(self, dest):
@@ -3298,69 +3255,44 @@ class MainWindow(QMainWindow):
 
     def _onGlobTabChange(self):
 
-        #Todo check this for extraneous call upon new project and open project
-
         self.tabChanged.emit()
         self.setUpdatesEnabled(False)
         caller = inspect.stack()[1].function
         logger.info(f'changing tab to tab of type {self._getTabType()}')
-        # if caller not in ('onStartProject', '_setLastTab'): #0524-
-        #     self.shutdownNeuroglancer()  # 0329+
-        if caller == '_closeOpenProjectTab':
-            logger.warning(f"caller == '_closeOpenProjectTab' - Returning...")
-            return
 
-        if hasattr(cfg, 'data'):
-            del cfg.data
-        if hasattr(cfg, 'project_tab'):
-            del cfg.project_tab
-        if hasattr(cfg, 'zarr_tab'):
-            del cfg.zarr_tab
+        # if hasattr(cfg, 'data'):
+        #     del cfg.data
+        # if hasattr(cfg, 'project_tab'):
+        #     del cfg.project_tab
+        # if hasattr(cfg, 'zarr_tab'):
+        #     del cfg.zarr_tab
+
         # cfg.project_tab = None
         # cfg.zarr_tab = None
-        self._changeScaleCombo.clear()
         self.stopPlaybackTimer()
-        self.reload_scales_combobox()
+        self.reloadComboScale()
 
         # QApplication.restoreOverrideCursor()
 
-        if type(self._lastTab) == src.ui.tab_project.ProjectTab:
-            self._lastTab.datamodel['state']['blink'] = False
-            self._lastTab.blinkTimer.stop()
-            self._lastTab.tbbBlinkToggle.setIcon(qta.icon('mdi.toggle-switch-off-outline', color='#f3f6fb'))
-            self._lastTab.tbbBlinkToggle.setChecked(False)
-
         if self._getTabType() != 'ProjectTab':
             self.statusBar.clearMessage()
-            self.statusBar.setStyleSheet("""
-                font-size: 10px;
-                color: #161c20;
-                background-color: #ede9e8;
-                margin: 0px;
-                padding: 0px;
-            """)
             self.dw_thumbs.setWidget(NullWidget())
             self.dw_matches.setWidget(NullWidget())
             self.dw_snr.setWidget(NullWidget())
-
-            # self.dw_thumbs.setWidget(NullWidget())
             self.dw_matches.setWidget(NullWidget())
             self.dw_snr.setWidget(NullWidget())
 
-        # elif self._getTabType() == 'OpenProject':
-        #     # configure_project_paths()
-        #     self._getTabObject().user_projects.set_data()
-
         elif self._getTabType() == 'ProjectTab':
             cfg.data = self.globTabs.currentWidget().datamodel
-            # cfg.data.signals.zposChanged.connect(self._updateZposWidgets)
+            # cfg.data.signals.zposChanged.connect(self.updateSlidrZpos)
             cfg.project_tab = cfg.pt = self.globTabs.currentWidget()
             cfg.pt.initNeuroglancer() #0815-
+            self.updateLowest8widget()
             try:
                 if cfg.emViewer:
                     cfg.emViewer = cfg.project_tab.viewer
-                if hasattr(cfg.project_tab, 'baseViewer'):
-                    cfg.baseViewer = cfg.project_tab.baseViewer
+                if hasattr(cfg.project_tab, 'editorViewer'):
+                    cfg.editorViewer = cfg.project_tab.editorViewer
             except:
                 print_exception()
 
@@ -3370,24 +3302,21 @@ class MainWindow(QMainWindow):
             self.dw_snr.setWidget(cfg.pt.dSnr_plot)
             if self.dw_snr.isVisible():
                 cfg.pt.dSnr_plot.initSnrPlot()
-            # self.updateAllCpanelDetails()
 
         elif self._getTabType() == 'ZarrTab':
             logger.critical('Loading Zarr Tab...')
             cfg.zarr_tab = self.globTabs.currentWidget()
             cfg.emViewer = cfg.zarr_tab.viewer
-            # self.set_nglayout_combo_text(layout='4panel')
             cfg.zarr_tab.viewer.bootstrap()
 
         elif self._getTabType() == 'OpenProject':
             self.pm.resetView()
             self.pm.refresh()
-
         
         logger.info('Wrapping up...')
         # self.updateMenus()
         self.reload_zpos_slider_and_lineedit()  # future changes to image importing will require refactor
-        self.reload_scales_combobox()
+        self.reloadComboScale()
         self.updateEnabledButtons()
         self.updateNotes()
         self._lastTab = self._getTabObject()
@@ -3515,15 +3444,11 @@ class MainWindow(QMainWindow):
         '''Initialize Menu'''
         logger.info('')
 
-        # self.scManualAlign = QShortcut(QKeySequence('Ctrl+M'), self)
-        # self.scManualAlign.activated.connect(self.enterExitManAlignMode)
-
         self.action_groups = {}
 
         # self.menu = self.menuBar()
         self.menu.setStyleSheet("""font-size: 11px; font-weight: 600;""")
         self.menu.setFocusPolicy(Qt.NoFocus)
-
         # Fix for non-native menu on macOS
         # self.menu.setNativeMenuBar(False)
         # self.menu.setNativeMenuBar(True)
@@ -3551,16 +3476,6 @@ class MainWindow(QMainWindow):
         self.menu.addAction(self.fullScreenAction)
 
         fileMenu = self.menu.addMenu('File')
-
-        # self.newAction = QAction('&New Project...', self)
-        # def fn():
-        #     if self._isOpenProjTab():
-        #
-        #         self.getCurrentTabWidget()
-        # self.newAction.triggered.connect(self.new_project)
-        # self.newAction.setShortcut('Ctrl+N')
-        # self.addAction(self.newAction)
-        # fileMenu.addAction(self.newAction)
 
         self.openAction = QAction('&Open...', self)
         # self.openAction.triggered.connect(self.open_project)
@@ -3600,9 +3515,9 @@ class MainWindow(QMainWindow):
         fileMenu.addAction(self.resetPreferencesAction)
 
         self.refreshAction = QAction('&Refresh', self)
-        self.refreshAction.triggered.connect(self.refreshTab)
-        # self.refreshAction.setShortcut('Ctrl+R')
-        # self.refreshAction.setShortcutContext(Qt.ApplicationShortcut)
+        self.refreshAction.triggered.connect(self._refresh)
+        self.refreshAction.setShortcut('Ctrl+R')
+        self.refreshAction.setShortcutContext(Qt.ApplicationShortcut)
         # self.addAction(self.refreshAction)
         fileMenu.addAction(self.refreshAction)
 
@@ -3705,41 +3620,17 @@ class MainWindow(QMainWindow):
         # self.zoomOutAction.setShortcutContext(Qt.ApplicationShortcut)
         viewMenu.addAction(self.zoomOutAction)
 
-
-        # self.ngShowAxisLinesAction = QAction(self)
-
-        # self.ngShowScaleBarAction = QAction(self)
-        # def fn():
-        #     if self._isProjectTab():
-        #         opt = self.ngShowScaleBarAction.isChecked()
-        #         setOpt('neuroglancer,SHOW_SCALE_BAR', opt)
-        #         # self.ngShowScaleBarAction.setText(('Show Scale Bar', 'Hide Scale Bar')[opt])
-        #         # for v in self.get_viewers():
-        #         #     v.updateScaleBar()
-        #         if cfg.emViewer:
-        #             cfg.emViewer.updateScaleBar()
-        # self.ngShowScaleBarAction.setCheckable(True)
-        # self.ngShowScaleBarAction.setChecked(getOpt('neuroglancer,SHOW_SCALE_BAR'))
-        # # self.ngShowScaleBarAction.setText(('Show Scale Bar', 'Hide Scale Bar')[getOpt('neuroglancer,SHOW_SCALE_BAR')])
-        # self.ngShowScaleBarAction.setText('Scale Bar')
-        # self.ngShowScaleBarAction.triggered.connect(fn)
-        # viewMenu.addAction(self.ngShowScaleBarAction)
-
         alignMenu = self.menu.addMenu('Align')
 
-
-        self.alignAllAction = QAction('Align All Current Scale', self)
+        self.alignAllAction = QAction('Align + Generate All: Current Level', self)
         self.alignAllAction.triggered.connect(self.alignAll)
-        # self.alignAllAction.setShortcut('Ctrl+A')
-        # self.alignAllAction.setShortcutContext(Qt.ApplicationShortcut)
         alignMenu.addAction(self.alignAllAction)
 
-        self.alignAllScalesAction = QAction('Align Scales to Full Res', self)
+        self.alignAllScalesAction = QAction('Align + Generate All Scale Levels', self)
         self.alignAllScalesAction.triggered.connect(self.alignAllScales)
         alignMenu.addAction(self.alignAllScalesAction)
 
-        self.alignOneAction = QAction('Align Current Section', self)
-        # self.alignOneAction.triggered.connect(self.alignGenerateOne) #0802-
+        self.alignOneAction = QAction('Align + Generate Current Only', self)
         self.alignOneAction.triggered.connect(self.alignOne)
         alignMenu.addAction(self.alignOneAction)
 
@@ -3748,10 +3639,6 @@ class MainWindow(QMainWindow):
         # self.skipChangeAction.setShortcut('Ctrl+K')
         self.addAction(self.skipChangeAction)
         alignMenu.addAction(self.skipChangeAction)
-
-        # self.showMatchpointsAction = QAction('Show Matchpoints', self)
-        # self.showMatchpointsAction.triggered.connect(self.show_all_matchpoints)
-        # alignMenu.addAction(self.showMatchpointsAction)
 
         ngMenu = self.menu.addMenu("Neuroglancer")
 
@@ -3859,9 +3746,9 @@ class MainWindow(QMainWindow):
 
         actionsMenu = self.menu.addMenu('Actions')
 
-        self.rescaleAction = QAction('Rescale...', self)
-        self.rescaleAction.triggered.connect(self.rescale)
-        actionsMenu.addAction(self.rescaleAction)
+        # self.rescaleAction = QAction('Rescale...', self)
+        # self.rescaleAction.triggered.connect(self.rescale)
+        # actionsMenu.addAction(self.rescaleAction)
 
         # self.rechunkAction = QAction('Rechunk...', self)
         # self.rechunkAction.triggered.connect(self.rechunk)
@@ -3902,10 +3789,8 @@ class MainWindow(QMainWindow):
         debugMenu.addAction(self.debugGpuAction)
 
         self.printfocusAction = QAction('Print Focus Widget', self)
-        self.printfocusAction.triggered.connect(lambda: print(cfg.main_window.focusWidget()))
+        self.printfocusAction.triggered.connect(lambda: print(self.focusWidget()))
         debugMenu.addAction(self.printfocusAction)
-
-
 
         self.chromiumDebugAction = QAction('Troubleshoot Chromium', self)
         self.chromiumDebugAction.triggered.connect(self.chromium_debug)
@@ -4105,13 +3990,13 @@ class MainWindow(QMainWindow):
     #     caller = inspect.stack()[1].function
     #     if caller == 'main':
     #         logger.info(f'caller: {caller}')
-    #         # cfg.data.set_swim_window_global(float(cfg.pt._swimWindowControl.value()) / 100.)
-    #         cfg.data.set_swim_1x1_custom_px(cfg.pt._swimWindowControl.value())
+    #         # cfg.data.set_swim_window_global(float(cfg.pt.leSwimWindow.value()) / 100.)
+    #         cfg.data.set_swim_1x1_custom_px(cfg.pt.leSwimWindow.value())
 
     def printExportInstructionsTIFF(self):
         work = os.getenv('WORK')
         user = os.getenv('USER')
-        tiffs = os.path.join(cfg.data.dest(),'scale_1','img_src')
+        tiffs = os.path.join(cfg.data.location,'scale_1','img_src')
         self.hud.post(f'Use the follow command to copy-export full resolution TIFFs to another location on the filesystem:\n\n'
                       f'    rsync -atvr {tiffs} {user}@ls6.tacc.utexas.edu:{work}/data')
 
@@ -4119,23 +4004,13 @@ class MainWindow(QMainWindow):
     def printExportInstructionsZarr(self):
         work = os.getenv('WORK')
         user = os.getenv('USER')
-        zarr = os.path.join(cfg.data.dest(),'img_aligned.zarr','s1')
+        zarr = os.path.join(cfg.data.location,'img_aligned.zarr','s1')
         self.hud.post(
             f'Use the follow command to copy-export full resolution Zarr to another location on the filesystem:\n\n'
             f'    rsync -atvr {zarr} {user}@ls6.tacc.utexas.edu:{work}/data\n\n'
             f'Note: AlignEM-SWIFT supports the opening and re-opening of arbitrary Zarr files in Neuroglancer')
 
 
-
-    def _valueChangedWhitening(self):
-        # logger.info('')
-        caller = inspect.stack()[1].function
-        # if caller != 'initControlPanel':
-        if caller == 'main':
-            val = float(cfg.pt.sb_whiteningControl.value())
-            cfg.data.default_whitening = val
-            self.tell('Signal Whitening is set to %.3f' % val)
-            cfg.pt.updateDetailsPanel()
 
     def _valueChangedPolyOrder(self):
         #Todo move to ProjectTab
@@ -4145,39 +4020,28 @@ class MainWindow(QMainWindow):
             try:
                 cfg.data.set_stack_cafm()
             except:
-                print_exception
-            if cfg.pt._polyBiasCombo.currentText() == 'None':
-                cfg.data.default_poly_order = None
+                print_exception()
+            if self.boxBias.currentText() == 'None':
+                cfg.data.poly_order = None
                 self.tell('Corrective Polynomial Order is set to None')
             else:
-                txt = cfg.pt._polyBiasCombo.currentText()
-                index = cfg.pt._polyBiasCombo.findText(txt)
+                txt = self.boxBias.currentText()
+                index = self.boxBias.findText(txt)
                 val = index - 1
-                cfg.data.default_poly_order = val
+                cfg.data.poly_order = val
                 self.tell('Corrective Polynomial Order is set to %d' % val)
             if self.dw_snr.isVisible():
                 cfg.pt.dSnr_plot.initSnrPlot()
 
 
-
-    def _toggledAutogenerate(self) -> None:
-        # logger.info('')
-        caller = inspect.stack()[1].function
-        if caller == 'main':
-            cfg.data['state']['auto_generate'] = cfg.pt._toggleAutogenerate.isChecked()
-            if cfg.pt._toggleAutogenerate.isChecked():
-                self.tell('Images will be generated automatically after alignment')
-            else:
-                self.tell('Images will not be generated automatically after alignment')
-
     def rechunk(self):
         # if self._isProjectTab():
         #     if cfg.data.is_aligned_and_generated():
-        #         target = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's%d' % cfg.data.scale_val())
-        #         _src = os.path.join(cfg.data.dest(), 'img_aligned.zarr', '_s%d' % cfg.data.scale_val())
+        #         target = os.path.join(cfg.data.location, 'img_aligned.zarr', 's%d' % cfg.data.lvl())
+        #         _src = os.path.join(cfg.data.location, 'img_aligned.zarr', '_s%d' % cfg.data.lvl())
         #     else:
-        #         target = os.path.join(cfg.data.dest(), 'img_src.zarr', 's%d' % cfg.data.scale_val())
-        #         _src = os.path.join(cfg.data.dest(), 'img_src.zarr', '_s%d' % cfg.data.scale_val())
+        #         target = os.path.join(cfg.data.location, 'img_src.zarr', 's%d' % cfg.data.lvl())
+        #         _src = os.path.join(cfg.data.location, 'img_src.zarr', '_s%d' % cfg.data.lvl())
         #
         #     dlg = RechunkDialog(self, target=target)
         #     if dlg.exec():
@@ -4240,205 +4104,218 @@ class MainWindow(QMainWindow):
 
     def initControlPanel(self):
 
-        button_size = QSize(54, 16)
-
-        ctl_lab_style = 'color: #ede9e8; font-size: 10px;'
-
         tip = """Sections marked for exclusion will not be aligned or used by SWIM in any way (like a dropped frame)."""
-        self._lab_keep_reject = QLabel('Include:')
-        self._lab_keep_reject.setStyleSheet(ctl_lab_style)
-        self._lab_keep_reject.setToolTip(tip)
-        self._skipCheckbox = ToggleSwitch()
-        self._skipCheckbox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-
-        self._skipCheckbox.setToolTip(tip)
-        self._skipCheckbox.setEnabled(False)
-        self._skipCheckbox.stateChanged.connect(self._callbk_skipChanged)
-        self._skipCheckbox.stateChanged.connect(lambda: cfg.pt.updateDetailsPanel())
-
-        self.labInclude = QLabel('Include:')
-        self.labInclude.setStyleSheet('font-size: 9px;')
-
-        self._w_skipCheckbox = HWidget(self.labInclude, self._skipCheckbox)
-        self._w_skipCheckbox.layout.setAlignment(Qt.AlignCenter)
+        self.cbSkip = ToggleSwitch()
+        self.cbSkip.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.cbSkip.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+        self.cbSkip.setEnabled(False)
+        self.cbSkip.stateChanged.connect(self._callbk_skipChanged)
+        labSkip = QLabel('Include:')
+        labSkip.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+        labSkip.setStyleSheet('font-size: 8px; font-weight: 600;')
+        self.wToggleExclude = VWidget(labSkip, self.cbSkip)
+        self.wToggleExclude.layout.setSpacing(0)
+        self.wToggleExclude.layout.setAlignment(Qt.AlignCenter)
 
         tip = 'Go To Previous Section.'
-        self._btn_prevSection = QPushButton()
-        self._btn_prevSection.setObjectName('z-index-left-button')
-        self._btn_prevSection.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._btn_prevSection.setToolTip(tip)
-        self._btn_prevSection.clicked.connect(self.layer_left)
-        self._btn_prevSection.setFixedSize(QSize(18, 18))
-        self._btn_prevSection.setIcon(qta.icon("fa.arrow-left", color=ICON_COLOR))
-        self._btn_prevSection.setEnabled(False)
+        self.bLeftArrow = QPushButton()
+        self.bLeftArrow.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.bLeftArrow.setToolTip(tip)
+        self.bLeftArrow.clicked.connect(self.layer_left)
+        self.bLeftArrow.setFixedSize(QSize(18, 18))
+        self.bLeftArrow.setIcon(qta.icon("fa.arrow-left", color=ICON_COLOR))
+        self.bLeftArrow.setEnabled(False)
 
         tip = 'Go To Next Section.'
-        self._btn_nextSection = QPushButton()
-        self._btn_nextSection.setObjectName('z-index-right-button')
-        self._btn_nextSection.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._btn_nextSection.setToolTip(tip)
-        self._btn_nextSection.clicked.connect(self.layer_right)
-        self._btn_nextSection.setFixedSize(QSize(18, 18))
-        self._btn_nextSection.setIcon(qta.icon("fa.arrow-right", color=ICON_COLOR))
-        self._btn_nextSection.setEnabled(False)
-
-        self._sectionChangeWidget = HWidget(self._btn_prevSection, self._btn_nextSection)
-        self._sectionChangeWidget.layout.setAlignment(Qt.AlignCenter)
+        self.bRightArrow = QPushButton()
+        self.bRightArrow.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.bRightArrow.setToolTip(tip)
+        self.bRightArrow.clicked.connect(self.layer_right)
+        self.bRightArrow.setFixedSize(QSize(18, 18))
+        self.bRightArrow.setIcon(qta.icon("fa.arrow-right", color=ICON_COLOR))
+        self.bRightArrow.setEnabled(False)
 
         tip = 'Go To Previous Scale.'
-        self._scaleDownButton = QPushButton()
-        self._scaleDownButton.setEnabled(False)
-        self._scaleDownButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._scaleDownButton.setToolTip(tip)
-        self._scaleDownButton.clicked.connect(self.scale_down)
-        self._scaleDownButton.setFixedSize(QSize(18, 18))
-        self._scaleDownButton.setIcon(qta.icon("fa.arrow-down", color=ICON_COLOR))
+        self.bArrowDown = QPushButton()
+        self.bArrowDown.setEnabled(False)
+        self.bArrowDown.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.bArrowDown.setToolTip(tip)
+        self.bArrowDown.clicked.connect(self.scale_down)
+        self.bArrowDown.setFixedSize(QSize(18, 18))
+        self.bArrowDown.setIcon(qta.icon("fa.arrow-down", color=ICON_COLOR))
 
         tip = 'Go To Next Scale.'
-        self._scaleUpButton = QPushButton()
-        self._scaleUpButton.setEnabled(False)
-        self._scaleUpButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._scaleUpButton.setToolTip(tip)
-        self._scaleUpButton.clicked.connect(self.scale_up)
-        self._scaleUpButton.setFixedSize(QSize(18, 18))
-        self._scaleUpButton.setIcon(qta.icon("fa.arrow-up", color=ICON_COLOR))
+        self.bArrowUp = QPushButton()
+        self.bArrowUp.setEnabled(False)
+        self.bArrowUp.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.bArrowUp.setToolTip(tip)
+        self.bArrowUp.clicked.connect(self.scale_up)
+        self.bArrowUp.setFixedSize(QSize(18, 18))
+        self.bArrowUp.setIcon(qta.icon("fa.arrow-up", color=ICON_COLOR))
 
-        self._scaleSetWidget = HWidget(self._scaleUpButton, self._scaleDownButton)
-        self._scaleSetWidget.layout.setAlignment(Qt.AlignCenter)
+        self.wUpDownArrows = HWidget(self.bArrowUp, self.bArrowDown)
+        self.wUpDownArrows.layout.setAlignment(Qt.AlignCenter)
 
-        self._sectionSlider = QSlider(Qt.Orientation.Horizontal, self)
-        # self._sectionSlider.setMaximumWidth(220)
-        self._sectionSlider.setObjectName('z-index-slider')
-        self._sectionSlider.setFocusPolicy(Qt.StrongFocus)
-        self._sectionSlider.valueChanged.connect(self.jump_to_slider)
-        # self._sectionSlider.valueChanged.connect(lambda v: setData('data,z_position', v))
+        self.sldrZpos = QSlider(Qt.Orientation.Horizontal, self)
+        self.sldrZpos.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.sldrZpos.setFocusPolicy(Qt.StrongFocus)
+        self.sldrZpos.valueChanged.connect(self.jump_to_slider)
 
         tip = 'Jumpt to section #'
-        self._jumpToLineedit = QLineEdit(self)
-        self._jumpToLineedit.setFocusPolicy(Qt.ClickFocus)
-        self._jumpToLineedit.setToolTip(tip)
-        self._jumpToLineedit.setFixedSize(QSize(32, 16))
-        self._jumpToLineedit.returnPressed.connect(self.jump_to_layer)
-        # self._jumpToLineedit.returnPressed.connect(lambda: self.jump_to(int(self._jumpToLineedit.text())))
+        self.leJump = QLineEdit(self)
+        self.leJump.setStyleSheet("font-size: 11px;")
+        self.leJump.setAlignment(Qt.AlignCenter)
+        self.leJump.setFocusPolicy(Qt.ClickFocus)
+        self.leJump.setToolTip(tip)
+        self.leJump.setFixedSize(QSize(32, 16))
+        self.leJump.returnPressed.connect(self.jump_to_layer)
+        # self.leJump.returnPressed.connect(lambda: self.jump_to(int(self.leJump.text())))
 
-        self._btn_automaticPlayTimer = QPushButton()
-        self._btn_automaticPlayTimer.setFixedSize(18, 18)
-        self._btn_automaticPlayTimer.setIcon(qta.icon('fa.play', color=cfg.ICON_COLOR))
-        self.automaticPlayTimer = QTimer(self)
-        self._btn_automaticPlayTimer.clicked.connect(self.startStopTimer)
+        self.bPlayback = QPushButton()
+        self.bPlayback.setFixedSize(18, 18)
+        self.bPlayback.setIcon(qta.icon('fa.play', color=cfg.ICON_COLOR))
+        self.timerPlayback = QTimer(self)
+        self.bPlayback.clicked.connect(self.startStopTimer)
 
         def onTimer():
             logger.info('')
-            self.automaticPlayTimer.setInterval(int(1000 / self.spinbox_fps.value()))
+            self.timerPlayback.setInterval(int(1000 / self.sbFPS.value()))
             if hasattr(cfg,'data'):
                 if cfg.project_tab:
-                    if self._sectionSlider.value() < len(cfg.data) - 1:
+                    if self.sldrZpos.value() < len(cfg.data) - 1:
                         cfg.data.zpos += 1
                     else:
                         cfg.data.zpos = 0
-                        self.automaticPlayTimer.stop()
-                        self._isPlayingBack = 0
-                        self._btn_automaticPlayTimer.setIcon(qta.icon('fa.play', color=cfg.ICON_COLOR))
+                        self.timerPlayback.stop()
+                        self.bPlayback.setIcon(qta.icon('fa.play', color=cfg.ICON_COLOR))
 
-        self.automaticPlayTimer.timeout.connect(onTimer)
-        self._sectionSliderWidget = QWidget()
+        self.timerPlayback.timeout.connect(onTimer)
 
-        hbl = QHBoxLayout()
-        hbl.setSpacing(0)
-        hbl.setContentsMargins(2, 0, 2, 0)
-        hbl.addWidget(self._btn_automaticPlayTimer)
-        hbl.addWidget(self._sectionSlider)
-        self._sectionSliderWidget.setLayout(hbl)
+        self.sbFPS = QDoubleSpinBox()
+        self.sbFPS.setFixedSize(QSize(50, 18))
+        self.sbFPS.setMinimum(.1)
+        self.sbFPS.setMaximum(20)
+        self.sbFPS.setSingleStep(.2)
+        self.sbFPS.setDecimals(1)
+        self.sbFPS.setSuffix('fps')
+        self.sbFPS.setValue(float(cfg.DEFAULT_PLAYBACK_SPEED))
+        self.sbFPS.setToolTip('Autoplay Speed (frames/second)')
 
-        # self.spinbox_fps = QLineEdit()
-        self.spinbox_fps = QDoubleSpinBox()
-        self.spinbox_fps.setFixedSize(QSize(50, 18))
-        self.spinbox_fps.setMinimum(.1)
-        self.spinbox_fps.setMaximum(20)
-        self.spinbox_fps.setSingleStep(.2)
-        self.spinbox_fps.setDecimals(1)
-        self.spinbox_fps.setSuffix('fps')
-        self.spinbox_fps.setValue(float(cfg.DEFAULT_PLAYBACK_SPEED))
-        self.spinbox_fps.setToolTip('Paging Speed (frames/second)')
-        self.spinbox_fps.clear()
+        self.boxScale = QComboBox(self)
+        self.boxScale.setFixedSize(QSize(132, 16))
+        self.boxScale.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
-        self._changeScaleCombo = QComboBox(self)
-        self._changeScaleCombo.setFixedSize(QSize(132, 16))
-        self._changeScaleCombo.setStyleSheet('font-size: 10px;')
-        self._changeScaleCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._changeScaleCombo.currentTextChanged.connect(self.fn_scales_combobox)
+        self.labAlign = QLabel('Align All +\n'
+                               'Generate\n'
+                               'All Output:')
+        self.boxScale.currentTextChanged.connect(self.onScaleChange)
 
-        resLab = QLabel('Level / Downsampled Image Resolution')
-        resLab.setStyleSheet('font-size: 8px; font-weight: 600;')
-        scaleLabel = QLabel('Scale:')
-        scaleLabel.setStyleSheet("font-size: 10px; font-weight:600;")
-        hw = HWidget(scaleLabel, self._changeScaleCombo, self._scaleSetWidget)
-        hw.layout.setSpacing(8)
-        self.scaleWidget = VWidget(hw)
+        labs = [QLabel('Scale Level / Resolution'), QLabel('Z-position'), self.labAlign]
+        for lab in labs:
+            lab.setAlignment(Qt.AlignLeft)
+            lab.setStyleSheet("""color: #161c20; font-size: 8px; font-weight: 600;""")
 
-        secLabel = QLabel('Section:')
-        secLabel.setStyleSheet("font-size: 10px; font-weight:600;")
-        self.sectionIndexWidget = HWidget(
-            secLabel, self._jumpToLineedit,
-            self._sectionChangeWidget,
-            self._sectionSliderWidget,
-            self.spinbox_fps,
-            self._w_skipCheckbox
-        )
-        self.sectionIndexWidget.layout.setSpacing(8)
+        self.wwScaleLevel = HWidget(self.boxScale, self.wUpDownArrows)
+        self.wwScaleLevel.layout.setSpacing(4)
+        self.wScaleLevel = VWidget(labs[0], self.wwScaleLevel)
+        self.wScaleLevel = VWidget(labs[0], self.wwScaleLevel)
 
-        self.navControls = HWidget(self.scaleWidget, self.sectionIndexWidget)
-        self.navControls.layout.setSpacing(8)
+        self.wLeftRightArrows = HWidget(self.bLeftArrow, self.bRightArrow)
+        self.wLeftRightArrows.layout.setAlignment(Qt.AlignCenter)
+        # self.wLeftRightArrows.layout.setAlignment(Qt.AlignCenter)
+
+        self.wwwZpos = HWidget(self.leJump, self.wLeftRightArrows)
+        self.wwwZpos.layout.setAlignment(Qt.AlignCenter)
+
+        self.wwZpos = VWidget(labs[1], self.wwwZpos)
+        self.wwZpos.setFixedWidth(80)
+        self.wZpos = HWidget(self.bPlayback, self.sldrZpos, self.sbFPS)
+        self.wZpos.layout.setSpacing(4)
 
         tip = """Align and generate all sections for the current scale"""
-        # self._btn_alignAll = QPushButton(f"Align All {hotkey('A')}")
-        self._btn_alignAll = QPushButton(f"Align All")
-        self._btn_alignAll.setStyleSheet("font-size: 10px;")
-        self._btn_alignAll.setMaximumWidth(128)
-        self._btn_alignAll.setFixedHeight(20)
-        self._btn_alignAll.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self._btn_alignAll.setEnabled(False)
-        self._btn_alignAll.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._btn_alignAll.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        self._btn_alignAll.clicked.connect(self.alignAll)
+        self.bAlign = QPushButton(f"Apply")
+        # self.bAlign.setStyleSheet("font-size: 12px; background-color: #FFFF66;")
+        self.bAlign.setStyleSheet("font-size: 12px;")
+        self.bAlign.setFixedSize(QSize(64,28))
+        self.bAlign.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.bAlign.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+        self.bAlign.clicked.connect(self.alignAll)
+
+        labs[2].setAlignment(Qt.AlignRight)
+        self.wAlign = HWidget(QVLine(), labs[2], self.bAlign)
+        self.wAlign.layout.setSpacing(4)
+        self.wAlign.hide()
 
 
-        # self.startRangeInput = QLineEdit()
-        # self.startRangeInput.setMaximumWidth(64)
-        # # self.startRangeInput.setFixedSize(30, 16)
-        # self.startRangeInput.setAlignment(Qt.AlignCenter)
-        # self.startRangeInput.setEnabled(False)
-        #
-        # self.endRangeInput = QLineEdit()
-        # self.endRangeInput.setMaximumWidth(64)
-        # # self.endRangeInput.setFixedSize(30, 16)
-        # self.endRangeInput.setAlignment(Qt.AlignCenter)
-        # self.endRangeInput.setEnabled(False)
-        #
-        # tip = """The range of sections to align."""
-        # self.rangeInputWidget = HWidget(self.startRangeInput, QLabel(' : '), self.endRangeInput)
-        # self.rangeInputWidget.layout.setAlignment(Qt.AlignHCenter)
-        # self.rangeInputWidget.setMaximumWidth(110)
-        # self.rangeInputWidget.setToolTip(tip)
+        '''
+        OUTPUT SETTINGS
+        '''
+
+        tip = """Bounding box is only applied upon "Align All" and "Regenerate". Caution: Turning this ON may 
+        significantly increase the size of generated images."""
+        self.cbBB = QCheckBox()
+        self.cbBB.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+        self.cbBB.toggled.connect(lambda state: cfg.data.set_use_bounding_rect(state))
+        # self.cbBB.toggled.connect(lambda: cfg.data.set_use_bounding_rect(self.cbBB.isChecked()))
+
+        tip = 'Polynomial bias correction (defaults to None), alters the generated images including their width and height.'
+        self.boxBias = QComboBox(self)
+        # self.boxBias.setStyleSheet("font-size: 10px; padding-left: 6px;")
+        self.boxBias.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+        self.boxBias.addItems(['None', 'poly 0°', 'poly 1°', 'poly 2°', 'poly 3°', 'poly 4°'])
+        # self.boxBias.setCurrentText(str(cfg.DEFAULT_CORRECTIVE_POLYNOMIAL))
+        self.boxBias.currentIndexChanged.connect(self._valueChangedPolyOrder)
+        self.boxBias.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.boxBias.setFixedSize(QSize(74, 12))
+        self.boxBias.lineEdit()
+
+        self.bRegenerateAll = QPushButton('Regenerate All Output')
+        self.bRegenerateAll.clicked.connect(lambda: self.regenerateAll())
+        # self.bRegenerateAll.setFixedSize(QSize(120, 16))
+        self.bRegenerateAll.setFixedHeight(15)
+
+        hw0 = HWidget(QLabel('Bounding Box: '), self.cbBB, ExpandingHWidget(self), QLabel('Corrective Bias: '),
+                 self.boxBias)
+        hw0.layout.setAlignment(Qt.AlignBottom)
+        hw1 = HWidget(self.bRegenerateAll)
+        # hw1.layout.setAlignment(Qt.AlignRight)
+
+        # vbl = VBL(hw0, hw1)
+
+        self.wOutputSettings = HWidget(VWidget(hw0, hw1))
+        self.wOutputSettings.setContentsMargins(2,0,2,0)
+        self.wOutputSettings.setFixedWidth(220)
+        self.wOutputSettings.hide()
+
+        # self.gbOutputSettings = QGroupBox("Output Settings")
+        # # self.gbOutputSettings.setFixedHeight(34)
+        # self.gbOutputSettings.setAlignment(Qt.AlignBottom)
+        # self.gbOutputSettings.setStyleSheet("font-size: 10px;")
+        # # self.gbOutputSettings.setObjectName('gb_cpanel')
+        # self.gbOutputSettings.setLayout(vbl)
+
+        self.bOutputSettings = QToolButton()
+        self.bOutputSettings.setText('Output\nSettings')
+        self.bOutputSettings.setStyleSheet("font-size: 8px;")
+        self.bOutputSettings.setCheckable(True)
+        self.bOutputSettings.toggled.connect(lambda state: self.wOutputSettings.setVisible(state))
 
 
-        self.gb_ctlActions = QGroupBox("Scale Actions")
-        self.gb_ctlActions.setObjectName("gb_cpanel")
-        self.gb_ctlActions.setStyleSheet("font-size: 9px;")
 
-        self.w_range = HWidget(VWidget(QLabel('Range: ')))
-        self.w_range.layout.setAlignment(Qt.AlignHCenter)
-        self.w_range.layout.setSpacing(2)
+        self.wCpanel = HWidget(self.wScaleLevel, QVLine(),
+                               self.wwZpos, QVLine(),
+                               self.wZpos, QVLine(),
+                               self.wToggleExclude,
+                               self.wAlign, QVLine(),
+                               self.bOutputSettings,
+                               self.wOutputSettings
+                               )
 
-        self.toolbar_cpanel = QToolBar()
-        self.toolbar_cpanel.setObjectName("Main Toolbar")
-        self.toolbar_cpanel.setAllowedAreas(Qt.TopToolBarArea | Qt.BottomToolBarArea)
-        # self.toolbar_cpanel.setMovable(False)
-        self.toolbar_cpanel.setFixedHeight(32)
-        hw = HWidget(self.navControls, self._btn_alignAll)
-        hw.layout.setStretch(0,1)
-        hw.layout.setStretch(1,0)
-        self.toolbar_cpanel.addWidget(hw)
+        self.setAutoFillBackground(True)
+        self.wCpanel.setStyleSheet("font-size: 9px; color: #161c20;")
+        self.wCpanel.setFixedHeight(34)
+        self.wCpanel.layout.setContentsMargins(6,2,6,2)
+        self.wCpanel.layout.setSpacing(4)
 
     def initUI(self):
         '''Initialize Main UI'''
@@ -4451,9 +4328,7 @@ class MainWindow(QMainWindow):
 
         self.dw_thumbs = DockWidget('Tra./Ref. Thumbnails', self)
         self.dw_thumbs.visibilityChanged.connect(self.callbackDwVisibilityChanged)
-        # self.dw_thumbs.setFeatures(self.dw_hud.DockWidgetClosable | self.dw_hud.DockWidgetVerticalTitleBar)
         self.dw_thumbs.setFeatures(QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetClosable)
-        # self.dw_thumbs.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea | Qt.TopDockWidgetArea | Qt.BottomDockWidgetArea)
         self.dw_thumbs.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea)
         self.dw_thumbs.setObjectName('Dock Widget Thumbnails')
         self.dw_thumbs.setStyleSheet("""
@@ -4469,7 +4344,6 @@ class MainWindow(QMainWindow):
         self.dw_thumbs.setWidget(NullWidget())
         self.addDockWidget(Qt.RightDockWidgetArea, self.dw_thumbs)
         self.dw_thumbs.hide()
-
 
         self.dw_matches = DockWidget('Matches & Match Signals', self)
         self.dw_matches.visibilityChanged.connect(self.callbackDwVisibilityChanged)
@@ -4734,73 +4608,6 @@ class MainWindow(QMainWindow):
         self.detailsTitle.setStyleSheet(
             'color: #f3f6fb; font-size: 10px; font-weight: 600; margin-left: 2px; margin-top: 2px;')
 
-        # #0210
-        # self.detailsScales = QLabel()
-        # self.btnDetailsScales = QPushButton('Hide Scales')
-        # self.btnDetailsScales.setFixedWidth(dSize)
-        # self.btnDetailsScales.setIcon(qta.icon('fa.caret-down', color='#f3f6fb'))
-        # def fn():
-        #     self.detailsScales.setVisible(not self.detailsScales.isVisible())
-        #     if self.detailsScales.isHidden():
-        #         label, icon = ' Scales', 'fa.caret-right'
-        #     else:
-        #         label, icon = 'Hide Scales', 'fa.caret-down'
-        #     self.btnDetailsScales.setIcon(qta.icon(icon, color='#f3f6fb'))
-        #     self.btnDetailsScales.setText(label)
-        # self.btnDetailsScales.clicked.connect(fn)
-        # self.detailsScales.setWordWrap(True)
-        # self.detailsScales.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # self.detailsScales.setStyleSheet("""font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace; font-size: 11px;""")
-        # # self.detailsScales.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum) #???
-        # self.detailsScales.setFixedWidth(dSize)
-        # # self.detailsScales.setReadOnly(True)
-        #
-        # self.detailsSkips = QLabel()
-        # self.btndetailsSkips = QPushButton('Hide Rejects')
-        # self.btndetailsSkips.setFixedWidth(dSize)
-        # self.btndetailsSkips.setIcon(qta.icon('fa.caret-down', color='#f3f6fb'))
-        # def fn():
-        #     self.detailsSkips.setVisible(not self.detailsSkips.isVisible())
-        #     if self.detailsSkips.isHidden(): label, icon = ' Rejects', 'fa.caret-right'
-        #     else:                            label, icon = 'Hide Rejects', 'fa.caret-down'
-        #     self.btndetailsSkips.setIcon(qta.icon(icon, color='#f3f6fb'))
-        #     self.btndetailsSkips.setText(label)
-        # self.btndetailsSkips.clicked.connect(fn)
-        # self.detailsSkips.setWordWrap(True)
-        # self.detailsSkips.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # self.detailsSkips.setStyleSheet("""font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;""")
-        # self.detailsSkips.setFixedWidth(dSize)
-        # # self.detailsSkips.setReadOnly(True)
-
-        # self.detailsTensor = QWidget()
-        # self.detailsTensor.setFixedWidth(dSize)
-        # self.detailsTensorLab = QLabel()
-        # self.detailsTensorLab.setWordWrap(True)
-        # # self.detailsTensorLab.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # self.detailsTensorLab.setStyleSheet("""
-        # font-family: Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;
-        # color: #f3f6fb;
-        # font-size: 10px;""")
-        # self.detailsTensorLab.hide()
-        # self.btnDetailsTensor = QPushButton('Tensor')
-        # self.btnDetailsTensor.setIcon(qta.icon('fa.caret-right', color='#f3f6fb'))
-        # def fn():
-        #     logger.info('')
-        #     self.detailsTensorLab.setVisible(not self.detailsTensorLab.isVisible())
-        #     if self.detailsTensorLab.isHidden():
-        #         label, icon = ' Tensor', 'fa.caret-right'
-        #     else:
-        #         label, icon  = 'Hide Tensor', 'fa.caret-down'
-        #         self.detailsTensorLab.setText(json.dumps(cfg.tensor.spec().to_json(), indent=2))
-        #     self.btnDetailsTensor.setIcon(qta.icon(icon, color='#f3f6fb'))
-        #     self.btnDetailsTensor.setText(label)
-        # self.btnDetailsTensor.setFixedWidth(dSize + 26)
-        # self.btnDetailsTensor.clicked.connect(fn)
-        # vbl = QVBoxLayout()
-        # vbl.setContentsMargins(0, 0, 0, 0)
-        # vbl.addWidget(self.btnDetailsTensor)
-        # vbl.addWidget(self.detailsTensorLab)
-        # self.detailsTensor.setLayout(vbl)
 
         '''Tabs Global Widget'''
         self.globTabs = QTabWidget(self)
@@ -4812,14 +4619,13 @@ class MainWindow(QMainWindow):
         self.globTabs.setContentsMargins(0, 0, 0, 0)
         self.globTabs.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.globTabs.tabBar().setStyleSheet("""
-        QTabBar::close-button {
-
+        QTabBar::close {
             image: url(src/resources/close-tab-light.png);
             subcontrol-origin: padding;
             subcontrol-position: right;
             padding: 6px;
         }
-        QTabBar::close-button:!selected {
+        QTabBar::close:!selected {
 
             image: url(src/resources/close-tab-dark.png);
             subcontrol-origin: padding;
@@ -5077,70 +4883,105 @@ class MainWindow(QMainWindow):
         vbl.addWidget(browser_bottom_controls)
         self.browser_widget.setLayout(vbl)
 
-
-
-        self.globTabs.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.pbar.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-
-        # self.globTabsAndCpanel = VWidget(self.globTabs, self.sw_pbar)
-        self.globTabsAndCpanel = VWidget(self.globTabs)
+        self.globTabsAndCpanel = VWidget(self.globTabs, self.wCpanel)
+        self.globTabsAndCpanel.layout.setStretch(0,9)
+        self.globTabsAndCpanel.layout.setStretch(1,0)
         self.addToolBar(Qt.LeftToolBarArea, self.toolbar)
-        self.addToolBar(Qt.BottomToolBarArea, self.toolbar_cpanel)
+        # self.addToolBar(Qt.BottomToolBarArea, self.wCpanel)
         self.globTabsAndCpanel.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-
-        # self.test_widget = QWidget()
-        # self.test_widget.setFixedHeight(100)
-        # # self.test_widget.setFixedSize(40, 40)
-        # # self.test_widget.setStyleSheet("background-color: #000000;")
-        # self.clicksLabel = QLabel("Counting: 0 clicks", self)
-        # self.clicksLabel.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
-        # self.stepLabel = QLabel("Long-Running Step: 0")
-        # self.stepLabel.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
-        # self.countBtn = QPushButton("Click me!", self)
-        # self.countBtn.clicked.connect(self.countClicks)
-        # # self.longRunningBtn = QPushButton("Long-Running Task!", self)
-        # # self.longRunningBtn.clicked.connect(self.runLongTask)
-        # # Set the layout
-        # layout = QVBoxLayout()
-        # layout.addWidget(self.clicksLabel)
-        # layout.addWidget(self.countBtn)
-        # layout.addStretch()
-        # layout.addWidget(self.stepLabel)
-        # layout.addWidget(self.longRunningBtn)
-        # self.test_widget.setLayout(layout)
-
-
 
         self.setCentralWidget(self.globTabsAndCpanel)
         # self.setCentralWidget(VWidget(self.globTabsAndCpanel, self.test_widget))
-
         # self.setDockOptions(QMainWindow.AnimatedDocks | QMainWindow.AllowNestedDocks)
         self.setDockOptions(QMainWindow.AnimatedDocks)
 
 
-
-    def setControlPanelData(self):
+    def updateLowest8widget(self):
         logger.info('')
-        if self._isProjectTab():
-            cfg.pt._swimWindowControl.setText(str(getData(f'defaults,{cfg.data.scale_key},swim-window-px')[0]))
-            cfg.pt._swimWindowControl.setValidator(QIntValidator(0, cfg.data.image_size()[0]))
-            cfg.pt.sb_whiteningControl.setValue(float(getData('defaults,signal-whitening')))
-            cfg.pt.sb_SWIMiterations.setValue(int(getData('defaults,swim-iterations')))
+        if cfg.data:
+            if cfg.data.is_aligned():
+                logger.info('')
+                n_lowest = min(8, len(cfg.data) - 1)
+                lowest_X_i = [x[0] for x in list(cfg.data.snr_lowest(n_lowest))]
+                lowest_X = list(cfg.data.snr_lowest(n_lowest))
+                self.lowestX_btns = []
+                self.lowestX_txt = []
 
-            poly = getData('defaults,corrective-polynomial')
-            if (poly == None) or (poly == 'None'):
-                cfg.pt._polyBiasCombo.setCurrentText('None')
+                for i in range(n_lowest):
+                    try:
+                        # logger.info(f'i = {i}, lowest_X_i[i] = {lowest_X_i[i]}')
+                        s1 = ('z-index <u><b>%d</b></u>' % lowest_X[i][0]).ljust(15)
+                        s2 = ("<span style='color: #a30000;'>%.2f</span>" % lowest_X[i][1]).ljust(15)
+                        combined = s1 + ' ' + s2
+                        self.lowestX_txt.append(combined)
+                        zpos = copy.deepcopy(lowest_X_i[i])
+                        btn = QPushButton(f'Jump To {zpos}')
+                        self.lowestX_btns.append(btn)
+                        btn.setLayoutDirection(Qt.RightToLeft)
+                        btn.setFixedSize(QSize(78, 16))
+                        btn.setStyleSheet("font-size: 9px;")
+                        btn.setIconSize(QSize(12, 12))
+                        btn.setIcon(qta.icon('fa.arrow-right', color='#161c20'))
+                        # self.lowestX_btns[i].clicked.connect(funcs[i])
+                        btn.clicked.connect(lambda state, x=zpos: self.jump_to_index(x))
+                    except:
+                        print_exception()
+
+                self.lowX_left_fl = QFormLayout()
+                self.lowX_left_fl.setContentsMargins(4,18,4,4)
+                self.lowX_left_fl.setVerticalSpacing(1)
+                if n_lowest >= 1:
+                    self.lowX_left_fl.addRow(self.lowestX_txt[0], self.lowestX_btns[0])
+                if n_lowest >= 2:
+                    self.lowX_left_fl.addRow(self.lowestX_txt[1], self.lowestX_btns[1])
+                if n_lowest >= 3:
+                    self.lowX_left_fl.addRow(self.lowestX_txt[2], self.lowestX_btns[2])
+                if n_lowest >= 4:
+                    self.lowX_left_fl.addRow(self.lowestX_txt[3], self.lowestX_btns[3])
+                if n_lowest >= 5:
+                    self.lowX_left_fl.addRow(self.lowestX_txt[4], self.lowestX_btns[4])
+                if n_lowest >= 6:
+                    self.lowX_left_fl.addRow(self.lowestX_txt[5], self.lowestX_btns[5])
+                if n_lowest >= 7:
+                    self.lowX_left_fl.addRow(self.lowestX_txt[6], self.lowestX_btns[6])
+                if n_lowest >= 8:
+                    self.lowX_left_fl.addRow(self.lowestX_txt[7], self.lowestX_btns[7])
+                self.lowX_left = QWidget()
+                self.lowX_left.setStyleSheet("QScrollArea{border-radius: 8px; border-width: 2px; "
+                                             "border-color: #161c20; font-size:10px;}")
+                self.lowX_left.setWindowFlags(Qt.FramelessWindowHint)
+                self.lowX_left.setAutoFillBackground(False)
+                self.lowX_left.setContentsMargins(4,4,4,4)
+                # self.lowX_left.setLayout(self.lowX_left_fl)
+                self.lowX_left.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+                self.gb8 = QGroupBox('Your 8 Most Unfavorable Alignments')
+                self.gb8.setWindowFlags(Qt.FramelessWindowHint)
+                self.gb8.setAutoFillBackground(False)
+                self.gb8.setAlignment(Qt.AlignBottom)
+                self.gb8.setStyleSheet("QGroupBox{border-radius: 8px; border-width: 2px; border-color: #161c20; font-size:10px;}")
+                self.gb8.setLayout(self.lowX_left_fl)
+                self.sa8.setWidget(self.gb8)
+
             else:
-                # cfg.pt._polyBiasCombo.setCurrentText(str(poly))
-                cfg.pt._polyBiasCombo.setCurrentIndex(int(poly) + 1)
+                label = QLabel('Not Yet Aligned.')
+                label.setStyleSheet("font-size: 11px; color: #161c20; font-weight: 600;")
+                label.setAlignment(Qt.AlignCenter)
+                self.sa8.setWidget(label)
 
-            cfg.pt._bbToggle.setChecked(bool(getData(f"bounding_box,{cfg.data.scale},use")))
+        else:
+            self.sa8.setWidget(NullWidget())
 
-            try:    cfg.pt._bbToggle.setChecked(cfg.data.use_bb())
-            except: logger.warning('Bounding Box Toggle Failed to Update')
 
-            cfg.pt.updateDetailsPanel()
-
+    def initLowest8Widget(self):
+        self.sa8 = QScrollArea()
+        self.sa8.setAutoFillBackground(True)
+        self.sa8.setStyleSheet("background-color: #161c20; color: #f3f6fb;")
+        # self.sa8.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # self.sa8.setWidgetResizable(True)
+        self.sa8.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.sa8.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.sa8.setFixedSize(QSize(200,164))
 
 
     def _initProjectManager(self):
@@ -5152,6 +4993,7 @@ class MainWindow(QMainWindow):
     def get_application_root(self):
         return Path(__file__).parents[2]
 
+
     def initWidgetSpacing(self):
         logger.info('')
         self.hud.setContentsMargins(0, 0, 0, 0)
@@ -5161,24 +5003,8 @@ class MainWindow(QMainWindow):
 
     def initStatusBar(self):
         logger.info('')
-        # self.statusBar = self.statusBar()
         self.statusBar = QStatusBar()
         self.statusBar.setFixedHeight(18)
-        # self.statusBar.setStyleSheet("""
-        #     font-size: 10px;
-        #     color: #161c20;
-        #     background-color: #ede9e8;
-        #     margin: 0px;
-        #     padding: 0px;
-        # """)
-        # self.statusBar.setStyleSheet("""
-        #         font-size: 10px;
-        #         font-weight: 600;
-        #         background-color: #161c20;
-        #         color: #f3f6fb;
-        #         margin: 0px;
-        #         padding: 0px;
-        #         """)
         self.setStatusBar(self.statusBar)
 
     def initPbar(self):
@@ -5186,19 +5012,19 @@ class MainWindow(QMainWindow):
         self.pbar.setFixedWidth(320)
         self.pbar.setFixedHeight(13)
         self.pbar.setStyleSheet("font-size: 9px; padding: 0px;")
+        self.pbar.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.pbar.setTextVisible(True)
         self.bPbarStop = QPushButton('Stop')
-        self.bPbarStop.setFixedSize(42, 13)
+        self.bPbarStop.setFixedSize(36, 13)
         self.bPbarStop.setIconSize(QSize(12, 12))
-        self.bPbarStop.setToolTip('Terminate Pending Multiprocessing Tasks')
+        self.bPbarStop.setToolTip('Cancel running tasks')
         self.bPbarStop.setIcon(qta.icon('mdi.cancel', color=cfg.ICON_COLOR))
         self.bPbarStop.setStyleSheet("""font-size: 8px; margin: 0px; padding: 0px;""")
         self.bPbarStop.clicked.connect(self.cancelTasks)
-        # self.pbarLabel = QLabel('Task... ')
-        # self.pbarLabel.setStyleSheet("""font-size: 9px;""")
-        # self.wPbar = HWidget(self.pbarLabel, self.pbar, self.bPbarStop)
-        self.wPbar = HWidget(ExpandingHWidget(self), self.pbar, self.bPbarStop)
-        self.wPbar.layout.setAlignment(Qt.AlignCenter)
+        # self.wPbar = HWidget(ExpandingHWidget(self), self.pbar, self.bPbarStop)
+        self.wPbar = HWidget(self.pbar, self.bPbarStop)
+        self.wPbar.layout.setAlignment(Qt.AlignRight)
+        # self.wPbar.layout.setAlignment(Qt.AlignCenter)
         self.wPbar.layout.setContentsMargins(4, 0, 4, 0)
         self.wPbar.layout.setSpacing(2)
         self.statusBar.addPermanentWidget(self.wPbar)
@@ -5215,14 +5041,11 @@ class MainWindow(QMainWindow):
             self._scaleworker.stop()
         except:
             logger.warning('Unable to stop _scaleworker or no _scaleworker to stop')
-        self.cleanupAfterCancel()
 
+        self.cleanupAfterCancel()
 
     def setPbarMax(self, x):
         self.pbar.setMaximum(x)
-
-
-
 
     def setPbar(self, n:int):
         '''New method to replace historical pbar functionality 2023-08-09'''
@@ -5238,7 +5061,7 @@ class MainWindow(QMainWindow):
         self.wPbar.show()
         self.pbar.setMaximum(data[0])
         self.pbar.setValue(0)
-        self.pbar.setFormat('(%p%) ' + data[1])
+        self.pbar.setFormat('  (%p%) ' + data[1])
         # logger.info(f"Progress bar reset with maximum {data[0]}, descript: {data[1]}")
         QApplication.processEvents()
 
@@ -5249,63 +5072,24 @@ class MainWindow(QMainWindow):
         logger.info(f"x = {x}")
         if x == None: x = 9
         self.pbar.setValue(x)
-        try:
-            if self._isProjectTab():
-                if caller == "collect_results":
-                    if "Transforms" in self.pbar.text():
-                        if self.dw_matches:
-                            # else:
-                            self.updateCorrSignalsDrawer(z=x - 1)
-                            self.setTargKargPixmaps(z=x - 1)
-                    # elif "Copy-converting" in self.pbar.text():
-                    #     # if cfg.pt._tabs.currentIndex() == 0:
-                    #     if x%10 == 10:
-                    #         logger.info(f'Displaying NG alignment at z={x}')
-                    #         cfg.emViewer.initViewerAligned(z=x)
-                    #         # cfg.emViewer.
+        # try:
+        #     if self._isProjectTab():
+        #         if caller == "collect_results":
+        #             if "Transforms" in self.pbar.text():
+        #                 if self.dw_matches:
+        #                     # else:
+        #                     self.updateCorrSignalsDrawer(z=x - 1)
+        #                     self.setTargKargPixmaps(z=x - 1)
+        #
+        # except:
+        #     print_exception()
+        # finally:
+        #     QApplication.processEvents()
+        # QApplication.processEvents()
 
-        except:
-            print_exception()
-        finally:
-            QApplication.processEvents()
-
-    def setPbarText(self, text: str):
-        # logger.critical('')
-        # logger.critical(f'cfg.nTasks = {cfg.nProcessSteps}, cfg.nCompleted = {cfg.nProcessDone}')
-        self.pbar.setFormat('(%p%) ' + text)
-        # self.pbarLabel.setText('Processing (%d/%d)...' % (cfg.nProcessDone, cfg.nProcessSteps))
-        self.pbarLabel.setText('(Task %d/%d)' % (cfg.nProcessDone, cfg.nProcessSteps))
-        # logger.info('Processing (%d/%d)...' % (cfg.nProcessDone, cfg.nProcessSteps))
-        # self.repaint()
-        QApplication.processEvents()
-
-    # def showZeroedPbar(self, set_n_processes=None, cancel_processes=None):
-    def showZeroedPbar(self, set_n_processes=None, pbar_max=None):
-        '''
-        Note:
-        pbar_max is set by mp queue for all multiprocessing functions
-        '''
-        caller = inspect.stack()[1].function
-        # logger.critical(f'caller = {caller}, set_n_processes = {set_n_processes}')
-        if set_n_processes and (set_n_processes > 1):
-            # logger.critical('Resetting # tasks...')
-            cfg.nProcessSteps = set_n_processes
-            cfg.nProcessDone = 0
-            self.pbarLabel.show()
-        else:
-            self.pbarLabel.hide()
-        # if cancel_processes:
-        #     self.bPbarStop.hide()
-        # else:
-        #     self.bPbarStop.show()
-        # logger.critical(f'cfg.nProcessSteps = {cfg.nProcessSteps}, cfg.nProcessDone = {cfg.nProcessDone}')
-        if pbar_max:
-            self.pbar.setMaximum(pbar_max)
-        self.pbar.setValue(0)
-        # self.setPbarText('Preparing Tasks...')
-        self.wPbar.show()
-        QApplication.processEvents()
-        # pass
+    # def setPbarText(self, text: str):
+    #     self.pbar.setFormat('(%p%) ' + text)
+    #     self.pbarLabel.setText('(Task %d/%d)' % (cfg.nProcessDone, cfg.nProcessSteps))
 
     def hidePbar(self):
         # logger.info('')
@@ -5354,11 +5138,11 @@ class MainWindow(QMainWindow):
                 return self.children()[i]
 
     # def mousePressEvent(self, event):
-    #     if event.button() == Qt.LeftButton:
+    #     if event.bBlink() == Qt.LeftButton:
     #         self._old_pos = event.pos()
     #
     # def mouseReleaseEvent(self, event):
-    #     if event.button() == Qt.LeftButton:
+    #     if event.bBlink() == Qt.LeftButton:
     #         self._old_pos = None
     #
     # def mouseMoveEvent(self, event):
@@ -5370,73 +5154,56 @@ class MainWindow(QMainWindow):
 
     def keyPressEvent(self, event):
         super(MainWindow, self).keyPressEvent(event)
-
-        t0 = time.time()
-
         key = event.key()
-        # if DEV:
-        #     logger.info(f'caller: {caller_name()}')
-        logger.info(f'{key} ({event.text()} / {event.nativeVirtualKey()} / modifiers: {event.nativeModifiers()}) was pressed!')
-        # if ((key == 77) and (event.nativeModifiers() == 1048840)) \
-        #         or ((key == 16777249) and (event.nativeModifiers() == 264)):
-        #     self.enterExitManAlignMode()
-        #     return
-        #Prev...
-        # if (key == 77) and (event.nativeModifiers() == 1048840):
-        #     self.enterExitManAlignMode()
-        #     return
-        # if (key == 16777249) and (event.nativeModifiers() == 264):
-        #     self.enterExitManAlignMode()
-        #     return
-        # M Key: key: 77 <class 'int'>
-        # Command key modifier: event.nativeModifiers(): 1048840 <class 'int'>
 
-
-
-
+        if cfg.DEV_MODE:
+            t0 = time.time()
+            logger.info(f'{key} ({event.text()} / {event.nativeVirtualKey()} / modifiers: {event.nativeModifiers()}) was pressed!')
 
         if key == Qt.Key_Slash:
             if self._isProjectTab():
                 # self.setUpdatesEnabled(False)
-                if cfg.pt._tabs.currentIndex() == 1:
-                    logger.critical(f"Slash pressed tra_ref_toggle=[{cfg.data['state']['tra_ref_toggle']}]")
+                if cfg.pt.wTabs.currentIndex() == 1:
+                    logger.info(f"Slash pressed! toggle:[{cfg.data['state']['tra_ref_toggle']}]")
                     if cfg.data['state']['tra_ref_toggle'] == 1:
                         cfg.pt.set_reference()
                     else:
                         cfg.pt.set_transforming()
                 # self.setUpdatesEnabled(True)
-                return
 
         # left arrow key = 16777234
         elif key == 16777234:
             self.layer_left()
-            return
 
         # right arrow key = 16777236
         elif key == 16777236:
             self.layer_right()
-            return
-
 
         elif key == 35 and event.nativeVirtualKey() == 20:
             logger.info("Shift + 3 was pressed")
 
-
         elif key == Qt.Key_Escape:
             if self.isMaximized():
                 self.showNormal()
+            elif self._isOpenProjTab():
+                self.pm.resetView()
+
+        # elif key == Qt.Key_B:
+        #     if self._isProjectTab():
+        #         if cfg.pt.wTabs.currentIndex() == 1:
+        #             cfg.pt.gifPlayer.bBlink.click()
 
         # Shift key workaround
         # elif key == 16777248:
         #     logger.info('16777248 was pressed!')
         #     if self._isProjectTab():
-        #         cur = cfg.pt._tabs.currentIndex()
-        #         cfg.pt._tabs.setCurrentIndex((cur + 1) % 5)
+        #         cur = cfg.pt.wTabs.currentIndex()
+        #         cfg.pt.wTabs.setCurrentIndex((cur + 1) % 5)
         # elif key == Qt.Key_Shift:
         #     logger.info(f"{Qt.Key_Shift} was pressed")
         #     if self._isProjectTab():
-        #         cur = cfg.pt._tabs.currentIndex()
-        #         cfg.pt._tabs.setCurrentIndex((cur + 1) % 5)
+        #         cur = cfg.pt.wTabs.currentIndex()
+        #         cfg.pt.wTabs.setCurrentIndex((cur + 1) % 5)
 
         elif key == Qt.Key_F11:
             if self.isMaximized():
@@ -5444,12 +5211,12 @@ class MainWindow(QMainWindow):
             else:
                 self.showMaximized()
 
-        elif key == Qt.Key_R:
-            self.refreshTab()
+        # elif key == Qt.Key_R:
+        #     self._refresh()
 
         elif key == Qt.Key_Space:
             if self._isProjectTab():
-                cfg.pt._tabs.setCurrentIndex(0)
+                cfg.pt.wTabs.setCurrentIndex(0)
 
 
         # elif key == Qt.Key_M:
@@ -5503,15 +5270,20 @@ class MainWindow(QMainWindow):
 
         elif key == Qt.Key_Up:
             if self._isProjectTab():
-                if cfg.pt._tabs.currentIndex() in (0,1):
+                if cfg.pt.wTabs.currentIndex() in (0, 1):
                     self.incrementZoomIn()
 
         elif key == Qt.Key_Down:
             if self._isProjectTab():
-                if cfg.pt._tabs.currentIndex() in (0, 1):
+                if cfg.pt.wTabs.currentIndex() in (0, 1):
                     self.incrementZoomOut()
 
-
+        # elif key == Qt.Key_Tab:
+        #     logger.info('')
+        #     if self._isProjectTab():
+        #         new_index = (cfg.project_tab.wTabs.currentIndex()+1)%4
+        #         logger.info(f'new index: {new_index}')
+        #         cfg.project_tab.wTabs.setCurrentIndex(new_index)
 
         elif key == Qt.Key_Delete:
             if self._isOpenProjTab():
@@ -5519,31 +5291,9 @@ class MainWindow(QMainWindow):
         else:
             super().keyPressEvent(event) # re-raise the event if it doesn't match!
 
-        # elif key == Qt.Key_Shift:
-        # elif key == Qt.Key_M:
-        #     # logger.info('Shift Key Pressed!')
-        #     if self._isProjectTab():
-        #         if getData('state,viewer_mode') == 'series_as_stack':
-        #             cfg.pt.configure_or_stack(selection='configure')
-        #
-        #         elif getData('state,viewer_mode') == 'series_with_regions':
-        #             cfg.pt.configure_or_stack(selection='stack')
-
-
-                # if cfg.project_tab._tabs.currentIndex == 0:
-                #     (cfg.project_tab.cl_tra.setChecked,
-                #      cfg.project_tab.cl_ref.setChecked)[
-                #         cfg.project_tab.cl_tra.isChecked](True)
-
-        # elif key == Qt.Key_Tab:
-        #     logger.info('')
-        #     if self._isProjectTab():
-        #         new_index = (cfg.project_tab._tabs.currentIndex()+1)%4
-        #         logger.info(f'new index: {new_index}')
-        #         cfg.project_tab._tabs.setCurrentIndex(new_index)
-
-        dt = time.time() - t0
-        logger.info(f"keyPressEvent time elapsed = {dt:.4g}") # time elapsed = 0.20649194717407227
+        if cfg.DEV_MODE:
+            dt = time.time() - t0
+            logger.info(f"keyPressEvent time elapsed = {dt:.4g}") # time elapsed = 0.20649194717407227
 
 
         # # left arrow key = 16777234
@@ -5557,7 +5307,6 @@ class MainWindow(QMainWindow):
         # self.keyPressed.emit(event)
 
 
-
 class DockWidget(QDockWidget):
     hasFocus = Signal([QDockWidget])
 
@@ -5567,36 +5316,27 @@ class DockWidget(QDockWidget):
         self.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea | Qt.TopDockWidgetArea | Qt.BottomDockWidgetArea)
         self.setFeatures(QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetClosable)
 
-    def event(self, event):
-        if event.type() == QEvent.MouseButtonPress and event.button() == 1:
-            self.hasFocus.emit(self)
-            logger.info(f'Emission from {self.objectName()}')
-        return super().event(event)
-
-
+    # def event(self, event):
+    #     if event.type() == QEvent.MouseButtonPress and event.button() == 1:
+    #         self.hasFocus.emit(self)
+    #         logger.info(f'Emission from {self.objectName()}')
+    #     return super().event(event)
 
 
 class ExpandingWidget(QWidget):
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
 class ExpandingHWidget(QWidget):
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
-        # self.setStyleSheet("background-color: #000000;")
-        # self.setAutoFillBackground(True)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
 class ExpandingVWidget(QWidget):
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
-        # self.setStyleSheet("background-color: #000000;")
-        # self.setAutoFillBackground(True)
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
-        # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
 
 class VerticalLabel(QLabel):
@@ -5742,8 +5482,6 @@ class AspectWidget(QWidget):
         self.setContentsMargins(h_margin, v_margin, h_margin, v_margin)
 
 
-
-
 '''
 #indicators css
 
@@ -5752,11 +5490,11 @@ QGroupBox::indicator:unchecked {
 }
 
 https://stackoverflow.com/questions/47206667/collect-all-docked-widgets-and-their-locations
-for dock in cfg.mw.findChildren(QDockWidget):
+for dock in self.findChildren(QDockWidget):
     print(dock.windowTitle())
 
 
-area = cfg.mw.dockWidgetArea(dock)
+area = self.dockWidgetArea(dock)
 if area == QtCore.Qt.LeftDockWidgetArea:
     print(dock.windowTitle(), '(Left)')
 elif area == QtCore.Qt.RightDockWidgetArea:
@@ -5764,9 +5502,9 @@ elif area == QtCore.Qt.RightDockWidgetArea:
 
 
 
-for i,dock in enumerate(cfg.mw.findChildren(QDockWidget)):
+for i,dock in enumerate(self.findChildren(QDockWidget)):
     title = dock.windowTitle()
-    area = cfg.mw.dockWidgetArea(dock)
+    area = self.dockWidgetArea(dock)
     # if title == 'Correlation Signals':
     if title == 'Head-up Display':
         if area in (Qt.LeftDockWidgetArea, Qt.RightDockWidgetArea):
@@ -5791,29 +5529,29 @@ FAQs:
 
 Q: What is AlignEM-SWiFT?
 A: AlignEM-SWiFt is a software tool specialized for registering electron micrographs. It is
-   able to generate scale_key image hierarchies, compute affine transforms, and generate aligned
+   able to generate level image hierarchies, compute affine transforms, and generate aligned
    images using multi-image rendering.
 
 Q: Can AlignEM-SWiFT be used to register or "align" non-EM images?
 A: Yes, but its forte is aligning EM images which tend to be large, and greyscale. AlignEM-SWIFT
    provides functionality for downscaling and the ability to pass alignment results (affines)
-   from lower scale_key levels to higher ones.
+   from lower level levels to higher ones.
 
 Q: What are scales?
-A: In AlignEM-SWiFT a "scale_key" means a downsampled (or decreased resolution) series of images.
+A: In AlignEM-SWiFT a "level" means a downsampled (or decreased resolution) series of images.
 
 Q: Why should data be scaled? Is it okay to align the full resolution series with brute force?
 A: You could, but EM images tend to run large. A more efficient workflow is to:
    1) generate a hierarchy of downsampled images from the full resolution images
    2) align the lowest resolution images first
-   3) pass the computed affines to the scale_key of next-highest resolution, and repeat
+   3) pass the computed affines to the level of next-highest resolution, and repeat
       until the full resolution images are in alignment. In these FAQs this is referred to
-      as "climbing the scale_key hierarchy""
+      as "climbing the level hierarchy""
 
-Q: Why do SNR values not necessarily increase as we "climb the scale_key hierarchy"?
+Q: Why do SNR values not necessarily increase as we "climb the level hierarchy"?
 A: SNR values returned by SWIM are a relative metric which depend on image resolution. It is
    therefore most useful when comparing the relative alignment quality of aligned image
-   pairs at the same scale_key.
+   pairs at the same level.
 
 Q: Why are the selected manual correlation regions not mutually independent? In other words,
    why does moving or removing an argument to SWIM affect the signal-to-noise ratio and

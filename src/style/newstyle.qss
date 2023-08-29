@@ -21,6 +21,10 @@ QMainWindow::separator:hover {
     height: 4px;
 }
 
+
+
+
+
 QToolTip {
    /*background-color: #339933;*/
    color: #161c20;
@@ -75,19 +79,6 @@ QComboBox:focus {
 }
 
 
-QLineEdit {
-    color: #161c20;
-    background-color: #f3f6fb;
-    border: 1px solid #c7c7c7;
-	selection-background-color: #daebfe;
-	font-size: 10px;
-    border-radius: 3px;
-    padding: 2px;
-    height:18px;
-}
-QLineEdit:focus {
-  border: 1px solid #339933;
-}
 
 QAction {
     color: #161c20;
@@ -99,26 +90,6 @@ QLabel {
     font-size: 10px;
 }
 
-
-QLabel#green_toolbar_label{
-    font-size: 11px;
-    color: #00BF00;
-    font-weight: 550;
-    background: #f3f6fb;
-    border-radius: 5px;
-    border: 1px solid #00BF00;
-
-}
-
-QLabel#red_toolbar_label{
-    font-size: 11px;
-    color: #ff0000;
-    font-weight: 550;
-    background: #f3f6fb;
-    border-radius: 5px;
-    border: 1px solid #ff0000;
-
-}
 
 QLabel#validity_label{
     font-size: 11px;
@@ -142,8 +113,9 @@ QScrollBar:horizontal {
     height: 8px;
 }
 
+
+/*
 QProgressBar {
-    /*border: none;*/
     text-align: center;
     font-size: 10px;
     font-weight: 600;
@@ -151,35 +123,28 @@ QProgressBar {
 QProgressBar::chunk {
     background-color: #9fdf9f;
 }
+*/
 
+QProgressBar {
+    text-align: left;
+}
 
 
 QDockWidget {
     font-size: 10px;
     font-weight: 600;
-    color: #ede9e8;
-    border: 0px solid #ede9e8;
+    color: #f3f6fb;
+    border: none;
 }
 QDockWidget::title {
-    text-align: left;
-    /*background: #222222;*/
-    padding-left: 4px;
-    padding-bottom: 0px;
-    padding-top: 0px;
-    margin: 0px;
     font-weight: 600;
 }
 
-
-/*
 QDockWidget::close-button, QDockWidget::float-button {
     border: 1px solid transparent;
     background: none;
     padding: 0px;
 }
-*/
-
-/*
 QDockWidget::close-button:hover, QDockWidget::float-button:hover {
     background: #ede9e8;
 }
@@ -187,26 +152,18 @@ QDockWidget::close-button:hover, QDockWidget::float-button:hover {
 QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
     padding: 1px -1px -1px 1px;
 }
-*/
 
-
-
-/*
 QTabBar::tab {
-    font-size: 11px;
-    height: 13px;
+    font-size: 10px;
+    height: 12px;
     min-width: 40px;
     max-width: 200px;
 }
+
 QTabBar::tab:selected
 {
     font-weight: 600;
 }
-QTabWidget::pane {
-    border: 1px solid #161c20;
-    background: #ede9e8;
-}
-*/
 
 QMenu {
 	border-width: 1px;

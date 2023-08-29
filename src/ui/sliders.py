@@ -61,7 +61,7 @@ class DoubleSlider(QSlider):
             # super().setValue(float((value - self._min_value) / self._value_range * self._max_int))
         except:
             super().setValue(10)
-            logger.warning('Unable to set slider value to %s' %str(value))
+            logger.warning('Unable to set wSlider value to %s' %str(value))
             # print_exception()
 
 
@@ -444,7 +444,7 @@ class DoubleSlider(QSlider):
         old_value = self.value()
         self._min_value = minimum
         self._max_value = maximum
-        self.setValue(old_value)  # Put slider in correct position
+        self.setValue(old_value)  # Put wSlider in correct position
 
     def value(self):
         return float(super().value()) / self._max_int * self._value_range

@@ -18,7 +18,7 @@ import src.config as cfg
 from src.helpers import get_scale_val, do_scales_exist, is_joel, is_tacc, hotkey
 from src.funcs_image import ImageSize, ImageIOSize
 from src.ui.layouts import VBL, HBL, VWidget, HWidget
-from src.ui.thumbnail import Thumbnail, ThumbnailFast
+from src.ui.thumbnail import ThumbnailFast
 
 logger = logging.getLogger(__name__)
 
@@ -245,10 +245,10 @@ class ImportImagesDialog(QFileDialog):
 #         super().__init__()
 #         layout = QHBoxLayout(self)
 #         self.pathEdit = QLineEdit(placeholderText='Select path...')
-#         self.button = QToolButton(text='...')
+#         self.bBlink = QToolButton(text='...')
 #         layout.addWidget(self.pathEdit)
-#         layout.addWidget(self.button)
-#         self.button.clicked.connect(self.selectTarget)
+#         layout.addWidget(self.bBlink)
+#         self.bBlink.clicked.connect(self.selectTarget)
 #
 #     def selectTarget(self):
 #         dialog = QFileDialog(self)
@@ -269,11 +269,11 @@ class ImportImagesDialog(QFileDialog):
 #                 return checkLineEdit(path.rstrip(QDir.separator()))
 #             path = QFileInfo(path)
 #             if path.exists() or QFileInfo(path.absolutePath()).exists():
-#                 button.setEnabled(True)
+#                 bBlink.setEnabled(True)
 #                 return True
 #
-#         # get the "Open" button in the dialog
-#         button = dialog.findChild(QDialogButtonBox).button(QDialogButtonBox.Open)
+#         # get the "Open" bBlink in the dialog
+#         bBlink = dialog.findChild(QDialogButtonBox).bBlink(QDialogButtonBox.Open)
 #
 #         # get the line edit used for the path
 #         lineEdit = dialog.findChild(QLineEdit)
@@ -541,9 +541,7 @@ class NewConfigureProjectDialog(QDialog):
 
 
     def onScaleAndAlign(self):
-        cfg.data['data']['autoalign_flag'] = True
         self.on_apply()
-
 
     def on_apply(self):
 
@@ -555,7 +553,7 @@ class NewConfigureProjectDialog(QDialog):
 
             # cfg.data.set_scales_from_string(self.scales_input.text()) #Deprecated
             cfg.data.set_use_bounding_rect(self.bounding_rectangle_checkbox.isChecked())
-            cfg.data['defaults']['initial-rotation'] = float(self.initial_rotation_input.text())
+            cfg.data['defaults'][cfg.data.scale]['initial_rotation'] = float(self.initial_rotation_input.text())
             cfg.data['data']['clevel'] = int(self.clevel_input.text())
             cfg.data['data']['cname'] = self.cname_combobox.currentText()
             cfg.data['data']['chunkshape'] = (int(self.chunk_z_lineedit.text()),
@@ -578,7 +576,6 @@ class NewConfigureProjectDialog(QDialog):
             return 0
 
     def scale_only(self):
-        cfg.data['data']['autoalign_flag'] = False
 
         try:
             cfg.main_window.hud('Applying Project Settings...')
@@ -588,7 +585,7 @@ class NewConfigureProjectDialog(QDialog):
 
             # cfg.data.set_scales_from_string(self.scales_input.text()) #Deprecated
             cfg.data.set_use_bounding_rect(self.bounding_rectangle_checkbox.isChecked())
-            cfg.data['defaults']['initial-rotation'] = float(self.initial_rotation_input.text())
+            cfg.data['defaults'][cfg.data.scale]['initial_rotation'] = float(self.initial_rotation_input.text())
             cfg.data['data']['clevel'] = int(self.clevel_input.text())
             cfg.data['data']['cname'] = self.cname_combobox.currentText()
             cfg.data['data']['chunkshape'] = (int(self.chunk_z_lineedit.text()),
@@ -607,12 +604,6 @@ class NewConfigureProjectDialog(QDialog):
 
     def initUI(self):
         logger.info('')
-
-        # self.cb_alignLowestScale = QCheckBox('Immediately Align the Coarsest Scale ')
-        # def fn_align_coarsest():
-        #     logger.info('')
-        #     cfg.data['data']['autoalign_flag'] = self.cb_alignLowestScale.isChecked()
-        # self.cb_alignLowestScale.stateChanged.connect(fn_align_coarsest)
 
         self.createScalesButton = QPushButton('Create Scale Pyramid')
         # self.createScalesButton.setStyleSheet("font-size: 10px;")
@@ -660,7 +651,7 @@ class NewConfigureProjectDialog(QDialog):
         self.scales_input.setFixedWidth(130)
         self.scales_input.setText(scales_str)
         self.scales_input.setAlignment(Qt.AlignCenter)
-        tip = "Scale factors, space-delimited.\nExample: To generate a 4x 2x and 1x scale_key hierarchy:\n\n4 2 1"
+        tip = "Scale factors, space-delimited.\nExample: To generate a 4x 2x and 1x level hierarchy:\n\n4 2 1"
         self.scale_instructions_label = QLabel(tip)
         self.scale_instructions_label.setStyleSheet("font-size: 11px;")
         self.scales_input.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))

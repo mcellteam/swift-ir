@@ -360,7 +360,7 @@ class JsonModel(QAbstractItemModel):
             return item.value
 
     def collapseIndex(self, s=None, l=None):
-        if s == None: s = cfg.data.scale_key
+        if s == None: s = cfg.data.level
         if l == None: l = cfg.data.zpos
         cfg.project_tab.treeview.collapseAll()
         keys = ['data', 'scales', s, 'stack', l]
@@ -369,7 +369,8 @@ class JsonModel(QAbstractItemModel):
 
     def getIndex(self, findkeys, treeitem=None, jump=True, expand=False, collapse=False):
         # start w/ cfg.project_tab.treeview_model._rootItem
-        # print('\nRecursing...')
+        print('\nRecursing...')
+        print(f"findkeys: {findkeys}")
         isRoot = 0
         if treeitem == None:
             isRoot = 1
@@ -410,24 +411,24 @@ class JsonModel(QAbstractItemModel):
             self.getIndex(findkeys, treeitem=next_treeitem)
 
     def jumpToLayer(self, s=None, l=None):
-        if s == None: s = cfg.data.scale_key
+        if s == None: s = cfg.data.level
         if l == None: l = cfg.data.zpos
         # cfg.project_tab.treeview.collapseAll()
         keys = ['stack', l, 'levels', s]
         # if l !=0:
         #     self.collapseIndex(l=l - 1)
         self.getIndex(findkeys=keys, expand=True)
-        cfg.project_tab.treeview.scrollTo(self.next_treeitem, QAbstractItemView.PositionAtTop)
+        # cfg.project_tab.treeview.scrollTo(self.next_treeitem, QAbstractItemView.PositionAtCenter)
 
     # def jumpToScale(self, s=None):
-    #     if s == None: s = cfg.data.scale_key
+    #     if s == None: s = cfg.data.level
     #     keys = ['data', 'scales', s]
     #     self.getIndex(findkeys=keys, expand=True)
     #     cfg.project_tab.treeview.scrollTo(self.next_treeitem, QAbstractItemView.PositionAtTop)
 
 
     def jumpToSection(self, sec, s=None):
-        if s == None: s = cfg.data.scale_key
+        if s == None: s = cfg.data.level
         keys = ['data', 'scales', s, 'stack', sec]
         self.getIndex(findkeys=keys, expand=True)
         cfg.project_tab.treeview.scrollTo(self.next_treeitem, QAbstractItemView.PositionAtTop)
