@@ -655,6 +655,7 @@ def delete_correlation_signals(dm, scale, indexes):
         for f in files:
             if os.path.isfile(f):  # this makes the code more robust
                 os.remove(f)
+    logger.info('done')
 
 
 def delete_matches(dm, scale, indexes):
@@ -666,6 +667,7 @@ def delete_matches(dm, scale, indexes):
             if os.path.isfile(f):  # this makes the code more robust
                 # logger.info(f"Removing {f}...")
                 os.remove(f)
+    logger.info('done')
 
 
 def natural_sort(l):
