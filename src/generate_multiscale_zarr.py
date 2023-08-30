@@ -23,11 +23,11 @@ def generate_multiscale_zarr(src, out):
     tasks_ = []
     imgs = sorted(get_img_filenames(os.path.join(src, 'tiff', cfg.data.level)))
     logger.info('# images: %d' % len(imgs))
-    chunkshape = cfg.data.chunkshape
+    chunkshape = cfg.data.chunkshape(level=cfg.data.level)
     for ID, img in enumerate(imgs):
         for scale in get_scales_with_generated_alignments(cfg.data.scales):
             scale_val = get_scale_val(scale)
-            path_out = os.path.join(out, 's' + str(scale_val))
+            path_out = os.path.join(out, 'level' + str(scale_val))
             tasks_.append([ID, img, src, path_out, scale, str(chunkshape)])
     tasks = [[t for t in tasks_[x::Z_STRIDE]] for x in range(0, Z_STRIDE)]
     logger.info('\n(example task)\n%s' % str(tasks[0]))
@@ -43,7 +43,7 @@ def generate_multiscale_zarr(src, out):
                      str(task[1]),          # img
                      str(task[2]),          # src
                      str(task[3]),          # out
-                     str(task[4]),          # s str
+                     str(task[4]),          # level str
                      str(0),
                      ]
         task_queue.add_task(task_args)
@@ -56,7 +56,7 @@ def generate_multiscale_zarr(src, out):
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
-    ap.add_argument('-s', '--src', type=str, help='Path containing scaled tiff subdirectories')
+    ap.add_argument('-level', '--src', type=str, help='Path containing scaled tiff subdirectories')
     ap.add_argument('-o', '--out', type=str, help='Path for Zarr output')
     args = ap.parse_args()
     generate_multiscale_zarr(src=args.src, out=args.out)

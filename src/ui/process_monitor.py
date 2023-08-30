@@ -195,7 +195,7 @@ class HeadupDisplay(QWidget):
 
         self.textedit.undo()
         self.post(last_line + f'done ({caller})')
-        # self.post(last_line + 'done(%s).' % caller)
+        # self.post(last_line + 'done(%level).' % caller)
         self.textedit.moveCursor(QTextCursor.End)
         self.update()
         # pass

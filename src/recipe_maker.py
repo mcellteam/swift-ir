@@ -528,7 +528,7 @@ class align_ingredient:
             # args.append(self.recipe.ss['extra_args'])
             multi_arg_str.append(args())
 
-        print(f"{multi_arg_str()}")
+        # print(f"{multi_arg_str()}")
         return multi_arg_str
 
 
@@ -716,7 +716,7 @@ class align_ingredient:
                 scale_factor = 1
         except Exception as e:
             print_exception()
-            logger.error('Unable to generate thumbnail(s) - Do file(s) exist?')
+            logger.error('Unable to generate thumbnail(level) - Do file(level) exist?')
             raise e
 
         for i, fn in enumerate(self.matches_filenames):

@@ -16,18 +16,18 @@ logger = logging.getLogger(__name__)
 class GifPlayer(QWidget):
     def __init__(self, path, parent=None):
         QWidget.__init__(self, parent)
-        # self.color = QColor(0, 0, 0)
-        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-        sizePolicy.setHeightForWidth(True)
-        self.setSizePolicy(sizePolicy)
-
-        self.path=path
-        # self.movie = QMovie(path, QByteArray(), self)
-        self.movie = QMovie(path)
+        self.color = QColor(0, 0, 0)
+        self.path = path
+        # sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        # sizePolicy.setHeightForWidth(True)
+        # self.setSizePolicy(sizePolicy)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.movie = QMovie(path, QByteArray(), self)
+        # self.movie = QMovie(path)
         # self.setMinimumSize(QSize(128,128))
         self.label = QLabel()
-        self.label.setSizePolicy(sizePolicy)
-        self.label.setAutoFillBackground(False)
+        # self.label.setSizePolicy(sizePolicy)
+        self.label.setAutoFillBackground(True)
         # self.label.setScaledContents(True)
         self.label.setMinimumSize(QSize(64,64))
         # self.label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -38,18 +38,18 @@ class GifPlayer(QWidget):
         self.movie.loopCount()
 
         self.bPlay = QPushButton()
-        self.bPlay.setStyleSheet("""color: #f3f6fb; background: none;""")
-        self.bPlay.setAutoFillBackground(False)
+        self.bPlay.setStyleSheet("""color: #f3f6fb; background-color:  rgba(255, 255, 255, 200);""")
+        # self.bPlay.setAutoFillBackground(False)
         self.bPlay.setCheckable(True)
         self.bPlay.setChecked(True)
-        self.bPlay.setFixedSize(QSize(22,22))
+        self.bPlay.setFixedSize(QSize(22, 22))
         self.bPlay.setIcon(qta.icon('fa.pause', color='#161c20'))
         self.bPlay.clicked.connect(self.onPlayButton)
 
         self.bBlink = QPushButton()
-        self.bBlink.setStyleSheet("""color: #f3f6fb; background: none;""")
-        self.bBlink.setAutoFillBackground(False)
-        self.bBlink.setStyleSheet("font-size: 11px;")
+        # self.bBlink.setStyleSheet("""color: #f3f6fb; background: none;""")
+        # self.bBlink.setAutoFillBackground(False)
+        self.bBlink.setStyleSheet("""color: #f3f6fb; background-color:  rgba(255, 255, 255, 10);""")
         self.bBlink.setFixedSize(QSize(22, 22))
         self.bBlink.setToolTip(self.path)
         self.bBlink.setIcon(qta.icon('fa.eye', color='#161c20'))
@@ -60,7 +60,7 @@ class GifPlayer(QWidget):
         self.controls.layout.setAlignment(Qt.AlignLeft | Qt. AlignTop)
         # self.controls.move(2, 2)
         self.gl = GL()
-        self.gl.setContentsMargins(10,10,10,10)
+        self.gl.setContentsMargins(0,0,0,0)
         self.gl.addWidget(self.label, 0, 0, 2, 2)
         self.gl.addWidget(self.controls, 0, 0, 0, 0)
         self.gl.setRowStretch(0, 0)
@@ -76,6 +76,7 @@ class GifPlayer(QWidget):
         self.timerGif.timeout.connect(self.on_click)
 
         self.setLayout(self.gl)
+        self.setStyleSheet(f"background-color: #000000;")
 
     def start(self):
         logger.info('')
@@ -109,11 +110,35 @@ class GifPlayer(QWidget):
         self.label.setMovie(self.movie)
         self.movie.start()
 
-    # def paintEvent(self, event):
-    #     painter = QPainter()
-    #     painter.begin(self)
-    #     painter.fillRect(event.rect(), QBrush(self.color))
-    #     painter.end()
+    def paintEvent(self, event):
+        qp = QPainter()
+        qp.begin(self)
+        qp.fillRect(event.rect(), QBrush(self.color))
+
+        self.r = QRect(0, 0, self.width(), self.height())
+
+        font = QFont()
+        font.setFamily('Ubuntu')
+        fsize = 20
+        font.setPointSize(fsize)
+        font.setWeight(10)
+        qp.setFont(font)
+        qp.setPen(QColor('#fd411e'))
+
+        textFill = QColor('#ffffff')
+        textFill.setAlpha(128)
+        qp.fillRect(QRect(QPoint(0, 0), QSize(100, 200)), QBrush(textFill))
+        pixmap = QPixmap(100, 100)
+        pixmap.fill(Qt.transparent)
+
+        qp.setPen(QPen(Qt.green, 4, Qt.SolidLine))
+        qp.drawEllipse(pixmap.rect().adjusted(4, 4, -4, -4))
+
+
+        qp.drawText(QPointF(100, 100), 'TEEEST')
+
+
+        qp.end()
 
     def resizeEvent(self, event):
         rect = self.geometry()

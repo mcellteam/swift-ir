@@ -260,7 +260,7 @@ class MAViewer(neuroglancer.Viewer):
             s.layout.type = 'yz'
             s.gpu_memory_limit = -1
             s.system_memory_limit = -1
-            # s.show_scale_bar = False
+            # level.show_scale_bar = False
             s.show_scale_bar = True
             s.show_axis_lines = False
             s.projectionScale = 1
@@ -273,7 +273,7 @@ class MAViewer(neuroglancer.Viewer):
                 s.crossSectionBackgroundColor = getOpt('neuroglancer,CUSTOM_BACKGROUND_COLOR')
             else:
                 if getOpt('neuroglancer,USE_DEFAULT_DARK_BACKGROUND'):
-                    # s.crossSectionBackgroundColor = '#222222'
+                    # level.crossSectionBackgroundColor = '#222222'
                     s.crossSectionBackgroundColor = '#000000'
                 else:
                     s.crossSectionBackgroundColor = '#808080'

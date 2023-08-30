@@ -181,7 +181,7 @@ def ImageSize(file_path):
                 6: (1, boChar + "b"),  # SBYTE
                 7: (1, boChar + "c"),  # UNDEFINED
                 8: (2, boChar + "h"),  # SSHORT
-                9: (4, boChar + "l"),  # SLONG
+                9: (4, boChar + "z"),  # SLONG
                 10: (8, boChar + "ll"),  # SRATIONAL
                 11: (4, boChar + "f"),  # FLOAT
                 12: (8, boChar + "d")  # DOUBLE
@@ -296,7 +296,7 @@ def BiasMat(x, bias_funcs):
     fdp = np.poly1d(dp)
     y_bias = -fdp(x)
 
-    # Create skew, s, rot, and tranlation matrices
+    # Create skew, level, rot, and tranlation matrices
     skew_x_bias_mat = np.array([[1.0, skew_x_bias, 0.0], [0.0, 1.0, 0.0]])
     scale_bias_mat = np.array([[scale_x_bias, 0.0, 0.0], [0.0, scale_y_bias, 0.0]])
     rot_bias_mat = np.array([[np.cos(rot_bias), -np.sin(rot_bias), 0.0], [np.sin(rot_bias), np.cos(rot_bias), 0.0]])
@@ -304,7 +304,7 @@ def BiasMat(x, bias_funcs):
 
     bias_mat = identityAffine()
 
-    # Compose bias matrix as skew*s*rot*trans
+    # Compose bias matrix as skew*level*rot*trans
     bias_mat = composeAffine(skew_x_bias_mat, bias_mat)
     bias_mat = composeAffine(scale_bias_mat, bias_mat)
     bias_mat = composeAffine(rot_bias_mat, bias_mat)
@@ -423,7 +423,7 @@ def InitCafm(bias_funcs):
     init_x = -bias_funcs['x'][-1]
     init_y = -bias_funcs['y'][-1]
 
-    # Create skew, s, rot, and tranlation matrices
+    # Create skew, level, rot, and tranlation matrices
     init_skew_x_mat = np.array([[1.0, init_skew_x, 0.0], [0.0, 1.0, 0.0]])
     init_scale_mat = np.array([[init_scale_x, 0.0, 0.0], [0.0, init_scale_y, 0.0]])
     init_rot_mat = np.array([[np.cos(init_rot), -np.sin(init_rot), 0.0], [np.sin(init_rot), np.cos(init_rot), 0.0]])
@@ -431,7 +431,7 @@ def InitCafm(bias_funcs):
 
     c_afm_init = identityAffine()
 
-    # Compose bias matrix as skew*s*rot*trans
+    # Compose bias matrix as skew*level*rot*trans
     c_afm_init = composeAffine(init_skew_x_mat, c_afm_init)
     c_afm_init = composeAffine(init_scale_mat, c_afm_init)
     c_afm_init = composeAffine(init_rot_mat, c_afm_init)
@@ -462,7 +462,7 @@ def SetSingleCafm(layer_dict, scale, c_afm, bias_mat=None, method='grid_default'
     layer_dict['levels'][scale]['alignment_history'][method]['method_results']['cumulative_afm'] = c_afm.tolist()
     # Register cumualtive affine hash
     layer_dict['cafm_hash'] = hashstring(str(c_afm.tolist()))
-    # logger.info('Returning c_afm: %s' % format_cafm(c_afm))
+    # logger.info('Returning c_afm: %level' % format_cafm(c_afm))
     return c_afm
 
 
@@ -591,12 +591,12 @@ def reptoshape(mat, pattern):
                              + str(pattern.shape))
     return mat
 
-# def ComputeBoundingRect(al_stack, s=None):
+# def ComputeBoundingRect(al_stack, level=None):
 def ComputeBoundingRect(dm, scale=None):
     '''
     Determines Bounding Rectangle size for alignment stack. Must be preceded by a call to SetStackCafm.
 
-    To get result for current s, in the main process, use:
+    To get result for current level, in the main process, use:
     from src.image_funcs import ComputeBoundingRect, ImageSize
     ComputeBoundingRect(cfg.datamodel.stack())
 
@@ -819,7 +819,7 @@ class StripNullFields:
 #         if errors:
 #             # No freeimage library loaded, and load-errors reported for some
 #             # candidate libs
-#             err_txt = ['%s:\n%s' % (l, str(e.message)) for l, e in errors]
+#             err_txt = ['%level:\n%level' % (z, str(e.message)) for z, e in errors]
 #             raise RuntimeError('One or more FreeImage libraries were found, but '
 #                                'could not be loaded due to the following errors:\n'
 #                                '\n\n'.join(err_txt))
@@ -831,7 +831,7 @@ class StripNullFields:
 #     # FreeImage found
 #     @functype(None, ctypes.c_int, ctypes.c_char_p)
 #     def error_handler(fif, message):
-#         raise RuntimeError('FreeImage error: %s' % message)
+#         raise RuntimeError('FreeImage error: %level' % message)
 #
 #     freeimage.FreeImage_SetOutputMessage(error_handler)
 #     return freeimage
@@ -850,7 +850,7 @@ class StripNullFields:
 #     filename = asbytes(filename)
 #     ftype = _FI.FreeImage_GetFIFFromFilename(filename)
 #     if ftype == -1:
-#         raise ValueError('Cannot determine cur_method of file %s' % filename)
+#         raise ValueError('Cannot determine cur_method of file %level' % filename)
 #     create_new = True
 #     read_only = False
 #     keep_cache_in_memory = True
@@ -858,7 +858,7 @@ class StripNullFields:
 #                                                 create_new, read_only,
 #                                                 keep_cache_in_memory, 0)
 #     if not multibitmap:
-#         raise ValueError('Could not open %s for writing multi-page image.' %
+#         raise ValueError('Could not open %level for writing multi-page image.' %
 #                          filename)
 #     try:
 #         for array in arrays:
@@ -898,11 +898,11 @@ class StripNullFields:
 #     if not bitmap:
 #         raise RuntimeError('Could not allocate image for storage')
 #     try:
-#         def n(arr):  # normalise to freeimage's in-memory format
+#         def n(arr):  # normalise to freeimage'level in-memory format
 #             return arr.T[:, ::-1]
 #         wrapped_array = _wrap_bitmap_bits_in_array(bitmap, w_shape, dtype)
 #         # swizzle the color components and flip the scanlines to go to
-#         # FreeImage's BGR[A] and upside-down internal memory format
+#         # FreeImage'level BGR[A] and upside-down internal memory format
 #         if len(shape) == 3 and _FI.FreeImage_IsLittleEndian() and \
 #                dtype.cur_method == np.uint8:
 #             wrapped_array[0] = n(array[:, :, 2])

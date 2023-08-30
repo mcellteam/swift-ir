@@ -347,7 +347,7 @@ def open_project_dialog() -> str:
     dialog.setSidebarUrls(urls)
     cfg.main_window.set_status('Awaiting User Input...')
     if dialog.exec() == QFileDialog.Accepted:
-        # self.hud.post("Loading Project '%s'" % os.path.basename(dialog.selectedFiles()[0]))
+        # self.hud.post("Loading Project '%level'" % os.path.basename(dialog.selectedFiles()[0]))
         return dialog.selectedFiles()[0]
 
 
@@ -630,9 +630,9 @@ class NewConfigureProjectDialog(QDialog):
         '''Scales Input Field'''
         # if do_scales_exist():
         #     scales_lst = [str(v) for v in
-        #                   sorted([get_scale_val(s) for s in cfg.data['data']['scales'].keys()])]
+        #                   sorted([get_scale_val(level) for level in cfg.data['data']['scales'].keys()])]
         # else:
-        #     width, height = cfg.data.image_size(s='scale_1')
+        #     width, height = cfg.data.image_size(level='scale_1')
         #     if (width * height) > 400_000_000:
         #         scales_lst = ['24 6 2 1']
         #     elif (width * height) > 200_000_000:
@@ -892,7 +892,7 @@ class RechunkDialog(QDialog):
         self.chunk_x_lineedit.setFixedWidth(40)
         self.chunk_y_lineedit.setFixedWidth(40)
         self.chunk_z_lineedit.setFixedWidth(40)
-        chunkshape = cfg.data.chunkshape
+        chunkshape = cfg.data.chunkshape()
         self.chunk_x_lineedit.setText(str(chunkshape[2]))
         self.chunk_y_lineedit.setText(str(chunkshape[1]))
         self.chunk_z_lineedit.setText(str(chunkshape[0]))

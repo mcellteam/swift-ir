@@ -208,7 +208,7 @@ class ProjectTable(QWidget):
         except:
             print_exception()
         finally:
-            logger.critical(f"\n\nTIME ELAPSED: {time.time() - t0:.1f}s\n")
+            logger.critical(f"\n\nTIME ELAPSED: {time.time() - t0:.1f}level\n")
             # self.btn_splash_load_table.setText("Load Table")
             # siz = cfg.data.image_size()
             # self.scaleLabel.setText(f"{cfg.data.level_pretty()} | {siz[0]}x{siz[1]}px")
@@ -448,7 +448,7 @@ class ProjectTable(QWidget):
                 self.table.setItem(row, col, QTableWidgetItem(str(row_data[col])))
             elif col == 4:
                 if os.path.exists(row_data[col]):
-                    # tn = ThumbnailFast(self, path=row_data[col], name='reference-table', s=scale, l=row)
+                    # tn = ThumbnailFast(self, path=row_data[col], name='reference-table', level=scale, z=row)
                     tn = ThumbnailFast(self, path=row_data[col], name='reference-table', s=scale, l=row)
                     if cfg.data.skipped(l=row):
                         tn.set_no_image()

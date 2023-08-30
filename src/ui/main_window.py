@@ -56,7 +56,6 @@ import src.shaders
 from src.thumbnailer import Thumbnailer
 from src.config import ICON_COLOR
 from src.data_model import DataModel
-from src.generate_aligned import GenerateAligned
 # from src.generate_scales import GenerateScales
 from src.helpers import setOpt, getOpt, getData, setData, print_exception, get_scale_val, \
     natural_sort, tracemalloc_start, tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, \
@@ -79,7 +78,6 @@ from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter,
 from src.funcs_image import SetStackCafm
 
 # from src.ui.components import AutoResizingTextEdit
-import src.pairwise
 # if cfg.DEV_MODE:
 #     from src.ui.python_console import PythonConsole
 from src.ui.python_console import PythonConsole, PythonConsoleWidget
@@ -91,7 +89,7 @@ logger = logging.getLogger(__name__)
 
 DEV = is_joel()
 
-# logger.critical('_Directory of this script: %s' % os.path.dirname(__file__))
+# logger.critical('_Directory of this script: %level' % os.path.dirname(__file__))
 
 class HudOutputFormat(logging.Formatter):
     # ANSI color codess
@@ -725,14 +723,14 @@ class MainWindow(QMainWindow):
                 if not cfg.pt.msList[i]._noImage:
                     cfg.pt.msList[i].set_no_image()
 
-            # logger.critical('thumbs: %s' % str(thumbs))
+            # logger.critical('thumbs: %level' % str(thumbs))
             # logger.info(f"[{caller}] snr_vals: {str(snr_vals)}")
             method = cfg.data.method(l=z)
             logger.info(f"method: {method}")
             if method == 'grid_custom':
                 regions = cfg.data.quadrants
                 names = cfg.data.get_grid_custom_filenames(l=z)
-                # logger.info('names: %s' % str(names))
+                # logger.info('names: %level' % str(names))
                 for i in range(4):
                     if regions[i]:
                         try:
@@ -749,7 +747,7 @@ class MainWindow(QMainWindow):
                             count += 1
                         except:
                             print_exception()
-                            logger.warning(f'There was a problem with index {i}, {names[i]}\ns')
+                            logger.warning(f'There was a problem with index {i}, {names[i]}\nlevel')
                     else:
                         cfg.pt.msList[i].set_no_image()
                         # cfg.pt.msList[i].update()
@@ -767,7 +765,7 @@ class MainWindow(QMainWindow):
                     logger.info(f'i = {i}, n = {n}')
                     if i < n:
                         logger.info(f'i is < n...')
-                        # logger.info('i = %d ; name = %s' %(i, str(thumbs[i])))
+                        # logger.info('i = %d ; name = %level' %(i, str(thumbs[i])))
                         try:
                             try:
                                 snr = snr_vals[i]
@@ -1066,7 +1064,7 @@ class MainWindow(QMainWindow):
         # caller = inspect.stack()[1].function
         if s == None: s = cfg.data.level
         if cfg.data.is_aligned():
-            # logger.info('Checking SNR data for %s...' % cfg.data.level_pretty(s=s))
+            # logger.info('Checking SNR data for %level...' % cfg.data.level_pretty(level=level))
             failed = cfg.data.check_snr_status()
             if len(failed) == len(cfg.data):
                 self.warn('No SNR Data Available for %s' % cfg.data.level_pretty(s=s))
@@ -1148,6 +1146,8 @@ class MainWindow(QMainWindow):
         logger.critical('\n\nRunning Post-Alignment Tasks...\n')
         t0 = time.time()
         self._working = False
+        cfg.pt.bTransform.setEnabled(True)
+        cfg.pt.bSWIM.setEnabled(True)
         self.hidePbar()
         if self.dw_matches.isVisible():
             self.updateCorrSignalsDrawer()
@@ -1158,26 +1158,32 @@ class MainWindow(QMainWindow):
 
         self.updateEnabledButtons()
         self.updateLowest8widget()
+        self.boxScale.setEnabled(True)
         # self.dataUpdateWidgets()
         if self._isProjectTab():
             # self._showSNRcheck()
             cfg.pt.updateTimingsWidget()
             self.cbBB.setChecked(cfg.data.has_bb())
-        self.boxScale.setEnabled(True)
-        cfg.project_tab.initNeuroglancer()
-        if cfg.data.is_aligned():
-            if self._isProjectTab():
+            if cfg.data.is_aligned():
+                setData('state,neuroglancer,layout', '4panel')
+                if not cfg.data['level_data'][cfg.data.level]['aligned']:
+                    cfg.data['level_data'][cfg.data.level]['initial_snr'] = cfg.data.snr_list()
+                    cfg.data['level_data'][cfg.data.level]['aligned'] = True
                 if cfg.pt.wTabs.currentIndex() == 1:
                     cfg.pt.gifPlayer.set(path=cfg.data.gif)
                 self.setdw_snr(True)  # Also initializes
                 cfg.pt.dSnr_plot.initSnrPlot() #Todo #Redundant #Why is this needed?? Race conditino?
                 if cfg.pt.wTabs.currentIndex() == 2:
                     cfg.pt.snr_plot.initSnrPlot()
+            else:
+                setData('state,neuroglancer,layout', 'xy')
+
+        cfg.project_tab.initNeuroglancer()
         dt = time.time() - t0
         logger.info(f'  Elapsed Time         : {dt:.2f}s')
         self._autosave()
         self.setFocus()
-        self.set_status("Alignment Complete!")
+        self.statusBar.showMessage("Alignment Complete!", msecs=3000)
         logger.critical("Alignment Complete!")
 
 
@@ -1277,14 +1283,12 @@ class MainWindow(QMainWindow):
         self._alignworker.hudMessage.connect(self.tell)
         self._alignworker.hudWarning.connect(self.warn)
         self._alignworker.finished.connect(lambda: self.bAlign.setEnabled(True))
-        self._alignworker.finished.connect(lambda: cfg.data.updateComportsKeys(
-            indexes=list(set().union(align_indexes,regen_indexes)))) #BEFORE onAlignmentEnd
+        self._alignworker.finished.connect(lambda: cfg.data.updateComportsKeys(indexes=align_indexes)) #BEFORE onAlignmentEnd
         self._alignworker.finished.connect(self.onAlignmentEnd)
 
         if dm.is_aligned():
             self._alignworker.finished.connect(lambda: self.present_snr_results(align_indexes))
         self._alignworker.finished.connect(lambda: print(self._alignworker.dm))
-        self.bAlign.setEnabled(False)  # Final resets
         self._alignThread.start()  # Step 6: Start the thread
 
 
@@ -1296,7 +1300,7 @@ class MainWindow(QMainWindow):
         logger.info('\n\nAutoscaling...\n')
         self._scaleThread = QThread()  # Step 2: Create a QThread object
         scale_keys = opts['levels']
-        scales = zip(scale_keys, [opts['levels'][s]['size_xy'] for s in scale_keys])
+        scales = zip(scale_keys, [opts['size_xy'][s] for s in scale_keys])
         self._scaleworker = ScaleWorker(src=src, out=out, scales=scales, opts=opts)
         self._scaleworker.moveToThread(self._scaleThread)  # Step 4: Move worker to the thread
         self._scaleThread.started.connect(self._scaleworker.run)  # Step 5: Connect signals and slots
@@ -1307,6 +1311,11 @@ class MainWindow(QMainWindow):
         self._scaleworker.finished.connect(self.hidePbar)
         self._scaleworker.finished.connect(self._refresh)
         self._scaleworker.finished.connect(lambda: self.pm.bConfirmImport.setEnabled(True))
+        def fn():
+            cfg.settings['series_combo_text'] = os.path.basename(out)
+            self.saveUserPreferences()
+            self.pm.refresh()
+        self._scaleworker.finished.connect(fn)
         self._scaleworker.progress.connect(self.setPbar)
         self._scaleworker.initPbar.connect(self.resetPbar)
         self._scaleworker.hudMessage.connect(self.tell)
@@ -1333,6 +1342,11 @@ class MainWindow(QMainWindow):
 
         if self._isProjectTab():
             # self.bAlign.setStyleSheet(("background-color: #FFFF66;", "")[cfg.data.is_aligned()])
+            try:
+                cfg.pt.bTransform.setEnabled(True)
+                cfg.pt.bSWIM.setEnabled(True)
+            except:
+                print_exception()
             self.cbSkip.setEnabled(True)
             self.boxScale.setEnabled(True)
             self.bLeftArrow.setEnabled(True)
@@ -1564,37 +1578,25 @@ class MainWindow(QMainWindow):
                 self.updateNotes()
 
 
-            #0803- Cant do this... too inefficient. just update the _curLayerLine
-            # if self.dw_snr.isVisible():
-            #     cfg.project_tab.dSnr_plot.initSnrPlot()
-
             if self.dw_matches.isVisible():
                 self.updateCorrSignalsDrawer()
                 self.setTargKargPixmaps()
-
 
             if cfg.pt.wTabs.currentIndex() == 0:
                 cfg.project_tab._overlayLab.setVisible(cfg.data.skipped()) #Todo find/fix
                 if hasattr(cfg, 'emViewer'):
                     try:
-                        if floor(cfg.emViewer.state.voxel_coordinates[0]) != cfg.data.zpos:
+                        if floor(cfg.emViewer.state.position[0]) != cfg.data.zpos:
                             cfg.emViewer.set_layer(cfg.data.zpos)
                     except:
                         print_exception()
                 else:
                     logger.warning("no attribute: 'emViewer'!")
 
-
             elif cfg.pt.wTabs.currentIndex() == 1:
+                cfg.project_tab.dataUpdateMA()
 
                 cfg.editorViewer.set_layer()
-
-                # cfg.pt.set_transforming()
-
-                # if cfg.data['state']['tra_ref_toggle']:
-                #     cfg.pt.set_transforming()
-                # else:
-                #     cfg.pt.set_reference()
 
                 cfg.pt.lab_filename.setText(f"[{cfg.data.zpos}] Name: {cfg.data.filename_basename()} - {cfg.data.level_pretty()}")
                 cfg.pt.cl_tra.setText(f'[{cfg.data.zpos}] {cfg.data.filename_basename()} (Transforming)')
@@ -1606,7 +1608,6 @@ class MainWindow(QMainWindow):
                         cfg.pt.cl_ref.setText(f'[{cfg.data.get_ref_index()}] {cfg.data.reference_basename()} (Reference)')
                     except:
                         cfg.pt.cl_ref.setText(f'Null (Reference)')
-                cfg.project_tab.dataUpdateMA()
 
 
             elif cfg.pt.wTabs.currentIndex() == 2:
@@ -1822,9 +1823,15 @@ class MainWindow(QMainWindow):
         self.boxScale.clear()
         if self._isProjectTab():
             if hasattr(cfg, 'data'):
-                # logger.info('Reloading Scale Combobox (caller: %s)' % caller)
+                # logger.info('Reloading Scale Combobox (caller: %level)' % caller)
                 self._scales_combobox_switch = 0
-                lst = ['%d / %d x %dpx' % (cfg.data.lvl(s=s), *cfg.data.image_size(s=s)) for s in cfg.data.scales]
+                # lvl = cfg.data.lvl(s=cfg.data.level)
+                lst = []
+                for level in cfg.data.levels:
+                    lvl = cfg.data.lvl(s=level)
+                    siz = cfg.data.image_size(s=level)
+                    lst.append('%d / %d x %dpx' % (lvl, siz[0], siz[1]))
+
                 self.boxScale.addItems(lst)
                 self.boxScale.setCurrentIndex(cfg.data.scales.index(cfg.data.level))
                 self._scales_combobox_switch = 1
@@ -1840,6 +1847,11 @@ class MainWindow(QMainWindow):
                     # logger.info(f'[{caller}]')
                     requested = cfg.data.scales[self.boxScale.currentIndex()]
                     cfg.data.scale = requested
+                    if cfg.data.is_aligned():
+                        setData('state,neuroglancer,layout', '4panel')
+                    else:
+                        setData('state,neuroglancer,layout', 'xy')
+
                     cfg.pt.updateWarnings()
                     cfg.pt.project_table.veil()
                     self.alignAllAction.setText(f"Align + Generate All: Level {cfg.data.scale}")
@@ -1916,6 +1928,10 @@ class MainWindow(QMainWindow):
         cfg.settings['last_alignment_opened'] = dm.location
         dm.scale = dm.coarsest_scale_key()
         name,_ = os.path.splitext(os.path.basename(dm.location))
+        if cfg.data.is_aligned():
+            setData('state,neuroglancer,layout', '4panel')
+        else:
+            setData('state,neuroglancer,layout', 'xy')
         cfg.project_tab = cfg.pt = ProjectTab(self, path=dm.location, datamodel=dm)
         cfg.dataById[id(cfg.project_tab)] = dm
         self.addGlobTab(cfg.project_tab, name, switch_to=switch_to)
@@ -1969,7 +1985,7 @@ class MainWindow(QMainWindow):
             cfg.data.location = new_dest
             # if not new_dest.endswith('.json'):  # 0818-
             #     new_dest += ".json"
-            # logger.info('new_dest = %s' % new_dest)
+            # logger.info('new_dest = %level' % new_dest)
             self._autosave()
 
     def save(self):
@@ -2014,6 +2030,7 @@ class MainWindow(QMainWindow):
                 if not name.endswith('.swiftir'):
                     name += ".swiftir"
 
+                logger.critical(f"Saving as: {name}")
                 with open(name, 'w') as f:
                     jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
                     # f.write(jde.encode(data_cp)) #0828-
@@ -2029,7 +2046,7 @@ class MainWindow(QMainWindow):
                 #     with open(of, 'w') as f:
                 #         f.write(jde.encode(data_cp))
 
-                # self.saveUserPreferences()
+                self.saveUserPreferences()
                 # if not silently:
                 #     self.statusBar.showMessage('Project Saved!', 3000)
 
@@ -2627,8 +2644,7 @@ class MainWindow(QMainWindow):
         # self.le_max_downsampling_scales.returnPressed.connect(update_le_max_downsampling_scales)
 
         self.le_tacc_num_scale1_cores = QLineEdit()
-        self.le_tacc_num_scale1_cores.setFixedHeight(18)
-        self.le_tacc_num_scale1_cores.setFixedWidth(30)
+        self.le_tacc_num_scale1_cores.setFixedSize(QSize(30,18))
         self.le_tacc_num_scale1_cores.setValidator(QIntValidator(1,128))
         def update_tacc_max_scale1_cores():
             logger.info('')
@@ -2693,6 +2709,18 @@ class MainWindow(QMainWindow):
         self.cb_use_pool.setChecked(cfg.USE_POOL_FOR_SWIM)
         self.cb_use_pool.toggled.connect(update_mp_mode)
 
+        self.le_thumb_size = QLineEdit()
+        self.le_thumb_size.setFixedSize(QSize(30, 18))
+        self.le_thumb_size.setValidator(QIntValidator(1, 1024))
+        def update_thumb_size():
+            logger.info('')
+            n = int(self.le_thumb_size.text())
+            cfg.TARGET_THUMBNAIL_SIZE = n
+            self.tell(f"Target thumbnail size is now set to: {n}")
+        self.le_thumb_size.setText(str(cfg.TARGET_THUMBNAIL_SIZE))
+        self.le_thumb_size.textEdited.connect(update_thumb_size)
+        self.le_thumb_size.returnPressed.connect(update_thumb_size)
+
         self.w_tacc = QWidget()
         self.w_tacc.setContentsMargins(2,2,2,2)
         self.fl_tacc = QFormLayout()
@@ -2709,6 +2737,7 @@ class MainWindow(QMainWindow):
         self.fl_tacc.addRow(f"Log recipe to file", self.cb_recipe_logging)
         self.fl_tacc.addRow(f"Verbose SWIM (-v)", self.cb_verbose_swim)
         self.fl_tacc.addRow(f"DEV_MODE", self.cb_dev_mode)
+        self.fl_tacc.addRow(f"Target Thumbnail Size", self.le_thumb_size)
 
         self.wAdvanced = QScrollArea()
         self.wAdvanced.setStyleSheet("background-color: #161c20; color: #f3f6fb;")
@@ -3280,6 +3309,12 @@ class MainWindow(QMainWindow):
             self.dw_snr.setWidget(NullWidget())
             self.dw_matches.setWidget(NullWidget())
             self.dw_snr.setWidget(NullWidget())
+            if self.dw_snr.isVisible():
+                self.setdw_snr(False)
+            if self.dw_matches.isVisible():
+                self.setdw_matches(False)
+            if self.dw_thumbs.isVisible():
+                self.setdw_thumbs(False)
 
         elif self._getTabType() == 'ProjectTab':
             cfg.data = self.globTabs.currentWidget().datamodel
@@ -3309,6 +3344,7 @@ class MainWindow(QMainWindow):
             cfg.zarr_tab.viewer.bootstrap()
 
         elif self._getTabType() == 'OpenProject':
+            self.pm.loadSeriesCombo()
             self.pm.resetView()
             self.pm.refresh()
         
@@ -4054,8 +4090,8 @@ class MainWindow(QMainWindow):
         #         os.rename(target, _src)
         #         try:
         #             source = zarr.open(store=_src)
-        #             self.tell('Configuring rechunking (target: %s). New chunk shape: %s...' % (target, str(chunkshape)))
-        #             logger.info('Configuring rechunk operation (target: %s)...' % target)
+        #             self.tell('Configuring rechunking (target: %level). New chunk shape: %level...' % (target, str(chunkshape)))
+        #             logger.info('Configuring rechunk operation (target: %level)...' % target)
         #             rechunked = rechunk(
         #                 source=source,
         #                 target_chunks=chunkshape,
@@ -4063,7 +4099,7 @@ class MainWindow(QMainWindow):
         #                 max_mem=100_000_000_000,
         #                 temp_store=intermediate
         #             )
-        #             self.tell('Rechunk plan:\n%s' % str(rechunked))
+        #             self.tell('Rechunk plan:\n%level' % str(rechunked))
         #         except:
         #             self.warn('Unable to rechunk the array')
         #             print_exception()
@@ -4075,13 +4111,13 @@ class MainWindow(QMainWindow):
         #         rechunked.execute()
         #         self.hud.done()
         #
-        #         logger.info('Removing %s...' %intermediate)
-        #         self.tell('Removing %s...' %intermediate)
+        #         logger.info('Removing %level...' %intermediate)
+        #         self.tell('Removing %level...' %intermediate)
         #         shutil.rmtree(intermediate, ignore_errors=True)
         #         shutil.rmtree(intermediate, ignore_errors=True)
         #
-        #         logger.info('Removing %s...' %_src)
-        #         self.tell('Removing %s...' %_src)
+        #         logger.info('Removing %level...' %_src)
+        #         self.tell('Removing %level...' %_src)
         #         shutil.rmtree(_src, ignore_errors=True)
         #         shutil.rmtree(_src, ignore_errors=True)
         #         self.hud.done()
@@ -4090,7 +4126,7 @@ class MainWindow(QMainWindow):
         #         dt = t_end - t_start
         #         z = zarr.open(store=target)
         #         info = str(z.info)
-        #         self.tell('\n%s' %info)
+        #         self.tell('\n%level' %info)
         #
         #         self.tell('Rechunking Time: %.2f' % dt)
         #         logger.info('Rechunking Time: %.2f' % dt)
@@ -4209,7 +4245,7 @@ class MainWindow(QMainWindow):
                                'All Output:')
         self.boxScale.currentTextChanged.connect(self.onScaleChange)
 
-        labs = [QLabel('Scale Level / Resolution'), QLabel('Z-position'), self.labAlign]
+        labs = [QLabel('Resolution Level'), QLabel('Z-position'), self.labAlign]
         for lab in labs:
             lab.setAlignment(Qt.AlignLeft)
             lab.setStyleSheet("""color: #161c20; font-size: 8px; font-weight: 600;""")
@@ -5466,7 +5502,7 @@ class AspectWidget(QWidget):
         size = event.size()
         if size == self.adjusted_to_size:
             # Avoid infinite recursion. I suspect Qt does this for you,
-            # but it's best to be safe.
+            # but it'level best to be safe.
             return
         self.adjusted_to_size = size
 

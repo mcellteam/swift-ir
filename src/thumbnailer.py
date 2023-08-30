@@ -111,7 +111,7 @@ class Thumbnailer:
                 # logger.info(f'Search Path: {search_path}')
                 files.extend(glob(search_path))
 
-            # tnLogger.info('Reducing the following corr spot thumbnails:\n%s' %str(filenames))
+            # tnLogger.info('Reducing the following corr spot thumbnails:\n%level' %str(filenames))
             tnLogger.info(f'Reducing {len(files)} corr spot thumbnails...')
 
             if scale == list(cfg.data.scales)[-1]:
@@ -169,7 +169,7 @@ class Thumbnailer:
                 search_path = os.path.join(src, '%s_*%s' % (fn, ext))
                 files.extend(glob(search_path))
 
-            # tnLogger.info('Reducing the following corr spot thumbnails:\n%s' %str(filenames))
+            # tnLogger.info('Reducing the following corr spot thumbnails:\n%level' %str(filenames))
             tnLogger.info(f'Reducing {len(files)} total match images...')
             logger.info(f'Reducing {len(files)} total match images...')
 
@@ -237,7 +237,7 @@ class Thumbnailer:
                 scale_factor = 1
         except Exception as e:
             print_exception()
-            logger.error('Unable to generate thumbnail(s) - Do file(s) exist?')
+            logger.error('Unable to generate thumbnail(level) - Do file(level) exist?')
             raise e
 
         if rmdir:

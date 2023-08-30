@@ -96,6 +96,9 @@ class DataModel:
             if not initialize:
                 self.updateComportsKeys(all=True)
             self.signals = Signals()
+            self.signals.warning2.connect(lambda: logger.critical('emission!'))
+            # self.signals.warning2.connect(lambda: self.updateComportsKeys(forward=True))
+            self.signals.warning2.connect(lambda: self.updateComportsKeys(indexes=[self.zpos]))
         logger.info('<<')
 
     def __iter__(self):
@@ -164,7 +167,6 @@ class DataModel:
         '''Get reference image filename.'''
         return os.path.basename(self['stack'][self.zpos]['levels'][self.level]['swim_settings']['reference'])
 
-
     @property
     def created(self):
         '''Get time stamp, created.'''
@@ -201,12 +203,12 @@ class DataModel:
     @property
     def scales(self) -> list[str]:
         '''Get scale levels list.'''
-        return natural_sort(self['series'].get('levels'))
+        return natural_sort(self['series']['levels'])
 
     @property
     def levels(self) -> list[str]:
         '''Get scale levels list.'''
-        return natural_sort(self['series'].get('levels'))
+        return natural_sort(self['series']['levels'])
 
     @property
     def source_path(self):
@@ -231,7 +233,7 @@ class DataModel:
     @property
     def zpos(self):
         '''Get global Z-position.'''
-        return self['current'].get('z_position')
+        return self['current']['z_position']
 
     @zpos.setter
     def zpos(self, index):
@@ -250,36 +252,37 @@ class DataModel:
     @property
     def cname(self) -> str:
         '''Get compression type'''
-        return self['series']['settings'].get('cname')
+        return self['series']['cname']
 
     @cname.setter
     def cname(self, x:str):
         '''Set compression type'''
-        self['series']['settings'].update(cname=str(x))
+        self['series']['cname'] = x
 
     @property
     def clevel(self) -> int:
         '''Get compression level'''
-        return int(self['series']['settings'].get('clevel'))
+        return int(self['series']['clevel'])
 
     @clevel.setter
     def clevel(self, x:int):
         '''Set compression level'''
-        self['series']['settings'].update(clevel=int(x))
+        self['series']['clevel'] = x
 
-    @property
-    def chunkshape(self) -> tuple:
+
+    def chunkshape(self, level=None) -> tuple:
         '''Get chunk shape.'''
-        return self['series']['settings'].get('chunkshape')
+        if level == None: level = self.level
+        return self['series']['chunkshape'][level]
 
-    @chunkshape.setter
-    def chunkshape(self, x:tuple):
+    def set_chunkshape(self, x:tuple, level:str=None):
         '''Set chunk shape.'''
-        self['series']['settings']['chunkshape'] = x
+        if level == None: level = self.level
+        self['series']['chunkshape'][level] = x
 
     @property
     def brightness(self):
-        return self['rendering'].get('brightness')
+        return self['rendering']['brightness']
 
     @brightness.setter
     def brightness(self, v:float):
@@ -287,7 +290,7 @@ class DataModel:
 
     @property
     def contrast(self):
-        return self['rendering'].get('contrast')
+        return self['rendering']['contrast']
 
     @contrast.setter
     def contrast(self, v:float):
@@ -295,7 +298,7 @@ class DataModel:
 
     @property
     def level(self):
-        return self['current'].get('level')
+        return self['current']['level']
 
     @level.setter
     def level(self, s:str):
@@ -304,7 +307,7 @@ class DataModel:
 
     @property
     def scale(self):
-        return self['current'].get('level')
+        return self['current']['level']
 
     @scale.setter
     def scale(self, s):
@@ -348,10 +351,20 @@ class DataModel:
     @quadrants.setter
     def quadrants(self, lst):
         '''property previously called grid_custom_regions'''
-        # for s in self.levels():
+        # for level in self.levels():
         for s in self.finer_scales():
             self._data['stack'][self.zpos]['levels'][s]['swim_settings']['grid']['quadrants'] = lst
         self.signals.warning2.emit()
+
+    @property
+    def padlock(self):
+        '''Get time stamp, created.'''
+        return self['state']['padlock']
+
+    @padlock.setter
+    def padlock(self, b):
+        '''Get time stamp, created.'''
+        self['state']['padlock'] = b
 
     def get_grid_custom_regions(self, s=None, l=None):
         if s == None: s = self.level
@@ -391,8 +404,10 @@ class DataModel:
         return self['defaults'][self.level]
 
     @defaults.setter
-    def defaults(self, d):
-        self['defaults'][self.level] = d
+    def defaults(self, d, level=None):
+        if level == None:
+            level = self.level
+        self['defaults'][level] = d
 
     @property
     def defaults_pretty(self):
@@ -422,8 +437,8 @@ class DataModel:
     def get_ref_index(self, l=None):
         if l == None: l = self.zpos
         caller = inspect.stack()[1].function
-        # logger.critical(f'caller: {caller}, l={l}')
-        # if self.skipped(s=self.level, l=l):
+        # logger.critical(f'caller: {caller}, z={z}')
+        # if self.skipped(level=self.level, z=z):
         if not self.include(s=self.level, l=l):
             return self.get_index(self._data['stack'][l]['levels'][self.level]['swim_settings']['path']) #Todo refactor this but not sure how
         reference = self._data['stack'][l]['levels'][self.level]['swim_settings']['reference']
@@ -460,7 +475,7 @@ class DataModel:
         if s == None: s = self.level
         #Todo improve this, cache it or something
 
-        # if s in get_scales_with_generated_alignments(self.levels):
+        # if level in get_scales_with_generated_alignments(self.levels):
         #     return True
         # else:
         #     return False
@@ -579,7 +594,7 @@ class DataModel:
     def base_image_name(self, s=None, l=None):
         if s == None: s = self.level
         if l == None: l = self.zpos
-        # logger.info(f'Caller: {inspect.stack()[1].function}, s={s}, l={l}')
+        # logger.info(f'Caller: {inspect.stack()[1].function}, level={level}, z={z}')
         return os.path.basename(self._data['stack'][l]['levels'][s]['swim_settings']['path'])
 
     '''NEW METHODS USING NEW DATA SCHEMA 2023'''
@@ -962,9 +977,9 @@ class DataModel:
 
 
     def snr_average(self, scale=None) -> float:
-        # logger.info('caller: %s...' % inspect.stack()[1].function)
+        # logger.info('caller: %level...' % inspect.stack()[1].function)
         if scale == None: scale = self.level
-        # NOTE: skip the first layer which does not have an SNR value s may be equal to zero
+        # NOTE: skip the first layer which does not have an SNR value level may be equal to zero
         try:
             return statistics.fmean(self.snr_list(s=scale)[1:])
         except:
@@ -1022,7 +1037,7 @@ class DataModel:
                 if p:
                     coords[i] = (p[0] / fac, p[1] / fac)
             logger.info(f'Setting manual points for {s}: {coords}')
-            # self._data['stack'][l]['levels'][s]['swim_settings']['match_points'][role] = coords
+            # self._data['stack'][z]['levels'][level]['swim_settings']['match_points'][role] = coords
             self._data['stack'][l]['levels'][s]['swim_settings']['manual']['points']['ng_coords'][role] = coords
 
             # set manual points in MIR coordinate system
@@ -1079,8 +1094,8 @@ class DataModel:
             except:
                 print_exception()
 
-        # ref = [(l, x[0], x[1]) for x in mps['ref']]
-        # base = [(l, x[0], x[1]) for x in mps['base']]
+        # ref = [(z, x[0], x[1]) for x in mps['ref']]
+        # base = [(z, x[0], x[1]) for x in mps['base']]
         return d
 
 
@@ -1088,7 +1103,7 @@ class DataModel:
         if s == None: s = self.level
         if l == None: l = self.zpos
         try:
-            # return self._data['stack'][l]['levels'][s]['alignment']['method_results']['affine_matrix']
+            # return self._data['stack'][z]['levels'][level]['alignment']['method_results']['affine_matrix']
             method = self.method(s=s,l=l)
             return self._data['stack'][l]['levels'][s]['alignment_history'][method]['method_results'][
             'affine_matrix']
@@ -1100,24 +1115,24 @@ class DataModel:
     def swim_settings_hashable(self, s=None, l=None):
         if s == None: s = self.level
         if l == None: l = self.zpos
-        # return [tuple(map(tuple, x)) for x in self.cafm_list(s=s,end=end)]
-        # return hash(str(self.cafm_list(s=s,end=end)))
+        # return [tuple(map(tuple, x)) for x in self.cafm_list(level=level,end=end)]
+        # return hash(str(self.cafm_list(level=level,end=end)))
         try:
             return hash(str(self['stack'][l]['levels'][s]['swim_settings']))
         except:
-            print_exception(extra=f's={s}, l={l}')
+            print_exception(extra=f'level={s}, l={l}')
 
 
     def cafm(self, s=None, l=None) -> list:
         if s == None: s = self.level
         if l == None: l = self.zpos
         try:
-            # return self._data['stack'][l]['levels'][s]['alignment']['method_results']['cumulative_afm'] #0802-
+            # return self._data['stack'][z]['levels'][level]['alignment']['method_results']['cumulative_afm'] #0802-
             method = self.method(s=s, l=l)
             return self._data['stack'][l]['levels'][s]['alignment_history'][method]['method_results']['cumulative_afm']
         except:
             # caller = inspect.stack()[1].function
-            # print_exception(extra=f'Layer {l}, caller: {caller}')
+            # print_exception(extra=f'Layer {z}, caller: {caller}')
             exi = sys.exc_info()
             logger.warning(f"[{l}] {exi[0]} {exi[1]}")
             return [[1, 0, 0], [0, 1, 0]]
@@ -1147,10 +1162,10 @@ class DataModel:
     def cafm_hashable(self, s=None, end=None):
         if s == None: s = self.level
         if end == None: end = self.zpos
-        # return [tuple(map(tuple, x)) for x in self.cafm_list(s=s,end=end)]
-        # return hash(str(self.cafm_list(s=s,end=end)))
+        # return [tuple(map(tuple, x)) for x in self.cafm_list(level=level,end=end)]
+        # return hash(str(self.cafm_list(level=level,end=end)))
         try:
-            # return hash(str(self.cafm(s=s, l=end)))
+            # return hash(str(self.cafm(level=level, z=end)))
             return hashstring(str(self.cafm(s=s, l=end)))
         except:
             caller = inspect.stack()[1].function
@@ -1166,7 +1181,7 @@ class DataModel:
     def cafm_current_hash(self, s=None, l=None):
         if s == None: s = self.level
         if l == None: l = self.zpos
-        # return hash(str(self.cafm_list(s=s, end=l)))
+        # return hash(str(self.cafm_list(level=level, end=z)))
         try:
             return self.cafm_hashable(s=s, end=l)
         except:
@@ -1188,30 +1203,81 @@ class DataModel:
         return answer
 
 
-    def data_comports(self, s=None, l=None):
-        if s == None: s = self.level
-        if l == None: l = self.zpos
+    def isdefaults(self, level=None, z=None):
+        logger.critical('')
+        if level == None: level = self.level
+        if z == None: z = self.zpos
         caller = inspect.stack()[1].function
-        # logger.critical(f"caller: {caller}, s={s}, l={l}")
+        # logger.critical(f"caller: {caller}, level={level}, z={z}")
+        reasons = []
+        method = self.method(s=level, l=z)
+
+        cur = self['stack'][z]['levels'][level]['swim_settings']  # current
+        dflts = self['defaults'][level]  # memory
+
+        if method in ('manual_hint', 'manual_strict'):
+            reasons.append((f"Uses manual alignment rather than default grid alignment", cur['method'], dflts['method']))
+            answer = len(reasons) == 0
+            return answer, reasons
+
+        #Todo figure this out later
+        # if cur['reference'] != dflts['reference']:
+        #     reasons.append(('Reference images differ', cur['reference'], dflts['reference']))
+
+        if cur['clobber_fixed_noise'] != dflts['clobber_fixed_noise']:
+            reasons.append(("Inconsistent data at clobber fixed pattern ON/OFF (key: clobber_fixed_noise)",
+                             cur['clobber_fixed_noise'],
+                             dflts['clobber_fixed_noise']))
+        elif (cur['clobber_fixed_noise'] == True) and (dflts['clobber_fixed_noise'] == True):
+            if cur['clobber_size'] != dflts['clobber_size']:
+                reasons.append(("Inconsistent data at clobber size in pixels (key: clobber_size)",
+                                 cur['clobber_size'], dflts['clobber_size']))
+
+        else:
+            if cur['whitening'] != dflts['whitening']:
+                reasons.append(("Inconsistent data at signal whitening magnitude (key: whitening)",
+                                 cur['whitening'], dflts['whitening']))
+            if cur['iterations'] != dflts['iterations']:
+                reasons.append(("Inconsistent data at # SWIM iterations (key: swim_iters)",
+                                 cur['iterations'], dflts['iterations']))
+
+        if 'grid' in method:
+            keys = ['size_1x1', 'size_2x2', 'quadrants']
+            for key in keys:
+                if cur['grid'][key] != dflts['grid'][key]:
+                    reasons.append((f"Inconsistent data (key: {key})", cur['grid'][key], dflts['grid'][key]))
+
+
+        answer = len(reasons) == 0
+        logger.critical(f"Returning {answer}!\nReasons: {reasons}")
+        return answer, reasons
+
+
+
+    def data_comports(self, level=None, z=None):
+        if level == None: level = self.level
+        if z == None: z = self.zpos
+        caller = inspect.stack()[1].function
+        # logger.critical(f"caller: {caller}, level={level}, z={z}")
         problems = []
-        method = self.method(s=s, l=l)
+        method = self.method(s=level, l=z)
 
         #Temporary
-        if l == self.first_unskipped():
+        if z == self.first_unskipped():
             return True, []
 
-        if not self['stack'][l]['levels'][s]['alignment_history'][method]['complete']:
+        if not self['stack'][z]['levels'][level]['alignment_history'][method]['complete']:
             problems.append((f"Alignment method '{method}' is incomplete", 1, 0))
             return False, problems
 
-        cur = self['stack'][l]['levels'][s]['swim_settings']  # current
-        mem = self['stack'][l]['levels'][s]['alignment_history'][method]['swim_settings'] # memory
+        cur = self['stack'][z]['levels'][level]['swim_settings']  # current
+        mem = self['stack'][z]['levels'][level]['alignment_history'][method]['swim_settings'] # memory
 
         #Todo refactor, 'recent_method' key
         try:
-            prev_method = self['stack'][l]['levels'][s]['method_results']['method']
-            if prev_method != cur['method']:
-                problems.append(('Method changed', prev_method, cur['method']))
+            last_method_used = self['stack'][z]['levels'][level]['method_results']['method']
+            if last_method_used != cur['method']:
+                problems.append(('Method changed', last_method_used, cur['method']))
         except:
             pass
 
@@ -1233,10 +1299,10 @@ class DataModel:
         #                 continue
         #             if self.defaults[key] != mem['defaults'][key]:
         #                 if type(mem['defaults'][key]) == dict and len(mem['defaults'][key]) == 1:
-        #                     breadcrumb = 'defaults > %s > %s' % (key, mem['defaults'][key])
+        #                     breadcrumb = 'defaults > %level > %level' % (key, mem['defaults'][key])
         #                 else:
-        #                     breadcrumb = 'defaults > %s' % key
-        #                 problems.append(('Inconsistent data (key: %s)' % breadcrumb,
+        #                     breadcrumb = 'defaults > %level' % key
+        #                 problems.append(('Inconsistent data (key: %level)' % breadcrumb,
         #                                  self.defaults[key], mem['defaults'][key]))
 
         else:
@@ -1265,12 +1331,12 @@ class DataModel:
         # elif method == 'grid-custom':
         #     return cur['defaults'] == mem['defaults']
         answer = len(problems) == 0
-        self['stack'][l]['levels'][s]['data_comports'] = answer
+        self['stack'][z]['levels'][level]['data_comports'] = answer
         return answer, problems
         # return tuple(comports?, [(reason/key, val1, val2)])
 
     def updateComportsKeys(self, one=False, forward=False, all=False, indexes=None):
-        logger.critical(f"[{caller_name()}]")
+        logger.critical(f"[{caller_name()}] Updating Comports Keys...")
         if one:        to_update = range(self.zpos, self.zpos+1)
         elif forward:  to_update = range(self.zpos, len(self))
         elif indexes:  to_update = indexes
@@ -1279,7 +1345,7 @@ class DataModel:
         for i in to_update:
             _data_comports = self['stack'][i]['levels'][self.level]['data_comports']
             _cafm_comports = self['stack'][i]['levels'][self.level]['cafm_comports']
-            data_comports = self.data_comports(s=self.level, l=i)[0]
+            data_comports = self.data_comports(level=self.level, z=i)[0]
             cafm_comports = self.cafm_hash_comports(s=self.level, l=i)
             if _data_comports != data_comports:
                 logger.critical(f"Changing 'data_comports' from {_data_comports} to {data_comports} for section #{i}")
@@ -1291,14 +1357,14 @@ class DataModel:
 
     def data_comports_list(self, s=None):
         if s == None: s = self.level
-        # return np.array([self.data_comports(s=s, l=l)[0] for l in range(0, len(self))]).nonzero()[0].tolist()
+        # return np.array([self.data_comports(level=level, z=z)[0] for z in range(0, len(self))]).nonzero()[0].tolist()
         return [self['stack'][i]['levels'][s]['data_comports'] for i in range(0,len(self))]
 
 
     def data_dn_comport_indexes(self, s=None):
         if s == None: s = self.level
         t0 = time.time()
-        # lst = [(not self.data_comports(s=s, l=l)[0]) and (not self.skipped(s=s, l=l)) for l in range(0, len(self))]
+        # lst = [(not self.data_comports(level=level, z=z)[0]) and (not self.skipped(level=level, z=z)) for z in range(0, len(self))]
         # answer = np.array(lst).nonzero()[0].tolist()
         answer = []
         for i in range(0, len(self)):
@@ -1318,15 +1384,15 @@ class DataModel:
             if self['stack'][i]['levels'][s]['data_comports']:
                 if self['stack'][i]['levels'][s]['cafm_comports']:
                     answer.append(i)
-        # answer = list(set(range(len(self))) - set(self.cafm_dn_comport_indexes(s=s)) - set(self.data_dn_comport_indexes(
-        #     s=s)))
+        # answer = list(set(range(len(self))) - set(self.cafm_dn_comport_indexes(level=level)) - set(self.data_dn_comport_indexes(
+        #     level=level)))
         logger.info(f"dt = {time.time() - t0:.3g}")
         return answer
 
 
     def cafm_comports_indexes(self, s=None):
         if s == None: s = self.level
-        # return np.array([self.cafm_hash_comports(s=s, l=l) for l in range(0, len(self))]).nonzero()[0].tolist()
+        # return np.array([self.cafm_hash_comports(level=level, z=z) for z in range(0, len(self))]).nonzero()[0].tolist()
         answer = []
         for i in range(len(self)):
             if self['stack'][i]['levels'][s]['cafm_comports']:
@@ -1338,10 +1404,6 @@ class DataModel:
         if s == None: s = self.level
         t0 = time.time()
         answer = []
-        # for i in range(0, len(self)):
-        #     if not self.cafm_hash_comports(s=s, l=i) or not self.data_comports(s=s, l=i)[0]:
-        #         if not self.skipped(s=s, l=i):
-        #             answer.append(i)
         for i in range(len(self)):
             if self.include(s=s, l=i):
                 if (not self['stack'][i]['levels'][s]['data_comports']) or (not self['stack'][i]['levels'][s]['cafm_comports']):
@@ -1355,13 +1417,12 @@ class DataModel:
     def level_pretty(self, s=None) -> str:
         if not s:
             s = self.level
-        return 'Scale %d' % self.lvl(s=s)
+        return 'Level %d' % self.lvl(s=s)
 
     def lvl(self, s:str = None) -> int:
         if not s:
             s = self.level
-        while s.startswith('s'):
-            return int(s[1:])
+        return int(s[1:])
 
     def lvls(self) -> list[int]:
         return [int(k[1:]) for k in self.levels]
@@ -1376,15 +1437,16 @@ class DataModel:
 
     def resolution(self, s=None):
         if s == None: s = self.level
-        return self['series']['settings']['levels'][str(self.lvl())]['resolution']
+        return self['series']['resolution'][s]
 
     def set_resolution(self, s, res_x:int, res_y:int, res_z:int):
-        self['series']['settings']['levels'][str(self.lvl())]['resolution'] = (res_z, res_y, res_x)
+        if s == None: s = self.level
+        self['series']['resolution'][s] = (res_z, res_y, res_x)
 
 
     def get_user_zarr_settings(self):
         '''Returns user settings for cname, clevel, chunkshape as tuple (in that order).'''
-        return (self.cname, self.clevel, self.chunkshape)
+        return (self.cname, self.clevel, self.chunkshape())
 
 
 
@@ -1392,19 +1454,16 @@ class DataModel:
         '''Get downscales list (similar to scales() but with scale_1 removed).
         Faster than O(n*m) performance.
         Preserves order of scales.'''
-        lst = natural_sort(self['series']['levels'])
-        try:
-            lst.remove('s1')
-        except:
-            print_exception()
-        return lst
+        downscales = natural_sort(self['series']['levels'])
+        downscales.remove('s1')
+        return downscales
 
     def skipped(self, s=None, l=None) -> bool:
         '''Called by get_axis_data'''
         if s == None: s = self.level
         if l == None: l = self.zpos
         try:
-            # return bool(self._data['stack'][l]['levels'][s]['skipped'])
+            # return bool(self._data['stack'][z]['levels'][level]['skipped'])
             return not bool(self._data['stack'][l]['levels'][s]['swim_settings']['include'])
         except IndexError:
             logger.warning(f'Index {l} is out of range.')
@@ -1431,7 +1490,7 @@ class DataModel:
 
 
     def skips_list(self, s=None) -> list:
-        '''Returns the list of excluded images for a s'''
+        '''Returns the list of excluded images for a level'''
         if s == None: s = self.level
         indexes, names = [], []
         try:
@@ -1453,7 +1512,7 @@ class DataModel:
             return []
 
     def skips_by_name(self, s=None) -> list[str]:
-        '''Returns the list of skipped images for a s'''
+        '''Returns the list of skipped images for a level'''
         if s == None: s = self.level
         lst = []
         try:
@@ -1485,8 +1544,6 @@ class DataModel:
         if s == None: s = self.level
         if l == None: l = self.zpos
         return self._data['stack'][l]['levels'][s]['swim_settings']
-
-
 
 
     def set_whitening(self, f: float) -> None:
@@ -1524,7 +1581,7 @@ class DataModel:
 
     def propagate_swim_1x1_custom_px(self, indexes:list):
         '''Sets the SWIM Window for the Current Section across all scales.'''
-        # img_w, img_h = self.image_size(s=self.level)
+        # img_w, img_h = self.image_size(level=self.level)
         # logger.critical(f"caller: {caller_name()}")
         for l in indexes:
             pixels = self._data['stack'][l]['levels'][self.level]['swim_settings']['grid']['size_1x1']
@@ -1568,7 +1625,7 @@ class DataModel:
 
     def propagate_swim_2x2_custom_px(self, indexes:list):
         '''Returns the SWIM Window in pixels'''
-        # img_w, img_h = self.image_size(s=self.level)
+        # img_w, img_h = self.image_size(level=self.level)
         for l in indexes:
             pixels = self._data['stack'][l]['levels'][self.level]['swim_settings']['grid']['size_2x2']
             for s in self.finer_scales(include_self=False):
@@ -1589,7 +1646,7 @@ class DataModel:
         if factor == None:
             factor = cfg.DEFAULT_AUTO_SWIM_WINDOW_PERC
         man_ww_full = img_size[0] * factor, img_size[1] * factor
-        # for s in self.levels():
+        # for level in self.levels():
         for s in levels:
             man_ww_x = int(man_ww_full[0] / self.lvl(s) + 0.5)
             man_ww_y = int(man_ww_full[1] / self.lvl(s) + 0.5)
@@ -1635,7 +1692,7 @@ class DataModel:
                 sf = self.lvl() / self.lvl(s)  # level factor
                 self['stack'][l]['levels'][s]['swim_settings']['manual']['size_region'] = int(pixels * sf + 0.5)
                 #todo
-                # self['stack'][l]['levels'][s]['swim_settings']['manual']['size_region'] = (
+                # self['stack'][z]['levels'][level]['swim_settings']['manual']['size_region'] = (
                 #             np.array(pixels) * sf).astype(int).tolist()
 
     def set_manual_swim_windows_to_default(self, levels=None, current_only=False, silent=False) -> None:
@@ -1645,10 +1702,10 @@ class DataModel:
 
         img_size = self.image_size(self.levels[0])  # largest level size
         man_ww_full = min(img_size[0], img_size[1]) * cfg.DEFAULT_MANUAL_SWIM_WINDOW_PERC
-        # for s in self.levels():
+        # for level in self.levels():
         for s in levels:
             man_ww = man_ww_full / self.lvl(s)['manual']
-            # logger.info(f'Manual SWIM window size for {s} to {man_ww}')
+            # logger.info(f'Manual SWIM window size for {level} to {man_ww}')
             if current_only:
                 self['stack'][self.zpos]['levels'][s]['swim_settings']['manual']['size_region'] = man_ww
             else:
@@ -1659,7 +1716,15 @@ class DataModel:
 
     def image_size(self, s=None) -> tuple:
         if s == None: s = self.level
-        return tuple(self['series']['levels'][s]['size_xy'])
+        return tuple(self['series']['size_xy'][s])
+
+    def size_xy(self, s=None) -> tuple:
+        if s == None: s = self.level
+        return tuple(self['series']['size_xy'][s])
+
+    def size_zyx(self, s=None) -> tuple:
+        if s == None: s = self.level
+        return tuple(self['series']['size_zyx'][s])
 
 
     def name_base(self, s=None, l=None) -> str:
@@ -1702,11 +1767,11 @@ class DataModel:
     def set_calculate_bounding_rect(self, s=None):
         if s == None: s = self.level
         self.set_bounding_rect(ComputeBoundingRect(self))
-        return self.bounding_rect()
+        return self['level_data'][s]['output_settings']['bounding_box']['size']
 
 
     def coarsest_scale_key(self) -> str:
-        '''Return the coarsest s key. '''
+        '''Return the coarsest level key. '''
         #Confirmed
         return natural_sort(self['series']['levels'])[-1]
 
@@ -1714,9 +1779,9 @@ class DataModel:
     def finer_scales(self, s=None, include_self=True):
         if s == None: s = self.level
         if include_self:
-            return [get_scale_key(x) for x in self.lvls() if x <= self.lvl(s=s)]
+            return [self.level_key(x) for x in self.lvls() if x <= self.lvl(s=s)]
         else:
-            return [get_scale_key(x) for x in self.lvls() if x < self.lvl(s=s)]
+            return [self.level_key(x) for x in self.lvls() if x < self.lvl(s=s)]
 
 
     def first_unskipped(self, s=None):
@@ -1726,31 +1791,6 @@ class DataModel:
                 return section['levels'][self.level]['swim_settings']['index']
 
 
-
-    def link_full_resolution(self):
-        t0 = time.time()
-        logger.info('Symbolically linking full scale images >>>>')
-        for img in self.basefilenames():
-            fn = os.path.join(self.source_path, img)
-            ofn = os.path.join(self.location, 'tiff', 's1', os.path.split(fn)[1])
-            # normalize path for different OSs
-            if os.path.abspath(os.path.normpath(fn)) != os.path.abspath(os.path.normpath(ofn)):
-                try:
-                    os.unlink(ofn)
-                except:
-                    pass
-                try:
-                    os.symlink(fn, ofn)
-                except:
-                    logger.warning("Unable to link %s to %s. Copying instead." % (fn, ofn))
-                    try:
-                        shutil.copy(fn, ofn)
-                    except:
-                        logger.warning("Unable to link or copy from " + fn + " to " + ofn)
-        dt = time.time() - t0
-        logger.info(f'<<<< {dt}')
-
-
     def link_reference_sections(self, levels=None):
         logger.critical('Linking reference sections...')
         if levels == None:
@@ -1758,28 +1798,74 @@ class DataModel:
         for s in levels:
             skip_list = self.skips_indices(s=s)
             for layer_index in range(len(self)):
-                j = layer_index - 1  # Find nearest previous non-skipped l
+                j = layer_index - 1  # Find nearest previous non-skipped z
                 while (j in skip_list) and (j >= 0):
                     j -= 1
                 if (j not in skip_list) and (j >= 0):
                     ref = self['stack'][j]['levels'][s]['swim_settings']['path']
                     self['stack'][layer_index]['levels'][s]['swim_settings']['reference'] = ref
-            self['stack'][self.first_unskipped(s=s)]['levels'][s]['swim_settings']['reference'] = '' #0804
+            self['stack'][self.first_unskipped(s=s)]['levels'][s]['swim_settings']['reference'] = ''  # 0804
         logger.info("<<")
 
+        def link_full_resolution(self):
+            t0 = time.time()
+            logger.info('Symbolically linking full scale images >>>>')
+            for img in self.basefilenames():
+                fn = os.path.join(self.source_path, img)
+                ofn = os.path.join(self.location, 'tiff', 's1', os.path.split(fn)[1])
+                # normalize path for different OSs
+                if os.path.abspath(os.path.normpath(fn)) != os.path.abspath(os.path.normpath(ofn)):
+                    try:
+                        os.unlink(ofn)
+                    except:
+                        pass
+                    try:
+                        os.symlink(fn, ofn)
+                    except:
+                        logger.warning("Unable to link %s to %s. Copying instead." % (fn, ofn))
+                        try:
+                            shutil.copy(fn, ofn)
+                        except:
+                            logger.warning("Unable to link or copy from " + fn + " to " + ofn)
+            dt = time.time() - t0
+            logger.info(f'<<<< {dt}')
 
-    def applyDefaults(self):
-        defaults = self.defaults
+    def applyPresetDefaults(self, levels=None, finer_only=False, update_current=False):
+        if finer_only:
+            levels=self.finer_scales()
+        elif not levels:
+            levels = self.levels
+
+        logger.critical(f"Applying preset defaults to levels {', '.join(levels)} (Update current? {update_current})")
+
+        presets = self.gatherDataPresets()
+        self._data['preset_defaults'] = copy.deepcopy(presets)
+
+        self._data['defaults'].update(presets)
+        for level in levels:
+            # d = self._data['defaults'][level]
+            # d.update(presets[level])
+
+            if update_current:
+                for i in range(self.count):
+                    for level in levels:
+                        self['stack'][i]['levels'][level]['swim_settings'].update(presets[level])
 
 
     def getDataPresets(self):
         return self['preset_defaults']
 
 
+    def applyLevelDefaults(self):
+        for level in self.finer_scales():
+            self['stack'][self.zpos]['levels'][self.level]['swim_settings'].update(copy.deepcopy(self.defaults))
+        self.signals.warning2.emit()
+
+
     def gatherDataPresets(self) -> dict:
         logger.info("Getting data presets...")
 
-        fullsize = np.array(self['series']['levels'][self.levels[0]]['size_xy'], dtype=int)
+        fullsize = np.array(self['series']['size_xy'][self.levels[0]], dtype=int)
         s1_size_1x1 = fullsize * cfg.DEFAULT_AUTO_SWIM_WINDOW_PERC
         s1_region_size = (fullsize * cfg.DEFAULT_MANUAL_SWIM_WINDOW_PERC)
 
@@ -1789,7 +1875,7 @@ class DataModel:
             _1x1 = np.rint(s1_size_1x1 / factor).astype(int).tolist()
             _2x2 = np.rint(s1_size_1x1 / factor / 2).astype(int).tolist()
             _regions = np.rint(s1_region_size / factor).astype(int).tolist()[0]
-            #Temporary ^. Take first value only. This should perhaps be rectangular, two-value.
+            # Temporary ^. Take first value only. This should perhaps be rectangular, two-value.
             _1x1 = ensure_even(_1x1, extra='1x1 size')
             _2x2 = ensure_even(_2x2, extra='2x2 size')
             _regions = ensure_even(_regions, extra='region size')
@@ -1834,33 +1920,6 @@ class DataModel:
         return d
 
 
-    def applyPresetDefaults(self, levels=None, finer_only=False, update_current=False):
-        if finer_only:
-            levels=self.finer_scales()
-        elif not levels:
-            levels = self.levels
-
-        logger.critical(f"Applying preset defaults to levels {', '.join(levels)} (Update current? {update_current})")
-
-        presets = self.gatherDataPresets()
-        self._data['preset_defaults'] = copy.deepcopy(presets)
-
-        self._data['defaults'].update(presets)
-        for level in levels:
-            # d = self._data['defaults'][level]
-            # d.update(presets[level])
-
-            if update_current:
-                for i in range(self.count):
-                    for level in levels:
-                        self['stack'][i]['levels'][level]['swim_settings'].update(presets[level])
-
-
-    def applyLevelDefaults(self):
-        for level in self.finer_scales():
-            self['stack'][self.zpos]['levels'][self.level]['swim_settings'].update(copy.deepcopy(self.defaults))
-        self.signals.warning2.emit()
-
     def initializeStack(self, series_info, location=location):
         logger.critical(f"\n\nInitializing data model ({location})...\n")
 
@@ -1881,24 +1940,25 @@ class DataModel:
                 'level': natural_sort(series_info['levels'])[-1],
                 'z_position': 0
             },
-            defaults={v: {} for v in levels},
-            level_data={v: {} for v in levels},
+            defaults={s: {} for s in levels},
+            level_data={s: {} for s in levels},
             timings={
-                'levels': {v: {} for v in levels},
+                'levels': {s: {} for s in levels},
                 't_scaling': 0.0,
                 't_scaling_convert_zarr': 0.0,
                 't_thumbs': 0.0
             },
             state={
+                'padlock': False,
                 'current_tab': 0,
                 'neuroglancer': {
                     'layout': '4panel',
                     'zoom': 1.0,
                     'blink': False,
                     'show_controls': False,
-                    'show_bounds': False,
-                    'show_axes': False,
-                    'show_scalebar': False,
+                    'show_bounds': True,
+                    'show_axes': True,
+                    'show_scalebar': True,
                     'region_selection': {
                         'select_by': 'cycle',  # cycle, zigzag, or sticky
                     }
@@ -1927,7 +1987,7 @@ class DataModel:
                 index=i,
                 name=basename,
                 path=paths[i],
-                levels={v: {} for v in levels},
+                levels={s: {} for s in levels},
                 notes=''
             )
             for level in levels:
@@ -1964,8 +2024,9 @@ class DataModel:
 
         for level in levels:
             self['level_data'][level].update(
-                initial_snr = None,
-                output_settings = {
+                initial_snr=None,
+                aligned=False,
+                output_settings={
                     'bounding_box': {
                         'use': False,
                         'has': False,
@@ -1974,22 +2035,9 @@ class DataModel:
                     'polynomial_bias': cfg.DEFAULT_CORRECTIVE_POLYNOMIAL
                 }
             )
-
-
         self.applyPresetDefaults(update_current=True)
-
         self.link_reference_sections(levels)
-
         '''deprecated keys: grid_custom_px_1x1, grid_custom_px_2x2, grid_custom_regions'''
-
-
-
-def get_scale_key(scale_val) -> str:
-    s = str(scale_val)
-    while s.startswith('s'):
-        s = s[1:]
-    return 's' + s
-
 
 
 def natural_sort(l):

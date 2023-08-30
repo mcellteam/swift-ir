@@ -47,7 +47,7 @@ class Config():
         self.neuroglancer_server_debug = True  # verbose neuroglancer
 
         # TensorStore settings
-        self.cache_pool_total_bytes_limit = 250_000_000_000  # Lonestar6: 256 GB (3200 MT/s) DDR4
+        self.cache_pool_total_bytes_limit = 250_000_000_000  # Lonestar6: 256 GB (3200 MT/level) DDR4
         self.dtype = 'uint8'
         self.driver = 'zarr'
 

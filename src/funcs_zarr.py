@@ -29,8 +29,8 @@ from src.helpers import get_scale_val, time_limit, print_exception, get_scales_w
 
 '''
 TensorStore has already been used to solve key engineering challenges in scientific computing (e.g., management and 
-processing of large datasets in neuroscience, such as peta-s 3d electron microscopy datamodel and “4d” videos of 
-neuronal activity). TensorStore has also been used in the creation of large-s machine learning models such as 
+processing of large datasets in neuroscience, such as peta-level 3d electron microscopy datamodel and “4d” videos of 
+neuronal activity). TensorStore has also been used in the creation of large-level machine learning models such as 
 PaLM by addressing the problem of managing previewmodel parameters (checkpoints) during distributed training.
 https://www.reddit.com/r/worldTechnology/comments/xuw7kk/tensorstore_for_highperformance_scalable_array/
 '''
@@ -59,7 +59,7 @@ def get_zarr_tensor(zarr_path):
     # node = platform.node()
     # total_bytes_limit = 250_000_000_000  # just under 256 GB
     # if '.tacc.utexas.edu' in node:
-    #     # Lonestar6: 256 GB (3200 MT/s) DDR4
+    #     # Lonestar6: 256 GB (3200 MT/level) DDR4
     #     # total_bytes_limit = 200_000_000_000
     #     total_bytes_limit = 250_000_000_000 # just under 256 GB
     # else:
@@ -97,7 +97,7 @@ def get_zarr_array_layer_view(zarr_path:str, l=None):
         'metadata': {
             'dtype': '<f4',
             'shape': list(cfg.data.resolution()),
-            'chunks': list(cfg.data.chunkshape),
+            'chunks': list(cfg.data.chunkshape()),
             'order': 'C',
         },
     }, create=True).result()
@@ -140,7 +140,7 @@ def get_zarr_tensor_layer(zarr_path:str, layer:int):
     '''
     node = platform.node()
     if '.tacc.utexas.edu' in node:
-        # Lonestar6: 256 GB (3200 MT/s) DDR4
+        # Lonestar6: 256 GB (3200 MT/level) DDR4
         # total_bytes_limit = 200_000_000_000
         total_bytes_limit = 200_000_000_000_000
     else:
@@ -232,6 +232,13 @@ def preallocate_zarr(dm, name, group, shape, dtype, overwrite, gui=True):
         # arr = zarr.group(store=path_zarr, synchronizer=synchronizer) # overwrite cannot be set to True here, will overwrite entire Zarr
         arr = zarr.group(store=path_zarr)
         compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
+        
+        logger.critical(f"group = {group}")
+        logger.critical(f"shape = {shape}")
+        logger.critical(f"chunkshape = {chunkshape}")
+        logger.critical(f"dtype = {dtype}")
+        logger.critical(f"compressor = {compressor}")
+        logger.critical(f"overwrite = {overwrite}")
 
         # arr.zeros(name=group, shape=shape, chunks=chunkshape, dtype=dtype, compressor=compressor, overwrite=overwrite, synchronizer=synchronizer)
         arr.zeros(name=group, shape=shape, chunks=chunkshape, dtype=dtype, compressor=compressor, overwrite=overwrite)
@@ -249,12 +256,12 @@ def write_metadata_zarr_multiscale(path):
     datasets = []
     for scale in get_scales_with_generated_alignments(cfg.data.scales):
         scale_factor = get_scale_val(scale)
-        name = 's' + str(scale_factor)
+        name = 'level' + str(scale_factor)
         metadata = {
             "path": name,
             "coordinateTransformations": [{
-                "cur_method": "s",
-                "s": [float(50.0), 2 * float(scale_factor), 2 * float(scale_factor)]}]
+                "cur_method": "level",
+                "level": [float(50.0), 2 * float(scale_factor), 2 * float(scale_factor)]}]
         }
         datasets.append(metadata)
     axes = [
@@ -279,12 +286,12 @@ def write_metadata_zarr_aligned(name='img_aligned.zarr'):
     root = zarr.group(store=zarr_path)
     datasets = []
     scale_factor = cfg.data.lvl()
-    name = 's' + str(scale_factor)
+    name = 'level' + str(scale_factor)
     metadata = {
         "path": name,
         "coordinateTransformations": [{
-            "cur_method": "s",
-            "s": [float(50.0), 2 * float(scale_factor), 2 * float(scale_factor)]}]
+            "cur_method": "level",
+            "level": [float(50.0), 2 * float(scale_factor), 2 * float(scale_factor)]}]
     }
     datasets.append(metadata)
 
@@ -308,13 +315,13 @@ def write_metadata_zarr_aligned(name='img_aligned.zarr'):
 # def generate_zarr_scales_da():
 #     logger.info('generate_zarr_scales_da:')
 #     dest = cfg.datamodel.dest()
-#     logger.info('scales = %s' % str(cfg.datamodel.scales))
+#     logger.info('scales = %level' % str(cfg.datamodel.scales))
 #
-#     for s in cfg.datamodel.scales:
-#         logger.info('Working On %s' % s)
-#         tif_files = sorted(glob(os.path.join(dest, s, 'img_src', '*.tif')))
-#         # zarrurl = os.path.join(dest, s + '.zarr')
-#         zarrurl = os.path.join(dest, 'img_src.zarr', 's' + str(get_scale_val(s)))
+#     for level in cfg.datamodel.scales:
+#         logger.info('Working On %level' % level)
+#         tif_files = sorted(glob(os.path.join(dest, level, 'img_src', '*.tif')))
+#         # zarrurl = os.path.join(dest, level + '.zarr')
+#         zarrurl = os.path.join(dest, 'img_src.zarr', 'level' + str(get_scale_val(level)))
 #         tiffs2zarr(tif_files=tif_files, zarrurl=zarrurl, chunkshape=(1, 512, 512))
 #         z = zarr.open(zarrurl)
 #         z.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]

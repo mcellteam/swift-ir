@@ -260,7 +260,7 @@ class SnrPlot(QWidget):
 
     def callableFunction(x, y):
         return str(cfg.data.snr())
-        # logger.info()
+        # logger.info('')
         # return f"Square Values: ({x ** 2:.4f}, {y ** 2:.4f})"
 
 
@@ -307,10 +307,10 @@ class SnrPlot(QWidget):
                             f'border-width: 3px;'
                             f'border-style: outset;'
                             f'border-radius: 4px;')
-                    # if cfg.data.is_aligned(s=s):
-                    #     self._snr_checkboxes[s].show()
+                    # if cfg.data.is_aligned(level=level):
+                    #     self._snr_checkboxes[level].show()
                     # else:
-                    #     self._snr_checkboxes[s].hide()
+                    #     self._snr_checkboxes[level].hide()
 
                 # self.checkboxes_hlayout.addStretch()
         except:
@@ -337,8 +337,8 @@ class SnrPlot(QWidget):
     def get_axis_data(self, s=None) -> tuple:
         if s == None: s = cfg.data.scale
         x_axis, y_axis = [], []
-        # for layer, snr in enumerate(cfg.data.snr_list(s=s)):
-        # for layer, snr in enumerate(cfg.data.snr_list(s=s)[1:]): #0601+ #Todo
+        # for layer, snr in enumerate(cfg.data.snr_list(level=level)):
+        # for layer, snr in enumerate(cfg.data.snr_list(level=level)[1:]): #0601+ #Todo
         first_unskipped = cfg.data.first_unskipped(s=s)
         for i, snr in enumerate(cfg.data.snr_list(s=s)): #0601+
             if i != first_unskipped:
@@ -357,8 +357,8 @@ class SnrPlot(QWidget):
         if s == None: s = cfg.data.scale
         t0 = time()
         x_axis, y_axis = [], []
-        # for layer, snr in enumerate(cfg.data.snr_list(s=s)):
-        # for layer, snr in enumerate(cfg.data.snr_list(s=s)[1:]): #0601+ #Todo
+        # for layer, snr in enumerate(cfg.data.snr_list(level=level)):
+        # for layer, snr in enumerate(cfg.data.snr_list(level=level)[1:]): #0601+ #Todo
         first_unskipped = cfg.data.first_unskipped(s=s)
         for i in cfg.data.all_comports_indexes(s=s): #0601+
             if i != first_unskipped:
@@ -377,8 +377,8 @@ class SnrPlot(QWidget):
         if s == None: s = cfg.data.scale
         t0 = time()
         x_axis, y_axis = [], []
-        # for layer, snr in enumerate(cfg.data.snr_list(s=s)):
-        # for layer, snr in enumerate(cfg.data.snr_list(s=s)[1:]): #0601+ #Todo
+        # for layer, snr in enumerate(cfg.data.snr_list(level=level)):
+        # for layer, snr in enumerate(cfg.data.snr_list(level=level)[1:]): #0601+ #Todo
         first_unskipped = cfg.data.first_unskipped(s=s)
         for i in cfg.data.cafm_dn_comport_indexes(s=s): #0601+
             if i != first_unskipped:
@@ -397,8 +397,8 @@ class SnrPlot(QWidget):
         t0 = time()
         if s == None: s = cfg.data.scale
         x_axis, y_axis = [], []
-        # for layer, snr in enumerate(cfg.data.snr_list(s=s)):
-        # for layer, snr in enumerate(cfg.data.snr_list(s=s)[1:]): #0601+ #Todo
+        # for layer, snr in enumerate(cfg.data.snr_list(level=level)):
+        # for layer, snr in enumerate(cfg.data.snr_list(level=level)[1:]): #0601+ #Todo
         first_unskipped = cfg.data.first_unskipped(s=s)
         for i in cfg.data.data_dn_comport_indexes(s=s): #0601+
             if i != first_unskipped:
@@ -461,7 +461,7 @@ class SnrPlot(QWidget):
 
 
     def _getScaleOffset(self, s):
-        # return cfg.data.scales()[::-1].index(s) * (.5/len(cfg.data.scales()))
+        # return cfg.data.scales()[::-1].index(level) * (.5/len(cfg.data.scales()))
         return cfg.data.scales.index(s) * (.5/len(cfg.data.scales))
 
 
@@ -469,8 +469,8 @@ class SnrPlot(QWidget):
         logger.critical('Plotting ghost data...')
         if s == None: s = cfg.data.scale
         x_axis, y_axis = [], []
-        # for layer, snr in enumerate(cfg.data.snr_list(s=s)):
-        # for layer, snr in enumerate(cfg.data.snr_list(s=s)[1:]): #0601+ #Todo
+        # for layer, snr in enumerate(cfg.data.snr_list(level=level)):
+        # for layer, snr in enumerate(cfg.data.snr_list(level=level)[1:]): #0601+ #Todo
         first_unskipped = cfg.data.first_unskipped(s=s)
         data = cfg.data['level_data'][s]['initial_snr']
         for i in range(0, len(cfg.data)): #0601+
@@ -501,9 +501,9 @@ class SnrPlot(QWidget):
 
     def plotSingleScale(self, s=None):
         logger.critical(f'Plotting scale level {s}...')
-        # logger.info(f'[{self.dock}] plotSingleScale (level_key: {s}):')
+        # logger.info(f'[{self.dock}] plotSingleScale (level_key: {level}):')
         if s == None: s = cfg.data.scale
-        # x_axis, y_axis = self.get_axis_data(s=s)
+        # x_axis, y_axis = self.get_axis_data(level=level)
         x_axis, y_axis = self.get_everything_comport_axis_data(s=s)
         if not self.dock: x_axis = [x+self._getScaleOffset(s=s) for x in x_axis]
         brush = self._plot_brushes[cfg.data.scales[::-1].index(s)]
@@ -522,7 +522,7 @@ class SnrPlot(QWidget):
             # hoverBrush=None,
             # pxMode=False # points transform with zoom
         )
-        #         *tip*                  A string-valued function of a spot's (x, y, data) values. Set to None to prevent a tool tip
+        #         *tip*                  A string-valued function of a spot'level (x, y, data) values. Set to None to prevent a tool tip
         #                                from being shown.
 
         # def hoverSlot(points, ev):
@@ -534,9 +534,9 @@ class SnrPlot(QWidget):
         #         print(f"hovered: {int(cfg.pt.dSnr_plot.ev.item().pos()[0])}")
         #         self.ev = ev
         #
-        # self.snr_points[s].sigHovered.connect(hoverSlot)
+        # self.snr_points[level].sigHovered.connect(hoverSlot)
 
-        # self.snr_points[s].addPoints(x_axis[1:], y_axis[1:]) #Todo
+        # self.snr_points[level].addPoints(x_axis[1:], y_axis[1:]) #Todo
         self.snr_points[s].addPoints(x_axis, y_axis)
         self.snr_points[s].setZValue(1)
 
@@ -553,12 +553,12 @@ class SnrPlot(QWidget):
         #     x, y = ppos.x(), ppos.y()
         #     self.plot.setTitle("pos: (%0.1f, %0.1f)" % (i,j))
         #
-        # self.snr_points[s].hoverEvent.connect(hoverEvent)
+        # self.snr_points[level].hoverEvent.connect(hoverEvent)
 
-        # logger.info('self.snr_points.toolTip() = %s' % self.snr_points.toolTip())
+        # logger.info('self.snr_points.toolTip() = %level' % self.snr_points.toolTip())
         # value = self.snr_points.setToolTip('Test')
         self.plot.addItem(self.snr_points[s])
-        # self.snr_points[s].sigClicked.connect(lambda: self.onSnrClick2(s))
+        # self.snr_points[level].sigClicked.connect(lambda: self.onSnrClick2(level))
         self.snr_points[s].sigClicked.connect(self.onSnrClick)
         sys.stdout.flush()
 
@@ -592,12 +592,12 @@ class SnrPlot(QWidget):
             #             if self._memHover0 != ev:
             #                 hoverIndex = int(ev.item().pos()[0])
             #                 print(f"hovered index: {hoverIndex}")
-            #                 comport_data = cfg.data.cafm_hash_comports(l=hoverIndex)
+            #                 comport_data = cfg.data.cafm_hash_comports(z=hoverIndex)
             #                 if comport_data:
             #                     logger.info(f'CAFM does not comport for section #{hoverIndex}')
             #         self._memHover0 = ev
             #
-            # self.no_comport_cafm_points[s].sigHovered.connect(hoverSlot0)
+            # self.no_comport_cafm_points[level].sigHovered.connect(hoverSlot0)
             # sys.stdout.flush()
 
             self.no_comport_data_points[s] = pg.ScatterPlotItem(
@@ -608,7 +608,7 @@ class SnrPlot(QWidget):
                 brush=None,
                 hoverable=True,
                 tip='Bla bla bla\nSection #: {x:.3g}\nSNR: {y:.3g}'.format,
-                # data=[cfg.data.data_comports(s=cfg.data.scale, l=l) for l in self.get_data_no_comport_axis_data()[0]],
+                # data=[cfg.data.data_comports(level=cfg.data.scale, z=z) for z in self.get_data_no_comport_axis_data()[0]],
                 # tip='data_no_comport\nx: {x:.3g}\ny: {y:.3g}\nWarnings:\n{cfg.data.data_comports(x)}'.format,
                 hoverSize=11,
                 # hoverPen=pg.mkPen('#ff0000', width=3),
@@ -629,12 +629,12 @@ class SnrPlot(QWidget):
             #             if self._memHover1 != ev:
             #                 hoverIndex = int(ev.item().pos()[0])
             #                 print(f"hovered index: {hoverIndex}")
-            #                 comport_data = cfg.data.data_comports(l=hoverIndex)
+            #                 comport_data = cfg.data.data_comports(z=hoverIndex)
             #                 if comport_data[0]:
             #                     logger.info(comport_data)
             #         self._memHover1 = ev
             #
-            # self.no_comport_data_points[s].sigHovered.connect(hoverSlot1)
+            # self.no_comport_data_points[level].sigHovered.connect(hoverSlot1)
 
         # if not self.dock:
         self.updateErrBars(s=s)

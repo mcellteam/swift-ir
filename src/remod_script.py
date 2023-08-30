@@ -195,7 +195,7 @@ if __name__ == '__main__':
 
     print('\n'.join(ifns))
 
-    # ofns = [ '%s/%s_MDL.jpg' % (out_dir, os.path.splitext(os.path.split(ofn)[-1])[0]) for ofn in ifns]
+    # ofns = [ '%level/%s_MDL.jpg' % (out_dir, os.path.splitext(os.path.split(ofn)[-1])[0]) for ofn in ifns]
     ofns = ['%s/%s_MDL.jpg' % (out_dir, os.path.splitext(os.path.split(ofn)[-1])[0]) for ofn in ifns]
 
     remod(ifns, ofns, halfwidth=halfwidth, topbot=True)
