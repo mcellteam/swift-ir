@@ -1,10 +1,12 @@
 #!/bin/bash
 
-echo "development_ng version of this script"
-
 CACHER="0"
 DEBUG="0"
 PULL="1"
+FORCE="0"
+
+
+echo "fb30_joel version of this script"
 
 echo "Parsing cli arguments..."
 for i in "$@"; do
@@ -15,6 +17,11 @@ for i in "$@"; do
       ;;
     -d|--debug)
       DEBUG="1"
+      shift
+      ;;
+    -f|--force)
+      echo "Forcing reinstallation of miniconda."
+      FORCE="1"
       shift
       ;;
     -t|--test)
@@ -29,6 +36,22 @@ for i in "$@"; do
       ;;
   esac
 done
+
+
+echo "Checking if miniconda3 is installed..."
+if [ ! -d "$WORK/miniconda3" ] | [ "$FORCE" = "1" ]; then
+  echo "Installing miniconda..."
+  mkdir -p $WORK/miniconda3
+  wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O $WORK/miniconda3/miniconda.sh
+  bash $WORK/miniconda3/miniconda.sh -b -u -p $WORK/miniconda3
+  rm -rf $WORK/miniconda3/miniconda.sh
+
+  echo "Ensuring conda base environment is OFF..."
+  conda config --set auto_activate_base false
+fi
+
+echo "Initializing conda..."
+$WORK/miniconda3/bin/conda init bash
 
 echo "Loading intel/19.1.1 module..."
 ml intel/19.1.1
@@ -78,4 +101,3 @@ if [ "$DEBUG" = "1" ] ; then
 else
   python3 $WORK/swift-ir/alignEM.py
 fi
-
