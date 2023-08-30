@@ -1883,9 +1883,6 @@ class DataModel:
             d_ww[lev]['size_2x2'] = _2x2
             d_ww[lev]['size_region'] = _regions
 
-        logger.critical(f"      1x1 = {d_ww['s4']['size_1x1']}\n"
-                        f"      2x2 = {d_ww['s2']['size_1x1']}\n"
-                        f"  regions = {d_ww['s1']['size_1x1']}")
         d = {v: {} for v in self.levels}
         for k, v in d.items():
             logger.critical(f"k = {k}")
