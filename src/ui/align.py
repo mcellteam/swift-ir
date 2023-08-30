@@ -57,6 +57,8 @@ __all__ = ['AlignWorker']
 logger = logging.getLogger(__name__)
 
 
+
+
 class AlignWorker(QObject):
     finished = Signal()
     progress = Signal(int)
