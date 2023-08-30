@@ -636,6 +636,8 @@ class OpenProject(QWidget):
     # importalignment
     def createAlignment(self):
         logger.info('')
+        self.bPlusAlignment.setEnabled(False)
+        self.resetView()
         # name         = self.leNameAlignment.text()
         name         = self.leNameAlignment.text()
         cr           = cfg.settings['content_root']
@@ -699,7 +701,7 @@ class OpenProject(QWidget):
             jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
             f.write(jde.encode(dm._data))
         cfg.mw._saveProjectToFile()
-
+        self.bPlusAlignment.setEnabled(True)
         cfg.mw.onStartProject(dm, switch_to=True)
 
 
@@ -729,6 +731,7 @@ class OpenProject(QWidget):
         # if self.wNameAlignment.isVisible():
         #     self.wNameAlignment.hide()
         #     return
+        self.bPlusAlignment.setEnabled(True)
 
         cr = cfg.settings['content_root']
         series_path = os.path.join(cr, 'series', self.cmbSelectSeries.currentText())

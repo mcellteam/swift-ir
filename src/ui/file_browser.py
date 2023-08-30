@@ -259,13 +259,13 @@ class FileBrowser(QWidget):
             cfg.settings['content_root'] = self.leContentRoot.text()
             p = cfg.settings['content_root']
             if not os.path.exists(p):
-                cfg.mw.tell(f"Creating directory {p}"); os.makedirs(p, exist_ok=True)
+                cfg.mw.tell(f"Creating directory content root {p}"); os.makedirs(p, exist_ok=True)
             p = os.path.join(cfg.settings['content_root'], 'series')
             if not os.path.exists(p):
-                cfg.mw.tell(f"Creating directory! {p}"); os.makedirs(p, exist_ok=True)
-            p = os.path.join(cfg.settings['content_root'], 'projects')
+                cfg.mw.tell(f"Creating series directory {p}"); os.makedirs(p, exist_ok=True)
+            p = os.path.join(cfg.settings['content_root'], 'alignments')
             if not os.path.exists(p):
-                cfg.mw.tell(f"Creating directory! {p}"); os.makedirs(p, exist_ok=True)
+                cfg.mw.tell(f"Creating alignments directory {p}"); os.makedirs(p, exist_ok=True)
             cfg.mw.saveUserPreferences(silent=True)
             self.w_teContentSources.hide()
             cfg.mw.statusBar.showMessage('Content roots saved!', 3000)
