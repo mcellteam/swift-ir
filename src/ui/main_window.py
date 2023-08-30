@@ -688,37 +688,28 @@ class MainWindow(QMainWindow):
 
 
     def updateCorrSignalsDrawer(self, z=None):
-        logger.critical('--------- START : updateCorrSignalsDrawer ---------')
+        logger.info('--------- START : updateCorrSignalsDrawer ---------')
 
         if not hasattr(cfg, 'data'):
             return
 
         if self.dw_matches.isVisible():
 
-            caller = inspect.stack()[1].function
-
             if z == None: z = cfg.data.zpos
 
             # caller = inspect.stack()[1].function
             if not self._isProjectTab():
+                logger.warning('Not a project tab')
                 return
 
+            caller = inspect.stack()[1].function
             logger.info(f'[{caller}]')
-
-            # if not cfg.data.is_aligned():
-            #     cfg.pt.ms_widget.hide()
-            #     return
-            # else:
-            #     cfg.pt.ms_widget.show()
 
             thumbs = cfg.data.get_signals_filenames(l=z)
             n = len(thumbs)
             snr_vals = copy.deepcopy(cfg.data.snr_components(l=z))
             # logger.info(f'snr_vals = {snr_vals}')
-            colors = cfg.glob_colors
             count = 0
-            # for i in range(7):
-
             for i in range(4):
                 if not cfg.pt.msList[i]._noImage:
                     cfg.pt.msList[i].set_no_image()
@@ -835,7 +826,7 @@ class MainWindow(QMainWindow):
             #     cfg.pt.msList[3].show()
 
 
-            logger.critical('--------- END : updateCorrSignalsDrawer ---------')
+            logger.info('--------- END : updateCorrSignalsDrawer ---------')
 
 
     def setTargKargPixmaps(self, z=None):
@@ -1208,11 +1199,13 @@ class MainWindow(QMainWindow):
                 # cfg.project_tab.initNeuroglancer()
                 cfg.project_tab.refreshTab()
                 self.dataUpdateWidgets()
-                self.alignAll()
+                self.alignAll(dm=self.dm)
 
 
-    def alignOne(self, index=None, regenerate=False, align=True):
+    def alignOne(self, dm=None, index=None, regenerate=False, align=True):
         logger.critical('Aligning One...')
+        if dm == None:
+            dm = cfg.data
         self.tell('Re-aligning Section #%d (%s)...' % (cfg.data.zpos, cfg.data.level_pretty()))
         if index == None:
             index = cfg.data.zpos
@@ -1224,24 +1217,41 @@ class MainWindow(QMainWindow):
 
 
     @Slot()
-    def alignAll(self):
+    def alignAll(self, dm=None):
+        logger.critical('Aligning All...')
+        if dm == None:
+            dm = cfg.data
         indexes = list(range(0,len(cfg.data)))
         self.align(align_indexes=indexes, regen_indexes=indexes, reallocate_zarr=True)
 
 
 
     @Slot()
-    def align(self, align_indexes=(), regen_indexes=(), scale=None, renew_od=False, reallocate_zarr=False,
+    def align(self, dm, align_indexes=(), regen_indexes=(), scale=None, renew_od=False, reallocate_zarr=False,
               align=True, regenerate=True, ignore_bb=False):
         self.set_status('Aligning...')
         logger.critical('')
-        dm = cfg.data
         if scale == None:
             scale = dm.scale
 
         if self._working == True:
             self.warn('Another Process is Already Running')
             return
+
+        if hasattr(self, '_scaleworker'):
+            try:
+                self._scaleworker.stop()
+            except:
+                print_exception()
+            logger.info('\n\nSleeping for 2 seconds...\n')
+            time.sleep(2)
+        if hasattr(self, '_alignworker'):
+            try:
+                self._alignworker.stop()
+            except:
+                print_exception()
+            logger.info('\n\nSleeping for 2 seconds...\n')
+            time.sleep(2)
 
         self.tell(f'Aligning {len(align_indexes)} pairs')
         self.tell(f'Regenerating {len(regen_indexes)} images')
@@ -1301,6 +1311,21 @@ class MainWindow(QMainWindow):
         self._scaleThread = QThread()  # Step 2: Create a QThread object
         scale_keys = opts['levels']
         scales = zip(scale_keys, [opts['size_xy'][s] for s in scale_keys])
+        if hasattr(self, '_scaleworker'):
+            try:
+                self._scaleworker.stop()
+            except:
+                print_exception()
+            logger.info('\n\nSleeping for 2 seconds...\n')
+            time.sleep(2)
+        if hasattr(self, '_alignworker'):
+            try:
+                self._alignworker.stop()
+            except:
+                print_exception()
+            logger.info('\n\nSleeping for 2 seconds...\n')
+            time.sleep(2)
+
         self._scaleworker = ScaleWorker(src=src, out=out, scales=scales, opts=opts)
         self._scaleworker.moveToThread(self._scaleThread)  # Step 4: Move worker to the thread
         self._scaleThread.started.connect(self._scaleworker.run)  # Step 5: Connect signals and slots

@@ -563,7 +563,7 @@ class ProjectTable(QWidget):
         logger.info('')
         for r in self.getSelectedRows():
             cfg.data.zpos = r
-            cfg.main_window.alignOne()
+            cfg.main_window.alignOne(dm=self.dm)
             QApplication.processEvents()
             if cfg.pt.wTabs.currentIndex() == 0:
                 cfg.emViewer.set_layer(cfg.data.zpos)
