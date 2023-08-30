@@ -730,9 +730,6 @@ class OpenProject(QWidget):
         #     self.wNameAlignment.hide()
         #     return
 
-
-
-
         cr = cfg.settings['content_root']
         series_path = os.path.join(cr, 'series', self.cmbSelectSeries.currentText())
         logger.info(f"series path {series_path}")

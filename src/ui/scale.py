@@ -100,7 +100,7 @@ class ScaleWorker(QObject):
         logger.info(f'Reducing {len(self.paths)} images...')
 
         ctx = mp.get_context('forkserver')
-        for s, siz in self.scales:
+        for s, siz in self.scales.reverse():
             sv = get_scale_val(s)
             if s != 's1':
                 desc = f'Reducing {s}...'
