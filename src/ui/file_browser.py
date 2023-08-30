@@ -180,8 +180,8 @@ class FileBrowser(QWidget):
         if is_tacc():
             hw2.addWidget(self.bSetRootScratch)
             hw2.addWidget(self.bSetRootWork)
-            hw2.addWidget(self.buttonSetRoot_corral_images)
-            hw2.addWidget(self.buttonSetRoot_corral_projects)
+            # hw2.addWidget(self.buttonSetRoot_corral_images)
+            # hw2.addWidget(self.buttonSetRoot_corral_projects)
             hw2.addWidget(self.buttonSetRoot_corral_root)
 
         self.wTreeviewButtons = VWidget(hw1, hw2)
