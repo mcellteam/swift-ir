@@ -23,7 +23,7 @@ max_downsampled_size=2056
 
 DEBUG_MP = 0
 DEBUG_NEUROGLANCER = 0
-DEV_MODE = 1
+DEV_MODE = 0
 VERBOSE_SWIM = 0
 LOG_RECIPE_TO_FILE = 0
 # LOG_RECIPE_TO_FILE = int(getpass.getuser() in ('joelyancey','joely'))

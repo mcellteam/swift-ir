@@ -112,8 +112,8 @@ class TaskQueue(QObject):
     def start(self, n_workers, retries=0) -> None:
 
         # if cfg.CancelProcesses == True:
-        #     cfg.main_window.warn('Canceling Tasks: %s' % self.pbar_text)
-        #     logger.warning('Canceling Tasks: %s' % self.pbar_text)
+        #     cfg.main_window.warn('Canceling Tasks: %level' % self.pbar_text)
+        #     logger.warning('Canceling Tasks: %level' % self.pbar_text)
         #     return
         #
         # if cfg.DEBUG_MP:
@@ -129,7 +129,7 @@ class TaskQueue(QObject):
         self.n_workers = n_workers
         self.retries = retries
 
-        logger.info('Starting Task Queue: %s. Processing %d Task(s): %s' % (self.pbar_text, self.n_tasks, self.pbar_text))
+        logger.info('Starting Task Queue: %s. Processing %d Task(level): %s' % (self.pbar_text, self.n_tasks, self.pbar_text))
 
         for i in range(self.n_workers):
             sys.stderr.write('Starting Worker %d >>>>' % i)
@@ -272,7 +272,7 @@ class TaskQueue(QObject):
                     # .get method is BLOCKING by default for mp.Queue
                     task_id, outs, errs, rc, dt = self.result_queue.get()
 
-                    # logger.warning('%d%s' % (task_id,errs))  # *** lots of output for alignment
+                    # logger.warning('%d%level' % (task_id,errs))  # *** lots of output for alignment
                     self.task_dict[task_id]['stdout'] = outs
                     self.task_dict[task_id]['stderr'] = errs
                     self.task_dict[task_id]['rc'] = rc
@@ -333,21 +333,21 @@ class TaskQueue(QObject):
             # for task_item in self.task_dict:
             #     if task_item['statusBar'] == 'completed':
             #         logger.debug('\nProcessDone:')
-            #         logger.debug('   CMD:    %s' % (str(task_item['cmd'])))
-            #         logger.debug('   ARGS:   %s' % (str(task_item['args'])))
-            #         logger.debug('   STDERR: %s\n' % (str(task_item['stderr'])))
+            #         logger.debug('   CMD:    %level' % (str(task_item['cmd'])))
+            #         logger.debug('   ARGS:   %level' % (str(task_item['args'])))
+            #         logger.debug('   STDERR: %level\n' % (str(task_item['stderr'])))
             #         n_success += 1
             #     elif task_item['statusBar'] == 'queued':
             #         logger.warning('\nQueued:')
-            #         logger.warning('   CMD:    %s' % (str(task_item['cmd'])))
-            #         logger.warning('   ARGS:   %s' % (str(task_item['args'])))
-            #         logger.warning('   STDERR: %s\n' % (str(task_item['stderr'])))
+            #         logger.warning('   CMD:    %level' % (str(task_item['cmd'])))
+            #         logger.warning('   ARGS:   %level' % (str(task_item['args'])))
+            #         logger.warning('   STDERR: %level\n' % (str(task_item['stderr'])))
             #         n_queued += 1
             #     elif task_item['statusBar'] == 'task_error':
             #         logger.error('\nTask Error:')
-            #         logger.error('   CMD:    %s' % (str(task_item['cmd'])))
-            #         logger.error('   ARGS:   %s' % (str(task_item['args'])))
-            #         logger.error('   STDERR: %s\n' % (str(task_item['stderr'])))
+            #         logger.error('   CMD:    %level' % (str(task_item['cmd'])))
+            #         logger.error('   ARGS:   %level' % (str(task_item['args'])))
+            #         logger.error('   STDERR: %level\n' % (str(task_item['stderr'])))
             #         n_failed += 1
 
             # logger.critical('# TASKS: %d... SUCCESS: %d | QUEUED: %d | FAILED: %d' % (self.n_tasks, n_success, n_queued, n_failed))
@@ -431,7 +431,7 @@ OMP_NUM_THREADS=1 <- turns off OpenMP multi-threading, so each Python process re
 
 multiprocess is a fork of multiprocessing. multiprocess extends multiprocessing to provide enhanced serialization, 
 using dill. multiprocess leverages multiprocessing to support the spawning of processes using the API of the python 
-standard library’s threading module. multiprocessing has been distributed as part of the standard library since 
+standard library’level threading module. multiprocessing has been distributed as part of the standard library since 
 python 2.6.
 
 Local

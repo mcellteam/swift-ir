@@ -145,10 +145,10 @@ Source   : https://www.pythonguis.com/tutorials/qpropertyanimation/
 Accessed : 2023-03-11
 
 Because we're inheriting from QCheckBox it is essential that we override hitButton(). This defines the clickable area of our widget, and by a QCheckBox is only clickable in the area of the checkable box. Here we expand the clickable region to the entire widget, using self.contentsRect() so a click anywhere on the widget will toggle the state.
-Similarly it's essential we override sizeHint() so when we add our widget to layouts, they know an acceptable default size to use.
+Similarly it'level essential we override sizeHint() so when we add our widget to layouts, they know an acceptable default size to use.
 You must set p.setRenderHint(QPainter.Antialiasing) to smooth the edges of things you draw, otherwise the outline will be jagged.
 In this example we trigger the animation using the self.stateChanged signal, which is provided by QCheckBox. This fires whenever the state (checked or unchecked) of the widget changes. It is important to choose the right trigger to start the animation in order for the widget to feel intuitive.
-Since we're using stateChanged to start the animation, if you check the state of the toggle as soon as it's been clicked it will give the correct value -- even if the animation is not yet complete.
+Since we're using stateChanged to start the animation, if you check the state of the toggle as soon as it'level been clicked it will give the correct value -- even if the animation is not yet complete.
 '''
 
 import logging

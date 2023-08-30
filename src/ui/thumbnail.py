@@ -194,7 +194,7 @@ class ThumbnailFast(QLabel):
                         l = self.l
                     else:
                         method = cfg.data.current_method
-                        s = cfg.data.level_
+                        s = cfg.data.level
                         l = cfg.data.zpos
 
                     img_size = cfg.data.image_size()
@@ -412,7 +412,7 @@ class CorrSignalThumbnail(QLabel):
         if self.pixmap():
             try:
                 # originalRatio = pm.width() / pm.height()
-                # currentRatio = self.width() / self.height()s
+                # currentRatio = self.width() / self.height()level
                 # if originalRatio != currentRatio:
                 qp = QPainter(self)
                 # pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation)
@@ -477,9 +477,6 @@ class CorrSignalThumbnail(QLabel):
                     qp.drawArc(arcRect, 30*16 + 90*16, spanAngle*16)
                     qp.drawArc(arcRect, 30*16 + 270*16, spanAngle*16)
 
-
-
-
                     font = QFont()
                     font.setFamily('Ubuntu')
                     fsize = max(int(pm.height() / 10 + 0.5), 5)
@@ -497,8 +494,6 @@ class CorrSignalThumbnail(QLabel):
                     # upper right
                     p1_x = int(pm.width()/2 + 0.5)
                     p1_y = coords[1] + fsize
-
-
 
                     textFill = QColor('#ffffff')
                     textFill.setAlpha(128)

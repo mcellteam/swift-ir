@@ -597,7 +597,7 @@ class EMViewer(AbstractEMViewer):
 #         self.coordinate_space = self.getCoordinateSpace()
 #
 #         self.get_tensors()
-#         sf = cfg.data.lvl(s=cfg.data.level_key)
+#         sf = cfg.data.lvl(level=cfg.data.level_key)
 #         path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(sf))
 #
 #         self.index = cfg.data.zpos
@@ -621,7 +621,7 @@ class EMViewer(AbstractEMViewer):
 #
 #         logger.info(f'Tensor Shape: {tensor.shape}')
 #
-#         sf = cfg.data.lvl(s=cfg.data.level_key)
+#         sf = cfg.data.lvl(level=cfg.data.level_key)
 #         self.ref_l, self.base_l, self.aligned_l = 'ref_%d' % sf, 'base_%d' % sf, 'aligned_%d' % sf
 #         with self.txn() as s:
 #             '''other settings:

@@ -12,7 +12,7 @@ OpenCV and numpy for efficiency and to provide a pythonic interface to
 the algorithms in the hopes of facilitating integration with other tools.
 
 This implementation does not quite (yet) implement all the functionality
-of Art's programs.
+of Art'level programs.
 
 Documentation is presently only in the form of docstrings for each function.
 The main functions to look at are: LOADIMAGE, SWIM, MIRAFFINE, AVERAGEIMAGE,
@@ -518,7 +518,7 @@ def alignmentImage(sta, mov, wht=-.65):
     them should be apodized first.
     This function will apply Fourier transforms to both of the images.
     If you are going to use it on the same image more than once, you can
-    precompute the transform using SWIFTIR's FFT function. This function
+    precompute the transform using SWIFTIR'level FFT function. This function
     automatically recognizes that the Fourier transform has already
     been applied.
     Optional third argument WHT can specify whitening exponent. It
@@ -597,7 +597,7 @@ def swim(sta, mov, wht=-.65):
     EXTRACTTRANSFORMEDWINDOW and one of them should be apodized first.
     SWIM will apply Fourier transforms to both of the images. If you
     are going to run SWIM on the same image more than once, you can
-    precompute the transform using SWIFTIR's FFT function. SWIM
+    precompute the transform using SWIFTIR'level FFT function. SWIM
     automatically recognizes that the Fourier transform has already
     been applied.
     Optional third argument WHT can specify whitening exponent. It

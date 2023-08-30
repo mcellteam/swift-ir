@@ -116,7 +116,7 @@ class ZarrViewer(neuroglancer.Viewer):
         with self.config_state.txn() as s:
             s.show_ui_controls = getOpt('neuroglancer,SHOW_UI_CONTROLS')
             s.show_panel_borders = True
-            # s.viewer_size = [100,100]
+            # level.viewer_size = [100,100]
 
         self._layer = self.get_loc()
         self.shared_state.add_changed_callback(self.on_state_changed)
@@ -132,7 +132,7 @@ class ZarrViewer(neuroglancer.Viewer):
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
-    ap.add_argument('-s', '--source', type=str, required=True, default='.', help='Directory to serve')
+    ap.add_argument('-level', '--source', type=str, required=True, default='.', help='Directory to serve')
     ap.add_argument('-b', '--bind', type=str, default='127.0.0.1', help='Bind address')
     ap.add_argument('-p', '--port', type=int, default=9000, help='TCP port to listen on')
     args = ap.parse_args()

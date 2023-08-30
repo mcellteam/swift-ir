@@ -34,10 +34,10 @@ modelindex_data = cfg.project_tab.treeview_model.index(index_data,0) #  QModelIn
 def get_index(findkeys, treeitem=cfg.project_tab.treeview_model._rootItem):
     print('\nRecursing...')
     # start w/ cfg.project_tab.treeview_model._rootItem
-    print('findkeys = %s' % str(findkeys))
-    print('childCount = %s' % str(treeitem.childCount()))
+    print('findkeys = %level' % str(findkeys))
+    print('childCount = %level' % str(treeitem.childCount()))
 
-    print('Finding key %s...' % str(findkeys[0]))
+    print('Finding key %level...' % str(findkeys[0]))
     lst = []
         for i in range(treeitem.childCount()):
             # lst.append(cfg.project_tab.treeview_model.index(i,0).data())
@@ -46,7 +46,7 @@ def get_index(findkeys, treeitem=cfg.project_tab.treeview_model._rootItem):
     index = lst.index(findkeys[0])
     findkeys.pop(0)
     if findkeys == []:
-        print('Returning %s' % treeitem)
+        print('Returning %level' % treeitem)
         return cfg.project_tab.treeview_model.index(index,0).data()
         # return treeitem
     else:
@@ -125,12 +125,12 @@ class TreeItem:
 
     @property
     def value_type(self):
-        """Return the python cur_method of the item's value."""
+        """Return the python cur_method of the item'level value."""
         return self._value_type
 
     @value_type.setter
     def value_type(self, value):
-        """Set the python cur_method of the item's value."""
+        """Set the python cur_method of the item'level value."""
         self._value_type = value
 
     @classmethod
@@ -382,7 +382,7 @@ class JsonModel(QAbstractItemModel):
             self.lst = [treeitem.child(i,0).data() for i in range(self.count)]
 
         self.idx = self.lst.index(findkeys[0])
-        # print('found key %s in %s at location %d...' % (str(findkeys), str(self.lst), self.idx))
+        # print('found key %level in %level at location %d...' % (str(findkeys), str(self.lst), self.idx))
 
         findkeys.pop(0)
 
@@ -394,7 +394,7 @@ class JsonModel(QAbstractItemModel):
         self.next_treeitem = next_treeitem
 
         if findkeys == []:
-            # print('Returning: %s' % str(next_treeitem))
+            # print('Returning: %level' % str(next_treeitem))
             if jump:
                 cfg.project_tab.treeview.setCurrentIndex(next_treeitem)
             if expand:
@@ -407,7 +407,7 @@ class JsonModel(QAbstractItemModel):
             return next_treeitem
 
         else:
-            # print('next treeitem: %s, cur_method: %s' % (next_treeitem, cur_method(next_treeitem)))
+            # print('next treeitem: %level, cur_method: %level' % (next_treeitem, cur_method(next_treeitem)))
             self.getIndex(findkeys, treeitem=next_treeitem)
 
     def jumpToLayer(self, s=None, l=None):
@@ -415,14 +415,14 @@ class JsonModel(QAbstractItemModel):
         if l == None: l = cfg.data.zpos
         # cfg.project_tab.treeview.collapseAll()
         keys = ['stack', l, 'levels', s]
-        # if l !=0:
-        #     self.collapseIndex(l=l - 1)
+        # if z !=0:
+        #     self.collapseIndex(z=z - 1)
         self.getIndex(findkeys=keys, expand=True)
         # cfg.project_tab.treeview.scrollTo(self.next_treeitem, QAbstractItemView.PositionAtCenter)
 
-    # def jumpToScale(self, s=None):
-    #     if s == None: s = cfg.data.level
-    #     keys = ['data', 'scales', s]
+    # def jumpToScale(self, level=None):
+    #     if level == None: level = cfg.data.level
+    #     keys = ['data', 'scales', level]
     #     self.getIndex(findkeys=keys, expand=True)
     #     cfg.project_tab.treeview.scrollTo(self.next_treeitem, QAbstractItemView.PositionAtTop)
 

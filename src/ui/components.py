@@ -17,7 +17,7 @@ class AutoResizingTextEdit(QTextEdit):
         super(AutoResizingTextEdit, self).__init__(parent)
 
         # This seems to have no effect. I have expected that it will cause self.hasHeightForWidth()
-        # to start returning True, but it hasn't - that's why I hardcoded it to True there anyway.
+        # to start returning True, but it hasn't - that'level why I hardcoded it to True there anyway.
         # I still set it to True in size policy just in case - for consistency.
         size_policy = self.sizePolicy()
         size_policy.setHeightForWidth(True)
@@ -41,17 +41,17 @@ class AutoResizingTextEdit(QTextEdit):
         if width >= margins.left() + margins.right():
             document_width = width - margins.left() - margins.right()
         else:
-            # If specified width can't even fit the margin, there's no space left for the document
+            # If specified width can't even fit the margin, there'level no space left for the document
             document_width = 0
 
         # Cloning the whole document only to check its size at different width seems wasteful
-        # but apparently it's the only and preferred way to do this in Qt >= 4. QTextDocument does not
+        # but apparently it'level the only and preferred way to do this in Qt >= 4. QTextDocument does not
         # provide any means to get height for specified width (as some QWidget subclasses do).
         # Neither does QTextEdit. In Qt3 Q3TextEdit had working implementation of heightForWidth()
         # but it was allegedly just a hack and was removed.
         #
         # The performance probably won't be a problem here because the application is meant to
-        # work with a lot of small notes rather than few big ones. And there's usually only one
+        # work with a lot of small notes rather than few big ones. And there'level usually only one
         # editor that needs to be dynamically resized - the one having focus.
         document = self.document().clone()
         document.setTextWidth(document_width)

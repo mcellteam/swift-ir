@@ -34,15 +34,23 @@ from src.thumbnailer import Thumbnailer
 from src.mp_queue import TaskQueue
 from src.ui.timer import Timer
 from src.recipe_maker import run_recipe
-from src.helpers import print_exception, pretty_elapsed, is_tacc, get_n_tacc_cores
+from src.helpers import print_exception, pretty_elapsed, is_tacc, get_bindir, get_n_tacc_cores
 from src.save_bias_analysis import save_bias_analysis
 from src.helpers import get_scale_val, renew_directory, file_hash, pretty_elapsed, is_tacc
 from src.funcs_zarr import preallocate_zarr
-from src.job_apply_affine import run_mir
 import src.config as cfg
 
 from qtpy.QtCore import Signal, QObject, QMutex
 from qtpy.QtWidgets import QApplication
+
+try:
+    from src.swiftir import applyAffine, reptoshape
+except Exception as e:
+    print(e)
+    try:
+        from swiftir import applyAffine, reptoshape
+    except Exception as e:
+        print(e)
 
 __all__ = ['AlignWorker']
 
@@ -58,7 +66,7 @@ class AlignWorker(QObject):
 
     def __init__(self, scale, path, align_indexes, regen_indexes, align, regenerate, renew_od, reallocate_zarr, dm):
         super().__init__()
-        logger.info('')
+        logger.info('Initializing...')
         self.scale = scale
         self.path = path
         self.align_indexes = align_indexes
@@ -69,8 +77,8 @@ class AlignWorker(QObject):
         self._reallocate_zarr = reallocate_zarr
         self.dm = dm
         self.result = None
-        self._mutex = QMutex()
         self._running = True
+        self._mutex = QMutex()
 
         self._tasks = []
         if self._align:
@@ -95,7 +103,7 @@ class AlignWorker(QObject):
 
 
     def run(self):
-        logger.info('')
+        logger.info('Running...')
         while self._tasks and self.running():
             self._tasks.pop(0)()
         self.finished.emit() #Important!
@@ -103,6 +111,8 @@ class AlignWorker(QObject):
 
     def align(self):
         """Long-running task."""
+        logger.info('Aligning...')
+
 
         scale = self.scale
         indexes = self.align_indexes
@@ -138,7 +148,7 @@ class AlignWorker(QObject):
             ss['index'] = zpos
             ss['isRefinement'] = dm.isRefinement()
             ss['location'] = dm.location
-            ss['img_size'] = dm.series['levels'][scale]['size_xy']
+            ss['img_size'] = dm.series['size_xy'][scale]
             # ss['include'] = not sec['skipped']
             ss['dev_mode'] = cfg.DEV_MODE
             ss['log_recipe_to_file'] = cfg.LOG_RECIPE_TO_FILE
@@ -295,7 +305,7 @@ class AlignWorker(QObject):
 
         # Todo make this better
         # for i, layer in enumerate(dm.get_iter(scale)):
-        #     layer['alignment_history'][dm.method(l=i)]['method_results']['cafm_hash'] = dm.cafm_current_hash(l=i)
+        #     layer['alignment_history'][dm.method(z=i)]['method_results']['cafm_hash'] = dm.cafm_current_hash(z=i)
 
         # if cfg.mw._isProjectTab():
         #     cfg.mw.updateCorrSignalsDrawer()
@@ -349,14 +359,14 @@ class AlignWorker(QObject):
 
         # try:
         #     bias_path = os.path.join(dm.location, level, 'bias_data')
-        #     save_bias_analysis(layers=dm.get_iter(s=level), bias_path=bias_path)
+        #     save_bias_analysis(layers=dm.get_iter(level=level), bias_path=bias_path)
         # except:
         #     print_exception()
 
         print_example_cafms(dm)
 
         if dm.has_bb():
-            # Note: now have got new cafm's -> recalculate bounding box
+            # Note: now have got new cafm'level -> recalculate bounding box
             rect = dm.set_calculate_bounding_rect(s=scale)  # Only after SetStackCafm
         else:
             w, h = dm.image_size(s=scale)
@@ -467,7 +477,7 @@ class AlignWorker(QObject):
         generateAnimations(dm=dm, indexes=indexes)
         t1 = time.time()
         dt = t1 - t0
-        logger.critical(f"Time Elapsed (generate animated gifs): {dt:.3g}s")
+        logger.critical(f"Time Elapsed (generate animated gifs): {dt:.3g}level")
 
         if not self.running():
             self.finished.emit()
@@ -550,6 +560,58 @@ class AlignWorker(QObject):
         logger.info(f"Elapsed Time: {t_elapsed:.3g}s")
 
 
+def run_mir(task):
+    in_fn = task[0]
+    out_fn = task[1]
+    rect = task[2]
+    cafm = task[3]
+    border = task[4]
+
+    # Todo get exact median greyscale value for each image in list, for now just use 128
+
+    app_path = os.path.dirname(os.path.split(os.path.realpath(__file__))[0])
+    mir_c = os.path.join(app_path, 'lib', get_bindir(), 'mir')
+
+    bb_x, bb_y = rect[2], rect[3]
+    # afm = np.array(cafm)
+    # logger.info(f"cafm: {str(cafm)}")
+    afm = np.array([cafm[0][0], cafm[0][1], cafm[0][2], cafm[1][0], cafm[1][1], cafm[1][2]], dtype='float64').reshape((
+                                                                                                                      -1,
+                                                                                                                      3))
+    # logger.info(f'afm: {str(afm.tolist())}')
+    p1 = applyAffine(afm, (0, 0))  # Transform Origin To Output Space
+    p2 = applyAffine(afm, (rect[0], rect[1]))  # Transform BB Lower Left To Output Space
+    offset_x, offset_y = p2 - p1  # Offset Is Difference of 'p2' and 'p1'
+    a = cafm[0][0]
+    c = cafm[0][1]
+    e = cafm[0][2] + offset_x
+    b = cafm[1][0]
+    d = cafm[1][1]
+    f = cafm[1][2] + offset_y
+
+    mir_script = \
+        'B %d %d 1\n' \
+        'Z %g\n' \
+        'F %s\n' \
+        'A %g %g %g %g %g %g\n' \
+        'RW %s\n' \
+        'E' % (bb_x, bb_y, border, in_fn, a, c, e, b, d, f, out_fn)
+    o = run_command(mir_c, arg_list=[], cmd_input=mir_script)
+
+
+def run_command(cmd, arg_list=None, cmd_input=None):
+    # logger.info("\n================== Run Command ==================")
+    cmd_arg_list = [cmd]
+    if arg_list != None:
+        cmd_arg_list = [a for a in arg_list]
+        cmd_arg_list.insert(0, cmd)
+    # Note: decode bytes if universal_newlines=False in Popen (cmd_stdout.decode('utf-8'))
+    cmd_proc = sp.Popen(cmd_arg_list, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
+    cmd_stdout, cmd_stderr = cmd_proc.communicate(cmd_input)
+    # logger.info(f"\nSTDOUT:\n{cmd_stdout}\n\nSTDERR:\n{cmd_stderr}\n")
+    return ({'out': cmd_stdout, 'err': cmd_stderr, 'rc': cmd_proc.returncode})
+
+
 def generateAnimations(dm, indexes):
     # https://stackoverflow.com/questions/753190/programmatically-generate-video-or-animated-gif-in-python
 
@@ -583,6 +645,8 @@ def run_subprocess(task):
         print("error: %s run(*%r)" % (e, task))
 
 
+
+
 def delete_correlation_signals(dm, scale, indexes):
     logger.info('')
     for i in indexes:
@@ -612,13 +676,13 @@ def natural_sort(l):
 
 
 def checkForTiffs(path) -> bool:
-    '''Returns True or False dependent on whether aligned images have been generated for the current s.'''
+    '''Returns True or False dependent on whether aligned images have been generated for the current level.'''
     files = glob.glob(path + '/*.tif')
     if len(files) < 1:
-        logger.debug('Zero aligned TIFs were found at this s - Returning False')
+        logger.debug('Zero aligned TIFs were found at this level - Returning False')
         return False
     else:
-        logger.debug('One or more aligned TIFs were found at this s - Returning True')
+        logger.debug('One or more aligned TIFs were found at this level - Returning True')
         return True
 
 
@@ -630,7 +694,7 @@ def save2file(dm, name):
     logger.info(f'---- SAVING  ----\n{name}')
     if not name.endswith('.swiftir'):
         name += ".swiftir"
-    # logger.info('Save Name: %s' % name)
+    # logger.info('Save Name: %level' % name)
     with open(name, 'w') as f:
         f.write(proj_json)
 
@@ -656,7 +720,7 @@ def convert_zarr(task):
 def count_aligned_files(dest, s):
     path = os.path.join(dest, 'tiff', s)
     files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
-    # print(f"# {s} Files: {len(files)}")
+    # print(f"# {level} Files: {len(files)}")
     print(f"# complete: {len(files)}", end="\r")
     return len(files)
 

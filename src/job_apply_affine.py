@@ -72,6 +72,7 @@ def is_mac() -> bool:
     if system == 'Darwin':  return True
     else:                   return False
 
+
 def run_mir(task):
     in_fn = task[0]
     out_fn = task[1]

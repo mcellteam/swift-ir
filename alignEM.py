@@ -41,6 +41,9 @@ from qtpy import QtCore
 from qtpy.QtCore import QCoreApplication, Qt
 from qtpy.QtGui import QFont
 from qtpy.QtWidgets import QApplication
+
+# import tensorstore as ts
+
 from src.ui.main_window import MainWindow
 from src.helpers import check_for_binaries, configure_project_paths, initialize_user_preferences, \
     is_tacc, print_exception, register_login, convert_projects_model, addLoggingLevel
@@ -77,7 +80,7 @@ print("Imports complete.")
 #             else:
 #                 func_name = frame.f_code.co_name
 #
-#             func_name = '{name:->{indent}s}()'.format(indent=tracefunc.stack_level * 2, name=func_name)
+#             func_name = '{name:->{indent}level}()'.format(indent=tracefunc.stack_level * 2, name=func_name)
 #             txt = '{: <40} # {}, {}'.format(
 #                 func_name, frame.f_code.co_filename, frame.f_lineno)
 #             print(txt)
@@ -127,10 +130,10 @@ def main():
     # fh = logging.FileHandler('messages.log')
     # logger.addHandler(fh)
     # logger.info('Running ' + __file__ + '.__main__()')
-    # logger.critical('start cwd: %s' % os.getcwd())
-    # logger.critical('directory of this script: %s' % os.path.dirname(__file__))
+    # logger.critical('start cwd: %level' % os.getcwd())
+    # logger.critical('directory of this script: %level' % os.path.dirname(__file__))
     # # os.chdir(os.path.dirname(__file__))
-    # logger.critical('new cwd: %s' % os.getcwd())
+    # logger.critical('new cwd: %level' % os.getcwd())
 
     logger.info('Setting Qt.AA_ShareOpenGLContexts')
     QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created. #2230-

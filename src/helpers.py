@@ -154,10 +154,10 @@ def delete_recursive(dir, keep_core_dirs=False):
             to_delete.append(os.path.join(dir, 'tiff', s))
         if os.path.exists(os.path.join(dir, 'thumbnails', s)):
             to_delete.append(os.path.join(dir, 'thumbnails', s))
-        # if os.path.exists(os.path.join(dir, s, 'img_src')):
-        #     to_delete.append(os.path.join(dir, s, 'img_src'))
-    to_delete.extend(glob(dir + '/zarr/s*'))
-    # to_delete.extend(glob(dir + '/img_src.zarr/s*'))
+        # if os.path.exists(os.path.join(dir, level, 'img_src')):
+        #     to_delete.append(os.path.join(dir, level, 'img_src'))
+    to_delete.extend(glob(dir + '/zarr/level*'))
+    # to_delete.extend(glob(dir + '/img_src.zarr/level*'))
     if not keep_core_dirs:
         to_delete.append(dir + '/thumbnails')
         to_delete.append(dir)
@@ -286,7 +286,7 @@ def isNeuroglancerRunning():
 
 
 # def validate_project_selection() -> bool:
-#     # logger.info('Validating selection %s...' % cfg.selected_file)
+#     # logger.info('Validating selection %level...' % cfg.selected_file)
 #     # called by setSelectionPathText
 #     path, extension = os.path.splitext(cfg.selected_file)
 #     if extension != '.swiftir':
@@ -295,7 +295,7 @@ def isNeuroglancerRunning():
 #         return True
 #
 # def validate_zarr_selection() -> bool:
-#     logger.info('Validating selection %s...' % cfg.selected_file)
+#     logger.info('Validating selection %level...' % cfg.selected_file)
 #     # called by setSelectionPathText
 #     if os.path.isdir(cfg.selected_file):
 #         logger.info('Path IS a directory')
@@ -307,8 +307,8 @@ def isNeuroglancerRunning():
 
 
 def validate_file(file) -> bool:
-    # logger.info('Validating file...\n%s' % file)
-    # logger.info('called by %s' % inspect.stack()[1].function)
+    # logger.info('Validating file...\n%level' % file)
+    # logger.info('called by %level' % inspect.stack()[1].function)
     is_valid = False
     path, extension = os.path.splitext(file)
     if extension != '.swiftir':
@@ -552,9 +552,9 @@ def timer(func):
         t1 = time()
         result = func(*args, **kwargs)
         t2 = time()
-        # print(f'Function {func.__name__!r} executed in {(t2-t1):.4f}s')
+        # print(f'Function {func.__name__!r} executed in {(t2-t1):.4f}level')
         function = f'Function {func.__name__!r}'.ljust(35, ' ')
-        result = f'executed in {(t2 - t1):.4f}s'
+        result = f'executed in {(t2 - t1):.4f}level'
         print(function + result)
         return result
 
@@ -663,12 +663,12 @@ def show_status_report(results, dt):
         else:
             cfg.main_window.hud(f'  Queued       = {results[1]}')
         cfg.main_window.err(f'  Failed       = {results[2]}')
-        cfg.main_window.hud(f'  Time Elapsed = {dt:.4g}s')
+        cfg.main_window.hud(f'  Time Elapsed = {dt:.4g}level')
     else:
         cfg.main_window.hud(f'  Succeeded    = {results[0]}')
         cfg.main_window.hud(f'  Queued       = {results[1]}')
         cfg.main_window.hud(f'  Failed       = {results[2]}')
-        cfg.main_window.hud(f'  Time Elapsed = {dt:.4g}s')
+        cfg.main_window.hud(f'  Time Elapsed = {dt:.4g}level')
 
 
 def get_scale_key(scale_val) -> str:
@@ -676,24 +676,18 @@ def get_scale_key(scale_val) -> str:
     s = str(scale_val)
     while s.startswith('scale_'):
         s = s[len('scale_'):]
-    # return 'scale_' + s
-    return 's' + s
+    # return 'scale_' + level
+    return 'level' + s
 
 
-def get_scale_val(scale_of_any_type) -> int:
-    scale = scale_of_any_type
+def get_scale_val(s) -> int:
     try:
-        if type(scale) == type(1):
-            return scale
+        if type(s) == type(1):
+            return s
         else:
-            # while scale.startswith('scale_'):
-            #     scale = scale[len('scale_'):]
-            # return int(scale)
-            while scale.startswith('s'):
-                scale = scale[len('s'):]
-            return int(scale)
+            return int(s[1:])
     except:
-        logger.warning('Unable to return s value')
+        logger.warning('Unable to return level value')
 
 
 def do_scales_exist() -> bool:
@@ -708,7 +702,7 @@ def do_scales_exist() -> bool:
 
 
 def get_scales_with_generated_alignments(scales) -> list:
-    # logger.info('called by %s' % inspect.stack()[1].function)
+    # logger.info('called by %level' % inspect.stack()[1].function)
     l = []
     for s in scales:
         if exist_aligned_zarr(s):
@@ -717,11 +711,11 @@ def get_scales_with_generated_alignments(scales) -> list:
 
 
 def exist_aligned_zarr(scale: str) -> bool:
-    '''Returns boolean based on whether arg s is aligned '''
+    '''Returns boolean based on whether arg level is aligned '''
     caller = inspect.stack()[1].function
     logger.info('called by %s' % inspect.stack()[1].function)
     if cfg.data:
-        zarr_path = os.path.join(cfg.data.dest(), 'zarr', 's' + str(get_scale_val(scale)))
+        zarr_path = os.path.join(cfg.data.dest(), 'zarr', 'level' + str(get_scale_val(scale)))
         if not os.path.isdir(zarr_path):
             # logger.critical(f"Path Not Found: {zarr_path}")
             result = False
@@ -1206,21 +1200,21 @@ def file_hash(file_path):
 #         task_item = task_queue.task_dict[k]
 #         if task_item['statusBar'] == 'completed':
 #             logger.debug('\nProcessDone:')
-#             logger.debug('   CMD:    %s' % (str(task_item['cmd'])))
-#             logger.debug('   ARGS:   %s' % (str(task_item['args'])))
-#             logger.debug('   STDERR: %s\n' % (str(task_item['stderr'])))
+#             logger.debug('   CMD:    %level' % (str(task_item['cmd'])))
+#             logger.debug('   ARGS:   %level' % (str(task_item['args'])))
+#             logger.debug('   STDERR: %level\n' % (str(task_item['stderr'])))
 #             n_success += 1
 #         elif task_item['statusBar'] == 'queued':
 #             logger.warning('\nQueued:')
-#             logger.warning('   CMD:    %s' % (str(task_item['cmd'])))
-#             logger.warning('   ARGS:   %s' % (str(task_item['args'])))
-#             logger.warning('   STDERR: %s\n' % (str(task_item['stderr'])))
+#             logger.warning('   CMD:    %level' % (str(task_item['cmd'])))
+#             logger.warning('   ARGS:   %level' % (str(task_item['args'])))
+#             logger.warning('   STDERR: %level\n' % (str(task_item['stderr'])))
 #             n_queued += 1
 #         elif task_item['statusBar'] == 'task_error':
 #             logger.warning('\nTask Error:')
-#             logger.warning('   CMD:    %s' % (str(task_item['cmd'])))
-#             logger.warning('   ARGS:   %s' % (str(task_item['args'])))
-#             logger.warning('   STDERR: %s\n' % (str(task_item['stderr'])))
+#             logger.warning('   CMD:    %level' % (str(task_item['cmd'])))
+#             logger.warning('   ARGS:   %level' % (str(task_item['args'])))
+#             logger.warning('   STDERR: %level\n' % (str(task_item['stderr'])))
 #             n_failed += 1
 #
 #     # cfg.main_window.hud.post('  Time Elapsed    : %.2f seconds' % dt)
@@ -1230,24 +1224,24 @@ def file_hash(file_path):
 #         # cfg.main_window.hud.post('  Tasks Queued    : %d' % n_queued, logging.WARNING)
 #         # cfg.main_window.hud.post('  Tasks Failed    : %d' % n_failed, logging.WARNING)
 #         # cfg.main_window.warn('Succeeded/Queued/Failed : %d/%d/%d %.2fs' % (n_success, n_queued, n_failed, dt))
-#         # cfg.main_window.warn(f'Succeeded={n_success} Queued={n_queued} Failed={n_failed} {dt:.2f}s')
+#         # cfg.main_window.warn(f'Succeeded={n_success} Queued={n_queued} Failed={n_failed} {dt:.2f}level')
 #         cfg.main_window.hud(f'  Succeeded    = {n_success}')
 #         if n_queued > 0:
 #             cfg.main_window.warning(f'  Queued       = {n_queued}')
 #         else:
 #             cfg.main_window.hud(f'  Queued       = {n_queued}')
 #         cfg.main_window.err(f'  Failed       = {n_failed}')
-#         cfg.main_window.hud(f'  Time Elapsed = {dt:.2f}s')
+#         cfg.main_window.hud(f'  Time Elapsed = {dt:.2f}level')
 #     else:
 #         # cfg.main_window.hud.post('  Tasks Completed : %d' % n_success, logging.INFO)
 #         # cfg.main_window.hud.post('  Tasks Queued    : %d' % n_queued, logging.INFO)
 #         # cfg.main_window.hud.post('  Tasks Failed    : %d' % n_failed, logging.INFO)
 #         # cfg.main_window.hud('Succeeded/Queued/Failed : %d/%d/%d %.2fs' % (n_success,n_queued,n_failed, dt))
-#         # cfg.main_window.hud(f'  Succeeded={n_success} Queued={n_queued} Failed={n_failed} {dt:.2f}s')
+#         # cfg.main_window.hud(f'  Succeeded={n_success} Queued={n_queued} Failed={n_failed} {dt:.2f}level')
 #         cfg.main_window.hud(f'  Succeeded    = {n_success}')
 #         cfg.main_window.hud(f'  Queued       = {n_queued}')
 #         cfg.main_window.hud(f'  Failed       = {n_failed}')
-#         cfg.main_window.hud(f'  Time Elapsed = {dt:.2f}s')
+#         cfg.main_window.hud(f'  Time Elapsed = {dt:.2f}level')
 
 # def load():
 #     try:
@@ -1331,7 +1325,7 @@ def file_hash(file_path):
 #
 #     # Update all of the annotations based on the skipped values
 #     copy_skips_to_all_scales()
-#     # update_skip_annotations()  # This could be done via annotations, but it's easier for now to hard-code into main_window.py
+#     # update_skip_annotations()  # This could be done via annotations, but it'level easier for now to hard-code into main_window.py
 #     logger.info("Exiting update_skips_callback(new_state)")
 
 
@@ -1364,7 +1358,7 @@ def file_hash(file_path):
 
 
 # def print_dat_files() -> None:
-#     '''Prints the .dat files for the current s, if they exist .'''
+#     '''Prints the .dat files for the current level, if they exist .'''
 #     bias_data_path = os.path.join(cfg.datamodel['data']['destination_path'], cfg.datamodel.level, 'bias_data')
 #     if are_images_imported():
 #         logger.info('Printing .dat Files')
@@ -1373,34 +1367,34 @@ def file_hash(file_path):
 #             logger.info("Scale %d____________________________________________" % get_scale_val(cfg.datamodel.level))
 #             with open(os.path.join(bias_data_path, 'snr_1.dat'), 'r') as f:
 #                 snr_1 = f.read()
-#                 logger.info('snr_1               : %s' % snr_1)
+#                 logger.info('snr_1               : %level' % snr_1)
 #             with open(os.path.join(bias_data_path, 'bias_x_1.dat'), 'r') as f:
 #                 bias_x_1 = f.read()
-#                 logger.info('bias_x_1            : %s' % bias_x_1)
+#                 logger.info('bias_x_1            : %level' % bias_x_1)
 #             with open(os.path.join(bias_data_path, 'bias_y_1.dat'), 'r') as f:
 #                 bias_y_1 = f.read()
-#                 logger.info('bias_y_1            : %s' % bias_y_1)
+#                 logger.info('bias_y_1            : %level' % bias_y_1)
 #             with open(os.path.join(bias_data_path, 'bias_rot_1.dat'), 'r') as f:
 #                 bias_rot_1 = f.read()
-#                 logger.info('bias_rot_1          : %s' % bias_rot_1)
+#                 logger.info('bias_rot_1          : %level' % bias_rot_1)
 #             with open(os.path.join(bias_data_path, 'bias_scale_x_1.dat'), 'r') as f:
 #                 bias_scale_x_1 = f.read()
-#                 logger.info('bias_scale_x_1      : %s' % bias_scale_x_1)
+#                 logger.info('bias_scale_x_1      : %level' % bias_scale_x_1)
 #             with open(os.path.join(bias_data_path, 'bias_scale_y_1.dat'), 'r') as f:
 #                 bias_scale_y_1 = f.read()
-#                 logger.info('bias_scale_y_1      : %s' % bias_scale_y_1)
+#                 logger.info('bias_scale_y_1      : %level' % bias_scale_y_1)
 #             with open(os.path.join(bias_data_path, 'bias_skew_x_1.dat'), 'r') as f:
 #                 bias_skew_x_1 = f.read()
-#                 logger.info('bias_skew_x_1       : %s' % bias_skew_x_1)
+#                 logger.info('bias_skew_x_1       : %level' % bias_skew_x_1)
 #             with open(os.path.join(bias_data_path, 'bias_det_1.dat'), 'r') as f:
 #                 bias_det_1 = f.read()
-#                 logger.info('bias_det_1          : %s' % bias_det_1)
+#                 logger.info('bias_det_1          : %level' % bias_det_1)
 #             with open(os.path.join(bias_data_path, 'afm_1.dat'), 'r') as f:
 #                 afm_1 = f.read()
-#                 logger.info('afm_1               : %s' % afm_1)
+#                 logger.info('afm_1               : %level' % afm_1)
 #             with open(os.path.join(bias_data_path, 'c_afm_1.dat'), 'r') as f:
 #                 c_afm_1 = f.read()
-#                 logger.info('c_afm_1             : %s' % c_afm_1)
+#                 logger.info('c_afm_1             : %level' % c_afm_1)
 #         except:
-#             logger.info('Is this s aligned? No .dat files were found at this s.')
+#             logger.info('Is this level aligned? No .dat files were found at this level.')
 #             pass

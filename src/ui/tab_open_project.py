@@ -11,6 +11,7 @@ import platform
 import textwrap
 from datetime import datetime
 import copy
+import pprint
 from glob import glob
 from pathlib import Path
 import subprocess as sp
@@ -103,6 +104,19 @@ class OpenProject(QWidget):
         self.bImportSeries.setStyleSheet("color: #f3f6fb; padding: 4px; font-size: 12px; background-color: rgba(0, 0, 0, 0.5);")
         self.bImportSeries.clicked.connect(self.showImportSeriesDialog)
 
+        # self.bMinusAlignment = HoverButton('Delete')
+        self.bMinusSeries = QPushButton()
+        self.bMinusSeries.setFixedSize(QSize(18, 18))
+        self.bMinusSeries.setIconSize(QSize(13, 13))
+        self.bMinusSeries.setCursor(QCursor(Qt.PointingHandCursor))
+        self.bMinusSeries.setStyleSheet("color: #f3f6fb; padding: 4px; font-size: 12px; background-color: rgba(0, 0, 0, 0.5);")
+        self.bMinusSeries.setToolTip("Delete series")
+        self.bMinusSeries.setToolTipDuration(-1)
+        self.bMinusSeries.setIcon(qta.icon('fa.minus', color='#f3f6fb'))
+        self.bMinusSeries.clicked.connect(self.onMinusSeries)
+
+
+
         self.cmbLevel = QComboBox()
         self.cmbLevel.setFixedSize(QSize(44, 18))
         self.cmbLevel.setFocusPolicy(Qt.NoFocus)
@@ -110,8 +124,8 @@ class OpenProject(QWidget):
         self.cmbLevel.currentIndexChanged.connect(self.onComboLevel)
 
         self.cmbSelectAlignment = QComboBox()
-        self.cmbSelectAlignment.setEditable(True)
-        self.cmbSelectAlignment.completer().setCompletionMode(QCompleter.PopupCompletion)
+        # self.cmbSelectAlignment.setEditable(True)
+        # self.cmbSelectAlignment.completer().setCompletionMode(QCompleter.PopupCompletion)
         self.cmbSelectAlignment.setCursor(QCursor(Qt.PointingHandCursor))
         self.cmbSelectAlignment.setFixedHeight(18)
         self.cmbSelectAlignment.setMaximumWidth(240)
@@ -120,8 +134,8 @@ class OpenProject(QWidget):
         # self.cmbSelectAlignment.addItems(["None"])
 
         self.cmbSelectSeries = QComboBox()
-        self.cmbSelectSeries.setEditable(True)
-        self.cmbSelectSeries.completer().setCompletionMode(QCompleter.PopupCompletion)
+        # self.cmbSelectSeries.setEditable(True)
+        # self.cmbSelectSeries.completer().setCompletionMode(QCompleter.PopupCompletion)
         self.cmbSelectSeries.setCursor(QCursor(Qt.PointingHandCursor))
         self.cmbSelectSeries.setFixedHeight(18)
         self.cmbSelectSeries.setMaximumWidth(240)
@@ -129,6 +143,7 @@ class OpenProject(QWidget):
         self.cmbSelectSeries.setStyleSheet("background-color: #222222; color: #f3f6fb;")
         self.loadSeriesCombo()
         self.cmbSelectSeries.currentIndexChanged.connect(self.onSelectSeriesCombo)
+
 
         # self.bPlusAlignment = HoverButton('New')
         self.bPlusAlignment = QPushButton()
@@ -178,7 +193,7 @@ class OpenProject(QWidget):
         self.l1.setStyleSheet("background-color: rgba(0,0,0,.5); padding: 2px; font-weight: 600; color: "
                               "#f3f6fb; border-bottom-left-radius: 8px; border-top-left-radius: 8px;")
 
-        self.w_cmbSelectSeries = HWidget(self.l0, self.cmbSelectSeries, self.cmbLevel, self.bImportSeries)
+        self.w_cmbSelectSeries = HWidget(self.l0, self.cmbSelectSeries, self.cmbLevel, self.bImportSeries, self.bMinusSeries)
         self.w_cmbSelectSeries.layout.setAlignment(Qt.AlignCenter)
         self.w_cmbSelectSeries.layout.setContentsMargins(10, 0, 10, 0)
         # self.w_cmbSelectSeries.setStyleSheet("color: #f3f6fb; border: 1px solid #f3f6fb;")
@@ -203,13 +218,13 @@ class OpenProject(QWidget):
         self.webengine.setMinimumWidth(200)
         self.webengine.setMinimumHeight(200)
 
-        self.labTitle = QLabel("Series Manager")
-        self.labTitle.setFixedWidth(96)
-        self.labTitle.setAutoFillBackground(False)
-        self.labTitle.setAttribute(Qt.WA_TransparentForMouseEvents)
-        self.labTitle.setAlignment(Qt.AlignLeft)
-        # self.labTitle.setStyleSheet("color: #f3f6fb; font-size: 11px; font-weight: 600; padding: 2px;")
-        self.labTitle.setStyleSheet("color: #f3f6fb; padding: 2px; font-size: 12px; background-color: rgba(0, 0, 0, 0.5); border-radius: 1px;")
+        # self.labTitle = QLabel("Series Manager")
+        # self.labTitle.setFixedWidth(96)
+        # self.labTitle.setAutoFillBackground(False)
+        # self.labTitle.setAttribute(Qt.WA_TransparentForMouseEvents)
+        # self.labTitle.setAlignment(Qt.AlignLeft)
+        # # self.labTitle.setStyleSheet("color: #f3f6fb; font-size: 11px; font-weight: 600; padding: 2px;")
+        # self.labTitle.setStyleSheet("color: #f3f6fb; padding: 2px; font-size: 12px; background-color: rgba(0, 0, 0, 0.5); border-radius: 1px;")
 
         self.leNameAlignment = QLineEdit()
         self.leNameAlignment.setFixedHeight(18)
@@ -254,10 +269,9 @@ class OpenProject(QWidget):
         newAlignmentLab = QLabel("Alignment Name:")
         # newAlignmentLab.setStyleSheet(f"border-bottom-left-radius: 2px; border-top-left-radius: 2px;")
         newAlignmentLab.setStyleSheet("font-size: 10px; background-color: rgba(0,0,0,.5); color: #f3f6fb; border-color: #f3f6fb;")
-        self.wNameAlignment = HWidget(self.leNameAlignment, self.bConfirmNewAlignment,
-                                      self.bCancelNewAligment)
+        self.wNameAlignment = HWidget(self.leNameAlignment, self.bConfirmNewAlignment, self.bCancelNewAligment)
         self.wNameAlignment.setFixedHeight(18)
-        self.wNameAlignment.layout.setSpacing(4)
+        self.wNameAlignment.layout.setSpacing(0)
         newAlignmentLab.setAutoFillBackground(True)
         # self.wNameAlignment.setStyleSheet("font-size: 10px; background-color: #222222; color: #f3f6fb;")
         self.wNameAlignment.setStyleSheet("font-size: 10px; background-color: rgba(0,0,0,.5); color: #f3f6fb; border-color: #f3f6fb;")
@@ -376,7 +390,13 @@ class OpenProject(QWidget):
         self.gbCreateSeries.setLayout(vbl)
         self.gbCreateSeries.hide()
 
-        self.wTop = VWidget(self.labTitle, self.wCombos, self.gbCreateSeries, self.wNameAlignment, self.iid_dialog)
+        self._gapW = QWidget()
+        self._gapW.setAttribute(Qt.WA_TranslucentBackground)
+        self._gapW.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self._gapW.setFixedSize(QSize(1,12))
+
+        # self.wTop = VWidget(self.labTitle, self.wCombos, self.gbCreateSeries, self.wNameAlignment, self.iid_dialog)
+        self.wTop = VWidget(self._gapW, self.wCombos, self.gbCreateSeries, self.wNameAlignment, self.iid_dialog)
         self.wTop.layout.setContentsMargins(18, 12, 18, 18)
         self.wTop.layout.setSpacing(4)
         self.wTop.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
@@ -391,9 +411,14 @@ class OpenProject(QWidget):
         self.glMain.addWidget(self.wTop, 0, 0, 1, 3)
         self.glMain.setRowStretch(1,9)
 
-        self.wProjects = QWidget()
-        self.wProjects.setContentsMargins(0,0,0,0)
-        self.wProjects.setLayout(self.glMain)
+        self._wProjects = QWidget()
+        self._wProjects.setContentsMargins(0,0,0,0)
+        self._wProjects.setLayout(self.glMain)
+
+        self.vlPM = VerticalLabel('Series Manager')
+        self.vlPM.setStyleSheet("color: #f3f6fb; font-size: 10px; background-color: rgba(0, 0, 0, 0.5);")
+
+        self.wProjects = HWidget(self.vlPM, self._wProjects)
 
         # from src.ui.gif_player import GifPlayer
 
@@ -559,8 +584,9 @@ class OpenProject(QWidget):
                     pass
                 try:
                     os.symlink(fn, ofn)
-                except:
-                    logger.warning("Unable to link %s to %s. Copying instead." % (fn, ofn))
+                except FileNotFoundError:
+                    # print_exception()
+                    logger.warning(f"File not found: {fn}. Unable to link, copying instead." )
                     try:
                         shutil.copy(fn, ofn)
                     except:
@@ -571,13 +597,14 @@ class OpenProject(QWidget):
         count = len(self._NEW_SERIES_PATHS)
         level_keys = natural_sort(['s%d' % v for v in scale_vals])
         series_name = os.path.basename(dirname)
+        logger.critical(f"level keys: {level_keys}")
+
         opts = {
             'name': series_name,
             'location': dirname,
             'created': datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
-            'settings': self.wSeriesConfig.getSettings(),
             'scale_factors': scale_vals,
-            'levels': {k: {} for k in level_keys},
+            'levels': level_keys,
             'count': count,
             'cal_grid': {
                 'has': has_cal_grid,
@@ -585,14 +612,18 @@ class OpenProject(QWidget):
             },
             'paths': self._NEW_SERIES_PATHS,
         }
+        opts.update(self.wSeriesConfig.getSettings())
+        pprint.pprint(opts, compact=True)
+
 
         full_scale_size = ImageSize(self._NEW_SERIES_PATHS[0])
+        opts['size_zyx'] = {}
+        opts['size_xy'] = {}
         for sv in scale_vals:
             key = 's%d' % sv
-            opts['levels'][key] = {}
             siz = (np.array(full_scale_size) / sv).astype(int).tolist()
-            opts['levels'][key]['size_zyx'] = [count, siz[1], siz[0]]
-            opts['levels'][key]['size_xy'] = siz
+            opts['size_zyx'][key] = [count, siz[1], siz[0]]
+            opts['size_xy'][key] = siz
 
         jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
         with open(os.path.join(dirname, series_name + '.series'), 'w') as f:
@@ -646,7 +677,7 @@ class OpenProject(QWidget):
         os.makedirs(out, exist_ok=True)
         logger.critical(f"\n\n\n\nOut: {out}")
         logger.critical(f"Levels: {info['levels']}")
-        for k in info['levels'].keys():
+        for k in info['levels']:
             cfg.mw.tell(f'Preparing directories for scale level %s' %k[1:])
             logger.critical(f"creating {os.path.join(out, 'tiff',        k)}")
             os.makedirs(os.path.join(out, 'tiff',        k), exist_ok=True)
@@ -682,10 +713,7 @@ class OpenProject(QWidget):
     def initPMviewer(self):
         caller = inspect.stack()[1].function
         logger.critical(f'[{caller}]')
-        # w = int(self.webengine.width() / 2)
-        # h = self.webengine.height()
         self.viewer = cfg.pmViewer = PMViewer(webengine=self.webengine)
-        # if self.cmbSelectSeries.currentText() != 'None':
         if self.cmbSelectSeries.currentText():
             path_l, path_r = self.get_pmviewer_paths()
             self.viewer.initViewer(path_l=path_l, path_r=path_r)
@@ -698,9 +726,13 @@ class OpenProject(QWidget):
 
 
     def onPlusAlignment(self):
-        if self.wNameAlignment.isVisible():
-            self.wNameAlignment.hide()
-            return
+        # if self.wNameAlignment.isVisible():
+        #     self.wNameAlignment.hide()
+        #     return
+
+
+
+
         cr = cfg.settings['content_root']
         series_path = os.path.join(cr, 'series', self.cmbSelectSeries.currentText())
         logger.info(f"series path {series_path}")
@@ -729,10 +761,19 @@ class OpenProject(QWidget):
                                                  QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
                     if reply == QMessageBox.Yes:
                         shutil.rmtree(path, ignore_errors=True)
+                        cfg.mw.tell(f'Deleting project directory {path}...')
                         try:
                             os.remove(path + '.swiftir')
                         except FileNotFoundError:
                             cfg.mw.warn(f"FileNotFoundError: {path + '.swiftir'}")
+                        try:
+                            run_subprocess(["rm", "-rf", path])
+                            # delete_recursive(dir=project)
+                            # shutil.rmtree(project, ignore_errors=True, onerror=handleError)
+                            # shutil.rmtree(project, ignore_errors=True, onerror=handleError)
+                        except:
+                            print_exception()
+                        self.loadSeriesCombo()
                         self.refresh()
             else:
                 cfg.mw.warn('Path not found.')
@@ -771,6 +812,33 @@ class OpenProject(QWidget):
 
         cfg.mw.tell(f"Opening: {requested_file}...")
         self.openAlignment(path=requested_file)
+
+    def onMinusSeries(self):
+        cr = cfg.settings['content_root']
+        series = self.cmbSelectSeries.currentText()
+        path = os.path.join(cr, 'series', series)
+        logger.info(f"path: {path}")
+        if series:
+            if os.path.exists(path):
+                if os.path.isdir(path):
+                    logger.warning(f"Removing series at: {path}...")
+                    reply = QMessageBox.question(self, "Quit", f"Delete this series?\n\n'{path}'",
+                                                 QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                    if reply == QMessageBox.Yes:
+                        shutil.rmtree(path, ignore_errors=True)
+                        cfg.mw.tell(f'Deleting series {path}...')
+                        try:
+                            run_subprocess(["rm", "-rf", path])
+                        except:
+                            print_exception()
+                        self.loadSeriesCombo()
+                        self.refresh()
+            else:
+                cfg.mw.warn('Path not found.')
+        else:
+            cfg.mw.warn('No series selected.')
+        time.sleep(2)
+        self.loadSeriesCombo()
 
 
     def loadSeriesCombo(self):
@@ -879,7 +947,7 @@ class OpenProject(QWidget):
                 if os.path.isdir(dir):
                     info_file = dir + '.swiftir'
                     if os.path.exists(info_file):
-                        # l.append(d + '/' + name)
+                        # z.append(d + '/' + name)
                         l.append(name)
                     else:
                         logger.warning(f"Not found: {info_file}.")
@@ -1221,7 +1289,7 @@ class OpenProject(QWidget):
                     # configure_project_paths()
                     # self.user_projects.set_data()
 
-                    cfg.mw.tell(f'Deleting project directory {project}...')
+                    cfg.mw.tell(f'Deleting alignment at {project}...')
                     cfg.mw.set_status(f'Deleting {project_file}...')
                     try:
                         run_subprocess(["rm","-rf", project])
@@ -1427,7 +1495,7 @@ def getSideBarPlacesImportImages():
 #     #     if caller != 'updateNotes':
 #     #         self.statusBar.showMessage('Note Saved!', 3000)
 #     #
-#     #         # cfg.data.save_notes(text=txt, l=index)
+#     #         # cfg.data.save_notes(text=txt, z=index)
 #     #     else:
 #     #         cfg.settings['notes']['global_notes'] = self.notes.toPlainText()
 #     #     self.notes.update()
@@ -1579,7 +1647,7 @@ def getSideBarPlacesImportImages():
 #                     dm = DataModel(data=json.load(f), quietly=True)
 #             except:
 #                 # print_exception()
-#                 logger.error('Unable to locate or load data model: %s' % p)
+#                 logger.error('Unable to locate or load data model: %level' % p)
 #
 #             try:    created.append(dm.created)
 #             except: created.append('Unknown')
@@ -1697,7 +1765,7 @@ def validate_project_selection(path) -> bool:
 
 def validate_zarr_selection(path) -> bool:
     # logger.info(f'caller:{inspect.stack()[1].function}')
-    # logger.info('Validating selection %s...' % cfg.selected_file)
+    # logger.info('Validating selection %level...' % cfg.selected_file)
     # called by setSelectionPathText
     if os.path.isdir(path):
         if '.zarray' in os.listdir(path):
@@ -1754,20 +1822,21 @@ class SeriesConfig(QWidget):
 
         cfg.main_window.hud('Setting series configuration...')
         logger.info('Setting series configuration...')
-        self._settings['scale_factors'] = list(map(int, self.scales_input.text().strip().split(' ')))
+        self._settings['scale_factors'] = sorted(list(map(int, self.scales_input.text().strip().split(' '))))
         self._settings['clevel'] = int(self.clevel_input.text())
         self._settings['cname'] = self.cname_combobox.currentText()
-        self._settings['chunkshape'] = (int(self.le_chunk_z.text()),
-                                          int(self.le_chunk_y.text()),
-                                          int(self.le_chunk_x.text()))
-        self._settings['levels'] = {}
+        chunkshape = (int(self.le_chunk_z.text()),
+                      int(self.le_chunk_y.text()),
+                      int(self.le_chunk_x.text()))
+        self._settings['chunkshape'] = {}
+        self._settings['resolution'] = {}
         # if cfg.data['data']['has_cal_grid']:
         for sv in self._settings['scale_factors']:
             res_x = int(self.le_res_x.text()) * sv
             res_y = int(self.le_res_y.text()) * sv
             res_z = int(self.le_res_z.text())
-            self._settings['levels'].setdefault(sv, {})
-            self._settings['levels'][sv]['resolution'] = [res_z, res_y, res_x]
+            self._settings['resolution']['s%d' % sv] = [res_z, res_y, res_x]
+            self._settings['chunkshape']['s%d' % sv] = chunkshape
 
         return self._settings
 

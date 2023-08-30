@@ -61,7 +61,7 @@ if __name__ == '__main__':
     # mir_script = '''
     # B 1024 1024 \n
     # Z \n
-    # F %s \n
+    # F %level \n
     # 96 96 104 104 \n
     # 512 96 312 104 \n
     # 512 512 312 312 \n
@@ -69,16 +69,16 @@ if __name__ == '__main__':
     # T \n
     # 0 1 2 \n
     # 2 3 0 \n
-    # #F %s \n
+    # #F %level \n
     # #512 96 0 0 \n
     # #R \n
-    # #F %s \n
+    # #F %level \n
     # #96 512 0 0 \n
     # #R \n
-    # #F %s \n
+    # #F %level \n
     # #512 512 0 0 \n
     # #R \n
-    # W %s
+    # W %level
     # ''' % (name0, name1, name2, name3, out)
 
     sys.stdout.close()

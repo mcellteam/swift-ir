@@ -154,7 +154,7 @@ class ScaleWorker(QObject):
 
             shape = (len(self.paths), y, x)
             name = 's%d' % get_scale_val(s)
-            preallocate_zarr(zarr_od=zarr_od, name=name, shape=shape, dtype='|u1', opts=self.opts)
+            preallocate_zarr(zarr_od=zarr_od, name=name, shape=shape, dtype='|u1', opts=self.opts, scale=s)
 
             t = time.time()
             self.initPbar.emit((len(tasks), desc))
@@ -200,9 +200,9 @@ class ScaleWorker(QObject):
         logger.info('**** Autoscaling Complete ****')
         self.finished.emit()
 
-def preallocate_zarr(zarr_od, name, shape, dtype, opts):
+def preallocate_zarr(zarr_od, name, shape, dtype, opts, scale):
     '''zarr.blosc.list_compressors() -> ['blosclz', 'lz4', 'lz4hc', 'zlib', 'zstd']'''
-    cname, clevel, chunkshape = opts['settings']['cname'], opts['settings']['clevel'], opts['settings']['chunkshape']
+    cname, clevel, chunkshape = opts['cname'], opts['clevel'], opts['chunkshape'][scale]
     output_text = f'\n  Zarr root : {zarr_od}' \
                   f'\n      group :   └ {name} {dtype}/{cname}/{clevel}' \
                   f'\n      shape : {str(shape)} ' \
@@ -320,7 +320,7 @@ def count_files(dest, scales):
         path = os.path.join(dest, s, 'img_src')
         files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
         result.append(len(files))
-        # print(f"# {s} Files: {len(files)}")
+        # print(f"# {level} Files: {len(files)}")
         print(f"# {s} Files: {len(files)}", end="\r")
     return result
 
