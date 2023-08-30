@@ -28,11 +28,18 @@ OTHER DEALINGS IN THE SOFTWARE.
 For more information, please refer to [http://unlicense.org]
 
 """
+
+import sys, getpass
+
+if not getpass.getuser() in ('joelyancey', 'joely', 'tmbartol', 'tbartol', 'bartol'):
+    print("Please do not use this version of AlignEM-SWiFT yet, thank you. Bye!")
+    sys.exit()
+
 print('(Hang tight. The application will launch shortly...)')
 import os
 import subprocess as sp
 import qtpy
-import sys, signal, logging, argparse
+import signal, logging, argparse
 import faulthandler
 from concurrent.futures import ThreadPoolExecutor
 
@@ -46,7 +53,7 @@ from qtpy.QtWidgets import QApplication
 
 from src.ui.main_window import MainWindow
 from src.helpers import check_for_binaries, configure_project_paths, initialize_user_preferences, \
-    is_tacc, print_exception, register_login, convert_projects_model, addLoggingLevel
+    is_tacc, print_exception, register_login, convert_projects_model, addLoggingLevel, is_joel
 import src.config as cfg
 from qtconsole import __version__ as qcv
 
