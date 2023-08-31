@@ -475,9 +475,15 @@ class OpenProject(QWidget):
 
 
     def getDict(self, path):
-        with open(path, 'r') as f:
-            data=json.load(f)
-        return data
+        if os.path.isfile(path):
+            try:
+                with open(path, 'r') as f:
+                    data=json.load(f)
+                return data
+            except:
+                print_exception()
+        return None
+
 
 
     def getScaleKeys(self, series):
@@ -523,15 +529,17 @@ class OpenProject(QWidget):
             directory = self.cmbSelectAlignment.currentText()
         name,_ = os.path.splitext(os.path.basename(directory))
         path = os.path.join(directory, name + '.swiftir')
-
         uuid = None
         if os.path.exists(path):
-            try:
-                data = self.getDict(path)
-                uuid = data['info']['series_uuid']
-            except json.decoder.JSONDecodeError:
-                logger.warning('JSON decoder error!')
-                # cfg.mw.set_status('JSON decoder error!', 3000)
+            if os.path.exists(path):
+                try:
+                    data = self.getDict(path)
+                    uuid = data['info']['series_uuid']
+                except json.decoder.JSONDecodeError:
+                    logger.warning('JSON decoder error!')
+                    # cfg.mw.set_status('JSON decoder error!', 3000)
+            else:
+                logger.warning(f"path does not exist: {path}")
         else:
             logger.warning(f"Not found: {path}")
         return uuid
@@ -544,14 +552,18 @@ class OpenProject(QWidget):
         if directory == None:
             directory = os.path.join(self.cmbSelectSeries.currentText())
         path = os.path.join(directory, 'info.json')
+        logger.info(f"path: {path}")
         uuid = None
         if os.path.exists(directory):
-            try:
-                data = self.getDict(path)
-                uuid = data['uuid']
-            except json.decoder.JSONDecodeError:
-                logger.warning('JSON decoder error!')
-                # cfg.mw.set_status('JSON decoder error!', 3000)
+            if os.path.exists(path):
+                try:
+                    data = self.getDict(path)
+                    uuid = data['uuid']
+                except json.decoder.JSONDecodeError:
+                    logger.warning('JSON decoder error!')
+                    # cfg.mw.set_status('JSON decoder error!', 3000)
+            else:
+                logger.warning(f"path does not exist: {path}")
         else:
             logger.warning(f"Not found: {path}")
         return uuid
