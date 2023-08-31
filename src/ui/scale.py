@@ -119,11 +119,16 @@ class ScaleWorker(QObject):
                 self.initPbar.emit((len(tasks), desc))
                 t = time.time()
 
-                # with ThreadPoolExecutor(max_workers=10) as pool:
+
                 logger.info(f"# mp.Pool Processes: {cpus}")
-                with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
+                # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
                 # with ctx.Pool(processes=104, maxtasksperchild=1) as pool:
-                    for i, result in enumerate(tqdm.tqdm(pool.imap_unordered(run, tasks),
+                with ThreadPoolExecutor(max_workers=20) as pool:
+                    # for i, result in enumerate(tqdm.tqdm(pool.imap_unordered(run, tasks),
+                    #                                      total=len(tasks),
+                    #                                      desc=desc, position=0,
+                    #                                      leave=True)):
+                    for i, result in enumerate(tqdm.tqdm(pool.map(run, tasks),
                                                          total=len(tasks),
                                                          desc=desc, position=0,
                                                          leave=True)):
@@ -164,13 +169,20 @@ class ScaleWorker(QObject):
             i = 0
             # with ctx.Pool(processes=104, maxtasksperchild=1) as pool:
             logger.info(f"# mp.Pool Processes: {cpus}")
-            with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
+            # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
+            with ThreadPoolExecutor(max_workers=20) as pool:
                 for result in tqdm.tqdm(
-                    pool.imap_unordered(convert_zarr, tasks),
+                    # pool.imap_unordered(convert_zarr, tasks),
+                    #     total=len(tasks),
+                    #     desc=desc,
+                    #     position=0,
+                    #     leave=True):
+                    pool.map(convert_zarr, tasks),
                         total=len(tasks),
                         desc=desc,
                         position=0,
                         leave=True):
+
                     all_results.append(result)
                     i += 1
                     self.progress.emit(i)
