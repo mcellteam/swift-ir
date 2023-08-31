@@ -122,16 +122,16 @@ class ScaleWorker(QObject):
 
                 logger.info(f"# mp.Pool Processes: {cpus}")
                 # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
-                # with ctx.Pool(processes=104, maxtasksperchild=1) as pool:
-                with ThreadPoolExecutor(max_workers=20) as pool:
-                    # for i, result in enumerate(tqdm.tqdm(pool.imap_unordered(run, tasks),
-                    #                                      total=len(tasks),
-                    #                                      desc=desc, position=0,
-                    #                                      leave=True)):
-                    for i, result in enumerate(tqdm.tqdm(pool.map(run, tasks),
+                with ctx.Pool(processes=104, maxtasksperchild=1) as pool:
+                # with ThreadPoolExecutor(max_workers=20) as pool:
+                    for i, result in enumerate(tqdm.tqdm(pool.imap_unordered(run, tasks),
                                                          total=len(tasks),
                                                          desc=desc, position=0,
                                                          leave=True)):
+                    # for i, result in enumerate(tqdm.tqdm(pool.map(run, tasks),
+                    #                                      total=len(tasks),
+                    #                                      desc=desc, position=0,
+                    #                                      leave=True)):
                         self.progress.emit(i)
                         if not self.running():
                             break
