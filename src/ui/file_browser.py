@@ -20,6 +20,7 @@ class FileBrowser(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.treeview = QTreeView()
+        self.treeview.expanded.connect(self.onExpanded)
         self.treeview.setContextMenuPolicy(Qt.CustomContextMenu)
         self.treeview.customContextMenuRequested.connect(self.openMenu)
         # self.treeview.customContextMenuRequested.connect(self._show_context_menu)
@@ -54,6 +55,9 @@ class FileBrowser(QWidget):
 
         # sanitizeSavedPaths()
         self.loadPathCombo()
+
+    def onExpanded(self, index):
+        logger.info(f'Expanded! {index}')
 
     # def _show_context_menu(self, position):
     #     display_action1 = QAction("Display Selection")
@@ -143,6 +147,15 @@ class FileBrowser(QWidget):
     def initUI(self):
         # with open('src/style/controls.qss', 'r') as f:
         #     style = f.read()
+
+        self.bDirUp = QPushButton()
+        self.bDirUp.setIcon(qta.icon('fa.arrow-up', color='#161c20'))
+
+        self.bDirUp = QPushButton()
+        self.bDirUp.setIcon(qta.icon('fa.arrow-down', color='#161c20'))
+
+        # self.bCreateDirectory = QPushButton()
+        # self.bCreateDirectory.setIcon(qta.icon('fa.plus', color='#161c20'))
 
         self.bSetRootRoot = QPushButton('/ (Root)')
         self.bSetRootRoot.setStyleSheet('font-size: 9px;')
@@ -301,7 +314,8 @@ class FileBrowser(QWidget):
         self.teSeriesSearchPaths = QTextEdit()
         self.teSeriesSearchPaths.setMinimumHeight(80)
         self.teSeriesSearchPaths.setReadOnly(False)
-        lab = BoldLabel('Series Search Paths (Recursive):')
+        # lab = BoldLabel('Series Search Paths (Recursive):')
+        lab = BoldLabel('Series Search Paths:')
         self.wSeriesSearchPaths = VWidget(lab, self.teSeriesSearchPaths)
         self.wSeriesSearchPaths.setMaximumHeight(80)
         self.wSeriesSearchPaths.layout.setAlignment(Qt.AlignVCenter)
@@ -312,7 +326,8 @@ class FileBrowser(QWidget):
         self.teAlignmentsSearchPaths = QTextEdit()
         self.teAlignmentsSearchPaths.setMinimumHeight(70)
         self.teAlignmentsSearchPaths.setReadOnly(False)
-        lab = BoldLabel('Alignments Search Paths (Recursive):')
+        # lab = BoldLabel('Alignments Search Paths (Recursive):')
+        lab = BoldLabel('Alignments Search Paths:')
         self.wAlignmentsSearchPaths = VWidget(lab, self.teAlignmentsSearchPaths)
         self.wAlignmentsSearchPaths.setMaximumHeight(80)
         self.wAlignmentsSearchPaths.layout.setAlignment(Qt.AlignVCenter)
