@@ -200,7 +200,7 @@ class ProjectTab(QWidget):
             logger.critical(f"[DEV][{caller_name()}] Initializing Neuroglancer...")
 
         if cfg.mw._isOpenProjTab():
-            cfg.mw.pm.loadSeriesCombo()
+            cfg.mw.pm.loadCombos()
             cfg.mw.pm.viewer = cfg.pmViewer = PMViewer(webengine=cfg.mw.pm.webengine)
             if cfg.mw.pm.cmbSelectSeries.count() > 0:
                 cfg.mw.pm.viewer.initViewer()
@@ -855,6 +855,7 @@ class ProjectTab(QWidget):
         self.pxLab = QLabel('px')
 
         self.wwWidget = HWidget(self.sliderMatch, self.leMatch, self.pxLab)
+        self.wwWidget.layout.setSpacing(4)
 
         self.flManualAlign = QFormLayout()
         self.flManualAlign.setContentsMargins(0,0,0,0)

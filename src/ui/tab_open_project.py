@@ -4,6 +4,7 @@ import os
 import sys
 import json
 import time
+import uuid
 import shutil
 import inspect
 import logging
@@ -11,7 +12,7 @@ import platform
 import textwrap
 from datetime import datetime
 import copy
-import pprint
+from pprint import pformat
 from glob import glob
 from pathlib import Path
 import subprocess as sp
@@ -51,19 +52,19 @@ class OpenProject(QWidget):
         def fn():
             self.selectionReadout.setText(self.filebrowser.getSelectionPath())
         self.filebrowser.treeview.selectionModel().selectionChanged.connect(fn)
-        self.filebrowser.navigateTo(cfg.settings['content_root'])
+        self.filebrowser.navigateTo(os.path.expanduser('~'))
         self.initUI()
         self.selected_file = ''
 
         # clipboard = QGuiApplication.clipboard()
-        clipboard = QApplication.clipboard()
-        clipboard.dataChanged.connect(self.onClipboardChanged)
+        # clipboard = QApplication.clipboard()
+        # clipboard.dataChanged.connect(self.onClipboardChanged)
         #Note: when clipboard changes during app out-of-focus, clipboard changed signal gets emitted
         #once focus is returned. This is the ideal behavior.
 
         self.setStyleSheet("font-size: 10px; color: #161c20;")
 
-        sanitizeSavedPaths()
+        # sanitizeSavedPaths()
 
         # configure_project_paths()
 
@@ -74,12 +75,12 @@ class OpenProject(QWidget):
 
 
 
-    def onClipboardChanged(self):
-        # print('Clipboard changed!')
-        buffer = QApplication.clipboard().text()
-        tip = 'Your Clipboard:\n' + '\n'.join(textwrap.wrap(buffer[0:512], width=35)) #set limit on length of tooltip string
-        # print('\n' + tip)
-        self._buttonBrowserPaste.setToolTip(tip)
+    # def onClipboardChanged(self):
+    #     # print('Clipboard changed!')
+    #     buffer = QApplication.clipboard().text()
+    #     tip = 'Your Clipboard:\n' + '\n'.join(textwrap.wrap(buffer[0:512], width=35)) #set limit on length of tooltip string
+    #     # print('\n' + tip)
+    #     self._buttonBrowserPaste.setToolTip(tip)
 
 
     def initUI(self):
@@ -141,7 +142,7 @@ class OpenProject(QWidget):
         self.cmbSelectSeries.setMaximumWidth(240)
         self.cmbSelectSeries.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.cmbSelectSeries.setStyleSheet("background-color: #222222; color: #f3f6fb;")
-        self.loadSeriesCombo()
+        self.loadCombos()
         self.cmbSelectSeries.currentIndexChanged.connect(self.onSelectSeriesCombo)
 
 
@@ -197,14 +198,14 @@ class OpenProject(QWidget):
         self.w_cmbSelectSeries.layout.setAlignment(Qt.AlignCenter)
         self.w_cmbSelectSeries.layout.setContentsMargins(10, 0, 10, 0)
         # self.w_cmbSelectSeries.setStyleSheet("color: #f3f6fb; border: 1px solid #f3f6fb;")
-        self.w_cmbSelectSeries.setStyleSheet("background-color: rgba(0,0,0,.5); padding: 2px; font-weight: 600; color: #f3f6fb;")
+        self.w_cmbSelectSeries.setStyleSheet("background-color: rgba(0,0,0,.5); padding: 2px; color: #f3f6fb;")
 
         self.w_cmbSelectAlignment = HWidget(self.l1, self.cmbSelectAlignment, self.bOpenAlignment, self.bPlusAlignment,
                                             self.bMinusAlignment)
         self.w_cmbSelectAlignment.layout.setAlignment(Qt.AlignCenter)
         self.w_cmbSelectAlignment.layout.setContentsMargins(10, 0, 10, 0)
         # self.w_cmbSelectAlignment.setStyleSheet("color: #f3f6fb; border: 1px solid #f3f6fb;")
-        self.w_cmbSelectAlignment.setStyleSheet("background-color: rgba(0,0,0,.5); padding: 2px; font-weight: 600; color: #f3f6fb;")
+        self.w_cmbSelectAlignment.setStyleSheet("background-color: rgba(0,0,0,.5); padding: 2px; color: #f3f6fb;")
 
         self.wCombos = HWidget(self.w_cmbSelectSeries, QLabel('        '), self.w_cmbSelectAlignment)
         self.wCombos.setAutoFillBackground(False)
@@ -460,81 +461,120 @@ class OpenProject(QWidget):
 
     def resetView(self):
         logger.info('')
-        self._NEW_SERIES_PATHS = []
-        self.leNameSeries.setText('')
+        # self.leNameSeries.setText('')
+        # self.leNameAlignment.setText('')
         self.leNameSeries.setStyleSheet("border-color: #339933; border-width: 2px;")
         self.bSelect.setStyleSheet("background-color: #339933; color: #f3f6fb; border-color: #f3f6fb;")
         self.bConfirmImport.setStyleSheet("")
-        self.leNameAlignment.setText('')
         self.leNameAlignment.setStyleSheet("border-color: #339933; color: #f3f6fb; border-width: 2px;")
         self.gbCreateSeries.hide()
         self.labImgCount.hide()
         self.iid_dialog.hide()
         self.wNameAlignment.hide()
+        self.bPlusAlignment.setEnabled(True)
 
 
     def getDict(self, path):
-        logger.info(f'requested: {path}')
         with open(path, 'r') as f:
             data=json.load(f)
         return data
 
 
     def getScaleKeys(self, series):
-        logger.info(f'requested: {series}')
-        cr = cfg.settings['content_root']
-        series_path = os.path.join(cr, 'series', series)
-        basename = os.path.basename(series_path)
-        info_path = os.path.join(series_path, basename + '.series')
-        info = self.getDict(info_path)
-        return natural_sort(info['levels'])
-
-
-    def getCoarsestAlignedScale(self, series, alignment):
         logger.info('')
-        cr = cfg.settings['content_root']
-        data_path = os.path.join(cr, 'alignments', series, alignment + '.swiftir')
-        if os.path.exists(data_path):
+        basename,_ = os.path.splitext(os.path.basename(series))
+        info_path = os.path.join(series, 'info.json')
+        if os.path.isfile(info_path):
+            info = self.getDict(info_path)
+            return natural_sort(info['levels'])
+        else:
+            return []
+
+
+    # def getCoarsestAlignedScale(self, series, alignment):
+    #     logger.info('')
+    #     cr = cfg.settings['content_root']
+    #     data_path = os.path.join(cr, 'alignments', series, alignment + '.swiftir')
+    #     if os.path.exists(data_path):
+    #         try:
+    #             data = self.getDict(data_path)
+    #         except json.decoder.JSONDecodeError:
+    #             logger.warning('JSON decoder error!')
+    #             # cfg.mw.set_status('JSON decoder error!', 3000)
+    #             return None
+    #         keys = natural_sort(list(data['series']['levels'])) #Todo fix this
+    #         for key in keys:
+    #             try:
+    #                 if cfg.data.is_aligned(s=key):
+    #                     logger.info(f"returning: {key}")
+    #                     return key
+    #             except:
+    #                 logger.warning('Exception, likely KeyError')
+    #                 return keys[-1]
+    #     else:
+    #         logger.warning(f"Not found: {data_path}")
+    #     logger.info(f"returning: None")
+    #     return None
+
+
+    def _getAlignmentUUID(self, directory=None):
+        logger.info('')
+        if directory == None:
+            directory = self.cmbSelectAlignment.currentText()
+        name,_ = os.path.splitext(os.path.basename(directory))
+        path = os.path.join(directory, name + '.swiftir')
+
+        uuid = None
+        if os.path.exists(path):
             try:
-                data = self.getDict(data_path)
+                data = self.getDict(path)
+                uuid = data['info']['series_uuid']
             except json.decoder.JSONDecodeError:
                 logger.warning('JSON decoder error!')
                 # cfg.mw.set_status('JSON decoder error!', 3000)
-                return None
-            keys = natural_sort(list(data['series']['levels'])) #Todo fix this
-            for key in keys:
-                try:
-                    if cfg.data.is_aligned(s=key):
-                        logger.info(f"returning: {key}")
-                        return key
-                except:
-                    logger.warning('Exception, likely KeyError')
-                    return keys[-1]
         else:
-            logger.warning(f"Not found: {data_path}")
-        logger.info(f"returning: None")
-        return None
+            logger.warning(f"Not found: {path}")
+        return uuid
 
+    def _getSeriesName(self):
+        return os.path.basename(self.cmbSelectSeries.currentText())
+
+    def _getSeriesUUID(self, directory=None):
+        logger.info('')
+        if directory == None:
+            directory = os.path.join(self.cmbSelectSeries.currentText())
+        path = os.path.join(directory, 'info.json')
+        uuid = None
+        if os.path.exists(directory):
+            try:
+                data = self.getDict(path)
+                uuid = data['uuid']
+            except json.decoder.JSONDecodeError:
+                logger.warning('JSON decoder error!')
+                # cfg.mw.set_status('JSON decoder error!', 3000)
+        else:
+            logger.warning(f"Not found: {path}")
+        return uuid
 
 
     #importseries
     def createSeries(self):
         logger.info("")
-        self.gbCreateSeries.hide()
+        self.resetView()
         self.bConfirmImport.setEnabled(False)
         self.bConfirmImport.setStyleSheet("")
         self.bSelect.setStyleSheet("")
-        cr = cfg.settings['content_root']
 
         name = self.leNameSeries.text()
-        name.replace(' ','_')
-        name, _ = os.path.splitext(name)
-        dirname = os.path.join(cr, 'series', name)
-        out = dirname
-        n_imgs = len(self._NEW_SERIES_PATHS)
-        logger.info(f"\n"
-                    f"content root : {cr}\n"
-                    f"      series :   └ {name} ({n_imgs} images)")
+        logger.critical(f"\n\nname: {name}\n")
+        name.replace(' ', '_')
+        logger.critical(f"\n\nname: {name}\n")
+        if not name.endswith('.series'):
+            name += '.series'
+        logger.critical(f"\n\nname: {name}\n")
+
+        out = os.path.join(cfg.settings['series_root'], name)
+        logger.critical(f"\n\nout: {out}\n")
 
         zarr_settings = self.wSeriesConfig.getSettings()
         # logger.info(f"Scale levels & Zarr settings:\n{zarr_settings}")
@@ -543,7 +583,9 @@ class OpenProject(QWidget):
         except:
             print_exception()
 
-        initLogFiles(dirname)
+        logpath = os.path.join(out, 'logs')
+        os.makedirs(logpath, exist_ok=True)
+        open(os.path.join(logpath, 'exceptions.log'), 'a').close()
 
         has_cal_grid = self.iid_dialog.cb_cal_grid.isChecked()
         cal_grid_path = None
@@ -553,21 +595,24 @@ class OpenProject(QWidget):
             self._NEW_SERIES_PATHS = self._NEW_SERIES_PATHS[1:]
 
         src = os.path.dirname(self._NEW_SERIES_PATHS[0])
+        logger.critical(f"src = {src}")
+        logger.critical(f"self._NEW_SERIES_PATHS[0] = {self._NEW_SERIES_PATHS[0]}")
+        logger.critical(f"self._NEW_SERIES_PATHS = {self._NEW_SERIES_PATHS}")
         cfg.mw.tell(f'Importing {len(self._NEW_SERIES_PATHS)} Images...')
         scales_str = self.wSeriesConfig.scales_input.text().strip()
         scale_vals = list(map(int,scales_str.split(' ')))
 
-        makedirs_exist_ok(dirname, exist_ok=True)
+        # makedirs_exist_ok(dirname, exist_ok=True)
 
-        tiff_path = os.path.join(dirname, 'tiff')
-        zarr_path = os.path.join(dirname, 'zarr')
-        thumbs_path = os.path.join(dirname, 'thumbnails')
+        tiff_path = os.path.join(out, 'tiff')
+        zarr_path = os.path.join(out, 'zarr')
+        thumbs_path = os.path.join(out, 'thumbnails')
 
         for sv in scale_vals:
-            cfg.mw.tell('Creating new series directories for scale %s...' % sv)
-            os.makedirs(os.path.join(tiff_path, 's%d' % sv), exist_ok=True)
-            os.makedirs(os.path.join(zarr_path, 's%d' % sv), exist_ok=True)
-        os.makedirs(thumbs_path, exist_ok=True)
+            cfg.mw.tell('Making new series directories for scale %s...' % sv)
+            os.makedirs(os.path.join(tiff_path,   's%d' % sv), exist_ok=True)
+            os.makedirs(os.path.join(zarr_path,   's%d' % sv), exist_ok=True)
+            os.makedirs(os.path.join(thumbs_path, 's%d' % sv), exist_ok=True)
 
         logger.info(f"# Imported: {len(self._NEW_SERIES_PATHS)}")
 
@@ -575,7 +620,7 @@ class OpenProject(QWidget):
         logger.info('Symbolically linking full scale images...')
         for img in self._NEW_SERIES_PATHS:
             fn = img
-            ofn = os.path.join(dirname, 'tiff', 's1', os.path.split(fn)[1])
+            ofn = os.path.join(out, 'tiff', 's1', os.path.split(fn)[1])
             # normalize path for different OSs
             if os.path.abspath(os.path.normpath(fn)) != os.path.abspath(os.path.normpath(ofn)):
                 try:
@@ -596,12 +641,13 @@ class OpenProject(QWidget):
 
         count = len(self._NEW_SERIES_PATHS)
         level_keys = natural_sort(['s%d' % v for v in scale_vals])
-        series_name = os.path.basename(dirname)
-        logger.critical(f"level keys: {level_keys}")
+        series_name = os.path.basename(out)
+        logger.critical(f"Resolution levels: {level_keys}")
 
         opts = {
             'name': series_name,
-            'location': dirname,
+            'uuid': str(uuid.uuid4()),
+            'location': out,
             'created': datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
             'scale_factors': scale_vals,
             'levels': level_keys,
@@ -613,7 +659,7 @@ class OpenProject(QWidget):
             'paths': self._NEW_SERIES_PATHS,
         }
         opts.update(self.wSeriesConfig.getSettings())
-        pprint.pprint(opts, compact=True)
+        logger.info(pformat(opts))
 
 
         full_scale_size = ImageSize(self._NEW_SERIES_PATHS[0])
@@ -626,8 +672,9 @@ class OpenProject(QWidget):
             opts['size_xy'][key] = siz
 
         jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
-        with open(os.path.join(dirname, series_name + '.series'), 'w') as f:
+        with open(os.path.join(out, 'info.json'), 'w') as f:
             f.write(jde.encode(copy.deepcopy(opts)))
+
 
         cfg.mw.autoscaleSeries(src, out, opts)
         logger.info('<<')
@@ -640,13 +687,17 @@ class OpenProject(QWidget):
         self.resetView()
         # name         = self.leNameAlignment.text()
         name         = self.leNameAlignment.text()
-        cr           = cfg.settings['content_root']
-        series_path = os.path.join(cr, 'series', self.cmbSelectSeries.currentText())
-        logger.critical(f"self.cmbSelectSeries.currentText() = {self.cmbSelectSeries.currentText()}")
-        logger.critical(f"series_path = {series_path}")
-        series_name = self.cmbSelectSeries.currentText()
-        series_info_path    = os.path.join(series_path, series_name + '.series')
-        out = os.path.join(cr, 'alignments', series_name, name )
+        if not name.endswith('.alignment'):
+            name += '.alignment'
+
+
+        out = os.path.join(cfg.settings['alignments_root'], name)
+
+        series_path = self.cmbSelectSeries.currentText()
+        series_name,_ = os.path.splitext(os.path.basename(series_path))
+
+        series_info_path = os.path.join(series_path, 'info.json')
+
         if not os.path.isfile(series_info_path):
             cfg.mw.warn(f"Series data file not found: {series_info_path}. Was it moved?")
             print(series_info_path)
@@ -665,9 +716,9 @@ class OpenProject(QWidget):
             info = json.load(f)
 
         logger.critical(f"Initializing Data Model...\n"
-                    f"  alignment name : {name}\n"
-                    f"       of series : {series_name}\n"
-                    f"           count : {info['count']}")
+                        f"  alignment name : {name}\n"
+                        f"       of series : {series_name}\n"
+                        f"           count : {info['count']}")
 
         t0 = time.time()
         dm = DataModel(location=out, initialize=True, series_info=info)
@@ -697,6 +748,7 @@ class OpenProject(QWidget):
             os.makedirs(os.path.join(out, 'tmp',         k), exist_ok=True)
 
         logger.info("Writing alignment data file...")
+        logger.info(f"name: {name}")
         with open(name, 'w') as f:
             jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
             f.write(jde.encode(dm._data))
@@ -708,7 +760,8 @@ class OpenProject(QWidget):
 
     def refresh(self):
         logger.info('')
-        self.loadSeriesCombo()
+        self.resetView() #0830+
+        self.loadCombos()
         self.initPMviewer()
 
 
@@ -728,53 +781,42 @@ class OpenProject(QWidget):
 
 
     def onPlusAlignment(self):
-        # if self.wNameAlignment.isVisible():
-        #     self.wNameAlignment.hide()
-        #     return
-        self.bPlusAlignment.setEnabled(True)
-
-        cr = cfg.settings['content_root']
-        series_path = os.path.join(cr, 'series', self.cmbSelectSeries.currentText())
-        logger.info(f"series path {series_path}")
-        if not os.path.exists(series_path):
-            cfg.mw.warn('Not a valid series.')
-            cfg.mw.set_status('Not a valid series.', 3000)
+        logger.info('')
+        if self.wNameAlignment.isVisible():
+            self.wNameAlignment.hide()
             return
-
-        self.wNameAlignment.setVisible(not self.wNameAlignment.isVisible())
+        if not os.path.isdir(self.cmbSelectSeries.currentText()):
+            cfg.mw.warn(f"'{self.cmbSelectSeries.currentText()}' is not a valid series.")
+            return
+        self.wNameAlignment.show()
         self.leNameAlignment.setFocus()
 
 
 
     def onMinusAlignment(self):
+        logger.info('')
         # path = self.cmbSelectAlignment.currentText()
-        cr = cfg.settings['content_root']
-        series = self.cmbSelectSeries.currentText()
-        alignment = self.cmbSelectAlignment.currentText()
-        path = os.path.join(cr, 'alignments', series, alignment)
-        logger.info(f"path: {path}")
-        if alignment:
-            if os.path.exists(path):
-                if os.path.isdir(path):
-                    logger.warning(f"Removing alignment at: {path}...")
-                    reply = QMessageBox.question(self, "Quit", f"Delete this alignment?\n\n'{path}'",
-                                                 QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-                    if reply == QMessageBox.Yes:
-                        shutil.rmtree(path, ignore_errors=True)
-                        cfg.mw.tell(f'Deleting project directory {path}...')
-                        try:
-                            os.remove(path + '.swiftir')
-                        except FileNotFoundError:
-                            cfg.mw.warn(f"FileNotFoundError: {path + '.swiftir'}")
-                        try:
+
+        path = self.cmbSelectAlignment.currentText()
+        if path:
+            if os.path.isdir(path):
+                logger.warning(f"Removing alignment at: {path}...")
+                reply = QMessageBox.question(self, "Quit", f"Delete this alignment?\n\n'{path}'",
+                                             QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                if reply == QMessageBox.Yes:
+                    cfg.mw.tell(f'Removing alignment at {path}')
+                    try:
+                        if path.endswith('.alignment'):
                             run_subprocess(["rm", "-rf", path])
-                            # delete_recursive(dir=project)
-                            # shutil.rmtree(project, ignore_errors=True, onerror=handleError)
-                            # shutil.rmtree(project, ignore_errors=True, onerror=handleError)
-                        except:
-                            print_exception()
-                        self.loadSeriesCombo()
-                        self.refresh()
+                        else:
+                            logger.warning(f"\n\nCANNOT REMOVE THIS PATH: {path}\n")
+                        # delete_recursive(dir=project)
+                        # shutil.rmtree(project, ignore_errors=True, onerror=handleError)
+                        # shutil.rmtree(project, ignore_errors=True, onerror=handleError)
+                    except:
+                        print_exception()
+                    self.loadCombos()
+                    self.refresh()
             else:
                 cfg.mw.warn('Path not found.')
         else:
@@ -783,145 +825,112 @@ class OpenProject(QWidget):
 
     def onOpenAlignment(self):
         logger.info('')
-        # name = self.leNameAlignment.text()
-        name = self.cmbSelectAlignment.currentText()
-        cr = cfg.settings['content_root']
-        series_path = os.path.join(cr, 'series', self.cmbSelectSeries.currentText())
-        series_name = self.cmbSelectSeries.currentText()
-        series_info_path = os.path.join(series_path, series_name + '.series')
-        requested_dir = os.path.join(cr, 'alignments', series_name, name)
-        requested_file = os.path.join(cr, 'alignments', series_name, name + '.swiftir')
-
-        if not os.path.isfile(series_info_path):
-            cfg.mw.warn(f"Series data file not found: {series_info_path}. Was it moved?")
-            print(series_info_path)
-            self.resetView()
-            return
-        if not os.path.isdir(series_path):
-            cfg.mw.warn(f"Series not found: {series_path}. Was this series moved?")
-            self.resetView()
-            return
-        if not os.path.exists(requested_file):
-            cfg.mw.warn(f"Alignment data file not found: {requested_file}")
-            self.resetView()
-            return
-        if not os.path.exists(requested_dir):
-            cfg.mw.warn(f"Alignment data not found: {requested_dir}")
-            self.resetView()
-            return
-
-        cfg.mw.tell(f"Opening: {requested_file}...")
-        self.openAlignment(path=requested_file)
+        alignment_dir = self.cmbSelectAlignment.currentText()
+        if alignment_dir:
+            name,_ = os.path.splitext(os.path.basename(alignment_dir))
+            swiftir_file = os.path.join(alignment_dir, name + '.swiftir')
+            if not os.path.exists(swiftir_file):
+                cfg.mw.warn(f"Alignment data file not found: {swiftir_file}")
+                self.resetView()
+                return
+            if not os.path.exists(alignment_dir):
+                cfg.mw.warn(f"Alignment data not found: {alignment_dir}")
+                self.resetView()
+                return
+            cfg.mw.tell(f"Opening: {swiftir_file}...")
+            self.openAlignment(path=swiftir_file)
+        else:
+            cfg.mw.warn("No alignment selected.")
 
     def onMinusSeries(self):
-        cr = cfg.settings['content_root']
-        series = self.cmbSelectSeries.currentText()
-        path = os.path.join(cr, 'series', series)
-        logger.info(f"path: {path}")
-        if series:
-            if os.path.exists(path):
-                if os.path.isdir(path):
-                    logger.warning(f"Removing series at: {path}...")
-                    reply = QMessageBox.question(self, "Quit", f"Delete this series?\n\n'{path}'",
-                                                 QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-                    if reply == QMessageBox.Yes:
-                        shutil.rmtree(path, ignore_errors=True)
-                        cfg.mw.tell(f'Deleting series {path}...')
-                        try:
+        path = self.cmbSelectSeries.currentText()
+        if os.path.isdir(path):
+            if os.path.isdir(path):
+                logger.warning(f"Removing series at: {path}...")
+                reply = QMessageBox.question(self, "Quit", f"Delete this series?\n\n'{path}'",
+                                             QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                if reply == QMessageBox.Yes:
+                    try:
+                        if path.endswith('.series'):
+                            cfg.mw.tell(f'Deleting series {path}...')
                             run_subprocess(["rm", "-rf", path])
-                        except:
-                            print_exception()
-                        self.loadSeriesCombo()
-                        self.refresh()
-            else:
-                cfg.mw.warn('Path not found.')
+                        else:
+                            logger.warning(f"\n\nCANNOT REMOVE THIS PATH: {path}\n")
+                    except:
+                        print_exception()
+                    self.loadCombos()
+                    self.refresh()
+
         else:
-            cfg.mw.warn('No series selected.')
+            cfg.mw.warn(f"Series not found: {path}")
         time.sleep(2)
-        self.loadSeriesCombo()
+        self.loadCombos()
 
 
-    def loadSeriesCombo(self):
+    def loadCombos(self):
         '''Loading this combobox triggers the loading of the alignment and scales comboboxes'''
         caller = inspect.stack()[1].function
         logger.critical(f'Loading series combobox...')
         self.cmbSelectSeries.clear()
-        self.cmbSelectSeries.clearEditText()
         self.cmbSelectAlignment.clear()
-        self.cmbSelectAlignment.clearEditText()
+        # self.cmbSelectSeries.clearEditText()
+        # self.cmbSelectAlignment.clearEditText()
         self.cmbLevel.clear()
-        cr = cfg.settings['content_root']  # content root full path
-        d = os.path.join(cr, 'series')
 
+        search_paths = cfg.settings['series_search_paths']
         self.valid_series_list = []
-        dir_contents = os.listdir(d)
-        print(f"dir_contents:")
-        print(*dir_contents, sep='\n')
-        for name in dir_contents:
-            path = os.path.join(d, name)
-            if os.path.isdir(path):
-                basename = os.path.basename(path)
-                info_file = os.path.join(path, basename + '.series')
-                if os.path.exists(info_file):
-                    logger.info(f"Info file found: {info_file}\nAppending '{name}' to valid series list")
-                    self.valid_series_list.append(name)
+        for p in search_paths:
+            if os.path.isdir(p):
+                directories = [x[0] for x in os.walk(p)]
+                self.valid_series_list.extend(list(filter(lambda x: '.series' in os.path.basename(x), directories)))
+            else:
+                logger.warning(f"Directory not found: {p}")
 
-        if self.valid_series_list:
-            self.cmbSelectSeries.addItems(self.valid_series_list)
-        # else:
-        #     self.cmbSelectSeries.addItems(["None"])
+        self.cmbSelectSeries.addItems(self.valid_series_list)
 
-        logger.info(f"Valid series list: {self.valid_series_list}")
+        logger.info(f"Found Series: {pformat(self.valid_series_list)}")
 
         if cfg.settings['series_combo_text']:
-            last = os.path.basename(cfg.settings['series_combo_text'])
-            if last in self.valid_series_list:
-                try:
-                    self.cmbSelectSeries.setCurrentText(last)
-                except:
-                    print_exception()
-
-        cfg.settings['series_combo_text'] = self.cmbSelectSeries.currentText()
-        if len(self.valid_series_list) > 0:
-            self.loadAlignmentCombo()
-            try:
-                self.loadLevelsCombo()
-            except:
-                print_exception()
+            recent = os.path.basename(cfg.settings['series_combo_text'])
+            if recent in self.valid_series_list:
+                self.cmbSelectSeries.setCurrentText(recent)
+        if self.cmbSelectSeries.currentText():
+            cfg.settings['series_combo_text'] = self.cmbSelectSeries.currentText()
+        self.loadAlignmentCombo()
+        self.loadLevelsCombo()
         self.update()
 
     def onSelectSeriesCombo(self):
         caller = inspect.stack()[1].function
-        logger.critical(f"caller: {caller}")
         if caller == 'main':
-        #     logger.info('')
-            self.gbCreateSeries.hide()
-            self.wNameAlignment.hide()
+            logger.critical(f"caller: {caller}")
+            self.resetView()
             cfg.settings['series_combo_text'] = self.cmbSelectSeries.currentText()
-            w = int(self.webengine.width() / 2)
-            h = self.webengine.height()
-            # if self.cmbSelectSeries.currentText() != "None":
-            if self.cmbSelectSeries.currentText():
-                self.viewer = cfg.pmViewer = PMViewer(webengine=self.webengine)
-                path_l, path_r = self.get_pmviewer_paths()
-                self.viewer.initViewer(path_l=path_l, path_r=path_r)
-                # self.viewer.initZoom(w=w, h=h)
-            else:
-                self.viewer.initExample()
+
             try:
                 self.loadLevelsCombo() #Important load the scale levels combo before initializing viewers
             except:
                 print_exception()
             self.loadAlignmentCombo()
+
+            w, h = int(self.webengine.width() / 2), self.webengine.height()
+            if self.cmbSelectSeries.currentText():
+                self.viewer = cfg.pmViewer = PMViewer(webengine=self.webengine)
+                path_l, path_r = self.get_pmviewer_paths()
+                self.viewer.initViewer(path_l=path_l, path_r=path_r)
+                # self.viewer.initZoom(w=w, h=h)
             self.webengine.setFocus()
+            logger.critical(f"Selected series: {self._getSeriesUUID()} / {self._getSeriesName()}")
 
     def loadLevelsCombo(self):
-        logger.info('')
+        logger.critical('')
         self.cmbLevel.clear()
-        scales = self.getScaleKeys(series=self.cmbSelectSeries.currentText())
-        if scales:
-            self.cmbLevel.addItems(scales)
-            self.cmbLevel.setCurrentIndex(self.cmbLevel.count() - 1)
+        cur_series = self.cmbSelectSeries.currentText()
+        if cur_series:
+            scales = self.getScaleKeys(series=cur_series)
+            if scales:
+                self.cmbLevel.addItems(scales)
+                self.cmbLevel.setCurrentIndex(self.cmbLevel.count() - 1)
 
     def onComboLevel(self):
         caller = inspect.stack()[1].function
@@ -933,41 +942,49 @@ class OpenProject(QWidget):
         logger.critical("")
         # self.cmbSelectAlignment.disconnect()
         self.cmbSelectAlignment.clear()
-        self.cmbSelectAlignment.clearEditText()
-        cr = cfg.settings['content_root'] # content root full path
-        series_name = self.cmbSelectSeries.currentText()
-        d = os.path.join(cr, 'alignments', series_name)
-        # if not d.endswith('None') and os.path.exists(d):
-        logger.critical(f"d = {d}")
-        if os.path.exists(d):
-            l = []
-            print(os.listdir(d), sep='\n')
-            for name in os.listdir(d):
-                dir = os.path.join(d, name)
-                if os.path.isdir(dir):
-                    info_file = dir + '.swiftir'
-                    if os.path.exists(info_file):
-                        # z.append(d + '/' + name)
-                        l.append(name)
-                    else:
-                        logger.warning(f"Not found: {info_file}.")
+        # self.cmbSelectAlignment.clearEditText()
 
-            print('\n\n')
-            print(l, sep='\n')
-            self.cmbSelectAlignment.addItems(l)
+        logger.critical(f"Selected series: {self._getSeriesUUID()} / {self._getSeriesName()}")
 
-            if cfg.settings['alignment_combo_text']:
-                if cfg.settings['alignment_combo_text'] in l:
-                    try:
-                        self.cmbSelectAlignment.setCurrentText(cfg.settings['alignment_combo_text'])
-                    except:
-                        print_exception()
+        search_paths = cfg.settings['alignments_search_paths']
+        logger.critical(f"search paths: {cfg.settings['alignments_search_paths']}")
+        self.alignments_list = []
+        for sp in search_paths:
+            if os.path.isdir(sp):
+                logger.critical(f"Searching path: {sp}...")
+                directories = [x[0] for x in os.walk(sp)]
+                logger.critical(f"# directories found: {len(directories)}")
+                filtered_list = list(filter(lambda x: '.alignment' in os.path.basename(x), directories))
+                # logger.info(f"Filtered list:\n{pformat(filtered_list)}")
+                self.alignments_list.extend(filtered_list)
+            else:
+                logger.warning(f"Directory not found: {sp}")
 
-            cfg.settings['alignment_combo_text'] = self.cmbSelectAlignment.currentText()
-        else:
-            logger.critical(f"Directory does not exist: {d}")
-            # self.cmbSelectAlignment.addItems(["None"])
-            cfg.settings['alignment_combo_text'] = None
+        # self.valid_alignments_list = []
+        logger.critical(f"All alignments found:\n{pformat(self.alignments_list)}")
+
+        series_uuid = self._getSeriesUUID()
+        logger.critical(f"series UUID: {series_uuid}")
+        self.valid_alignments_list = []
+        for p in self.alignments_list:
+            alignment_uuid = self._getAlignmentUUID(directory=p)
+            logger.critical(f"Comparing {alignment_uuid} to {series_uuid}")
+            if alignment_uuid == series_uuid:
+                self.valid_alignments_list.append(p)
+
+        logger.critical(f"Alignments matching series UUID {series_uuid}:\n{pformat(self.valid_alignments_list)}")
+
+        self.cmbSelectAlignment.addItems(self.valid_alignments_list)
+
+        if cfg.settings['alignment_combo_text']:
+            if cfg.settings['alignment_combo_text'] in self.valid_alignments_list:
+                try:
+                    self.cmbSelectAlignment.setCurrentText(cfg.settings['alignment_combo_text'])
+                except:
+                    print_exception()
+
+        cfg.settings['alignment_combo_text'] = self.cmbSelectAlignment.currentText()
+
         logger.critical("<<")
 
 
@@ -982,7 +999,6 @@ class OpenProject(QWidget):
             self.webengine.setFocus()
 
     def get_pmviewer_paths(self):
-        cr = cfg.settings['content_root']
         path_l, path_r = None, None
 
         series = self.cmbSelectSeries.currentText()
@@ -993,14 +1009,11 @@ class OpenProject(QWidget):
             scale = keys[-1]
         logger.info(f"scale to set: {scale}")
         if self.cmbSelectSeries.count() > 0:
-            path_l = os.path.join(cr, 'series', series, 'zarr', scale)
+            path_l = os.path.join(series, 'zarr', scale)
             # if self.cmbSelectAlignment.currentText() != 'None':
             if self.cmbSelectAlignment.currentText():
                 # coarsest_aligned = self.getCoarsestAlignedScale(alignment_file)
-                coarsest = self.getCoarsestAlignedScale(series=series, alignment=alignment)
-                if coarsest:
-                    path_r = os.path.join(cr, 'alignments', series, alignment, 'zarr', scale)
-
+                path_r = os.path.join(alignment, 'zarr', scale)
         return path_l, path_r
 
 

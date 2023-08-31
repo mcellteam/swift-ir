@@ -479,7 +479,7 @@ class ProjectTable(QWidget):
                     else:
                         assert snr_4x[0] > 0.0
 
-                    tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x.pop(0), name='ms0', annotations=False)
+                    tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x.pop(0, None), name='ms0', annotations=False)
                     self._ms0[row] = tn
                     if cfg.data.skipped(l=row):
                         tn.set_no_image()
@@ -497,7 +497,7 @@ class ProjectTable(QWidget):
                         assert regions[1] == 1
                     else:
                         assert snr_4x[0] > 0.0
-                    tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x.pop(0), name='ms1', annotations=False)
+                    tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x.pop(0, None), name='ms1', annotations=False)
                     self._ms1[row] = tn
                     if cfg.data.skipped(l=row):
                         tn.set_no_image()
@@ -514,7 +514,7 @@ class ProjectTable(QWidget):
                         assert regions[2] == 1
                     else:
                         assert snr_4x[0] > 0.0
-                    tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x.pop(0), name='ms2', annotations=False)
+                    tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x.pop(0, None), name='ms2', annotations=False)
                     self._ms2[row] = tn
                     if cfg.data.skipped(l=row):
                         tn.set_no_image()
@@ -531,7 +531,7 @@ class ProjectTable(QWidget):
                         assert regions[3] == 1
                     else:
                         assert snr_4x[0] > 0.0
-                    tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x.pop(0), name='ms3', annotations=False)
+                    tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x.pop(0, None), name='ms3', annotations=False)
                     self._ms3[row] = tn
                     if cfg.data.skipped(l=row):
                         tn.set_no_image()

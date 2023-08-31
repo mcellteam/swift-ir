@@ -166,7 +166,7 @@ class ImportImagesDialog(QFileDialog):
         self.cb_cal_grid.setChecked(False)
 
         self.cb_display_thumbs = QCheckBox('Display Thumbnails')
-        self.cb_display_thumbs.setChecked(cfg.settings['ui']['DISPLAY_THUMBNAILS_IN_DIALOG'])
+        self.cb_display_thumbs.setChecked(True)
         self.cb_display_thumbs.toggled.connect(self.onToggle)
 
         # self.cb_overwrite = QCheckBox('Overwrite')
@@ -198,8 +198,7 @@ class ImportImagesDialog(QFileDialog):
 
 
     def onToggle(self):
-        cfg.settings['ui']['DISPLAY_THUMBNAILS_IN_DIALOG'] = self.cb_display_thumbs.isChecked()
-        if cfg.settings['ui']['DISPLAY_THUMBNAILS_IN_DIALOG']:
+        if self.cb_display_thumbs.isChecked():
             self.imageDimensionsLabel.show()
             self.mpPreview.show()
         else:
@@ -212,7 +211,7 @@ class ImportImagesDialog(QFileDialog):
         self.pixmap = QPixmap(path)
         if(self.pixmap.isNull()):
             self.imageDimensionsLabel.setText('')
-        elif cfg.settings['ui']['DISPLAY_THUMBNAILS_IN_DIALOG']:
+        elif self.cb_display_thumbs.isChecked():
             self.mpPreview.setPixmap(self.pixmap.scaled(self.mpPreview.width(),
                                                    self.mpPreview.height(),
                                                    Qt.KeepAspectRatio,
