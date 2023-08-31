@@ -688,6 +688,7 @@ class OpenProject(QWidget):
 
 
         cfg.mw.autoscaleSeries(src, out, opts)
+        cfg.settings['series_combo_text'] = out
         logger.info('<<')
 
 
