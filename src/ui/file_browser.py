@@ -38,8 +38,9 @@ class FileBrowser(QWidget):
         # self.fileSystemModel.setFilter(QDir.Files)
         # self.fileSystemModel.setFilter(QDir.NoDotAndDotDot)
         self.treeview.setModel(self.fileSystemModel)
-        root = self.fileSystemModel.setRootPath(os.path.expanduser('~'))
-        # root = self.fileSystemModel.setRootPath('/')
+        # self._root = os.path.expanduser('~')
+        # self.fileSystemModel.setRootPath(self._root)
+        root = self.fileSystemModel.setRootPath('/')
 
         self.treeview.setRootIndex(root)
 
@@ -59,8 +60,24 @@ class FileBrowser(QWidget):
         # sanitizeSavedPaths()
         self.loadPathCombo()
 
-    def directoryUp(self):
-        pass
+    def navigateUp(self):
+        logger.info('')
+        logger.info(f'current root: {self._root}')
+        # selection = self.getSelectionPath()
+        self._root = os.path.dirname(self._root)
+        logger.info(f"Setting root: {self._root}")
+        self.treeview.setRootIndex(self.fileSystemModel.index(self._root))
+
+    def navigateDown(self):
+        logger.info('')
+        selection = self.getSelectionPath()
+        if selection:
+            self._root = selection
+            logger.info(f"Setting root: {self._root}")
+            self.treeview.setRootIndex(self.fileSystemModel.index(self._root))
+        else:
+            logger.warning("No directory selected!")
+
 
     def onExpanded(self, index):
         logger.info(f'Expanded! {index}')
@@ -101,69 +118,84 @@ class FileBrowser(QWidget):
         menu.exec_(self.treeview.viewport().mapToGlobal(position))
 
     def setRootHome(self):
-        try:    self.treeview.setRootIndex(self.fileSystemModel.index(os.path.expanduser('~')))
+        self._root = os.path.expanduser('~')
+        try:    self.treeview.setRootIndex(self.fileSystemModel.index(self._root))
         except: logger.warning('Directory cannot be accessed')
 
     def setRootRoot(self):
-        try:    self.treeview.setRootIndex(self.fileSystemModel.index('/'))
+        self._root = '/'
+        try:    self.treeview.setRootIndex(self.fileSystemModel.index(self._root))
         except: logger.warning('Directory cannot be accessed')
 
     def setRootTmp(self):
-        try:    self.treeview.setRootIndex(self.fileSystemModel.index('/tmp'))
+        self._root = '/tmp'
+        try:    self.treeview.setRootIndex(self.fileSystemModel.index(self._root))
         except: logger.warning('Directory cannot be accessed')
 
     def setRootWork(self):
-        try:   self.treeview.setRootIndex(self.fileSystemModel.index(self.path_work))
+        self._root = self.path_work
+        try:   self.treeview.setRootIndex(self.fileSystemModel.index(self._root))
         except: logger.warning('Directory cannot be accessed')
 
     def setRootScratch(self):
-        try:    self.treeview.setRootIndex(self.fileSystemModel.index(self.path_scratch))
+        self._root = self.path_scratch
+        try:    self.treeview.setRootIndex(self.fileSystemModel.index(self._root))
         except: logger.warning('Directory cannot be accessed')
 
     def setRootSpecial(self):
-        try:    self.treeview.setRootIndex(self.fileSystemModel.index(self.path_special))
+        self._root = self.path_special
+        try:    self.treeview.setRootIndex(self.fileSystemModel.index(self._root))
         except: logger.warning('Directory cannot be accessed')
 
     def setRootSeries(self):
+        self._root = cfg.settings['series_root']
         try:
-            self.treeview.setRootIndex(self.fileSystemModel.index(cfg.settings['series_root']))
+            self.treeview.setRootIndex(self.fileSystemModel.index(self._root))
         except:
             logger.warning('Directory cannot be accessed')
 
     def setRootAlignments(self):
+        self._root = cfg.settings['alignments_root']
         try:
-            self.treeview.setRootIndex(self.fileSystemModel.index(cfg.settings['alignments_root']))
+            self.treeview.setRootIndex(self.fileSystemModel.index(self._root))
         except:
             logger.warning('Directory cannot be accessed')
 
     def setRoot_corral_projects(self):
-        corral_projects_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/3dem-1076/Projects_AlignEM'
-        try:    self.treeview.setRootIndex(self.fileSystemModel.index(corral_projects_dir))
+
+        self._root = '/corral-repl/projects/NeuroNex-3DEM/projects/3dem-1076/Projects_AlignEM'
+        try:    self.treeview.setRootIndex(self.fileSystemModel.index(self._root))
         except: logger.warning('Directory cannot be accessed')
 
     def setRoot_corral_images(self):
-        corral_images_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/3dem-1076/EM_Series'
-        try:    self.treeview.setRootIndex(self.fileSystemModel.index(corral_images_dir))
+        self._root = '/corral-repl/projects/NeuroNex-3DEM/projects/3dem-1076/EM_Series'
+        try:    self.treeview.setRootIndex(self.fileSystemModel.index(self._root))
         except: logger.warning('Directory cannot be accessed')
 
     def set_corral_root(self):
-        dir = '/corral-repl'
-        try:    self.treeview.setRootIndex(self.fileSystemModel.index(dir))
+        self._root = '/corral-repl'
+        try:    self.treeview.setRootIndex(self.fileSystemModel.index(self._root))
         except: logger.warning('Directory cannot be accessed')
-
-
-
 
 
     def initUI(self):
         # with open('src/style/controls.qss', 'r') as f:
         #     style = f.read()
 
-        self.bDirUp = QPushButton()
-        self.bDirUp.setIcon(qta.icon('fa.arrow-up', color='#161c20'))
+        self.bNavigateUp = QPushButton()
+        self.bNavigateUp.setFixedSize(QSize(16, 16))
+        self.bNavigateUp.setIconSize(QSize(12,12))
+        self.bNavigateUp.setIcon(qta.icon('fa.arrow-up', color='#161c20'))
+        self.bNavigateUp.clicked.connect(self.navigateUp)
 
-        self.bDirUp = QPushButton()
-        self.bDirUp.setIcon(qta.icon('fa.arrow-down', color='#161c20'))
+        self.bNavigateDown = QPushButton()
+        self.bNavigateDown.setFixedSize(QSize(16, 16))
+        self.bNavigateDown.setIconSize(QSize(12, 12))
+        self.bNavigateDown.setIcon(qta.icon('fa.arrow-down', color='#161c20'))
+        self.bNavigateDown.clicked.connect(self.navigateDown)
+
+        self.wNavButtons = HWidget(self.bNavigateUp, self.bNavigateDown, ExpandingHWidget(self))
+        self.wNavButtons.setFixedHeight(18)
 
         # self.bCreateDirectory = QPushButton()
         # self.bCreateDirectory.setIcon(qta.icon('fa.plus', color='#161c20'))
@@ -397,7 +429,7 @@ class FileBrowser(QWidget):
         # self.vsplitter = VSplitter(self.vw1, self.wContentRoot, self.vw2)
         # self.vsplitter = VSplitter()
 
-        vbl = VBL(self.treeview, self.comboWidget, self.wJumpTo, self.vwButtons, self.wContentRoot)
+        vbl = VBL(self.comboWidget, self.wJumpTo, self.wNavButtons, self.treeview, self.vwButtons, self.wContentRoot)
         vbl.setSpacing(2)
         self.setLayout(vbl)
         self.setStyleSheet("font-size: 9px;")
