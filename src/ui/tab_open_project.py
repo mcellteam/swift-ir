@@ -49,9 +49,9 @@ class OpenProject(QWidget):
         # self.filebrowser.setToolTip('<img src="/Users/joelyancey/alignem_data/alignments/r34_full_series/new_alignment3/gif/s4/R34CA1-BS12.122.gif">')
         self.filebrowser.setContentsMargins(2,2,2,2)
         # self.filebrowsertacc = FileBrowserTacc(parent=self)
-        def fn():
-            self.selectionReadout.setText(self.filebrowser.getSelectionPath())
-        self.filebrowser.treeview.selectionModel().selectionChanged.connect(fn)
+        # def fn():
+        #     self.selectionReadout.setText(self.filebrowser.getSelectionPath())
+        # self.filebrowser.treeview.selectionModel().selectionChanged.connect(fn)
         self.filebrowser.navigateTo(os.path.expanduser('~'))
         self.initUI()
         self.selected_file = ''
