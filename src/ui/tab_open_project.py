@@ -1016,20 +1016,23 @@ class OpenProject(QWidget):
 
     def get_pmviewer_paths(self):
         path_l, path_r = None, None
+        try:
 
-        series = self.cmbSelectSeries.currentText()
-        alignment = self.cmbSelectAlignment.currentText()
-        scale = self.cmbLevel.currentText()
-        keys = self.getScaleKeys(series=series)
-        if scale == '':
-            scale = keys[-1]
-        logger.info(f"scale to set: {scale}")
-        if self.cmbSelectSeries.count() > 0:
-            path_l = os.path.join(series, 'zarr', scale)
-            # if self.cmbSelectAlignment.currentText() != 'None':
-            if self.cmbSelectAlignment.currentText():
-                # coarsest_aligned = self.getCoarsestAlignedScale(alignment_file)
-                path_r = os.path.join(alignment, 'zarr', scale)
+            series = self.cmbSelectSeries.currentText()
+            alignment = self.cmbSelectAlignment.currentText()
+            scale = self.cmbLevel.currentText()
+            keys = self.getScaleKeys(series=series)
+            if scale == '':
+                scale = keys[-1]
+            logger.info(f"scale to set: {scale}")
+            if self.cmbSelectSeries.count() > 0:
+                path_l = os.path.join(series, 'zarr', scale)
+                # if self.cmbSelectAlignment.currentText() != 'None':
+                if self.cmbSelectAlignment.currentText():
+                    # coarsest_aligned = self.getCoarsestAlignedScale(alignment_file)
+                    path_r = os.path.join(alignment, 'zarr', scale)
+        except:
+            print_exception()
         return path_l, path_r
 
 
