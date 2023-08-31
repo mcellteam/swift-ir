@@ -55,6 +55,7 @@ class OpenProject(QWidget):
         self.filebrowser.navigateTo(os.path.expanduser('~'))
         self.initUI()
         self.selected_file = ''
+        self._NEW_SERIES_PATHS = []
 
         # clipboard = QGuiApplication.clipboard()
         # clipboard = QApplication.clipboard()
@@ -130,7 +131,8 @@ class OpenProject(QWidget):
         self.cmbSelectAlignment.setCursor(QCursor(Qt.PointingHandCursor))
         self.cmbSelectAlignment.setFixedHeight(18)
         self.cmbSelectAlignment.setMaximumWidth(240)
-        self.cmbSelectAlignment.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.cmbSelectAlignment.setMinimumWidth(100)
+        # self.cmbSelectAlignment.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.cmbSelectAlignment.setStyleSheet("background-color: #222222; color: #f3f6fb;")
         # self.cmbSelectAlignment.addItems(["None"])
 
@@ -140,7 +142,8 @@ class OpenProject(QWidget):
         self.cmbSelectSeries.setCursor(QCursor(Qt.PointingHandCursor))
         self.cmbSelectSeries.setFixedHeight(18)
         self.cmbSelectSeries.setMaximumWidth(240)
-        self.cmbSelectSeries.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.cmbSelectSeries.setMinimumWidth(100)
+        # self.cmbSelectSeries.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.cmbSelectSeries.setStyleSheet("background-color: #222222; color: #f3f6fb;")
         self.loadCombos()
         self.cmbSelectSeries.currentIndexChanged.connect(self.onSelectSeriesCombo)
@@ -209,8 +212,6 @@ class OpenProject(QWidget):
 
         self.wCombos = HWidget(self.w_cmbSelectSeries, QLabel('        '), self.w_cmbSelectAlignment)
         self.wCombos.setAutoFillBackground(False)
-        self.setFocusPolicy(Qt.NoFocus)
-        lab.setAutoFillBackground(False)
 
         self.webengine = WebEngine(ID='pmViewer')
         self.webengine.setFocusPolicy(Qt.StrongFocus)
@@ -421,23 +422,6 @@ class OpenProject(QWidget):
 
         self.wProjects = HWidget(self.vlPM, self._wProjects)
 
-        # from src.ui.gif_player import GifPlayer
-
-        self.lMovie = QLabel()
-        gif = '/Users/joelyancey/alignem_data/alignments/r34_full_series/new_alignment3/gif/s4/R34CA1-BS12.116.gif'
-        # self.movie = QMovie()
-        # self.movie.setCacheMode(QMovie.CacheAll)
-        # self.movie.setFileName(gif)
-        # self.movie.setSpeed(100)
-        # self.lMovie.setMovie(self.movie)
-        # self.lMovie.setMinimumSize(QSize(128,128))
-        # self.movie.start()
-        # self.movie.loopCount()
-        # self.movTimer = QTimer()
-        # self.movTimer.setSingleShot(False)
-        # self.movTimer.timeout.connect(self.movie.jumpToNextFrame)
-        # self.movTimer.setInterval(1000)
-        # self.movTimer.start()
 
         self._hsplitter = QSplitter()
         self._hsplitter.addWidget(self.wProjects)
@@ -445,19 +429,18 @@ class OpenProject(QWidget):
         # self._hsplitter.addWidget(HWidget(self.lMovie))
         # self._hsplitter.addWidget()
 
-        self._hsplitter.setSizes([int(cfg.WIDTH * (4/5)), int(200 * (1/5))])
+        # self._hsplitter.setSizes([int(cfg.WIDTH * (4/5)), int(200 * (1/5))])
+        self._hsplitter.setStretchFactor(0,2)
+        self._hsplitter.setStretchFactor(1,1)
 
         self.vbl_main = VBL()
-        self._vw = VWidget(self._hsplitter)
-        self._vsplitter = QSplitter(Qt.Orientation.Vertical)
-        self._vsplitter.addWidget(self._vw)
+        self._vw = VWidget()
 
-        self.vbl_main.addWidget(self._vsplitter)
-        self.vbl_main.addWidget(self.lMovie)
+        self.vbl_main.addWidget(self._hsplitter)
 
         self.setLayout(self.vbl_main)
 
-        self._NEW_SERIES_PATHS = []
+
 
     def resetView(self):
         logger.info('')

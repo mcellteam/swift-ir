@@ -25,7 +25,7 @@ class FileBrowserTacc(QWidget):
         self.fileSystemModel.setReadOnly(False)
         self.fileSystemModel.setFilter(QDir.AllEntries | QDir.Hidden)
         self.treeview.setModel(self.fileSystemModel)
-        # root = self.fileSystemModel.setRootPath(os.path.expanduser('~'))
+        # root = self.model.setRootPath(os.path.expanduser('~'))
         root = self.fileSystemModel.setRootPath('/')
         self.treeview.setRootIndex(root)
 
