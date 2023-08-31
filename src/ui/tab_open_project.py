@@ -1334,7 +1334,7 @@ class OpenProject(QWidget):
                     else:
                         cfg.mw.hud.done()
 
-                    cfg.mw.tell('Wrapping up...')
+                    # cfg.mw.tell('Wrapping up...')
                     # configure_project_paths()
                     # if cfg.mw.globTabs.currentWidget().__class__.__name__ == 'OpenProject':
                     #     try:
@@ -1436,6 +1436,7 @@ def getSideBarPlacesImportImages():
             places[QUrl.fromLocalFile('/Volumes/3dem_data')] = '/Volumes/3dem_data'
 
     return places
+
 
 # class TableWidget(QTableWidget):
 #     def __init__(self, parent=None):

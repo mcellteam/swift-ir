@@ -1,13 +1,14 @@
 # !/usr/bin/env python3
 
 import os, sys, logging, pprint, textwrap
+import subprocess as sp
 from qtpy.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTreeView, QFileSystemModel, \
     QPushButton, QSizePolicy, QAbstractItemView, QLineEdit, QAction, QMenu, QComboBox, QTextEdit, QFormLayout, \
-    QButtonGroup, QLabel, QCompleter
+    QButtonGroup, QLabel, QCompleter, QMessageBox
 from qtpy.QtCore import Slot, Qt, QSize, QDir
 from qtpy.QtGui import QCursor
 import qtawesome as qta
-from src.helpers import is_joel, is_tacc, sanitizeSavedPaths
+from src.helpers import is_joel, is_tacc, sanitizeSavedPaths, print_exception
 from src.ui.layouts import HWidget, VWidget, VBL, HBL, HSplitter, VSplitter
 import src.config as cfg
 
@@ -30,6 +31,8 @@ class FileBrowser(QWidget):
         self.treeview.setAlternatingRowColors(True)
         self.treeview.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.fileSystemModel = QFileSystemModel(self.treeview)
+        self.fileSystemModel.directoryLoaded.connect(lambda path: print(f"directoryLoaded: {path}!"))
+        self.fileSystemModel.rootPathChanged.connect(lambda newpath: print(f"rootPathChanged: {newpath}!"))
         self.fileSystemModel.setReadOnly(False)
         self.fileSystemModel.setFilter(QDir.AllEntries | QDir.Hidden)
         # self.fileSystemModel.setFilter(QDir.Files)
@@ -56,6 +59,9 @@ class FileBrowser(QWidget):
         # sanitizeSavedPaths()
         self.loadPathCombo()
 
+    def directoryUp(self):
+        pass
+
     def onExpanded(self, index):
         logger.info(f'Expanded! {index}')
 
@@ -78,15 +84,20 @@ class FileBrowser(QWidget):
                 index = index.parent()
                 level += 1
 
-        logger.info(f"menu level = {level}")
+        # logger.info(f"menu level = {level}")
+        action_delete = QAction()
+        selected = self.getSelectionPath()
+        action_delete.setText(f"Delete {selected}")
+        action_delete.triggered.connect(self.onDelete)
 
         menu = QMenu()
-        if level == 0:
-            menu.addAction(self.tr("Edit person"))
-        elif level == 1:
-            menu.addAction(self.tr("Edit object/container"))
-        elif level == 2:
-            menu.addAction(self.tr("Edit object"))
+        menu.addAction(action_delete)
+        # if level == 0:
+        #     menu.addAction(self.tr("Edit person"))
+        # elif level == 1:
+        #     menu.addAction(self.tr("Edit object/container"))
+        # elif level == 2:
+        #     menu.addAction(self.tr("Edit object"))
         menu.exec_(self.treeview.viewport().mapToGlobal(position))
 
     def setRootHome(self):
@@ -504,6 +515,36 @@ class FileBrowser(QWidget):
         else:
             cfg.mw.warn(f"Nothing selected.")
 
+    def onDelete(self):
+        selection = self.getSelectionPath()
+
+        cfg.mw.tell("Delete %s?" % selection)
+        txt = "Are you sure you want to PERMANENTLY DELETE %s?" % selection
+        msgbox = QMessageBox(QMessageBox.Warning,'Confirm Delete Project',
+                             txt,
+                             buttons=QMessageBox.Cancel | QMessageBox.Yes
+                             )
+        msgbox.setIcon(QMessageBox.Critical)
+        msgbox.setMaximumWidth(350)
+        msgbox.setDefaultButton(QMessageBox.Cancel)
+        reply = msgbox.exec_()
+        if reply == QMessageBox.Cancel:
+            cfg.mw.tell('Canceling delete...')
+            return
+        if reply == QMessageBox.Ok:
+            logger.info('Attempting to delete %s...' % selection)
+
+        try:
+            run_subprocess(["rm", "-rf", selection])
+            # delete_recursive(dir=project)
+            # shutil.rmtree(project, ignore_errors=True, onerror=handleError)
+            # shutil.rmtree(project, ignore_errors=True, onerror=handleError)
+        except:
+            cfg.mw.warn('An Error Was Encountered During Deletion of the Project Directory')
+            print_exception()
+        else:
+            cfg.mw.hud.done()
+
 
     def navigateTo(self, path):
         logger.info(f'Navigating to: {path}')
@@ -555,6 +596,13 @@ class ExpandingHWidget(QWidget):
         super().__init__(parent, **kwargs)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
+
+def run_subprocess(task):
+    """Call run(), catch exceptions."""
+    try:
+        sp.Popen(task, bufsize=-1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
+    except Exception as e:
+        print("error: %s run(*%r)" % (e, task))
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
