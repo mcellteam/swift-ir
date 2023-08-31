@@ -593,11 +593,10 @@ class OpenProject(QWidget):
             logger.info('Linking to calibration grid image...')
             cal_grid_path = self._NEW_SERIES_PATHS[0]
             self._NEW_SERIES_PATHS = self._NEW_SERIES_PATHS[1:]
+            logger.info('Copying calibration grid image...')
+            shutil.copyfile(cal_grid_path, out)
 
         src = os.path.dirname(self._NEW_SERIES_PATHS[0])
-        logger.critical(f"src = {src}")
-        logger.critical(f"self._NEW_SERIES_PATHS[0] = {self._NEW_SERIES_PATHS[0]}")
-        logger.critical(f"self._NEW_SERIES_PATHS = {self._NEW_SERIES_PATHS}")
         cfg.mw.tell(f'Importing {len(self._NEW_SERIES_PATHS)} Images...')
         scales_str = self.wSeriesConfig.scales_input.text().strip()
         scale_vals = list(map(int,scales_str.split(' ')))
@@ -640,7 +639,7 @@ class OpenProject(QWidget):
         logger.info(f'Elapsed Time (linking): {dt:.3g} seconds')
 
         count = len(self._NEW_SERIES_PATHS)
-        level_keys = natural_sort(['s%d' % v for v in scale_vals])
+        level_keys = natural_sort(['s%d' % v for v in scale_vals])[::-1]
         series_name = os.path.basename(out)
         logger.critical(f"Resolution levels: {level_keys}")
 

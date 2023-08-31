@@ -845,11 +845,11 @@ def print_exception(extra=''):
 
     if 'MemoryError' in str(exi[0]):
         logger.critical('Memory Error!!')
-        cfg.main_window.memory()
-        try:
-            cfg.main_window.mem()
-        except:
-            print_exception()
+        # cfg.main_window.memory()
+        # try:
+        #     cfg.main_window.mem()
+        # except:
+        #     print_exception()
 
     txt = f"[{inspect.stack()[1].function}] [{tstamp}]\nError Type/Value : {exi[0]} {exi[1]}\n{traceback.format_exc()}{extra}"
     logger.warning(txt)

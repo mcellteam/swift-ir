@@ -1301,7 +1301,6 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def autoscaleSeries(self, src, out, opts):
-        logger.info(pprint.pformat({'src':src, 'out':out, 'opts': opts}))
         if self._working == True:
             self.warn('Another Process is Already Running')
             return
