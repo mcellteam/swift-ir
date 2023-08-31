@@ -19,7 +19,9 @@ logger = logging.getLogger(__name__)
 class FileBrowser(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.treeview = cfg.treeview = QTreeView()
+        self.treeview = QTreeView()
+        self.treeview.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.treeview.customContextMenuRequested.connect(self.openMenu)
         # self.treeview.customContextMenuRequested.connect(self._show_context_menu)
         self.treeview.setStyleSheet('border-width: 0px; color: #161c20;')
         self.treeview.expandsOnDoubleClick()
@@ -60,6 +62,28 @@ class FileBrowser(QWidget):
     #     menu.addAction(display_action1)
     #
     #     menu.exec_(self.tree_widget.mapToGlobal(position))
+
+    def openMenu(self, position):
+        logger.info('')
+        indexes = self.treeview.selectedIndexes()
+        logger.info(f"len(indexes) = {len(indexes)}")
+        if len(indexes) > 0:
+            level = 0
+            index = indexes[0]
+            while index.parent().isValid():
+                index = index.parent()
+                level += 1
+
+        logger.info(f"menu level = {level}")
+
+        menu = QMenu()
+        if level == 0:
+            menu.addAction(self.tr("Edit person"))
+        elif level == 1:
+            menu.addAction(self.tr("Edit object/container"))
+        elif level == 2:
+            menu.addAction(self.tr("Edit object"))
+        menu.exec_(self.treeview.viewport().mapToGlobal(position))
 
     def setRootHome(self):
         try:    self.treeview.setRootIndex(self.fileSystemModel.index(os.path.expanduser('~')))
@@ -338,7 +362,7 @@ class FileBrowser(QWidget):
         self.comboWidget.layout.setAlignment(Qt.AlignVCenter)
 
         self.leWidget = HWidget(self.lePath, self.bGo, self.bPlus)
-        lab = BoldLabel('Jump To:')
+        lab = BoldLabel('Folder...')
         self.wJumpTo = VWidget(lab, self.leWidget)
         # self.wJumpTo.setFixedHeight(18)
 
@@ -347,7 +371,7 @@ class FileBrowser(QWidget):
         # self.vsplitter = VSplitter(self.vw1, self.wContentRoot, self.vw2)
         # self.vsplitter = VSplitter()
 
-        vbl = VBL(self.treeview, self.vwButtons, self.comboWidget, self.wJumpTo, self.wContentRoot)
+        vbl = VBL(self.treeview, self.comboWidget, self.wJumpTo, self.vwButtons, self.wContentRoot)
         vbl.setSpacing(2)
         self.setLayout(vbl)
         self.setStyleSheet("font-size: 9px;")
