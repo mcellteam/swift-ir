@@ -10,6 +10,7 @@ import re
 import sys
 import copy
 import json
+import uuid
 import inspect
 import logging
 import hashlib
@@ -1929,6 +1930,8 @@ class DataModel:
                 'version': cfg.VERSION,
                 'created': date_time(),
                 'system': {'node': platform.node()},
+                'alignment_uuid': str(uuid.uuid4()),
+                'series_uuid': series_info['uuid']
             },
             series=series_info,
             stack=[],

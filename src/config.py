@@ -75,13 +75,6 @@ WIDTH, HEIGHT = 1200, 720
 
 '''Default Alignment Params'''
 
-DEFAULT_CONTENT_ROOT = os.path.join(os.path.expanduser('~'), 'alignem_data')
-if '.tacc.utexas.edu' in platform.node():
-    try:
-        DEFAULT_CONTENT_ROOT_TACC = os.path.join(os.getenv('SCRATCH', "SCRATCH not found"),'alignem_data')
-    except  Exception as e:
-        print(e)
-
 DEFAULT_METHOD                = 'grid_default'
 # DEFAULT_POLY_ORDER            = int(0)
 DEFAULT_NULL_BIAS             = bool(False)

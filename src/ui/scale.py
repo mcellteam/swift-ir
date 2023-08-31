@@ -88,6 +88,7 @@ class ScaleWorker(QObject):
     def run(self):
 
         print(f'\n######## Reducing Source Images ########\n')
+        logger.critical(f"src = {self.src}")
 
         # Todo This should check for source files before doing anything
         if not self.running():
@@ -181,11 +182,12 @@ class ScaleWorker(QObject):
             logger.info(f"Elapsed Time: {dt:.3g}s")
 
         out = os.path.join(self.out, 'thumbnails')
-        logger.critical(f"\n"
+        logger.info(f"Creating thumbnails...\n"
                         f"src: {self.src}\n"
                         f"out: {out}")
         thumbnailer = Thumbnailer()
-        self._timing_results['t_thumbs'] = thumbnailer.reduce_main(self.src, out)
+        # self._timing_results['t_thumbs'] = thumbnailer.reduce_main(self.src, out)
+        self._timing_results['t_thumbs'] = thumbnailer.reduce_main(self.src, self.paths, out)
 
 
         self.finished.emit()

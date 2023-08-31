@@ -32,14 +32,17 @@ class Thumbnailer:
     def __init__(self):
         self.iscale2_c = os.path.join(get_appdir(), 'lib', get_bindir(), 'iscale2')
 
-    def reduce_main(self, src, od):
+    def reduce_main(self, src, filenames, od):
         print(f'\n######## Reducing: Source Images ########\n')
         # coarsest_scale = cfg.data.smallest_scale()
-        # logger.info(f"coarsest_scale = {coarsest_scale}\n"
-        #                 f"src            = {src}\n"
-        #                 f"od             = {od}")
+
         d = os.path.dirname(od) #Needed for logging
-        dt = self.reduce(src=src, od=od, dest=d, rmdir=True, prefix='', start=0, end=None)
+        dt = -1
+        try:
+            # dt = self.reduce(src=src, od=od, dest=d, rmdir=True, prefix='', start=0, end=None)
+            dt = self.reduce(src=src, filenames=filenames, od=od, dest=d, rmdir=True, prefix='', start=0, end=None)
+        except:
+            print_exception()
         return dt
 
 
@@ -227,8 +230,23 @@ class Thumbnailer:
             logger.error(f"Directory '{src}' is empty, nothing to thumbnail...")
             return
 
+
+
+        if rmdir:
+            if os.path.exists(od):
+                try:    shutil.rmtree(od)
+                except: print_exception()
+        if not os.path.exists(od):
+            os.makedirs(od, exist_ok=True)
+
+
+        if filenames == None:
+            filenames = natural_sort(glob(os.path.join(src, '*.tif')))[start:end]
+
         try:
-            siz_x, siz_y = ImageSize(next(absFilePaths(src)))
+            sample = filenames[0]
+            logger.critical(f"sample: {sample}")
+            siz_x, siz_y = ImageSize(sample)
             # siz_x, siz_y = ImageIOSize(next(absFilePaths(src)))
             scale_factor = int(max(siz_x, siz_y) / target_size)
             if full_size:
@@ -240,15 +258,6 @@ class Thumbnailer:
             logger.error('Unable to generate thumbnail(level) - Do file(level) exist?')
             raise e
 
-        if rmdir:
-            if os.path.exists(od):
-                try:    shutil.rmtree(od)
-                except: print_exception()
-        if not os.path.exists(od):
-            os.makedirs(od, exist_ok=True)
-
-        if filenames == None:
-            filenames = natural_sort(glob(os.path.join(src, '*.tif')))[start:end]
 
         if is_tacc():
             cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(filenames)),1)

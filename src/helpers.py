@@ -122,17 +122,18 @@ def count_widgets(name_or_type) -> int:
 
 
 def sanitizeSavedPaths():
-    logger.info("Sanitizing paths...")
-    paths = cfg.settings['saved_paths']
-    n_start = len(paths)
-    sanitized = []
-    for path in paths:
-        if os.path.exists(path) and os.path.isdir(path):
-            sanitized.append(path)
-    n_end = len(sanitized)
-    if n_start != n_end:
-        logger.warning(f"{n_start - n_end} saved paths were found to be invalid and will be forgotten")
-    cfg.settings['saved_paths'] = sanitized
+    # logger.info("Sanitizing paths...")
+    # paths = cfg.settings['saved_paths']
+    # n_start = len(paths)
+    # sanitized = []
+    # for path in paths:
+    #     if os.path.exists(path) and os.path.isdir(path):
+    #         sanitized.append(path)
+    # n_end = len(sanitized)
+    # if n_start != n_end:
+    #     logger.warning(f"{n_start - n_end} saved paths were found to be invalid and will be forgotten")
+    # cfg.settings['saved_paths'] = sanitized
+    pass
 
 def delete_recursive(dir, keep_core_dirs=False):
     # chunks = glob(dir + '/img_aligned.zarr/**/*', recursive=True) + glob(dir + '/img_src.zarr/**/*', recursive=True)
@@ -181,10 +182,17 @@ def delete_recursive(dir, keep_core_dirs=False):
 def update_preferences_model():
     # caller = inspect.stack()[1].function
     logger.info(f'Updating user preferences model...')
-    cfg.settings.setdefault('locations', [])
-    cfg.settings.setdefault('series_combo_text', None)
-    cfg.settings.setdefault('alignment_combo_text', None)
-    cfg.settings.setdefault('saved_paths', [])
+    if '.tacc.utexas.edu' in platform.node():
+        DEFAULT_CONTENT_ROOT = os.path.join(os.getenv('SCRATCH', "SCRATCH not found"), 'alignem_data')
+    else:
+        DEFAULT_CONTENT_ROOT = os.path.join(os.path.expanduser('~'), 'alignem_data')
+    cfg.settings.pop('search_paths', None)
+    if 'state' in cfg.settings:
+        cfg.settings.pop('state', None)
+    if 'ui' in cfg.settings:
+        cfg.settings.pop('ui', None)
+    cfg.settings.pop('search_paths', None)
+
     cfg.settings.setdefault('neuroglancer', {})
     cfg.settings['neuroglancer'].setdefault('SHOW_UI_CONTROLS', False)
     cfg.settings['neuroglancer'].setdefault('USE_CUSTOM_BACKGROUND', False)
@@ -198,54 +206,40 @@ def update_preferences_model():
     cfg.settings['neuroglancer'].setdefault('SHOW_SWIM_WINDOW', True)
     cfg.settings['neuroglancer'].setdefault('SHOW_HUD_OVERLAY', True)
     cfg.settings['neuroglancer'].setdefault('NEUTRAL_CONTRAST_MODE', False)
-    cfg.settings.setdefault('state', {})
-    cfg.settings['state'].setdefault('manual_mode', False)
-    cfg.settings['state'].setdefault('open_project_tab', {})
-    cfg.settings['state']['open_project_tab'].setdefault('row_height', 42)
-    cfg.settings.setdefault('ui', {})
-    cfg.settings['ui'].setdefault('SHOW_CORR_SPOTS', False)
-    cfg.settings['ui'].setdefault('FETCH_PROJECT_SIZES', False)
-    cfg.settings['ui'].setdefault('DISPLAY_THUMBNAILS_IN_DIALOG', True)
+
+    cfg.settings.setdefault('locations', [])
+    cfg.settings.setdefault('alignments', [])
+
+    cfg.settings.setdefault('series_combo_text', None)
+    cfg.settings.setdefault('alignment_combo_text', None)
     cfg.settings.setdefault('notes', {})
     cfg.settings['notes'].setdefault('global_notes', '')
-    cfg.settings.setdefault('alignments', [])
-    cfg.settings.setdefault('search_paths', [])
-    if is_tacc():
-        p = cfg.DEFAULT_CONTENT_ROOT_TACC
-        cfg.settings.setdefault('content_root', p)
-        if not os.path.exists(p):
-            os.makedirs(p)
-        p = os.path.join(cfg.DEFAULT_CONTENT_ROOT,'alignments')
-        if not p in cfg.settings['search_paths']:
-            cfg.settings['search_paths'].append(p)
-        if not os.path.exists(p):
-            os.makedirs(p)
-    else:
-        p = os.path.join(cfg.DEFAULT_CONTENT_ROOT)
-        cfg.settings.setdefault('content_root', cfg.DEFAULT_CONTENT_ROOT)
-        if not os.path.exists(p):
-            os.makedirs(p)
-        p = os.path.join(cfg.DEFAULT_CONTENT_ROOT,'alignments')
-        if not p in cfg.settings['search_paths']:
-            cfg.settings['search_paths'].append(p)
-        if not os.path.exists(p):
-            os.makedirs(p)
 
-    try:
-        p = os.path.join(cfg.settings['content_root'], 'series')
-        if not os.path.exists(p):
-            logger.critical(f'Creating directory! {p}')
-            os.makedirs(p, exist_ok=True)
-    except:
-        print_exception()
+    cfg.settings.setdefault('content_root', DEFAULT_CONTENT_ROOT)
+    if not os.path.isdir(DEFAULT_CONTENT_ROOT):
+        logger.info(f"Making content root directory: {DEFAULT_CONTENT_ROOT}")
+        os.makedirs(DEFAULT_CONTENT_ROOT, exist_ok=True)
 
-    try:
-        p = os.path.join(cfg.settings['content_root'], 'alignments')
-        if not os.path.exists(p):
-            logger.critical(f'Creating directory! {p}')
-            os.makedirs(p, exist_ok=True)
-    except:
-        print_exception()
+    p = os.path.join(DEFAULT_CONTENT_ROOT, 'series')
+    cfg.settings.setdefault('series_root', p)
+    if not os.path.isdir(p):
+        logger.info(f"Making default alignments directory: {p}")
+        os.makedirs(p, exist_ok=True)
+
+    p = os.path.join(DEFAULT_CONTENT_ROOT, 'alignments')
+    cfg.settings.setdefault('alignments_root', p)
+    if not os.path.isdir(p):
+        os.makedirs(p, exist_ok=True)
+
+    cfg.settings.setdefault('series_search_paths', [os.path.join(DEFAULT_CONTENT_ROOT, 'series')])
+    cfg.settings.setdefault('alignments_search_paths', [os.path.join(DEFAULT_CONTENT_ROOT, 'alignments')])
+
+    cfg.settings.setdefault('saved_paths', [
+        os.path.join(DEFAULT_CONTENT_ROOT, 'series'),
+        os.path.join(DEFAULT_CONTENT_ROOT, 'alignments'),
+    ])
+
+
 
 
 def initialize_user_preferences():
@@ -262,7 +256,10 @@ def initialize_user_preferences():
     except:
         print_exception()
 
-    update_preferences_model()
+    try:
+        update_preferences_model()
+    except:
+        print_exception()
     '''save user preferences to file'''
     try:
         f = open(userpreferencespath, 'w')

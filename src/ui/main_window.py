@@ -8,6 +8,7 @@ import sys
 import copy
 import json
 import time
+import pprint
 import timeit
 import datetime
 from math import sqrt
@@ -397,6 +398,7 @@ class MainWindow(QMainWindow):
         if cfg.USE_DELAY:
             time.sleep(cfg.DELAY_AFTER)
 
+
     def _refresh(self):
         caller = inspect.stack()[1].function
         logger.info(f'')
@@ -404,14 +406,8 @@ class MainWindow(QMainWindow):
         if not self._working:
             self.tell('Refreshing...')
             if self._isProjectTab():
-                cfg.project_tab.refreshTab()
-                # self.updateEnabledButtons()  #0301+ #0803-
-                # self.setControlPanelData() #0803-
-                # if self.dw_snr.isVisible(): #0803-
-                #     cfg.project_tab.dSnr_plot.initSnrPlot()
+                cfg.pt.refreshTab()
             elif self._isOpenProjTab():
-                # self._getTabObject().user_projects.set_data()
-                # self.pm.showMainUI()
                 self.pm.refresh()
             elif self._getTabType() == 'WebBrowser':
                 self._getTabObject().browser.page().triggerAction(QWebEnginePage.Reload)
@@ -1210,6 +1206,7 @@ class MainWindow(QMainWindow):
         if index == None:
             index = cfg.data.zpos
         self.align(
+            dm=dm,
             align_indexes=[index],
             regen_indexes=[index],
             align=align, regenerate=regenerate
@@ -1222,7 +1219,7 @@ class MainWindow(QMainWindow):
         if dm == None:
             dm = cfg.data
         indexes = list(range(0,len(cfg.data)))
-        self.align(align_indexes=indexes, regen_indexes=indexes, reallocate_zarr=True)
+        self.align(dm=dm, align_indexes=indexes, regen_indexes=indexes, reallocate_zarr=True)
 
 
 
@@ -1304,6 +1301,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def autoscaleSeries(self, src, out, opts):
+        logger.info(pprint.pformat({'src':src, 'out':out, 'opts': opts}))
         if self._working == True:
             self.warn('Another Process is Already Running')
             return
@@ -1478,46 +1476,6 @@ class MainWindow(QMainWindow):
 
     def reset_groupbox_styles(self):
         logger.info('reset_groupbox_styles:')
-
-    # def dataUpdateResults(self):
-    #     caller = inspect.stack()[1].function
-    #     logger.critical(f'>>>> dataUpdateResults [{caller}] >>>>')
-    #
-    #     if cfg.data:
-    #         # self.results0 = QLabel('...Image Dimensions')
-    #         # self.results1 = QLabel('...# Images')
-    #         # self.results2 = QLabel('...SNR (average)')
-    #         # self.results3 = QLabel('...Worst 5 SNR')
-    #
-    #         self.results0 = QLabel()  # Image dimensions
-    #         self.results1 = QLabel()  # # of images
-    #         self.results2 = QLabel()  # SNR average
-    #
-    #         # self.fl_main_results = QFormLayout()
-    #         # self.fl_main_results.setContentsMargins(2,2,2,2)
-    #         # self.fl_main_results.setVerticalSpacing(2)
-    #         # self.fl_main_results.addRow('Source Dimensions', self.results0)
-    #         # self.fl_main_results.addRow('# Images', self.results1)
-    #         # self.fl_main_results.addRow('SNR (average)', self.results2)
-    #         # # self.fl_main_results.addRow('Lowest 10 SNR', self.results3)
-    #
-    #         siz = cfg.data.image_size()
-    #         try:
-    #             self.results0.setText("%dx%dpx" % (siz[0], siz[1]))
-    #         except:
-    #             self.results0.setText("N/A")
-    #         try:
-    #             self.results1.setText("%d" % len(cfg.data))
-    #         except:
-    #             self.results1.setText("N/A")
-    #         try:
-    #             self.results2.setText("%.2f" % cfg.data.snr_average())
-    #         except:
-    #             self.results2.setText("N/A")
-    #
-    #         # w = QWidget()
-    #         # w.setLayout(self.fl_main_results)
-    #         # self.saStats.setWidget(w)
 
 
     @staticmethod
@@ -2048,15 +2006,12 @@ class MainWindow(QMainWindow):
 
                 # data_cp.make_paths_relative(start=cfg.data.location)
                 # data_cp_json = data_cp.to_dict()
-                name = copy.deepcopy(cfg.data.location)
+                name,_ = os.path.splitext(os.path.basename(cfg.data.location))
+                path = os.path.join(cfg.data.location, name + '.swiftir')
                 if not silently:
-                    logger.info(f'Saving:\n{name}')
+                    logger.info(f'Saving:\n{path}')
 
-                if not name.endswith('.swiftir'):
-                    name += ".swiftir"
-
-                logger.critical(f"Saving as: {name}")
-                with open(name, 'w') as f:
+                with open(path, 'w') as f:
                     jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
                     # f.write(jde.encode(data_cp)) #0828-
                     f.write(jde.encode(cfg.data._data))
@@ -3369,7 +3324,7 @@ class MainWindow(QMainWindow):
             cfg.zarr_tab.viewer.bootstrap()
 
         elif self._getTabType() == 'OpenProject':
-            self.pm.loadSeriesCombo()
+            self.pm.loadCombos()
             self.pm.resetView()
             self.pm.refresh()
         
