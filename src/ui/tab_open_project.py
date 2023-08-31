@@ -651,7 +651,8 @@ class OpenProject(QWidget):
         logger.info(f'Elapsed Time (linking): {dt:.3g} seconds')
 
         count = len(self._NEW_SERIES_PATHS)
-        level_keys = natural_sort(['s%d' % v for v in scale_vals])[::-1]
+        # level_keys = natural_sort(['s%d' % v for v in scale_vals])[::-1]
+        level_keys = natural_sort(['s%d' % v for v in scale_vals])
         series_name = os.path.basename(out)
         logger.critical(f"Resolution levels: {level_keys}")
 
