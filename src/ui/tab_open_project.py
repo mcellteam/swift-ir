@@ -869,7 +869,7 @@ class OpenProject(QWidget):
     def loadCombos(self):
         '''Loading this combobox triggers the loading of the alignment and scales comboboxes'''
         caller = inspect.stack()[1].function
-        logger.critical(f'Loading series combobox...')
+        logger.critical(f'Loading comboboxes...')
         self.cmbSelectSeries.clear()
         self.cmbSelectAlignment.clear()
         # self.cmbSelectSeries.clearEditText()
@@ -878,12 +878,16 @@ class OpenProject(QWidget):
 
         search_paths = cfg.settings['series_search_paths']
         self.valid_series_list = []
-        for p in search_paths:
-            if os.path.isdir(p):
-                directories = [x[0] for x in os.walk(p)]
-                self.valid_series_list.extend(list(filter(lambda x: '.series' in os.path.basename(x), directories)))
+        for sp in search_paths:
+            if os.path.isdir(sp):
+                logger.info(f"Searching path: {sp}...")
+                # directories = [x[0] for x in os.walk(p)]
+                directories = glob(os.path.join(sp, '*.series'))
+                logger.info(f"# directories found: {len(directories)}")
+                # self.valid_series_list.extend(list(filter(lambda x: '.series' in os.path.basename(x), directories)))
+                self.valid_series_list.extend(directories)
             else:
-                logger.warning(f"Directory not found: {p}")
+                logger.warning(f"Directory not found: {sp}")
 
         self.cmbSelectSeries.addItems(self.valid_series_list)
 
@@ -938,24 +942,25 @@ class OpenProject(QWidget):
 
 
     def loadAlignmentCombo(self):
-        logger.critical("")
+        logger.info("")
         # self.cmbSelectAlignment.disconnect()
         self.cmbSelectAlignment.clear()
         # self.cmbSelectAlignment.clearEditText()
 
-        logger.critical(f"Selected series: {self._getSeriesUUID()} / {self._getSeriesName()}")
+        logger.info(f"Selected series: {self._getSeriesUUID()} / {self._getSeriesName()}")
 
         search_paths = cfg.settings['alignments_search_paths']
-        logger.critical(f"search paths: {cfg.settings['alignments_search_paths']}")
+        logger.info(f"search paths: {cfg.settings['alignments_search_paths']}")
         self.alignments_list = []
         for sp in search_paths:
             if os.path.isdir(sp):
-                logger.critical(f"Searching path: {sp}...")
-                directories = [x[0] for x in os.walk(sp)]
-                logger.critical(f"# directories found: {len(directories)}")
-                filtered_list = list(filter(lambda x: '.alignment' in os.path.basename(x), directories))
-                # logger.info(f"Filtered list:\n{pformat(filtered_list)}")
-                self.alignments_list.extend(filtered_list)
+                logger.info(f"Searching path: {sp}...")
+                # directories = [x[0] for x in os.walk(sp)]
+                directories = glob(os.path.join(sp, '*.alignment'))
+                logger.info(f"# directories found: {len(directories)}")
+                # filtered_list = list(filter(lambda x: '.alignment' in os.path.basename(x), directories))
+                # filtered_list = self.valid_series_list.extend()
+                self.alignments_list.extend(directories)
             else:
                 logger.warning(f"Directory not found: {sp}")
 
