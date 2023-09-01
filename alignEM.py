@@ -342,6 +342,9 @@ if __name__ == "__main__":
 
     os.environ["QT_DEBUG_PLUGINS"] = "1"
 
+    os.putenv("QT_QPA_PLATFORM", "offscreen")
+    os.putenv("QT_QPA_PLATFORM", "offscreen")
+
     print('Instantiating QApplication...')
     app = QApplication(sys.argv)
     print('Setting application style...')
