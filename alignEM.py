@@ -339,7 +339,8 @@ if __name__ == "__main__":
 
     print('Instantiating QApplication...')
 
-    app = QApplication(sys.argv)
+    # app = QApplication(sys.argv)
+    app = QApplication([])
     print('Setting application style...')
     app.setStyle('Fusion')
     print('Setting application font...')
