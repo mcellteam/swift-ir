@@ -52,16 +52,15 @@ class FileBrowser(QWidget):
         self.path_work = os.getenv('WORK', "WORK not found")
         self.path_special = '/Volumes/3dem_data'
 
-        self.treeview.setColumnWidth(0, 400)
         self.initUI()
         self.treeview.selectionModel().selectionChanged.connect(self.selectionChanged)
-
-        self.treeview.setColumnWidth(0,150)
+        self.treeview.setColumnWidth(0,110)
         self.treeview.setColumnWidth(1,50)
         self.treeview.setColumnWidth(2,50)
+        self.treeview.setColumnWidth(3,70)
 
         # sanitizeSavedPaths()
-        self.loadPathCombo()
+        self.loadCombobox()
 
     def navigateUp(self):
         logger.info('')
@@ -104,14 +103,36 @@ class FileBrowser(QWidget):
                 index = index.parent()
                 level += 1
 
-        # logger.info(f"menu level = {level}")
-        action_delete = QAction()
         selected = self.getSelectionPath()
-        action_delete.setText(f"Delete {selected}")
-        action_delete.triggered.connect(self.onDelete)
 
         menu = QMenu()
-        menu.addAction(action_delete)
+
+        action = QAction()
+        action.setText(f"Save {selected} to My Locations")
+        def fn():
+            if selected not in cfg.settings['saved_paths']:
+                cfg.settings['saved_paths'].append(selected)
+
+        action.triggered.connect(fn)
+        menu.addAction(action)
+
+        fn,ext = os.path.splitext(selected)
+        if ext == '.alignment':
+            action = QAction()
+            action.setText(f"Open Alignment {selected}")
+            action.triggered.connect(lambda: cfg.pm.openAlignment(selected))
+            menu.addAction(action)
+
+        if ext in ('.alignment', '.series'):
+            action = QAction()
+            action.setText(f"Delete {selected}")
+            action.triggered.connect(self.onDelete)
+            menu.addAction(action)
+
+
+
+
+
         # if level == 0:
         #     menu.addAction(self.tr("Edit person"))
         # elif level == 1:
@@ -119,6 +140,7 @@ class FileBrowser(QWidget):
         # elif level == 2:
         #     menu.addAction(self.tr("Edit object"))
         menu.exec_(self.treeview.viewport().mapToGlobal(position))
+
 
     def setRootHome(self):
         self._root = os.path.expanduser('~')
@@ -215,9 +237,6 @@ class FileBrowser(QWidget):
             b.setFixedSize(QSize(16, 16))
             b.setIconSize(QSize(12, 12))
             b.setStyleSheet('font-size: 9px;')
-
-
-
 
 
         self.wNavButtons = HWidget(self.bNavigateUp, self.bNavigateDown, self.bSetRootRoot, self.bSetRootHome)
@@ -323,8 +342,12 @@ class FileBrowser(QWidget):
         self.lePath.setPlaceholderText('<path>')
         self.lePath.returnPressed.connect(lambda: self.navigateTo(self.lePath.text()))
         self.lePath.textChanged.connect(self.onPathChanged)
-        self.bGo = QPushButton('Go')
-        self.bGo.setFixedSize(QSize(24, 16))
+
+        # self.bGo = QPushButton('Go')
+        self.bGo = QPushButton()
+        self.bGo.setIcon(qta.icon('mdi.arrow-right', color='#161c20'))
+        self.bGo.setFixedSize(QSize(16, 16))
+        self.bGo.setIconSize(QSize(12, 12))
         def fn_bGo():
             logger.info('')
             cur = self.lePath.text()
@@ -431,10 +454,11 @@ class FileBrowser(QWidget):
         self.wContentRoot.hide()
 
         lab = BoldLabel('My Locations:')
-        self.comboWidget = VWidget(lab, HWidget(self.combobox, self.bMinus))
+        self.comboWidget = VWidget(lab, HWidget(self.combobox, self.bPlus, self.bMinus, ))
         self.comboWidget.layout.setAlignment(Qt.AlignVCenter)
 
-        self.leWidget = HWidget(self.lePath, self.bGo, self.bPlus)
+        # self.leWidget = HWidget(self.lePath, self.bGo, self.bPlus)
+        self.leWidget = HWidget(self.lePath, self.bGo)
         lab = BoldLabel('Folder...')
         self.wJumpTo = VWidget(lab, self.leWidget)
         # self.wJumpTo.setFixedHeight(18)
@@ -520,7 +544,7 @@ class FileBrowser(QWidget):
         self.bPlus.setEnabled((self.getSelectionPath() not in cfg.settings['saved_paths']) and os.path.isdir(requested))
 
 
-    def loadPathCombo(self):
+    def loadCombobox(self):
 
         self.combobox.clear()
 
@@ -544,7 +568,7 @@ class FileBrowser(QWidget):
             except:
                 logger.warning(f"Nothing to remove!")
             cfg.mw.saveUserPreferences(silent=True)
-            self.loadPathCombo()
+            self.loadCombobox()
 
     def onPlus(self):
         requested = self.lePath.text()
@@ -558,7 +582,7 @@ class FileBrowser(QWidget):
             else:
                 cfg.mw.warn(f"Path is not a directory! {requested}")
             cfg.mw.saveUserPreferences(silent=True)
-            self.loadPathCombo()
+            self.loadCombobox()
         else:
             cfg.mw.warn(f"Nothing selected.")
 

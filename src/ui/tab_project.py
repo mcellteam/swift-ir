@@ -151,6 +151,7 @@ class ProjectTab(QWidget):
         logger.info('')
         index = self.wTabs.currentIndex()
         self.datamodel['state']['blink'] = False
+        # self.matchPlayTimer.stop()
         if index == 0:
             self.shutdownNeuroglancer()
             self.initNeuroglancer()

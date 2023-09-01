@@ -426,11 +426,8 @@ class OpenProject(QWidget):
         self._hsplitter = QSplitter()
         self._hsplitter.addWidget(self.wProjects)
         self._hsplitter.addWidget(self.userFilesWidget)
-        # self._hsplitter.addWidget(HWidget(self.lMovie))
-        # self._hsplitter.addWidget()
-
-        # self._hsplitter.setSizes([int(cfg.WIDTH * (4/5)), int(200 * (1/5))])
-        self._hsplitter.setStretchFactor(0,2)
+        self._hsplitter.setSizes([int(cfg.WIDTH * (4/5)), int(200 * (1/5))])
+        self._hsplitter.setStretchFactor(0,1)
         self._hsplitter.setStretchFactor(1,1)
 
         self.vbl_main = VBL()
