@@ -142,7 +142,9 @@ class CustomFormatter(logging.Formatter):
 
 
 def main():
+
     logger = logging.getLogger()
+    logger.info('')
     # logger = logging.getLogger(__name__)
     # logging.propagate = False  # stops message propogation to the root handler
     # fh = logging.FileHandler('messages.log')
