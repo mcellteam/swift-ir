@@ -864,7 +864,6 @@ class OpenProject(QWidget):
         else:
             cfg.mw.warn(f"Series not found: {path}")
         time.sleep(2)
-        self.loadCombos()
 
 
     def loadCombos(self):
@@ -904,7 +903,7 @@ class OpenProject(QWidget):
             self.loadAlignmentCombo()
             self.loadLevelsCombo()
             self.update()
-            logger.info('<<')
+        logger.info('<<')
 
     def onSelectSeriesCombo(self):
         caller = inspect.stack()[1].function

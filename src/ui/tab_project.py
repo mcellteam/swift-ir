@@ -201,7 +201,7 @@ class ProjectTab(QWidget):
             logger.critical(f"[DEV][{caller_name()}] Initializing Neuroglancer...")
 
         if cfg.mw._isOpenProjTab():
-            cfg.mw.pm.loadCombos()
+            # cfg.mw.pm.loadCombos()
             cfg.mw.pm.viewer = cfg.pmViewer = PMViewer(webengine=cfg.mw.pm.webengine)
             if cfg.mw.pm.cmbSelectSeries.count() > 0:
                 cfg.mw.pm.viewer.initViewer()
