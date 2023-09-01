@@ -221,7 +221,7 @@ class OpenProject(QWidget):
         self.webengine = WebEngine(ID='pmViewer')
         logger.info('C')
         self.webengine.setFocusPolicy(Qt.StrongFocus)
-        setWebengineProperties(self.webengine)
+        # setWebengineProperties(self.webengine)
         logger.info('D')
         self.webengine.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.webengine.setMinimumWidth(200)
