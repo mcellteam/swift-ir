@@ -767,7 +767,8 @@ class OpenProject(QWidget):
 
 
     def refresh(self):
-        logger.info('')
+        caller = inspect.stack()[1].function
+        logger.info(f"[{caller}]")
         self.resetView() #0830+
         self.loadCombos()
         self.initPMviewer()
@@ -784,6 +785,7 @@ class OpenProject(QWidget):
         else:
             self.viewer.initViewer(path_l=None, path_r=None)
             # self.viewer.initZoom(w=w, h=h)
+        logger.info('<<')
 
 
 
