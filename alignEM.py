@@ -43,20 +43,25 @@ import signal, logging, argparse
 import faulthandler
 from concurrent.futures import ThreadPoolExecutor
 
+print('Importing QtWebEngineWidgets...')
 from qtpy.QtWebEngineWidgets import *
+
+print('Importing QtCore, QtGui, QtWidgets...')
 from qtpy import QtCore
 from qtpy.QtCore import QCoreApplication, Qt
 from qtpy.QtGui import QFont
 from qtpy.QtWidgets import QApplication
 
 # import tensorstore as ts
-
+print('Importing helpers...')
 from src.ui.main_window import MainWindow
 from src.helpers import check_for_binaries, configure_project_paths, initialize_user_preferences, \
     is_tacc, print_exception, register_login, convert_projects_model, addLoggingLevel, is_joel, \
     update_preferences_model
 import src.config as cfg
 from qtconsole import __version__ as qcv
+
+print('Setting global application...')
 
 global app
 
