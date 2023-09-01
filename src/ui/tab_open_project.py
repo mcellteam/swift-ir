@@ -212,19 +212,21 @@ class OpenProject(QWidget):
         # self.w_cmbSelectAlignment.setStyleSheet("color: #f3f6fb; border: 1px solid #f3f6fb;")
         self.w_cmbSelectAlignment.setStyleSheet("background-color: rgba(0,0,0,.5); padding: 2px; color: #f3f6fb;")
 
-        logger.info('B')
+
 
         self.wCombos = HWidget(self.w_cmbSelectSeries, QLabel('        '), self.w_cmbSelectAlignment)
         self.wCombos.setAutoFillBackground(False)
 
+        logger.info('B')
         self.webengine = WebEngine(ID='pmViewer')
+        logger.info('C')
         self.webengine.setFocusPolicy(Qt.StrongFocus)
         setWebengineProperties(self.webengine)
         self.webengine.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.webengine.setMinimumWidth(200)
         self.webengine.setMinimumHeight(200)
 
-        logger.info('C')
+
 
         # self.labTitle = QLabel("Series Manager")
         # self.labTitle.setFixedWidth(96)
