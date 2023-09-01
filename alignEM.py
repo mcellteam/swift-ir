@@ -302,11 +302,13 @@ def main():
 
 
 if __name__ == "__main__":
+    print('__main__:')
     # app = QApplication(sys.argv)
     # app.setStyle('Fusion')
     # font = QFont("Tahoma")
     # app.setFont(font)
     # os.environ['PYQTGRAPH_QT_LIB'] = args.api #do not set!
+    print('Configuring environment variables...')
 
     os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt5'
     os.environ["BLOSC_NTHREADS"] = "1"
@@ -335,10 +337,13 @@ if __name__ == "__main__":
 
     # os.environ["QT_DEBUG_PLUGINS"] = "1"
 
+    print('Instantiating QApplication...')
+
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
     font = QFont("Tahoma")
     app.setFont(font)
+    print('Entering main...')
     main()
     # sys.exit(app.exec())
 
