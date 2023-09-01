@@ -53,13 +53,18 @@ from qtpy.QtGui import QFont
 from qtpy.QtWidgets import QApplication
 
 # import tensorstore as ts
-print('Importing helpers...')
+print('Importing main window...')
 from src.ui.main_window import MainWindow
+
+print('Importing helpers...')
 from src.helpers import check_for_binaries, configure_project_paths, initialize_user_preferences, \
     is_tacc, print_exception, register_login, convert_projects_model, addLoggingLevel, is_joel, \
     update_preferences_model
+
+print('Importing configuration...')
+print('Importing configuration...')
 import src.config as cfg
-from qtconsole import __version__ as qcv
+# from qtconsole import __version__ as qcv
 
 print('Setting global application...')
 
@@ -161,7 +166,7 @@ def main():
     logging.getLogger('init').versioncheck('QtCore.__version__    : %s' % QtCore.__version__)
     logging.getLogger('init').versioncheck('qtpy.PYQT_VERSION     : %s' % qtpy.PYQT_VERSION)
     logging.getLogger('init').versioncheck('qtpy.PYSIDE_VERSION   : %s' % qtpy.PYSIDE_VERSION)
-    logging.getLogger('init').versioncheck('Jupyter QtConsole     : %s' % qcv)
+    # logging.getLogger('init').versioncheck('Jupyter QtConsole     : %s' % qcv)
 
     check_for_binaries()
 
