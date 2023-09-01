@@ -309,33 +309,29 @@ if __name__ == "__main__":
     # app.setFont(font)
     # os.environ['PYQTGRAPH_QT_LIB'] = args.api #do not set!
     print('Configuring environment variables...')
-    #
-    # os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt5'
-    # os.environ["BLOSC_NTHREADS"] = "1"
-    # os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
-    # # logger.info('Setting OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES')
-    # # logger.info('Setting QTWEBENGINE_CHROMIUM_FLAGS')
-    # os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
-    # # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
-    #
-    # # ***************
-    # # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--no-sandbox -disable-web-security --enable-logging'
-    # # ***************
-    #
-    # # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--enable-logging --log-level=3' # suppress JS warnings
-    # # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=0'
-    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --no-sandbox --num-raster-threads=%s ' \
-    #                                            '--enable-logging --log-level=3' % \
-    #                                            cfg.QTWEBENGINE_RASTER_THREADS
-    # os.environ['OPENBLAS_NUM_THREADS'] = '1'
-    # # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
-    # os.environ['LIBTIFF_STRILE_ARRAY_MAX_RESIZE_COUNT'] = '1000000000'
-    #
-    # # PYTHONHASHSEED must be "random" or an integer in range [0; 4294967295]
-    # # os.environ['PYTHONHASHSEED'] = '98247985'
-    # # os.environ['PYTHONHASHSEED'] = '0'
-    #
-    # os.environ["QT_DEBUG_PLUGINS"] = "1"
+
+    os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt5'
+    os.environ["BLOSC_NTHREADS"] = "1"
+    os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
+    # logger.info('Setting OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES')
+    # logger.info('Setting QTWEBENGINE_CHROMIUM_FLAGS')
+    os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
+    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
+
+    # ***************
+    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--no-sandbox -disable-web-security --enable-logging'
+    # ***************
+
+    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--enable-logging --log-level=3' # suppress JS warnings
+    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=0'
+    os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --no-sandbox --num-raster-threads=%s ' \
+                                               '--enable-logging --log-level=3' % \
+                                               cfg.QTWEBENGINE_RASTER_THREADS
+    os.environ['OPENBLAS_NUM_THREADS'] = '1'
+    # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
+    os.environ['LIBTIFF_STRILE_ARRAY_MAX_RESIZE_COUNT'] = '1000000000'
+
+    os.environ["QT_DEBUG_PLUGINS"] = "1"
 
     print('Instantiating QApplication...')
     app = QApplication(sys.argv)
