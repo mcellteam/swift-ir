@@ -7,10 +7,11 @@ import imagecodecs
 # import libtiff
 # import zarr
 import numpy as np
-try:     from src.helpers import get_img_filenames
-except:  from helpers import get_img_filenames
-try:     import src.config as cfg
-except:  import config as cfg
+
+try:
+    import src.config as cfg
+except:
+    import config as cfg
 
 __all__ = [
     'ImageSize',

@@ -6,7 +6,7 @@ import logging
 import subprocess as sp
 
 try:
-    from helpers import get_bindir
+    from src.helpers import get_bindir
 except ImportError:
     from src.helpers import get_bindir
 
