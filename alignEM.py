@@ -31,7 +31,7 @@ For more information, please refer to [http://unlicense.org]
 
 import sys, getpass
 
-if not getpass.getuser() in ('joelyancey', 'joely', 'tmbartol', 'tbartol', 'bartol'):
+if not getpass.getuser() in ('joelyancey', 'joely', 'jyancey', 'tmbartol', 'tbartol', 'bartol'):
     print("Please do not use this version of AlignEM-SWiFT yet, thank you. Bye!")
     sys.exit()
 
