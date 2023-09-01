@@ -36,7 +36,16 @@ if not getpass.getuser() in ('joelyancey', 'joely', 'jyancey', 'tmbartol', 'tbar
     sys.exit()
 
 print('(Hang tight. The application will launch shortly...)')
+
+
 import os
+
+import PyQt5
+dirname = os.path.dirname(PyQt5.__file__)
+plugin_path = os.path.join(dirname,'plugins','platforms')
+print(f'Qt plugin path: {plugin_path}')
+os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = plugin_path
+
 import subprocess as sp
 import qtpy
 import signal, logging, argparse
