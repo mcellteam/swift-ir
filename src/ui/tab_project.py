@@ -74,7 +74,7 @@ class ProjectTab(QWidget):
         self.webengine.setStyleSheet("background-color: #000000;")
         self.webengine.setFocusPolicy(Qt.NoFocus)
         self.webengine.loadFinished.connect(lambda: print('Web engine load finished!'))
-        setWebengineProperties(self.webengine)
+        # setWebengineProperties(self.webengine)
         # self.webengine.setStyleSheet('background-color: #222222;')
         self.webengine.setMouseTracking(True)
         self.focusedViewer = None
@@ -353,7 +353,7 @@ class ProjectTab(QWidget):
         self.editorWebengine.page().setBackgroundColor(Qt.transparent) #0726+
         self.editorWebengine.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        setWebengineProperties(self.editorWebengine)
+        # setWebengineProperties(self.editorWebengine)
         self.editorWebengine.setMouseTracking(True)
         # self.editorWebengine.setFocusPolicy(Qt.NoFocus) #0726-
 
