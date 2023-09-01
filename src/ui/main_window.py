@@ -3987,9 +3987,9 @@ class MainWindow(QMainWindow):
         # self.googleAction.triggered.connect(self.tab_google)
         # helpMenu.addAction(self.googleAction)
 
-        action = QAction('PyQtGraph Examples', self)
-        action.triggered.connect(self.pyqtgraph_examples)
-        helpMenu.addAction(action)
+        # action = QAction('PyQtGraph Examples', self)
+        # action.triggered.connect(self.pyqtgraph_examples)
+        # helpMenu.addAction(action)
 
         action = QAction('Google', self)
         action.triggered.connect(self.tab_google)
