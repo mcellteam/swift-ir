@@ -2041,11 +2041,12 @@ class WebEngine(QWebEngineView):
         self.grabGesture(Qt.PinchGesture, Qt.DontStartGestureOnChildren)
 
 def setWebengineProperties(webengine):
-    webengine.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
-    webengine.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
+    # webengine.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
+    # webengine.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
     # webengine.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
     # webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
     # webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
+    pass
 
 
 class HoverButton(QPushButton):
