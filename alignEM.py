@@ -335,12 +335,10 @@ if __name__ == "__main__":
     # os.environ['PYTHONHASHSEED'] = '98247985'
     # os.environ['PYTHONHASHSEED'] = '0'
 
-    # os.environ["QT_DEBUG_PLUGINS"] = "1"
+    os.environ["QT_DEBUG_PLUGINS"] = "1"
 
     print('Instantiating QApplication...')
-
-    # app = QApplication(sys.argv)
-    app = QApplication([])
+    app = QApplication(sys.argv)
     print('Setting application style...')
     app.setStyle('Fusion')
     print('Setting application font...')
