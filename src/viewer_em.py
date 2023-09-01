@@ -778,6 +778,7 @@ class PMViewer(AbstractEMViewer):
 
 
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
+        logger.info('<<')
 
 
 
