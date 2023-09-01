@@ -222,9 +222,11 @@ class OpenProject(QWidget):
         logger.info('C')
         self.webengine.setFocusPolicy(Qt.StrongFocus)
         setWebengineProperties(self.webengine)
+        logger.info('D')
         self.webengine.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.webengine.setMinimumWidth(200)
         self.webengine.setMinimumHeight(200)
+        logger.info('E')
 
 
 
