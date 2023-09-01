@@ -896,6 +896,7 @@ class OpenProject(QWidget):
         self.loadAlignmentCombo()
         self.loadLevelsCombo()
         self.update()
+        logger.info('<<')
 
     def onSelectSeriesCombo(self):
         caller = inspect.stack()[1].function
@@ -928,6 +929,7 @@ class OpenProject(QWidget):
             if scales:
                 self.cmbLevel.addItems(scales)
                 self.cmbLevel.setCurrentIndex(self.cmbLevel.count() - 1)
+        logger.info('<<')
 
     def onComboLevel(self):
         caller = inspect.stack()[1].function
