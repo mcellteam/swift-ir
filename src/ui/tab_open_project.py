@@ -890,29 +890,28 @@ class OpenProject(QWidget):
             else:
                 logger.warning(f"Directory not found: {sp}")
 
-        self.cmbSelectSeries.addItems(self.valid_series_list)
+        if self.valid_series_list:
+            self.cmbSelectSeries.addItems(self.valid_series_list)
 
-        logger.info(f"Found Series: {pformat(self.valid_series_list)}")
+            logger.info(f"Found Series: {pformat(self.valid_series_list)}")
 
-        if cfg.settings['series_combo_text']:
-            recent = os.path.basename(cfg.settings['series_combo_text'])
-            if recent in self.valid_series_list:
-                self.cmbSelectSeries.setCurrentText(recent)
-        if self.cmbSelectSeries.currentText():
-            cfg.settings['series_combo_text'] = self.cmbSelectSeries.currentText()
-        self.loadAlignmentCombo()
-        self.loadLevelsCombo()
-        self.update()
-        logger.info('<<')
+            if cfg.settings['series_combo_text']:
+                recent = os.path.basename(cfg.settings['series_combo_text'])
+                if recent in self.valid_series_list:
+                    self.cmbSelectSeries.setCurrentText(recent)
+            if self.cmbSelectSeries.currentText():
+                cfg.settings['series_combo_text'] = self.cmbSelectSeries.currentText()
+            self.loadAlignmentCombo()
+            self.loadLevelsCombo()
+            self.update()
+            logger.info('<<')
 
     def onSelectSeriesCombo(self):
         caller = inspect.stack()[1].function
         if caller == 'main':
-            logger.critical(f"caller: {caller}")
-            self.resetView()
-            cfg.settings['series_combo_text'] = self.cmbSelectSeries.currentText()
-
             if self.cmbSelectSeries.currentText():
+                self.resetView()
+                cfg.settings['series_combo_text'] = self.cmbSelectSeries.currentText()
                 try:
                     self.loadLevelsCombo() #Important load the scale levels combo before initializing viewers
                 except:
