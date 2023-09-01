@@ -707,6 +707,7 @@ class PMViewer(AbstractEMViewer):
         #     print_exception()
 
         if self.path_l:
+            logger.info(f'Initializing Local Volume: {path_l}')
             try:
                 self.tensor = get_zarr_tensor(path_l).result()
                 self.LV_l = ng.LocalVolume(
@@ -724,6 +725,7 @@ class PMViewer(AbstractEMViewer):
                 print_exception()
 
         if self.path_r:
+            logger.info(f'Initializing Local Volume: {path_r}')
             try:
                 self.tensor_r = get_zarr_tensor(path_r).result()
                 self.LV_r = ng.LocalVolume(
@@ -739,6 +741,8 @@ class PMViewer(AbstractEMViewer):
                 )
             except:
                 print_exception()
+
+        logger.info('Adding layers...')
 
         with self.txn() as s:
             s.layout.type = 'yz'
@@ -761,7 +765,7 @@ class PMViewer(AbstractEMViewer):
                 ng.LayerGroupViewer(layout='yz', layers=['layer1'],),
             ])
 
-
+        logger.info('Configuring layers...')
         with self.config_state.txn() as s:
             # s.status_messages['message'] = ''
             s.show_ui_controls = False
@@ -775,8 +779,7 @@ class PMViewer(AbstractEMViewer):
             #     if hasattr(self, 'LV_r'):
             #         s.status_messages['msg1'] = f'alignment : {path_r}'
 
-
-
+        logger.info('Setting URL...')
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
         logger.info('<<')
 
