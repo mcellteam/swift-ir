@@ -2,7 +2,7 @@
 import copy, time
 import os, struct, logging, inspect
 from dataclasses import dataclass
-import imageio.v3 as iio
+# import imageio.v3 as iio
 import imagecodecs
 import libtiff
 import zarr
@@ -66,27 +66,27 @@ def convert_zarr2(task):
         print(e)
         return 1
 
-def imageio_read_image(img_path:str):
-    '''
-    Load A Single Image Into a Numpy Array
-    :param image_path: Path to image on disk.
-    :cur_method image_path: str
-    :return: The image as a numpy array.
-    :rtype: numpy.ndarray
-    '''
-    return iio.imread(img_path)
+# def imageio_read_image(img_path:str):
+#     '''
+#     Load A Single Image Into a Numpy Array
+#     :param image_path: Path to image on disk.
+#     :cur_method image_path: str
+#     :return: The image as a numpy array.
+#     :rtype: numpy.ndarray
+#     '''
+#     return iio.imread(img_path)
 
-def ImageIOSize(path):
-    '''
-    Returns the size in pixels of the source images
-    :return width: Width of the source images.
-    :rtype width: int
-    :return height: Height of the source images.
-    :rtype height: int
-    '''
-    width, height = imageio_read_image(path).shape
-    #Todo finish this function
-    return width, height
+# def ImageIOSize(path):
+#     '''
+#     Returns the size in pixels of the source images
+#     :return width: Width of the source images.
+#     :rtype width: int
+#     :return height: Height of the source images.
+#     :rtype height: int
+#     '''
+#     width, height = imageio_read_image(path).shape
+#     #Todo finish this function
+#     return width, height
 
 
 def ImageSize(file_path):

@@ -16,7 +16,7 @@ from multiprocessing.pool import ThreadPool
 import subprocess as sp
 import tqdm
 import src.config as cfg
-from src.funcs_image import ImageSize, ImageIOSize
+from src.funcs_image import ImageSize
 from src.helpers import print_exception, get_appdir, get_bindir, natural_sort, absFilePaths, is_tacc
 
 __all__ = ['Thumbnailer']
