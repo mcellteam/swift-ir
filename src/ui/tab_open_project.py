@@ -912,20 +912,21 @@ class OpenProject(QWidget):
             self.resetView()
             cfg.settings['series_combo_text'] = self.cmbSelectSeries.currentText()
 
-            try:
-                self.loadLevelsCombo() #Important load the scale levels combo before initializing viewers
-            except:
-                print_exception()
-            self.loadAlignmentCombo()
-
-            w, h = int(self.webengine.width() / 2), self.webengine.height()
             if self.cmbSelectSeries.currentText():
-                self.viewer = cfg.pmViewer = PMViewer(webengine=self.webengine)
-                path_l, path_r = self.get_pmviewer_paths()
-                self.viewer.initViewer(path_l=path_l, path_r=path_r)
-                # self.viewer.initZoom(w=w, h=h)
-            self.webengine.setFocus()
-            logger.critical(f"Selected series: {self._getSeriesUUID()} / {self._getSeriesName()}")
+                try:
+                    self.loadLevelsCombo() #Important load the scale levels combo before initializing viewers
+                except:
+                    print_exception()
+
+                self.loadAlignmentCombo()
+
+                w, h = int(self.webengine.width() / 2), self.webengine.height()
+                if self.cmbSelectSeries.currentText():
+                    self.viewer = cfg.pmViewer = PMViewer(webengine=self.webengine)
+                    path_l, path_r = self.get_pmviewer_paths()
+                    self.viewer.initViewer(path_l=path_l, path_r=path_r)
+                    # self.viewer.initZoom(w=w, h=h)
+                self.webengine.setFocus()
 
     def loadLevelsCombo(self):
         logger.critical('')
