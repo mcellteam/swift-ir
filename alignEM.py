@@ -340,9 +340,9 @@ if __name__ == "__main__":
     # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
     os.environ['LIBTIFF_STRILE_ARRAY_MAX_RESIZE_COUNT'] = '1000000000'
 
-    os.environ["QT_DEBUG_PLUGINS"] = "1"
+    # os.environ["QT_DEBUG_PLUGINS"] = "1"
 
-    os.putenv("QT_QPA_PLATFORM", "offscreen")
+    # os.putenv("QT_QPA_PLATFORM", "offscreen")
 
     print('Instantiating QApplication...')
     app = QApplication(sys.argv)
