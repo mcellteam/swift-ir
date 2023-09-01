@@ -4361,6 +4361,7 @@ class MainWindow(QMainWindow):
 
         self.dw_matches = DockWidget('Matches & Match Signals', self)
         self.dw_matches.visibilityChanged.connect(self.callbackDwVisibilityChanged)
+        self.dw_matches.visibilityChanged.connect(lambda: cfg.pt.matchPlayTimer.stop())
         self.dw_matches.setFeatures(QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetClosable)
         self.dw_matches.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea)
         self.dw_matches.setObjectName('Dock Widget Thumbnails')
@@ -4935,7 +4936,7 @@ class MainWindow(QMainWindow):
                         btn.setFixedSize(QSize(78, 16))
                         btn.setStyleSheet("font-size: 9px;")
                         btn.setIconSize(QSize(12, 12))
-                        btn.setIcon(qta.icon('fa.arrow-right', color='#161c20'))
+                        btn.setIcon(qta.icon('fa.arrow-right', color='#ede9e8'))
                         # self.lowestX_btns[i].clicked.connect(funcs[i])
                         btn.clicked.connect(lambda state, x=zpos: self.jump_to_index(x))
                     except:
