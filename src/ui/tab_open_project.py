@@ -182,6 +182,8 @@ class OpenProject(QWidget):
         self.bOpenAlignment.setIcon(qta.icon('fa.folder-open', color='#f3f6fb'))
         self.bOpenAlignment.clicked.connect(self.onOpenAlignment)
 
+        logger.info('A')
+
         self.l0 = QLabel('Series: ')
         self.l0.setFixedHeight(18)
         self.l0.setFixedWidth(58)
@@ -210,6 +212,8 @@ class OpenProject(QWidget):
         # self.w_cmbSelectAlignment.setStyleSheet("color: #f3f6fb; border: 1px solid #f3f6fb;")
         self.w_cmbSelectAlignment.setStyleSheet("background-color: rgba(0,0,0,.5); padding: 2px; color: #f3f6fb;")
 
+        logger.info('B')
+
         self.wCombos = HWidget(self.w_cmbSelectSeries, QLabel('        '), self.w_cmbSelectAlignment)
         self.wCombos.setAutoFillBackground(False)
 
@@ -219,6 +223,8 @@ class OpenProject(QWidget):
         self.webengine.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.webengine.setMinimumWidth(200)
         self.webengine.setMinimumHeight(200)
+
+        logger.info('C')
 
         # self.labTitle = QLabel("Series Manager")
         # self.labTitle.setFixedWidth(96)
@@ -279,7 +285,7 @@ class OpenProject(QWidget):
         self.wNameAlignment.setStyleSheet("font-size: 10px; background-color: rgba(0,0,0,.5); color: #f3f6fb; border-color: #f3f6fb;")
         self.wNameAlignment.hide()
 
-        logger.info('A')
+
         '''Step 1/3'''
         logger.info('Creating name_dialog...')
         self.name_dialog = QFileDialog()
@@ -364,7 +370,7 @@ class OpenProject(QWidget):
             self._NEW_SERIES_PATHS = []
         self.bCancel.clicked.connect(fn)
 
-        logger.info('B')
+
 
         # self.bConfirmImport = QPushButton("Import")
         self.bConfirmImport = QPushButton("Create")
@@ -415,8 +421,6 @@ class OpenProject(QWidget):
         self.glMain.addWidget(self.webengine, 0, 0, 4, 3)
         self.glMain.addWidget(self.wTop, 0, 0, 1, 3)
         self.glMain.setRowStretch(1,9)
-
-        logger.info('C')
 
         self._wProjects = QWidget()
         self._wProjects.setContentsMargins(0,0,0,0)
