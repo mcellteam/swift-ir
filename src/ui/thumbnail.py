@@ -15,7 +15,7 @@ from qtpy.QtCore import Qt, QRect, QRectF, QSize, QPoint, QEvent, QPointF, QSize
 from qtpy.QtGui import QPixmap, QPainter, QColor, QBrush, QFont, QPen, QMouseEvent, QImage
 from src.helpers import absFilePaths
 from src.helpers import print_exception, get_appdir, caller_name
-from src.funcs_image import ImageSize, ImageIOSize
+from src.funcs_image import ImageSize
 
 import src.config as cfg
 

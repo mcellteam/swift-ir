@@ -34,7 +34,7 @@ from qtpy.QtWidgets import QApplication
 from src.funcs_image import SetStackCafm
 from src.helpers import print_exception, exist_aligned_zarr, get_scales_with_generated_alignments, getOpt, \
     caller_name
-from src.funcs_image import ComputeBoundingRect, ImageSize, ImageIOSize
+from src.funcs_image import ComputeBoundingRect, ImageSize
 try:
     import src.config as cfg
 except:

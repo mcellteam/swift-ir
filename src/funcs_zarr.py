@@ -24,7 +24,6 @@ numcodecs.blosc.use_threads = False
 # import imagecodecs
 # import dask.array as da
 import src.config as cfg
-from src.funcs_image import imageio_read_image
 from src.helpers import get_scale_val, time_limit, print_exception, get_scales_with_generated_alignments
 
 '''
@@ -35,7 +34,7 @@ PaLM by addressing the problem of managing previewmodel parameters (checkpoints)
 https://www.reddit.com/r/worldTechnology/comments/xuw7kk/tensorstore_for_highperformance_scalable_array/
 '''
 
-__all__ = ['preallocate_zarr', 'tiffs2MultiTiff', 'write_metadata_zarr_multiscale']
+__all__ = ['preallocate_zarr', 'write_metadata_zarr_multiscale']
 
 logger = logging.getLogger(__name__)
 
@@ -157,37 +156,24 @@ def get_zarr_tensor_layer(zarr_path:str, layer:int):
     return slice
 
 
-def loadTiffsMp(directory:str):
-    '''
-    :param directory: Directory containing TIF images.
-    :cur_method directory: str
-    :return: image_arrays
-    :rtype: list[numpy.ndarray]
-    '''
-    tifs = glob(os.path.join(directory, '*.tif'))
-    cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2,1)
-    pool = mp.Pool(processes=cpus)
-    start = time.time()
-    image_arrays = pool.map(imageio_read_image, tifs)
-    dt = time.time() - start
-    logger.critical('Writing the Multipage Tiff Took %g Seconds' % dt)
+# def loadTiffsMp(directory:str):
+#     '''
+#     :param directory: Directory containing TIF images.
+#     :cur_method directory: str
+#     :return: image_arrays
+#     :rtype: list[numpy.ndarray]
+#     '''
+#     tifs = glob(os.path.join(directory, '*.tif'))
+#     cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2,1)
+#     pool = mp.Pool(processes=cpus)
+#     start = time.time()
+#     image_arrays = pool.map(imageio_read_image, tifs)
+#     dt = time.time() - start
+#     logger.critical('Writing the Multipage Tiff Took %g Seconds' % dt)
+#
+#     return image_arrays
 
-    return image_arrays
 
-
-# def tiffs2MultiTiff(directory:str, out:str, n_frames:int, width:int, height:int):
-def tiffs2MultiTiff(directory:str, out:str):
-    # tifs = list(pathlib.Path(directory).glob('*.tif'))
-    image_arrays = loadTiffsMp(directory=directory) # image_arrays is a list of numpy arrays
-    with tifffile.TiffWriter(out, bigtiff=True) as file:
-        file.write(image_arrays)
-    # write_multipage(tifs, out)
-    # imageio.mimwrite(out, tifs)
-    # a = np.ones((n_frames, width, height), dtype=np.uint8)
-    # imlist = []
-    # for m in a:
-    #     imlist.append(Image.fromarray(m))
-    # imlist[0].save("test.tif", compression="tiff_deflate", save_all=True, append_images=imlist[1:])
 
 
 def remove_zarr(path) -> None:

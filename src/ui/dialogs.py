@@ -16,7 +16,7 @@ from qtpy.QtCore import Qt, Slot, QAbstractListModel, QModelIndex, QUrl, QDir, Q
 from qtpy.QtGui import QDoubleValidator, QFont, QIntValidator, QPixmap, QColor, QIcon
 import src.config as cfg
 from src.helpers import get_scale_val, do_scales_exist, is_joel, is_tacc, hotkey
-from src.funcs_image import ImageSize, ImageIOSize
+from src.funcs_image import ImageSize
 from src.ui.layouts import VBL, HBL, VWidget, HWidget
 from src.ui.thumbnail import ThumbnailFast
 
