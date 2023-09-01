@@ -279,6 +279,7 @@ class OpenProject(QWidget):
         self.wNameAlignment.setStyleSheet("font-size: 10px; background-color: rgba(0,0,0,.5); color: #f3f6fb; border-color: #f3f6fb;")
         self.wNameAlignment.hide()
 
+        logger.info('A')
         '''Step 1/3'''
         logger.info('Creating name_dialog...')
         self.name_dialog = QFileDialog()
@@ -363,6 +364,8 @@ class OpenProject(QWidget):
             self._NEW_SERIES_PATHS = []
         self.bCancel.clicked.connect(fn)
 
+        logger.info('B')
+
         # self.bConfirmImport = QPushButton("Import")
         self.bConfirmImport = QPushButton("Create")
         self.bConfirmImport.setCursor(QCursor(Qt.PointingHandCursor))
@@ -413,6 +416,8 @@ class OpenProject(QWidget):
         self.glMain.addWidget(self.wTop, 0, 0, 1, 3)
         self.glMain.setRowStretch(1,9)
 
+        logger.info('C')
+
         self._wProjects = QWidget()
         self._wProjects.setContentsMargins(0,0,0,0)
         self._wProjects.setLayout(self.glMain)
@@ -436,6 +441,8 @@ class OpenProject(QWidget):
         self.vbl_main.addWidget(self._hsplitter)
 
         self.setLayout(self.vbl_main)
+
+        logger.info('<<')
 
 
 
