@@ -341,6 +341,7 @@ if __name__ == "__main__":
     os.environ['LIBTIFF_STRILE_ARRAY_MAX_RESIZE_COUNT'] = '1000000000'
 
     os.environ["QT_DEBUG_PLUGINS"] = "1"
+    os.environ["XDG_RUNTIME_DIR"] = "/tmp"
 
     os.putenv("QT_QPA_PLATFORM", "offscreen")
     os.putenv("QT_QPA_PLATFORM", "offscreen")
