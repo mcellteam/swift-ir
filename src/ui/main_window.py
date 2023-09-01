@@ -2,6 +2,7 @@
 """
 GlanceEM-SWiFT - A software tool for image alignment that is under active development.
 """
+print('mainwindow:Importing Python modules...')
 import os
 import shutil
 import sys
@@ -32,14 +33,20 @@ from collections import OrderedDict
 import asyncio
 import numpy as np
 # from guppy import hpy; h=hpy()
+print('mainwindow:Importing Neuroglancer...')
 import neuroglancer as ng
+
+print('mainwindow:Importing qtawesome...')
 import qtawesome as qta
 # from rechunker import rechunk
+print('mainwindow:Importing QtWebEngineWidgets...')
 from qtpy.QtWebEngineWidgets import *
-from src.ui.webpage import QuickWebPage
+
+print('mainwindow:Importing Qt...')
 from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
+
 # from qtpy.QtCore import Qt, QThread, QThreadPool, QEvent, Slot, Signal, QSize, QUrl,  QTimer, QPoint, QRectF, \
 #     QSettings, QObject, QFileInfo, QMutex
 # from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QFont, \
@@ -51,12 +58,13 @@ from qtpy.QtWidgets import *
 #     QDesktopWidget, QTextEdit, QToolBar, QListWidget, QMenu, QMenuBar, QTableView, QTabWidget, QStatusBar, QTextBrowser, \
 #     QFormLayout, QGroupBox, QScrollArea, QToolButton, QWidgetAction, QSpacerItem, QButtonGroup, QAbstractButton, \
 #     QApplication, QPlainTextEdit, QTableWidget, QTableWidgetItem, QDockWidget, QMdiArea, QMdiSubWindow
-import pyqtgraph.examples
+# import pyqtgraph.examples
+print('mainwindow:Importing local modules...')
 import src.config as cfg
 import src.shaders
 from src.thumbnailer import Thumbnailer
 from src.config import ICON_COLOR
-from src.data_model import DataModel
+# from src.data_model import DataModel
 # from src.generate_scales import GenerateScales
 from src.helpers import setOpt, getOpt, getData, setData, print_exception, get_scale_val, \
     natural_sort, tracemalloc_start, tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, \
@@ -74,14 +82,10 @@ from src.ui.toggle_switch import ToggleSwitch
 from src.ui.tab_browser import WebBrowser
 from src.ui.tab_project import ProjectTab
 from src.ui.tab_open_project import OpenProject
-from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter, YellowTextLabel, Button, \
-    QVLine, QHLine
+from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter, QVLine, QHLine
 from src.funcs_image import SetStackCafm
-
-# from src.ui.components import AutoResizingTextEdit
-# if cfg.DEV_MODE:
-#     from src.ui.python_console import PythonConsole
-from src.ui.python_console import PythonConsole, PythonConsoleWidget
+from src.ui.python_console import PythonConsoleWidget
+from src.ui.webpage import QuickWebPage
 
 __all__ = ['MainWindow']
 
@@ -276,8 +280,8 @@ class MainWindow(QMainWindow):
     #     #     self.focusW = self.focusWidget()
     #     # self.setFocus()
 
-    def pyqtgraph_examples(self):
-        pyqtgraph.examples.run()
+    # def pyqtgraph_examples(self):
+    #     pyqtgraph.examples.run()
 
     def TO(self):
         return self._getTabObject()
