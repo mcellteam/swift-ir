@@ -221,7 +221,7 @@ class OpenProject(QWidget):
         self.webengine = WebEngine(ID='pmViewer')
         logger.info('C')
         self.webengine.setFocusPolicy(Qt.StrongFocus)
-        # setWebengineProperties(self.webengine)
+        setWebengineProperties(self.webengine)
         logger.info('D')
         self.webengine.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.webengine.setMinimumWidth(200)
@@ -2043,9 +2043,9 @@ class WebEngine(QWebEngineView):
 def setWebengineProperties(webengine):
     webengine.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
     webengine.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
-    webengine.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
-    webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
-    webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
+    # webengine.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
+    # webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
+    # webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
 
 class HoverButton(QPushButton):
