@@ -855,21 +855,20 @@ class OpenProject(QWidget):
     def onMinusSeries(self):
         path = self.cmbSelectSeries.currentText()
         if os.path.isdir(path):
-            if os.path.isdir(path):
-                logger.warning(f"Removing series at: {path}...")
-                reply = QMessageBox.question(self, "Quit", f"Delete this series?\n\n'{path}'",
-                                             QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-                if reply == QMessageBox.Yes:
-                    try:
-                        if path.endswith('.series'):
-                            cfg.mw.tell(f'Deleting series {path}...')
-                            run_subprocess(["rm", "-rf", path])
-                        else:
-                            logger.warning(f"\n\nCANNOT REMOVE THIS PATH: {path}\n")
-                    except:
-                        print_exception()
-                    self.loadCombos()
-                    self.refresh()
+            logger.warning(f"Removing series at: {path}...")
+            reply = QMessageBox.question(self, "Quit", f"Delete this series?\n\n'{path}'",
+                                         QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if reply == QMessageBox.Yes:
+                try:
+                    if path.endswith('.series'):
+                        cfg.mw.tell(f'Deleting series {path}...')
+                        run_subprocess(["rm", "-rf", path])
+                    else:
+                        logger.warning(f"\n\nCANNOT REMOVE THIS PATH: {path}\n")
+                except:
+                    print_exception()
+                self.loadCombos()
+                self.refresh()
 
         else:
             cfg.mw.warn(f"Series not found: {path}")
@@ -879,7 +878,7 @@ class OpenProject(QWidget):
     def loadCombos(self):
         '''Loading this combobox triggers the loading of the alignment and scales comboboxes'''
         caller = inspect.stack()[1].function
-        logger.critical(f'Loading comboboxes...')
+        logger.critical(f'[{caller}] Loading comboboxes...')
         self.cmbSelectSeries.clear()
         self.cmbSelectAlignment.clear()
         # self.cmbSelectSeries.clearEditText()
@@ -892,10 +891,12 @@ class OpenProject(QWidget):
             if os.path.isdir(sp):
                 logger.info(f"Searching path: {sp}...")
                 # directories = [x[0] for x in os.walk(p)]
-                directories = glob(os.path.join(sp, '*.series'))
-                logger.info(f"# directories found: {len(directories)}")
+                matches = glob(os.path.join(sp, '*.series'))
+                logger.info(f"# directories found: {len(matches)}")
                 # self.valid_series_list.extend(list(filter(lambda x: '.series' in os.path.basename(x), directories)))
-                self.valid_series_list.extend(directories)
+                for match in matches:
+                    if os.path.isdir(match):
+                        self.valid_series_list.append(match)
             else:
                 logger.warning(f"Directory not found: {sp}")
 
@@ -910,8 +911,8 @@ class OpenProject(QWidget):
                     self.cmbSelectSeries.setCurrentText(recent)
             if self.cmbSelectSeries.currentText():
                 cfg.settings['series_combo_text'] = self.cmbSelectSeries.currentText()
-            self.loadAlignmentCombo()
             self.loadLevelsCombo()
+            self.loadAlignmentCombo()
             self.update()
         logger.info('<<')
 
