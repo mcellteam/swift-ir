@@ -120,12 +120,14 @@ class ScaleWorker(QObject):
                 self.initPbar.emit((len(tasks), desc))
                 t = time.time()
 
-                cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks))
+                # cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks))
+                cpus = 10
                 logger.info(f"CPUs: {cpus}")
                 # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
                 # with ctx.Pool(processes=cpus) as pool:
                 # with ctx.Pool(processes=cpus) as pool:
                 # with ctx.Pool(processes=20) as pool:
+
                 with ThreadPoolExecutor(max_workers=cpus) as pool:
                 # with ThreadPoolExecutor(max_workers=1) as pool:
                 #     for i, result in enumerate(tqdm.tqdm(pool.imap_unordered(run, tasks),
@@ -139,7 +141,7 @@ class ScaleWorker(QObject):
                         self.progress.emit(i)
                         if not self.running():
                             break
-
+                # ThreadPoolExecutor.shutdown()
 
                 dt = time.time() - t
                 self._timing_results['t_scale_generate'][s] = dt
