@@ -67,8 +67,7 @@ from src.ui.main_window import MainWindow
 
 print('Importing helpers...')
 from src.helpers import check_for_binaries, configure_project_paths, initialize_user_preferences, \
-    is_tacc, print_exception, register_login, convert_projects_model, addLoggingLevel, is_joel, \
-    update_preferences_model
+    is_tacc, print_exception, register_login, convert_projects_model, addLoggingLevel
 
 print('Importing configuration...')
 print('Importing configuration...')
@@ -343,8 +342,7 @@ if __name__ == "__main__":
     # os.environ["QT_DEBUG_PLUGINS"] = "1"
 
     # os.putenv("QT_QPA_PLATFORM", "offscreen")
-
-    print('Instantiating QApplication...')
+    print('Initializing QApplication...')
     app = QApplication(sys.argv)
     print('Setting application style...')
     app.setStyle('Fusion')
