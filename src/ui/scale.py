@@ -123,17 +123,17 @@ class ScaleWorker(QObject):
                 # cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks))
                 # logger.info(f"# mp.Pool Processes: {cpus}")
                 # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
-                # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
+                with ctx.Pool(processes=20, maxtasksperchild=1) as pool:
                 # with ThreadPoolExecutor(max_workers=10) as pool:
-                with ThreadPoolExecutor(max_workers=1) as pool:
-                    # for i, result in enumerate(tqdm.tqdm(pool.imap_unordered(run, tasks),
-                    #                                      total=len(tasks),
-                    #                                      desc=desc, position=0,
-                    #                                      leave=True)):
-                    for i, result in enumerate(tqdm.tqdm(pool.map(run, tasks),
+                # with ThreadPoolExecutor(max_workers=1) as pool:
+                    for i, result in enumerate(tqdm.tqdm(pool.imap_unordered(run, tasks),
                                                          total=len(tasks),
                                                          desc=desc, position=0,
                                                          leave=True)):
+                    # for i, result in enumerate(tqdm.tqdm(pool.map(run, tasks),
+                    #                                      total=len(tasks),
+                    #                                      desc=desc, position=0,
+                    #                                      leave=True)):
                         self.progress.emit(i)
                         if not self.running():
                             break
@@ -147,6 +147,15 @@ class ScaleWorker(QObject):
                 self.finished.emit()
                 return
 
+        scales_list = []
+        for s, siz in deepcopy(self.scales):
+            scales_list.append(s)
+
+        logger.critical(f"self.out = {self.out}\n"
+                        f"scales_list = {scales_list}")
+
+        count_files(self.out, scales_list)
+
         out = os.path.join(self.out, 'thumbnails')
         logger.info(f"Creating thumbnails...\n"
                     f"src: {self.src}\n"
@@ -154,6 +163,10 @@ class ScaleWorker(QObject):
         thumbnailer = Thumbnailer()
         # self._timing_results['t_thumbs'] = thumbnailer.reduce_main(self.src, out)
         self._timing_results['t_thumbs'] = thumbnailer.reduce_main(self.src, self.paths, out)
+
+        count_files(self.out, scales_list)
+
+
 
 
         for s, siz in deepcopy(self.scales):
@@ -354,13 +367,14 @@ def get_process_children(pid):
 
 
 def count_files(dest, scales):
+    logger.info('')
     result = []
     for s in scales:
-        path = os.path.join(dest, s, 'img_src')
+        path = os.path.join(dest, 'tiff', s)
         files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
         result.append(len(files))
         # print(f"# {level} Files: {len(files)}")
-        print(f"# {s} Files: {len(files)}", end="\r")
+        logger.info(f"# {s} files: {len(files)}")
     return result
 
 
