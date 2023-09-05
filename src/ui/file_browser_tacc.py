@@ -80,13 +80,13 @@ class FileBrowserTacc(QWidget):
         button_size = QSize(54, 16)
 
         self.buttonSetRootRoot = QPushButton('Root')
-        # self.bSetRootRoot.setStyleSheet(button_gradient_style)
+        # self.bSlash.setStyleSheet(button_gradient_style)
         self.buttonSetRootRoot.setStyleSheet('font-size: 9px;')
         self.buttonSetRootRoot.setFixedSize(button_size)
         self.buttonSetRootRoot.clicked.connect(self.setRootRoot)
 
         self.buttonSetRootHome = QPushButton('Home')
-        # self.bSetRootHome.setStyleSheet(button_gradient_style)
+        # self.bHome.setStyleSheet(button_gradient_style)
         self.buttonSetRootHome.setStyleSheet('font-size: 9px;')
         self.buttonSetRootHome.setFixedSize(button_size)
         self.buttonSetRootHome.clicked.connect(self.setRootHome)
