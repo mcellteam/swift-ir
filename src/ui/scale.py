@@ -120,8 +120,8 @@ class ScaleWorker(QObject):
                 self.initPbar.emit((len(tasks), desc))
                 t = time.time()
 
-                # cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks))
-                cpus = 10
+                cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks))
+                # cpus = 10
                 logger.info(f"CPUs: {cpus}")
                 # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
                 # with ctx.Pool(processes=cpus) as pool:
