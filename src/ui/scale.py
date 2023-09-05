@@ -26,6 +26,7 @@ import numpy as np
 import zarr
 import imagecodecs
 import libtiff
+libtiff.libtiff_ctypes.suppress_warnings()
 import tqdm
 import numcodecs
 from numcodecs import Blosc
@@ -38,10 +39,8 @@ from src.helpers import print_exception, get_bindir, get_scale_val, \
 # from src.funcs_zarr import preallocate_zarr
 from src.funcs_zarr import remove_zarr
 import src.config as cfg
-from src.ui.align import AlignWorker
 
 from qtpy.QtCore import Signal, QObject, QMutex
-from qtpy.QtWidgets import QApplication
 
 __all__ = ['ScaleWorker']
 
@@ -226,7 +225,6 @@ class ScaleWorker(QObject):
                     if not self.running():
                         break
 
-
             # i = 0
             # # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
             # with ctx.Pool(processes=1, maxtasksperchild=1) as pool:
@@ -239,9 +237,14 @@ class ScaleWorker(QObject):
             #         all_results.append(result)
             #         i += 1
             #         self.progress.emit(i)
-            #         # QApplication.processEvents()
             #         if not self.running():
             #             break
+
+            # with ThreadPool(processes=cpus) as pool:
+            #     results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_pbar) for task in tasks]
+            #     pool.close()
+            #     [p.get() for p in results]
+            #     # pool.join()
 
             dt = time.time() - t
             self._timing_results['t_scale_convert'][s] = dt
