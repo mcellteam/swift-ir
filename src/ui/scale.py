@@ -346,6 +346,7 @@ def run(task):
         #Critical bufsize=-1... allows blocking for reduction tasks
         process = sp.Popen(task, bufsize=-1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
         process.wait()
+
         # sp.Popen(task, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
     except Exception as e:
         print("error: %s run(*%r)" % (e, task))
