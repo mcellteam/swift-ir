@@ -436,7 +436,8 @@ class AlignWorker(QObject):
         # QApplication.processEvents()
         all_results = []
         i = 0
-        cpus = (psutil.cpu_count(logical=False) - 2, 104)[is_tacc()]
+        # cpus = (psutil.cpu_count(logical=False) - 2, 104)[is_tacc()]
+        cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks))
         logger.info(f'# Processes: {cpus}')
         with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
             for result in tqdm.tqdm(
@@ -538,9 +539,10 @@ class AlignWorker(QObject):
         self.initPbar.emit((len(tasks), desc))
         # QApplication.processEvents()
         all_results = []
-        i = 0
-        cpus = (psutil.cpu_count(logical=False) - 2, 104)[is_tacc()]
+        # cpus = (psutil.cpu_count(logical=False) - 2, 80)[is_tacc()]
+        cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks))
         logger.info(f"# Processes: {cpus}")
+        i = 0
         with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
             for result in tqdm.tqdm(
                     pool.imap_unordered(convert_zarr, tasks),
