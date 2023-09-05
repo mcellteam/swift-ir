@@ -123,7 +123,7 @@ class ScaleWorker(QObject):
                 # cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks))
                 # logger.info(f"# mp.Pool Processes: {cpus}")
                 # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
-                with ctx.Pool(processes=20, maxtasksperchild=1) as pool:
+                with ctx.Pool(processes=30, maxtasksperchild=1) as pool:
                 # with ThreadPoolExecutor(max_workers=10) as pool:
                 # with ThreadPoolExecutor(max_workers=1) as pool:
                     for i, result in enumerate(tqdm.tqdm(pool.imap_unordered(run, tasks),
@@ -153,6 +153,9 @@ class ScaleWorker(QObject):
 
         logger.critical(f"self.out = {self.out}\n"
                         f"scales_list = {scales_list}")
+
+        logger.info("Sleeping for 2 seconds...")
+        time.sleep(2)
 
         count_files(self.out, scales_list)
 
@@ -375,6 +378,7 @@ def count_files(dest, scales):
         result.append(len(files))
         # print(f"# {level} Files: {len(files)}")
         logger.info(f"# {s} files: {len(files)}")
+    logger.info('<<')
     return result
 
 
