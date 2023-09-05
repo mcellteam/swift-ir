@@ -3809,13 +3809,13 @@ class MainWindow(QMainWindow):
         self.chromiumDebugAction.triggered.connect(self.chromium_debug)
         debugMenu.addAction(self.chromiumDebugAction)
 
-        def fn():
-            try:
-                log = json.dumps(cfg.webdriver.get_log(), indent=2)
-            except:
-                print_exception()
-                log = 'Webdriver is offline.'
-            self.menuTextWebdriverLog.setText(log)
+        # def fn():
+        #     try:
+        #         log = json.dumps(cfg.webdriver.get_log(), indent=2)
+        #     except:
+        #         print_exception()
+        #         log = 'Webdriver is offline.'
+        #     self.menuTextWebdriverLog.setText(log)
 
         # menu = debugMenu.addMenu('Webdriver Log')
         # self.menuTextWebdriverLog = QTextEdit(self)
@@ -3835,11 +3835,13 @@ class MainWindow(QMainWindow):
         #         log = 'Webdriver is offline.'
         #     self.menuTextWebdriverLog.setText(log)
 
-        menu = debugMenu.addMenu('Debug Dump')
-        self.menuTextWebdriverLog = QTextEdit(self)
-        self.menuTextWebdriverLog.setReadOnly(True)
-        action = QWidgetAction(self)
-        action.setDefaultWidget(self.menuTextWebdriverLog)
+        # menu = debugMenu.addMenu('Debug Dump')
+        # self.menuTextWebdriverLog = QTextEdit(self)
+        # self.menuTextWebdriverLog.setReadOnly(True)
+        # action = QWidgetAction(self)
+        # action.setDefaultWidget(self.menuTextWebdriverLog)
+
+
         menu.hovered.connect(fn)
         debugMenu.hovered.connect(fn)
         menu.addAction(action)
