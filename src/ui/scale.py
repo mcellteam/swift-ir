@@ -137,7 +137,6 @@ class ScaleWorker(QObject):
                         self.progress.emit(i)
                         if not self.running():
                             break
-                    pool.close()
 
 
                 dt = time.time() - t
