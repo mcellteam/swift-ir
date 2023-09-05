@@ -12,6 +12,7 @@ import time
 import psutil
 import shutil
 import logging
+from copy import deepcopy
 from pathlib import Path
 
 from os import kill
@@ -101,7 +102,7 @@ class ScaleWorker(QObject):
         logger.info(f'Reducing {len(self.paths)} images...')
 
         ctx = mp.get_context('forkserver')
-        for s, siz in self.scales:
+        for s, siz in deepcopy(self.scales):
             sv = get_scale_val(s)
             if s != 's1':
                 desc = f'Reducing {s}...'
@@ -144,6 +145,18 @@ class ScaleWorker(QObject):
                 self.hudWarning.emit('Canceling Tasks:  Convert TIFFs to NGFF Zarr')
                 self.finished.emit()
                 return
+
+        out = os.path.join(self.out, 'thumbnails')
+        logger.info(f"Creating thumbnails...\n"
+                    f"src: {self.src}\n"
+                    f"out: {out}")
+        thumbnailer = Thumbnailer()
+        # self._timing_results['t_thumbs'] = thumbnailer.reduce_main(self.src, out)
+        self._timing_results['t_thumbs'] = thumbnailer.reduce_main(self.src, self.paths, out)
+
+
+        for s, siz in deepcopy(self.scales):
+            sv = get_scale_val(s)
 
             zarr_od = os.path.abspath(os.path.join(self.out, 'zarr'))
             # renew_directory(directory=zarr_od, gui=False)
@@ -192,14 +205,6 @@ class ScaleWorker(QObject):
             dt = time.time() - t
             self._timing_results['t_scale_convert'][s] = dt
             logger.info(f"Elapsed Time: {dt:.3g}s")
-
-        out = os.path.join(self.out, 'thumbnails')
-        logger.info(f"Creating thumbnails...\n"
-                        f"src: {self.src}\n"
-                        f"out: {out}")
-        thumbnailer = Thumbnailer()
-        # self._timing_results['t_thumbs'] = thumbnailer.reduce_main(self.src, out)
-        self._timing_results['t_thumbs'] = thumbnailer.reduce_main(self.src, self.paths, out)
 
 
         self.finished.emit()
