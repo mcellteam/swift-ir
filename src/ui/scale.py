@@ -115,16 +115,17 @@ class ScaleWorker(QObject):
                     scale_arg  = '+%d' % get_scale_val(s)
                     tasks.append([iscale2_c, scale_arg, of_arg, if_arg])
 
-                cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks))
+
 
                 self.initPbar.emit((len(tasks), desc))
                 t = time.time()
 
-
-                logger.info(f"# mp.Pool Processes: {cpus}")
+                # cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks))
+                # logger.info(f"# mp.Pool Processes: {cpus}")
                 # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
                 # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
-                with ThreadPoolExecutor(max_workers=10) as pool:
+                # with ThreadPoolExecutor(max_workers=10) as pool:
+                with ThreadPoolExecutor() as pool:
                     # for i, result in enumerate(tqdm.tqdm(pool.imap_unordered(run, tasks),
                     #                                      total=len(tasks),
                     #                                      desc=desc, position=0,
