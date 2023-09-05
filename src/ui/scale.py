@@ -125,7 +125,7 @@ class ScaleWorker(QObject):
                 # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
                 # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
                 # with ThreadPoolExecutor(max_workers=10) as pool:
-                with ThreadPoolExecutor() as pool:
+                with ThreadPoolExecutor(max_workers=1) as pool:
                     # for i, result in enumerate(tqdm.tqdm(pool.imap_unordered(run, tasks),
                     #                                      total=len(tasks),
                     #                                      desc=desc, position=0,
