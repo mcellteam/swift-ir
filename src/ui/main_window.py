@@ -3841,10 +3841,9 @@ class MainWindow(QMainWindow):
         # action = QWidgetAction(self)
         # action.setDefaultWidget(self.menuTextWebdriverLog)
 
-
-        menu.hovered.connect(fn)
-        debugMenu.hovered.connect(fn)
-        menu.addAction(action)
+        # menu.hovered.connect(fn)
+        # debugMenu.hovered.connect(fn)
+        # menu.addAction(action)
 
         def fn():
             threads = '\n'.join([thread.name for thread in threading.enumerate()])
