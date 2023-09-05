@@ -390,15 +390,15 @@ def get_process_children(pid):
 
 
 def count_files(dest, scales):
-    logger.info('')
+    # logger.info('')
     result = []
     for s in scales:
         path = os.path.join(dest, 'tiff', s)
         files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
         result.append(len(files))
         # print(f"# {level} Files: {len(files)}")
-        logger.info(f"# {s} files: {len(files)}")
-    logger.info('<<')
+        # logger.info(f"# {s} files: {len(files)}")
+    # logger.info('<<')
     return result
 
 

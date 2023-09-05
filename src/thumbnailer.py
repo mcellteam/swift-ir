@@ -33,7 +33,7 @@ class Thumbnailer:
         self.iscale2_c = os.path.join(get_appdir(), 'lib', get_bindir(), 'iscale2')
 
     def reduce_main(self, src, filenames, od):
-        print(f'\n######## Reducing: Source Images ########\n')
+        print(f'\n######## Reducing Thumbnails: Source Images ########\n')
         # coarsest_scale = cfg.data.smallest_scale()
 
         d = os.path.dirname(od) #Needed for logging
@@ -47,7 +47,7 @@ class Thumbnailer:
 
 
     def reduce_aligned(self, indexes, dest, scale):
-        print(f'\n######## Reducing: Aligned Images ########\n')
+        print(f'\n######## Reducing Thumbnails: Aligned Images ########\n')
         src = os.path.join(dest, 'tiff', scale)
         od = os.path.join(dest, 'thumbnails', scale)
 
@@ -75,7 +75,7 @@ class Thumbnailer:
 
     def reduce_signals(self, indexes, dest, scale):
 
-        print(f'\n######## Reducing: Correlation Signals ########\n')
+        print(f'\n######## Reducing Thumbnails: Correlation Signals ########\n')
 
         pbar_text = 'Generating %s Signal Spot Thumbnails...' % cfg.data.level_pretty()
         if cfg.CancelProcesses:
@@ -135,7 +135,7 @@ class Thumbnailer:
 
     def reduce_matches(self, indexes, dest, scale):
 
-        print(f'\n######## Reducing: Matches ########\n')
+        print(f'\n######## Reducing Thumbnails: Matches ########\n')
 
         pbar_text = 'Reducing %s Matches...' % cfg.data.level_pretty()
         if cfg.CancelProcesses:
