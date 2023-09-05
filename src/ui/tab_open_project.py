@@ -868,12 +868,12 @@ class OpenProject(QWidget):
                         logger.warning(f"\n\nCANNOT REMOVE THIS PATH: {path}\n")
                 except:
                     print_exception()
-                self.loadCombos()
-                self.refresh()
+
 
         else:
             cfg.mw.warn(f"Series not found: {path}")
         time.sleep(2)
+        self.refresh()
 
 
     def loadCombos(self):
