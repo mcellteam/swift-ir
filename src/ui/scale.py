@@ -130,14 +130,14 @@ class ScaleWorker(QObject):
                 # #                                          total=len(tasks),
                 # #                                          desc=desc, position=0,
                 # #                                          leave=True)):
-                    for i, result in enumerate(tqdm.tqdm(pool.map(run2, tasks),
+                    for i, result in enumerate(tqdm.tqdm(pool.map(run, tasks),
                                                          total=len(tasks),
                                                          desc=desc, position=0,
                                                          leave=True)):
                         self.progress.emit(i)
                         if not self.running():
                             break
-                    # pool.close()
+                    pool.close()
 
 
                 dt = time.time() - t
@@ -351,8 +351,7 @@ def run(task):
 
 
 
-# def run2(args, cwd = None, shell = False, kill_tree = True, timeout = -1, env = None):
-def run2(args, cwd = None, shell = False, kill_tree = True, timeout = 5, env = None):
+def run2(args, cwd = None, shell = False, kill_tree = True, timeout = -1, env = None):
     '''
     Run a command with a timeout after which it will be forcibly
     killed.
