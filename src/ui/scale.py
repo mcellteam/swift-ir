@@ -317,8 +317,8 @@ def imread(filename):
 def run(task):
     """Call run(), catch exceptions."""
     try:
-        # sp.Popen(task, bufsize=-1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
-        sp.Popen(task, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
+        sp.Popen(task, bufsize=-1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
+        # sp.Popen(task, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
     except Exception as e:
         print("error: %s run(*%r)" % (e, task))
 
