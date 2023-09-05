@@ -122,7 +122,7 @@ class ScaleWorker(QObject):
                 # cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks))
                 # logger.info(f"# mp.Pool Processes: {cpus}")
                 # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
-                with ctx.Pool(processes=10, maxtasksperchild=1) as pool:
+                with ctx.Pool(processes=80, maxtasksperchild=1) as pool:
                 # with ctx.Pool(processes=20) as pool:
                 # with ThreadPoolExecutor(max_workers=10) as pool:
                 # # with ThreadPoolExecutor(max_workers=1) as pool:
@@ -351,7 +351,8 @@ def run(task):
 
 
 
-def run2(args, cwd = None, shell = False, kill_tree = True, timeout = -1, env = None):
+# def run2(args, cwd = None, shell = False, kill_tree = True, timeout = -1, env = None):
+def run2(args, cwd = None, shell = False, kill_tree = True, timeout = 5, env = None):
     '''
     Run a command with a timeout after which it will be forcibly
     killed.
