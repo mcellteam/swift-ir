@@ -2,7 +2,6 @@
 """
 GlanceEM-SWiFT - A software tool for image alignment that is under active development.
 """
-print('mainwindow:Importing Python modules...')
 import os
 import shutil
 import sys
@@ -33,16 +32,12 @@ from collections import OrderedDict
 import asyncio
 import numpy as np
 # from guppy import hpy; h=hpy()
-print('mainwindow:Importing Neuroglancer...')
 import neuroglancer as ng
 
-print('mainwindow:Importing qtawesome...')
 import qtawesome as qta
 # from rechunker import rechunk
-print('mainwindow:Importing QtWebEngineWidgets...')
 from qtpy.QtWebEngineWidgets import *
 
-print('mainwindow:Importing Qt...')
 from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
@@ -59,7 +54,7 @@ from qtpy.QtWidgets import *
 #     QFormLayout, QGroupBox, QScrollArea, QToolButton, QWidgetAction, QSpacerItem, QButtonGroup, QAbstractButton, \
 #     QApplication, QPlainTextEdit, QTableWidget, QTableWidgetItem, QDockWidget, QMdiArea, QMdiSubWindow
 # import pyqtgraph.examples
-print('mainwindow:Importing local modules...')
+# print('mainwindow:Importing local modules...')
 import src.config as cfg
 import src.shaders
 from src.thumbnailer import Thumbnailer
