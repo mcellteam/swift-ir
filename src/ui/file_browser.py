@@ -217,29 +217,29 @@ class FileBrowser(QWidget):
         self.bNavigateDown.clicked.connect(self.navigateDown)
         self.bNavigateDown.setToolTip("Enter Directory")
 
-        self.bSetRootRoot = QPushButton()
-        # self.bSetRootRoot = QPushButton('/')
-        self.bSetRootRoot.setIcon(qta.icon('mdi.slash-forward', color='#161c20'))
-        self.bSetRootRoot.clicked.connect(self.setRootRoot)
-        self.bSetRootRoot.setToolTip("Go to system root")
+        self.bSlash = QPushButton()
+        # self.bSlash = QPushButton('/')
+        self.bSlash.setIcon(qta.icon('mdi.slash-forward', color='#161c20'))
+        self.bSlash.clicked.connect(self.setRootRoot)
+        self.bSlash.setToolTip("Go to system root")
 
-        self.bSetRootHome = QPushButton()
-        self.bSetRootHome.setIcon(qta.icon('fa.home', color='#161c20'))
-        self.bSetRootHome.clicked.connect(self.setRootHome)
-        self.bSetRootHome.setToolTip("Go to home directory")
+        self.bHome = QPushButton()
+        self.bHome.setIcon(qta.icon('fa.home', color='#161c20'))
+        self.bHome.clicked.connect(self.setRootHome)
+        self.bHome.setToolTip("Go to home directory")
 
         # self.bSetRootTmp = QPushButton('/tmp')
         # self.bSetRootTmp.clicked.connect(self.setRootTmp)
         # self.bSetRootTmp.setToolTip("Go to /tmp directory")
 
-        navbuttons = [self.bNavigateUp, self.bNavigateDown, self.bSetRootRoot, self.bSetRootHome]
+        navbuttons = [self.bNavigateUp, self.bNavigateDown, self.bSlash, self.bHome]
         for b in navbuttons:
             b.setFixedSize(QSize(16, 16))
             b.setIconSize(QSize(12, 12))
             b.setStyleSheet('font-size: 9px;')
 
 
-        self.wNavButtons = HWidget(self.bNavigateUp, self.bNavigateDown, self.bSetRootRoot, self.bSetRootHome)
+        self.wNavButtons = HWidget(self.bNavigateUp, self.bNavigateDown, self.bSlash, self.bHome, ExpandingHWidget(self))
         self.wNavButtons.setFixedHeight(18)
         self.wNavButtons.layout.setSpacing(2)
 
