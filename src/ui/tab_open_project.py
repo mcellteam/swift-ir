@@ -1168,7 +1168,7 @@ class OpenProject(QWidget):
 
     def updateImportSeriesUI(self):
         logger.info('')
-        self.leNameSeries.setText(self.leNameSeries.text().strip())
+        # self.leNameSeries.setText(self.leNameSeries.text().strip())
         f = QFont()
         f.setItalic(not len(self.leNameSeries.text()))
         self.leNameSeries.setFont(f)
@@ -1178,7 +1178,7 @@ class OpenProject(QWidget):
         self.leNameSeries.setStyleSheet(("border-color: #339933; border-width: 2px;", "border-color: #f3f6fb;")[bool(self.leNameSeries.text())])
         # QApplication.processEvents()
         self.labImgCount.setVisible(len(self.iid_dialog.selectedFiles()))
-        self.update()
+        # self.update()
 
 
     def selectImages(self):
