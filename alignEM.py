@@ -345,6 +345,7 @@ if __name__ == "__main__":
     app.setStyle('Fusion')
     print('Setting application font...')
     font = QFont("Tahoma")
+    font.setPointSize(10)
     app.setFont(font)
     print('Entering main...')
     main()
