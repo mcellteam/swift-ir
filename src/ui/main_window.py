@@ -3327,8 +3327,6 @@ class MainWindow(QMainWindow):
             cfg.zarr_tab.viewer.bootstrap()
 
         elif self._getTabType() == 'OpenProject':
-            self.pm.loadCombos()
-            self.pm.resetView()
             self.pm.refresh()
         
         logger.info('Wrapping up...')
