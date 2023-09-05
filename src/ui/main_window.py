@@ -1322,6 +1322,8 @@ class MainWindow(QMainWindow):
             logger.info('\n\nSleeping for 2 seconds...\n')
             time.sleep(2)
 
+        self.shutdownNeuroglancer()
+
         self._scaleworker = ScaleWorker(src=src, out=out, scales=scales, opts=opts)
         self._scaleworker.moveToThread(self._scaleThread)  # Step 4: Move worker to the thread
         self._scaleThread.started.connect(self._scaleworker.run)  # Step 5: Connect signals and slots
