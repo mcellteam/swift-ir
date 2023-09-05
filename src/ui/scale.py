@@ -121,12 +121,12 @@ class ScaleWorker(QObject):
                 t = time.time()
 
                 cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks))
-                # logger.info(f"# mp.Pool Processes: {cpus}")
+                logger.info(f"CPUs: {cpus}")
                 # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
                 # with ctx.Pool(processes=cpus) as pool:
                 # with ctx.Pool(processes=cpus) as pool:
                 # with ctx.Pool(processes=20) as pool:
-                with ThreadPoolExecutor(max_workers=90) as pool:
+                with ThreadPoolExecutor(max_workers=cpus) as pool:
                 # with ThreadPoolExecutor(max_workers=1) as pool:
                 #     for i, result in enumerate(tqdm.tqdm(pool.imap_unordered(run, tasks),
                 #                                          total=len(tasks),
