@@ -248,7 +248,7 @@ class FileBrowser(QWidget):
             self.bSetRootScratch.setStyleSheet('font-size: 9px;')
             self.bSetRootScratch.setFixedHeight(16)
             self.bSetRootScratch.clicked.connect(self.setRootScratch)
-            self.wNavButtons.addWidget(self.setRootScratch)
+            self.wNavButtons.addWidget(self.bSetRootScratch)
 
             self.bSetRootWork = QPushButton('$WORK')
             self.bSetRootWork.setStyleSheet('font-size: 9px;')
