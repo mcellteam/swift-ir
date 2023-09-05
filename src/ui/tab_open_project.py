@@ -1175,13 +1175,9 @@ class OpenProject(QWidget):
         isAllowedImport = bool(self.leNameSeries.text() and bool(len(self._NEW_SERIES_PATHS)))
         self.bConfirmImport.setStyleSheet(("", "background-color: #339933; color: #f3f6fb;")[isAllowedImport])
         self.bConfirmImport.setEnabled(isAllowedImport)
-        self.leNameSeries.setStyleSheet(("border-color: #339933; border-width: 2px;", "border-color: #f3f6fb;")[bool(
-        self.leNameSeries.text(
-
-        ))])
-        QApplication.processEvents()
-        filenames = self.iid_dialog.selectedFiles()
-        self.labImgCount.setVisible(len(filenames))
+        self.leNameSeries.setStyleSheet(("border-color: #339933; border-width: 2px;", "border-color: #f3f6fb;")[bool(self.leNameSeries.text())])
+        # QApplication.processEvents()
+        self.labImgCount.setVisible(len(self.iid_dialog.selectedFiles()))
         self.update()
 
 
