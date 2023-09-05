@@ -1306,7 +1306,7 @@ class MainWindow(QMainWindow):
         logger.info('\n\nAutoscaling...\n')
         self._scaleThread = QThread()  # Step 2: Create a QThread object
         scale_keys = opts['levels']
-        scales = zip(scale_keys, [opts['size_xy'][s] for s in scale_keys[::-1]])
+        scales = zip(scale_keys[::-1], [opts['size_xy'][s] for s in scale_keys[::-1]])
         if hasattr(self, '_scaleworker'):
             try:
                 self._scaleworker.stop()
