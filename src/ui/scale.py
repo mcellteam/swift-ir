@@ -130,7 +130,7 @@ class ScaleWorker(QObject):
                 # #                                          total=len(tasks),
                 # #                                          desc=desc, position=0,
                 # #                                          leave=True)):
-                    for i, result in enumerate(tqdm.tqdm(pool.map(run, tasks),
+                    for i, result in enumerate(tqdm.tqdm(pool.map(run2, tasks),
                                                          total=len(tasks),
                                                          desc=desc, position=0,
                                                          leave=True)):
@@ -314,13 +314,7 @@ def imread(filename):
     return imagecodecs.tiff_decode(data)
 
 
-def run(task):
-    """Call run(), catch exceptions."""
-    try:
-        sp.Popen(task, bufsize=-1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
-        # sp.Popen(task, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
-    except Exception as e:
-        print("error: %s run(*%r)" % (e, task))
+
 
 
 class Command(object):
@@ -346,6 +340,14 @@ class Command(object):
             thread.join()
         print(self.process.returncode)
 
+
+def run(task):
+    """Call run(), catch exceptions."""
+    try:
+        sp.Popen(task, bufsize=-1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
+        # sp.Popen(task, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
+    except Exception as e:
+        print("error: %s run(*%r)" % (e, task))
 
 
 
