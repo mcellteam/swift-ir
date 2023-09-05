@@ -5018,6 +5018,7 @@ class MainWindow(QMainWindow):
     def initStatusBar(self):
         logger.info('')
         self.statusBar = QStatusBar()
+        self.statusBar.setStyleSheet("font-size: 10px;")
         self.statusBar.setFixedHeight(18)
         self.setStatusBar(self.statusBar)
 
