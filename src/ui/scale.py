@@ -109,9 +109,10 @@ class ScaleWorker(QObject):
                 tasks = []
                 for i in range(0, len(self.paths)):
                     if_arg     = os.path.join(self.src, self.paths[i])
-                    ofn        = os.path.join(self.out, 'tiff', 's%d' % sv, os.path.split(if_arg)[1])
-                    of_arg     = 'of=%s' % ofn
+
                     scale_arg  = '+%d' % get_scale_val(s)
+                    ofn = os.path.join(self.out, 'tiff', 's%d' % sv, os.path.split(if_arg)[1])
+                    of_arg = 'of=%s' % ofn
                     tasks.append([iscale2_c, scale_arg, of_arg, if_arg])
 
 
@@ -122,7 +123,7 @@ class ScaleWorker(QObject):
                 cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks))
                 # logger.info(f"# mp.Pool Processes: {cpus}")
                 # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
-                with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
+                with ctx.Pool(processes=cpus) as pool:
                 # with ctx.Pool(processes=cpus) as pool:
                 # with ctx.Pool(processes=20) as pool:
                 # with ThreadPoolExecutor(max_workers=10) as pool:
