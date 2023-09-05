@@ -157,7 +157,9 @@ class ScaleWorker(QObject):
 
 
         for s, siz in deepcopy(self.scales):
+            logger.critical(f"Looping s={s}, siz={siz}...")
             sv = get_scale_val(s)
+
 
             zarr_od = os.path.abspath(os.path.join(self.out, 'zarr'))
             # renew_directory(directory=zarr_od, gui=False)
@@ -174,6 +176,7 @@ class ScaleWorker(QObject):
 
             shape = (len(self.paths), y, x)
             name = 's%d' % get_scale_val(s)
+            logger.critical(f"preallocating name: {name}, shape: {shape}...")
             preallocate_zarr(zarr_od=zarr_od, name=name, shape=shape, dtype='|u1', opts=self.opts, scale=s)
 
             t = time.time()
