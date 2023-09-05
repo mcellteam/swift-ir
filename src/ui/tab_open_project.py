@@ -649,7 +649,7 @@ class OpenProject(QWidget):
 
         count = len(self._NEW_SERIES_PATHS)
         # level_keys = natural_sort(['s%d' % v for v in scale_vals])[::-1]
-        level_keys = natural_sort(['s%d' % v for v in scale_vals])[::-1]
+        level_keys = natural_sort(['s%d' % v for v in scale_vals])
         series_name = os.path.basename(out)
         logger.critical(f"Resolution levels: {level_keys}")
 
