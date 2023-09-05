@@ -599,9 +599,10 @@ class OpenProject(QWidget):
         if has_cal_grid:
             logger.info('Linking to calibration grid image...')
             cal_grid_path = self._NEW_SERIES_PATHS[0]
+            cal_grid_name = os.path.basename(cal_grid_path)
             self._NEW_SERIES_PATHS = self._NEW_SERIES_PATHS[1:]
             logger.info('Copying calibration grid image...')
-            shutil.copyfile(cal_grid_path, out)
+            shutil.copyfile(cal_grid_path, os.path.join(out, cal_grid_name))
 
         src = os.path.dirname(self._NEW_SERIES_PATHS[0])
         cfg.mw.tell(f'Importing {len(self._NEW_SERIES_PATHS)} Images...')

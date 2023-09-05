@@ -70,15 +70,12 @@ from src.helpers import check_for_binaries, configure_project_paths, initialize_
     is_tacc, print_exception, register_login, convert_projects_model, addLoggingLevel
 
 print('Importing configuration...')
-print('Importing configuration...')
 import src.config as cfg
 # from qtconsole import __version__ as qcv
 
 print('Setting global application...')
 
 global app
-
-print("Imports complete.")
 
 
 
