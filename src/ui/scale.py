@@ -179,44 +179,45 @@ class ScaleWorker(QObject):
             t = time.time()
             self.initPbar.emit((len(tasks), desc))
             all_results = []
-            cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks))
             i = 0
+            # cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks))
             # with ctx.Pool(processes=104, maxtasksperchild=1) as pool:
-            logger.info(f"# mp.Pool Processes: {cpus}")
+            # logger.info(f"# mp.Pool Processes: {cpus}")
             # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
-            # with ThreadPoolExecutor(max_workers=10) as pool:
-            #     for result in tqdm.tqdm(
-            #         # pool.imap_unordered(convert_zarr, tasks),
-            #         #     total=len(tasks),
-            #         #     desc=desc,
-            #         #     position=0,
-            #         #     leave=True):
-            #         pool.map(convert_zarr, tasks),
-            #             total=len(tasks),
-            #             desc=desc,
-            #             position=0,
-            #             leave=True):
-            #
-            #         all_results.append(result)
-            #         i += 1
-            #         self.progress.emit(i)
-            #         if not self.running():
-            #             break
-
-            i = 0
-            with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
+            with ThreadPoolExecutor(max_workers=1) as pool:
                 for result in tqdm.tqdm(
-                        pool.imap_unordered(convert_zarr, tasks),
+                    # pool.imap_unordered(convert_zarr, tasks),
+                    #     total=len(tasks),
+                    #     desc=desc,
+                    #     position=0,
+                    #     leave=True):
+                    pool.map(convert_zarr, tasks),
                         total=len(tasks),
                         desc=desc,
                         position=0,
                         leave=True):
+
                     all_results.append(result)
                     i += 1
                     self.progress.emit(i)
-                    # QApplication.processEvents()
                     if not self.running():
                         break
+
+            # i = 0
+            # # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
+            # with ctx.Pool(processes=1, maxtasksperchild=1) as pool:
+            #     for result in tqdm.tqdm(
+            #             pool.imap_unordered(convert_zarr, tasks),
+            #             total=len(tasks),
+            #             desc=desc,
+            #             position=0,
+            #             leave=True):
+            #         all_results.append(result)
+            #         i += 1
+            #         self.progress.emit(i)
+            #         # QApplication.processEvents()
+            #         if not self.running():
+            #             break
 
             dt = time.time() - t
             self._timing_results['t_scale_convert'][s] = dt
