@@ -173,11 +173,20 @@ class ScaleWorker(QObject):
         count_files(self.out, scales_list)
 
 
-
+        n_imgs = len(self.paths)
 
         for s, siz in deepcopy(self.scales):
             logger.critical(f"Looping s={s}, siz={siz}...")
             sv = get_scale_val(s)
+
+            allow_continue = False
+            while not allow_continue:
+                n_files = count_files(self.out, [s])[0]
+
+                allow_continue = n_files >= n_imgs
+
+                logger.info(f"Waiting on {n_imgs - n_files} images to generate. Total generated: {n_files}/{n_imgs}")
+
 
 
             zarr_od = os.path.abspath(os.path.join(self.out, 'zarr'))
