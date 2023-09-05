@@ -122,14 +122,14 @@ class ScaleWorker(QObject):
                 # cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks))
                 # logger.info(f"# mp.Pool Processes: {cpus}")
                 # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
-                # with ctx.Pool(processes=30, maxtasksperchild=1) as pool:
+                with ctx.Pool(processes=50, maxtasksperchild=1) as pool:
                 # with ctx.Pool(processes=20) as pool:
-                with ThreadPoolExecutor(max_workers=10) as pool:
-                # with ThreadPoolExecutor(max_workers=1) as pool:
-                #     for i, result in enumerate(tqdm.tqdm(pool.imap_unordered(run, tasks),
-                #                                          total=len(tasks),
-                #                                          desc=desc, position=0,
-                #                                          leave=True)):
+                # with ThreadPoolExecutor(max_workers=10) as pool:
+                # # with ThreadPoolExecutor(max_workers=1) as pool:
+                # #     for i, result in enumerate(tqdm.tqdm(pool.imap_unordered(run, tasks),
+                # #                                          total=len(tasks),
+                # #                                          desc=desc, position=0,
+                # #                                          leave=True)):
                     for i, result in enumerate(tqdm.tqdm(pool.map(run, tasks),
                                                          total=len(tasks),
                                                          desc=desc, position=0,
@@ -160,7 +160,7 @@ class ScaleWorker(QObject):
         logger.info("Sleeping for 2 seconds...")
         time.sleep(2)
 
-        count_files(self.out, scales_list)
+        # count_files(self.out, scales_list)
 
         out = os.path.join(self.out, 'thumbnails')
         logger.info(f"Creating thumbnails...\n"
@@ -170,7 +170,7 @@ class ScaleWorker(QObject):
         # self._timing_results['t_thumbs'] = thumbnailer.reduce_main(self.src, out)
         self._timing_results['t_thumbs'] = thumbnailer.reduce_main(self.src, self.paths, out)
 
-        count_files(self.out, scales_list)
+        # count_files(self.out, scales_list)
 
 
         n_imgs = len(self.paths)
@@ -186,7 +186,7 @@ class ScaleWorker(QObject):
                 allow_continue = n_files >= n_imgs
 
                 # logger.info(f"Waiting on {n_imgs - n_files} images to generate. Total generated: {n_files}/{n_imgs}")
-                print(f"Waiting on {n_imgs - n_files} images to generate. Total generated: {n_files}/{n_imgs}", end="\r")
+                print(f"Waiting on: {n_imgs - n_files} {s} image(s), total generated: {n_files}/{n_imgs}", end="\r")
 
 
 
