@@ -220,7 +220,7 @@ class ScaleWorker(QObject):
             # with ctx.Pool(processes=104, maxtasksperchild=1) as pool:
             # logger.info(f"# mp.Pool Processes: {cpus}")
             # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
-            with ThreadPoolExecutor(max_workers=1) as pool:
+            with ThreadPoolExecutor(max_workers=10) as pool:
                 for result in tqdm.tqdm(
                     # pool.imap_unordered(convert_zarr, tasks),
                     #     total=len(tasks),
