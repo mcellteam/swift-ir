@@ -171,8 +171,8 @@ def main():
     logging.getLogger('init').versioncheck('alignEM-SWiFT         : %s' % cfg.VERSION)
     logging.getLogger('init').versioncheck('environment           : %s' % sys.version)
     logging.getLogger('init').versioncheck('QtCore.__version__    : %s' % QtCore.__version__)
-    logging.getLogger('init').versioncheck('qtpy.PYQT_VERSION     : %s' % qtpy.PYQT_VERSION)
-    logging.getLogger('init').versioncheck('qtpy.PYSIDE_VERSION   : %s' % qtpy.PYSIDE_VERSION)
+    # logging.getLogger('init').versioncheck('qtpy.PYQT_VERSION     : %s' % qtpy.PYQT_VERSION)
+    # logging.getLogger('init').versioncheck('qtpy.PYSIDE_VERSION   : %s' % qtpy.PYSIDE_VERSION)
     # logging.getLogger('init').versioncheck('Jupyter QtConsole     : %s' % qcv)
 
     check_for_binaries()
