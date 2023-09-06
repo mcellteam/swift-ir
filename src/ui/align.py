@@ -217,7 +217,7 @@ class AlignWorker(QObject):
             #         self.progress.emit(i)
             #         if not self.running():
             #             break
-            s
+
 
 
             with ThreadPoolExecutor(max_workers=cpus) as pool:
