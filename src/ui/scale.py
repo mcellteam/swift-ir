@@ -159,9 +159,6 @@ class ScaleWorker(QObject):
         logger.critical(f"self.out = {self.out}\n"
                         f"scales_list = {scales_list}")
 
-        logger.info("Sleeping for 2 seconds...")
-        time.sleep(2)
-
         # count_files(self.out, scales_list)
 
         out = os.path.join(self.out, 'thumbnails')

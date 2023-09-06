@@ -1236,14 +1236,14 @@ class MainWindow(QMainWindow):
             except:
                 print_exception()
             logger.info('\n\nSleeping for 2 seconds...\n')
-            time.sleep(2)
+            time.sleep(1)
         if hasattr(self, '_alignworker'):
             try:
                 self._alignworker.stop()
             except:
                 print_exception()
             logger.info('\n\nSleeping for 2 seconds...\n')
-            time.sleep(2)
+            time.sleep(1)
 
         self.tell(f'Aligning {len(align_indexes)} pairs')
         self.tell(f'Regenerating {len(regen_indexes)} images')
