@@ -574,15 +574,11 @@ class OpenProject(QWidget):
         self.bSelect.setStyleSheet("")
 
         name = self.leNameSeries.text()
-        logger.critical(f"\n\nname: {name}\n")
         name.replace(' ', '_')
-        logger.critical(f"\n\nname: {name}\n")
         if not name.endswith('.series'):
             name += '.series'
-        logger.critical(f"\n\nname: {name}\n")
 
         out = os.path.join(cfg.settings['series_root'], name)
-        logger.critical(f"\n\nout: {out}\n")
 
         zarr_settings = self.wSeriesConfig.getSettings()
         # logger.info(f"Scale levels & Zarr settings:\n{zarr_settings}")
@@ -725,7 +721,7 @@ class OpenProject(QWidget):
         with open(series_info_path) as f:
             info = json.load(f)
 
-        logger.critical(f"Initializing Data Model...\n"
+        logger.info(f"Initializing Data Model...\n"
                         f"  alignment name : {name}\n"
                         f"       of series : {series_name}\n"
                         f"           count : {info['count']}")
@@ -733,7 +729,7 @@ class OpenProject(QWidget):
         t0 = time.time()
         dm = DataModel(location=out, initialize=True, series_info=info)
         dt = time.time() - t0
-        logger.critical(f'Time Elapsed (initialize data model): {dt:.3g} seconds')
+        logger.info(f'Time Elapsed (initialize data model): {dt:.3g} seconds')
 
         initLogFiles(out)
         # makedirs_exist_ok(out, exist_ok=True)
@@ -773,7 +769,7 @@ class OpenProject(QWidget):
 
     def initPMviewer(self):
         caller = inspect.stack()[1].function
-        logger.critical(f'[{caller}]')
+        logger.info(f'[{caller}]')
         self.viewer = cfg.pmViewer = PMViewer(webengine=self.webengine)
         if self.cmbSelectSeries.currentText():
             path_l, path_r = self.get_pmviewer_paths()
@@ -875,7 +871,7 @@ class OpenProject(QWidget):
     def loadCombos(self):
         '''Loading this combobox triggers the loading of the alignment and scales comboboxes'''
         caller = inspect.stack()[1].function
-        logger.critical(f'[{caller}] Loading comboboxes...')
+        logger.info(f'[{caller}] Loading comboboxes...')
         self.cmbSelectSeries.clear()
         self.cmbSelectAlignment.clear()
         # self.cmbSelectSeries.clearEditText()
@@ -975,18 +971,18 @@ class OpenProject(QWidget):
                 logger.warning(f"Directory not found: {sp}")
 
         # self.valid_alignments_list = []
-        logger.critical(f"All alignments found:\n{pformat(self.alignments_list)}")
+        logger.info(f"All alignments found:\n{pformat(self.alignments_list)}")
 
         series_uuid = self._getSeriesUUID()
-        logger.critical(f"series UUID: {series_uuid}")
+        logger.info(f"series UUID: {series_uuid}")
         self.valid_alignments_list = []
         for p in self.alignments_list:
             alignment_uuid = self._getAlignmentUUID(directory=p)
-            logger.critical(f"Comparing {alignment_uuid} to {series_uuid}")
+            # logger.info(f"Comparing {alignment_uuid} to {series_uuid}")
             if alignment_uuid == series_uuid:
                 self.valid_alignments_list.append(p)
 
-        logger.critical(f"Alignments matching series UUID {series_uuid}:\n{pformat(self.valid_alignments_list)}")
+        logger.info(f"Alignments matching series UUID {series_uuid}:\n{pformat(self.valid_alignments_list)}")
 
         self.cmbSelectAlignment.addItems(self.valid_alignments_list)
 
@@ -999,7 +995,6 @@ class OpenProject(QWidget):
 
         cfg.settings['alignment_combo_text'] = self.cmbSelectAlignment.currentText()
 
-        logger.critical("<<")
 
 
     def onSelectAlignmentCombo(self):
