@@ -1219,7 +1219,7 @@ class MainWindow(QMainWindow):
     def alignAll(self, dm=None):
         if self._isProjectTab():
             if cfg.data.is_alignable():
-                logger.critical('Aligning All...')
+                logger.info('\n\nAligning All...\n')
                 if dm == None:
                     dm = cfg.data
                 indexes = list(range(0,len(cfg.data)))
@@ -1255,6 +1255,8 @@ class MainWindow(QMainWindow):
                 print_exception()
             logger.info('\n\nSleeping for 2 seconds...\n')
             time.sleep(1)
+
+        self.shutdownNeuroglancer()
 
         self.tell(f'Aligning {len(align_indexes)} pairs')
         self.tell(f'Regenerating {len(regen_indexes)} images')
