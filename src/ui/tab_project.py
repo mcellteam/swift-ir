@@ -75,8 +75,9 @@ class ProjectTab(QWidget):
         self.blinkCur = 0
         # self.initNeuroglancer(init_all=True)
         self.datamodel.signals.zposChanged.connect(cfg.mw.updateSlidrZpos)
-        self.datamodel.signals.warning2.connect(self.updateDataComportsUI)
-        self.datamodel.signals.warning2.connect(cfg.main_window._callbk_unsavedChanges)
+        self.datamodel.signals.dataChanged.connect(self.updateDataComportsUI)
+        self.datamodel.signals.dataChanged.connect(cfg.main_window._callbk_unsavedChanges)
+        self.datamodel.signals.dataChanged.connect(lambda: self.cbDefaults.setChecked(self.dm.isdefaults()[0]))
 
 
 
@@ -519,10 +520,12 @@ class ProjectTab(QWidget):
 
 
         self.bPushSettingsAsDefaults = QPushButton('Apply Settings As Defaults')
-        self.bPushSettingsAsDefaults.setEnabled(False)
+        # self.bPushSettingsAsDefaults.setEnabled(False)
         self.bPushSettingsAsDefaults.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.bPushSettingsAsDefaults.setFixedHeight(14)
-        self.bPushSettingsAsDefaults.setStyleSheet('font-size: 8px;')
+        self.bPushSettingsAsDefaults.clicked.connect(lambda: self.datamodel.setTheseAsDefaults())
+
+
         # msg = "Use these as default settings for the current and finer scale levels."
         msg = "Push (forward-propagate) displayed SWIM settings as defaults for this and higher resolution levels."
         msg = '\n'.join(textwrap.wrap(msg, width=40))
@@ -2419,7 +2422,7 @@ class ProjectTab(QWidget):
         data_comports = self.dm.data_comports()[0]
         hide = self.dm.is_aligned() and data_comports
         self.warning_data.setHidden(hide)
-        self.cbDefaults.setChecked(data_comports)
+        # self.cbDefaults.setChecked(data_comports) #Bug!!
         self.update()
         return hide
 
@@ -3014,8 +3017,8 @@ class ProjectTab(QWidget):
         #     if self.dSnr_plot.isVisible():
         #         logger.info('Signal received! Reinitializing SNR plot dock widget...')
         #         self.dSnr_plot.initSnrPlot()
-        # self.datamodel.signals.warning2.connect(reinit_dSnr)
-        self.datamodel.signals.warning2.connect(cfg.main_window._callbk_unsavedChanges)
+        # self.datamodel.signals.dataChanged.connect(reinit_dSnr)
+        self.datamodel.signals.dataChanged.connect(cfg.main_window._callbk_unsavedChanges)
         self.dSnr_plot.setStyleSheet('background-color: #222222; font-weight: 600; font-size: 12px; color: #ede9e8;')
         cfg.mw.dw_snr.setWidget(self.dSnr_plot)
 

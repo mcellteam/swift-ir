@@ -69,7 +69,7 @@ def date_time():
 
 class Signals(QObject):
     zposChanged = Signal()
-    warning2 = Signal()
+    dataChanged = Signal()
     outputSettingsChanged = Signal()
     swimSettingsChanged = Signal()
 
@@ -97,9 +97,9 @@ class DataModel:
             if not initialize:
                 self.updateComportsKeys(all=True)
             self.signals = Signals()
-            self.signals.warning2.connect(lambda: logger.critical('emission!'))
-            # self.signals.warning2.connect(lambda: self.updateComportsKeys(forward=True))
-            self.signals.warning2.connect(lambda: self.updateComportsKeys(indexes=[self.zpos]))
+            self.signals.dataChanged.connect(lambda: logger.critical('emission!'))
+            # self.signals.dataChanged.connect(lambda: self.updateComportsKeys(forward=True))
+            self.signals.dataChanged.connect(lambda: self.updateComportsKeys(indexes=[self.zpos]))
         logger.info('<<')
 
     def __iter__(self):
@@ -331,7 +331,7 @@ class DataModel:
     def current_method(self, str):
         for s in self.finer_scales():
             self._data['stack'][self.zpos]['levels'][s]['swim_settings']['method'] = str
-        self.signals.warning2.emit()
+        self.signals.dataChanged.emit()
 
 
     @property
@@ -355,7 +355,7 @@ class DataModel:
         # for level in self.levels():
         for s in self.finer_scales():
             self._data['stack'][self.zpos]['levels'][s]['swim_settings']['grid']['quadrants'] = lst
-        self.signals.warning2.emit()
+        self.signals.dataChanged.emit()
 
     @property
     def padlock(self):
@@ -385,7 +385,7 @@ class DataModel:
     @poly_order.setter
     def poly_order(self, use):
         self['level_data'][self.level]['output_settings']['polynomial_bias'] = use
-        self.signals.warning2.emit()
+        self.signals.dataChanged.emit()
 
     # def whitening(self) -> float:
     #     '''Returns the Signal Whitening Factor for the Current Layer.'''
@@ -398,7 +398,7 @@ class DataModel:
     @whitening.setter
     def whitening(self, x):
         self._data['stack'][self.zpos]['levels'][self.level]['swim_settings']['whitening'] = float(x)
-        self.signals.warning2.emit()
+        self.signals.dataChanged.emit()
 
     @property
     def defaults(self):
@@ -649,7 +649,7 @@ class DataModel:
                         self['stack'][i]['levels'][s]['swim_settings']['clobber_fixed_noise'] = b
                 else:
                     self['stack'][self.zpos]['levels'][s]['swim_settings']['clobber_fixed_noise'] = b
-            self.signals.warning2.emit()
+            self.signals.dataChanged.emit()
 
     def clobber_px(self):
         return self._data['stack'][self.zpos]['levels'][self.level]['swim_settings']['clobber_size']
@@ -661,14 +661,14 @@ class DataModel:
                 if stack:
                     for i in range(len(self)):
                         self['stack'][i]['levels'][s]['swim_settings']['clobber_size'] = x
-                    self.signals.warning2.emit()
+                    self.signals.dataChanged.emit()
 
                 else:
                     cur = self._data['stack'][self.zpos]['levels'][s]['swim_settings']['clobber_size']
                     self._data['stack'][self.zpos]['levels'][s]['swim_settings']['clobber_size'] = x
                     if cur != x:
-                        self.signals.warning2.emit()
-            self.signals.warning2.emit()
+                        self.signals.dataChanged.emit()
+            self.signals.dataChanged.emit()
 
     def get_signals_filenames(self, s=None, l=None):
         if s == None: s = self.level
@@ -1538,7 +1538,7 @@ class DataModel:
         if l == None: l = self.zpos
         for level in self.finer_scales():
             self._data['stack'][l]['levels'][level]['swim_settings']['iterations'] = val
-        self.signals.warning2.emit()
+        self.signals.dataChanged.emit()
 
 
     def swim_settings(self, s=None, l=None):
@@ -1551,7 +1551,7 @@ class DataModel:
         '''Sets the Whitening Factor for the Current Layer.'''
         for level in self.finer_scales():
             self._data['stack'][self.zpos]['levels'][level]['swim_settings']['whitening'] = f
-        self.signals.warning2.emit()
+        self.signals.dataChanged.emit()
 
 
     def swim_1x1_custom_px(self, s=None, l=None):
@@ -1576,7 +1576,7 @@ class DataModel:
         if (self.swim_2x2_custom_px()[0] * 2) > pixels:
             self._data['stack'][self.zpos]['levels'][self.level]['swim_settings']['grid']['size_2x2'] = [int(pixels / 2  + 0.5), int(pixels_y / 2 + 0.5)]
         if not silent:
-            self.signals.warning2.emit()
+            self.signals.dataChanged.emit()
 
 
 
@@ -1621,7 +1621,7 @@ class DataModel:
              = \
                 force_pixels
         if not silent:
-            self.signals.warning2.emit()
+            self.signals.dataChanged.emit()
 
 
     def propagate_swim_2x2_custom_px(self, indexes:list):
@@ -1664,7 +1664,7 @@ class DataModel:
                                                                                                      0.5),
                                                                                             int(man_ww_y/ 2 + 0.5)]
         if not silent:
-            self.signals.warning2.emit()
+            self.signals.dataChanged.emit()
 
     def manual_swim_window_px(self, s=None, l=None) -> int:
         '''Returns the SWIM Window for the Current Layer.'''
@@ -1681,7 +1681,7 @@ class DataModel:
 
         self['stack'][self.zpos]['levels'][self.level]['swim_settings']['manual']['size_region'] = pixels
         if not silent:
-            self.signals.warning2.emit()
+            self.signals.dataChanged.emit()
 
 
     def propagate_manual_swim_window_px(self, indexes) -> None:
@@ -1713,7 +1713,7 @@ class DataModel:
                 for i in range(len(self)):
                     self['stack'][i]['levels'][s]['swim_settings']['manual']['size_region'] = man_ww
         if not silent:
-            self.signals.warning2.emit()
+            self.signals.dataChanged.emit()
 
     def image_size(self, s=None) -> tuple:
         if s == None: s = self.level
@@ -1858,9 +1858,57 @@ class DataModel:
 
 
     def applyLevelDefaults(self):
-        for level in self.finer_scales():
-            self['stack'][self.zpos]['levels'][self.level]['swim_settings'].update(copy.deepcopy(self.defaults))
-        self.signals.warning2.emit()
+        logger.info('')
+        self['stack'][self.zpos]['levels'][self.level]['swim_settings'].update(copy.deepcopy(self.defaults))
+
+        self.signals.dataChanged.emit()
+
+
+    def getSWIMSettings(self, zpos=None, level=None):
+        if zpos == None: zpos = self.zpos
+        if level == None: level = self.level
+        ss = self['stack'][zpos]['levels'][level]['swim_settings']
+        logger.info('')
+        d = {
+            'clobber_fixed_noise': ss['clobber_fixed_noise'],
+            'clobber_size': ss['clobber_size'],
+            'grid':{
+                'quadrants': ss['grid']['quadrants'],
+                'size_1x1': ss['grid']['size_1x1'],
+                'size_2x2': ss['grid']['size_2x2'],
+            },
+            'initial_rotation': ss['initial_rotation'],
+            'iterations': ss['iterations'],
+            'whitening': ss['whitening']
+        }
+        return d
+
+
+    def setTheseAsDefaults(self):
+        logger.info('')
+        self.defaults.update(self.getSWIMSettings())
+        self.updateDefaults()
+        self.updateComportsKeys(all=True)
+        self.signals.dataChanged.emit()
+
+
+    def updateDefaults(self):
+        level=self.level
+        for z in range(0,len(self)):
+            if self.isdefaults(level=level, z=z):
+                self['stack'][z]['levels'][level]['swim_settings'].update(self['defaults'][level])
+
+
+
+
+
+
+
+    # def setLevelDefaults(self):
+    #     logger.info('')
+    #     for level in self.finer_scales():
+    #         self['stack'][self.zpos]['levels'][level]['swim_settings'].update(copy.deepcopy(self.defaults))
+    #     self.signals.dataChanged.emit()
 
 
     def gatherDataPresets(self) -> dict:
