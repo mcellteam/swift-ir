@@ -542,10 +542,10 @@ class ProjectTab(QWidget):
             self.dataUpdateMA()
 
 
-        self.bPush = QPushButton('Apply Settings As Defaults')
-        self.bPush.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.bPush.setFixedHeight(14)
-        self.bPush.setStyleSheet('font-size: 8px;')
+        self.bPushSettingsAsDefaults = QPushButton('Apply Settings As Defaults')
+        self.bPushSettingsAsDefaults.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.bPushSettingsAsDefaults.setFixedHeight(14)
+        self.bPushSettingsAsDefaults.setStyleSheet('font-size: 8px;')
         # msg = "Use these as default settings for the current and finer scale levels."
         msg = "Push (forward-propagate) displayed SWIM settings as defaults for this and higher resolution levels."
         msg = '\n'.join(textwrap.wrap(msg, width=40))
@@ -764,7 +764,7 @@ class ProjectTab(QWidget):
 
         def fn_slider1x1():
             caller = inspect.stack()[1].function
-            if caller == 'main':
+            if caller in ('main','fn_le1x1'):
                 logger.info('')
                 val = int(self.slider1x1.value())
                 if (val % 2) == 1:
@@ -787,28 +787,31 @@ class ProjectTab(QWidget):
         self.slider1x1.valueChanged.connect(fn_slider1x1)
         self.slider1x1.setMaximumWidth(100)
 
-        def fn():
-            self.dm.set_swim_1x1_custom_px(int(self.le1x1.text()))
-            self.dataUpdateMA()
-            if self.tn_widget.isVisible():
-                self.tn_ref.update()
-                self.tn_tra.update()
+        def fn_le1x1():
+            logger.info('')
+            # self.dm.set_swim_1x1_custom_px(int(self.le1x1.text()))
+            # self.dm.set_swim_1x1_custom_px(int(self.le1x1.text()))
+            self.slider1x1.setValue(int(self.le1x1.text()))
+            # self.dataUpdateMA()
 
         self.le1x1 = QLineEdit()
-        self.le1x1.returnPressed.connect(fn)
+        self.le1x1.returnPressed.connect(fn_le1x1)
         self.le1x1.setFixedSize(QSize(48, 16))
 
         tip = "2x2 window width for automatic alignment (px)"
 
         def fn_slider2x2():
             caller = inspect.stack()[1].function
-            if caller == 'main':
+            if caller in ('main','fn_le2x2'):
                 logger.info('')
                 val = int(self.slider2x2.value())
                 self.dm.set_swim_2x2_custom_px(val)
                 self.le2x2.setText(str(self.dm.swim_2x2_custom_px()[0]))
                 self.slider2x2.setValue(int(self.dm.swim_2x2_custom_px()[0]))
                 self.editorViewer.drawSWIMwindow()
+                if self.tn_widget.isVisible():
+                    self.tn_ref.update()
+                    self.tn_tra.update()
 
         self.slider2x2 = QSlider(Qt.Orientation.Horizontal, self)
         self.slider2x2.setFocusPolicy(Qt.NoFocus)
@@ -816,11 +819,14 @@ class ProjectTab(QWidget):
         self.slider2x2.valueChanged.connect(fn_slider2x2)
         self.slider2x2.setMaximumWidth(100)
 
-        def fn():
+        def fn_le2x2():
+            logger.info('')
+            # self.dm.set_swim_2x2_custom_px(int(self.le2x2.text()))
             self.slider2x2.setValue(int(self.le2x2.text()))
+            # self.dataUpdateMA()
 
         self.le2x2 = QLineEdit()
-        self.le2x2.returnPressed.connect(fn)
+        self.le2x2.returnPressed.connect(fn_le2x2)
         self.le2x2.setFixedSize(QSize(48, 16))
 
         def fn():
@@ -1010,7 +1016,7 @@ class ProjectTab(QWidget):
         wids = [self.leSwimWindow, self.leWhitening, self.leIterations, self.cbClobber, self.leClobber]
         for w in wids:
             w.setFixedHeight(16)
-        self.flGrid.addWidget(VWidget(self.bPush, lPush))
+        self.flGrid.addWidget(VWidget(self.bPushSettingsAsDefaults, lPush))
         self.flGrid.addWidget(VWidget(self.bPull, lPull))
 
         # self.saGrid = QScrollArea()
