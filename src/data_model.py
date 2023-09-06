@@ -1205,7 +1205,7 @@ class DataModel:
 
 
     def isdefaults(self, level=None, z=None):
-        logger.critical('')
+        logger.info('')
         if level == None: level = self.level
         if z == None: z = self.zpos
         caller = inspect.stack()[1].function
@@ -1250,7 +1250,7 @@ class DataModel:
 
 
         answer = len(reasons) == 0
-        logger.critical(f"Returning {answer}!\nReasons: {reasons}")
+        logger.info(f"Returning {answer}, Reasons:\n{reasons}")
         return answer, reasons
 
 

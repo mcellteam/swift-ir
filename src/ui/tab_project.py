@@ -2599,7 +2599,7 @@ class ProjectTab(QWidget):
     def updateWarnings(self):
         logger.critical('')
         if self.dm.is_aligned():
-            logger.critical(f"\n\n[{caller_name()}] Updating warnings...\n")
+            logger.info(f"\n\n[{caller_name()}] Updating warnings...\n")
             ishidden0 = self.updateCafmComportsLabel()
             ishidden1 = self.updateDataComportsUI()
             self.gbWarnings.setHidden(ishidden0 and ishidden1)
@@ -2609,7 +2609,7 @@ class ProjectTab(QWidget):
 
 
     def updateCafmComportsLabel(self):
-        logger.critical('')
+        logger.info('')
         #Todo isAlignedAndGenerated
         hide = self.dm.is_aligned() and self.dm.cafm_hash_comports()
         self.warning_cafm.setHidden(hide)
@@ -2617,7 +2617,7 @@ class ProjectTab(QWidget):
 
 
     def updateDataComportsUI(self):
-        logger.critical('')
+        logger.info('')
         #Todo isAlignedAndGenerated
         data_comports = self.dm.data_comports()[0]
         hide = self.dm.is_aligned() and data_comports
