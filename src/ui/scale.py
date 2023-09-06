@@ -115,14 +115,12 @@ class ScaleWorker(QObject):
                     of_arg = 'of=%s' % ofn
                     tasks.append([iscale2_c, scale_arg, of_arg, if_arg])
 
-
-
                 self.initPbar.emit((len(tasks), desc))
                 t = time.time()
 
                 cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks))
                 # cpus = 10
-                logger.info(f"CPUs: {cpus}")
+                logger.info(f"# Threads: {cpus}")
                 # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
                 # with ctx.Pool(processes=cpus) as pool:
                 # with ctx.Pool(processes=cpus) as pool:
@@ -135,13 +133,10 @@ class ScaleWorker(QObject):
                 #                                          total=len(tasks),
                 #                                          desc=desc, position=0,
                 #                                          leave=True)):
-                #     for i, result in enumerate(tqdm.tqdm(pool.map(run, tasks),
-                #                                          total=len(tasks),
-                #                                          desc=desc, position=0,
-                #                                          leave=True)):
-                    for i in tqdm.tqdm(pool.map(run, tasks), total=len(tasks),
-                                                     desc=desc, position=0,
-                                                     leave=True):
+                    for i, result in enumerate(tqdm.tqdm(pool.map(run, tasks),
+                                                         total=len(tasks),
+                                                         desc=desc, position=0,
+                                                         leave=True)):
                         self.progress.emit(i)
                         if not self.running():
                             break
@@ -221,7 +216,7 @@ class ScaleWorker(QObject):
             i = 0
             cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks))
             # with ctx.Pool(processes=104, maxtasksperchild=1) as pool:
-            # logger.info(f"# mp.Pool Processes: {cpus}")
+            logger.info(f"# Threads: {cpus}")
             # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
             with ThreadPoolExecutor(max_workers=cpus) as pool:
                 for result in tqdm.tqdm(
