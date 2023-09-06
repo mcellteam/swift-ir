@@ -1142,6 +1142,13 @@ class MainWindow(QMainWindow):
         self.updateLowest8widget()
         self.boxScale.setEnabled(True)
         # self.dataUpdateWidgets()
+
+        try:
+            self.pm.refresh()
+        except:
+            print_exception()
+
+
         if self._isProjectTab():
             # self._showSNRcheck()
             cfg.pt.updateTimingsWidget()
