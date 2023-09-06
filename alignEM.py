@@ -343,7 +343,6 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     print('Setting application style...')
     app.setStyle('Fusion')
-    print('Setting application font...')
     font = QFont("Tahoma")
     font.setPointSize(10)
     app.setFont(font)

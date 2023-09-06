@@ -178,7 +178,6 @@ class ScaleWorker(QObject):
         n_imgs = len(self.paths)
 
         for s, siz in deepcopy(self.scales):
-            logger.critical(f"Looping s={s}, siz={siz}...")
             sv = get_scale_val(s)
 
             allow_continue = False
@@ -207,7 +206,6 @@ class ScaleWorker(QObject):
 
             shape = (len(self.paths), y, x)
             name = 's%d' % get_scale_val(s)
-            logger.critical(f"preallocating name: {name}, shape: {shape}...")
             preallocate_zarr(zarr_od=zarr_od, name=name, shape=shape, dtype='|u1', opts=self.opts, scale=s)
 
             t = time.time()
@@ -284,7 +282,7 @@ def preallocate_zarr(zarr_od, name, shape, dtype, opts, scale):
                   f'\n      chunk : {chunkshape}'
     logger.info(output_text)
     try:
-        if os.path.exists(os.path.join(zarr_od, name)):
+        if os.path.isdir(os.path.join(zarr_od, name)):
             remove_zarr(os.path.join(zarr_od, name))
         arr = zarr.group(store=zarr_od, overwrite=False)
         compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
