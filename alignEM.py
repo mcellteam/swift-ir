@@ -31,7 +31,7 @@ For more information, please refer to [http://unlicense.org]
 
 import sys, getpass
 
-if not getpass.getuser() in ('joelyancey', 'joely', 'jyancey', 'tmbartol', 'tbartol', 'bartol'):
+if not getpass.getuser() in ('joelyancey', 'joely', 'jyancey', 'tmbartol', 'tbartol', 'bartol', 'ama8447'):
     print("Please do not use this version of AlignEM-SWiFT yet, thank you. Bye!")
     sys.exit()
 
@@ -330,7 +330,7 @@ if __name__ == "__main__":
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--enable-logging --log-level=3' # suppress JS warnings
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=0'
     os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --no-sandbox --num-raster-threads=%s ' \
-                                               '--enable-logging --log-level=0' % \
+                                               '--enable-logging --log-level=3' % \
                                                cfg.QTWEBENGINE_RASTER_THREADS
     os.environ['OPENBLAS_NUM_THREADS'] = '1'
     # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
