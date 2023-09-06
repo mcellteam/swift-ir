@@ -14,7 +14,7 @@ import imageio
 from pathlib import Path
 from multiprocessing import Pool
 from multiprocessing.pool import ThreadPool
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import multiprocessing as mp
 import subprocess as sp
 import numpy as np
@@ -210,13 +210,26 @@ class AlignWorker(QObject):
             # QApplication.processEvents()
             all_results = []
             logger.info(f'# Processes: {cpus}')
-            with ctx.Pool(processes=cpus) as pool:
-                for i, result in enumerate(tqdm.tqdm(pool.imap_unordered(run_recipe, tasks),
-                                        total=len(tasks), desc=desc, position=0, leave=True)):
-                    all_results.append(result)
+            # with ctx.Pool(processes=cpus) as pool:
+            #     for i, result in enumerate(tqdm.tqdm(pool.imap_unordered(run_recipe, tasks),
+            #                             total=len(tasks), desc=desc, position=0, leave=True)):
+            #         all_results.append(result)
+            #         self.progress.emit(i)
+            #         if not self.running():
+            #             break
+
+            with ProcessPoolExecutor(max_workers=cpus) as pool:
+                # with ProcessPoolExecutor(max_workers=cpus) as pool:
+                # with ThreadPoolExecutor(max_workers=1) as pool:
+                #     for i, result in enumerate(tqdm.tqdm(pool.imap_unordered(run, tasks),
+                #                                          total=len(tasks),
+                #                                          desc=desc, position=0,
+                #                                          leave=True)):
+                for i, result in enumerate(tqdm.tqdm(pool.map(run_recipe, tasks),
+                                                     total=len(tasks),
+                                                     desc=desc, position=0,
+                                                     leave=True)):
                     self.progress.emit(i)
-                    # QApplication.processEvents()
-                    # logger.info(f'running? {self.running()}')
                     if not self.running():
                         break
 
@@ -452,6 +465,21 @@ class AlignWorker(QObject):
                 # QApplication.processEvents()
                 if not self.running():
                     break
+
+        # with ThreadPoolExecutor(max_workers=cpus) as pool:
+        #     # with ProcessPoolExecutor(max_workers=cpus) as pool:
+        #     # with ThreadPoolExecutor(max_workers=1) as pool:
+        #     #     for i, result in enumerate(tqdm.tqdm(pool.imap_unordered(run, tasks),
+        #     #                                          total=len(tasks),
+        #     #                                          desc=desc, position=0,
+        #     #                                          leave=True)):
+        #     for i, result in enumerate(tqdm.tqdm(pool.map(run_mir, tasks),
+        #                                          total=len(tasks),
+        #                                          desc=desc, position=0,
+        #                                          leave=True)):
+        #         self.progress.emit(i)
+        #         if not self.running():
+        #             break
 
 
         # with ctx.Pool() as pool:
