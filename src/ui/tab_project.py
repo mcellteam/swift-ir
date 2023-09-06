@@ -543,6 +543,7 @@ class ProjectTab(QWidget):
 
 
         self.bPushSettingsAsDefaults = QPushButton('Apply Settings As Defaults')
+        self.bPushSettingsAsDefaults.setEnabled(False)
         self.bPushSettingsAsDefaults.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.bPushSettingsAsDefaults.setFixedHeight(14)
         self.bPushSettingsAsDefaults.setStyleSheet('font-size: 8px;')
@@ -554,6 +555,7 @@ class ProjectTab(QWidget):
         lPush.setStyleSheet('font-size: 8px;')
 
         self.bPull = QPushButton('Pull Settings From Lower Resolution')
+        self.bPull.setEnabled(False)
         self.bPull.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.bPull.setFixedHeight(14)
         self.bPull.setStyleSheet('font-size: 8px;')
@@ -851,6 +853,7 @@ class ProjectTab(QWidget):
         self.rb_MA_hint = QRadioButton('Match Regions')
         self.rb_MA_hint.setStyleSheet("font-size: 9px;")
         self.rb_MA_strict = QRadioButton('Match Points')
+        self.rb_MA_strict.setEnabled(False)
         self.rb_MA_strict.setStyleSheet("font-size: 9px;")
         self.MA_bg = QButtonGroup(self)
         self.MA_bg.setExclusive(True)
