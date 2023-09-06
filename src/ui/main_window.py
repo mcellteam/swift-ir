@@ -1999,6 +1999,7 @@ class MainWindow(QMainWindow):
 
     def _saveProjectToFile(self, saveas=None, silently=False):
         if cfg.data:
+            caller = inspect.stack()[1].function
             try:
                 if saveas is not None:
                     cfg.data.location = saveas
@@ -2011,6 +2012,7 @@ class MainWindow(QMainWindow):
                 if not silently:
                     logger.info(f'Saving:\n{path}')
 
+                logger.critical(f"\n\n[{caller}] Writing {path} to file...\n")
                 with open(path, 'w') as f:
                     jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
                     # f.write(jde.encode(data_cp)) #0828-

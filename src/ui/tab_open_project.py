@@ -757,11 +757,6 @@ class OpenProject(QWidget):
             logger.critical(f"creating {os.path.join(out, 'tmp', k)}")
             os.makedirs(os.path.join(out, 'tmp',         k), exist_ok=True)
 
-        logger.info("Writing alignment data file...")
-        logger.info(f"name: {name}")
-        with open(name, 'w') as f:
-            jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
-            f.write(jde.encode(dm._data))
         cfg.mw._saveProjectToFile()
         self.bPlusAlignment.setEnabled(True)
         cfg.mw.onStartProject(dm, switch_to=True)
