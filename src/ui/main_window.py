@@ -421,7 +421,7 @@ class MainWindow(QMainWindow):
     def shutdownNeuroglancer(self):
         if ng.is_server_running():
             if DEV:
-                logger.critical('[DEV] Stopping Neuroglancer...')
+                logger.info('[DEV] Stopping Neuroglancer...')
             # self.tell('Stopping Neuroglancer...')
             ng.server.stop()
             time.sleep(.1)
@@ -785,10 +785,6 @@ class MainWindow(QMainWindow):
                 for n in thumbs:
                     fn, _ = os.path.splitext(n)
                     indexes.append(int(fn[-1]))
-
-                # logger.critical(f"indexes: {indexes}")
-                # logger.critical(f"snr_vals: {snr_vals}")
-                # logger.critical(f"thumbs: {thumbs}")
 
                 for i in range(0,4):
 
@@ -2012,7 +2008,7 @@ class MainWindow(QMainWindow):
                 if not silently:
                     logger.info(f'Saving:\n{path}')
 
-                logger.critical(f"\n\n[{caller}] Writing {path} to file...\n")
+                logger.critical(f"[{caller}] Writing {path} to file...")
                 with open(path, 'w') as f:
                     jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
                     # f.write(jde.encode(data_cp)) #0828-
@@ -2420,7 +2416,7 @@ class MainWindow(QMainWindow):
         # if caller == 'main':
         if self._isProjectTab():
             if caller != 'updateSlidrZpos':
-                logger.critical(f'[{caller}]')
+                logger.info(f'[{caller}]')
                 skip_state = not self.cbSkip.isChecked()
                 layer = cfg.data.zpos
                 for s in cfg.data.finer_scales():
@@ -2464,12 +2460,6 @@ class MainWindow(QMainWindow):
         logger.info('')
         if cfg.data:
             self.cbSkip.setChecked(not self.cbSkip.isChecked())
-
-
-    def onMAsyncTimer(self):
-        logger.critical("")
-        logger.critical(f"cfg.data.zpos         = {cfg.data.zpos}")
-        logger.critical(f"cfg.editorViewer.index  = {cfg.editorViewer.index}")
 
 
     def print_all_matchpoints(self):
@@ -3320,7 +3310,7 @@ class MainWindow(QMainWindow):
                 cfg.pt.dSnr_plot.initSnrPlot()
 
         elif self._getTabType() == 'ZarrTab':
-            logger.critical('Loading Zarr Tab...')
+            logger.info('Loading Zarr Tab...')
             cfg.zarr_tab = self.globTabs.currentWidget()
             cfg.emViewer = cfg.zarr_tab.viewer
             cfg.zarr_tab.viewer.bootstrap()
@@ -4718,7 +4708,6 @@ class MainWindow(QMainWindow):
                     if loc_py in (4, 8):
                         self.splitDockWidget(self.dw_hud, self.dw_python, Qt.Horizontal)
                         w = int(self.width() / 2)
-                        # logger.critical(f"w = {w}")
                         self.resizeDocks((self.dw_hud, self.dw_python), (w, w), Qt.Horizontal)
                         # self.resizeDocks((self.dw_hud, self.dw_python), (self.dw_python.sizeHint().height(), self.dw_python.sizeHint().height()), Qt.Vertical)
                     elif loc_py in (1, 2):
@@ -5049,7 +5038,7 @@ class MainWindow(QMainWindow):
         self.hidePbar()
 
     def cancelTasks(self):
-        logger.critical("STOP requested!")
+        logger.critical("STOP TASKS requested!")
         self._working = False
         try:
             self._alignworker.stop()
@@ -5085,9 +5074,8 @@ class MainWindow(QMainWindow):
 
 
     def updatePbar(self, x=None):
-        caller = inspect.stack()[1].function
-        # logger.critical(f"caller: {caller}")
-        logger.info(f"x = {x}")
+        # caller = inspect.stack()[1].function
+        # logger.info(f"x = {x}")
         if x == None: x = 9
         self.pbar.setValue(x)
         # try:

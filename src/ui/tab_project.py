@@ -1,12 +1,7 @@
 #!/usr/bin/env python3
-
-'''TODO This needs to have columns for indexing and section name (for sorting!)'''
-import glob
 import os, sys, logging, inspect, copy, time, warnings
 from datetime import datetime
 import textwrap
-# from math import log10
-from math import log2, sqrt
 import neuroglancer as ng
 import numpy as np
 import shutil
@@ -16,8 +11,7 @@ from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWebEngineWidgets import *
 import src.config as cfg
-from src.helpers import print_exception, getOpt, setOpt, getData, setData, get_scale_key, natural_sort, hotkey, \
-    get_appdir, caller_name, is_tacc, is_joel, make_affine_widget_HTML
+from src.helpers import print_exception, getOpt, setOpt, getData, setData, caller_name, is_tacc, is_joel
 from src.viewer_em import EMViewer, PMViewer
 from src.viewer_ma import MAViewer
 from src.ui.snr_plot import SnrPlot
@@ -25,28 +19,17 @@ from src.ui.project_table import ProjectTable
 from src.ui.models.json_tree import JsonModel
 from src.ui.sliders import DoubleSlider
 from src.ui.thumbnail import CorrSignalThumbnail, ThumbnailFast
-from src.ui.toggle_switch import ToggleSwitch, AnimatedToggle
-from src.ui.process_monitor import HeadupDisplay
 from src.ui.gif_player import GifPlayer
-from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter, YellowTextLabel
+from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter
 from src.ui.joystick import Joystick
 from src.funcs_image import SetStackCafm
 from src import DataModel
-from collections import OrderedDict
 
 __all__ = ['ProjectTab']
 
 logger = logging.getLogger(__name__)
 
-
 DEV = is_joel()
-
-
-
-
-# class Signals(QObject):
-#     dataChanged = Signal(tuple)
-
 
 class ProjectTab(QWidget):
 
@@ -62,12 +45,6 @@ class ProjectTab(QWidget):
         self.path = path
         self.viewer = None
         self.datamodel = self.dm = datamodel
-
-
-        #0827-
-        # self.datamodel.signals.warning2.connect(self.updateWarnings)
-
-
         self.setUpdatesEnabled(True)
         # self.webengine = QWebEngineView()
         self.webengine = WebEngine(ID='emViewer')
@@ -405,7 +382,6 @@ class ProjectTab(QWidget):
         self.lab_ref.setStyleSheet('font-size: 10px; background-color: #ede9e8; color: #161c20;')
         self.lab_nextcolor1 = QLabel()
         self.lab_nextcolor1.setFixedSize(14, 14)
-
 
 
         self.lw_tra = ListWidget()
@@ -896,20 +872,8 @@ class ProjectTab(QWidget):
         self.Q3.clicked.connect(self.updateAutoSwimRegions)
         self.Q4.clicked.connect(self.updateAutoSwimRegions)
 
-        # siz = 30
-        # self.Q1.setFixedSize(siz, siz)
-        # self.Q2.setFixedSize(siz, siz)
-        # self.Q3.setFixedSize(siz, siz)
-        # self.Q4.setFixedSize(siz, siz)
-
-        # self.Q_widget = QWidget()
-        # self.Q_widget.setAutoFillBackground(True)
         self.gl_Q = QGridLayout()
         self.gl_Q.setSpacing(1)
-        # self.gl_Q.addWidget(self.Q1, 0, 0, 1, 1, alignment=Qt.AlignRight | Qt.AlignBottom)
-        # self.gl_Q.addWidget(self.Q2, 0, 1, 1, 1, alignment=Qt.AlignLeft | Qt.AlignBottom)
-        # self.gl_Q.addWidget(self.Q3, 1, 0, 1, 1, alignment=Qt.AlignRight | Qt.AlignTop)
-        # self.gl_Q.addWidget(self.Q4, 1, 1, 1, 1, alignment=Qt.AlignLeft | Qt.AlignTop)
         self.gl_Q.addWidget(self.Q1, 0, 0, 1, 1)
         self.gl_Q.addWidget(self.Q2, 0, 1, 1, 1)
         self.gl_Q.addWidget(self.Q3, 0, 2, 1, 1)
@@ -1481,24 +1445,6 @@ class ProjectTab(QWidget):
         self.labScaleStatus = QLabel('Status: ')
         self.labScaleStatus.setStyleSheet("""color: #ede9e8; font-weight: 600; font-size: 10px;""")
 
-        # def fn():
-        #     logger.info('')
-        #     opt = getData('state,show_ng_controls')
-        #     opt = not opt
-        #     setData('state,show_ng_controls', opt)
-        #     self.initNeuroglancer()
-        #     # self.spreadW.setVisible(opt)
-        #     # self.updateUISpacing()
-        #     if self.dm['state']['current_tab'] == 1:
-        #         self.editorViewer.updateUIControls()
-        #     else:
-        #         cfg.emViewer.updateUIControls()
-        #     QApplication.processEvents()
-        # self.ngcl_uiControls = QToolButton()
-        # self.ngcl_uiControls.setCheckable(True)
-        # self.ngcl_uiControls.setText('NG Controls')
-        # self.ngcl_uiControls.clicked.connect(fn)
-
 
         def fn():
             self.setUpdatesEnabled(False)
@@ -2069,158 +2015,6 @@ class ProjectTab(QWidget):
         # hbl.setAlignment(Qt.AlignBottom)
         # self.gbMethodRbs.setLayout(hbl)
         # self.gbMethodRbs.setStyleSheet('font-size: 11px; padding: 2px;')
-
-
-        #
-        # self.le_tacc_num_cores = QLineEdit()
-        # self.le_tacc_num_cores.setFixedHeight(18)
-        # self.le_tacc_num_cores.setFixedWidth(30)
-        # self.le_tacc_num_cores.setValidator(QIntValidator(1,128))
-        # def update_tacc_max_cores():
-        #     logger.info('')
-        #     n = int(self.le_tacc_num_cores.text())
-        #     cfg.TACC_MAX_CPUS = int(n)
-        #     cfg.main_window.tell(f"Maximum # of cores is now set to: {n}")
-        # self.le_tacc_num_cores.setText(str(cfg.TACC_MAX_CPUS))
-        # self.le_tacc_num_cores.textEdited.connect(update_tacc_max_cores)
-        # self.le_tacc_num_cores.returnPressed.connect(update_tacc_max_cores)
-        #
-        # self.le_max_downsampling = QLineEdit()
-        # self.le_max_downsampling.setFixedHeight(18)
-        # self.le_max_downsampling.setFixedWidth(30)
-        # self.le_max_downsampling.setValidator(QIntValidator())
-        # def update_le_max_downsampling():
-        #     logger.info('')
-        #     n = int(self.le_max_downsampling.text())
-        #     cfg.max_downsampling = int(n)
-        # self.le_max_downsampling.setText(str(cfg.max_downsampling))
-        # self.le_max_downsampling.textEdited.connect(update_le_max_downsampling)
-        # self.le_max_downsampling.returnPressed.connect(update_le_max_downsampling)
-        #
-        # self.le_max_downsampled_size = QLineEdit()
-        # self.le_max_downsampled_size.setFixedHeight(18)
-        # self.le_max_downsampled_size.setFixedWidth(30)
-        # self.le_max_downsampled_size.setValidator(QIntValidator())
-        # def update_le_max_downsampled_size():
-        #     logger.info('')
-        #     n = int(self.le_max_downsampled_size.text())
-        #     cfg.max_downsampled_size = int(n)
-        # self.le_max_downsampled_size.setText(str(cfg.max_downsampled_size))
-        # self.le_max_downsampled_size.textEdited.connect(update_le_max_downsampled_size)
-        # self.le_max_downsampled_size.returnPressed.connect(update_le_max_downsampled_size)
-        #
-        # # self.le_max_downsampling_scales = QLineEdit()
-        # # self.le_max_downsampling_scales.setFixedHeight(18)
-        # # self.le_max_downsampling_scales.setFixedWidth(30)
-        # # self.le_max_downsampling_scales.setValidator(QIntValidator())
-        # # def update_le_max_downsampling_scales():
-        # #     logger.info('')
-        # #     n = int(self.le_max_downsampling_scales.text())
-        # #     cfg.max_downsampling_scales = int(n)
-        # # self.le_max_downsampling_scales.setText(str(cfg.max_downsampling_scales))
-        # # self.le_max_downsampling_scales.textEdited.connect(update_le_max_downsampling_scales)
-        # # self.le_max_downsampling_scales.returnPressed.connect(update_le_max_downsampling_scales)
-        #
-        # self.le_tacc_num_scale1_cores = QLineEdit()
-        # self.le_tacc_num_scale1_cores.setFixedHeight(18)
-        # self.le_tacc_num_scale1_cores.setFixedWidth(30)
-        # self.le_tacc_num_scale1_cores.setValidator(QIntValidator(1,128))
-        # def update_tacc_max_scale1_cores():
-        #     logger.info('')
-        #     n = int(self.le_tacc_num_scale1_cores.text())
-        #     cfg.SCALE_1_CORES_LIMIT = int(n)
-        #     cfg.main_window.tell(f"Maximum # of cores is now set to: {n}")
-        # self.le_tacc_num_scale1_cores.setText(str(cfg.SCALE_1_CORES_LIMIT))
-        # self.le_tacc_num_scale1_cores.textEdited.connect(update_tacc_max_scale1_cores)
-        # self.le_tacc_num_scale1_cores.returnPressed.connect(update_tacc_max_scale1_cores)
-        #
-        # self.le_qtwebengine_raster_threads = QLineEdit()
-        # self.le_qtwebengine_raster_threads.setFixedHeight(18)
-        # self.le_qtwebengine_raster_threads.setFixedWidth(30)
-        # self.le_qtwebengine_raster_threads.setValidator(QIntValidator())
-        # def update_raster_threads():
-        #     logger.info('')
-        #     n = int(self.le_qtwebengine_raster_threads.text())
-        #     cfg.QTWEBENGINE_RASTER_THREADS = n
-        #     cfg.main_window.tell(f"# QtWebengine raster threads is now set to: {n}")
-        # self.le_qtwebengine_raster_threads.setText(str(cfg.QTWEBENGINE_RASTER_THREADS))
-        # self.le_qtwebengine_raster_threads.textEdited.connect(update_raster_threads)
-        # self.le_qtwebengine_raster_threads.returnPressed.connect(update_raster_threads)
-        #
-        # self.cb_recipe_logging = QCheckBox()
-        # self.cb_recipe_logging.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # def update_recipe_logging():
-        #     logger.info('')
-        #     b = self.cb_recipe_logging.isChecked()
-        #     cfg.LOG_RECIPE_TO_FILE = int(b)
-        #     cfg.main_window.tell(f"Recipe logging is now set to: {b}")
-        # self.cb_recipe_logging.setChecked(cfg.LOG_RECIPE_TO_FILE)
-        # self.cb_recipe_logging.toggled.connect(update_recipe_logging)
-        #
-        # self.cb_verbose_swim = QCheckBox()
-        # self.cb_verbose_swim.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # def update_swim_verbosity():
-        #     logger.info('')
-        #     b = self.cb_verbose_swim.isChecked()
-        #     cfg.VERBOSE_SWIM = int(b)
-        #     cfg.main_window.tell(f"Recipe logging is now set to: {b}")
-        # self.cb_verbose_swim.setChecked(cfg.VERBOSE_SWIM)
-        # self.cb_verbose_swim.toggled.connect(update_swim_verbosity)
-        #
-        # self.cb_dev_mode = QCheckBox()
-        # self.cb_dev_mode.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # def update_dev_mode():
-        #     logger.info('')
-        #     b = self.cb_dev_mode.isChecked()
-        #     cfg.DEV_MODE = int(b)
-        #     cfg.main_window.tell(f"Dev mode is now set to: {b}")
-        # self.cb_dev_mode.setChecked(cfg.DEV_MODE)
-        # self.cb_dev_mode.toggled.connect(update_dev_mode)
-        #
-        # self.cb_use_pool = QCheckBox()
-        # self.cb_use_pool.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # def update_mp_mode():
-        #     logger.info('')
-        #     b = self.cb_use_pool.isChecked()
-        #     cfg.USE_POOL_FOR_SWIM = int(b)
-        #     cfg.main_window.tell(f"Multiprocessing mode is now set to: "
-        #                          f"{('task queue', 'pool')[b]}")
-        # self.cb_use_pool.setChecked(cfg.USE_POOL_FOR_SWIM)
-        # self.cb_use_pool.toggled.connect(update_mp_mode)
-        #
-        # self.w_tacc = QWidget()
-        # self.w_tacc.setContentsMargins(2,2,2,2)
-        # self.fl_tacc = QFormLayout()
-        # self.fl_tacc.setContentsMargins(0,0,0,0)
-        # self.fl_tacc.setSpacing(0)
-        # self.w_tacc.setLayout(self.fl_tacc)
-        # self.fl_tacc.addRow(f"Local Vol., max_downsampling", self.le_max_downsampling)
-        # self.fl_tacc.addRow(f"Local Vol., max_downsampled_size", self.le_max_downsampled_size)
-        # # self.fl_tacc.addRow(f"Local Vol., max_downsampling_scales", self.le_max_downsampling_scales)
-        # self.fl_tacc.addRow(f"Max # cores (downsampled scales)", self.le_tacc_num_cores)
-        # self.fl_tacc.addRow(f"Max # cores (scale 1)", self.le_tacc_num_scale1_cores)
-        # self.fl_tacc.addRow(f"Use mp.Pool (vs task queue)", self.cb_use_pool)
-        # self.fl_tacc.addRow(f"QtWebengine # raster threads", self.le_qtwebengine_raster_threads)
-        # self.fl_tacc.addRow(f"Log recipe to file", self.cb_recipe_logging)
-        # self.fl_tacc.addRow(f"Verbose SWIM (-v)", self.cb_verbose_swim)
-        # self.fl_tacc.addRow(f"DEV_MODE", self.cb_dev_mode)
-        #
-        # self.wAdvanced = QScrollArea()
-        # self.wAdvanced.setWidget(self.w_tacc)
-        # self.wAdvanced.setWidgetResizable(True)
-        # self.wAdvanced.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        # self.wAdvanced.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-
-        # self.sideTabs = QTabWidget()
-        # self.sideTabs.addTab(self.swMethod, 'Configure')
-        # self.sideTabs.addTab(self.saStats, 'Details')
-        # self.sideTabs.addTab(self.sa_runtimes, 'Timings')
-        # self.sideTabs.addTab(self.logs_widget, 'Logs')
-        # if is_tacc() or is_joel():
-        #     self.sideTabs.addTab(self.wAdvanced, 'Other')
-
-        # self.sideTabs.currentChanged.connect(self.onSideTabChange)
-
 
         self.glGifPlayer = QGridLayout()
         self.glGifPlayer.addWidget(self.gifPlayer, 0, 0)

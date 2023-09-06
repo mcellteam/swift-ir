@@ -252,7 +252,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
     def set_brightness(self):
         state = copy.deepcopy(self.state)
         for layer in state.layers:
-            logger.critical(f"Setting brightness: {cfg.data.brightness}")
+            logger.info(f"Setting brightness: {cfg.data.brightness}")
             layer.shaderControls['brightness'] = cfg.data.brightness
             # layer.volumeRendering = True
         self.set_state(state)
@@ -260,7 +260,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
     def set_contrast(self):
         state = copy.deepcopy(self.state)
         for layer in state.layers:
-            logger.critical(f"Setting contrast: {cfg.data.contrast}")
+            logger.info(f"Setting contrast: {cfg.data.contrast}")
             layer.shaderControls['contrast'] = cfg.data.contrast
             #layer.volumeRendering = True
         self.set_state(state)
