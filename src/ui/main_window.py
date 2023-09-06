@@ -1218,11 +1218,14 @@ class MainWindow(QMainWindow):
     @Slot()
     def alignAll(self, dm=None):
         if self._isProjectTab():
-            logger.critical('Aligning All...')
-            if dm == None:
-                dm = cfg.data
-            indexes = list(range(0,len(cfg.data)))
-            self.align(dm=dm, align_indexes=indexes, regen_indexes=indexes, reallocate_zarr=True)
+            if cfg.data.is_alignable():
+                logger.critical('Aligning All...')
+                if dm == None:
+                    dm = cfg.data
+                indexes = list(range(0,len(cfg.data)))
+                self.align(dm=dm, align_indexes=indexes, regen_indexes=indexes, reallocate_zarr=True)
+            else:
+                logger.warning("This scale is not alignable!")
 
 
 
