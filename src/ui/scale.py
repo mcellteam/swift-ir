@@ -139,7 +139,7 @@ class ScaleWorker(QObject):
                 #                                          total=len(tasks),
                 #                                          desc=desc, position=0,
                 #                                          leave=True)):
-                for i in tqdm.tqdm(pool.map(run, tasks), total=len(tasks),
+                    for i in tqdm.tqdm(pool.map(run, tasks), total=len(tasks),
                                                      desc=desc, position=0,
                                                      leave=True):
                         self.progress.emit(i)
