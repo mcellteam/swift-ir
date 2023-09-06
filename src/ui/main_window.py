@@ -1384,7 +1384,7 @@ class MainWindow(QMainWindow):
             self.leJump.setEnabled(True)
             self.boxScale.setEnabled(True)
             # self.bAlign.setEnabled(not cfg.data.is_aligned())
-            self.wAlign.setVisible(not cfg.data.is_aligned() and cfg.data.is_alignable())
+            # self.wAlign.setVisible(not cfg.data.is_aligned() and cfg.data.is_alignable()) #Temp dont hide align button
 
             if len(cfg.data.scales) == 1:
                 self.bArrowUp.setEnabled(False)
@@ -4257,7 +4257,7 @@ class MainWindow(QMainWindow):
         labs[2].setAlignment(Qt.AlignRight)
         self.wAlign = HWidget(QVLine(), labs[2], self.bAlign)
         self.wAlign.layout.setSpacing(4)
-        self.wAlign.hide()
+        # self.wAlign.hide()
 
 
         '''
