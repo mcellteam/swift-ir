@@ -1957,7 +1957,7 @@ class ProjectTab(QWidget):
             to_regenerate = self.dm.cafm_dn_comport_indexes()
             logger.critical(f'Indexes to align:\n{to_align}')
             logger.critical(f'Indexes to regenerateAll:\n{to_regenerate}')
-            cfg.mw.align(align_indexes=to_align, regen_indexes=to_regenerate, ignore_bb=True)
+            cfg.mw.align(dm=self.datamodel, align_indexes=to_align, regen_indexes=to_regenerate, ignore_bb=True)
             # cfg.mw.regenerateAll(scale=self.dm.scale, indexes=to_regenerate, ignore_bb=True)
             # to_regenerate = self.dm.cafm_dn_comport_indexes()
             # cfg.mw.regenerateAll(scale=self.dm.level, indexes=to_regenerate, reallocate_zarr=False)
