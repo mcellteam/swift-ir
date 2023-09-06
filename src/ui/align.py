@@ -210,28 +210,28 @@ class AlignWorker(QObject):
             # QApplication.processEvents()
             all_results = []
             logger.info(f'# Processes: {cpus}')
-            # with ctx.Pool(processes=cpus) as pool:
-            #     for i, result in enumerate(tqdm.tqdm(pool.imap_unordered(run_recipe, tasks),
-            #                             total=len(tasks), desc=desc, position=0, leave=True)):
-            #         all_results.append(result)
-            #         self.progress.emit(i)
-            #         if not self.running():
-            #             break
-
-            with ProcessPoolExecutor(max_workers=cpus) as pool:
-                # with ProcessPoolExecutor(max_workers=cpus) as pool:
-                # with ThreadPoolExecutor(max_workers=1) as pool:
-                #     for i, result in enumerate(tqdm.tqdm(pool.imap_unordered(run, tasks),
-                #                                          total=len(tasks),
-                #                                          desc=desc, position=0,
-                #                                          leave=True)):
-                for i, result in enumerate(tqdm.tqdm(pool.map(run_recipe, tasks),
-                                                     total=len(tasks),
-                                                     desc=desc, position=0,
-                                                     leave=True)):
+            with ctx.Pool(processes=cpus) as pool:
+                for i, result in enumerate(tqdm.tqdm(pool.imap_unordered(run_recipe, tasks),
+                                        total=len(tasks), desc=desc, position=0, leave=True)):
+                    all_results.append(result)
                     self.progress.emit(i)
                     if not self.running():
                         break
+            #
+            # with ProcessPoolExecutor(max_workers=cpus) as pool:
+            #     # with ProcessPoolExecutor(max_workers=cpus) as pool:
+            #     # with ThreadPoolExecutor(max_workers=1) as pool:
+            #     #     for i, result in enumerate(tqdm.tqdm(pool.imap_unordered(run, tasks),
+            #     #                                          total=len(tasks),
+            #     #                                          desc=desc, position=0,
+            #     #                                          leave=True)):
+            #     for i, result in enumerate(tqdm.tqdm(pool.map(run_recipe, tasks),
+            #                                          total=len(tasks),
+            #                                          desc=desc, position=0,
+            #                                          leave=True)):
+            #         self.progress.emit(i)
+            #         if not self.running():
+            #             break
 
 
             logger.critical(f"# Completed Alignment Tasks: {len(all_results)}")
