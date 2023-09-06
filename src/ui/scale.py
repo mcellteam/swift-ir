@@ -21,7 +21,7 @@ from subprocess import PIPE, Popen
 import multiprocessing as mp
 import subprocess as sp
 from multiprocessing.pool import ThreadPool
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import numpy as np
 import zarr
 import imagecodecs
@@ -128,7 +128,8 @@ class ScaleWorker(QObject):
                 # with ctx.Pool(processes=cpus) as pool:
                 # with ctx.Pool(processes=20) as pool:
 
-                with ThreadPoolExecutor(max_workers=cpus) as pool:
+                # with ThreadPoolExecutor(max_workers=cpus) as pool:
+                with ProcessPoolExecutor(max_workers=cpus) as pool:
                 # with ThreadPoolExecutor(max_workers=1) as pool:
                 #     for i, result in enumerate(tqdm.tqdm(pool.imap_unordered(run, tasks),
                 #                                          total=len(tasks),
@@ -219,7 +220,7 @@ class ScaleWorker(QObject):
             # with ctx.Pool(processes=104, maxtasksperchild=1) as pool:
             # logger.info(f"# mp.Pool Processes: {cpus}")
             # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
-            with ThreadPoolExecutor(max_workers=cpus) as pool:
+            with ThreadPoolExecutor(max_workers=1) as pool:
                 for result in tqdm.tqdm(
                     # pool.imap_unordered(convert_zarr, tasks),
                     #     total=len(tasks),
