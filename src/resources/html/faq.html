@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-   <title>AlignEM-SWiFT FAQ</title>
+   <title>alignEM FAQ</title>
     <meta charset="utf-8">
     <style>
         h3 { color: #161c20; }
@@ -10,25 +10,26 @@
 <body style="font-family: Calibri, sans-serif;">
 <h3><u>FAQs:</u></h3>
 
-<b>Q: What is AlignEM-SWiFT?</b><br/>
-A: AlignEM-SWiFt is a software tool specialized for registering electron micrographs. It is able to generate scale image hierarchies, compute affine transforms, and generate aligned images using multi-image rendering.
+<b>Q: What is alignEM?</b><br/>
+A: alignEM is a software tool specialized for registering electron micrographs. It is able to generate scale image hierarchies, compute affine transforms, and generate aligned images using multi-image rendering.
 <br/><br/>
 
-<b>Q: Can AlignEM-SWiFT be used to register/&quot;align&quot; images other than electron micrographs?</b><br/>
-A: Sure, however the Signal Whitening Image Matching (SWIM) was designed specifically with EM in mind. Such images are typically large in size and greyscale. AlignEM-SWIFT provides functionality for downscaling and the ability to pass alignment results (affines)<br/> &nbsp; from lower scale levels to higher ones.
+<b>Q: Can alignEM be used to register/&quot;align&quot; images other than electron micrographs?</b><br/>
+A: Sure, however the Signal Whitening Image Matching (SWIM) was designed specifically with EM in mind. Such images are typically large in size and greyscale.
+alignEM provides functionality for downscaling and the ability to pass alignment results (affines)<br/> &nbsp; from lower scale levels to higher ones.
 <br/><br/>
 
-<b>Q: What format is the output of AlignEM-SWiFT?</b>
+<b>Q: What format is the output of alignEM?</b>
 <br/>
 A: Scaled image series and generated alignments are always stored in two formats: TIFF and Zarr.Zarr is an open-source format for the storage of chunked, compressed, N-dimensional arrays with an interface similar to NumPy. It has a Nature Methods paper:<br/><a href='https://www.nature.com/articles/s41592-021-01326-w'>https://www.nature.com/articles/s41592-021-01326-w</a>
 <br/><br/>
-<img src="file:src/resources/sfn2022fig.png" alt="alignEM-swift-disk-storage" style="height:220px;">
+<img src="file:src/resources/sfn2022fig.png" alt="alignEM-disk-storage" style="height:220px;">
 <br/><br/>
 For more information about Zarr: <b>Help > Zarr Help</b>
 <br/><br/>
 
 <b>Q: What is meant by "scales"?</b><br/>
-A: In AlignEM-SWiFT a &quot;scale&quot; simply means a downsampled (of decreased resolution) copy of an image series.<br/><br/>
+A: In alignEM a &quot;scale&quot; simply means a downsampled (of decreased resolution) copy of an image series.<br/><br/>
 <b>Q: Why should data be scaled at all? Is it okay to align the full resolution series with brute force?</b><br/>
 A: You could, but EM images tend to run large. A more efficient workflow is to:<br/> &nbsp; 1) generate a hierarchy of downsampled images from the full resolution images<br/> &nbsp; 2) align the lowest resolution images first<br/> &nbsp; 3) pass the computed affines to the scale of next-highest resolution, and repeat until the full resolution images are in alignment. In these FAQs this is referred to as &quot;climbing the scale hierarchy&quot;&quot;<br/><br/>
 
@@ -42,17 +43,17 @@ A: SNR values returned by SWIM are a relativistic readout of alignment quality w
 A: This is a consequence of the fact that SWIM is an iterative algorithm as it is implemented for the Default Grid, Custom Grid, and Manual Hint alignment methods
 <br/><br/>
 <b>Q: What is Neuroglancer?</b><br/>
-A: Neuroglancer is an open-source WebGL and typescript-based web application for displaying volumetric data. AlignEM-SWiFT uses a Chromium-based API called QtWebEngine together with the Neuroglancer Python API to render large volumetric data efficiently and conveniently within the application window.
+A: Neuroglancer is an open-source WebGL and typescript-based web application for displaying volumetric data. alignEM uses a Chromium-based API called QtWebEngine together with the Neuroglancer Python API to render large volumetric data efficiently and conveniently within the application window.
 <br/><br/>
 
-<b>Q: What makes AlignEM-SWiFT fast?</b><br/>
+<b>Q: What makes alignEM fast?</b><br/>
 A: A few reasons:
 <br/> &nbsp; 1) Multi-core processing, time-intensive processes are executed in parallel.
 <br/> &nbsp; 2) Data scaling, SWIM alignment, and affine processing functions are all implemented in highly efficient C code written by computer scientist Arthur Wetzel.
 <br/> &nbsp; 3) Fast Fourier Transform is a fast algorithm.
 <br/><br/>
 
-<b>Q: How many CPUs or &quot;cores&quot; will AlignEM-SWiFT use?</b><br/>
+<b>Q: How many CPUs or &quot;cores&quot; will alignEM use?</b><br/>
 A: By default, as many cores as the system has available (greedy).
 <br/><br/>
 

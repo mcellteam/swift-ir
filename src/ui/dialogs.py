@@ -17,7 +17,7 @@ from qtpy.QtGui import QDoubleValidator, QFont, QIntValidator, QPixmap, QColor, 
 import src.config as cfg
 from src.helpers import get_scale_val, do_scales_exist, is_joel, is_tacc, hotkey
 from src.funcs_image import ImageSize
-from src.ui.layouts import VBL, HBL, VWidget, HWidget
+from src.ui.layouts import VBL, HBL, VW, HW
 from src.ui.thumbnail import ThumbnailFast
 
 logger = logging.getLogger(__name__)
@@ -319,7 +319,7 @@ def mendenhall_dialog() -> str:
 
 
 def export_affines_dialog() -> str:
-    '''Dialog for saving a datamodel. Returns 'filename'.'''
+    '''Dialog for saving a datamodel. Returns 'path'.'''
     dialog = QFileDialog()
     dialog.setOption(QFileDialog.DontUseNativeDialog)
     dialog.setWindowTitle('Export Affine Data as .csv')
@@ -333,7 +333,7 @@ def export_affines_dialog() -> str:
 
 
 def open_project_dialog() -> str:
-    '''Dialog for opening a datamodel. Returns 'filename'.'''
+    '''Dialog for opening a datamodel. Returns 'path'.'''
     dialog = QFileDialog()
     dialog.setOption(QFileDialog.DontUseNativeDialog)
     dialog.setWindowTitle('* Open Project *')
@@ -623,8 +623,8 @@ class NewConfigureProjectDialog(QDialog):
 
         self.w_buttons = QWidget()
         self.w_buttons.setStyleSheet("font-size: 10px;")
-        # self.w_buttons.setLayout(VBL(self.cb_alignLowestScale, HWidget(self.cancelButton, self.createScalesButton, ExpandingWidget(self)), ExpandingWidget(self)))
-        self.w_buttons.setLayout(VBL(HWidget(self.cancelButton, self.createScalesButton, self.scaleAndAlignButton, ExpandingWidget(self)), ExpandingWidget(self)))
+        # self.w_buttons.setLayout(VBL(self.cb_alignLowestScale, HW(self.cancelButton, self.createScalesButton, ExpandingWidget(self)), ExpandingWidget(self)))
+        self.w_buttons.setLayout(VBL(HW(self.cancelButton, self.createScalesButton, self.scaleAndAlignButton, ExpandingWidget(self)), ExpandingWidget(self)))
 
         '''Scales Input Field'''
         # if do_scales_exist():
@@ -730,7 +730,7 @@ class NewConfigureProjectDialog(QDialog):
         '''Bounding Box Field'''
         self.bounding_rectangle_label = QLabel("Bounding Box:")
         self.bounding_rectangle_checkbox = QCheckBox()
-        self.bounding_rectangle_checkbox.setChecked(cfg.DEFAULT_BOUNDING_BOX)
+        self.bounding_rectangle_checkbox.setChecked(cfg.DEFAULT_USE_BOUNDING_BOX)
 
 
         tip = 'Zarr Compression Level\n(default=5)'
@@ -887,7 +887,7 @@ class RechunkDialog(QDialog):
         self.chunk_x_lineedit = QLineEdit(self)
         self.chunk_y_lineedit = QLineEdit(self)
         self.chunk_z_lineedit = QLineEdit(self)
-        # self.le_chunk_z.setEnabled(False)
+        # self.leChunkZ.setEnabled(False)
         self.chunk_x_lineedit.setFixedWidth(40)
         self.chunk_y_lineedit.setFixedWidth(40)
         self.chunk_z_lineedit.setFixedWidth(40)
@@ -896,11 +896,11 @@ class RechunkDialog(QDialog):
         self.chunk_y_lineedit.setText(str(chunkshape[1]))
         self.chunk_z_lineedit.setText(str(chunkshape[0]))
         # img_size = cfg.data.image_size()
-        # self.le_chunk_x.setValidator(QIntValidator(0, img_size[0]))
-        # self.le_chunk_y.setValidator(QIntValidator(0, img_size[1]))
-        # self.le_chunk_z.setValidator(QIntValidator(0, len(cfg.data)))
-        # self.le_chunk_x.setValidator(QIntValidator(0, img_size[0]))
-        # self.le_chunk_y.setValidator(QIntValidator(0, img_size[1]))
+        # self.leChunkX.setValidator(QIntValidator(0, img_size[0]))
+        # self.leChunkY.setValidator(QIntValidator(0, img_size[1]))
+        # self.leChunkZ.setValidator(QIntValidator(0, len(cfg.data)))
+        # self.leChunkX.setValidator(QIntValidator(0, img_size[0]))
+        # self.leChunkY.setValidator(QIntValidator(0, img_size[1]))
         self.chunk_z_lineedit.setValidator(QIntValidator(0, len(cfg.data)))
         self.chunk_x_layout = QHBoxLayout()
         self.chunk_x_layout.setContentsMargins(4,4,4,4)

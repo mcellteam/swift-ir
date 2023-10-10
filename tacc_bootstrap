@@ -1,5 +1,5 @@
 #!/bin/bash
-# INSTRUCTIONS TO RUN AlignEM-SWiFT ON Lonestar6 AT TACC
+# INSTRUCTIONS TO RUN AlignEM ON Lonestar6 AT TACC
 # (DEPLOYMENT BY CONDA ENVIRONMENT STRATEGY)
 
 # NOTES:
@@ -78,9 +78,9 @@ $WORK/miniconda3/bin/conda init bash
 #echo "Updating conda..."
 #conda update --name base conda -y
 
-echo "Checking if AlignEM-SWiFT exists in $WORK..."
+echo "Checking if AlignEM exists in $WORK..."
 if [ ! -d "$WORK/swift-ir" ] | [ "$FORCE" = "1" ]; then
-  echo "Reinstalling AlignEM-SWiFT..."
+  echo "Reinstalling AlignEM..."
   cd $WORK
   git clone https://github.com/mcellteam/swift-ir.git
 fi
@@ -175,12 +175,12 @@ echo "Node     : $node"
 
 echo ""
 echo "You should now be in the environment 'alignTACC1024'."
-echo "To relaunch AlignEM-SWiFT on Lonestar6 @ TACC:"
+echo "To relaunch AlignEM on Lonestar6 @ TACC:"
 echo ""
 echo "    source $WORK/swift-ir/tacc_bootstrap"
 echo ""
-#echo "Launching AlignEM-SWiFT in *HEADLESS* mode..."
-echo "Launching AlignEM-SWiFT..."
+#echo "Launching AlignEM in *HEADLESS* mode..."
+echo "Launching AlignEM..."
 
 if [ "$DEBUG" = "1" ] ; then
   echo "Loading valgrind module for debugging..."

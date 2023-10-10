@@ -321,7 +321,7 @@ class JsonModel(QAbstractItemModel):
         """
         return 2
 
-    #Critical Uncomment these flags to make table non-editable
+    #Critical Uncomment these flags to make data non-editable
     # if qtpy.PYSIDE6:
     def flags(self, index: QModelIndex) -> Qt.ItemFlags:
         """Override from QAbstractItemModel
@@ -382,7 +382,7 @@ class JsonModel(QAbstractItemModel):
             self.lst = [treeitem.child(i,0).data() for i in range(self.count)]
 
         self.idx = self.lst.index(findkeys[0])
-        # print('found key %level in %level at location %d...' % (str(findkeys), str(self.lst), self.idx))
+        # print('found key %level in %level at series_location %d...' % (str(findkeys), str(self.lst), self.idx))
 
         findkeys.pop(0)
 

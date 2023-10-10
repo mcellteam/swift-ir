@@ -2,11 +2,13 @@
 import copy, time
 import os, struct, logging, inspect
 from dataclasses import dataclass
+import pprint
 # import imageio.v3 as iio
 import imagecodecs
 # import libtiff
 # import zarr
 import numpy as np
+from src.helpers import print_exception
 
 try:
     import src.config as cfg
@@ -222,7 +224,7 @@ def ImageSize(file_path):
                     if width > -1 and height > -1:
                         break
             except Exception as e:
-                msg = ' in filename: ' + str(file_path)
+                msg = ' in path: ' + str(file_path)
                 raise UnknownImageFormat(str(e) + msg)
         elif size >= 2:
             # ICO
@@ -346,8 +348,7 @@ def BiasFuncs(dm, scale, poly_order=0, bias_funcs=None):
 
     # for align_idx in range(len(al_stack)):
     for i, layer in enumerate(dm()):
-        method = layer['levels'][scale]['swim_settings']['method']
-        c_afm = np.array(layer['levels'][scale]['alignment_history'][method]['method_results']['cumulative_afm'])
+        c_afm = np.array(layer['levels'][scale]['cafm'])
 
         rot = np.arctan(c_afm[1, 0] / c_afm[0, 0])
         scale_x = np.sqrt(c_afm[0, 0] ** 2 + c_afm[1, 0] ** 2)
@@ -443,16 +444,21 @@ def InitCafm(bias_funcs):
     return c_afm_init
 
 
-def SetSingleCafm(layer_dict, scale, c_afm, bias_mat=None, method='grid_default'):
-    '''Calculate and set the value of the cafm (with optional bias) for a single layer_dict item'''
+# def SetSingleCafm(d, scale, c_afm, bias_mat=None, method='grid'):
+def SetSingleCafm(dm, scale, index, c_afm, bias_mat=None, method='grid'):
+    '''Calculate and set the value of the cafm (with optional bias) for a single section data dict'''
     # atrm = layer_dict['alignment']
+    include = dm['stack'][index]['levels'][scale]['saved_swim_settings']['include']
     try:
-        if layer_dict['levels'][scale]['swim_settings']['include']:
-            afm = np.array(layer_dict['levels'][scale]['alignment_history'][method]['method_results']['affine_matrix'])
+        if include:
+            # afm = np.array(d['levels'][scale]['results']['affine_matrix'])
+            afm = np.array(cfg.pt.ht.get(dm.saved_swim_settings(s=scale,l=index)))
+            print(f'index {index} afm: {str(afm)}, cafm: {pprint.pformat(c_afm)}')
         else:
             afm = identityAffine()
     except:
-        logger.warning('SetSingleCafm triggered an exception, skipping: %s' % (layer_dict['path']))
+        siz = len(cfg.pt.ht.data)
+        print_exception(extra=f"afm not found for index: {index}, table size: {siz}")
         afm = identityAffine()
         # atrm['method_results']['affine_matrix'] = afm.tolist() #0802-
     c_afm = np.array(c_afm)
@@ -460,9 +466,11 @@ def SetSingleCafm(layer_dict, scale, c_afm, bias_mat=None, method='grid_default'
     # Apply bias_mat if given
     if type(bias_mat) != type(None):
         c_afm = composeAffine(bias_mat, c_afm)
-    layer_dict['levels'][scale]['alignment_history'][method]['method_results']['cumulative_afm'] = c_afm.tolist()
+    dm['stack'][index]['levels'][scale]['cafm'] = c_afm.tolist()
+    dm['stack'][index]['levels'][scale]['afm'] = afm.tolist()
     # Register cumualtive affine hash
-    layer_dict['cafm_hash'] = hashstring(str(c_afm.tolist()))
+    # d['cafm_hash'] = hashstring(str(c_afm.tolist()))
+    # d['cafm_SetSingleCafm'] = c_afm.tolist() #1008+
     # logger.info('Returning c_afm: %level' % format_cafm(c_afm))
     return c_afm
 
@@ -472,8 +480,10 @@ def SetStackCafm(dm, scale, poly_order=None):
     '''Calculate cafm across the whole stack with optional bias correction'''
     caller = inspect.stack()[1].function
     logger.info(f'[{caller}] Propagating Cumulative Affine (bias: {poly_order})...')
+
     # logger.info(f'Setting Stack CAFM (iterator={str(iterator)}, level={level}, poly_order={poly_order})...')
-    cfg.mw.tell('<span style="color: #FFFF66;"><b>Setting Stack CAFM...</b></span>')
+    # cfg.mw.tell('<span style="color: #FFFF66;"><b>Setting Stack CAFM...</b></span>')
+    cfg.mw.tell('Setting Stack CAFM...')
     use_poly = (poly_order != None)
     if use_poly:
         SetStackCafm(dm, scale=scale, poly_order=None) # first initializeStack Cafms without bias correction
@@ -489,10 +499,18 @@ def SetStackCafm(dm, scale, poly_order=None):
     for bi in range(bias_iters):
         # logger.critical(f'\n\nbi = {bi}\n')
         c_afm = c_afm_init
-        for i, layer in enumerate(cfg.data()):
+        for i, d in enumerate(cfg.data()):
+            # try:
+            #     # assert 'affine_matrix' in d['levels'][scale]['results']
+            #     cfg.pt.ht.haskey()
+            # except AssertionError as e:
+            #     logger.error(f"AssertionError, section #{i}: {str(e)}")
+            #     break
             if use_poly:
                 bias_mat = BiasMat(i, bias_funcs)
-            c_afm = SetSingleCafm(layer, scale, c_afm, bias_mat=bias_mat, method=layer['levels'][scale]['swim_settings']['method']) # <class
+            # method = d['levels'][scale]['swim_settings']['method_opts']['method']
+            method = d['levels'][scale]['saved_swim_settings']['method_opts']['method']
+            c_afm = SetSingleCafm(dm, scale, i, c_afm, bias_mat=bias_mat, method=method) # <class
             # 'numpy.ndarray'>
 
         if bi < bias_iters - 1:
@@ -639,8 +657,8 @@ array([[   0,    0],
         model_bounds = [[0,0]] #Todo initializeStack this better
         siz = cfg.data.image_size(s=scale)
         for item in dm():
-            method = item['levels'][scale]['swim_settings']['method']
-            c_afm = np.array(item['levels'][scale]['alignment_history'][method]['method_results']['cumulative_afm'])
+            # method = item['levels'][scale]['swim_settings']['method_opts']['method']
+            c_afm = np.array(item['levels'][scale]['cafm'])
             model_bounds = np.append(model_bounds, modelBounds2(c_afm, siz), axis=0)
         border_width_x = max(0 - model_bounds[:, 0].min(), model_bounds[:, 0].max() - siz[0])
         border_width_y = max(0 - model_bounds[:, 1].min(), model_bounds[:, 1].max() - siz[1])
@@ -654,8 +672,7 @@ array([[   0,    0],
         model_bounds = None
         siz = cfg.data.image_size(s=scale)
         for item in dm():
-            method = item['levels'][scale]['swim_settings']['method']
-            c_afm = np.array(item['levels'][scale]['alignment_history'][method]['method_results']['cumulative_afm'])
+            c_afm = np.array(item['levels'][scale]['cafm'])
             if type(model_bounds) == type(None):
                 model_bounds = modelBounds2(c_afm, siz)
             else:
@@ -664,7 +681,7 @@ array([[   0,    0],
                            0 - model_bounds[:, 1].min(),
                            model_bounds[:, 0].max() - siz[0],
                            model_bounds[:, 1].max() - siz[0])
-        rect = [int(-border_width), int(-border_width), int(siz[0] + 2 * border_width), int(siz[0] + 2 * border_width)]
+        rect = (int(-border_width), int(-border_width), int(siz[0] + 2 * border_width), int(siz[0] + 2 * border_width))
         logger.critical('ComputeBoundingRectangle Return: %s' % str(rect))
 
     # logger.critical('<<<< ComputeBoundingRect <<<<')
@@ -839,28 +856,28 @@ class StripNullFields:
 #
 # _FI = load_freeimage()
 #
-# def write_multipage(arrays, filename, flags=0):
+# def write_multipage(arrays, path, flags=0):
 #     """Write a list of (height, width) or (height, width, nchannels)
 #     arrays to a multipage greyscale, RGB, or RGBA image, with file cur_method
-#     deduced from the filename.
+#     deduced from the path.
 #     The `flags` parameter should be one or more values from the IO_FLAGS
 #     class defined in this module, or-ed together with | as appropriate.
 #     (See the source-code comments for more details.)
 #     """
 #
-#     filename = asbytes(filename)
-#     ftype = _FI.FreeImage_GetFIFFromFilename(filename)
+#     path = asbytes(path)
+#     ftype = _FI.FreeImage_GetFIFFromFilename(path)
 #     if ftype == -1:
-#         raise ValueError('Cannot determine cur_method of file %level' % filename)
+#         raise ValueError('Cannot determine cur_method of file %level' % path)
 #     create_new = True
 #     read_only = False
 #     keep_cache_in_memory = True
-#     multibitmap = _FI.FreeImage_OpenMultiBitmap(ftype, filename,
+#     multibitmap = _FI.FreeImage_OpenMultiBitmap(ftype, path,
 #                                                 create_new, read_only,
 #                                                 keep_cache_in_memory, 0)
 #     if not multibitmap:
 #         raise ValueError('Could not open %level for writing multi-page image.' %
-#                          filename)
+#                          path)
 #     try:
 #         for array in arrays:
 #             array = np.asarray(array)

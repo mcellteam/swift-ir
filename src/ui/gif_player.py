@@ -5,7 +5,7 @@ libtiff.libtiff_ctypes.suppress_warnings()
 from qtpy.QtWidgets import *
 from qtpy.QtGui import *
 from qtpy.QtCore import *
-from src.ui.layouts import HBL, VBL, GL, HWidget, VWidget, HSplitter, VSplitter
+from src.ui.layouts import HBL, VBL, GL, HW, VW, HSplitter, VSplitter
 
 
 __all__ = ['GifPlayer']
@@ -14,22 +14,23 @@ logger = logging.getLogger(__name__)
 
 
 class GifPlayer(QWidget):
-    def __init__(self, path, parent=None):
+    def __init__(self, dm, parent=None):
         QWidget.__init__(self, parent)
         self.color = QColor(0, 0, 0)
-        self.path = path
-        # sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        self.dm = dm
+        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         # sizePolicy.setHeightForWidth(True)
         # self.setSizePolicy(sizePolicy)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.movie = QMovie(path, QByteArray(), self)
+        # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)  # 1007-
+        self.path = self.dm.path_gif()
+        self.movie = QMovie(self.path, QByteArray(), self)
         # self.movie = QMovie(path)
         # self.setMinimumSize(QSize(128,128))
         self.label = QLabel()
         # self.label.setSizePolicy(sizePolicy)
         self.label.setAutoFillBackground(True)
         # self.label.setScaledContents(True)
-        self.label.setMinimumSize(QSize(64,64))
+        # self.label.setMinimumSize(QSize(64,64)) #1007-
         # self.label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.label.setAlignment(Qt.AlignCenter)
         self.movie.setCacheMode(QMovie.CacheAll)
@@ -56,7 +57,7 @@ class GifPlayer(QWidget):
         self.bBlink.clicked.connect(self.on_click)
         self.bBlink.setEnabled(False)
 
-        self.controls = HWidget(self.bBlink, self.bPlay)
+        self.controls = HW(self.bBlink, self.bPlay)
         self.controls.layout.setAlignment(Qt.AlignLeft | Qt. AlignTop)
         # self.controls.move(2, 2)
         self.gl = GL()
@@ -98,8 +99,8 @@ class GifPlayer(QWidget):
             self.stop()
             self.bBlink.setEnabled(True)
 
-    def set(self, path):
-        self.path = path
+    def set(self):
+        self.path = self.dm.path_gif()
         self.movie.start()
         self.update()
 
@@ -115,35 +116,38 @@ class GifPlayer(QWidget):
         qp.begin(self)
         qp.fillRect(event.rect(), QBrush(self.color))
 
-        self.r = QRect(0, 0, self.width(), self.height())
+        # self.r = QRect(0, 0, self.width(), self.height())
 
-        font = QFont()
-        font.setFamily('Ubuntu')
-        fsize = 20
-        font.setPointSize(fsize)
-        font.setWeight(10)
-        qp.setFont(font)
-        qp.setPen(QColor('#fd411e'))
+        # font = QFont()
+        # font.setFamily('Ubuntu')
+        # fsize = 20
+        # font.setPointSize(fsize)
+        # font.setWeight(10)
+        # qp.setFont(font)
+        # qp.setPen(QColor('#fd411e'))
+        #
+        # textFill = QColor('#ffffff')
+        # textFill.setAlpha(128)
+        # qp.fillRect(QRect(QPoint(0, 0), QSize(100, 200)), QBrush(textFill))
+        # pixmap = QPixmap(100, 100)
+        # pixmap.fill(Qt.transparent)
 
-        textFill = QColor('#ffffff')
-        textFill.setAlpha(128)
-        qp.fillRect(QRect(QPoint(0, 0), QSize(100, 200)), QBrush(textFill))
-        pixmap = QPixmap(100, 100)
-        pixmap.fill(Qt.transparent)
-
-        qp.setPen(QPen(Qt.green, 4, Qt.SolidLine))
-        qp.drawEllipse(pixmap.rect().adjusted(4, 4, -4, -4))
-
-
-        qp.drawText(QPointF(100, 100), 'TEEEST')
-
+        # qp.setPen(QPen(Qt.green, 4, Qt.SolidLine))
+        # qp.drawEllipse(pixmap.rect().adjusted(4, 4, -4, -4))
+        # qp.drawText(QPointF(100, 100), 'TEEEST')
 
         qp.end()
 
-    def resizeEvent(self, event):
-        rect = self.geometry()
-        size = QSize(min(rect.width(), rect.height()), min(rect.width(), rect.height()))
-        self.movie.setScaledSize(size)
+    def sizeHint(self):
+        if self.isVisible():
+            return QSize(256,256)
+        else:
+            return QSize(0, 0)
+
+    # def resizeEvent(self, event):
+    #     rect = self.geometry()
+    #     size = QSize(min(rect.width(), rect.height()), min(rect.width(), rect.height()))
+    #     self.movie.setScaledSize(size)
 
 
 if __name__ == "__main__":

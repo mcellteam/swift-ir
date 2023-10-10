@@ -64,18 +64,18 @@ class WebBrowser(QWidget):
         buttonBrowserBack.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         buttonBrowserBack.clicked.connect(browser_backward)
         buttonBrowserBack.setFixedSize(QSize(18, 18))
-        buttonBrowserBack.setIcon(qta.icon('fa.arrow-left', color=cfg.ICON_COLOR))
+        buttonBrowserBack.setIcon(qta.icon('fa.arrow-left'))
 
         buttonBrowserForward = QPushButton()
         buttonBrowserForward.setStatusTip('Go Forward')
         buttonBrowserForward.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         buttonBrowserForward.clicked.connect(browser_forward)
         buttonBrowserForward.setFixedSize(QSize(18, 18))
-        buttonBrowserForward.setIcon(qta.icon('fa.arrow-right', color=cfg.ICON_COLOR))
+        buttonBrowserForward.setIcon(qta.icon('fa.arrow-right'))
 
         buttonBrowserRefresh = QPushButton()
         buttonBrowserRefresh.setStatusTip('Refresh')
-        buttonBrowserRefresh.setIcon(qta.icon("fa.refresh", color=cfg.ICON_COLOR))
+        buttonBrowserRefresh.setIcon(qta.icon("fa.refresh"))
         buttonBrowserRefresh.setFixedSize(QSize(18, 18))
         buttonBrowserRefresh.clicked.connect(browser_reload)
 
@@ -107,9 +107,9 @@ class WebBrowser(QWidget):
         button3demCommunity.clicked.connect(browser_3dem_community)
         button3demCommunity.setFixedHeight(18)
 
-        buttonDocumentation = QPushButton('AlignEM-SWiFT Docs')
+        buttonDocumentation = QPushButton('alignEM Docs')
         buttonDocumentation.setStyleSheet('font-size: 9px;')
-        buttonDocumentation.setStatusTip('View AlignEM-SWiFT Documentation')
+        buttonDocumentation.setStatusTip('View alignEM-SWiFT Documentation')
         buttonDocumentation.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         buttonDocumentation.clicked.connect(browser_documentation)
         # buttonDocumentation.setFixedSize(QSize(110, 18))

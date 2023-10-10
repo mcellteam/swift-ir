@@ -10,6 +10,7 @@ from qtconsole.rich_jupyter_widget import RichJupyterWidget
 from qtconsole.inprocess import QtInProcessKernelManager
 from qtpy.QtWidgets import QApplication, QSizePolicy, QWidget, QVBoxLayout
 from qtpy.QtCore import Qt, QSize
+from qtpy.QtGui import QFont
 from src.helpers import is_tacc
 import src.config as cfg
 
@@ -17,7 +18,7 @@ class PythonConsole(RichJupyterWidget):
 
     def __init__(self, customBanner=None, *args, **kwargs):
         super(PythonConsole, self).__init__(*args, **kwargs)
-        self.set_default_style(colors='nocolor')
+        # self.set_default_style(colors='nocolor')
         self.prompt_to_top()
 
         if customBanner is not None:
@@ -29,6 +30,12 @@ class PythonConsole(RichJupyterWidget):
         self.kernel_client = self._kernel_manager.client()
         self.kernel_client.start_channels()
         self.setFocusPolicy(Qt.NoFocus)
+
+        # f = QFont()
+        # f.setFamily('Ubuntu')
+        # f.setPointSize(13)
+        # self.setFont(f)
+
         # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         # self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
@@ -38,8 +45,8 @@ class PythonConsole(RichJupyterWidget):
             self.execute_command('import src.config as cfg')
             self.execute_command('from src.config import main_window')
             self.execute_command('import src.helpers')
-            self.execute_command('from src.helpers import find_allocated_widgets, count_widgets, obj_to_string, getData, setData, getOpt, setOpt')
-            self.execute_command('import os, sys, copy, json, stat')
+            self.execute_command('from src.helpers import dt, find_allocated_widgets, count_widgets, obj_to_string, getData, setData, getOpt, setOpt')
+            self.execute_command('import os, sys, copy, json, stat, time, glob')
             self.execute_command('import zarr')
             self.execute_command('import neuroglancer as ng')
             self.execute_command('from qtpy.QtCore import QUrl, Qt')
@@ -85,45 +92,6 @@ class PythonConsole(RichJupyterWidget):
         """Set linux color scheme"""
         self.set_default_style(colors='linux')
 
-    # def sizeHint(self):
-    #     if cfg.main_window:
-    #         width = int(cfg.main_window.width() / 2)
-    #     else:
-    #         width = int(cfg.WIDTH / 2)
-    #     return QSize(width, 90)
-
-    # def sizeHint(self):
-    #     # return QSize(int(cfg.WIDTH / 2), 90)
-    #
-    #     return QSize(int(cfg.mw.width() / 2), 90)
-
-
-    # def sizeHint(self):
-    #     if cfg.main_window:
-    #         width = int(cfg.main_window.width() / 2)
-    #     else:
-    #         width = int(cfg.WIDTH / 2)
-    #     return QSize(width, 90)
-
-    # def sizeHint(self):
-    #     if cfg.main_window:
-    #         width = int(cfg.main_window.width() / 2)
-    #     else:
-    #         width = int(cfg.WIDTH / 2)
-    #     return QSize(width, 90)
-
-    # def sizeHint(self):
-    #     # return self.minimumSizeHint()
-    #     if cfg.main_window:
-    #         width = int(cfg.main_window.width() / 2) - 10
-    #         return QSize(width, 90)
-
-    # def minimumSizeHint(self):
-    #     width = int(cfg.main_window.width() / 2)
-    #     return QSize(width, 90)
-
-
-
 class PythonConsoleWidget(QWidget):
 
     def __init__(self):
@@ -136,7 +104,10 @@ class PythonConsoleWidget(QWidget):
         self.pyconsole = PythonConsole()
         # self.pyconsole = QWidget()
         self.layout.addWidget(self.pyconsole)
+        # self.setFont(QFont('Ubuntu', 10))
         self.setLayout(self.layout)
+        self.setStyleSheet("font-family: 'Ubuntu Mono', 'Andale Mono', monospace;"
+                           "font-size: 9px;")
 
     def sizeHint(self):
         # return self.minimumSizeHint()

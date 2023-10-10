@@ -1,0 +1,2 @@
+To compile icons_rc.qrc to icons_rc.py, run:
+pyrcc5 src/resources/icons_rc.qrc -o src/resources/icons_rc.py

@@ -19,8 +19,8 @@
 
 ![Aligned Images](tests/aligned.gif?raw=true "Aligned Images")
 
-# AlignEM-SWiFT
-AlignEM-SWiFT is a graphical extension of SWiFT for aligning serial section electron micrographs.
+# alignEM-SWiFT
+alignEM is a graphical extension of SWiFT for aligning serial section electron micrographs.
 Soon we will publish to PyPi for convenient 'pip' installation. This branch may not be stable.
 Please report any feedback, suggestions, or bugs to joel@salk.edu.
 
@@ -28,7 +28,7 @@ Supported Python Versions:
 Version 3.9+ (recommended),
 Version 3.7+ (minimum)
 
-#### 1) Get AlignEM-SWiFT
+#### 1) Get alignEM
 
     git clone https://github.com/mcellteam/swift-ir.git
     cd swift-ir

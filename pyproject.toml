@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "alignem"
 version = "0.5.49"
-description = "AlignEM-SWIFT is a graphical tool for registering serial section electron micrographs using SWiFT-IR."
+description = "alignEM is a graphical tool for registering serial section electron micrographs using SWiFT-IR."
 authors = ["Joel Yancey <j.y@ucla.edu>"]
 license = "Mozilla Public License Version 2.0"
 readme = "README.md"

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
+
 """
-AlignEM-SWiFT - A software tool for image alignment that is under active development.
+alignEM - A software tool for image alignment that is under active development.
 
 This is free and unencumbered software released into the public domain.
 
@@ -29,11 +30,19 @@ For more information, please refer to [http://unlicense.org]
 
 """
 
-import sys, getpass
+print('alignEM:')
+import os, sys, getpass
 
-if not getpass.getuser() in ('joelyancey', 'joely', 'jyancey', 'tmbartol', 'tbartol', 'bartol', 'ama8447', 'aalario'):
-    print("Please do not use this version of AlignEM-SWiFT yet, thank you. Bye!")
+# if not getpass.getuser() in ('joelyancey', 'joely', 'jyancey', 'tmbartol', 'tbartol', 'bartol', 'ama8447', 'aalario'):
+if not getpass.getuser() in ('joelyancey', 'joely', 'jyancey', 'tmbartol', 'tbartol', 'bartol'):
+    print("Please do not use this version of alignEM yet, thank you. Bye!")
     sys.exit()
+
+hashseed = os.getenv('PYTHONHASHSEED')
+if not hashseed:
+    os.environ['PYTHONHASHSEED'] = '0'
+    os.execv(sys.executable, [sys.executable] + sys.argv)
+
 
 print('(Hang tight. The application will launch shortly...)')
 
@@ -67,10 +76,12 @@ from src.ui.main_window import MainWindow
 
 print('Importing helpers...')
 from src.helpers import check_for_binaries, configure_project_paths, initialize_user_preferences, \
-    is_tacc, print_exception, register_login, convert_projects_model, addLoggingLevel
+    is_tacc, is_joel, is_mac, print_exception, register_login, convert_projects_model, addLoggingLevel, \
+    check_macos_isdark_theme
 
 print('Importing configuration...')
 import src.config as cfg
+import src.resources.icons_rc
 # from qtconsole import __version__ as qcv
 
 print('Setting global application...')
@@ -92,7 +103,7 @@ global app
 #         if unique_id in tracefunc.memorized:
 #             return
 #
-#         # Part of filename MUST be in white list.
+#         # Part of path MUST be in white list.
 #         if any(x in frame.f_code.co_filename for x in WHITE_LIST) \
 #                 and \
 #                 not any(x in frame.f_code.co_name for x in EXCLUSIONS):
@@ -126,19 +137,23 @@ class CustomFormatter(logging.Formatter):
     yellow = "\x1b[33;20m"
     red = "\x1b[31;20m"
     bold_red = "\x1b[31;1m"
+    purp = "\x1b[38;5;25m"
     blue = "\x1b[1;34m"
+    debug_blue = '\x1b[38;5;57m'
     cyan = "\x1b[36m"
     # blue = "\x1b[44m"
     reset = "\x1b[0m"
     format = '%(asctime)s %(levelname)s [%(module)s.%(funcName)s:%(lineno)d] %(message)s'
     format2 = '%(asctime)s [%(module)s.%(funcName)s:%(lineno)d] %(message)s'
     FORMATS = {
-        logging.DEBUG: grey + format + reset,
+        # logging.DEBUG: grey + format + reset,
+        logging.DEBUG: red + format + reset,
         logging.INFO: grey + format + reset,
         logging.WARNING: yellow + format + reset,
-        logging.ERROR: red + format + reset,
+        logging.ERROR: bold_red + format + reset,
         # logging.CRITICAL: bold_red + format2 + reset,
-        logging.CRITICAL: cyan + format2 + reset,
+        # logging.CRITICAL: cyan + format2 + reset,
+        logging.CRITICAL: purp + format2 + reset,
     }
     def format(self, record):
         log_fmt = self.FORMATS.get(record.levelno)
@@ -148,7 +163,15 @@ class CustomFormatter(logging.Formatter):
 
 def main():
 
-    logger = logging.getLogger()
+    # logger = logging.getLogger() # reference to root logger
+    logger = logging.getLogger('root') # reference to root logger
+    if is_joel():
+        # logger.setLevel(logging.DEBUG)
+        logging.root.setLevel(logging.DEBUG)
+    else:
+        # logger.setLevel(logging.INFO)
+        logging.root.setLevel(logging.INFO)
+
     logger.info('')
     # logger = logging.getLogger(__name__)
     # logging.propagate = False  # stops message propogation to the root handler
@@ -164,16 +187,20 @@ def main():
     QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created. #2230-
     QCoreApplication.setAttribute(Qt.AA_UseOpenGLES)
 
-    QCoreApplication.setApplicationName("ALIGNEM-SWIFT")
+    QCoreApplication.setApplicationName("alignEM")
 
     addLoggingLevel('VERSIONCHECK', logging.DEBUG + 5)
     logging.getLogger('init').setLevel("VERSIONCHECK")
-    logging.getLogger('init').versioncheck('alignEM-SWiFT         : %s' % cfg.VERSION)
+    logging.getLogger('init').versioncheck('alignEM               : %s' % cfg.VERSION)
     logging.getLogger('init').versioncheck('environment           : %s' % sys.version)
     logging.getLogger('init').versioncheck('QtCore.__version__    : %s' % QtCore.__version__)
     # logging.getLogger('init').versioncheck('qtpy.PYQT_VERSION     : %s' % qtpy.PYQT_VERSION)
     # logging.getLogger('init').versioncheck('qtpy.PYSIDE_VERSION   : %s' % qtpy.PYSIDE_VERSION)
     # logging.getLogger('init').versioncheck('Jupyter QtConsole     : %s' % qcv)
+
+
+
+    logger.debug('\n\nIf this message is seen then the logging level is set to logging.DEBUG\n')
 
     check_for_binaries()
 
@@ -265,17 +292,7 @@ def main():
     # if cfg.PROFILING_MODE:
     #     sys.setprofile(tracefunc)
 
-
-
-
-    if qtpy.QT5:
-        logger.info('Setting Qt.AA_EnableHighDpiScaling')
-        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
-        logger.info('Setting Qt.AA_UseHighDpiPixmaps')
-        QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
-
-
-    # QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseDesktopOpenGL) #0226-
+    QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseDesktopOpenGL) #0226-
 
     # report the number of worker threads chosen by default
     logger.info(f"ThreadPoolExecutor _max_workers: {ThreadPoolExecutor()._max_workers}")
@@ -308,11 +325,6 @@ def main():
 
 if __name__ == "__main__":
     print('__main__:')
-    # app = QApplication(sys.argv)
-    # app.setStyle('Fusion')
-    # font = QFont("Tahoma")
-    # app.setFont(font)
-    # os.environ['PYQTGRAPH_QT_LIB'] = args.api #do not set!
     print('Configuring environment variables...')
 
     os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt5'
@@ -331,21 +343,35 @@ if __name__ == "__main__":
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=0'
     os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --no-sandbox --num-raster-threads=%s ' \
                                                '--enable-logging --log-level=3' % \
-                                               cfg.QTWEBENGINE_RASTER_THREADS
+                                              cfg.QTWEBENGINE_RASTER_THREADS
     os.environ['OPENBLAS_NUM_THREADS'] = '1'
     # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
     os.environ['LIBTIFF_STRILE_ARRAY_MAX_RESIZE_COUNT'] = '1000000000'
+    # os.environ['PYTHONHASHSEED'] = '1'
+    os.environ['PYTHONHASHSEED'] = '1'
 
-    # os.environ["QT_DEBUG_PLUGINS"] = "1"
+
+    # os.environ['QT_SCALE_FACTOR'] = '1' # scale the entire application
+    os.environ["QT_ENABLE_HIGHDPI_SCALING"] = '1'
+    # os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = '1'
+
+    # os.environ["QT_DEBUG_PLUGINS"] = "1" ##
 
     # os.putenv("QT_QPA_PLATFORM", "offscreen")
     print('Initializing QApplication...')
     app = QApplication(sys.argv)
-    print('Setting application style...')
     app.setStyle('Fusion')
     font = QFont("Tahoma")
+    # font.setHintingPreference(QFont.HintingPreference.PreferNoHinting)
+    # font.setStyleStrategy(QFont.PreferAntialias)
     font.setPointSize(10)
     app.setFont(font)
+
+    if is_mac():
+        if check_macos_isdark_theme():
+            print('macOS is in DARK mode')
+        else:
+            print('macOS is in LIGHT mode')
     print('Entering main...')
     main()
     # sys.exit(app.exec())

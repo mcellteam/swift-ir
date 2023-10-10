@@ -45,7 +45,7 @@ OPTIONS
 * Level two (or more): bicubic.
 
 **-b**:: Save overlap image for later intensity correction.
-    Filename is 'input'.back.pgm, where 'input' is the source filename with
+    Filename is 'input'.back.pgm, where 'input' is the source path with
     a three letter extension removed.
 
 **-?**:: Enable prompting. (That is, show the text ``Enter a MIR command >''
@@ -112,10 +112,10 @@ appear on the same line. Commands are:
     spaces.
 
 **F** 'name':: Read a new file. Any number of spaces and tab characters may
-    appear between the ``F'' and the filename. The filename may not contain
+    appear between the ``F'' and the path. The path may not contain
     any spaces. The actual file loaded is determined by concatenating the
-    filename to the current directory prefix (without inserting a slash or
-    anything else). The program aborts if no filename is given, but quietly
+    path to the current directory prefix (without inserting a slash or
+    anything else). The program aborts if no path is given, but quietly
     substitutes a 1x1 image if the file cannot be read. If this is the first
     image read, the size of the output image is set by the size of the image
     loaded (unless explicitly given by a **B** command or **-B** option).
@@ -140,7 +140,7 @@ appear on the same line. Commands are:
 **V**:: Toggle reverse video.
 
 **W** 'name':: Write output image. Any number of spaces and tab characters may
-    appear between the ``W'' and the filename. The filename may not contain
+    appear between the ``W'' and the path. The path may not contain
     any spaces. The ``directory prefix'' is not used. If tiling is enabled
     (by specifying nonzero _w_~tile~ and _h_~tile~_ to the **B** command),
     the 'name' must contain two `%i` place holders for `sprintf` to insert

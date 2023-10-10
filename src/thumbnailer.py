@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 
-'''Generates thumbnails for use with an AlignEM-SWiFT project.'''
+'''Generates thumbnails for use with an alignEM project.'''
 
 import os
 import time
+import errno
 import shutil
 import psutil
 import inspect
 import logging
 import datetime
+from pprint import pprint
 from math import floor, ceil
 from glob import glob
 import multiprocessing as mp
@@ -32,6 +34,7 @@ class Thumbnailer:
     def __init__(self):
         self.iscale2_c = os.path.join(get_appdir(), 'lib', get_bindir(), 'iscale2')
 
+
     def reduce_main(self, src, filenames, od):
         print(f'\n######## Reducing Thumbnails: Source Images ########\n')
         # coarsest_scale = cfg.data.smallest_scale()
@@ -46,32 +49,32 @@ class Thumbnailer:
         return dt
 
 
-    def reduce_aligned(self, indexes, dest, scale):
+    def reduce_aligned(self, dm, indexes, dest, scale):
         print(f'\n######## Reducing Thumbnails: Aligned Images ########\n')
-        src = os.path.join(dest, 'tiff', scale)
-        od = os.path.join(dest, 'thumbnails', scale)
-
-        files = []
+        to_reduce = []
         baseFileNames = cfg.data.basefilenames()
-        for name in [baseFileNames[i] for i in indexes]:
-            files.append(os.path.join(src,name))
+        for i, name in enumerate([baseFileNames[i] for i in indexes]):
+            ifn = dm.path_aligned(s=scale, l=i)
+            ofn = dm.path_thumb(s=scale, l=i)
+            if os.path.exists(ifn):
+                if not os.path.exists(ofn):
+                    os.makedirs(os.path.dirname(ofn), exist_ok=True)
+                    to_reduce.append((ifn,ofn))
+            else:
+                raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), ifn)
 
-        pbar_text = 'Generating %s Aligned Image Thumbnails...' % cfg.data.level_pretty()
-        if cfg.CancelProcesses:
-            cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
-        else:
+        if len(to_reduce):
+            pbar_text = f'Reducing {cfg.data.level_pretty()} aligned images (count={len(to_reduce)})...'
+            if cfg.CancelProcesses:
+                cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
+            else:
+                # dt = self.reduce(src=src, od=od, rmdir=False, prefix='', filenames=files, pbar_text=pbar_text, dest=dest)
+                dt = self.reduce_tuples(to_reduce=to_reduce)
+                try:
+                    cfg.data.t_thumbs_aligned = dt
+                except:
+                    pass
 
-            dt = self.reduce(
-                src=src, od=od, rmdir=False, prefix='', filenames=files, pbar_text=pbar_text, dest=dest)
-            try:
-                cfg.data.t_thumbs_aligned = dt
-            except:
-                pass
-
-            # cfg.mw.tell('Generating hashes for aligned image thumbnails...')
-            # if end == None:
-            #     end = len(cfg.data)
-            # cfg.mw.hud.done()
 
     def reduce_signals(self, indexes, dest, scale):
 
@@ -93,7 +96,7 @@ class Thumbnailer:
                 for i in indexes:
                     basename = os.path.basename(cfg.data.base_image_name(s=cfg.data.scale, l=i))
                     filename, extension = os.path.splitext(basename)
-                    method = cfg.data.section(s=cfg.data.scale, l=i)['swim_settings']['method']
+                    method = cfg.data.section(s=cfg.data.scale, l=i)['swim_settings']['method_opts']['method']
                     # old_thumbnails = glob(os.path.join(od, '*' + '_' + method + '_' + baseFileNames[i]))
                     search_path = os.path.join(od, '%s_%s_*%s' % (filename, method, extension))
                     # logger.critical(f'\n\n\nSearch Path (Pre-Removal):\n{search_path}\n\n')
@@ -152,7 +155,7 @@ class Thumbnailer:
                 for i in indexes:
                     basename = os.path.basename(cfg.data.base_image_name(s=cfg.data.scale, l=i))
                     fn, ext = os.path.splitext(basename)
-                    method = cfg.data.section(s=cfg.data.scale, l=i)['swim_settings']['method']
+                    method = cfg.data.section(s=cfg.data.scale, l=i)['swim_settings']['method_opts']['method']
                     pattern = os.path.join(od, '%s_%s_[tk]_%d%s' % (fn, method, i, ext))
 
                     originals = glob(pattern)
@@ -244,9 +247,9 @@ class Thumbnailer:
             filenames = natural_sort(glob(os.path.join(src, '*.tif')))[start:end]
 
         try:
-            sample = filenames[0]
-            logger.critical(f"sample: {sample}")
-            siz_x, siz_y = ImageSize(sample)
+            logger.critical(f"sample 0 : {filenames[0]}")
+            logger.critical(f"sample 1 : {filenames[1]}")
+            siz_x, siz_y = ImageSize(filenames[1])
             # siz_x, siz_y = ImageIOSize(next(absFilePaths(src)))
             scale_factor = int(max(siz_x, siz_y) / target_size)
             if full_size:
@@ -302,6 +305,52 @@ class Thumbnailer:
         # pool.close()
         # pool.join()
         dt = time.time() - t0
+        return dt
+
+
+    def reduce_tuples(self, to_reduce, target_size=cfg.TARGET_THUMBNAIL_SIZE):
+        logger.info(f"-------REDUCING TUPLES--------")
+        # logger.info(f"-------REDUCING TUPLES--------\n{pprint(to_reduce)}")
+
+        try:
+            assert len(to_reduce) > 0
+        except AssertionError:
+            logger.warning('Argument has no images to reduce.')
+            return
+
+        try:
+            sample = to_reduce[0][0]
+            logger.info(f"sample: {sample}")
+            siz_x, siz_y = ImageSize(sample)
+            # siz_x, siz_y = ImageIOSize(next(absFilePaths(src)))
+            scale_factor = int(max(siz_x, siz_y) / target_size)
+        except Exception as e:
+            print_exception()
+            logger.error('Unable to generate thumbnail(level) - Do file(level) exist?')
+            raise e
+
+        logger.info(f'Downsampling factor for thumbnails: {scale_factor}')
+
+        if is_tacc():
+            cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(to_reduce)), 1)
+        else:
+            cpus = psutil.cpu_count(logical=False) - 2
+
+        tasks = []
+        for item in to_reduce:
+            fn = item[0]
+            ofn = item[1]
+            tasks.append([self.iscale2_c, '+%d' % scale_factor, 'of=%s' % ofn, '%s' % fn])
+
+        t0 = time.time()
+        logger.info(f"# Processes: {cpus}")
+        with ThreadPool(processes=cpus) as pool:
+            pool.map(run_subprocess, tqdm.tqdm(tasks, total=len(tasks), desc="Generating Thumbnails", position=0, leave=True))
+            pool.close()
+            pool.join()
+
+        dt = time.time() - t0
+        logger.info(f'Thumbnailing complete. Time elapsed: {dt:.3f}')
         return dt
 
 

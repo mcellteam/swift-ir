@@ -161,13 +161,11 @@ class ScaleWorker(QObject):
 
         # count_files(self.out, scales_list)
 
-        out = os.path.join(self.out, 'thumbnails')
+        out = os.path.join(self.out, 'thumbs')
         logger.info(f"Creating thumbnails...\n"
                     f"src: {self.src}\n"
                     f"out: {out}")
-        thumbnailer = Thumbnailer()
-        # self._timing_results['t_thumbs'] = thumbnailer.reduce_main(self.src, out)
-        self._timing_results['t_thumbs'] = thumbnailer.reduce_main(self.src, self.paths, out)
+        self._timing_results['t_thumbs'] = Thumbnailer().reduce_main(self.src, self.paths, out)
 
         # count_files(self.out, scales_list)
 

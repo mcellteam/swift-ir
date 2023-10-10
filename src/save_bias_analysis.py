@@ -9,6 +9,8 @@ __all__ = ['save_bias_analysis']
 
 logger = logging.getLogger(__name__)
 
+
+# Todo this needs to be adapted to new data model
 def save_bias_analysis(layers, bias_path):
     """
     Saves bias analysis results to separate '.dat' files in the datamodel directory. Called by 'ComputeAffines'.
@@ -17,7 +19,6 @@ def save_bias_analysis(layers, bias_path):
     :param bias_path: Path to where the bias datamodel will be saved.
     :cur_method bias_path: str
     """
-
     logger.info('Saving Bias Data (.dat) to Path %s' % bias_path)
     # for i in range(len(al_stack)):
     for i, layer in enumerate(layers):
@@ -25,15 +26,14 @@ def save_bias_analysis(layers, bias_path):
         if True or not layer['skipped']:
             try:
                 atrm = layer['alignment']
-                method = layer['swim_settings']['method']
-                c_afm = np.array(layer['alignment_history'][method]['method_results']['cumulative_afm'])
+                c_afm = np.array(layer['results']['cumulative_afm'])
                 # snr = np.array(atrm['method_results']['snr_report']) #1205-
                 try:
-                    snr = np.array(atrm['method_results']['snr'])
+                    snr = np.array(atrm['results']['snr'])
                 except:
                     snr = np.array([0])
                 rot = np.arctan(c_afm[1, 0] / c_afm[0, 0])
-                afm = np.array(atrm['method_results']['affine_matrix'])
+                afm = np.array(atrm['results']['affine_matrix'])
                 scale_x = np.sqrt(c_afm[0, 0] ** 2 + c_afm[1, 0] ** 2)
                 scale_y = (c_afm[1, 1] * np.cos(rot)) - (c_afm[0, 1] * np.sin(rot))
                 skew_x = ((c_afm[0, 1] * np.cos(rot)) + (c_afm[1, 1] * np.sin(rot))) / scale_y

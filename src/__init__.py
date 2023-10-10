@@ -15,6 +15,11 @@ from .utils import *
 __all__.extend(utils.__all__)
 __all__.append('utils')
 
+from . import resources
+from .resources import *
+__all__.extend(resources.__all__)
+__all__.append('resources')
+
 from . import thumbnailer
 from .thumbnailer import *
 __all__.extend(thumbnailer.__all__)

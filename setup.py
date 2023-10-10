@@ -11,7 +11,7 @@ setup(
     version="0.5.49",
     author="Joel Yancey,",
     author_email="joelgyancey@ucla.edu",
-    description="AlignEM-SWIFT is a graphical tool for registering serial section electron micrographs using SWiFT-IR.",
+    description="alignEM is a graphical tool for registering serial section electron micrographs using SWiFT-IR.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     platforms=["any"],
