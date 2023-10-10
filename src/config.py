@@ -36,7 +36,7 @@ USE_POOL_FOR_SWIM = True
 if USE_POOL_FOR_SWIM:
     SCALE_1_CORES_LIMIT = 30
 else:
-    SCALE_1_CORES_LIMIT = 50
+    SCALE_1_CORES_LIMIT = 30
 
 '''Main Objects'''
 # datamodel = None
