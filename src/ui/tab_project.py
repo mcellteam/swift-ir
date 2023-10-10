@@ -99,26 +99,29 @@ class ProjectTab(QWidget):
     def updateAaButtons(self):
         logger.info('')
         # if self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings']['method_opts']['method'] == 'grid':
-        if self.twMethod.currentIndex() == 0:
-            self.aaButtons[0].setEnabled(self.dm['defaults'][self.dm.level]['method_opts']['size_1x1'] !=
-                                         self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
-                                             'method_opts']['size_1x1'])
-            self.aaButtons[1].setEnabled(self.dm['defaults'][self.dm.level]['method_opts']['size_2x2'] !=
-                                         self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
-                                             'method_opts']['size_2x2'])
-            self.aaButtons[2].setEnabled(self.dm['defaults'][self.dm.level]['iterations'] !=
-                                         self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings']['iterations'])
-            self.aaButtons[3].setEnabled(self.dm['defaults'][self.dm.level]['whitening'] !=
-                                         self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
-                                             'whitening'])
-            self.aaButtons[4].setEnabled((self.dm['defaults'][self.dm.level]['clobber'] !=
-                                         self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
-                                             'clobber']) or (self.dm['defaults'][self.dm.level]['clobber_size'] !=
-                                                             self.dm['stack'][self.dm.zpos]['levels'][self.dm.level][
-                                                                 'swim_settings']['clobber_size']))
-            self.aaButtons[5].setEnabled(self.dm['defaults'][self.dm.level]['method_opts']['quadrants'] !=
-                                         self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
-                                             'method_opts']['quadrants'])
+        try:
+            if self.twMethod.currentIndex() == 0:
+                self.aaButtons[0].setEnabled(self.dm['defaults'][self.dm.level]['method_opts']['size_1x1'] !=
+                                             self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
+                                                 'method_opts']['size_1x1'])
+                self.aaButtons[1].setEnabled(self.dm['defaults'][self.dm.level]['method_opts']['size_2x2'] !=
+                                             self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
+                                                 'method_opts']['size_2x2'])
+                self.aaButtons[2].setEnabled(self.dm['defaults'][self.dm.level]['iterations'] !=
+                                             self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings']['iterations'])
+                self.aaButtons[3].setEnabled(self.dm['defaults'][self.dm.level]['whitening'] !=
+                                             self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
+                                                 'whitening'])
+                self.aaButtons[4].setEnabled((self.dm['defaults'][self.dm.level]['clobber'] !=
+                                             self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
+                                                 'clobber']) or (self.dm['defaults'][self.dm.level]['clobber_size'] !=
+                                                                 self.dm['stack'][self.dm.zpos]['levels'][self.dm.level][
+                                                                     'swim_settings']['clobber_size']))
+                self.aaButtons[5].setEnabled(self.dm['defaults'][self.dm.level]['method_opts']['quadrants'] !=
+                                             self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
+                                                 'method_opts']['quadrants'])
+        except:
+            print_exception()
 
     def load_data_from_treeview(self):
         self.datamodel = DataModel(self.treeview_model.to_json())
@@ -239,7 +242,10 @@ class ProjectTab(QWidget):
                 # self.editorViewer.signals.ptsChanged.connect(self.updateWarnings)
                 self.editorViewer.signals.zVoxelCoordChanged.connect(lambda zpos: setattr(self.dm, 'zpos', zpos))
                 # self.editorViewer.signals.swimAction.connect(self.parent.alignOne)
-                self.dataUpdateMA()
+                try:
+                    self.dataUpdateMA()
+                except:
+                    print_exception()
                 # logger.info(f"Local Volume:\n{self.editorViewer.LV.info()}")
 
             if self.wTabs.currentIndex() == 0 or init_all:
@@ -1046,7 +1052,7 @@ class ProjectTab(QWidget):
         for w in wids:
             w.setFixedHeight(16)
         # self.flGrid.addWidget(self.bPush)
-        self.flGrid.addWidget(self.bPull)
+        # self.flGrid.addWidget(self.bPull)
 
         self.bLock = QPushButton()
         self.bLock.setFixedSize(QSize(16, 16))
@@ -1308,7 +1314,8 @@ class ProjectTab(QWidget):
         # self.sa_runtimes.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         # self.sa_runtimes.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
-        self.labPlaceholder = QLabel('Coarser resolutions must be aligned first.')
+        self.labPlaceholder = QLabel("This resolution level must be aligned first ('Align All').")
+        self.labPlaceholder.setAlignment(Qt.AlignCenter)
         self.labPlaceholder.setStyleSheet("font-size: 12px;")
         self.wPlaceholder = VW(self.labPlaceholder)
 
@@ -1943,16 +1950,17 @@ class ProjectTab(QWidget):
         self.checkboxes = HW(self.cbDefaults, self.cbSaved)
 
         # self.cpanelEditor = HW(self.bTransform, self.bSWIM, self.bSaveSettings)
-        btns = HW(self.bSWIM, self.bSaveSettings)
-        btns.layout.setContentsMargins(2,2,2,2)
-        btns.layout.setSpacing(2)
+        self.btnsSWIM = HW(self.bSWIM, self.bSaveSettings)
+        self.btnsSWIM.layout.setContentsMargins(2,2,2,2)
+        self.btnsSWIM.layout.setSpacing(2)
 
         self.wRightPanel = VW(
             self.warning_data,
             # self.wRadiobuttons,
             self.swMethod,
             self.checkboxes,
-            btns,
+            self.btnsSWIM,
+            self.bPull,
             # self.bRevertSettings,
             self.wGifPlayer,
             # self.gbOutputSettings,
@@ -2025,10 +2033,16 @@ class ProjectTab(QWidget):
         # sf = self.lvl(cur_level) / self.lvl(prev_level)
         sf = int(self.dm.lvl(prev_level) / self.dm.lvl(cur_level))
         try:
-            for d in self.dm():
-                ss = d['levels'][cur_level]['swim_settings']
-                prev_settings = d['levels'][prev_level]['swim_settings']
-                init_afm = copy.deepcopy(d['levels'][prev_level]['results']['affine_matrix'])
+            # for d in self.dm():
+            for i in range(len(self.dm)):
+                prev_settings = self.dm.swim_settings(s=prev_level, l=i)
+                self.dm['stack'][i]['levels'][cur_level]['swim_settings'] = copy.deepcopy(prev_settings)
+                ss = self.dm['stack'][i]['levels'][cur_level]['swim_settings']
+                try:
+                    init_afm = copy.deepcopy(self.ht.get(self.dm.saved_swim_settings(s=prev_level, l=i)))
+                except:
+                    print_exception(extra=f'Section #{i}. Using identity instead...')
+                    init_afm = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
                 init_afm[0][2] *= sf
                 init_afm[1][2] *= sf
                 ss = copy.deepcopy(prev_settings)
@@ -2060,6 +2074,7 @@ class ProjectTab(QWidget):
         else:
             self.dm['level_data'][cur_level]['ready'] = True
             self.dataUpdateMA()
+        logger.info('<<')
 
 
                     
@@ -2381,6 +2396,9 @@ class ProjectTab(QWidget):
         self.cbDefaults.setText(f'Default settings')
         ready = self.dm['level_data'][self.dm.scale]['ready']
         if ready:
+            self.swMethod.setCurrentIndex(0)
+            self.checkboxes.show()
+            self.btnsSWIM.show()
             ss = self.dm['stack'][self.dm.zpos]['levels'][self.dm.scale]['swim_settings']
             # self.cbDefaults.setEnabled(True)
             # self.le1x1.setEnabled(True)
@@ -2396,7 +2414,8 @@ class ProjectTab(QWidget):
             if self.dm.current_method == 'grid':
                 # self.swMethod.setCurrentIndex(0)
                 self.twMethod.setCurrentIndex(0)
-                self.swMethod.setCurrentIndex(0)
+
+
                 siz1x1 = ss['method_opts']['size_1x1']
                 # min_dim = min(self.dm.image_size())
                 min_dim = self.dm.image_size()[0]
@@ -2471,6 +2490,8 @@ class ProjectTab(QWidget):
             # self.bPush.setEnabled(False)
             # self.bPull.setEnabled(False)
             self.swMethod.setCurrentIndex(1)
+            self.checkboxes.hide()
+            self.btnsSWIM.hide()
         self.updateWarnings()
         if hasattr(self, 'editorViewer'):
             self.editorViewer.drawSWIMwindow() #1009+
