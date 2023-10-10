@@ -71,6 +71,7 @@ from src.ui.dialogs import AskContinueDialog, ConfigAppDialog, NewConfigureProje
 from src.ui.process_monitor import HeadupDisplay
 from src.ui.align import AlignWorker
 from src.ui.scale import ScaleWorker
+from src.ui.generate_zarr import ZarrWorker
 from src.viewer_em import PMViewer
 from src.ui.models.json_tree import JsonModel
 from src.ui.toggle_switch import ToggleSwitch
@@ -1179,6 +1180,28 @@ class MainWindow(QMainWindow):
             else:
                 logger.warning("This scale is not alignable!")
 
+    @Slot()
+    def regenZarr(self):
+        if self._isProjectTab():
+            if self.dm.is_aligned():
+                logger.info('Regenerating Zarr...')
+                self.bRegenZarr.setEnabled(False)
+                self._zarrThread = QThread()
+                self._zarrworker = ZarrWorker(dm=self.dm, ht=self.pt.ht)
+                self._zarrThread.started.connect(self._zarrworker.run)  # Step 5: Connect signals and slots
+                self._zarrThread.finished.connect(self._zarrThread.deleteLater)
+                self._zarrworker.moveToThread(self._zarrThread)  # Step 4: Move worker to the thread
+                self._zarrworker.progress.connect(self.setPbar)
+                self._zarrworker.initPbar.connect(self.resetPbar)
+                self._zarrworker.hudMessage.connect(self.tell)
+                self._zarrworker.hudWarning.connect(self.warn)
+                self._zarrworker.finished.connect(self._zarrThread.quit)
+                self._zarrworker.finished.connect(self._autosave)
+                self._zarrworker.finished.connect(lambda: self.wPbar.hide())
+                self._zarrworker.finished.connect(lambda: self.bRegenZarr.setEnabled(True))
+                self._zarrworker.finished.connect(self.dataUpdateWidgets)
+                self._zarrworker.finished.connect(lambda: print('Finished'))
+                self._zarrThread.start()  # Step 6: Start the thread
 
 
     @Slot()
@@ -1328,10 +1351,11 @@ class MainWindow(QMainWindow):
         self.wCpanel.hide()
 
         if self._isProjectTab():
+            self.bRegenZarr.setEnabled(self.dm.is_aligned())
             self.wCpanel.show()
             try:
-                self.pt.bTransform.setEnabled(True)
                 self.pt.bSWIM.setEnabled(True)
+                self.pt.bTransform.setEnabled(True)
             except:
                 print_exception()
             self.cbSkip.setEnabled(True)
@@ -1432,8 +1456,8 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def updateSlidrZpos(self):
-        caller = inspect.stack()[1].function
-        logger.info(f'[{caller}]')
+        # caller = inspect.stack()[1].function
+        # logger.info(f'[{caller}]')
         if self._isProjectTab():
             cur = self.dm.zpos
             self.leJump.setText(str(cur))
@@ -4158,21 +4182,26 @@ class MainWindow(QMainWindow):
         tip = """Align and generate new images for the current resolution level"""
         tip = '\n'.join(textwrap.wrap(tip, width=35))
         # self.bAlign = QPushButton(f"Apply")
-        self.bAlign = QPushButton('Align + Generate\nAll Output')
-        self.bAlign.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.bAlign = QPushButton('Align All')
         self.bAlign.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+        self.bAlign.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.bAlign.clicked.connect(self.alignAll)
         p = self.bAlign.palette()
-        # p.setColor(self.bAlign.backgroundRole(), QColor('#39ff14'))
-        p.setColor(self.bAlign.backgroundRole(), QColor('#FFFF66'))
+        p.setColor(self.bAlign.backgroundRole(), QColor('#f3f6fb'))
         p.setColor(QPalette.Text, QColor("#141414"))
         self.bAlign.setPalette(p)
 
-        # self.wAlign = HW(QVLine(), labs[2], self.bAlign)
-        # labs[2].setAlignment(Qt.AlignRight)
-        self.wAlign = HW(QVLine(), self.bAlign)
+        self.bRegenZarr = QPushButton('Regen Zarr')
+        self.bRegenZarr.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.bRegenZarr.clicked.connect(self.regenZarr)
+        p = self.bRegenZarr.palette()
+        p.setColor(self.bRegenZarr.backgroundRole(), QColor('#f3f6fb'))
+        p.setColor(QPalette.Text, QColor("#141414"))
+        self.bRegenZarr.setPalette(p)
+
+
+        self.wAlign = HW(QVLine(), self.bAlign, self.bRegenZarr)
         self.wAlign.layout.setSpacing(4)
-        # self.wAlign.hide()
 
 
         '''

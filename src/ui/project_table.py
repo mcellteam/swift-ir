@@ -563,7 +563,7 @@ class ProjectTable(QWidget):
                     font-size: 11px;
                 """)
                 self.all_notes.append(notes)
-                notes.textChanged.connect(lambda index=row, txt=notes.toPlainText(): self.setNotes(index, txt))
+                notes.textEdited.connect(lambda index=row, txt=notes.toPlainText(): self.setNotes(index, txt))
                 self.table.setCellWidget(row, col, notes)
             else:
                 self.table.setItem(row, col, QTableWidgetItem(str(row_data[col])))

@@ -707,7 +707,7 @@ class NewConfigureProjectDialog(QDialog):
               "aligning to unseen artifacts (default=0.0000)"
         self.initial_rotation_label = QLabel("Initial Rotation:")
         self.initial_rotation_input = QLineEdit(self)
-        self.initial_rotation_input.textChanged.connect(lambda: self.initial_rotation_dial.setValue(int(float(self.initial_rotation_input.text()))))
+        self.initial_rotation_input.textEdited.connect(lambda: self.initial_rotation_dial.setValue(int(float(self.initial_rotation_input.text()))))
         self.initial_rotation_input.setFixedWidth(70)
         self.initial_rotation_input.setText(str(cfg.DEFAULT_INITIAL_ROTATION))
         self.initial_rotation_input.setValidator(QIntValidator(-180, 180))

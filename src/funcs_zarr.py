@@ -192,7 +192,7 @@ def remove_zarr(path) -> None:
             logger.info('Done')
 
 
-def preallocate_zarr(dm, name, group, shape, dtype, overwrite, gui=True):
+def preallocate_zarr(dm, name, group, shape, dtype, overwrite, gui=True, attr=None):
     '''zarr.blosc.list_compressors() -> ['blosclz', 'lz4', 'lz4hc', 'zlib', 'zstd']'''
     cname, clevel, chunkshape = dm.get_user_zarr_settings()
     src = os.path.abspath(dm.dest())
@@ -230,6 +230,8 @@ def preallocate_zarr(dm, name, group, shape, dtype, overwrite, gui=True):
         # arr.zeros(name=group, shape=shape, chunks=chunkshape, dtype=dtype, compressor=compressor, overwrite=overwrite, synchronizer=synchronizer)
         arr.zeros(name=group, shape=shape, chunks=chunkshape, dtype=dtype, compressor=compressor, overwrite=overwrite)
         # write_metadata_zarr_multiscale()
+        if attr:
+            arr.attrs['attribute'] = attr
     except:
         print_exception()
         logger.warning('Zarr Preallocation Encountered A Problem')
