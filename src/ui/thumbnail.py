@@ -141,7 +141,7 @@ class ThumbnailFast(QLabel):
         # finally:
         #     self.update()
         self.pixmap().fill(QColor('#dadada'))
-        # self.update()
+        self.update()
 
 
     def paintEvent(self, event):
@@ -187,45 +187,24 @@ class ThumbnailFast(QLabel):
                     except:
                         print_exception()
 
-                elif self.name in ('reference', 'transforming', 'reference-table', 'transforming-table'):
-                    if self.name in ('reference-table', 'transforming-table'):
-                        method = cfg.data.method(s=self.s, l=self.l)
+                elif self.name in ('reference', 'transforming', 'reference-data', 'transforming-data'):
+                    if self.name in ('reference-data', 'transforming-data'):
                         s = self.s
                         l = self.l
                     else:
-                        method = cfg.data.current_method
                         s = cfg.data.level
                         l = cfg.data.zpos
+
+                    method = cfg.data.method(s=s, l=l)
 
                     img_size = cfg.data.image_size()
                     # sf = self.r.getCoords()[2] / img_size[0]  # level_key factor
                     sf = (self.r.getCoords()[2] - self.r.getCoords()[0]) / img_size[0]  # level_key factor
 
-                    # if method == 'grid_default':
-                    #     # cp = QPoint(self.r.center())  # center point
-                    #     # for i,r in enumerate(get_default_grid_rects(sf, img_size, ww, cp.x(), cp.y(), self.r.getCoords())):
-                    #     #     qp.setPen(QPen(QColor(cfg.glob_colors[i]), 2, Qt.DotLine))
-                    #     #     qp.drawRect(r)
-                    #
-                    #     ww1x1 = cfg.data['defaults'][cfg.data.level]['window_size']
-                    #     ww2x2 = [x / 2 for x in ww1x1]
-                    #
-                    #     a = [(img_size[0] - ww1x1[0])/2 + ww2x2[0]/2, (img_size[1] - ww1x1[1])/2 + ww2x2[1]/2]
-                    #     b = [img_size[0] - a[0], img_size[1] - a[1]]
-                    #
-                    #     qp.setPen(QPen(QColor(cfg.glob_colors[0]), 2, Qt.DotLine))
-                    #     qp.drawRect(get_rect(sf, a[0], a[1], ww2x2[0], self.r.getCoords()))
-                    #     qp.setPen(QPen(QColor(cfg.glob_colors[1]), 2, Qt.DotLine))
-                    #     qp.drawRect(get_rect(sf, b[0], a[1], ww2x2[0], self.r.getCoords()))
-                    #     qp.setPen(QPen(QColor(cfg.glob_colors[2]), 2, Qt.DotLine))
-                    #     qp.drawRect(get_rect(sf, a[0], b[1], ww2x2[0], self.r.getCoords()))
-                    #     qp.setPen(QPen(QColor(cfg.glob_colors[3]), 2, Qt.DotLine))
-                    #     qp.drawRect(get_rect(sf, b[0], b[1], ww2x2[0], self.r.getCoords()))
-
                     if 'grid' in method:
                         regions = cfg.data.get_grid_custom_regions(s=s, l=l)
-                        ww1x1 = cfg.data.swim_1x1_custom_px(s=s, l=l)
-                        ww2x2 = cfg.data.swim_2x2_custom_px(s=s, l=l)
+                        ww1x1 = cfg.data.swim_1x1_size(s=s, l=l)
+                        ww2x2 = cfg.data.swim_2x2_size(s=s, l=l)
 
                         a = [(img_size[0] - ww1x1[0])/2 + ww2x2[0]/2, (img_size[1] - ww1x1[1])/2 + ww2x2[1]/2]
                         b = [img_size[0] - a[0], img_size[1] - a[1]]
@@ -250,13 +229,13 @@ class ThumbnailFast(QLabel):
                     elif method == 'manual_hint':
                         pts = []
                         ww = cfg.data.manual_swim_window_px(s=s, l=l)
-                        if self.name in ('reference','reference-table'):
-                            if self.name == 'reference-table':
+                        if self.name in ('reference','reference-data'):
+                            if self.name == 'reference-data':
                                 pts = cfg.data.manpoints_mir('ref', s=s, l=l)
                             else:
                                 pts = cfg.data.manpoints_mir('ref')
-                        elif self.name in ('transforming', 'transforming-table'):
-                            if self.name == 'transforming-table':
+                        elif self.name in ('transforming', 'transforming-data'):
+                            if self.name == 'transforming-data':
                                 pts = cfg.data.manpoints_mir('base', s=s, l=l)
                             else:
                                 pts = cfg.data.manpoints_mir('base')
@@ -370,7 +349,12 @@ class CorrSignalThumbnail(QLabel):
         self.annotations = annotations
         self.setPixmap(QPixmap(32, 32))
         self.siz = None
+        # self.snr = snr
+        self.snr = 0.0
+        self.extra = extra
+        self.name = name
         if self.path:
+            logger.info(f'name = {name} / path = {self.path}')
             try:
                 # self.setPixmap(QPixmap(path))
                 self.setPixmap(QPixmap.fromImage(QImage(path)))
@@ -382,11 +366,6 @@ class CorrSignalThumbnail(QLabel):
             pixmap = QPixmap(32, 32)
             self.setPixmap(pixmap)
 
-
-        # self.snr = snr
-        self.snr = 0.0
-        self.extra = extra
-        self.name = name
         self.setContentsMargins(0,0,0,0)
 
         self.map_border_color = {
@@ -543,6 +522,7 @@ class CorrSignalThumbnail(QLabel):
         self.snr = 0.0
         self._noImage = 1
         self.pixmap().fill(QColor('#dadada'))
+        self.update()
 
 
 def convert_rotation(degrees):

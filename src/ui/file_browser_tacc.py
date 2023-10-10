@@ -59,8 +59,6 @@ class FileBrowserTacc(QWidget):
 
 
     def initUI(self):
-        # with open('src/style/controls.qss', 'r') as f:
-        #     style = f.read()
 
         self._btn_showFileBrowser = QPushButton('Hide Files')
         self._btn_showFileBrowser.setFixedSize(86, 18)

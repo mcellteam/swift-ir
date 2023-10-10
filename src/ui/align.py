@@ -7,10 +7,12 @@ import copy
 import json
 import glob
 import time
+import errno
 import shutil
 import psutil
 import logging
 import imageio
+import imageio.v3 as iio
 from pathlib import Path
 from multiprocessing import Pool
 from multiprocessing.pool import ThreadPool
@@ -35,7 +37,7 @@ from src.mp_queue import TaskQueue
 from src.ui.timer import Timer
 from src.recipe_maker import run_recipe
 from src.helpers import print_exception, pretty_elapsed, is_tacc, get_bindir, get_n_tacc_cores
-from src.save_bias_analysis import save_bias_analysis
+# from src.save_bias_analysis import save_bias_analysis
 from src.helpers import get_scale_val, renew_directory, file_hash, pretty_elapsed, is_tacc
 from src.funcs_zarr import preallocate_zarr
 import src.config as cfg
@@ -66,7 +68,7 @@ class AlignWorker(QObject):
     hudMessage = Signal(str)
     hudWarning = Signal(str)
 
-    def __init__(self, scale, path, align_indexes, regen_indexes, align, regenerate, renew_od, reallocate_zarr, dm):
+    def __init__(self, scale, path, align_indexes, regen_indexes, align, regenerate, renew_od, reallocate_zarr, dm, ht):
         super().__init__()
         logger.info('Initializing...')
         self.scale = scale
@@ -78,9 +80,11 @@ class AlignWorker(QObject):
         self._renew_od = renew_od
         self._reallocate_zarr = reallocate_zarr
         self.dm = dm
+        self.ht = ht
         self.result = None
         self._running = True
         self._mutex = QMutex()
+        self.finished.connect(lambda: logger.critical('Finished!'))
 
         self._tasks = []
         if self._align:
@@ -105,7 +109,9 @@ class AlignWorker(QObject):
 
 
     def run(self):
-        logger.info('Running...')
+        logger.critical('Running...')
+        logger.critical(f"align indexes : {self.align_indexes}\n"
+                        f"regen indexes : {self.regen_indexes}")
         while self._tasks and self.running():
             self._tasks.pop(0)()
         self.finished.emit() #Important!
@@ -113,21 +119,24 @@ class AlignWorker(QObject):
 
     def align(self):
         """Long-running task."""
-        logger.info('Aligning...')
+        logger.critical('\n\nAligning...\n')
 
 
         scale = self.scale
         indexes = self.align_indexes
         dm = self.dm
 
+        if 5 in indexes:
+            logger.critical(f"\nssHash      : {dm.ssHash(l=5)}\n"
+                            f"ssSavedHash : {dm.ssSavedHash(l=5)}\n"
+                            f"cafmHash    : {dm.cafmHash(l=5)}")
+
         if scale == dm.coarsest_scale_key():
-            logger.critical(f'\nInitializing affine for {len(indexes)} alignment pairs\n')
+            logger.info(f'INITIALIZING affine for {len(indexes)} alignment pairs...')
         else:
-            logger.critical(f'\nRefining affine for {len(indexes)} alignment pairs\n')
+            logger.info(f'REFINING affine for {len(indexes)} alignment pairs...')
 
-        # cfg.mw._autosave()
-
-        scratchpath = os.path.join(dm.location, 'logs', 'scratch.log')
+        scratchpath = os.path.join(dm.series_location, 'logs', 'scratch.log')
         if os.path.exists(scratchpath):
             os.remove(scratchpath)
 
@@ -135,52 +144,39 @@ class AlignWorker(QObject):
 
         first_unskipped = dm.first_unskipped(s=scale)
 
-        scale_val = dm.lvl(scale)
         tasks = []
         for zpos, sec in [(i, dm()[i]) for i in indexes]:
-            # zpos = sec['alignment']['ss']['index']
-            # if not sec['skipped'] and (zpos != first_unskipped):
             zpos = dm().index(sec)
-            sec['levels'][scale].setdefault('method_results', {})
-            sec['levels'][scale]['method_previous'] = copy.deepcopy(sec['levels'][scale]['swim_settings']['method'])
             for key in ['swim_args', 'swim_out', 'swim_err', 'mir_toks', 'mir_script', 'mir_out', 'mir_err']:
-                sec['levels'][scale]['method_results'].pop(key, None)
-            ss = sec['levels'][scale]['swim_settings']
-            mr = sec['levels'][scale]['method_results']
-            ss['index'] = zpos
-            ss['isRefinement'] = dm.isRefinement()
-            ss['location'] = dm.location
-            ss['img_size'] = dm.series['size_xy'][scale]
-            # ss['include'] = not sec['skipped']
-            ss['dev_mode'] = cfg.DEV_MODE
-            ss['log_recipe_to_file'] = cfg.LOG_RECIPE_TO_FILE
-            ss['target_thumb_size'] = cfg.TARGET_THUMBNAIL_SIZE
-            ss['verbose_swim'] = cfg.VERBOSE_SWIM
+                sec['levels'][scale]['results'].pop(key, None)
+            # ss = sec['levels'][scale]['swim_settings']
+            ss = copy.deepcopy(dm.swim_settings(s=scale, l=zpos))
+            ss['path'] = dm.path(s=scale, l=zpos)
+            ss['path_reference'] = dm.path_ref(s=scale, l=zpos)
+            ss['dir_signals'] = dm.dir_signals(s=scale, l=zpos)
+            ss['dir_matches'] = dm.dir_matches(s=scale, l=zpos)
+            ss['dir_tmp'] = dm.dir_tmp(s=scale, l=zpos)
+            # print(f"path : {ss['path']}")
+            # print(f" ref : {ss['path_reference']}")
 
-            if dm.isRefinement():
-                scale_prev = dm.scales[dm.scales.index(scale) + 1]
-                prev_scale_val = int(scale_prev[1:])
-                upscale = (float(prev_scale_val) / float(scale_val))
-                prev_method = dm['stack'][zpos]['levels'][scale_prev]['swim_settings']['method']
-                init_afm = np.array(copy.deepcopy(dm['stack'][zpos]['levels'][scale_prev]['alignment_history'][
-                                                      prev_method]['method_results']['affine_matrix']))
-                # prev_method = scale_prev_dict[zpos]['current_method']
-                # prev_afm = copy.deepcopy(np.array(scale_prev_dict[zpos]['alignment_history'][prev_method]['affine_matrix']))
-                init_afm[0][2] *= upscale
-                init_afm[1][2] *= upscale
-                ss['init_afm'] = init_afm.tolist()
-            else:
-                ss['init_afm'] = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
+            wd = dm.ssDir(s=scale, l=zpos)  # write directory
+            os.makedirs(wd, exist_ok=True)
+            wp = os.path.join(wd, 'swim_settings.json')  # write path
+            with open(wp, 'w') as f:
+                jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
+                f.write(jde.encode(dm.swim_settings(s=scale, l=zpos)))
 
+            # if (len(indexes) == len(dm)) or (ss['include'] and (zpos != first_unskipped)):
             if ss['include'] and (zpos != first_unskipped):
-                # tasks.append(copy.deepcopy(sec['alignment']))
-                tasks.append(copy.deepcopy({'swim_settings': ss, 'method_results': mr}))
+                tasks.append(copy.deepcopy(ss))
+                # tasks.append(copy.deepcopy(ss))
             else:
-                logger.critical(f"EXCLUDING section #{zpos}")
+                logger.info(f"EXCLUDING section #{zpos}")
 
-        delete_correlation_signals(dm=dm, scale=scale, indexes=indexes)
-        delete_matches(dm=dm, scale=scale, indexes=indexes)
-        dest = dm.location
+        # delete_correlation_signals(dm=dm, scale=scale, indexes=indexes)
+        # delete_matches(dm=dm, scale=scale, indexes=indexes)
+
+        dest = dm.data_location
 
         if is_tacc():
             cpus = get_n_tacc_cores(n_tasks=len(tasks))
@@ -192,66 +188,53 @@ class AlignWorker(QObject):
 
         t0 = time.time()
 
-        logger.info(f"# cores: {cpus}")
-
         # f_recipe_maker = f'{os.path.split(os.path.realpath(__file__))[0]}/src/recipe_maker.py'
 
         if cfg.USE_POOL_FOR_SWIM:
             ctx = mp.get_context('forkserver')
-            # with ctx.Pool(processes=cpus) as pool:
-            #     all_results = list(
-            #         tqdm.tqdm(pool.imap(run_recipe, tasks, chunksize=5),
-            #                   total=len(tasks), desc="Compute Affines",
-            #                   position=0, leave=True))
-
-            #initPbar
             desc = f"Computing Affines ({len(tasks)} tasks)"
             self.initPbar.emit((len(tasks), desc))
-            # QApplication.processEvents()
             all_results = []
-            # logger.info(f'# Processes: {cpus}')
-            # with ctx.Pool(processes=cpus) as pool:
-            #     for i, result in enumerate(tqdm.tqdm(pool.imap_unordered(run_recipe, tasks),
-            #                             total=len(tasks), desc=desc, position=0, leave=True)):
-            #         all_results.append(result)
-            #         self.progress.emit(i)
-            #         if not self.running():
-            #             break
 
+            # config = {
+            #     'dev_mode': cfg.DEV_MODE,
+            #     'verbose_swim': cfg.VERBOSE_SWIM,
+            #     'log_recipe_to_file': cfg.LOG_RECIPE_TO_FILE,
+            #     'target_thumb_size': cfg.TARGET_THUMBNAIL_SIZE,
+            #     'series_location': cfg.data.series_location,
+            # }
 
+            # for i in range(len(tasks)):
+            #     tasks[i] = (tasks[i], config)
 
+            cfg.CONFIG = {
+                'dev_mode': cfg.DEV_MODE,
+                'verbose_swim': cfg.VERBOSE_SWIM,
+                'log_recipe_to_file': cfg.LOG_RECIPE_TO_FILE,
+                'target_thumb_size': cfg.TARGET_THUMBNAIL_SIZE,
+                'series_location':dm.series_location,
+                'data_location': dm.data_location,
+            }
+
+            logger.info(f'max # workers: {cpus}')
             with ThreadPoolExecutor(max_workers=cpus) as pool:
-                # with ProcessPoolExecutor(max_workers=cpus) as pool:
-                # with ThreadPoolExecutor(max_workers=1) as pool:
-                #     for i, result in enumerate(tqdm.tqdm(pool.imap_unordered(run, tasks),
-                #                                          total=len(tasks),
-                #                                          desc=desc, position=0,
-                #                                          leave=True)):
                 for i, result in enumerate(tqdm.tqdm(pool.map(run_recipe, tasks),
                                                      total=len(tasks),
                                                      desc=desc, position=0,
                                                      leave=True)):
+                    all_results.append(result)
                     self.progress.emit(i)
                     if not self.running():
                         break
 
+            try:
+                assert len(all_results) > 0
+            except AssertionError:
+                logger.error('AssertionError: Alignment failed! No results.')
+                self.finished.emit()
+                return
 
             logger.critical(f"# Completed Alignment Tasks: {len(all_results)}")
-
-            # # # For use with ThreadPool ONLY
-            # for r in all_results:
-            #     index = r['swim_settings']['index']
-            #     method = r['swim_settings']['method']
-            #     sec = dm['data']['scales'][scale]['stack'][index]
-            #     sec['alignment'] = r
-            #     sec['alignment_history'][method]['method_results'] = copy.deepcopy(r['method_results'])
-            #     sec['alignment_history'][method]['swim_settings'] = copy.deepcopy(r['swim_settings'])
-            #     sec['alignment_history'][method]['complete'] = True
-            #     try:
-            #         assert np.array(sec['alignment_history'][method]['method_results']['affine_matrix']).shape == (2, 3)
-            #         # dm['data']['scales'][scale]['stack'][index]['alignment_history'][method]['complete'] = True
-            #     except:
-            #         logger.warning(f"Task failed at index: {index}")
         else:
 
             task_queue = TaskQueue(n_tasks=len(tasks), dest=dest)
@@ -262,7 +245,8 @@ class AlignWorker(QObject):
             align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'recipe_maker.py')
             logger.info('adding tasks to the queue...')
             for zpos, sec in [(i, dm()[i]) for i in indexes]:
-                if sec['swim_settings']['include'] and (zpos != first_unskipped):
+                if sec['include'] and (zpos != first_unskipped):
+                # if zpos != first_unskipped:
                     # encoded_data = json.dumps(copy.deepcopy(sec))
                     encoded_data = json.dumps(sec['levels'][scale])
                     task_args = [sys.executable, align_job, encoded_data]
@@ -286,30 +270,41 @@ class AlignWorker(QObject):
                     if ps.startswith('{') and ps.endswith('}'):
                         all_results.append(json.loads(p))
 
+        logger.critical(f"# results returned: {len(all_results)}")
 
-        for r in all_results:
-            index = r['swim_settings']['index']
-            method = r['swim_settings']['method']
-            sec = dm['stack'][index]['levels'][scale]
-            sec['method_results'] = r['method_results']
-            sec['alignment_history'][method]['method_results'] = copy.deepcopy(r['method_results'])
-            sec['alignment_history'][method]['swim_settings'] = copy.deepcopy(r['swim_settings'])
-            sec['alignment_history'][method]['complete'] = True
+        ident = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
+        fu = dm.first_unskipped()
+        fu_ss = dm.swim_settings(s=scale, l=fu)
+        self.ht.put(fu_ss, ident)
+
+        for i,r in enumerate(all_results):
             try:
-                assert np.array(sec['alignment_history'][method]['method_results']['affine_matrix']).shape == (2, 3)
-                # dm['data']['scales'][scale]['stack'][index]['alignment_history'][method]['complete'] = True
+                assert np.array(r['affine_matrix']).shape == (2, 3)
+                # assert np.array(r['affine_matrix']).all() != np.array([[1., 0., 0.], [0., 1., 0.]]).all()
             except:
-                logger.warning(f"Task failed at index: {index}")
+                siz = len(cfg.pt.ht.data)
+                print_exception(extra=f"Alignment failed at index {r['index']}")
+                continue
+            dm['stack'][r['index']]['levels'][scale]['results'] = r
 
+            ss = dm['stack'][r['index']]['levels'][scale]['swim_settings']
+            key = HashableDict(ss)
+            # index = r['index']
+            # key = dm.swim_settings(s=scale, l=index)
 
-        SetStackCafm(cfg.data, scale=scale, poly_order=dm.poly_order)
+            # value = r
+            value = r['affine_matrix']
+            if value != ident:
+                self.ht.put(key, value)
+            wd = dm.ssDir(s=scale, l=i)  # write directory
+            wp = os.path.join(wd, 'results.json')  # write path
+            os.makedirs(wd, exist_ok=True)
+            with open(wp, 'w') as f:
+                jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
+                f.write(jde.encode(r))
 
-        #Todo
-        # try:
-        #     shutil.rmtree(os.path.join(cfg.data.location, cfg.data.level, 'matches_raw'), ignore_errors=True)
-        #     shutil.rmtree(os.path.join(cfg.data.location, cfg.data.level, 'matches_raw'), ignore_errors=True)
-        # except:
-        #     print_exception()
+        # SetStackCafm(dm, scale=scale, poly_order=dm.poly_order)
+        dm.set_stack_cafm()
 
         if not self.running():
             self.finished.emit()
@@ -324,18 +319,19 @@ class AlignWorker(QObject):
         # for i, layer in enumerate(dm.get_iter(scale)):
         #     layer['alignment_history'][dm.method(z=i)]['method_results']['cafm_hash'] = dm.cafm_current_hash(z=i)
 
-        # if cfg.mw._isProjectTab():
-        #     cfg.mw.updateCorrSignalsDrawer()
-        #     cfg.mw.setTargKargPixmaps()
-
-        # save2file(dm=dm._data, name=dm.location)
-
-        # initPbar
-        # thumbnailer = Thumbnailer()
-        # thumbnailer.reduce_matches(indexes=indexes, dest=dm['data']['series_path'], scale=scale)
+        if 5 in indexes:
+            logger.critical(f"\nssHash      : {dm.ssHash(l=5)}\n"
+                            f"ssSavedHash : {dm.ssSavedHash(l=5)}\n"
+                            f"cafmHash    : {dm.cafmHash(l=5)}")
+        logger.critical(f"\n\nEND: ALIGN\n")
 
 
     def generate(self):
+        if 5 in self.regen_indexes:
+            logger.critical(f"\nssHash      : {self.dm.ssHash(l=5)}\n"
+                            f"ssSavedHash : {self.dm.ssSavedHash(l=5)}\n"
+                            f"cafmHash    : {self.dm.cafmHash(l=5)}")
+
         if not self.running():
             logger.warning('Canceling transformation process...')
             self.finished.emit()
@@ -348,11 +344,14 @@ class AlignWorker(QObject):
             self.finished.emit()
             return
 
-        logger.critical('\n\nTransforming images...\n')
+        print(f'\n######## Generating Transformed Images ########\n')
 
         dm = self.dm
         scale = self.scale
+
         indexes = self.regen_indexes
+
+        logger.critical(f"regen indexes: {self.regen_indexes}")
 
         scale_val = get_scale_val(scale)
 
@@ -361,21 +360,18 @@ class AlignWorker(QObject):
             self.finished.emit()
             return
 
-        tryRemoveDatFiles(dm, scale, dm.location)
+        # tryRemoveDatFiles(dm, scale, dm.data_location)
 
-        SetStackCafm(dm, scale=scale, poly_order=dm.poly_order)
+        # SetStackCafm(dm, scale=scale, poly_order=dm.poly_order)
 
-        dm.propagate_swim_1x1_custom_px(indexes=indexes)
-        dm.propagate_swim_2x2_custom_px(indexes=indexes)
-        dm.propagate_manual_swim_window_px(indexes=indexes)
-
-        od = os.path.join(dm.location, 'tiff', scale)
-        if self._renew_od:
-            renew_directory(directory=od)
+        #Todo a similar option should be added back in later for forcing regeneration of all output
+        # od = os.path.join(dm.series_location, 'tiff', scale)
+        # if self._renew_od:
+        #     renew_directory(directory=od)
         # print_example_cafms(scale_dict)
 
         # try:
-        #     bias_path = os.path.join(dm.location, level, 'bias_data')
+        #     bias_path = os.path.join(dm.series_location, level, 'bias_data')
         #     save_bias_analysis(layers=dm.get_iter(level=level), bias_path=bias_path)
         # except:
         #     print_exception()
@@ -394,24 +390,32 @@ class AlignWorker(QObject):
                     f'Aligned Size       : {rect[2]} x {rect[3]}\n'
                     f'Offsets            : {rect[0]}, {rect[1]}')
 
-        dest = dm.location
-        logger.info(f'Transforming {len(indexes)} images...')
+        dest = dm.data_location
+        print(f'\n######## Transforming {len(indexes)} images ########\n')
 
         tasks = []
         for i, sec in enumerate(dm()):
             if i in indexes:
-                base_name = sec['levels'][scale]['swim_settings']['path']
-                _, fn = os.path.split(base_name)
-                al_name = os.path.join(dest, 'tiff', scale, fn)
-                method = sec['levels'][scale]['swim_settings']['method']  # 0802+
-                cafm = sec['levels'][scale]['alignment_history'][method]['method_results']['cumulative_afm']
-                tasks.append([base_name, al_name, rect, cafm, 128])
-                # if i in [1,2,3]:
-                #     print(f"Example args:\n {[base_name, al_name, rect, cafm, 128]}")
-                # if cfg.DEV_MODE:
-                #     sec['levels'][scale]['method_results']['generate_args'] = [base_name, al_name, rect, cafm, 128]
+                ifp = dm.path(s=scale, l=i) # input file path
+                ofp = dm.path_aligned(s=scale, l=i)  # output file path
+                #Todo add flag to force regenerate
+                # if os.path.exists(al_name) or FLAG:
+                if not os.path.exists(ofp):
+                    os.makedirs(os.path.dirname(ofp), exist_ok=True)
+                    cafm = sec['levels'][scale]['cafm']
+                    tasks.append([ifp, ofp, rect, cafm, 128])
+                else:
+                    logger.info(f'Cache hit (transformed image): {ofp}')
+                    # if i in [1,2,3]:
+                    #     print(f"Example args:\n {[base_name, al_name, rect, cafm, 128]}")
 
-        logger.info(f"# of tasks: {len(tasks)}")
+
+        n_tasks = len(tasks)
+        logger.info(f"# of tasks: {n_tasks}")
+        if n_tasks == 0:
+            logger.info('Nothing new to generate - returning')
+            self.finished.emit()
+            return
 
         # pbar = tqdm.tqdm(total=len(tasks), position=0, leave=True, desc="Generating Alignment")
 
@@ -464,7 +468,6 @@ class AlignWorker(QObject):
                 all_results.append(result)
                 i += 1
                 self.progress.emit(i)
-                # QApplication.processEvents()
                 if not self.running():
                     break
 
@@ -489,28 +492,37 @@ class AlignWorker(QObject):
         #                    leave=True))
         #     pool.close()
 
-        logger.critical("Transformations finished")
 
         if not self.running():
             self.finished.emit()
             return
 
-        nFilesFound = len(os.listdir(os.path.join(dest, 'tiff', scale)))
-        logger.critical(f"# Files Found: {nFilesFound}")
-        if nFilesFound == 0:
-            logger.warning(f"No Files Found. Nothing to convert.")
-            self.finished.emit()
-            return
+        print(f'\n######## Generating Thumbnails ########\n')
 
-        #initPbar
-        thumbnailer = Thumbnailer()
-        thumbnailer.reduce_aligned(indexes, dest=dest, scale=scale)
+        to_reduce = []
+        names = dm.basefilenames()
+        for i, name in enumerate([names[i] for i in indexes]):
+            ifn = dm.path_aligned(s=scale, l=i)
+            ofn = dm.path_thumb(s=scale, l=i)
+            if not os.path.exists(ifn):
+                raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), ifn)
+                continue
+            else:
+                if not os.path.exists(ofn):
+                    os.makedirs(os.path.dirname(ofn), exist_ok=True)
+                    to_reduce.append((ifn, ofn))
+                else:
+                    logger.info(f'Cache hit (thumbnail): {ofn}')
 
+        if len(to_reduce):
+            Thumbnailer().reduce_aligned(dm, indexes, dest=dest, scale=scale)
+
+        print(f'\n######## Generating gifs ########\n')
         t0 = time.time()
-        generateAnimations(dm=dm, indexes=indexes)
+        generateAnimations(dm=dm, indexes=indexes, level=scale)
         t1 = time.time()
         dt = t1 - t0
-        logger.critical(f"Time Elapsed (generate animated gifs): {dt:.3g}level")
+        logger.critical(f"dt (generate gifs): {dt:.3g}s")
 
         if not self.running():
             self.finished.emit()
@@ -519,7 +531,7 @@ class AlignWorker(QObject):
         t_elapsed = time.time() - t0
         dm.t_generate = t_elapsed
 
-        dm.register_cafm_hashes(s=scale, indexes=indexes)
+        # dm.register_cafm_hashes(s=scale, indexes=indexes)
         # dm.set_image_aligned_size() #Todo upgrade
 
         pbar_text = 'Copy-converting Scale %d Alignment To Zarr (%d Cores)...' % (scale_val, cpus)
@@ -535,14 +547,15 @@ class AlignWorker(QObject):
                              dtype='|u1',
                              overwrite=True)
 
-        logger.info(f'Copy-converting {len(indexes)} images to Zarr...')
+        print(f'\n######## Copy-converting Images to Zarr ########\n')
 
         tasks = []
         for i in indexes:
-            _, fn = os.path.split(dm()[i]['levels'][scale]['swim_settings']['path'])
-            al_name = os.path.join(dm.location, 'tiff', scale, fn)
-            zarr_group = os.path.join(dm.location, 'zarr', 's%d' % scale_val)
-            task = [i, al_name, zarr_group]
+            al_name = dm.path_aligned(s=scale, l=i)
+            zarr_group = os.path.join(dm.data_location, 'zarr', 's%d' % scale_val)
+            save_to = os.path.join(dm.writeDir(s=scale, l=i), str(dm.cafmHash(s=scale, l=i)))
+            # save_to = os.path.join(dm.writeDir(s=scale, l=i))
+            task = [i, al_name, zarr_group, save_to]
             tasks.append(task)
         # shuffle(tasks)
 
@@ -592,6 +605,11 @@ class AlignWorker(QObject):
 
         logger.info("Zarr conversion complete.")
         logger.info(f"Elapsed Time: {t_elapsed:.3g}s")
+
+        if 5 in self.regen_indexes:
+            logger.critical(f"\nssHash      : {self.dm.ssHash(l=5)}\n"
+                            f"ssSavedHash : {self.dm.ssSavedHash(l=5)}\n"
+                            f"cafmHash    : {self.dm.cafmHash(l=5)}")
 
 
 def run_mir(task):
@@ -646,27 +664,36 @@ def run_command(cmd, arg_list=None, cmd_input=None):
     return ({'out': cmd_stdout, 'err': cmd_stderr, 'rc': cmd_proc.returncode})
 
 
-def generateAnimations(dm, indexes):
+def generateAnimations(dm, indexes, level):
     # https://stackoverflow.com/questions/753190/programmatically-generate-video-or-animated-gif-in-python
 
-    src = os.path.join(dm.location, 'thumbnails', dm.scale)
-    out = os.path.join(dm.location,'gif', dm.scale)
-    logger.info(f"Generating {len(indexes)} transformation animations... destination:\n{out}")
-    # os.makedirs(out, exist_ok=True)
+    # src = os.path.join(dm.series_location, 'thumbnails', dm.scale)
+    # out = os.path.join(dm.series_location, 'gif', dm.scale)
 
+    # logger.info(f"Generating {len(indexes)} transformation animations... destination:\n{out}")
+    # os.makedirs(out, exist_ok=True)
+    first_unskipped = dm.first_unskipped(s=level)
     for i in indexes:
-        name = os.path.basename(dm['stack'][i]['levels'][dm.scale]['swim_settings']['path'])
-        refname = os.path.basename(dm['stack'][i]['levels'][dm.scale]['swim_settings']['reference'])
-        im0 = os.path.join(src, refname)
-        im1 = os.path.join(src, name)
-        logger.info(f'im0 = {im0}')
-        logger.info(f'im1 = {im1}')
-        if refname == '':
-            im0 = im1
-        images = []
-        [images.append(imageio.imread(filename)) for filename in [im0, im1]]
-        _name, _ = os.path.splitext(name)
-        imageio.mimsave(os.path.join(out, _name) + '.gif', images)
+        if i == first_unskipped:
+            continue
+        ofn = dm.path_gif(s=level, l=i)
+        os.makedirs(os.path.dirname(ofn), exist_ok=True)
+        im0 = dm.path_thumb(l=i)
+        im1 = dm.path_thumb_ref(l=i)
+        # if refname == '':
+        #     im0 = im1
+        if not os.path.exists(im0):
+            logger.error(f'Not found: {im0}')
+            return
+        if not os.path.exists(im1):
+            logger.error(f'Not found: {im0}')
+            return
+        try:
+            images = [imageio.imread(im0), imageio.imread(im1)]
+            imageio.mimsave(ofn, images)
+        except:
+            print_exception()
+        # iio.imwrite(ofn, images, duration=100, loop=-1)
 
 
 def run_subprocess(task):
@@ -724,7 +751,7 @@ def checkForTiffs(path) -> bool:
 
 def save2file(dm, name):
     data_cp = copy.deepcopy(dm)
-    name = data_cp['location']
+    name = data_cp['data_location']
     jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
     proj_json = jde.encode(data_cp)
     logger.info(f'---- SAVING  ----\n{name}')
@@ -745,8 +772,11 @@ def convert_zarr(task):
         ID = task[0]
         fn = task[1]
         out = task[2]
+        save_to = task[3]
         store = zarr.open(out)
-        store[ID, :, :] = libtiff.TIFF.open(fn).read_image()[:, ::-1]  # store: <zarr.core.Array (19, 1244, 1130) uint8>
+        data = libtiff.TIFF.open(fn).read_image()[:, ::-1]  # store: <zarr.core.Array (19, 1244, 1130) uint8>
+        np.save(save_to, data)
+        store[ID, :, :] = data
         return 0
     except Exception as e:
         print(e)
@@ -798,3 +828,9 @@ def print_example_cafms(dm):
             print(str(dm.cafm(l=2)))
     except:
         pass
+
+
+class HashableDict(dict):
+    def __hash__(self):
+        # return hash(tuple(str(sorted(self.items()))))
+        return abs(hash(str(sorted(self.items()))))

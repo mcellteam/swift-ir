@@ -60,7 +60,6 @@ class WidgetArea(QWidget):
         self._form = QFormLayout()
         self._form.setContentsMargins(0,0,0,0)
         self._form.setVerticalSpacing(3)
-        # self._gb = QGroupBox('AlignEM-SWiFT')
         self._gb = QGroupBox()
         self._gb.setLayout(self._form)
         self._gb.setContentsMargins(0,0,0,0)

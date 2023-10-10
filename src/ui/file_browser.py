@@ -6,10 +6,10 @@ from qtpy.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTre
     QPushButton, QSizePolicy, QAbstractItemView, QLineEdit, QAction, QMenu, QComboBox, QTextEdit, QFormLayout, \
     QButtonGroup, QLabel, QCompleter, QMessageBox
 from qtpy.QtCore import Slot, Qt, QSize, QDir
-from qtpy.QtGui import QCursor
+from qtpy.QtGui import QCursor, QFont
 import qtawesome as qta
 from src.helpers import is_joel, is_tacc, sanitizeSavedPaths, print_exception
-from src.ui.layouts import HWidget, VWidget, VBL, HBL, HSplitter, VSplitter
+from src.ui.layouts import HW, VW, VBL, HBL, HSplitter, VSplitter
 import src.config as cfg
 
 __all__ = ['FileBrowser']
@@ -25,7 +25,6 @@ class FileBrowser(QWidget):
         self.treeview.setContextMenuPolicy(Qt.CustomContextMenu)
         self.treeview.customContextMenuRequested.connect(self.openMenu)
         # self.treeview.customContextMenuRequested.connect(self._show_context_menu)
-        self.treeview.setStyleSheet('border-width: 0px; color: #161c20;')
         self.treeview.expandsOnDoubleClick()
         self.treeview.setAnimated(True)
         self.treeview.setAlternatingRowColors(True)
@@ -44,9 +43,7 @@ class FileBrowser(QWidget):
         # self._root = os.path.expanduser('~')
         # self.model.setRootPath(self._root)
         root = self.model.setRootPath('/')
-
         self.treeview.setRootIndex(root)
-
 
         self.path_scratch = os.getenv('SCRATCH', "SCRATCH not found")
         self.path_work = os.getenv('WORK', "WORK not found")
@@ -62,27 +59,34 @@ class FileBrowser(QWidget):
         # sanitizeSavedPaths()
         self.loadCombobox()
 
+        # self.setRootLastKnownRoot()
+
     def navigateUp(self):
         logger.info('')
-        logger.info(f'current root: {self._root}')
-        # selection = self.getSelectionPath()
-        self._root = os.path.dirname(self._root)
-        logger.info(f"Setting root: {self._root}")
-        self.treeview.setRootIndex(self.model.index(self._root))
+        if hasattr(self, '_root'):
+            logger.debug(f'current root: {self._root}')
+            # selection = self.getSelectionPath()
+            self._root = os.path.dirname(self._root)
+            logger.debug(f"Setting root: {self._root}")
+            self.treeview.setRootIndex(self.model.index(self._root))
+            cfg.mw.tell(f'Root directory set to {self._root}')
 
     def navigateDown(self):
         logger.info('')
-        selection = self.getSelectionPath()
-        if selection:
-            self._root = selection
-            logger.info(f"Setting root: {self._root}")
-            self.treeview.setRootIndex(self.model.index(self._root))
-        else:
-            logger.warning("No directory selected!")
+        if hasattr(self, '_root'):
+            selection = self.getSelectionPath()
+            if selection:
+                self._root = selection
+                logger.debug(f"Setting root: {self._root}")
+                self.treeview.setRootIndex(self.model.index(self._root))
+                cfg.mw.tell(f'Root directory set to {self._root}')
+            else:
+                logger.warning("No directory selected!")
+
 
 
     def onExpanded(self, index):
-        logger.info(f'Expanded! {index}')
+        logger.debug(f'Expanded! {index}')
 
     # def _show_context_menu(self, position):
     #     display_action1 = QAction("Display Selection")
@@ -93,9 +97,8 @@ class FileBrowser(QWidget):
     #     menu.exec_(self.tree_widget.mapToGlobal(position))
 
     def openMenu(self, position):
-        logger.info('')
+        logger.debug('')
         indexes = self.treeview.selectedIndexes()
-        logger.info(f"len(indexes) = {len(indexes)}")
         if len(indexes) > 0:
             level = 0
             index = indexes[0]
@@ -130,9 +133,6 @@ class FileBrowser(QWidget):
             menu.addAction(action)
 
 
-
-
-
         # if level == 0:
         #     menu.addAction(self.tr("Edit person"))
         # elif level == 1:
@@ -141,165 +141,159 @@ class FileBrowser(QWidget):
         #     menu.addAction(self.tr("Edit object"))
         menu.exec_(self.treeview.viewport().mapToGlobal(position))
 
+    def setRootLastKnownRoot(self):
+        self._root = cfg.settings['current_filebrowser_root']
+        logger.critical(f'Setting filebrowser root to {self._root}')
+        try:    self.treeview.setRootIndex(self.model.index(self._root))
+        except: logger.warning('Directory cannot be accessed')
+        else:
+            if hasattr(cfg, 'mw') and cfg.mw:
+                cfg.mw.tell(f'Root directory set to {self._root}')
+            else:
+                logger.info(f'Root directory set to {self._root}')
 
     def setRootHome(self):
         self._root = os.path.expanduser('~')
         try:    self.treeview.setRootIndex(self.model.index(self._root))
         except: logger.warning('Directory cannot be accessed')
+        else:   cfg.mw.tell(f'Root directory set to {self._root}')
 
     def setRootRoot(self):
         self._root = '/'
         try:    self.treeview.setRootIndex(self.model.index(self._root))
         except: logger.warning('Directory cannot be accessed')
+        else:   cfg.mw.tell(f'Root directory set to {self._root}')
 
     def setRootTmp(self):
         self._root = '/tmp'
         try:    self.treeview.setRootIndex(self.model.index(self._root))
         except: logger.warning('Directory cannot be accessed')
+        else:   cfg.mw.tell(f'Root directory set to {self._root}')
 
     def setRootWork(self):
         self._root = self.path_work
-        try:   self.treeview.setRootIndex(self.model.index(self._root))
+        try:    self.treeview.setRootIndex(self.model.index(self._root))
         except: logger.warning('Directory cannot be accessed')
+        else:   cfg.mw.tell(f'Root directory set to {self._root}')
 
     def setRootScratch(self):
         self._root = self.path_scratch
         try:    self.treeview.setRootIndex(self.model.index(self._root))
         except: logger.warning('Directory cannot be accessed')
+        else:   cfg.mw.tell(f'Root directory set to {self._root}')
 
     def setRootSpecial(self):
         self._root = self.path_special
         try:    self.treeview.setRootIndex(self.model.index(self._root))
         except: logger.warning('Directory cannot be accessed')
+        else:   cfg.mw.tell(f'Root directory set to {self._root}')
 
     def setRootSeries(self):
         self._root = cfg.settings['series_root']
-        try:
-            self.treeview.setRootIndex(self.model.index(self._root))
-        except:
-            logger.warning('Directory cannot be accessed')
+        try:    self.treeview.setRootIndex(self.model.index(self._root))
+        except: logger.warning('Directory cannot be accessed')
+        else:   cfg.mw.tell(f'Root directory set to {self._root}')
 
     def setRootAlignments(self):
         self._root = cfg.settings['alignments_root']
-        try:
-            self.treeview.setRootIndex(self.model.index(self._root))
-        except:
-            logger.warning('Directory cannot be accessed')
+        try:    self.treeview.setRootIndex(self.model.index(self._root))
+        except: logger.warning('Directory cannot be accessed')
+        else:   cfg.mw.tell(f'Root directory set to {self._root}')
 
     def setRoot_corral_projects(self):
-
         self._root = '/corral-repl/projects/NeuroNex-3DEM/projects/3dem-1076/Projects_AlignEM'
         try:    self.treeview.setRootIndex(self.model.index(self._root))
         except: logger.warning('Directory cannot be accessed')
+        else:   cfg.mw.tell(f'Root directory set to {self._root}')
+
 
     def setRoot_corral_images(self):
         self._root = '/corral-repl/projects/NeuroNex-3DEM/projects/3dem-1076/EM_Series'
         try:    self.treeview.setRootIndex(self.model.index(self._root))
         except: logger.warning('Directory cannot be accessed')
+        else:   cfg.mw.tell(f'Root directory set to {self._root}')
 
     def set_corral_root(self):
         self._root = '/corral-repl'
         try:    self.treeview.setRootIndex(self.model.index(self._root))
         except: logger.warning('Directory cannot be accessed')
+        else:   cfg.mw.tell(f'Root directory set to {self._root}')
 
 
     def initUI(self):
-        # with open('src/style/controls.qss', 'r') as f:
-        #     style = f.read()
 
         self.bNavigateUp = QPushButton()
-        self.bNavigateUp.setIcon(qta.icon('fa.arrow-up', color='#161c20'))
+        self.bNavigateUp.setToolTip("Go up one level")
+        # self.bNavigateUp.setIcon(qta.icon('fa.arrow-up'))
+        self.bNavigateUp.setIcon(qta.icon('fa5s.angle-up'))
         self.bNavigateUp.clicked.connect(self.navigateUp)
-        self.bNavigateUp.setToolTip("Parent Directory")
 
         self.bNavigateDown = QPushButton()
-        self.bNavigateDown.setIcon(qta.icon('fa.arrow-down', color='#161c20'))
+        self.bNavigateDown.setToolTip("Go down one level")
+        # self.bNavigateDown.setIcon(qta.icon('fa.arrow-down'))
+        self.bNavigateDown.setIcon(qta.icon('fa5s.angle-down'))
         self.bNavigateDown.clicked.connect(self.navigateDown)
-        self.bNavigateDown.setToolTip("Enter Directory")
 
         self.bSlash = QPushButton()
-        # self.bSlash = QPushButton('/')
-        self.bSlash.setIcon(qta.icon('mdi.slash-forward', color='#161c20'))
-        self.bSlash.clicked.connect(self.setRootRoot)
         self.bSlash.setToolTip("Go to system root")
+        self.bSlash.setIcon(qta.icon('mdi.slash-forward'))
+        self.bSlash.clicked.connect(self.setRootRoot)
 
         self.bHome = QPushButton()
-        self.bHome.setIcon(qta.icon('fa.home', color='#161c20'))
-        self.bHome.clicked.connect(self.setRootHome)
         self.bHome.setToolTip("Go to home directory")
+        self.bHome.setIcon(qta.icon('fa.home'))
+        self.bHome.clicked.connect(self.setRootHome)
+
+        self.bPlus = QPushButton()
+        self.bPlus.setToolTip("Add path to saved locations")
+        self.bPlus.clicked.connect(self.onPlus)
+        self.bPlus.setIcon(qta.icon('fa.plus'))
+
+        self.bMinus = QPushButton()
+        self.bMinus.setToolTip("Remove path from saved locations")
+        self.bMinus.clicked.connect(self.onMinus)
+        self.bMinus.setIcon(qta.icon('fa.minus'))
 
         # self.bSetRootTmp = QPushButton('/tmp')
         # self.bSetRootTmp.clicked.connect(self.setRootTmp)
         # self.bSetRootTmp.setToolTip("Go to /tmp directory")
 
-        navbuttons = [self.bNavigateUp, self.bNavigateDown, self.bSlash, self.bHome]
+        navbuttons = [self.bNavigateUp, self.bNavigateDown, self.bSlash, self.bHome, self.bPlus, self.bMinus]
         for b in navbuttons:
-            b.setFixedSize(QSize(16, 16))
-            b.setIconSize(QSize(12, 12))
-            b.setStyleSheet('font-size: 9px;')
-
-
-        self.wNavButtons = HWidget(self.bNavigateUp, self.bNavigateDown, self.bSlash, self.bHome, ExpandingHWidget(self))
-        self.wNavButtons.setFixedHeight(18)
-        self.wNavButtons.layout.setSpacing(2)
-
-        if is_tacc():
-            self.bSetRootScratch = QPushButton('$SCRATCH')
-            self.bSetRootScratch.setStyleSheet('font-size: 9px;')
-            self.bSetRootScratch.setFixedHeight(16)
-            self.bSetRootScratch.clicked.connect(self.setRootScratch)
-            self.wNavButtons.addWidget(self.bSetRootScratch)
-
-            self.bSetRootWork = QPushButton('$WORK')
-            self.bSetRootWork.setStyleSheet('font-size: 9px;')
-            self.bSetRootWork.setFixedHeight(16)
-            self.bSetRootWork.clicked.connect(self.setRootWork)
-            self.wNavButtons.addWidget(self.bSetRootWork)
-        else:
-            self.wNavButtons.addWidget(ExpandingHWidget(self))
-
-
-
-
+            # b.setFixedSize(QSize(16, 16))
+            b.setFixedHeight(14)
+            b.setIconSize(QSize(14, 14))
 
         self.bSetRootSpecial = QPushButton('SanDisk')
-        self.bSetRootSpecial.setStyleSheet('font-size: 9px;')
-        self.bSetRootSpecial.setFixedHeight(16)
+        self.bSetRootSpecial.setFixedHeight(12)
         self.bSetRootSpecial.clicked.connect(self.setRootSpecial)
 
-        self.bSetRootSeries = QPushButton('Series Root')
-        self.bSetRootSeries.setStyleSheet('font-size: 9px;')
-        self.bSetRootSeries.setFixedHeight(16)
-        self.bSetRootSeries.clicked.connect(self.setRootSeries)
-
-        self.bSetRootAlignments = QPushButton('Alignments Root')
-        self.bSetRootAlignments.setStyleSheet('font-size: 9px;')
-        self.bSetRootAlignments.setFixedHeight(16)
-        self.bSetRootAlignments.clicked.connect(self.setRootAlignments)
+        # self.bSetRootSeries = QPushButton('Series Root')
+        # self.bSetRootSeries.setFixedHeight(16)
+        # self.bSetRootSeries.clicked.connect(self.setRootSeries)
+        #
+        # self.bSetRootAlignments = QPushButton('Alignments Root')
+        # self.bSetRootAlignments.setFixedHeight(16)
+        # self.bSetRootAlignments.clicked.connect(self.setRootAlignments)
 
         if is_tacc():
             self.buttonSetRoot_corral_projects = QPushButton('Projects_AlignEM')
-            self.buttonSetRoot_corral_projects.setStyleSheet('font-size: 9px;')
-            # self.buttonSetRoot_corral_projects.setFixedSize(QSize(90,16))
-            self.buttonSetRoot_corral_projects.setFixedHeight(16)
+            self.buttonSetRoot_corral_projects.setFixedHeight(14)
             self.buttonSetRoot_corral_projects.clicked.connect(self.setRoot_corral_projects)
 
             self.buttonSetRoot_corral_images = QPushButton('EM_Series')
-            self.buttonSetRoot_corral_images.setStyleSheet('font-size: 9px;')
-            # self.buttonSetRoot_corral_images.setFixedSize(QSize(90,16))
-            self.buttonSetRoot_corral_images.setFixedHeight(16)
+            self.buttonSetRoot_corral_images.setFixedHeight(14)
             self.buttonSetRoot_corral_images.clicked.connect(self.setRoot_corral_images)
 
             self.buttonSetRoot_corral_root = QPushButton('Corral')
-            self.buttonSetRoot_corral_root.setStyleSheet('font-size: 9px;')
-            # self.buttonSetRoot_corral_root.setFixedSize(QSize(90,16))
-            self.buttonSetRoot_corral_root.setFixedHeight(16)
+            self.buttonSetRoot_corral_root.setFixedHeight(14)
             self.buttonSetRoot_corral_root.clicked.connect(self.set_corral_root)
 
-        self.bSetContentSources = QPushButton('Configure Content Sources')
+        self.bSetContentSources = QPushButton('Set Content Sources')
         self.bSetContentSources.setFixedHeight(16)
         def fn():
-            self.wContentRoot.setVisible(not self.wContentRoot.isVisible())
+            self.setVisibilityContentSourcesCpanel(not self.wContentRoot.isVisible())
+
             if self.wContentRoot.isVisible():
                 self.leNewSeries.setText(cfg.settings['series_root'])
                 self.leNewAlignments.setText(cfg.settings['alignments_root'])
@@ -307,47 +301,31 @@ class FileBrowser(QWidget):
                 self.teAlignmentsSearchPaths.setText('\n'.join(cfg.settings['alignments_search_paths']))
         self.bSetContentSources.clicked.connect(fn)
 
-        self.btns0 = HWidget(self.bSetRootSeries, self.bSetRootAlignments)
-        self.btns0.setFixedHeight(16)
-
         if is_joel():
             if os.path.exists(self.path_special):
                 self.btns0.addWidget(self.bSetRootSpecial)
 
-
-        self.vwButtons = VWidget()
-        self.vwButtons.addWidget(self.btns0)
-
-        if is_tacc():
-            self.btns2 = HWidget()
-            self.btns2.addWidget(self.bSetRootScratch)
-            self.btns2.addWidget(self.bSetRootWork)
-            self.btns2.addWidget(self.buttonSetRoot_corral_root)
-            self.vwButtons.addWidget(self.btns2)
-
-
-        self.vwButtons.addWidget(self.bSetContentSources)
-
         self.combobox = QComboBox()
-        self.combobox.setFixedHeight(16)
-        self.combobox.setEditable(True)
-        self.combobox.completer().setCompletionMode(QCompleter.PopupCompletion)
-        self.combobox.setCursor(QCursor(Qt.PointingHandCursor))
+        # self.combobox.setPlaceholderText("Select series_location...")
+        self.combobox.setToolTip("Saved Locations")
+        # self.combobox.setEditable(True)
+        # self.combobox.completer().setCompletionMode(QCompleter.PopupCompletion)
+        # self.combobox.setCursor(QCursor(Qt.PointingHandCursor))
         # self.combobox.currentTextChanged.connect(self.onComboChanged)
         self.combobox.activated.connect(self.onComboChanged)
 
         self.lePath = QLineEdit()
+        self.lePath.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.lePath.setFixedHeight(16)
         self.lePath.setReadOnly(False)
-        self.lePath.setPlaceholderText('<path>')
+        self.lePath.setPlaceholderText('Go to...')
         self.lePath.returnPressed.connect(lambda: self.navigateTo(self.lePath.text()))
         self.lePath.textChanged.connect(self.onPathChanged)
 
-        # self.bGo = QPushButton('Go')
         self.bGo = QPushButton()
-        self.bGo.setIcon(qta.icon('mdi.arrow-right', color='#161c20'))
+        self.bGo.setIcon(qta.icon('mdi.arrow-right'))
         self.bGo.setFixedSize(QSize(16, 16))
-        self.bGo.setIconSize(QSize(12, 12))
+        self.bGo.setIconSize(QSize(13, 13))
         def fn_bGo():
             logger.info('')
             cur = self.lePath.text()
@@ -358,17 +336,8 @@ class FileBrowser(QWidget):
         self.bGo.clicked.connect(fn_bGo)
         self.bGo.setEnabled(False)
 
-        self.bPlus = QPushButton()
-        self.bPlus.setFixedSize(QSize(16, 16))
-        self.bPlus.setIconSize(QSize(12, 12))
-        self.bPlus.clicked.connect(self.onPlus)
-        self.bPlus.setIcon(qta.icon('fa.plus', color='#161c20'))
-
-        self.bMinus = QPushButton()
-        self.bMinus.setFixedSize(QSize(16, 16))
-        self.bMinus.setIconSize(QSize(12, 12))
-        self.bMinus.clicked.connect(self.onMinus)
-        self.bMinus.setIcon(qta.icon('fa.minus', color='#161c20'))
+        self.wPath = HW(self.lePath, self.bGo)
+        self.wPath.setFixedHeight(16)
 
         tip = "Location where new series will be created."
         tip = '\n'.join(textwrap.wrap(tip, width=35))
@@ -376,7 +345,8 @@ class FileBrowser(QWidget):
         self.leNewSeries.setFixedHeight(16)
         self.leNewSeries.setReadOnly(False)
         lab = BoldLabel('Series Root:')
-        self.wNewSeries = VWidget(lab, self.leNewSeries)
+        lab.setAlignment(Qt.AlignBottom)
+        self.wNewSeries = VW(lab, self.leNewSeries)
         self.wNewSeries.layout.setAlignment(Qt.AlignVCenter)
         self.wNewSeries.setToolTip(tip)
 
@@ -386,145 +356,141 @@ class FileBrowser(QWidget):
         self.leNewAlignments.setFixedHeight(16)
         self.leNewAlignments.setReadOnly(False)
         lab = BoldLabel('Alignments Root:')
-        self.wNewAlignments = VWidget(lab, self.leNewAlignments)
+        lab.setAlignment(Qt.AlignBottom)
+        self.wNewAlignments = VW(lab, self.leNewAlignments)
         self.wNewAlignments.layout.setAlignment(Qt.AlignVCenter)
         self.wNewAlignments.setToolTip(tip)
 
         tip = "List of filesystem locations to search for series."
         tip = '\n'.join(textwrap.wrap(tip, width=35))
         self.teSeriesSearchPaths = QTextEdit()
-        self.teSeriesSearchPaths.setMinimumHeight(80)
+        self.teSeriesSearchPaths.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # self.teSeriesSearchPaths.setMinimumHeight(40)
+        # self.teSeriesSearchPaths.setMaximumHeight(80)
         self.teSeriesSearchPaths.setReadOnly(False)
         # lab = BoldLabel('Series Search Paths (Recursive):')
         lab = BoldLabel('Series Search Paths:')
-        self.wSeriesSearchPaths = VWidget(lab, self.teSeriesSearchPaths)
-        self.wSeriesSearchPaths.setMaximumHeight(80)
-        self.wSeriesSearchPaths.layout.setAlignment(Qt.AlignVCenter)
+        lab.setAlignment(Qt.AlignBottom)
+        self.wSeriesSearchPaths = VW(lab, self.teSeriesSearchPaths)
         self.wSeriesSearchPaths.setToolTip(tip)
 
         tip = "List of filesystem locations to search for alignments."
         tip = '\n'.join(textwrap.wrap(tip, width=35))
         self.teAlignmentsSearchPaths = QTextEdit()
-        self.teAlignmentsSearchPaths.setMinimumHeight(70)
+        self.teAlignmentsSearchPaths.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # self.teAlignmentsSearchPaths.setMinimumHeight(40)
+        # self.teAlignmentsSearchPaths.setMaximumHeight(80)
         self.teAlignmentsSearchPaths.setReadOnly(False)
         # lab = BoldLabel('Alignments Search Paths (Recursive):')
         lab = BoldLabel('Alignments Search Paths:')
-        self.wAlignmentsSearchPaths = VWidget(lab, self.teAlignmentsSearchPaths)
-        self.wAlignmentsSearchPaths.setMaximumHeight(80)
-        self.wAlignmentsSearchPaths.layout.setAlignment(Qt.AlignVCenter)
+        lab.setAlignment(Qt.AlignBottom)
+        self.wAlignmentsSearchPaths = VW(lab, self.teAlignmentsSearchPaths)
         self.wAlignmentsSearchPaths.setToolTip(tip)
 
         self.bCancel = QPushButton()
-        # self.bCancel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # self.bCancel = QPushButton('Cancel')
         self.bCancel.setFixedHeight(16)
         self.bCancel.setIconSize(QSize(14, 14))
-        self.bCancel.setIcon(qta.icon('ri.close-fill', color='#161c20'))
-        self.bCancel.clicked.connect(lambda: self.wContentRoot.hide())
+        self.bCancel.setIcon(qta.icon('ri.close-fill'))
+        self.bCancel.clicked.connect(lambda: self.setVisibilityContentSourcesCpanel(False))
+
         self.bSave = QPushButton()
-        # self.bSave.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # self.bSave = QPushButton('Save')
         self.bSave.setFixedHeight(16)
         self.bSave.setIconSize(QSize(14, 14))
-        self.bSave.setIcon(qta.icon('fa.check', color='#161c20'))
+        self.bSave.setIcon(qta.icon('fa.check'))
         self.bSave.clicked.connect(self.onSaveContentSources)
+
         self.bgSources = QButtonGroup()
         self.bgSources.addButton(self.bCancel)
         self.bgSources.addButton(self.bSave)
-        # self.wCloseSaveButtons = HWidget(self.bSave, self.bCancel, ExpandingHWidget(self))
-        self.wCloseSaveButtons = HWidget(self.bSave, self.bCancel)
+        self.wCloseSaveButtons = HW(self.bSave, self.bCancel)
         self.wCloseSaveButtons.setFixedHeight(20)
 
-        self.flContentRoot = QFormLayout()
-        self.flContentRoot.setContentsMargins(0, 0, 0, 0)
-        self.flContentRoot.setSpacing(2)
-        # self.flContentRoot.addRow('New Series\nLocation', self.leNewSeries)
-        # self.flContentRoot.addRow('Series\nSearch Paths', self.teSeriesSearchPaths)
-        # self.flContentRoot.addRow('New Alignments\nLocation', self.leNewAlignments)
-        # self.flContentRoot.addRow('Alignments\nSearch Paths', self.teAlignmentsSearchPaths)
-        self.flContentRoot.addWidget(self.wNewSeries)
-        self.flContentRoot.addWidget(self.wSeriesSearchPaths)
-        self.flContentRoot.addWidget(self.wNewAlignments)
-        self.flContentRoot.addWidget(self.wAlignmentsSearchPaths)
-        self.flContentRoot.addWidget(self.wCloseSaveButtons)
-
-        self.wContentRoot = QWidget()
-        self.wContentRoot.setAutoFillBackground(True)
-        self.wContentRoot.setLayout(self.flContentRoot)
+        self.wContentRoot = VW(self.wNewSeries, self.wSeriesSearchPaths, self.wNewAlignments, self.wAlignmentsSearchPaths, self.wCloseSaveButtons)
+        self.wContentRoot.layout.setSpacing(6)
         self.wContentRoot.hide()
 
-        lab = BoldLabel('My Locations:')
-        self.comboWidget = VWidget(lab, HWidget(self.combobox, self.bPlus, self.bMinus, ))
-        self.comboWidget.layout.setAlignment(Qt.AlignVCenter)
+        self.wNavButtons = HW(self.bNavigateUp, self.bNavigateDown, self.bSlash, self.bHome, self.bPlus, self.bMinus, ExpandingHWidget(self))
+        self.wNavButtons.setStyleSheet("""border: none;""")
+        self.wNavButtons.setFixedHeight(16)
+        self.wNavButtons.layout.setSpacing(0)
 
-        # self.leWidget = HWidget(self.lePath, self.bGo, self.bPlus)
-        self.leWidget = HWidget(self.lePath, self.bGo)
-        lab = BoldLabel('Folder...')
-        self.wJumpTo = VWidget(lab, self.leWidget)
-        # self.wJumpTo.setFixedHeight(18)
+        # self.treetop = VW(self.combobox, self.vwButtons, self.wNavButtons)
+        self.treetop = VW(self.combobox, self.wNavButtons)
+        # self.treetop.setStyleSheet("""font-size: 9px;""")
 
-        self.vw1 = VWidget(self.treeview)
-
-        # self.vsplitter = VSplitter(self.vw1, self.wContentRoot, self.vw2)
-        # self.vsplitter = VSplitter()
-
-        vbl = VBL(self.comboWidget, self.wJumpTo, self.wNavButtons, self.treeview, self.vwButtons, self.wContentRoot)
-        vbl.setSpacing(2)
+        vbl = VBL(self.treetop, self.treeview, self.wPath, self.bSetContentSources, self.wContentRoot)
+        vbl.setSpacing(1)
+        # vbl.setSpacing(2)
         self.setLayout(vbl)
-        self.setStyleSheet("font-size: 9px;")
 
-        # self.setLayout(VBL(self.vsplitter))
-
-
-
-        self.setStyleSheet('font-size: 9px;')
+        # f = QFont()
+        # f.setPixelSize(9)
+        # self.setFont(f)
 
     def onSaveContentSources(self):
         logger.info(f'Saving search paths and content roots...')
-        d = {
-            'series_root': self.leNewSeries.text(),
-            'series_search_paths': self.teSeriesSearchPaths.toPlainText().split('\n'),
-            'alignments_root': self.leNewAlignments.text(),
-            'alignments_search_paths': self.teAlignmentsSearchPaths.toPlainText().split('\n'),
-        }
-        cfg.settings.update(d)
-        pprint.pprint(d)
-        p = cfg.settings['series_root']
-        if not os.path.exists(p):
-            cfg.mw.tell(f"Creating series directory {p}")
-            os.makedirs(p, exist_ok=True)
+        try:
+            d = {
+                'series_root': self.leNewSeries.text(),
+                'series_search_paths': self.teSeriesSearchPaths.toPlainText().split('\n'),
+                'alignments_root': self.leNewAlignments.text(),
+                'alignments_search_paths': self.teAlignmentsSearchPaths.toPlainText().split('\n'),
+            }
+            cfg.settings.update(d)
+            pprint.pprint(d)
+            p = cfg.settings['series_root']
+            if not os.path.exists(p):
+                cfg.mw.tell(f"Creating series directory {p}")
+                os.makedirs(p, exist_ok=True)
 
-        p = cfg.settings['alignments_root']
-        if not os.path.exists(p):
-            cfg.mw.tell(f"Creating alignments directory {p}")
-            os.makedirs(p, exist_ok=True)
+            p = cfg.settings['alignments_root']
+            if not os.path.exists(p):
+                cfg.mw.tell(f"Creating alignments directory {p}")
+                os.makedirs(p, exist_ok=True)
 
-        for path in cfg.settings['series_search_paths']:
-            if not os.path.isdir(path):
-                cfg.mw.warn(f"'{path}' is not a directory and will be ignored. ")
+            for path in cfg.settings['series_search_paths']:
+                if not os.path.isdir(path):
+                    cfg.mw.warn(f"'{path}' is not a directory and will be ignored. ")
 
-        for path in cfg.settings['alignments_search_paths']:
-            if not os.path.isdir(path):
-                cfg.mw.warn(f"'{path}' is not a directory and will be ignored. ")
+            for path in cfg.settings['alignments_search_paths']:
+                if not os.path.isdir(path):
+                    cfg.mw.warn(f"'{path}' is not a directory and will be ignored. ")
 
-        cfg.mw.saveUserPreferences(silent=True)
-        self.wContentRoot.hide()
-        cfg.mw.statusBar.showMessage('Preferences saved!', 3000)
+            cfg.mw.saveUserPreferences(silent=True)
+            self.wContentRoot.hide()
+            cfg.mw.statusBar.showMessage('Preferences saved!', 3000)
+        except:
+            print_exception()
+        finally:
+            self.setVisibilityContentSourcesCpanel(False)
 
     def onComboChanged(self):
         logger.info('')
         cur = self.combobox.currentText()
-        if os.path.exists(cur):
-            self.navigateTo(cur)
-        else:
-            logger.warning(f"path not found: {cur}")
+        try:
+            if cur == 'Saved locations...':
+                return
+            elif cur == 'Series Root':
+                self.setRootSeries()
+            elif cur == 'Alignments Root':
+                self.setRootAlignments()
+            elif cur == '$SCRATCH':
+                self.setRootScratch()
+            elif cur == '$WORK':
+                self.setRootWork()
+            elif cur == 'Corral':
+                self.setRoot_corral_projects()
+            elif os.path.exists(cur):
+                self.navigateTo(cur)
+            else:
+                logger.warning(f"path not found: {cur}")
+        except:
+            print_exception()
 
     def onPathChanged(self):
-        # requested = self.lePath.text()
-        # self.bGo.setEnabled((self.combobox.count() > 0) and
-        #                     (self.getSelectionPath() != self.combobox.currentText()))
+        logger.info('')
         cur = self.lePath.text()
-        self.bGo.setEnabled(os.path.exists(cur))
+        self.bGo.setEnabled(os.path.exists(cur) and (cur != self._root))
         self.bPlus.setEnabled(os.path.exists(cur) and cur not in cfg.settings['saved_paths'])
 
 
@@ -552,10 +518,17 @@ class FileBrowser(QWidget):
         #     aslist = os.path.normpath(path).split(os.sep)
         # self.combobox.addItems([])
 
-        self.combobox.addItems(cfg.settings['saved_paths'])
+        items = ['Saved locations...', 'Series Root', 'Alignments Root']
+        items.extend(cfg.settings['saved_paths'])
+        if is_tacc():
+            items.extend(['$SCRATCH', '$WORK', 'Corral'])
+
+        self.combobox.addItems(items)
         self.bMinus.setEnabled(self.combobox.count() > 0)
-        self.bGo.setEnabled((self.combobox.count() > 0) and
-                            (self.getSelectionPath() != self.combobox.currentText()))
+        # self.bGo.setEnabled((self.combobox.count() > 0) and
+        #                     (self.getSelectionPath() != self.combobox.currentText()))
+        cur = self.lePath.text()
+        self.bGo.setEnabled(os.path.exists(cur) and (cur != self._root))
 
 
 
@@ -584,7 +557,7 @@ class FileBrowser(QWidget):
             cfg.mw.saveUserPreferences(silent=True)
             self.loadCombobox()
         else:
-            cfg.mw.warn(f"Nothing selected.")
+            cfg.mw.warn(f"Select a valid location.")
 
     def onDelete(self):
         selection = self.getSelectionPath()
@@ -650,6 +623,13 @@ class FileBrowser(QWidget):
         except:
             logger.warning('No Path Selected.')
 
+    def setVisibilityContentSourcesCpanel(self, state):
+        self.wContentRoot.setVisible(state)
+        self.treetop.setVisible(not state)
+        self.treeview.setVisible(not state)
+        self.wPath.setVisible(not state)
+        self.bSetContentSources.setVisible(not state)
+
 
     # def sizeHint(self):
     #     return QSize(400,200)
@@ -660,6 +640,7 @@ class BoldLabel(QLabel):
         super().__init__(parent)
         self.setStyleSheet("font-size: 8px; font-weight: 600;")
         self.setAlignment(Qt.AlignLeft)
+        # self.setFixedHeight(8)
 
 
 class ExpandingHWidget(QWidget):

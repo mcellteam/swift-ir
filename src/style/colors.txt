@@ -1,3 +1,5 @@
+##070d12 - dark steel blue
+#336699 - websafe dark steel blue
 #808080 - #128 grey
 #004060 - drafting blue
 #a30000 - dark candy apple red

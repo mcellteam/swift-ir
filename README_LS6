@@ -1,4 +1,4 @@
-# INSTRUCTIONS TO RUN AlignEM-SWiFT ON Lonestar6 AT TACC
+# INSTRUCTIONS TO RUN alignEM ON Lonestar6 AT TACC
 # (DEPLOYMENT BY CONDA ENVIRONMENT STRATEGY)
 
 # NOTES:
@@ -6,7 +6,7 @@
 #     PURGE MODULES (HAVE NO MODULES LOADED) WHEN CREATING OR
 #     ACTIVATING A CONDA ENV
 
-# TO BOOTSTRAP-RUN AlignEM-SWiFT on Lonestar6 @ TACC, SIMPLY:
+# TO BOOTSTRAP-RUN alignEM on Lonestar6 @ TACC, SIMPLY:
 # 1) Download or copy+paste this script into a file:
 #    https://github.com/mcellteam/swift-ir/blob/development_ng/bootstrap_alignEM
 

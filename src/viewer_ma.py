@@ -59,15 +59,16 @@ class WorkerSignals(QObject):
 
 
 class MAViewer(neuroglancer.Viewer):
-    def __init__(self, role='tra', webengine=None):
+    def __init__(self, dm, role='tra', webengine=None):
         super().__init__()
+        self.dm = dm
         self.index = None
         self.role = role
         self.webengine = webengine
         self.signals = WorkerSignals()
         self.created = datetime.datetime.now()
         # self._settingZoom = True
-        # self._layer = cfg.data.zpos
+        # self._layer = self.dm.zpos
         self.cs_scale = None
         # self.pts = OrderedDict()
         self.pts = {'ref':[None,None,None], 'tra': [None,None,None]}
@@ -89,7 +90,7 @@ class MAViewer(neuroglancer.Viewer):
         self.coordinate_space = ng.CoordinateSpace(
             names=['z', 'y', 'x'],
             units=['nm', 'nm', 'nm'],
-            scales=list(cfg.data.resolution(s=cfg.data.level)), )
+            scales=list(self.dm.resolution(s=self.dm.level)), )
             # scales=[1,1,1] )
 
         # QApplication.processEvents()
@@ -160,6 +161,8 @@ class MAViewer(neuroglancer.Viewer):
 
     # def set_layer(self, index=None):
     def set_layer(self, zpos=None):
+        caller = inspect.stack()[1].function
+        logger.info(f"[{caller}] Setting layer (zpos={zpos})...")
         #NotCulpableForFlickerGlitch
         # if self.type != 'EMViewerStage':
         self._blockStateChanged = True
@@ -168,18 +171,18 @@ class MAViewer(neuroglancer.Viewer):
             if zpos:
                 self.index=zpos
             else:
-                self.index=cfg.data.get_ref_index()
+                self.index=self.dm.get_ref_index()
         else:
             if zpos:
                 self.index=zpos
             else:
-                self.index=cfg.data.zpos
+                self.index=self.dm.zpos
 
         with self.txn() as s:
             vc = s.voxel_coordinates
             vc[0] = self.index + 0.5
 
-        # if cfg.data.method in ('manual-hint', 'manual-strict'):
+        # if self.dm.method in ('manual-hint', 'manual-strict'):
         #     self.restoreManAlignPts() #Todo study this. Temp fix. #0805-
 
         self.drawSWIMwindow()
@@ -206,17 +209,17 @@ class MAViewer(neuroglancer.Viewer):
         #     logger.critical(f'Initializing [{self.type}] [role: {self.role}] [caller: {caller_name()}]...')
 
         if self.role == 'ref':
-            self.index = cfg.data.get_ref_index()
+            self.index = self.dm.get_ref_index()
         elif self.role == 'tra':
-            self.index = cfg.data.zpos #
+            self.index = self.dm.zpos #
 
 
         self.clear_layers()
 
         # self.restoreManAlignPts()
 
-        sf = cfg.data.lvl(s=cfg.data.level)
-        path = os.path.join(cfg.data['series']['location'], 'zarr', 's' + str(sf))
+        sf = self.dm.lvl(s=self.dm.level)
+        path = os.path.join(self.dm['info']['series_location'], 'zarr', 's' + str(sf))
 
         if not os.path.exists(path):
             cfg.main_window.warn('Data Store Not Found: %s' % path)
@@ -264,7 +267,7 @@ class MAViewer(neuroglancer.Viewer):
             s.show_scale_bar = True
             s.show_axis_lines = False
             s.projectionScale = 1
-            s.layers['layer'] = ng.ImageLayer(source=self.LV, shader=cfg.data['rendering']['shader'], )
+            s.layers['layer'] = ng.ImageLayer(source=self.LV, shader=self.dm['rendering']['shader'], )
             _, y, x = self.store.shape
             s.voxel_coordinates = [self.index + .5, y / 2, x / 2]
             s.show_default_annotations = False
@@ -343,11 +346,11 @@ class MAViewer(neuroglancer.Viewer):
         try:    txt += f'  caller             = {caller_name()}\n'
         except: txt += f'  caller             =\n'
         txt +=         f'  type/role          = {self.type}/{self.role}\n'
-        txt +=         f'  current method     = {cfg.data.current_method}\n'
+        txt +=         f'  current method     = {self.dm.current_method}\n'
         try:    txt += f'  _blockStateChanged = {self._blockStateChanged}\n'
         except: txt += f'  _blockStateChanged =\n'
-        try:    txt += f'  cfg.data.zpos      = {cfg.data.zpos}\n'
-        except: txt += f'  cfg.data.zpos      =\n'
+        try:    txt += f'  self.dm.zpos      = {self.dm.zpos}\n'
+        except: txt += f'  self.dm.zpos      =\n'
         try:    txt += f'  index              = {self.index}\n'
         except: txt += f'  index              =\n'
         try:    txt += f'  request_layer      = {int(self.state.position[0])}\n'
@@ -390,26 +393,12 @@ class MAViewer(neuroglancer.Viewer):
     @Slot()
     def on_state_changed(self):
         # logger.info(f'[{self.role}]')
-        # logger.info(f"[{self.role}], tra_ref_toggle = {cfg.data['state']['tra_ref_toggle']}, _blockStateChanged = {self._blockStateChanged}")
-
-        # if 1: #weirddddddddddd. still despite this...
-        #     return
-
+        # logger.info(f"[{self.role}], tra_ref_toggle = {self.dm['state']['tra_ref_toggle']}, _blockStateChanged = {self._blockStateChanged}")
 
         if self._blockStateChanged:
             return
 
-        # if self.role == 'tra':
-        #     if cfg.data['state']['tra_ref_toggle'] != 1:
-        #         logger.warning(f"[{self.role}] The state was changed of an inactive viewer! - {self.role}")
-        #         self._blockStateChanged = False #Ugh
-        #         return
-        #
-        # elif self.role == 'ref':
-        #     if cfg.data['state']['tra_ref_toggle'] != 0:
-        #         logger.warning(f"[{self.role}] The state was changed of an inactive viewer! - {self.role}")
-        #         self._blockStateChanged = False #Ugh
-        #         return
+        logger.info('state changed!')
 
         self._blockStateChanged = True
 
@@ -423,12 +412,12 @@ class MAViewer(neuroglancer.Viewer):
             if floor(self.state.position[0]) != self.index:
                 self.index = floor(self.state.position[0])
                 self.drawSWIMwindow(z=self.index) #NeedThis #0803
-                # cfg.data.zpos = self.index
+                # self.dm.zpos = self.index
                 # self._blockStateChanged = False
                 self.signals.zVoxelCoordChanged.emit(self.index)
 
 
-        # if cfg.data.lvl() > 2:
+        # if self.dm.lvl() > 2:
         #     if self.state.relative_display_scales == None:
         #         self.set_zmag()
 
@@ -498,7 +487,7 @@ class MAViewer(neuroglancer.Viewer):
 
     def add_matchpoint(self, s):
         # logger.critical('')
-        if cfg.data.method() not in ('manual_strict', 'manual_hint'):
+        if self.dm.method() not in ('manual_strict', 'manual_hint'):
             logger.warning('add_matchpoint: User may not select points while aligning with grid.')
             return
 
@@ -535,7 +524,7 @@ class MAViewer(neuroglancer.Viewer):
         self.setMpData()
 
         # self._selected_index[self.role] = self.getNextPoint(self.role)
-        select_by = cfg.data['state']['neuroglancer']['region_selection']['select_by']
+        select_by = self.dm['state']['neuroglancer']['region_selection']['select_by']
         logger.info(f"select by: {select_by}")
 
 
@@ -544,7 +533,7 @@ class MAViewer(neuroglancer.Viewer):
         elif select_by == 'cycle':
             self._selected_index[self.role] = (self._selected_index[self.role] + 1) % 3
             if self.numPts(self.role) == 3:
-                if cfg.data['state']['tra_ref_toggle'] == 1:
+                if self.dm['state']['tra_ref_toggle'] == 1:
                     # self._selected_index['ref'] = 0
                     cfg.pt.set_reference()
                 else:
@@ -552,7 +541,7 @@ class MAViewer(neuroglancer.Viewer):
                     cfg.pt.set_transforming()
 
         elif select_by == 'zigzag':
-            if cfg.data['state']['tra_ref_toggle'] == 1:
+            if self.dm['state']['tra_ref_toggle'] == 1:
                 # self._selected_index['ref'] = (self._selected_index[self.role] + 1) % 3
                 self._selected_index['ref'] = self._selected_index[self.role]
                 cfg.pt.set_reference()
@@ -563,7 +552,7 @@ class MAViewer(neuroglancer.Viewer):
         self.signals.ptsChanged.emit()
         logger.info('%s Match Point Added: %s' % (self.role, str(coords)))
         # self.drawSWIMwindow()
-        logger.info(f'dict = {cfg.data.manpoints_pretty()}')
+        logger.info(f'dict = {self.dm.manpoints_pretty()}')
 
 
     def setMpData(self):
@@ -579,11 +568,11 @@ class MAViewer(neuroglancer.Viewer):
 
         logger.info(f"Setting manpoints: {l}\n"
                         f"pts: {self.pts}\n")
-        cfg.data.set_manpoints(self.role, l)
+        self.dm.set_manpoints(self.role, l)
         # for p in self.pts['ref']:
         #     _, x, y = p.point.tolist()
         #     pts.append((x, y))
-        # cfg.data.set_manpoints('ref', pts)
+        # self.dm.set_manpoints('ref', pts)
 
 
 
@@ -613,11 +602,11 @@ class MAViewer(neuroglancer.Viewer):
     # @functools.cache
     def drawSWIMwindow(self, z=None):
         if z == None:
-            z = cfg.data.zpos
+            z = self.dm.zpos
 
-        # caller = inspect.stack()[1].function
 
-        if z == cfg.data.first_unskipped():
+
+        if z == self.dm.first_unskipped():
             return
 
         self._blockStateChanged = True
@@ -626,30 +615,32 @@ class MAViewer(neuroglancer.Viewer):
 
         self.undrawSWIMwindows()
 
+        caller = inspect.stack()[1].function
+        logger.info(f"[{caller}] Drawing SWIM windows...")
 
-        marker_size = 1
 
-        logger.info(f'[{caller_name()}] Drawing SWIM windows...')
+        # marker_size = 1
+        marker_size = 0
+
 
         # if self.role == 'ref':
-        #     self.index = cfg.data.get_ref_index()
+        #     self.index = self.dm.get_ref_index()
         # elif self.role == 'tra':
-        #     self.index = cfg.data.zpos  #
+        #     self.index = self.dm.zpos  #
 
-        # if cfg.data.current_method == 'manual-hint':
+        # if self.dm.current_method == 'manual-hint':
         #     self.draw_point_annotations()
         #     return
         #
 
-
-        # if cfg.data.current_method == 'grid-custom':
-        if cfg.data.current_method in ('grid_custom', 'grid_default'):
+        # if self.dm.current_method == 'grid-custom':
+        if self.dm.current_method == 'grid':
             logger.info('Method: SWIM Grid Alignment')
 
-            img_siz = cfg.data.image_size()
+            img_siz = self.dm.image_size()
             img_w, img_h = img_siz[0], img_siz[1]
-            ww_full = cfg.data.swim_1x1_custom_px() # full window width
-            ww_2x2 = cfg.data.swim_2x2_custom_px() # 2x2 window width
+            ww_full = self.dm.swim_1x1_size() # full window width
+            ww_2x2 = self.dm.swim_2x2_size() # 2x2 window width
 
             offset_x1 = ((img_w - ww_full[0]) / 2) + (ww_2x2[0] / 2)
             offset_x2 = img_w - offset_x1
@@ -658,7 +649,7 @@ class MAViewer(neuroglancer.Viewer):
 
             cps = []
             colors = []
-            regions = cfg.data.quadrants
+            regions = self.dm.quadrants
             # logger.info(f'regions: {regions}')
             if regions[0]:
                 # quadrant 1
@@ -692,75 +683,22 @@ class MAViewer(neuroglancer.Viewer):
                     )
                 )
 
-        # elif cfg.data.current_method == 'grid-default':
-        #     # logger.info('Type: Default Grid Alignment...')
-        #
-        #     img_siz = cfg.data.image_size()
-        #     img_w, img_h = img_siz[0], img_siz[1]
-        #     ww_full = cfg.data['defaults']['levels'][cfg.data.scale]['window_size']
-        #
-        #     offset_x1 = (img_w / 2) - (ww_full[0] * (1 / 4))
-        #     offset_x2 = (img_w / 2) + (ww_full[0] * (1 / 4))
-        #     offset_y1 = (img_h / 2) - (ww_full[1] * (1 / 4))
-        #     offset_y2 = (img_h / 2) + (ww_full[1] * (1 / 4))
-        #
-        #     # ww_2x2 = cfg.data.swim_2x2_custom_px() # 2x2 window width
-        #     # offset_x1 = ((img_w - ww_full[0]) / 2) + (ww_2x2[0] / 2)
-        #     # offset_x2 = img_w - offset_x1
-        #     # offset_y1 = ((img_h - ww_full[1]) / 2) + (ww_2x2[1] / 2)
-        #     # offset_y2 = img_h - offset_y1
-        #
-        #     cps = []
-        #     colors = []
-        #     regions = [1,1,1,1]
-        #     # logger.info(f'regions: {regions}')
-        #     if regions[0]:
-        #         # quadrant 1
-        #         cps.append((offset_x2, offset_y1))
-        #         colors.append(self.colors[0])
-        #     if regions[1]:
-        #         # quadrant 2
-        #         cps.append((offset_x1, offset_y1))
-        #         colors.append(self.colors[1])
-        #     if regions[2]:
-        #         # quadrant 3
-        #         cps.append((offset_x2, offset_y2))
-        #         colors.append(self.colors[2])
-        #     if regions[3]:
-        #         # quadrant 4
-        #         cps.append((offset_x1, offset_y2))
-        #         colors.append(self.colors[3])
-        #
-        #     annotations = []
-        #     for i, pt in enumerate(cps):
-        #         if regions[i]:
-        #             annotations.extend(
-        #                 self.makeRect(
-        #                     prefix=str(i),
-        #                     z_index=self.index,
-        #                     coords=pt,
-        #                     ww_x=(ww_full[0] / 2) - 4,
-        #                     ww_y=(ww_full[1] / 2) - 4,
-        #                     color=colors[i],
-        #                     marker_size=marker_size
-        #                 )
-        #             )
-
-        else:
+        elif self.dm.current_method == 'manual':
             logger.info('Method: SWIM Match Region Alignment')
             self.restoreManAlignPts()
             # pts = list(self.pts.items())
             try:
-                assert len(self.pts[self.role]) == len(cfg.data.manpoints()[self.role])
+                assert len(self.pts[self.role]) == len(self.dm.manpoints()[self.role])
             except:
                 print_exception(extra=f"""len(self.pts[{self.role}]) = {len(self.pts[self.role])}\n
-                len(cfg.data.manpoints()[{self.role}]) = {len(cfg.data.manpoints()[self.role])}""")
+                len(self.dm.manpoints()[{self.role}]) = {len(self.dm.manpoints()[self.role])}""")
             annotations = []
-            if cfg.data.current_method == 'manual_strict':
+            #Todo make this configurable, and check swim settings for manual 'mode'
+            if self.dm.current_method == 'manual_strict':
                 ww_x = 16
                 ww_y = 16
             else:
-                ww_x = ww_y = cfg.data.manual_swim_window_px()
+                ww_x = ww_y = self.dm.manual_swim_window_px()
 
             for i, pt in enumerate(self.pts[self.role]):
                 if pt:
@@ -776,26 +714,26 @@ class MAViewer(neuroglancer.Viewer):
                         )
                     )
 
-
-        with self.txn() as s:
-            # for i,ann in enumerate(annotations):
-            s.layers['SWIM'] = ng.LocalAnnotationLayer(
-                dimensions=self.coordinate_space,
-                annotation_properties=[
-                    ng.AnnotationPropertySpec(id='color', type='rgb', default='#ffff66', ),
-                    # ng.AnnotationPropertySpec(id='size', cur_method='float32', default=1, )
-                    ng.AnnotationPropertySpec(id='size', type='float32', default=5, )
-                ],
-                annotations=annotations,
-                shader='''
-                    void main() {
-                      setColor(prop_color());
-                      setPointMarkerSize(prop_size());
-                    }
-                ''',
-            )
-        self._blockStateChanged = False
-        # QApplication.processEvents()
+        if self.dm.current_method in ('grid','manual'):
+            with self.txn() as s:
+                # for i,ann in enumerate(annotations):
+                s.layers['SWIM'] = ng.LocalAnnotationLayer(
+                    dimensions=self.coordinate_space,
+                    annotation_properties=[
+                        ng.AnnotationPropertySpec(id='color', type='rgb', default='#ffff66', ),
+                        # ng.AnnotationPropertySpec(id='size', cur_method='float32', default=1, )
+                        ng.AnnotationPropertySpec(id='size', type='float32', default=5, )
+                    ],
+                    annotations=annotations,
+                    shader='''
+                        void main() {
+                          setColor(prop_color());
+                          setPointMarkerSize(prop_size());
+                        }
+                    ''',
+                )
+            self._blockStateChanged = False
+            # QApplication.processEvents()
 
     # @cache
     def makeRect(self, prefix, z_index, coords, ww_x, ww_y, color, marker_size):
@@ -818,7 +756,7 @@ class MAViewer(neuroglancer.Viewer):
     def restoreManAlignPts(self):
         logger.info(">>>> restoreManAlignPts >>>>")
         self.pts[self.role] = [None,None,None]
-        pts_data = cfg.data.getmpFlat(l=cfg.data.zpos)[self.role]
+        pts_data = self.dm.getmpFlat(l=self.dm.zpos)[self.role]
         for i, p in enumerate(pts_data):
             if p:
                 props = [self.colors[i], getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'),
@@ -832,7 +770,7 @@ class MAViewer(neuroglancer.Viewer):
         state = copy.deepcopy(self.state)
         for layer in state.layers:
             if val: layer.shaderControls['brightness'] = val
-            else:   layer.shaderControls['brightness'] = cfg.data.brightness
+            else:   layer.shaderControls['brightness'] = self.dm.brightness
             # layer.volumeRendering = True
         self.set_state(state)
 
@@ -841,7 +779,7 @@ class MAViewer(neuroglancer.Viewer):
         state = copy.deepcopy(self.state)
         for layer in state.layers:
             if val: layer.shaderControls['contrast'] = val
-            else:   layer.shaderControls['contrast'] = cfg.data.contrast
+            else:   layer.shaderControls['contrast'] = self.dm.contrast
             # layer.volumeRendering = True
         self.set_state(state)
 
@@ -884,7 +822,7 @@ class MAViewer(neuroglancer.Viewer):
             else:
                 widget_w = widget_h = cfg.mw.globTabs.height() - 30
 
-            res_z, res_y, res_x = cfg.data.resolution(s=cfg.data.level) # nm per imagepixel
+            res_z, res_y, res_x = self.dm.resolution(s=self.dm.level) # nm per imagepixel
             # tissue_h, tissue_w = res_y*frame[0], res_x*frame[1]  # nm of sample
             scale_h = ((res_y * tensor_y) / widget_h) * 1e-9  # nm/pixel (subtract height of ng toolbar)
             scale_w = ((res_x * tensor_x) / widget_w) * 1e-9  # nm/pixel (subtract width of sliders)
@@ -901,7 +839,7 @@ class MAViewer(neuroglancer.Viewer):
             # logger.info(f'res_y          = {res_y}')
             # logger.info(f'scale_h        = {scale_h}')
             # logger.info(f'scale_w        = {scale_w}')
-            # logger.info(f'cfg.data.level_key = {cfg.data.level_key}')
+            # logger.info(f'self.dm.level_key = {self.dm.level_key}')
             # logger.info(f'cs_scale       = {cs_scale}')
 
             # logger.info(f'Initializing crossSectionScale to calculated value times adjust {self.cs_scale} [{self.role}]')

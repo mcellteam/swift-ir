@@ -77,6 +77,7 @@ class HeadupDisplay(QWidget):
 
     def __init__(self, app, overlay=False):
         super(HeadupDisplay, self).__init__()
+
         self.app = app
         self._overlay = overlay
         self.setFocusPolicy(Qt.NoFocus)
@@ -104,13 +105,14 @@ class HeadupDisplay(QWidget):
         self.start_thread()
         self.theme = None
         # self.layout().setAlignment(Qt.AlignBottom)
-        self.setStyleSheet("""
-        padding: 0px;
-        margin: 0px;
-        border-width: 0px;
-        """)
-
+        # self.setStyleSheet("""
+        # padding: 0px;
+        # margin: 0px;
+        # border-width: 0px;
+        # """)
         self.messages = []
+
+        self.resize(self.sizeHint())
 
     def __call__(self, message, level=logging.INFO):
         logger.log(level, message)
@@ -266,8 +268,10 @@ class HeadupDisplay(QWidget):
 
     #
     def sizeHint(self):
-        width = int(cfg.main_window.width() / 2) - 10
-        return QSize(width, 90)
+        # width = int(cfg.main_window.width() / 2) - 10
+        # return QSize(width, 120)
+        return QSize(800, 100)
+
 
 
 

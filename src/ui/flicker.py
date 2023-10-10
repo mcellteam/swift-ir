@@ -35,8 +35,6 @@ class Flicker(QLabel):
         self.setMinimumSize(QSize(64,64))
         # self.resize(QSize(180,180))
         self.setStyleSheet("""background-color: #ffffff;""")
-
-        self.no_image_path = os.path.join(get_appdir(), 'resources', 'no-image.png')
         self.extra = "test"
 
         # policy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
@@ -65,15 +63,14 @@ class Flicker(QLabel):
             self.update()
             return
 
-        self.a = cfg.data.thumbnail_aligned(l=p)
+        self.a = cfg.data.path_aligned(l=p)
 
-        reference = cfg.data['data']['scales'][cfg.data.level]['stack'][cfg.data.zpos]['reference']
-        ind_reference = cfg.data.get_index(reference)
+        ind_reference = cfg.data['data']['scales'][cfg.data.level]['stack'][cfg.data.zpos]['reference_index']
 
         # self.b = cfg.data.thumbnail_aligned(z=max(0, p - 1))
-        self.b = cfg.data.thumbnail_aligned(l=ind_reference)
-        # self.a = cfg.data.filename(z=p)
-        # self.b = cfg.data.filename(z=max(0,p-1))
+        self.b = cfg.data.path_aligned(l=ind_reference)
+        # self.a = cfg.data.path(z=p)
+        # self.b = cfg.data.path(z=max(0,p-1))
         self.series = [self.a, self.b]
 
     def onTimer(self):

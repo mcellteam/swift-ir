@@ -218,13 +218,14 @@ def preallocate_zarr(dm, name, group, shape, dtype, overwrite, gui=True):
         # arr = zarr.group(store=path_zarr, synchronizer=synchronizer) # overwrite cannot be set to True here, will overwrite entire Zarr
         arr = zarr.group(store=path_zarr)
         compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
-        
-        logger.critical(f"group = {group}")
-        logger.critical(f"shape = {shape}")
-        logger.critical(f"chunkshape = {chunkshape}")
-        logger.critical(f"dtype = {dtype}")
-        logger.critical(f"compressor = {compressor}")
-        logger.critical(f"overwrite = {overwrite}")
+
+        logger.info(f"\n"
+                    f"  group      : {group}\n"
+                    f"  shape      : {shape}\n"
+                    f"  chunkshape : {chunkshape}\n"
+                    f"  dtype      : {dtype}\n"
+                    f"  compressor : {compressor}\n"
+                    f"  overwrite  : {overwrite}")
 
         # arr.zeros(name=group, shape=shape, chunks=chunkshape, dtype=dtype, compressor=compressor, overwrite=overwrite, synchronizer=synchronizer)
         arr.zeros(name=group, shape=shape, chunks=chunkshape, dtype=dtype, compressor=compressor, overwrite=overwrite)
@@ -336,15 +337,15 @@ def write_metadata_zarr_aligned(name='img_aligned.zarr'):
     #     logger.info('Converting Tiff To Zarr...')
     #     logger.info(str(tif_files))
     #
-    #     def imread(filename):
-    #         with open(filename, 'rb') as fh:
+    #     def imread(path):
+    #         with open(path, 'rb') as fh:
     #             datamodel = fh.read()
     #         return imagecodecs.tiff_decode(datamodel) # return first image in TIFF file as numpy array
     #     try:
     #         with tifffile.FileSequence(imread, tif_files) as tifs:
     #             with tifs.aszarr() as store:
     #                 array = da.from_zarr(store)
-    #                 #array.visualize(filename='_dask_visualize.png') # print dask task graph to file
+    #                 #array.visualize(path='_dask_visualize.png') # print dask task graph to file
     #                 array.rechunk(chunkshape).to_zarr(zarrurl, overwrite=True, **kwargs)
     #                 # NOTE **kwargs is passed to Passed to the zarr.creation.create() function, e.g., compression options.
     #                 # https://zarr.readthedocs.io/en/latest/api/creation.html#zarr.creation.create

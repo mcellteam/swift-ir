@@ -9,6 +9,7 @@ https://programtalk.com/vs4/python/janelia-cosem/fibsem-tools/src/fibsem_tools/i
 
 import os, re, sys, stat, copy, json, time, signal, logging, inspect
 import platform, traceback, shutil, statistics, tracemalloc
+import contextlib
 from os.path import expanduser
 import getpass
 from time import time
@@ -41,16 +42,16 @@ except:
     pass
 
 try:
-    from src.utils.treeview import Treeview
+    from src.utils.text_treeview import Treeview
 except:
-    from utils.treeview import Treeview
+    from utils.text_treeview import Treeview
 
-__all__ = ['is_tacc', 'is_linux', 'is_mac', 'create_paged_tiff', 'check_for_binaries', 'delete_recursive',
+__all__ = ['dt', 'is_tacc', 'is_linux', 'is_mac', 'create_paged_tiff', 'check_for_binaries', 'delete_recursive',
            'do_scales_exist', 'make_relative', 'make_absolute', 'get_img_filenames', 'print_exception',
            'get_scale_key', 'get_scale_val', 'print_project_tree',
            'verify_image_file', 'exist_aligned_zarr', 'get_scales_with_generated_alignments', 'handleError',
            'count_widgets', 'find_allocated_widgets', 'absFilePaths', 'validate_file', 'hotkey',
-           'caller_name','addLoggingLevel', 'sanitizeSavedPaths', 'recursive_key_values'
+           'caller_name','addLoggingLevel', 'sanitizeSavedPaths', 'recursive_key_values', 'check_macos_isdark_theme'
            ]
 
 logger = logging.getLogger(__name__)
@@ -63,6 +64,17 @@ def hotkey(letter: str):
 
 def get_n_tacc_cores(n_tasks):
     return max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, n_tasks),1)
+
+
+@contextlib.contextmanager
+def dt(ident='timer'):
+    import time
+    tstart = time.time()
+    yield
+    elapsed = (time.time() - tstart) * 1000
+    result = f"{ident}: {elapsed:.6g}s"
+    print(result)
+    return result
 
 
 
@@ -233,6 +245,8 @@ def update_preferences_model():
 
     cfg.settings.setdefault('series_search_paths', [os.path.join(DEFAULT_CONTENT_ROOT, 'series')])
     cfg.settings.setdefault('alignments_search_paths', [os.path.join(DEFAULT_CONTENT_ROOT, 'alignments')])
+    cfg.settings.setdefault('current_filebrowser_root', DEFAULT_CONTENT_ROOT)
+    cfg.settings.setdefault('previous_filebrowser_root', DEFAULT_CONTENT_ROOT)
 
     cfg.settings.setdefault('saved_paths', [
         os.path.join(DEFAULT_CONTENT_ROOT, 'series'),
@@ -383,7 +397,7 @@ def configure_project_paths():
         #         f.write(f"{p}\n")
         cfg.settings['projects'] = cleanpaths
         if cleanpaths:
-            logger.info('AlignEM-SWiFT knows about the following projects:\n\n'
+            logger.info('alignEM knows about the following projects:\n\n'
                         '  %s\n' % '\n  '.join(cleanpaths))
     except:
         print_exception()
@@ -570,6 +584,14 @@ def get_bytes(start_path='.'):
     return total_size
 
 
+def check_macos_isdark_theme():
+    """Checks DARK/LIGHT mode of macos."""
+    cmd = 'defaults read -g AppleInterfaceStyle'
+    p = sp.Popen(cmd, stdout=sp.PIPE,
+                 stderr=sp.PIPE, shell=True)
+    return bool(p.communicate()[0])
+
+
 def make_affine_widget_HTML(afm, cafm, fs1=9, fs2=8):
     # 'cellspacing' affects project_table width and 'cellpadding' affects project_table height
     # text = f"<project_table project_table-layout='fixed' style='border-collapse: collapse;' cellspacing='3' cellpadding='2' border='0'>"\
@@ -711,7 +733,7 @@ def exist_aligned_zarr(scale: str) -> bool:
     '''Returns boolean based on whether arg level is aligned '''
     caller = inspect.stack()[1].function
     logger.info('called by %s' % inspect.stack()[1].function)
-    if cfg.data:
+    if hasattr(cfg, 'data'):
         zarr_path = os.path.join(cfg.data.dest(), 'zarr', 'level' + str(get_scale_val(scale)))
         if not os.path.isdir(zarr_path):
             # logger.critical(f"Path Not Found: {zarr_path}")
@@ -987,7 +1009,7 @@ def is_not_hidden(path):
 
 def print_project_tree() -> None:
     '''Recursive function that lists datamodel directory contents as a tree.'''
-    paths = Treeview.make_tree(Path(cfg.data.location))
+    paths = Treeview.make_tree(Path(cfg.data.series_location))
     for path in paths:
         print(path.displayable())
 
@@ -1188,57 +1210,6 @@ def file_hash(file_path):
 
     return sha256.hexdigest()
 
-# def show_mp_queue_results(task_queue, dt):
-#
-#     logger.info('Checking Status of Tasks...')
-#     n_tasks = len(task_queue.task_dict.keys())
-#     n_success, n_queued, n_failed = 0, 0, 0
-#     for k in task_queue.task_dict.keys():
-#         task_item = task_queue.task_dict[k]
-#         if task_item['statusBar'] == 'completed':
-#             logger.debug('\nProcessDone:')
-#             logger.debug('   CMD:    %level' % (str(task_item['cmd'])))
-#             logger.debug('   ARGS:   %level' % (str(task_item['args'])))
-#             logger.debug('   STDERR: %level\n' % (str(task_item['stderr'])))
-#             n_success += 1
-#         elif task_item['statusBar'] == 'queued':
-#             logger.warning('\nQueued:')
-#             logger.warning('   CMD:    %level' % (str(task_item['cmd'])))
-#             logger.warning('   ARGS:   %level' % (str(task_item['args'])))
-#             logger.warning('   STDERR: %level\n' % (str(task_item['stderr'])))
-#             n_queued += 1
-#         elif task_item['statusBar'] == 'task_error':
-#             logger.warning('\nTask Error:')
-#             logger.warning('   CMD:    %level' % (str(task_item['cmd'])))
-#             logger.warning('   ARGS:   %level' % (str(task_item['args'])))
-#             logger.warning('   STDERR: %level\n' % (str(task_item['stderr'])))
-#             n_failed += 1
-#
-#     # cfg.main_window.hud.post('  Time Elapsed    : %.2f seconds' % dt)
-#
-#     if n_failed > 0:
-#         # cfg.main_window.hud.post('  Tasks Completed : %d' % n_success, logging.WARNING)
-#         # cfg.main_window.hud.post('  Tasks Queued    : %d' % n_queued, logging.WARNING)
-#         # cfg.main_window.hud.post('  Tasks Failed    : %d' % n_failed, logging.WARNING)
-#         # cfg.main_window.warn('Succeeded/Queued/Failed : %d/%d/%d %.2fs' % (n_success, n_queued, n_failed, dt))
-#         # cfg.main_window.warn(f'Succeeded={n_success} Queued={n_queued} Failed={n_failed} {dt:.2f}level')
-#         cfg.main_window.hud(f'  Succeeded    = {n_success}')
-#         if n_queued > 0:
-#             cfg.main_window.warning(f'  Queued       = {n_queued}')
-#         else:
-#             cfg.main_window.hud(f'  Queued       = {n_queued}')
-#         cfg.main_window.err(f'  Failed       = {n_failed}')
-#         cfg.main_window.hud(f'  Time Elapsed = {dt:.2f}level')
-#     else:
-#         # cfg.main_window.hud.post('  Tasks Completed : %d' % n_success, logging.INFO)
-#         # cfg.main_window.hud.post('  Tasks Queued    : %d' % n_queued, logging.INFO)
-#         # cfg.main_window.hud.post('  Tasks Failed    : %d' % n_failed, logging.INFO)
-#         # cfg.main_window.hud('Succeeded/Queued/Failed : %d/%d/%d %.2fs' % (n_success,n_queued,n_failed, dt))
-#         # cfg.main_window.hud(f'  Succeeded={n_success} Queued={n_queued} Failed={n_failed} {dt:.2f}level')
-#         cfg.main_window.hud(f'  Succeeded    = {n_success}')
-#         cfg.main_window.hud(f'  Queued       = {n_queued}')
-#         cfg.main_window.hud(f'  Failed       = {n_failed}')
-#         cfg.main_window.hud(f'  Time Elapsed = {dt:.2f}level')
 
 # def load():
 #     try:
@@ -1246,7 +1217,6 @@ def file_hash(file_path):
 #             self.previewmodel.todos = json.load(f)
 #     except Exception:
 #         pass
-
 
 #
 # # @delayed
@@ -1309,49 +1279,6 @@ def file_hash(file_path):
 #         files, dirs = tuple(tz.partitionby(os.path.isdir, sortd))
 #         return list(tz.concatv(files, *tz.map(list_files, dirs)))
 
-
-# NOTE: this is called right after importing base images
-# def update_linking_callback():
-#     logger.info('Updating linking callback | update_linking_callback...')
-#     link_reference_sections()
-#     logger.info('Exiting update_linking_callback()')
-#
-#
-# def update_skips_callback(new_state):
-#     logger.info('Updating skips callback | update_skips_callback...')
-#
-#     # Update all of the annotations based on the skipped values
-#     copy_skips_to_all_scales()
-#     # update_skip_annotations()  # This could be done via annotations, but it'level easier for now to hard-code into main_window.py
-#     logger.info("Exiting update_skips_callback(new_state)")
-
-
-# def mouse_down_callback(role, screen_coords, image_coords, bBlink):
-#     # global match_pt_mode
-#     # if match_pt_mode.get_value():
-#     # logger.info("mouse_down_callback was called but there is nothing to do.")
-#     return  # monkeypatch
-#
-#
-# def mouse_move_callback(role, screen_coords, image_coords, bBlink):
-#     # global match_pt_mode
-#     # if match_pt_mode.get_value():
-#     return #monkeypatch #jy
-#
-#     # # logger.info("view_match_crop.get_value() = ", view_match_crop.get_value())
-#     # if view_match_crop.get_value() == 'Match':
-#     #     return (True)  # Lets the framework know that the move has been handled
-#     # else:
-#     #     return (False)  # Lets the framework know that the move has not been handled
-
-# def notyet():
-#     logger.info('notyet() was called')
-#     # interface.print_debug(0, "Function not implemented yet. Skip = " + str(skipped.value)) #skipped
-#     # interface.print_debug(0, "Function not implemented yet. Skip = " + main_window.cbSkip.isChecked())
-
-# def crop_mode_callback():
-#     return
-#     # return view_match_crop.get_value()
 
 
 # def print_dat_files() -> None:

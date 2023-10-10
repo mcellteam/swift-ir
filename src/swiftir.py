@@ -538,7 +538,7 @@ def alignmentImage(sta, mov, wht=-.65):
     return shf
 
 def findPeak(img):
-    '''FINDPEAK - Finds the location of a peak in an image
+    '''FINDPEAK - Finds the series_location of a peak in an image
     (x,y) = FINDPEAK(img) finds the x- and y-coordinates of the highest peak
     in an image. This function folds x coordinates in the right half of the
     image to be negative. Same for y coordinates in the bottom half.'''
