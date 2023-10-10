@@ -213,7 +213,7 @@ class OpenProject(QWidget):
             f = QFont()
             f.setItalic(not len(self.leNameAlignment.text()))
             self.leNameAlignment.setFont(f)
-        self.leNameAlignment.textChanged.connect(onTextChanged)
+        self.leNameAlignment.textEdited.connect(onTextChanged)
 
         self.bConfirmNewAlignment = QPushButton('Create')
         self.bConfirmNewAlignment.setFixedSize(QSize(44, 18))
@@ -309,7 +309,7 @@ class OpenProject(QWidget):
         pal = self.leNameSeries.palette()
         pal.setColor(QPalette.PlaceholderText, QColor("#dadada"))
         self.leNameSeries.setPalette(pal)
-        self.leNameSeries.textChanged.connect(self.updateImportSeriesUI)
+        self.leNameSeries.textEdited.connect(self.updateImportSeriesUI)
 
         self.bSelect = QPushButton("Select Images")
         self.bSelect.setCursor(QCursor(Qt.PointingHandCursor))

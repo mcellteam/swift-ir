@@ -320,7 +320,7 @@ class FileBrowser(QWidget):
         self.lePath.setReadOnly(False)
         self.lePath.setPlaceholderText('Go to...')
         self.lePath.returnPressed.connect(lambda: self.navigateTo(self.lePath.text()))
-        self.lePath.textChanged.connect(self.onPathChanged)
+        self.lePath.textEdited.connect(self.onPathChanged)
 
         self.bGo = QPushButton()
         self.bGo.setIcon(qta.icon('mdi.arrow-right'))

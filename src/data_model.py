@@ -484,6 +484,7 @@ class DataModel:
         path = os.path.join(self.writeDir(s=s, l=l), name)
         return path
 
+
     def path_aligned_saved(self, s=None, l=None) -> str:
         if s == None: s = self.level
         if l == None: l = self.zpos
@@ -1218,7 +1219,7 @@ class DataModel:
             # print_exception(extra=f'Layer {z}, caller: {caller}')
             exi = sys.exc_info()
             logger.warning(f"[{l}] {exi[0]} {exi[1]}")
-            return [[1, 0, 0], [0, 1, 0]]
+            # return [[1, 0, 0], [0, 1, 0]]
 
 
     def cafmHash(self, s=None, l=None):
@@ -1712,6 +1713,13 @@ class DataModel:
         for i in range(len(self)):
             if self['stack'][i]['levels'][self.level]['swim_settings']['method_opts']['method'] == 'grid':
                 self['stack'][i]['levels'][self.level]['swim_settings']['method_opts']['size_2x2'] = [val, val_y]
+
+    def aaQuadrants(self, lst):
+        cfg.mw.tell(f"Setting default SWIM grid quadrants: {lst}")
+        self['defaults'][self.level]['method_opts']['quadrants'] = lst
+        for i in range(len(self)):
+            if self['stack'][i]['levels'][self.level]['swim_settings']['method_opts']['method'] == 'grid':
+                self['stack'][i]['levels'][self.level]['swim_settings']['method_opts']['quadrants'] = lst
 
     def aaIters(self, val):
         cfg.mw.tell(f"Setting default SWIM iterations: {val}")

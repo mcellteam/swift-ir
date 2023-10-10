@@ -634,6 +634,8 @@ class SnrPlot(QWidget):
 
         # if not self.dock:
         self.updateErrBars(s=s)
+        sys.stdout.flush()
+        self.update()
         # logger.info('<<')
 
 

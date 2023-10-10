@@ -72,7 +72,7 @@ class GifPlayer(QWidget):
         # self.setStyleSheet("""color: #f3f6fb; background-color: #000000;""")
 
         self.timerGif = QTimer(self)
-        self.timerGif.setInterval(500)
+        self.timerGif.setInterval(750)
         self.timerGif.setSingleShot(False)
         self.timerGif.timeout.connect(self.on_click)
 
@@ -100,6 +100,8 @@ class GifPlayer(QWidget):
             self.bBlink.setEnabled(True)
 
     def set(self):
+        self.movie = QMovie(self.path, QByteArray(), self)
+        self.label.setMovie(self.movie)
         self.path = self.dm.path_gif()
         self.movie.start()
         self.update()
@@ -107,9 +109,10 @@ class GifPlayer(QWidget):
     @Slot()
     def on_click(self):
         # logger.info('')
-        self.movie = QMovie(self.path, QByteArray(), self)
-        self.label.setMovie(self.movie)
+        # self.movie = QMovie(self.path, QByteArray(), self)
+        # self.label.setMovie(self.movie)
         self.movie.start()
+        # pass
 
     def paintEvent(self, event):
         qp = QPainter()

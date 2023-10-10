@@ -17,6 +17,7 @@ from pathlib import Path
 from multiprocessing import Pool
 from multiprocessing.pool import ThreadPool
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+from datetime import datetime
 import multiprocessing as mp
 import subprocess as sp
 import numpy as np
@@ -110,8 +111,6 @@ class AlignWorker(QObject):
 
     def run(self):
         logger.critical('Running...')
-        logger.critical(f"align indexes : {self.align_indexes}\n"
-                        f"regen indexes : {self.regen_indexes}")
         while self._tasks and self.running():
             self._tasks.pop(0)()
         self.finished.emit() #Important!
@@ -127,9 +126,9 @@ class AlignWorker(QObject):
         dm = self.dm
 
         if 5 in indexes:
-            logger.critical(f"\nssHash      : {dm.ssHash(l=5)}\n"
-                            f"ssSavedHash : {dm.ssSavedHash(l=5)}\n"
-                            f"cafmHash    : {dm.cafmHash(l=5)}")
+            logger.critical(f"\nss hash      : {dm.ssHash(l=5)}\n"
+                            f"ss saved hash : {dm.ssSavedHash(l=5)}\n"
+                            f"cafm hash    : {dm.cafmHash(l=5)}")
 
         if scale == dm.coarsest_scale_key():
             logger.info(f'INITIALIZING affine for {len(indexes)} alignment pairs...')
@@ -320,17 +319,17 @@ class AlignWorker(QObject):
         #     layer['alignment_history'][dm.method(z=i)]['method_results']['cafm_hash'] = dm.cafm_current_hash(z=i)
 
         if 5 in indexes:
-            logger.critical(f"\nssHash      : {dm.ssHash(l=5)}\n"
-                            f"ssSavedHash : {dm.ssSavedHash(l=5)}\n"
-                            f"cafmHash    : {dm.cafmHash(l=5)}")
+            logger.critical(f"\nss hash      : {dm.ssHash(l=5)}\n"
+                            f"ss saved hash : {dm.ssSavedHash(l=5)}\n"
+                            f"cafm hash    : {dm.cafmHash(l=5)}")
         logger.critical(f"\n\nEND: ALIGN\n")
 
 
     def generate(self):
         if 5 in self.regen_indexes:
-            logger.critical(f"\nssHash      : {self.dm.ssHash(l=5)}\n"
-                            f"ssSavedHash : {self.dm.ssSavedHash(l=5)}\n"
-                            f"cafmHash    : {self.dm.cafmHash(l=5)}")
+            logger.critical(f"\nss hash      : {self.dm.ssHash(l=5)}\n"
+                            f"ss saved hash : {self.dm.ssSavedHash(l=5)}\n"
+                            f"cafm hash    : {self.dm.cafmHash(l=5)}")
 
         if not self.running():
             logger.warning('Canceling transformation process...')
@@ -497,8 +496,6 @@ class AlignWorker(QObject):
             self.finished.emit()
             return
 
-        print(f'\n######## Generating Thumbnails ########\n')
-
         to_reduce = []
         names = dm.basefilenames()
         for i, name in enumerate([names[i] for i in indexes]):
@@ -540,76 +537,101 @@ class AlignWorker(QObject):
             self.finished.emit()
             return
         if self._reallocate_zarr:
+            tstamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             preallocate_zarr(dm=dm,
                              name='zarr',
                              group='s%d' % scale_val,
                              shape=(len(dm), rect[3], rect[2]),
                              dtype='|u1',
-                             overwrite=True)
+                             overwrite=True,
+                             attr=str(tstamp))
+
+
 
         print(f'\n######## Copy-converting Images to Zarr ########\n')
 
-        tasks = []
-        for i in indexes:
-            al_name = dm.path_aligned(s=scale, l=i)
+        #temporary kluge
+        if len(indexes) == len(dm):
+
             zarr_group = os.path.join(dm.data_location, 'zarr', 's%d' % scale_val)
-            save_to = os.path.join(dm.writeDir(s=scale, l=i), str(dm.cafmHash(s=scale, l=i)))
-            # save_to = os.path.join(dm.writeDir(s=scale, l=i))
-            task = [i, al_name, zarr_group, save_to]
-            tasks.append(task)
-        # shuffle(tasks)
+            z = zarr.open(zarr_group)
+            # z.attrs['ss_hash'] = [None] * len(dm)
+            # z.attrs['cafm_hash'] = [None] * len(dm)
 
-        t0 = time.time()
+            # sshash_list = [str(dm.ssSavedHash(s=scale, l=i)) for i in range(len(dm))]
+            # cafmhash_list = [str(dm.cafmHash(s=scale, l=i)) for i in range(len(dm))]
+            # z.attrs.setdefault('ss_hash', sshash_list)
+            # z.attrs.setdefault('cafm_hash', cafmhash_list)
 
-        if ng.is_server_running():
-            logger.info('Stopping Neuroglancer...')
-            ng.server.stop()
+            tasks = []
+            for i in indexes:
+                # ssHash = str(dm.ssHash(s=scale, l=i))
+                ssHash = str(dm.ssSavedHash(s=scale, l=i))
+                # al_name = dm.path_aligned(s=scale, l=i)
+                al_name = dm.path_aligned_saved(s=scale, l=i)
+                cafmHash = str(dm.cafmHash(s=scale, l=i))
+                # save_to = os.path.join(dm.writeDir(s=scale, l=i), cafmHash)
+                save_to = os.path.join(dm.writeDirSaved(s=scale, l=i), cafmHash)
+                # z.attrs['index'][i] = {'index': i, 'source': al_name, 'copypath': save_to,
+                #                             'ss_hash': ssHash, 'cafm_hash': cafmHash}
+                # z.attrs['ss_hash'].update({i: ssHash})
+                # z.attrs['cafm_hash'].update({i: cafmHash})
+                z.attrs[i] = (ssHash, cafmHash)
+                task = [i, al_name, zarr_group, save_to]
+                tasks.append(task)
+            # shuffle(tasks)
 
-        # with ctx.Pool(processes=cpus) as pool:
-        # with ThreadPool(processes=cpus) as pool:
-        #     results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_pbar) for task in tasks]
-        #     pool.close()
-        #     [p.get() for p in results]
-        #     # pool.join()
+            t0 = time.time()
 
-        desc = f"Copy-convert to Zarr ({len(tasks)} tasks)"
-        # with ThreadPoolExecutor(max_workers=10) as executor:
-        #     list(executor.map(convert_zarr,
-        #                       tqdm.tqdm(tasks, total=len(tasks), desc=desc, position=0,
-        #                                 leave=True)))
+            if ng.is_server_running():
+                logger.info('Stopping Neuroglancer...')
+                ng.server.stop()
 
-        ctx = mp.get_context('forkserver')
-        self.initPbar.emit((len(tasks), desc))
-        # QApplication.processEvents()
-        all_results = []
-        # cpus = (psutil.cpu_count(logical=False) - 2, 80)[is_tacc()]
-        cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks))
-        logger.info(f"# Processes: {cpus}")
-        i = 0
-        with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
-            for result in tqdm.tqdm(
-                    pool.imap_unordered(convert_zarr, tasks),
-                    total=len(tasks),
-                    desc=desc,
-                    position=0,
-                    leave=True):
-                all_results.append(result)
-                i += 1
-                self.progress.emit(i)
-                # QApplication.processEvents()
-                if not self.running():
-                    break
+            # with ctx.Pool(processes=cpus) as pool:
+            # with ThreadPool(processes=cpus) as pool:
+            #     results = [pool.apply_async(func=convert_zarr, args=(task,), callback=update_pbar) for task in tasks]
+            #     pool.close()
+            #     [p.get() for p in results]
+            #     # pool.join()
 
-        t_elapsed = time.time() - t0
-        dm.t_convert_zarr = t_elapsed
+            desc = f"Copy-convert to Zarr ({len(tasks)} tasks)"
+            # with ThreadPoolExecutor(max_workers=10) as executor:
+            #     list(executor.map(convert_zarr,
+            #                       tqdm.tqdm(tasks, total=len(tasks), desc=desc, position=0,
+            #                                 leave=True)))
 
-        logger.info("Zarr conversion complete.")
-        logger.info(f"Elapsed Time: {t_elapsed:.3g}s")
+            ctx = mp.get_context('forkserver')
+            self.initPbar.emit((len(tasks), desc))
+            # QApplication.processEvents()
+            all_results = []
+            # cpus = (psutil.cpu_count(logical=False) - 2, 80)[is_tacc()]
+            cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks))
+            logger.info(f"# Processes: {cpus}")
+            i = 0
+            with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
+                for result in tqdm.tqdm(
+                        pool.imap_unordered(convert_zarr, tasks),
+                        total=len(tasks),
+                        desc=desc,
+                        position=0,
+                        leave=True):
+                    all_results.append(result)
+                    i += 1
+                    self.progress.emit(i)
+                    # QApplication.processEvents()
+                    if not self.running():
+                        break
 
-        if 5 in self.regen_indexes:
-            logger.critical(f"\nssHash      : {self.dm.ssHash(l=5)}\n"
-                            f"ssSavedHash : {self.dm.ssSavedHash(l=5)}\n"
-                            f"cafmHash    : {self.dm.cafmHash(l=5)}")
+            t_elapsed = time.time() - t0
+            dm.t_convert_zarr = t_elapsed
+
+            logger.info("Zarr conversion complete.")
+            logger.info(f"Elapsed Time: {t_elapsed:.3g}s")
+
+            if 5 in self.regen_indexes:
+                logger.critical(f"\nss hash      : {dm.ssHash(l=5)}\n"
+                                f"ss saved hash : {dm.ssSavedHash(l=5)}\n"
+                                f"cafm hash    : {dm.cafmHash(l=5)}")
 
 
 def run_mir(task):
@@ -774,6 +796,7 @@ def convert_zarr(task):
         out = task[2]
         save_to = task[3]
         store = zarr.open(out)
+        # store.attr['test_attribute'] = {'key': 'value'}
         data = libtiff.TIFF.open(fn).read_image()[:, ::-1]  # store: <zarr.core.Array (19, 1244, 1130) uint8>
         np.save(save_to, data)
         store[ID, :, :] = data

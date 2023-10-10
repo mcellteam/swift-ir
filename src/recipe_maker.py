@@ -83,7 +83,10 @@ def run_recipe(data):
     recipe.assemble_recipe()
     recipe.execute_recipe()
     # results = recipe.set_results()
-    mr = recipe.set_results()
+    try:
+        mr = recipe.set_results()
+    except:
+        print_exception(extra=f"Something went wrong (Section #{data['index']})...")
     return mr
 
 
@@ -392,7 +395,11 @@ class align_recipe:
         except:
             print_exception(f"\nindex = {self.index}\ntype(afm) = {afm}\nafm={afm}")
         mr['init_afm'] = self.ss['init_afm']
-        mr['swim_pos'] = self.ingredients[-1].psta.tolist()
+        try:
+            mr['swim_pos'] = self.ingredients[-1].psta.tolist()
+        except:
+            pass
+
         mr['datetime'] = time
         # mr['whiten'] = self.ss['whiten']
         # mr['swim_iters'] = self.ss['swim_iters']

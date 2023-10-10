@@ -83,8 +83,9 @@ class ProjectTab(QWidget):
         self.dm.signals.dataChanged.connect(self.updateAaButtons)
         self.dm.signals.dataChanged.connect(lambda: self.cbDefaults.setChecked(self.dm.isDefaults()))
         self.dm.signals.dataChanged.connect(lambda: self.cbSaved.setChecked(self.dm.ssSavedComports()))
-        self.dm.signals.dataChanged.connect(lambda: self.bSaveSettings.setEnabled(not self.dm.ssSavedComports()))
-        self.dm.signals.dataChanged.connect(lambda: self.cbSaved.setText(('Saved settings (revert)', 'Saved settings')[self.dm.ssSavedComports()]))
+        # self.dm.signals.dataChanged.connect(lambda: self.bSaveSettings.setEnabled(not self.dm.ssSavedComports()))
+        self.dm.signals.dataChanged.connect(lambda: self.bSaveSettings.setEnabled(not self.dm.ssSavedComports() and self.ht.haskey(self.dm.swim_settings())))
+        # self.dm.signals.dataChanged.connect(lambda: self.cbSaved.setText(('Saved settings (revert)', 'Saved settings')[self.dm.ssSavedComports()]))
 
 
         self.ht = HashTable(self.dm.data_location)
@@ -97,22 +98,27 @@ class ProjectTab(QWidget):
 
     def updateAaButtons(self):
         logger.info('')
-        self.aaButtons[0].setEnabled(self.dm['defaults'][self.dm.level]['method_opts']['size_1x1'] !=
-                                     self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
-                                         'method_opts']['size_1x1'])
-        self.aaButtons[1].setEnabled(self.dm['defaults'][self.dm.level]['method_opts']['size_2x2'] !=
-                                     self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
-                                         'method_opts']['size_2x2'])
-        self.aaButtons[2].setEnabled(self.dm['defaults'][self.dm.level]['iterations'] !=
-                                     self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings']['iterations'])
-        self.aaButtons[3].setEnabled(self.dm['defaults'][self.dm.level]['whitening'] !=
-                                     self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
-                                         'whitening'])
-        self.aaButtons[4].setEnabled((self.dm['defaults'][self.dm.level]['clobber'] !=
-                                     self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
-                                         'clobber']) or (self.dm['defaults'][self.dm.level]['clobber_size'] !=
-                                                         self.dm['stack'][self.dm.zpos]['levels'][self.dm.level][
-                                                             'swim_settings']['clobber_size']))
+        # if self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings']['method_opts']['method'] == 'grid':
+        if self.twMethod.currentIndex() == 0:
+            self.aaButtons[0].setEnabled(self.dm['defaults'][self.dm.level]['method_opts']['size_1x1'] !=
+                                         self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
+                                             'method_opts']['size_1x1'])
+            self.aaButtons[1].setEnabled(self.dm['defaults'][self.dm.level]['method_opts']['size_2x2'] !=
+                                         self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
+                                             'method_opts']['size_2x2'])
+            self.aaButtons[2].setEnabled(self.dm['defaults'][self.dm.level]['iterations'] !=
+                                         self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings']['iterations'])
+            self.aaButtons[3].setEnabled(self.dm['defaults'][self.dm.level]['whitening'] !=
+                                         self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
+                                             'whitening'])
+            self.aaButtons[4].setEnabled((self.dm['defaults'][self.dm.level]['clobber'] !=
+                                         self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
+                                             'clobber']) or (self.dm['defaults'][self.dm.level]['clobber_size'] !=
+                                                             self.dm['stack'][self.dm.zpos]['levels'][self.dm.level][
+                                                                 'swim_settings']['clobber_size']))
+            self.aaButtons[5].setEnabled(self.dm['defaults'][self.dm.level]['method_opts']['quadrants'] !=
+                                         self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
+                                             'method_opts']['quadrants'])
 
     def load_data_from_treeview(self):
         self.datamodel = DataModel(self.treeview_model.to_json())
@@ -555,14 +561,14 @@ class ProjectTab(QWidget):
         # tip = '\n'.join(textwrap.wrap(tip, width=35))
         # self.bRevertSettings.setToolTip(tip)
 
-        self.bPush = QPushButton('Export as default settings')
-        self.bPush.setFocusPolicy(Qt.NoFocus)
-        # self.bPush.setFixedHeight(16)
-        self.bPush.clicked.connect(self.onPushSettings)
+        # self.bPush = QPushButton('Export as default settings')
+        # self.bPush.setFocusPolicy(Qt.NoFocus)
+        # # self.bPush.setFixedHeight(16)
+        # self.bPush.clicked.connect(self.onPushSettings)
         # msg = "Use these as default settings for the current and finer scale levels."
-        tip = "Push (forward-propagate) these SWIM settings as defaults for this and finer resolution levels."
-        tip = '\n'.join(textwrap.wrap(tip, width=35))
-        self.bPush.setToolTip(tip)
+        # tip = "Push (forward-propagate) these SWIM settings as defaults for this and finer resolution levels."
+        # tip = '\n'.join(textwrap.wrap(tip, width=35))
+        # self.bPush.setToolTip(tip)
 
         self.bPull = QPushButton('Pull Settings From Coarser Resolution')
         self.bPull.setFocusPolicy(Qt.NoFocus)
@@ -761,13 +767,15 @@ class ProjectTab(QWidget):
         self.slider1x1.setMinimum(64)
         self.slider1x1.setToolTip(tip)
         self.slider1x1.valueChanged.connect(fn_slider1x1)
-        self.slider1x1.setMaximumWidth(100)
+        # self.slider1x1.setMaximumWidth(100)
 
         def fn_le1x1():
             logger.info('')
             # self.dm.set_swim_1x1_size(int(self.le1x1.text()))
             # self.dm.set_swim_1x1_size(int(self.le1x1.text()))
-            self.slider1x1.setValue(int(self.le1x1.text()))
+            txt = self.le1x1.text()
+            if txt:
+                self.slider1x1.setValue(int(txt))
             # self.dataUpdateMA()
 
         self.le1x1 = QLineEdit()
@@ -795,12 +803,14 @@ class ProjectTab(QWidget):
         self.slider2x2.setFocusPolicy(Qt.NoFocus)
         self.slider2x2.setToolTip(tip)
         self.slider2x2.valueChanged.connect(fn_slider2x2)
-        self.slider2x2.setMaximumWidth(100)
+        # self.slider2x2.setMaximumWidth(100)
 
         def fn_le2x2():
             logger.info('')
             # self.dm.set_swim_2x2_size(int(self.le2x2.text()))
-            self.slider2x2.setValue(int(self.le2x2.text()))
+            txt = self.le2x2.text()
+            if txt:
+                self.slider2x2.setValue(int(txt))
             # self.dataUpdateMA()
 
         self.le2x2 = QLineEdit()
@@ -855,13 +865,12 @@ class ProjectTab(QWidget):
         ##############
 
         self.w1x1 = HW(self.le1x1, self.slider1x1)
-        # self.w1x1.layout.setSpacing(4)
-        self.w1x1.layout.setAlignment(Qt.AlignLeft)
+        self.w1x1.layout.setSpacing(4)
+        # self.w1x1.layout.setAlignment(Qt.AlignLeft)
         self.w2x2 = HW(self.le2x2, self.slider2x2)
-        # self.w2x2.layout.setSpacing(4)
-        self.w2x2.layout.setAlignment(Qt.AlignLeft)
+        self.w2x2.layout.setSpacing(4)
+        # self.w2x2.layout.setAlignment(Qt.AlignLeft)
 
-        clr = {'ul': '#e50000', 'ur': '#efb435', 'll': '#137e6d', 'lr': '#acc2d9'}
         self.Q1 = ClickRegion(self, color=cfg.glob_colors[0], name='Q1')
         self.Q2 = ClickRegion(self, color=cfg.glob_colors[1], name='Q2')
         self.Q3 = ClickRegion(self, color=cfg.glob_colors[2], name='Q3')  # correct
@@ -873,12 +882,17 @@ class ProjectTab(QWidget):
         self.Q4.clicked.connect(self.updateAutoSwimRegions)
 
         self.gl_Q = QGridLayout()
+        self.gl_Q.setContentsMargins(0,0,0,0)
         self.gl_Q.setSpacing(1)
         self.gl_Q.addWidget(self.Q1, 0, 0, 1, 1)
         self.gl_Q.addWidget(self.Q2, 0, 1, 1, 1)
-        self.gl_Q.addWidget(self.Q3, 0, 2, 1, 1)
-        self.gl_Q.addWidget(self.Q4, 0, 3, 1, 1)
-        self.Q_widget = HW(self.Q1, self.Q2, self.Q3, self.Q4)
+        # self.gl_Q.addWidget(self.Q3, 0, 2, 1, 1)
+        # self.gl_Q.addWidget(self.Q4, 0, 3, 1, 1)
+        self.gl_Q.addWidget(self.Q3, 1, 0, 1, 1)
+        self.gl_Q.addWidget(self.Q4, 1, 1, 1, 1)
+        # self.Q_widget = HW(self.Q1, self.Q2, self.Q3, self.Q4)
+        self.Q_widget = QWidget()
+        self.Q_widget.setFixedSize(QSize(50,50))
         self.Q_widget.setLayout(self.gl_Q)
 
         '''
@@ -897,11 +911,14 @@ class ProjectTab(QWidget):
         self.leWhitening.setToolTip(tip)
         self.leWhitening.setFixedSize(QSize(48, 16))
         def fnWhitening():
+            logger.info('')
             # caller = inspect.stack()[1].function
             # if caller == 'main':
-            val = float(self.leWhitening.text())
-            self.dm.whitening = val
-        self.leWhitening.textChanged.connect(fnWhitening)
+            txt = self.leWhitening.text()
+            if txt:
+                val = float(txt)
+                self.dm.whitening = val
+        self.leWhitening.textEdited.connect(fnWhitening)
 
         tip = """The number of sequential SWIM refinements to alignment. In general, greater iterations results in a more refined alignment up to some limit, except for in cases of local maxima or complete misalignment (default=3)."""
         tip = '\n'.join(textwrap.wrap(tip, width=35))
@@ -912,11 +929,10 @@ class ProjectTab(QWidget):
         self.leIterations.setFixedSize(QSize(24, 16))
         def fnIters():
             logger.info('')
-            # caller = inspect.stack()[1].function
-            # if caller == 'main':
-            logger.info(f"self.leIterations.text() = {self.leIterations.text()}")
-            self.dm.set_swim_iterations(int(self.leIterations.text()))
-        self.leIterations.textChanged.connect(fnIters)
+            txt = self.leIterations.text()
+            if txt:
+                self.dm.set_swim_iterations(int(self.leIterations.text()))
+        self.leIterations.textEdited.connect(fnIters)
 
         tip = f"""The full width in pixels of an imaginary, centered grid which SWIM 
         aligns against (default={cfg.DEFAULT_AUTO_SWIM_WINDOW_PERC * 100}% of image width)."""
@@ -961,7 +977,7 @@ class ProjectTab(QWidget):
         self.leClobber.setAlignment(Qt.AlignCenter)
         self.leClobber.setValidator(QIntValidator(1,16))
         self.leClobber.setFixedSize(QSize(24,16))
-        self.leClobber.textChanged.connect(lambda: self.dm.set_clobber_px(x=self.leClobber.text()))
+        self.leClobber.textEdited.connect(lambda: self.dm.set_clobber_px(x=self.leClobber.text()))
         self.wClobber = HW(self.cbClobber, QLabel('size (pixels): '), self.leClobber)
         self.wClobber.layout.setAlignment(Qt.AlignLeft)
         self.wClobber.setMaximumWidth(104)
@@ -990,17 +1006,18 @@ class ProjectTab(QWidget):
 
 
         self.flGrid = QFormLayout()
+        self.flGrid.setHorizontalSpacing(4)
         self.flGrid.setLabelAlignment(Qt.AlignRight)
-        self.flGrid.setFormAlignment(Qt.AlignLeft)
+        self.flGrid.setFormAlignment(Qt.AlignCenter)
         self.flGrid.setContentsMargins(2, 2, 2, 2)
         self.flGrid.setSpacing(2)
 
         self.aaWidgets = []
         self.aaButtons = []
-        for w in range(5):
+        for w in range(6):
             b = QPushButton('Apply All')
-            b.setFixedSize(42, 14)
-            b.clicked.connect(lambda: print('Applying All!'))
+            b.setFixedSize(42, 15)
+            # b.clicked.connect(lambda: print('Applying all!'))
             self.aaButtons.append(b)
             hw = HW(b)
             hw.layout.setAlignment(Qt.AlignRight)
@@ -1011,20 +1028,25 @@ class ProjectTab(QWidget):
         self.aaButtons[2].clicked.connect(lambda: self.dm.aaIters(int(self.leIterations.text())))
         self.aaButtons[3].clicked.connect(lambda: self.dm.aaWhitening(float(self.leWhitening.text())))
         self.aaButtons[4].clicked.connect(lambda: self.dm.aaClobber((self.cbClobber.isChecked(), int(self.leClobber.text()))))
-        self.flGrid.addRow("SWIM 1x1 Window: ", HW(self.w1x1, self.aaWidgets[0]))
-        self.flGrid.addRow("SWIM 2x2 Window: ", HW(self.w2x2, self.aaWidgets[1]))
+        self.aaButtons[5].clicked.connect(lambda: self.dm.aaQuadrants([self.Q1.isClicked, self.Q2.isClicked,self.Q3.isClicked, self.Q4.isClicked]))
+        for b in self.aaButtons:
+            b.clicked.connect(self.dataUpdateMA)
+
+        hw1x1 = HW(self.w1x1, self.aaWidgets[0])
+        hw1x1.layout.setSpacing(4)
+        hw2x2 = HW(self.w2x2, self.aaWidgets[1])
+        hw2x2.layout.setSpacing(4)
+        self.flGrid.addRow("SWIM 1x1 Window: ", hw1x1)
+        self.flGrid.addRow("SWIM 2x2 Window: ", hw2x2)
         self.flGrid.addRow('SWIM Iterations: ', HW(self.leIterations, self.aaWidgets[2]))
         self.flGrid.addRow('Signal Whitening: ', HW(self.leWhitening, self.aaWidgets[3]))
         self.flGrid.addRow('Clobber Fixed Noise: ', HW(self.wClobber, self.aaWidgets[4]))
-        self.flGrid.addRow("Use Quadrants\n"
-                           "(minimum=3): ", self.Q_widget)
+        self.flGrid.addRow("Use Quadrants\n(minimum=3): ", HW(self.Q_widget, self.aaWidgets[5]))
         wids = [self.cbDefaults, self.leSwimWindow, self.leWhitening, self.leIterations, self.cbClobber, self.leClobber]
         for w in wids:
             w.setFixedHeight(16)
-        self.flGrid.addWidget(self.bPush)
+        # self.flGrid.addWidget(self.bPush)
         self.flGrid.addWidget(self.bPull)
-
-
 
         self.bLock = QPushButton()
         self.bLock.setFixedSize(QSize(16, 16))
@@ -1294,15 +1316,16 @@ class ProjectTab(QWidget):
         self.twMethod.setCornerWidget(self.bLock)
         self.twMethod.setStyleSheet("""
         QTabBar::tab {
-            padding: 2px;
-            height: 11px;  
+            padding-top: 1px;
+            padding-bottom: 1px;
+            height: 12px;  
             min-width: 100px;          
             font-size: 9px;
         }
         """)
         self.twMethod.setTabShape(QTabWidget.Triangular)
-        self.twMethod.tabBar().setElideMode(Qt.ElideMiddle)
-        self.twMethod.tabBar().setExpanding(True)
+        # self.twMethod.tabBar().setElideMode(Qt.ElideMiddle)
+        # self.twMethod.tabBar().setExpanding(True)
         self.twMethod.setDocumentMode(True)
         self.twMethod.setTabsClosable(False)
         self.twMethod.setFocusPolicy(Qt.NoFocus)
@@ -1925,6 +1948,7 @@ class ProjectTab(QWidget):
         btns.layout.setSpacing(2)
 
         self.wRightPanel = VW(
+            self.warning_data,
             # self.wRadiobuttons,
             self.swMethod,
             self.checkboxes,
@@ -2353,7 +2377,8 @@ class ProjectTab(QWidget):
         # self.gbGrid.setTitle(f'Level {self.dm.lvl()} SWIM Settings')
 
         self.gbGrid.setTitle(f'Level {self.dm.lvl()} Grid Alignment Settings')
-        self.cbDefaults.setText(f'Uses defaults')
+        # self.cbDefaults.setText(f'Uses defaults')
+        self.cbDefaults.setText(f'Default settings')
         ready = self.dm['level_data'][self.dm.scale]['ready']
         if ready:
             ss = self.dm['stack'][self.dm.zpos]['levels'][self.dm.scale]['swim_settings']
@@ -2416,8 +2441,8 @@ class ProjectTab(QWidget):
             self.bPull.setVisible((self.dm.scale != self.dm.coarsest_scale_key()) and self.dm.is_alignable())
 
             self.bTransform.setEnabled(self.dm.is_aligned())
-            self.bSWIM.setEnabled(self.dm.is_aligned() and not os.path.exists(self.dm.path_aligned()))
-            self.bSaveSettings.setEnabled(not self.dm.ssSavedComports() and self.ht.haskey(self.dm.swim_settings()))
+            # self.bSWIM.setEnabled(self.dm.is_aligned() and not os.path.exists(self.dm.path_aligned()))
+            self.bSaveSettings.setEnabled(not self.dm.ssSavedComports() and self.ht.haskey(self.dm.swim_settings())) #Critical
 
             self.leWhitening.setText(str(ss['whitening']))
             self.leIterations.setText(str(ss['iterations']))
@@ -2984,7 +3009,7 @@ class ProjectTab(QWidget):
         vbl = VBL()
         vbl.setSpacing(0)
         vbl.addWidget(self.wTabs)
-        self.wTabs.setCornerWidget(self.warning_data)
+        # self.wTabs.setCornerWidget(self.warning_data)
         # vbl.addWidget(self.warning_data)
         self.setLayout(vbl)
 
@@ -3018,9 +3043,9 @@ class ProjectTab(QWidget):
         self.brightnessLE.setText('%d' % self.dm.brightness)
         self.brightnessLE.setValidator(QIntValidator(-100, 100))
         self.brightnessLE.setFixedSize(QSize(38,15))
-        self.brightnessLE.textChanged.connect(
+        self.brightnessLE.textEdited.connect(
             lambda: self.brightnessSlider.setValue(int(self.brightnessLE.text())))
-        self.brightnessLE.textChanged.connect(self.fn_brightness_control)
+        self.brightnessLE.textEdited.connect(self.fn_brightness_control)
         self.brightnessSlider = QSlider(Qt.Orientation.Horizontal, self)
         # self.brightnessSlider.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # self.brightnessSlider.setFixedWidth(150)
@@ -3042,9 +3067,9 @@ class ProjectTab(QWidget):
         self.contrastLE.setText('%d' % self.dm.contrast)
         self.contrastLE.setValidator(QIntValidator(-100, 100))
         self.contrastLE.setFixedSize(QSize(38, 15))
-        self.contrastLE.textChanged.connect(
+        self.contrastLE.textEdited.connect(
             lambda: self.contrastSlider.setValue(int(self.contrastLE.text())))
-        self.contrastLE.textChanged.connect(self.fn_contrast_control)
+        self.contrastLE.textEdited.connect(self.fn_contrast_control)
         self.contrastSlider = QSlider(Qt.Orientation.Horizontal, self)
         # self.contrastSlider.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # self.contrastSlider.setFixedWidth(150)
