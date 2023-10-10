@@ -4246,7 +4246,7 @@ class MainWindow(QMainWindow):
         self.wOutputSettings = HW(QVLine(), self.bOutputSettings, VW(hw0, hw1))
         self.wOutputSettings.setContentsMargins(2,0,2,0)
         self.wOutputSettings.setFixedWidth(220)
-        self.wOutputSettings.hide()
+        # self.wOutputSettings.hide()
 
         self.wCpanel = HW(self.wScaleLevel, QVLine(),
                           self.wwZpos, QVLine(),
