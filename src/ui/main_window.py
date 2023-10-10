@@ -1170,6 +1170,8 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def alignAll(self, dm=None):
+
+
         if self._isProjectTab():
             if self.dm.is_alignable():
                 logger.info('\n\nAligning All...\n')
@@ -1369,7 +1371,7 @@ class MainWindow(QMainWindow):
             self.leJump.setEnabled(True)
             self.boxScale.setEnabled(True)
 
-            # self.bAlign.setEnabled(self.dm.is_alignable())
+            self.bAlign.setEnabled(self.dm.is_alignable())
             # self.bAlign.setVisible(not self.dm.is_aligned())
 
             if len(self.dm.scales) == 1:
@@ -4238,21 +4240,22 @@ class MainWindow(QMainWindow):
 
         # vbl = VBL(hw0, hw1)
 
+        self.wPopoutOutputSettings = VW(hw0, hw1)
         self.bOutputSettings = QToolButton()
         self.bOutputSettings.setText('Output\nSettings')
         self.bOutputSettings.setCheckable(True)
         self.bOutputSettings.toggled.connect(lambda state: self.wOutputSettings.setVisible(state))
-
-        self.wOutputSettings = HW(QVLine(), self.bOutputSettings, VW(hw0, hw1))
+        self.wOutputSettings = HW(QVLine(), self.wPopoutOutputSettings)
         self.wOutputSettings.setContentsMargins(2,0,2,0)
         self.wOutputSettings.setFixedWidth(220)
-        # self.wOutputSettings.hide()
+        self.wOutputSettings.hide()
 
         self.wCpanel = HW(self.wScaleLevel, QVLine(),
                           self.wwZpos, QVLine(),
                           self.wZpos,
                           self.wToggleExclude,
                           self.wAlign,
+                          self.bOutputSettings,
                           self.wOutputSettings
                           )
 

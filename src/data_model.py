@@ -718,7 +718,10 @@ class DataModel:
         if s == None: s = self.level
         if l == None: l = self.zpos
         # i = self.swim_settings(s=s, l=l)['reference_index']
-        return self.swim_settings(s=s, l=l)['reference_name']
+        try:
+            return self.swim_settings(s=s, l=l)['reference_name']
+        except:
+            print_exception(extra=f'Section #{l}')
         # return os.path.basename(self._data['stack'][l]['levels'][s]['swim_settings']['reference'])
 
 
