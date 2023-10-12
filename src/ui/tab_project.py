@@ -1706,7 +1706,6 @@ class ProjectTab(QWidget):
         self.rbZarrTransformed.clicked.connect(self.initNeuroglancer)
         # self.rbZarrTransformed.setStyleSheet(style)
 
-
         self.bgZarrSelect = QButtonGroup()
         self.bgZarrSelect.addButton(self.rbZarrRaw)
         self.bgZarrSelect.addButton(self.rbZarrTransformed)
@@ -2441,6 +2440,8 @@ class ProjectTab(QWidget):
         self.parent.bRegenZarr.setEnabled(self.dm.is_aligned())
         # self.gifPlayer.labNull.setText(('Not Aligned.','No Data.')[self.dm.is_aligned()])
         self.bPull.setVisible((self.dm.scale != self.dm.coarsest_scale_key()) and self.dm.is_alignable())
+
+        self.gifPlayer.radiobuttons.setVisible(os.path.exists(self.dm.path_cafm_gif()))
 
         ready = self.dm['level_data'][self.dm.scale]['alignment_ready']
         if self.dm.is_alignable() and ready:

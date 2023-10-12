@@ -5,6 +5,7 @@ import shutil
 import time
 import psutil
 import logging
+import platform
 import imageio
 import imageio.v3 as iio
 from pathlib import Path
@@ -27,6 +28,7 @@ from qtpy.QtWidgets import QApplication
 
 from src.helpers import get_bindir, print_exception
 from src.funcs_zarr import preallocate_zarr
+from src.thumbnailer import Thumbnailer
 import src.config as cfg
 
 try:
@@ -93,6 +95,8 @@ class ZarrWorker(QObject):
         zarr_group = os.path.join(dm.data_location, 'zarr', 's%d' % self.dm.lvl(s=scale))
         z = zarr.open(zarr_group)
 
+        make_all = len(list(self.dm.zattrs.keys())) == 0
+
         indexes = []
         for i in range(len(self.dm)):
             # cur_ss_hash = str(self.dm.ssSavedHash(s=scale,l=i))
@@ -100,6 +104,12 @@ class ZarrWorker(QObject):
             # meta = z.attrs[str(i)]
             # zarr_ss_hash = meta[0]
             # zarr_cafm_hash = meta[1]
+
+            if make_all:
+                indexes.append(i)
+                continue
+
+
             if self.dm.zarrCafmHashComports(s=scale, l=i):
                 logger.info(f"Cache hit {cur_cafm_hash}! Zarr is correct at index {i}.")
             else:
@@ -125,10 +135,17 @@ class ZarrWorker(QObject):
 
         tasks = []
         # for i, sec in enumerate(dm()):
+        to_reduce = []
         for i in indexes:
             ifp = dm.path(s=scale, l=i)  # input file path
             ofp = dm.path_aligned_cafm(s=scale, l=i)  # output file path
             # Todo add flag to force regenerate
+            try:
+                to_reduce.append((ofp, self.dm.path_aligned_cafm_thumb(s=scale, l=i)))
+                print(f"Appending tuple: {(ofp, self.dm.path_aligned_cafm_thumb(s=scale, l=i))}")
+            except:
+                print_exception()
+
             if not os.path.exists(ofp):
                 os.makedirs(os.path.dirname(ofp), exist_ok=True)
                 # cafm = sec['levels'][scale]['cafm']
@@ -166,6 +183,18 @@ class ZarrWorker(QObject):
                 if not self.running():
                     break
 
+
+
+
+        logger.info('\n######## Reducing tuples ########\n')
+        Thumbnailer().reduce_tuples(to_reduce, scale_factor=self.dm.series['thumbnail_scale_factor'] // self.dm.lvl(scale))
+
+        if not self.running():
+            self.finished.emit()
+            return
+
+        print('\n######## Generating gif animations ########\n')
+        generateAnimations(dm=self.dm, indexes=indexes, level=scale)
 
         if not self.running():
             self.finished.emit()
@@ -352,6 +381,31 @@ def run_mir(task):
         'RW %s\n' \
         'E' % (bb_x, bb_y, border, in_fn, a, c, e, b, d, f, out_fn)
     o = run_command(mir_c, arg_list=[], cmd_input=mir_script)
+
+
+
+def generateAnimations(dm, indexes, level):
+    # https://stackoverflow.com/questions/753190/programmatically-generate-video-or-animated-gif-in-python
+
+    first_unskipped = dm.first_unskipped(s=level)
+    for i in indexes:
+        if i == first_unskipped:
+            continue
+        ofn = dm.path_cafm_gif(s=level, l=i)
+        os.makedirs(os.path.dirname(ofn), exist_ok=True)
+        im0 = dm.path_aligned_cafm_thumb(s=level, l=i)
+        im1 = dm.path_aligned_cafm_thumb_ref(s=level, l=i)
+        if not os.path.exists(im0):
+            logger.error(f'Not found: {im0}')
+            return
+        if not os.path.exists(im1):
+            logger.error(f'Not found: {im0}')
+            return
+        try:
+            images = [imageio.imread(im0), imageio.imread(im1)]
+            imageio.mimsave(ofn, images, format='GIF', duration=1, loop=0)
+        except:
+            print_exception()
 
 
 def run_command(cmd, arg_list=None, cmd_input=None):
