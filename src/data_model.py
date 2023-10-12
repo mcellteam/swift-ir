@@ -485,6 +485,7 @@ class DataModel:
         if s == None: s = self.level
         return os.path.join(self.series_location, 'zarr', s)
 
+
     def path_aligned(self, s=None, l=None) -> str:
         if s == None: s = self.level
         if l == None: l = self.zpos
