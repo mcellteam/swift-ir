@@ -2412,7 +2412,8 @@ class ProjectTab(QWidget):
         # self.gbOutputSettings.setTitle(f'Level {self.dm.lvl()} Output Settings')
         # self.gbGrid.setTitle(f'Level {self.dm.lvl()} SWIM Settings')
 
-        self.bRegenZarr.setEnabled(self.dm.is_aligned())
+        self.parent.bRegenZarr.setEnabled(self.dm.is_aligned())
+        # self.gifPlayer.labNull.setText(('Not Aligned.','No Data.')[self.dm.is_aligned()])
 
 
         ready = self.dm['level_data'][self.dm.scale]['alignment_ready']
