@@ -45,6 +45,7 @@ numcodecs.blosc.use_threads = False
 __all__ = ['EMViewer', 'PMViewer', 'EMViewerMendenhall']
 
 logger = logging.getLogger(__name__)
+logger.propagate = False
 # handler = logging.StreamHandler(stream=sys.stdout)
 # logger.addHandler(handler)
 
@@ -465,11 +466,12 @@ class EMViewer(AbstractEMViewer):
             logger.warning('Zarr (.zarray) Not Found: %s' % self.path)
             return
 
-        logger.info(f'Zarr path: {self.path}')
+        # logger.critical(f'Zarr path: {self.path}')
+        # logger.critical(f"nglayout = {nglayout}")
 
         if not nglayout:
             # requested = getData('state,neuroglancer,layout')
-            requested = getData('state,neuroglancer,layout')
+            # requested = getData('state,neuroglancer,layout')
 
             mapping = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
                        'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
@@ -478,6 +480,17 @@ class EMViewer(AbstractEMViewer):
                 nglayout = mapping['4panel']
             else:
                 nglayout = mapping['xy']
+
+
+        # logger.critical(f"nglayout = {nglayout}")
+        # logger.critical(f"self.path = {self.path}")
+
+        # 04:54:47 [viewer_em.initViewer:468] Zarr path: /Users/joelyancey/alignem_data/series/r34_full_series.series/zarr/s4
+        # 04:54:47 [viewer_em.initViewer:469] nglayout = None
+        # 04:54:47 [viewer_em.initViewer:484] nglayout = yz
+        # 04:54:47 [viewer_em.initViewer:485] self.path = /Users/joelyancey/alignem_data/series/r34_full_series.series/zarr/s4
+        # 04:54:47 INFO [funcs_zarr.get_zarr_tensor:57] Requested: /Users/joelyancey/alignem_data/series/r34_full_series.series/zarr/s4
+
 
 
         self.tensor = cfg.tensor = get_zarr_tensor(self.path).result()

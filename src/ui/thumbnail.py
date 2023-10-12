@@ -354,7 +354,7 @@ class CorrSignalThumbnail(QLabel):
         self.extra = extra
         self.name = name
         if self.path:
-            logger.info(f'name = {name} / path = {self.path}')
+            # logger.info(f'name = {name} / path = {self.path}')
             try:
                 # self.setPixmap(QPixmap(path))
                 self.setPixmap(QPixmap.fromImage(QImage(path)))
