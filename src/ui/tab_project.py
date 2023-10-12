@@ -282,7 +282,7 @@ class ProjectTab(QWidget):
                 # logger.info(f"Local Volume:\n{self.editorViewer.LV.info()}")
 
             if self.wTabs.currentIndex() == 0 or init_all:
-                self.updateZarrRadiobuttons()
+                # self.updateZarrRadiobuttons()
                 self.updateNgLayoutCombox()
 
                 path = (self.dm.path_zarr_transformed(), self.dm.path_zarr_raw())[self.rbZarrRaw.isChecked()]
@@ -2413,6 +2413,7 @@ class ProjectTab(QWidget):
             self.warning_data.hide()
 
     def updateZarrRadiobuttons(self):
+        logger.info('')
         isGenerated = self.dm.is_zarr_generated()
         self.parent.bExport.setVisible(self.dm.is_zarr_generated())
         self.gbGrid.setTitle(f'Level {self.dm.lvl()} Grid Alignment Settings')
