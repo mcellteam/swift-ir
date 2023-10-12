@@ -150,18 +150,14 @@ class DataModel:
 
     @property
     def zattrs(self):
-        logger.info('')
         s = self.level
-        l = self.zpos
         path = os.path.join(self.data_location, 'zarr', s)
         z = zarr.open(path)
         return z.attrs
 
     @property
     def zarr(self):
-        logger.info('')
         s = self.level
-        l = self.zpos
         path = os.path.join(self.data_location, 'zarr', s)
         z = zarr.open(path)
         return z
@@ -506,6 +502,23 @@ class DataModel:
         path = os.path.join(self.writeDirCafm(s=s, l=l), name)
         return path
 
+    def path_aligned_cafm_thumb(self, s=None, l=None) -> str:
+        if s == None: s = self.level
+        if l == None: l = self.zpos
+        # name = self.name(s=s, l=l)
+        fn, ext = os.path.splitext(self.name(s=s, l=l))
+        path = os.path.join(self.writeDir(s=s, l=l), fn + '.cafm.thumb' + ext)
+        return path
+
+    def path_aligned_cafm_thumb_ref(self, s=None, l=None) -> str:
+        if s == None: s = self.level
+        if l == None: l = self.zpos
+        # name = self.name(s=s, l=l)
+        i = self.get_ref_index(l=l)
+        fn, ext = os.path.splitext(self.name(s=s, l=i))
+        path = os.path.join(self.writeDir(s=s, l=i), fn + '.cafm.thumb' + ext)
+        return path
+
     def path_thumb_src(self, s=None, l=None) -> str:
         if s == None: s = self.level
         if l == None: l = self.zpos
@@ -539,6 +552,13 @@ class DataModel:
         if l == None: l = self.zpos
         fn, ext = os.path.splitext(self.name(s=s, l=l))
         path = os.path.join(self.writeDir(s=s, l=l), fn + '.gif')
+        return path
+
+    def path_cafm_gif(self, s=None, l=None) -> str:
+        if s == None: s = self.level
+        if l == None: l = self.zpos
+        fn, ext = os.path.splitext(self.name(s=s, l=l))
+        path = os.path.join(self.writeDir(s=s, l=l), fn + '.cafm.gif')
         return path
 
     def dir_signals(self, s=None, l=None) -> str:
@@ -1763,6 +1783,9 @@ class DataModel:
     def zarrCafmHashComports(self, s=None, l=None):
         if s == None: s = self.level
         if l == None: l = self.zpos
+        fu = self.first_unskipped()
+        if l == fu:
+            return True
         cur_cafm_hash = str(self.cafmHash(s=s, l=l))
         zarr_cafm_hash = self.zattrs[str(l)][1]
         # if cur_cafm_hash == zarr_cafm_hash:

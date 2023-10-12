@@ -309,7 +309,7 @@ class Thumbnailer:
         return dt
 
 
-    def reduce_tuples(self, to_reduce, target_size=cfg.TARGET_THUMBNAIL_SIZE):
+    def reduce_tuples(self, to_reduce, target_size=cfg.TARGET_THUMBNAIL_SIZE, scale_factor=None):
         logger.info(f"-------REDUCING TUPLES--------")
         # logger.info(f"-------REDUCING TUPLES--------\n{pprint(to_reduce)}")
 
@@ -319,16 +319,17 @@ class Thumbnailer:
             logger.warning('Argument has no images to reduce.')
             return
 
-        try:
-            sample = to_reduce[0][0]
-            logger.info(f"sample: {sample}")
-            siz_x, siz_y = ImageSize(sample)
-            # siz_x, siz_y = ImageIOSize(next(absFilePaths(src)))
-            scale_factor = int(max(siz_x, siz_y) / target_size)
-        except Exception as e:
-            print_exception()
-            logger.error('Unable to generate thumbnail(level) - Do file(level) exist?')
-            raise e
+        if scale_factor == None:
+            try:
+                sample = to_reduce[0][0]
+                logger.info(f"sample: {sample}")
+                siz_x, siz_y = ImageSize(sample)
+                # siz_x, siz_y = ImageIOSize(next(absFilePaths(src)))
+                scale_factor = int(max(siz_x, siz_y) / target_size)
+            except Exception as e:
+                print_exception()
+                logger.error('Unable to generate thumbnail(level) - Do file(level) exist?')
+                raise e
 
         logger.info(f'Downsampling factor for thumbnails: {scale_factor}')
 
