@@ -1355,7 +1355,8 @@ class MainWindow(QMainWindow):
             self.leJump.setEnabled(True)
             self.boxScale.setEnabled(True)
 
-            self.bAlign.setEnabled(self.dm.is_alignable() and self.dm['level_data'][self.dm.scale]['alignment_ready'])
+            # self.bAlign.setEnabled(self.dm.is_alignable() and self.dm['level_data'][self.dm.scale]['alignment_ready'])
+            self.bAlign.setEnabled(True)
             # self.bAlign.setVisible(not self.dm.is_aligned())
 
             if len(self.dm.scales) == 1:
