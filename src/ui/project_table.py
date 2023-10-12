@@ -367,11 +367,11 @@ class ProjectTable(QWidget):
 
 
     def set_row_data(self, row):
-        print(f"row: {row}")
+        # print(f"row: {row}")
         snr_4x = copy.deepcopy(self.dm.snr_components(s=self.dm.level, l=row))
-        logger.critical(f"SNR: {snr_4x}")
+        # logger.critical(f"SNR: {snr_4x}")
         row_data = self.get_row_data(s=self.dm.level, l=row)
-        pprint.pprint(row_data)
+        pprint.pprint("\n\nrow_data:\n" + row_data)
         method = self.dm.method(s=self.dm.level, l=row)
         if 'grid' in method:
             regions = copy.deepcopy(self.dm.get_grid_regions(l=row))
@@ -460,7 +460,6 @@ class ProjectTable(QWidget):
             elif col == 3:
                 self.table.setItem(row, col, QTableWidgetItem(str(row_data[col])))
             elif col == 4:
-                print(f"4: snr_4x = {snr_4x}")
                 if os.path.exists(row_data[col]):
                     # tn = ThumbnailFast(self, path=row_data[col], name='reference-data', level=scale, z=row)
                     tn = ThumbnailFast(self, path=row_data[col], name='reference-data', s=self.dm.level, l=row)
@@ -470,7 +469,6 @@ class ProjectTable(QWidget):
                 else:
                     logger.warning(f"Path DNE: {row_data[col]}")
             elif col == 5:
-                print(f"5: snr_4x = {snr_4x}")
                 if os.path.exists(row_data[col]):
                     tn = ThumbnailFast(self, path=row_data[col], name='transforming-data', s=self.dm.level, l=row)
                     if self.dm.skipped(l=row):
@@ -479,7 +477,6 @@ class ProjectTable(QWidget):
                 else:
                     logger.warning(f"Path DNE: {row_data[col]}")
             elif col == 6:
-                print(f"6: snr_4x = {snr_4x}")
                 if os.path.exists(row_data[col]):
                     tn = ThumbnailFast(self, path=row_data[col])
                     if self.dm.skipped(l=row):
@@ -488,21 +485,18 @@ class ProjectTable(QWidget):
                 else:
                     logger.warning(f"Path DNE: {row_data[col]}")
             elif col == 7:
-                print(f"7: snr_4x = {snr_4x}")
-
-
                 try:
                     # if method == 'grid_custom':
                     if 'grid' in method:
                         assert regions[0] == 1
                     else:
                         assert snr_4x[0] > 0.0
-
-                    tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x.pop(0, None), name='ms0', annotations=False)
-                    self._ms0[row] = tn
-                    if self.dm.skipped(l=row):
-                        tn.set_no_image()
-                    self.table.setCellWidget(row, col, tn)
+                    if len(snr_4x):
+                        tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x.pop(0), name='ms0', annotations=False)
+                        self._ms0[row] = tn
+                        if self.dm.skipped(l=row):
+                            tn.set_no_image()
+                        self.table.setCellWidget(row, col, tn)
                 except:
                     print_exception()
                     tn = CorrSignalThumbnail(self, name='ms0')
@@ -516,11 +510,12 @@ class ProjectTable(QWidget):
                         assert regions[1] == 1
                     else:
                         assert snr_4x[0] > 0.0
-                    tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x.pop(0, None), name='ms1', annotations=False)
-                    self._ms1[row] = tn
-                    if self.dm.skipped(l=row):
-                        tn.set_no_image()
-                    self.table.setCellWidget(row, col, tn)
+                    if len(snr_4x):
+                        tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x.pop(0), name='ms1', annotations=False)
+                        self._ms1[row] = tn
+                        if self.dm.skipped(l=row):
+                            tn.set_no_image()
+                        self.table.setCellWidget(row, col, tn)
                 except:
                     print_exception()
                     tn = CorrSignalThumbnail(self, name='ms1')
@@ -533,11 +528,12 @@ class ProjectTable(QWidget):
                         assert regions[2] == 1
                     else:
                         assert snr_4x[0] > 0.0
-                    tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x.pop(0, None), name='ms2', annotations=False)
-                    self._ms2[row] = tn
-                    if self.dm.skipped(l=row):
-                        tn.set_no_image()
-                    self.table.setCellWidget(row, col, tn)
+                    if len(snr_4x):
+                        tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x.pop(0), name='ms2', annotations=False)
+                        self._ms2[row] = tn
+                        if self.dm.skipped(l=row):
+                            tn.set_no_image()
+                        self.table.setCellWidget(row, col, tn)
                 except:
                     print_exception()
                     tn = CorrSignalThumbnail(self, name='ms2')
@@ -550,11 +546,12 @@ class ProjectTable(QWidget):
                         assert regions[3] == 1
                     else:
                         assert snr_4x[0] > 0.0
-                    tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x.pop(0, None), name='ms3', annotations=False)
-                    self._ms3[row] = tn
-                    if self.dm.skipped(l=row):
-                        tn.set_no_image()
-                    self.table.setCellWidget(row, col, tn)
+                    if len(snr_4x):
+                        tn = CorrSignalThumbnail(self, path=row_data[col], snr=snr_4x.pop(0), name='ms3', annotations=False)
+                        self._ms3[row] = tn
+                        if self.dm.skipped(l=row):
+                            tn.set_no_image()
+                        self.table.setCellWidget(row, col, tn)
                 except:
                     print_exception()
                     tn = CorrSignalThumbnail(self, name='ms3')

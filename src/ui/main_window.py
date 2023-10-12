@@ -3109,6 +3109,7 @@ class MainWindow(QMainWindow):
         # self.toolbar.addWidget(self.tbbTestThread)
 
     def onSecondPassed(self, val):
+        # logger.critical('')
         def secs_to_hrsminsec(secs: int):
             mins = secs // 60
             secs %= 60
@@ -3119,6 +3120,7 @@ class MainWindow(QMainWindow):
         # logger.info(f'time: {val}')
         self.lcdTimer.display(secs_to_hrsminsec(val))
         self.lcdTimer.update()
+        # QApplication.processEvents()
 
     def updateOutputSettings(self):
         if self.wOutputSettings.isVisible():
@@ -5081,7 +5083,7 @@ class MainWindow(QMainWindow):
     def setPbar(self, n:int):
         '''New method to replace historical pbar functionality 2023-08-09'''
         self.pbar.setValue(n)
-        # QApplication.processEvents() #1007-
+        QApplication.processEvents() #1007-
 
     def resetPbar(self, data:tuple):
         '''New method to replace historical pbar functionality 2023-08-09'''
