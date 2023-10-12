@@ -194,6 +194,7 @@ class ImportImagesDialog(QFileDialog):
         # self.pixmap = None
         self.pixmap = QPixmap()
         # self.pixmap = ThumbnailFast(self).pixmap()
+        self.setStyleSheet("font-size: 10px;")
 
 
 
