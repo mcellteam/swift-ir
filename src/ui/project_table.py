@@ -371,7 +371,8 @@ class ProjectTable(QWidget):
         snr_4x = copy.deepcopy(self.dm.snr_components(s=self.dm.level, l=row))
         # logger.critical(f"SNR: {snr_4x}")
         row_data = self.get_row_data(s=self.dm.level, l=row)
-        pprint.pprint("\n\nrow_data:\n" + row_data)
+        pprint.pprint("\n\nrow_data:\n")
+        pprint.pprint(row_data)
         method = self.dm.method(s=self.dm.level, l=row)
         if 'grid' in method:
             regions = copy.deepcopy(self.dm.get_grid_regions(l=row))
