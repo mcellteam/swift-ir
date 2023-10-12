@@ -59,8 +59,9 @@ class WorkerSignals(QObject):
 
 
 class MAViewer(neuroglancer.Viewer):
-    def __init__(self, dm, role='tra', webengine=None):
+    def __init__(self, parent, dm, role='tra', webengine=None):
         super().__init__()
+        self.parent = parent
         self.dm = dm
         self.index = None
         self.role = role
@@ -203,6 +204,7 @@ class MAViewer(neuroglancer.Viewer):
 
     # async def initViewer(self, obey_zpos=True):
     def initViewer(self):
+        t0 = time.time()
         # caller = inspect.stack()[1].function
         self._blockStateChanged = True #Critical #Always
         # if DEV:
@@ -215,6 +217,8 @@ class MAViewer(neuroglancer.Viewer):
 
 
         self.clear_layers()
+
+        t1 = time.time()
 
         # self.restoreManAlignPts()
 
@@ -232,6 +236,8 @@ class MAViewer(neuroglancer.Viewer):
         except Exception as e:
             cfg.main_window.warn('Unable to Load Data Store at %s' % path)
             raise e
+
+        t2 = time.time()
 
         # logger.critical('Creating Local Volume for %d' %self.index)
 
@@ -256,8 +262,7 @@ class MAViewer(neuroglancer.Viewer):
                 # max_downsampling_scales=cfg.max_downsampling_scales  # Goes a LOT slower when set to 1
             )
 
-
-
+        t3 = time.time()
 
         with self.txn() as s:
             s.layout.type = 'yz'
@@ -284,6 +289,8 @@ class MAViewer(neuroglancer.Viewer):
         self.actions.add('add_manpoint', self.add_matchpoint)
         self.actions.add('swim', self.swim)
 
+        t4 = time.time()
+
         # self.actions.add('swim', self.blinkCallback)
 
         with self.config_state.txn() as s:
@@ -304,12 +311,15 @@ class MAViewer(neuroglancer.Viewer):
             # s.scale_bar_options.font_name = 'monospace'
             # s.scale_bar_options.font_name = 'serif'
 
+        t5 = time.time()
         self.drawSWIMwindow()
+
+        t6 = time.time()
 
         if self.webengine:
             self.webengine.setUrl(QUrl(self.get_viewer_url()))
             # self.webengine.reload()
-            self.webengine.setFocus()
+            # self.webengine.setFocus() #1011-
 
         # self.set_brightness()
         # self.set_contrast()
@@ -317,6 +327,10 @@ class MAViewer(neuroglancer.Viewer):
         self.initZoom()
 
         self._blockStateChanged = False
+
+        t7 = time.time()
+
+        logger.info(f"\ntimings: {t1-t0:.3g}/{t2 - t0:.3g}/{t3 - t0:.3g}/{t4 - t0:.3g}/{t5 - t0:.3g}/{t6 - t0:.3g}/{t7 - t0:.3g}")
 
 
 
@@ -486,8 +500,8 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def add_matchpoint(self, s):
-        # logger.critical('')
-        if self.dm.method() not in ('manual_strict', 'manual_hint'):
+        logger.critical('\n\n--> add_matchpoint -->\n')
+        if self.dm.method() != 'manual':
             logger.warning('add_matchpoint: User may not select points while aligning with grid.')
             return
 
@@ -552,7 +566,8 @@ class MAViewer(neuroglancer.Viewer):
         self.signals.ptsChanged.emit()
         logger.info('%s Match Point Added: %s' % (self.role, str(coords)))
         # self.drawSWIMwindow()
-        logger.info(f'dict = {self.dm.manpoints_pretty()}')
+        # logger.info(f'dict = {self.dm.manpoints_pretty()}')
+        logger.critical('\n\n<-- add_matchpoint <--\n')
 
 
     def setMpData(self):

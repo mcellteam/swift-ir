@@ -96,7 +96,8 @@ class ScaleWorker(QObject):
             return
 
         cur_path = os.path.split(os.path.realpath(__file__))[0] + '/'
-        iscale2_c = os.path.join(Path(cur_path).parent.absolute(), 'lib', get_bindir(), 'iscale2')
+        # iscale2_c = os.path.join(Path(cur_path).parent.absolute(), 'lib', get_bindir(), 'iscale2')
+        iscale2_c = os.path.join(Path(cur_path).absolute(), 'lib', get_bindir(), 'iscale2')
 
         logger.info(f'Reducing {len(self.paths)} images...')
 
@@ -109,7 +110,6 @@ class ScaleWorker(QObject):
                 tasks = []
                 for i in range(0, len(self.paths)):
                     if_arg     = os.path.join(self.src, self.paths[i])
-
                     scale_arg  = '+%d' % get_scale_val(s)
                     ofn = os.path.join(self.out, 'tiff', 's%d' % sv, os.path.split(if_arg)[1])
                     of_arg = 'of=%s' % ofn
@@ -118,7 +118,7 @@ class ScaleWorker(QObject):
                 self.initPbar.emit((len(tasks), desc))
                 t = time.time()
 
-                cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks))
+                cpus = min(psutil.cpu_count(logical=False) - 2, cfg.TACC_MAX_CPUS, len(tasks))
                 # cpus = 10
                 logger.info(f"# Threads: {cpus}")
                 # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
@@ -165,7 +165,9 @@ class ScaleWorker(QObject):
         logger.info(f"Creating thumbnails...\n"
                     f"src: {self.src}\n"
                     f"out: {out}")
-        self._timing_results['t_thumbs'] = Thumbnailer().reduce_main(self.src, self.paths, out)
+
+        thumbnailer = Thumbnailer()
+        self._timing_results['t_thumbs'] = thumbnailer.reduce_main(self.src, self.paths, out)
 
         # count_files(self.out, scales_list)
 
@@ -175,16 +177,16 @@ class ScaleWorker(QObject):
         for s, siz in deepcopy(self.scales):
             sv = get_scale_val(s)
 
+            logger.info(f'Counting files inside of {self.out}')
+
             allow_continue = False
             while not allow_continue:
                 n_files = count_files(self.out, [s])[0]
-
                 allow_continue = n_files >= n_imgs
-
                 # logger.info(f"Waiting on {n_imgs - n_files} images to generate. Total generated: {n_files}/{n_imgs}")
                 print(f"Waiting on: {n_imgs - n_files} {s} image(s), total generated: {n_files}/{n_imgs}", end="\r")
 
-
+            logger.info('Continuing...')
 
             zarr_od = os.path.abspath(os.path.join(self.out, 'zarr'))
             # renew_directory(directory=zarr_od, gui=False)
@@ -254,15 +256,6 @@ class ScaleWorker(QObject):
             dt = time.time() - t
             self._timing_results['t_scale_convert'][s] = dt
             logger.info(f"Elapsed Time: {dt:.3g}s")
-
-
-        self.finished.emit()
-
-
-        if not self.running():
-            self.hudWarning.emit('Canceling Tasks:  Convert TIFFs to NGFF Zarr')
-            self.finished.emit()
-            return
 
         self.hudMessage.emit('**** Autoscaling Complete ****')
         logger.info('**** Autoscaling Complete ****')

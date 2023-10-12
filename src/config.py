@@ -22,7 +22,7 @@ max_downsampled_size=2056  # default=128
 
 DEBUG_MP = 0
 DEBUG_NEUROGLANCER = 0
-DEV_MODE = 0
+DEV_MODE = 1
 VERBOSE_SWIM = 0
 LOG_RECIPE_TO_FILE = 0
 TACC_MAX_CPUS = 80 # x3 is > 304

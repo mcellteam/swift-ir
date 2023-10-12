@@ -1,4 +1,4 @@
-##070d12 - dark steel blue
+#070d12 - dark steel blue
 #336699 - websafe dark steel blue
 #808080 - #128 grey
 #004060 - drafting blue
@@ -7,6 +7,7 @@
 #f3f6fb - New Snow White (https://www.color-name.com/snow-white.color)
 #ede9e8 - my dirty white
 #141414 - Chinese Black (darker than Duron)
+#d3d3d3 - new lightish grey: qlineedit, qcombobox border
 #222222 - Neuroglancer grey
 #339933 - Neuroglancer green (*** 40% lightness ***)
 #194d19 - Neuroglancer green (20% lightness)

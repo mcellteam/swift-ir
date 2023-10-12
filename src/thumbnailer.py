@@ -49,31 +49,31 @@ class Thumbnailer:
         return dt
 
 
-    def reduce_aligned(self, dm, indexes, dest, scale):
-        print(f'\n######## Reducing Thumbnails: Aligned Images ########\n')
-        to_reduce = []
-        baseFileNames = cfg.data.basefilenames()
-        for i, name in enumerate([baseFileNames[i] for i in indexes]):
-            ifn = dm.path_aligned(s=scale, l=i)
-            ofn = dm.path_thumb(s=scale, l=i)
-            if os.path.exists(ifn):
-                if not os.path.exists(ofn):
-                    os.makedirs(os.path.dirname(ofn), exist_ok=True)
-                    to_reduce.append((ifn,ofn))
-            else:
-                raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), ifn)
-
-        if len(to_reduce):
-            pbar_text = f'Reducing {cfg.data.level_pretty()} aligned images (count={len(to_reduce)})...'
-            if cfg.CancelProcesses:
-                cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
-            else:
-                # dt = self.reduce(src=src, od=od, rmdir=False, prefix='', filenames=files, pbar_text=pbar_text, dest=dest)
-                dt = self.reduce_tuples(to_reduce=to_reduce)
-                try:
-                    cfg.data.t_thumbs_aligned = dt
-                except:
-                    pass
+    # def reduce_aligned(self, dm, indexes, dest, scale):
+    #     print(f'\n######## Reducing Thumbnails: Aligned Images ########\n')
+    #     to_reduce = []
+    #     baseFileNames = cfg.data.basefilenames()
+    #     for i, name in enumerate([baseFileNames[i] for i in indexes]):
+    #         ifn = dm.path_aligned(s=scale, l=i)
+    #         ofn = dm.path_thumb(s=scale, l=i)
+    #         if os.path.exists(ifn):
+    #             if not os.path.exists(ofn):
+    #                 os.makedirs(os.path.dirname(ofn), exist_ok=True)
+    #                 to_reduce.append((ifn,ofn))
+    #         else:
+    #             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), ifn)
+    #
+    #     if len(to_reduce):
+    #         pbar_text = f'Reducing {cfg.data.level_pretty()} aligned images (count={len(to_reduce)})...'
+    #         if cfg.CancelProcesses:
+    #             cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
+    #         else:
+    #             # dt = self.reduce(src=src, od=od, rmdir=False, prefix='', filenames=files, pbar_text=pbar_text, dest=dest)
+    #             dt = self.reduce_tuples(to_reduce=to_reduce)
+    #             try:
+    #                 cfg.data.t_thumbs_aligned = dt
+    #             except:
+    #                 pass
 
 
     def reduce_signals(self, indexes, dest, scale):
@@ -305,6 +305,7 @@ class Thumbnailer:
         # pool.close()
         # pool.join()
         dt = time.time() - t0
+        logger.info('Thumbnailing complete.')
         return dt
 
 

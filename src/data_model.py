@@ -15,6 +15,7 @@ import inspect
 import logging
 import hashlib
 import time
+import pprint
 import platform
 import statistics
 from typing import Dict, Any
@@ -27,10 +28,12 @@ from dataclasses import dataclass
 from functools import cache, cached_property
 from functools import reduce
 import numpy as np
+import zarr
 from qtpy.QtCore import QObject, Signal, Slot, QMutex
 from qtpy.QtWidgets import QApplication
 
 from src.funcs_image import SetStackCafm
+from src.hash_table import HashTable
 from src.helpers import print_exception, caller_name
 from src.funcs_image import ComputeBoundingRect, ImageSize
 # from src.hash_table import HashTable
@@ -94,11 +97,14 @@ class DataModel:
         if not read_only:
             if series_location:
                 self.series_location = series_location
+            self.ht = None
             self._data['modified'] = date_time()
             self.signals = Signals()
             self.signals.dataChanged.connect(lambda: logger.critical('emission!'))
 
-        logger.info('<<')
+    def loadHashTable(self):
+        logger.info('')
+        self.ht = cfg.ht = HashTable(self)
 
     def __iter__(self):
         for item in self['stack'][self.zpos]['levels'][self.level]:
@@ -141,6 +147,24 @@ class DataModel:
             return self['series']['count']
         except:
             logger.warning('No Images Found')
+
+    @property
+    def zattrs(self):
+        logger.info('')
+        s = self.level
+        l = self.zpos
+        path = os.path.join(self.data_location, 'zarr', s)
+        z = zarr.open(path)
+        return z.attrs
+
+    @property
+    def zarr(self):
+        logger.info('')
+        s = self.level
+        l = self.zpos
+        path = os.path.join(self.data_location, 'zarr', s)
+        z = zarr.open(path)
+        return z
 
 
     def to_file(self):
@@ -318,40 +342,19 @@ class DataModel:
     def scale(self, s):
         self['current']['level'] = s
 
+    # @property
+    # def gif_speed(self):
+    #     return self['state']['gif_speed']
+    #
+    # @gif_speed.setter
+    # def gif_speed(self, s):
+    #     self['state']['gif_speed'] = s
+
     @property
     def series(self):
         '''Returns the original series info for the alignment'''
         return self['series']
 
-    @property
-    def current_method(self):
-        try:
-            if 'method_opts' in self['stack'][self.zpos]['levels'][self.level]['swim_settings']:
-                return self['stack'][self.zpos]['levels'][self.level]['swim_settings']['method_opts']['method']
-            else:
-                return None
-        except:
-            print_exception()
-            return
-
-
-    @current_method.setter
-    def current_method(self, str):
-        self._data['stack'][self.zpos]['levels'][self.scale]['swim_settings']['method_opts']['method'] = str
-        self.signals.dataChanged.emit()
-
-
-    @property
-    def current_method_pretty(self):
-        convert = {
-            'grid_default': 'Grid Default',
-            'grid_custom': 'Grid Custom',
-            'manual_hint': 'Correspondence Points, Hint',
-            'manual_strict': 'Correspondence Points, Strict',
-            'grid': 'Grid',
-            'manual': 'Match'
-        }
-        return convert[self.current_method]
 
     @property
     def quadrants(self):
@@ -432,11 +435,12 @@ class DataModel:
         if s == None: s = self.level
         if l == None: l = self.zpos
         ss_hash = str(self.ssHash(s=s, l=l))
-        cafm_hash = str(self.cafmHash(s=s, l=l))
-        path = os.path.join(self.data_location, 'data', str(l), s, ss_hash, cafm_hash)
+        # cafm_hash = str(self.cafmHash(s=s, l=l))
+        # path = os.path.join(self.data_location, 'data', str(l), s, ss_hash, cafm_hash)
+        path = os.path.join(self.data_location, 'data', str(l), s, ss_hash)
         return path
 
-    def writeDirSaved(self, s=None, l=None) -> str:
+    def writeDirCafm(self, s=None, l=None) -> str:
         if s == None: s = self.level
         if l == None: l = self.zpos
         ss_hash = str(self.ssSavedHash(s=s, l=l))
@@ -477,19 +481,42 @@ class DataModel:
         else:
             return os.path.join(self.series_location, 'tiff', s, self.name_ref(s=s, l=l))
 
+    def path_zarr_transformed(self, s=None):
+        if s == None: s = self.level
+        return os.path.join(self.data_location, 'zarr', s)
+
+    def path_zarr_raw(self, s=None):
+        if s == None: s = self.level
+        return os.path.join(self.series_location, 'zarr', s)
+
     def path_aligned(self, s=None, l=None) -> str:
         if s == None: s = self.level
         if l == None: l = self.zpos
-        name = self.name(s=s, l=l)
-        path = os.path.join(self.writeDir(s=s, l=l), name)
+        # name = self.name(s=s, l=l)
+        fn, ext = os.path.splitext(self.name(s=s, l=l))
+        # path = os.path.join(self.writeDir(s=s, l=l), name)
+        path = os.path.join(self.writeDir(s=s, l=l), fn + '.thumb' + ext)
         return path
 
 
-    def path_aligned_saved(self, s=None, l=None) -> str:
+    def path_aligned_cafm(self, s=None, l=None) -> str:
         if s == None: s = self.level
         if l == None: l = self.zpos
         name = self.name(s=s, l=l)
-        path = os.path.join(self.writeDirSaved(s=s, l=l), name)
+        path = os.path.join(self.writeDirCafm(s=s, l=l), name)
+        return path
+
+    def path_thumb_src(self, s=None, l=None) -> str:
+        if s == None: s = self.level
+        if l == None: l = self.zpos
+        path = os.path.join(self['info']['series_location'], 'thumbs', self.name(s=s, l=l))
+        return path
+
+    def path_thumb_src_ref(self, s=None, l=None) -> str:
+        if s == None: s = self.level
+        if l == None: l = self.zpos
+        i = self.get_ref_index(l=l)
+        path = os.path.join(self['info']['series_location'], 'thumbs', self.name(s=s, l=i))
         return path
 
     def path_thumb(self, s=None, l=None) -> str:
@@ -556,7 +583,16 @@ class DataModel:
         # return self.get_index(reference)
         return self.swim_settings(s=s, l=l)['reference_index']
 
-    # @cache
+    def is_zarr_generated(self, s=None):
+        '''Returns whether Zarr has been generated/exported'''
+        if s == None: s = self.level
+        path = self.path_zarr_transformed(s=s)
+        if os.path.exists(path):
+            if os.path.exists(os.path.join(path,'.zarray')):
+                return True
+        return False
+
+
     def is_aligned(self, s=None):
         if s == None: s = self.level
         return sum(self.snr_list(s=s)) > 1.0 #Todo make this better
@@ -816,7 +852,7 @@ class DataModel:
 
     # def first_cafm_false(self):
     #     for l in range(len(self)):
-    #         if not self.is_generated(l=l):
+    #         if not self.is_zarr_generated(l=l):
     #             logger.info(f'returning {l}')
     #             return l
     #     return None
@@ -1088,6 +1124,22 @@ class DataModel:
             logger.warning('No SNR data found - returning 0.0...')
             return 0.0
 
+    @property
+    def current_method(self):
+        try:
+            if 'method_opts' in self['stack'][self.zpos]['levels'][self.level]['swim_settings']:
+                return self['stack'][self.zpos]['levels'][self.level]['swim_settings']['method_opts']['method']
+            else:
+                return None
+        except:
+            print_exception()
+            return
+
+    @current_method.setter
+    def current_method(self, str):
+        self._data['stack'][self.zpos]['levels'][self.scale]['swim_settings']['method_opts']['method'] = str
+        self.signals.dataChanged.emit()
+
 
     def method(self, s=None, l=None):
         if s == None: s = self.level
@@ -1103,9 +1155,7 @@ class DataModel:
     def method_pretty(self, s=None, l=None):
         if s == None: s = self.level
         if l == None: l = self.zpos
-        convert = {'grid_default': 'Grid Align', 'grid_custom': 'Grid Custom',
-                   'manual_strict': 'Manual Strict', 'manual_hint': 'Manual Hint',
-                   'grid': 'Grid', 'manual': 'Match'}
+        convert = {'grid': 'Grid Align', 'manual': 'Manual Align'}
         return convert[self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']['method']]
 
 
@@ -1216,7 +1266,9 @@ class DataModel:
         try:
             # return self._data['stack'][z]['levels'][level]['alignment']['method_results']['cumulative_afm'] #0802-
             # method = self.method(s=s, l=l)
+            sss = self.saved_swim_settings(s=s, l=l)
             return self._data['stack'][l]['levels'][s]['cafm']
+            # return self.ht_cafm.get(sss)
         except:
             # caller = inspect.stack()[1].function
             # print_exception(extra=f'Layer {z}, caller: {caller}')
@@ -1228,8 +1280,8 @@ class DataModel:
     def cafmHash(self, s=None, l=None):
         return abs(hash(str(self.cafm(s=s, l=l))))
 
-    # if cfg.pt.ht.haskey(self.saved_swim_settings()):
-    #     d = cfg.pt.ht.get(self.saved_swim_settings())
+    # if self.ht.haskey(self.saved_swim_settings()):
+    #     d = self.ht.get(self.saved_swim_settings())
 
 
     def afm_list(self, s=None, l=None) -> list:
@@ -1266,17 +1318,6 @@ class DataModel:
     #     if s == None: s = self.level
     #     for i in indexes:
     #         self['stack'][i]['levels'][s]['cafm_hash'] = self.cafmHash(s=s, l=i)
-
-
-    def is_generated(self, s=None, l=None):
-        if s == None: s = self.level
-        if l == None: l = self.zpos
-        # answer = self.cafm_registered_hash(s=s, l=l) == self.cafmHash(s=s, l=l)
-        # self['stack'][l]['levels'][s]['cafm_comports'] = answer
-
-        answer = os.path.exists(self.path_aligned_saved(s=s, l=l))
-
-        return answer
 
 
     # def isdefaults(self, level=None, z=None):
@@ -1420,7 +1461,7 @@ class DataModel:
         #     _data_comports = self['stack'][i]['levels'][self.level]['data_comports']
         #     _cafm_comports = self['stack'][i]['levels'][self.level]['cafm_comports']
         #     data_comports = self.data_comports(level=self.level, z=i)[0]
-        #     cafm_comports = self.is_generated(s=self.level, l=i)
+        #     cafm_comports = self.is_zarr_generated(s=self.level, l=i)
         #     if _data_comports != data_comports:
         #         logger.critical(f"Changing 'data_comports' from {_data_comports} to {data_comports} for section #{i}")
         #     if _cafm_comports != cafm_comports:
@@ -1458,7 +1499,7 @@ class DataModel:
         #Todo make this not use global
         do = []
         for i in range(len(self)):
-            if not cfg.pt.ht.haskey(self.saved_swim_settings(s=s, l=i)):
+            if not self.ht.haskey(self.saved_swim_settings(s=s, l=i)):
                 do.append(i)
         return do
 
@@ -1493,7 +1534,7 @@ class DataModel:
 
     # def cafm_comports_indexes(self, s=None):
     #     if s == None: s = self.level
-    #     # return np.array([self.is_generated(level=level, z=z) for z in range(0, len(self))]).nonzero()[0].tolist()
+    #     # return np.array([self.is_zarr_generated(level=level, z=z) for z in range(0, len(self))]).nonzero()[0].tolist()
     #     answer = []
     #     for i in range(len(self)):
     #         if self['stack'][i]['levels'][s]['cafm_comports']:
@@ -1512,7 +1553,7 @@ class DataModel:
         for i in range(len(self)):
             if self.include(s=s, l=i):
                 # if not os.path.exists(self.path_aligned(s=s, l=i)):
-                if not os.path.exists(self.path_aligned_saved(s=s, l=i)):
+                if not os.path.exists(self.path_aligned_cafm(s=s, l=i)):
                     answer.append(i)
 
         data_dn_comport = self.needsAlignIndexes()
@@ -1522,6 +1563,28 @@ class DataModel:
 
         logger.info(f"dt = {time.time() - t0:.3g}")
         return answer
+
+    # def needsGenerateSavedIndexes(self, s=None):
+    #     if s == None: s = self.level
+    #     t0 = time.time()
+    #     answer = []
+    #     # for i in range(len(self)):
+    #     #     if self.include(s=s, l=i):
+    #     #         if (not self['stack'][i]['levels'][s]['data_comports']) or (not self['stack'][i]['levels'][s]['cafm_comports']):
+    #     #             answer.append(i)
+    #     for i in range(len(self)):
+    #         if self.include(s=s, l=i):
+    #             # if not os.path.exists(self.path_aligned(s=s, l=i)):
+    #             if not os.path.exists(self.path_aligned_cafm(s=s, l=i)):
+    #                 answer.append(i)
+    #
+    #     data_dn_comport = self.needsAlignIndexes()
+    #     if len(data_dn_comport):
+    #         sweep = list(range(min(data_dn_comport), len(self)))
+    #         answer = list(set(answer) | set(sweep))
+    #
+    #     logger.info(f"dt = {time.time() - t0:.3g}")
+    #     return answer
 
 
     def level_pretty(self, s=None) -> str:
@@ -2050,6 +2113,69 @@ class DataModel:
     def initLevel(self, level):
         pass
 
+    def pullSettings(self):
+        levels = self.levels
+        cur_level = self.level
+        prev_level = levels[levels.index(cur_level) + 1]
+        logger.critical(f'\n\nPulling settings from resolution level {prev_level} to {cur_level}...\n')
+        # sf = self.lvl(cur_level) / self.lvl(prev_level)
+        sf = int(self.lvl(prev_level) / self.lvl(cur_level))
+
+        self['level_data'][cur_level]['output_settings'] = copy.deepcopy(
+            self['level_data'][prev_level]['output_settings'])
+
+        # Todo need to add 'Align All' functionality for manual alignment settings (region size)
+        self['level_data'][cur_level]['method_presets'] = copy.deepcopy(
+            self['level_data'][prev_level]['method_presets'])
+        self['level_data'][cur_level]['method_presets']['grid']['size_1x1'][0] *= sf
+        self['level_data'][cur_level]['method_presets']['grid']['size_2x2'][1] *= sf
+        self['level_data'][cur_level]['method_presets']['manual'] = copy.deepcopy(
+            self['level_data'][prev_level]['method_presets']['manual'])
+        self['level_data'][cur_level]['method_presets']['manual']['size'] *= sf
+
+        try:
+            # for d in self():
+            for i in range(len(self)):
+                prev_settings = self.swim_settings(s=prev_level, l=i)
+                self['stack'][i]['levels'][cur_level]['swim_settings'] = copy.deepcopy(prev_settings)
+                ss = self['stack'][i]['levels'][cur_level]['swim_settings']
+                try:
+                    init_afm = copy.deepcopy(self.ht.get(self.saved_swim_settings(s=prev_level, l=i)))
+                except:
+                    print_exception(extra=f'Section #{i}. Using identity instead...')
+                    init_afm = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
+                init_afm[0][2] *= sf
+                init_afm[1][2] *= sf
+                # ss = copy.deepcopy(prev_settings)
+                # d['levels'][cur_level]['swim_settings']['img_size'] = self['series']['size_xy'][cur_level]
+                ss['init_afm'] = init_afm
+                mo = ss['method_opts']
+                method = mo['method']
+                if method == 'grid':
+                    mo['size_1x1'][0] *= sf
+                    mo['size_1x1'][1] *= sf
+                    mo['size_2x2'][0] *= sf
+                    mo['size_2x2'][1] *= sf
+                elif method == 'manual':
+                    mo['size'] *= sf
+                    p1 = mo['points']['ng_coords']['tra']
+                    p2 = mo['points']['ng_coords']['ref']
+                    p3 = mo['points']['mir_coords']['tra']
+                    p4 = mo['points']['mir_coords']['ref']
+                    for i, p in enumerate(p1):
+                        p1[i] = [(x * sf, y * sf) for x, y in p]
+                    for i, p in enumerate(p2):
+                        p2[i] = [(x * sf, y * sf) for x, y in p]
+                    for i, p in enumerate(p3):
+                        p3[i] = [(x * sf, y * sf) for x, y in p]
+                    for i, p in enumerate(p4):
+                        p4[i] = [(x * sf, y * sf) for x, y in p]
+        except:
+            print_exception()
+        else:
+            self['level_data'][cur_level]['alignment_ready'] = True
+        logger.info(f"\n\n{pprint.pformat(self['stack'][i]['levels'][cur_level]['swim_settings'])}\n")
+
 
     def initializeStack(self, series_info, series_location, data_location):
         logger.critical(f"\n\nInitializing data model ({data_location})...\n")
@@ -2089,6 +2215,8 @@ class DataModel:
             state={
                 'padlock': False,
                 'current_tab': 0,
+                'gif_speed': 100,
+                'zarr_viewing': 'raw',
                 'neuroglancer': {
                     'layout': '4panel',
                     'zoom': 1.0,
@@ -2168,7 +2296,7 @@ class DataModel:
                 self['level_data'][level].update(
                     initial_snr=None,
                     aligned=False,
-                    ready=level == self.coarsest_scale_key(),
+                    alignment_ready=(level == self.coarsest_scale_key()),
                 )
 
         swim_presets = self.getSwimPresets()
@@ -2179,6 +2307,7 @@ class DataModel:
 
         self['level_data'][bottom_level].update(
             #Todo output settings will need to propagate
+            zarr_made=False,
             swim_presets=swim_presets,
             method_presets=method_presets[bottom_level],
             output_settings={
@@ -2205,6 +2334,9 @@ class DataModel:
 
         self.linkReference(level=bottom_level)
 
+    def setZarrMade(self, b, s=None):
+        if s == None: s = self.level
+        self['level_data'][s]['zarr_made'] = b
 
 def natural_sort(l):
     '''Natural sort a list of strings regardless of zero padding. Faster than O(n*m) performance.'''

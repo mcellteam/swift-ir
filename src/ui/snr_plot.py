@@ -572,7 +572,7 @@ class SnrPlot(QWidget):
                 # brush=None,
                 hoverable=True,
                 tip='Bla bla bla\nSection #: {x:.3g}\nSNR: {y:.3g}'.format,
-                # tip='cafm_no_comport\nx: {x:.3g}\ny: {y:.3g}\nWarnings:\n{self.dm.is_generated(x)}'.format,
+                # tip='cafm_no_comport\nx: {x:.3g}\ny: {y:.3g}\nWarnings:\n{self.dm.is_zarr_generated(x)}'.format,
                 hoverSize=10,
                 # hoverPen=pg.mkPen('#ff0000', width=3),
                 # hoverBrush=None,
@@ -589,7 +589,7 @@ class SnrPlot(QWidget):
             #             if self._memHover0 != ev:
             #                 hoverIndex = int(ev.item().pos()[0])
             #                 print(f"hovered index: {hoverIndex}")
-            #                 comport_data = self.dm.is_generated(z=hoverIndex)
+            #                 comport_data = self.dm.is_zarr_generated(z=hoverIndex)
             #                 if comport_data:
             #                     logger.info(f'CAFM does not comport for section #{hoverIndex}')
             #         self._memHover0 = ev

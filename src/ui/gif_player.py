@@ -1,4 +1,4 @@
-import os, sys, logging
+import os, sys, logging, inspect
 import qtawesome as qta
 import libtiff
 libtiff.libtiff_ctypes.suppress_warnings()
@@ -6,6 +6,7 @@ from qtpy.QtWidgets import *
 from qtpy.QtGui import *
 from qtpy.QtCore import *
 from src.ui.layouts import HBL, VBL, GL, HW, VW, HSplitter, VSplitter
+import src.config as cfg
 
 
 __all__ = ['GifPlayer']
@@ -18,25 +19,30 @@ class GifPlayer(QWidget):
         QWidget.__init__(self, parent)
         self.color = QColor(0, 0, 0)
         self.dm = dm
-        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        self.min = 1
+        self.max = 100
+        # sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         # sizePolicy.setHeightForWidth(True)
         # self.setSizePolicy(sizePolicy)
         # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)  # 1007-
         self.path = self.dm.path_gif()
-        self.movie = QMovie(self.path, QByteArray(), self)
+        # self.movie = QMovie(self.path, QByteArray(), self)
         # self.movie = QMovie(path)
         # self.setMinimumSize(QSize(128,128))
         self.label = QLabel()
         # self.label.setSizePolicy(sizePolicy)
-        self.label.setAutoFillBackground(True)
+        # self.label.setAutoFillBackground(True)
         # self.label.setScaledContents(True)
         # self.label.setMinimumSize(QSize(64,64)) #1007-
         # self.label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.label.setAlignment(Qt.AlignCenter)
-        self.movie.setCacheMode(QMovie.CacheAll)
-        self.label.setMovie(self.movie)
-        self.movie.start()
-        self.movie.loopCount()
+        self.label.setStyleSheet("border: 2px inset #141414; border-radius: 4px;")
+
+        # self.label.setMovie(self.movie)
+        # self.movie.setCacheMode(QMovie.CacheAll)
+        # self.movie.loopCount()
+        # self.movie.frameChanged.connect(lambda: print(f"frame changed! {self.movie.currentFrameNumber()}"))
+        # self.movie.start()
 
         self.bPlay = QPushButton()
         self.bPlay.setStyleSheet("""color: #f3f6fb; background-color:  rgba(255, 255, 255, 200);""")
@@ -57,36 +63,114 @@ class GifPlayer(QWidget):
         self.bBlink.clicked.connect(self.on_click)
         self.bBlink.setEnabled(False)
 
+        self.labNull = QLabel('No Data.')
+        self.labNull.setAlignment(Qt.AlignCenter)
+
+        self.slrGif = QSlider(Qt.Horizontal, self)
+        # self.slrGif.setStyleSheet("""
+        # QSlider::handle:horizontal {
+        # background-color: #ede9e8;
+        # height: 10px;
+        # width:4px;
+        # margin-top: -2px;
+        # margin-bottom: -2px;
+        # border-radius: 4px;
+        # }
+        # QSlider::groove:horizontal {
+        # border: 1px solid #bbb;```
+        #
+        # height: 10px;
+        # border-radius: 4px;
+        # }
+        # """)
+        # self.slrGif.setMaximumWidth(100)
+        self.slrGif.setRange(self.min, self.max)
+        def fn_slrGif(val):
+            caller = inspect.stack()[1].function
+            if caller == 'main':
+                self.set_speed(val)
+
+        self.slrGif.valueChanged[int].connect(fn_slrGif)
+
+        self.labMs = QLabel('ms')
+        self.labMs.setStyleSheet("color: #f3f6fb;")
+
+        self.leSlr = QLineEdit()
+        def fn():
+            val = int(self.leSlr.text())
+            logger.info(f'[{val}]')
+            self.set_speed(val)
+        # self.leSlr.textEdited.connect(fn)
+        self.leSlr.textEdited[str].connect(fn)
+        self.leSlr.setAlignment(Qt.AlignCenter)
+        self.leSlr.setValidator(QIntValidator(self.min, self.max))
+        self.leSlr.setMaximumWidth(34)
+        # self.leSlr.setStyleSheet("color: #f3f6fb; border: 1px solid #f3f6fb;")
+        # self.leSlr.setStyleSheet("border: 1px solid #f3f6fb;")
+        # self.leW = HW(self.leSlr, self.labMs)
+        self.wSlrGif = HW(self.slrGif, self.leSlr)
+
         self.controls = HW(self.bBlink, self.bPlay)
-        self.controls.layout.setAlignment(Qt.AlignLeft | Qt. AlignTop)
+        self.controls.layout.setContentsMargins(4,4,4,4)
+        self.controls.layout.setAlignment(Qt.AlignLeft | Qt.AlignTop)
         # self.controls.move(2, 2)
         self.gl = GL()
+        self.vl = QVBoxLayout()
+        self.vl.setContentsMargins(0,0,0,0)
+        self.vl.setSpacing(2)
         self.gl.setContentsMargins(0,0,0,0)
-        self.gl.addWidget(self.label, 0, 0, 2, 2)
+        self.gl.addWidget(self.labNull, 0, 0, 3, 3)
+        self.gl.addWidget(self.label, 0, 0, 3, 3)
         self.gl.addWidget(self.controls, 0, 0, 0, 0)
         self.gl.setRowStretch(0, 0)
         self.gl.setRowStretch(1, 9)
         self.gl.setColumnStretch(0, 0)
         self.gl.setColumnStretch(1, 9)
+        self.w = QWidget()
+        self.w.setLayout(self.gl)
         # self.setStyleSheet("""color: #f3f6fb; background-color: rgba(255, 255, 255, 160);""")
         # self.setStyleSheet("""color: #f3f6fb; background-color: #000000;""")
 
-        self.timerGif = QTimer(self)
-        self.timerGif.setInterval(750)
-        self.timerGif.setSingleShot(False)
-        self.timerGif.timeout.connect(self.on_click)
+        # self.timerGif = QTimer(self)
+        # self.timerGif.setInterval(750)
+        # self.timerGif.setSingleShot(False)
+        # self.timerGif.timeout.connect(self.on_click)
 
-        self.setLayout(self.gl)
-        self.setStyleSheet(f"background-color: #000000;")
+        self.vl.addWidget(self.w)
+        self.vl.addWidget(self.wSlrGif)
+
+        self.setLayout(self.vl)
+        # self.setStyleSheet(f"background-color: #000000;")
+
+    @Slot()
+    def set_speed(self, val):
+        # self.movie.stop()
+        # self.movie.start()
+        logger.info(f'Setting animation speed: {val}')
+        self.movie.stop()
+        cfg.settings['gif_speed'] = val
+        self.movie.setSpeed(val)
+        self.leSlr.setText('%d' % val)
+        self.slrGif.setValue(val)
+        self.label.setMovie(self.movie)
+        # self.label.update()
+        self.movie.start()
+        cfg.mw.saveUserPreferences(silent=True)
+        QApplication.processEvents()
+
+
 
     def start(self):
         logger.info('')
-        self.timerGif.start()
+        # self.timerGif.start()
+        self.movie.start()
         self.bPlay.setIcon(qta.icon('fa.pause', color='#161c20'))
 
     def stop(self):
         logger.info('')
-        self.timerGif.stop()
+        # self.timerGif.stop()
+
+        self.movie.stop()
         self.bPlay.setIcon(qta.icon('fa.play', color='#161c20'))
 
     def onPlayButton(self):
@@ -100,9 +184,21 @@ class GifPlayer(QWidget):
             self.bBlink.setEnabled(True)
 
     def set(self):
-        self.movie = QMovie(self.path, QByteArray(), self)
-        self.label.setMovie(self.movie)
+        # self.movie = QMovie(self.path, QByteArray(), self)
         self.path = self.dm.path_gif()
+        self.movie = QMovie(self.path)
+        self.movie.setCacheMode(QMovie.CacheAll)
+        # self.movie.setSpeed(5)
+        # self.movie.loopCount()
+        # self.movie.frameChanged.connect(lambda: print(f"frame changed! {self.movie.currentFrameNumber()}"))
+        self.movie.setFileName(self.path)
+        self.label.setMovie(self.movie)
+        speed = max(5, cfg.settings['gif_speed'])
+        # cfg.settings['gif_speed'] = speed
+        self.set_speed(speed)
+        # self.leSlr.setText('%d' % speed)
+        # self.movie.setSpeed(speed)
+        # self.slrGif.setValue(speed)
         self.movie.start()
         self.update()
 
@@ -117,7 +213,7 @@ class GifPlayer(QWidget):
     def paintEvent(self, event):
         qp = QPainter()
         qp.begin(self)
-        qp.fillRect(event.rect(), QBrush(self.color))
+        # qp.fillRect(event.rect(), QBrush(self.color))
 
         # self.r = QRect(0, 0, self.width(), self.height())
 

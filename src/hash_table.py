@@ -6,12 +6,19 @@ import json
 import pickle
 
 class HashTable:
-    def __init__(self, location, name='data.pickle'):
+    def __init__(self, dm, name='data.pickle'):
+        self.dm = dm
         self.data = {}
-        self.location = location
         self.name = name
-        self.path = os.path.join(self.location, self.name)
+        self.path = os.path.join(self.dm.data_location, self.name)
         self.unpickle()
+
+    def __len__(self):
+        return self.count
+
+    @property
+    def count(self):
+        return len(self.data)
 
     def to_json(self, path):
         with open(path, 'w', encoding='utf-8') as f:
@@ -57,6 +64,16 @@ class HashTable:
 
     def get(self, key):
         """Retrieve the value associated with the given key."""
+        hashkey = self._hash(key)
+        if hashkey in self.data:
+            for k, v in self.data[hashkey]:
+                if k == key:
+                    return v
+        raise KeyError(f"Key '{key}' not found in the hash data.")
+
+    def geti(self, i):
+        """Retrieve the value associated with the given key."""
+        key = self.dm.swim_settings(s=self.dm.scale, l=i)
         hashkey = self._hash(key)
         if hashkey in self.data:
             for k, v in self.data[hashkey]:

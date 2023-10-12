@@ -194,8 +194,9 @@ def remove_zarr(path) -> None:
 
 def preallocate_zarr(dm, name, group, shape, dtype, overwrite, gui=True, attr=None):
     '''zarr.blosc.list_compressors() -> ['blosclz', 'lz4', 'lz4hc', 'zlib', 'zstd']'''
+    logger.info("\n\n--> preallocate -->\n")
     cname, clevel, chunkshape = dm.get_user_zarr_settings()
-    src = os.path.abspath(dm.dest())
+    src = os.path.abspath(dm.data_location)
     path_zarr = os.path.join(src, name)
     path_out = os.path.join(path_zarr, group)
     logger.info(f'allocating {name}/{group}...')
@@ -205,7 +206,7 @@ def preallocate_zarr(dm, name, group, shape, dtype, overwrite, gui=True, attr=No
     if os.path.exists(path_out) and (overwrite == False):
         logger.warning('Overwrite is False - Returning')
         return
-
+    print('')
     output_text = f'\n  Zarr root : {os.path.join(os.path.basename(src), name)}' \
                   f'\n      group :   └ {group}({name}) {dtype} {cname}/{clevel}' \
                   f'\n      shape : {str(shape)} ' \
@@ -213,9 +214,10 @@ def preallocate_zarr(dm, name, group, shape, dtype, overwrite, gui=True, attr=No
 
     try:
         if overwrite and os.path.exists(path_out):
+            logger.info(f'Removing {path_out}...')
             remove_zarr(path_out)
         # synchronizer = zarr.ThreadSynchronizer()
-        # arr = zarr.group(store=path_zarr, synchronizer=synchronizer) # overwrite cannot be set to True here, will overwrite entire Zarr
+        # arr = zarr.group(store=path_zarr_transformed, synchronizer=synchronizer) # overwrite cannot be set to True here, will overwrite entire Zarr
         arr = zarr.group(store=path_zarr)
         compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
 
@@ -238,6 +240,7 @@ def preallocate_zarr(dm, name, group, shape, dtype, overwrite, gui=True, attr=No
     else:
         # cfg.main_window.hud.done()
         logger.info(output_text)
+    logger.info(f"\n\n<-- preallocate <--\n")
 
 
 def write_metadata_zarr_multiscale(path):

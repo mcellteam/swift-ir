@@ -32,6 +32,7 @@ from src.ui.dialogs import ImportImagesDialog
 from src.ui.layouts import HBL, VBL, GL, HW, VW, HSplitter, VSplitter
 from src.ui.tab_project import VerticalLabel
 from src.viewer_em import PMViewer
+from src.thumbnailer import Thumbnailer
 
 import src.config as cfg
 
@@ -140,7 +141,9 @@ class OpenProject(QWidget):
         # self.cmbSelectSeries.completer().setCompletionMode(QCompleter.PopupCompletion)
         self.cmbSelectSeries.setCursor(QCursor(Qt.PointingHandCursor))
         self.loadCombos()
-        self.cmbSelectSeries.currentIndexChanged.connect(self.onSelectSeriesCombo)
+        # self.cmbSelectSeries.currentIndexChanged.connect(self.onSelectSeriesCombo)
+        # self.cmbSelectSeries.currentIndexChanged.connect(self.onSelectSeriesCombo)
+        self.cmbSelectSeries.textActivated.connect(self.onSelectSeriesCombo)
 
 
         # self.bPlusAlignment = HoverButton('New')
@@ -182,7 +185,7 @@ class OpenProject(QWidget):
         self.w_cmbSelectSeries = HW(self.cmbSelectSeries, self.cmbLevel, self.bPlusSeries, self.bMinusSeries)
 
         self.w_cmbSelectAlignment = HW(self.cmbSelectAlignment, self.bOpenAlignment, self.bPlusAlignment, self.bMinusAlignment)
-        self.w_cmbSelectAlignment.hide()
+        # self.w_cmbSelectAlignment.hide()
 
         self.toolbar = QToolBar()
         # self.toolbar.setStyleSheet("color: #ede9e8; background-color: #161c20;")
@@ -399,8 +402,8 @@ class OpenProject(QWidget):
 
         self.setLayout(self.vbl_main)
 
-        if self.cmbSelectSeries.currentText():
-            self.w_cmbSelectAlignment.setVisible(True)
+        # if self.cmbSelectSeries.currentText():
+        #     self.w_cmbSelectAlignment.setVisible(True)
 
         logger.info('<<')
 
@@ -427,8 +430,8 @@ class OpenProject(QWidget):
                 with open(path, 'r') as f:
                     data=json.load(f)
                 return data
-            except:
-                print_exception()
+            except json.decoder.JSONDecodeError:
+                logger.warning(f'JSON decoder error: {path}')
         return None
 
 
@@ -481,6 +484,11 @@ class OpenProject(QWidget):
             if os.path.exists(path):
                 try:
                     data = self.getDict(path)
+                    assert isinstance(data,dict)
+                except AssertionError:
+                    logger.warning(f'Unable to access project data model at {directory}')
+                    return None
+                try:
                     uuid = data['info']['series_uuid']
                 except json.decoder.JSONDecodeError:
                     logger.warning('JSON decoder error!')
@@ -627,13 +635,22 @@ class OpenProject(QWidget):
             opts['size_zyx'][key] = (count, siz[1], siz[0])
             opts['size_xy'][key] = siz
 
+
+
+
+        siz_x, siz_y = ImageSize(opts['paths'][1])
+        # siz_x, siz_y = ImageIOSize(next(absFilePaths(src)))
+        sf = int(max(siz_x, siz_y) / cfg.TARGET_THUMBNAIL_SIZE)
+        opts['thumbnail_scale_factor'] = sf
+
         jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
         with open(os.path.join(out, 'info.json'), 'w') as f:
             f.write(jde.encode(copy.deepcopy(opts)))
 
-
         cfg.mw.autoscaleSeries(src, out, opts)
+
         cfg.settings['series_combo_text'] = out
+
         logger.info('done')
 
 
@@ -692,12 +709,9 @@ class OpenProject(QWidget):
 
         cfg.mw.hud('Generating directory structure for alignment data...')
         for k in info['levels']:
-            logger.info(f"creating {os.path.join(out, 'zarr', k)}")
             os.makedirs(os.path.join(out, 'zarr',        k), exist_ok=True)
-
         for i in range(n):
-            logger.info(f"creating {os.path.join(out, 'zarr', k)}")
-            os.makedirs(os.path.join(out, 'zarr', k), exist_ok=True)
+            # logger.info(f"creating {os.path.join(out, 'zarr', k)}")
             for k in info['levels']:
                 os.makedirs(os.path.join(out, 'data', str(i), k), exist_ok=True)
 
@@ -806,10 +820,10 @@ class OpenProject(QWidget):
                 except:
                     print_exception()
 
-
         else:
             cfg.mw.warn(f"Series not found: {path}")
-        time.sleep(2)
+        logger.info('Sleeping for 3 seconds...')
+        time.sleep(3)
         self.refresh()
 
 
@@ -822,6 +836,7 @@ class OpenProject(QWidget):
         # self.cmbSelectSeries.clearEditText()
         # self.cmbSelectAlignment.clearEditText()
         self.cmbLevel.clear()
+        logger.info(f"cfg.settings['series_combo_text'] = {cfg.settings['series_combo_text']}")
 
         cur_series = ''
         if cfg.settings['series_combo_text']:
@@ -848,18 +863,18 @@ class OpenProject(QWidget):
 
             logger.info(f"Found series:\n{pformat(self.valid_series_list)}")
 
-            if cfg.settings['series_combo_text']:
-                recent = os.path.basename(cfg.settings['series_combo_text'])
-                logger.critical(f'recent = {recent}')
-                logger.critical(f"recent in self.valid_series_list? {recent in self.valid_series_list}")
-                if recent in self.valid_series_list:
-                    self.cmbSelectSeries.setCurrentText(recent)
+            last_viewed = cfg.settings['series_combo_text']
+            if os.path.exists(last_viewed):
+                if last_viewed in self.valid_series_list:
+                    self.cmbSelectSeries.setCurrentText(last_viewed)
             # if self.cmbSelectSeries.currentText():
             #     cfg.settings['series_combo_text'] = self.cmbSelectSeries.currentText()
             self.loadLevelsCombo()
             self.loadAlignmentCombo()
             self.update()
-        logger.info('<<')
+
+        # logger.info(f"cfg.settings['series_combo_text'] = {cfg.settings['series_combo_text']}")
+        # logger.info('<<')
 
     def onSelectSeriesCombo(self):
         logger.info('')
@@ -881,9 +896,9 @@ class OpenProject(QWidget):
                     path_l, path_r = self.get_pmviewer_paths()
                     self.viewer.initViewer(path_l=path_l, path_r=path_r)
                     # self.viewer.initZoom(w=w, h=h)
-                    self.w_cmbSelectAlignment.setVisible(True)
-                else:
-                    self.w_cmbSelectAlignment.setVisible(False)
+                #     self.w_cmbSelectAlignment.setVisible(True)
+                # else:
+                #     self.w_cmbSelectAlignment.setVisible(False)
                 self.webengine.setFocus()
 
     def loadLevelsCombo(self):
