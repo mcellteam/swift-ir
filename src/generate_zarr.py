@@ -88,7 +88,28 @@ class ZarrWorker(QObject):
 
         dm.set_stack_cafm(s=scale)
 
-        print_example_cafms(dm)
+        # print_example_cafms(dm)
+
+        zarr_group = os.path.join(dm.data_location, 'zarr', 's%d' % self.dm.lvl(s=scale))
+        z = zarr.open(zarr_group)
+
+        indexes = []
+        for i in range(len(self.dm)):
+            # cur_ss_hash = str(self.dm.ssSavedHash(s=scale,l=i))
+            cur_cafm_hash = str(self.dm.cafmHash(s=scale,l=i))
+            # meta = z.attrs[str(i)]
+            # zarr_ss_hash = meta[0]
+            # zarr_cafm_hash = meta[1]
+            if self.dm.zarrCafmHashComports(s=scale, l=i):
+                logger.info(f"Cache hit {cur_cafm_hash}! Zarr is correct at index {i}.")
+            else:
+                indexes.append(i)
+
+        if not len(indexes):
+            logger.info("\n\nZarr is in sync.\n")
+            self.finished.emit()
+            return
+
 
         if dm.has_bb():
             # Note: now have got new cafm'level -> recalculate bounding box
@@ -103,14 +124,16 @@ class ZarrWorker(QObject):
                     f'Offsets            : {rect[0]}, {rect[1]}')
 
         tasks = []
-        for i, sec in enumerate(dm()):
+        # for i, sec in enumerate(dm()):
+        for i in indexes:
             ifp = dm.path(s=scale, l=i)  # input file path
             ofp = dm.path_aligned_cafm(s=scale, l=i)  # output file path
             # Todo add flag to force regenerate
             if not os.path.exists(ofp):
                 os.makedirs(os.path.dirname(ofp), exist_ok=True)
                 # cafm = sec['levels'][scale]['cafm']
-                cafm = sec['levels'][scale]['cafm']
+                # cafm = sec['levels'][scale]['cafm']
+                cafm = self.dm['stack'][i]['levels'][scale]['cafm']
                 tasks.append([ifp, ofp, rect, cafm, 128])
             else:
                 logger.info(f'Cache hit (transformed image): {ofp}')
@@ -154,8 +177,8 @@ class ZarrWorker(QObject):
         dm = self.dm
         scale = dm.scale
 
-        zarr_group = os.path.join(dm.data_location, 'zarr', 's%d' % dm.lvl())
-        z = zarr.open(zarr_group)
+        # zarr_group = os.path.join(dm.data_location, 'zarr', 's%d' % dm.lvl())
+        # z = zarr.open(zarr_group)
 
         # sshash_list = [str(dm.ssSavedHash(s=scale, l=i)) for i in range(len(dm))]
         # cafmhash_list = [str(dm.cafmHash(s=scale, l=i)) for i in range(len(dm))]
@@ -186,7 +209,8 @@ class ZarrWorker(QObject):
         fu = dm.first_unskipped()
 
         tasks = []
-        for i in range(len(dm)):
+        # for i in range(len(dm)):
+        for i in indexes:
             ssHash = str(dm.ssSavedHash(s=scale, l=i))
             cafmHash = str(dm.cafmHash(s=scale, l=i))
             # src = dm.path_aligned(s=scale, l=i)

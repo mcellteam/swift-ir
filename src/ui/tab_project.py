@@ -106,24 +106,50 @@ class ProjectTab(QWidget):
         if alignment_ready:
             if self.twMethod.currentIndex() == 0:
                 try:
+                    # self.aaButtons[0].setEnabled(self.dm['defaults'][self.dm.level]['method_opts']['size_1x1'] !=
+                    #                              self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
+                    #                                  'method_opts']['size_1x1'])
+                    # self.aaButtons[1].setEnabled(self.dm['defaults'][self.dm.level]['method_opts']['size_2x2'] !=
+                    #                              self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
+                    #                                  'method_opts']['size_2x2'])
+                    # self.aaButtons[2].setEnabled(self.dm['defaults'][self.dm.level]['iterations'] !=
+                    #                              self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings']['iterations'])
+                    # self.aaButtons[3].setEnabled(self.dm['defaults'][self.dm.level]['whitening'] !=
+                    #                              self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
+                    #                                  'whitening'])
+                    # self.aaButtons[4].setEnabled((self.dm['defaults'][self.dm.level]['clobber'] !=
+                    #                              self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
+                    #                                  'clobber']) or (self.dm['defaults'][self.dm.level]['clobber_size'] !=
+                    #                                                  self.dm['stack'][self.dm.zpos]['levels'][self.dm.level][
+                    #                                                      'swim_settings']['clobber_size']))
+                    # self.aaButtons[5].setEnabled(self.dm['defaults'][self.dm.level]['method_opts']['quadrants'] !=
+                    #                              self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
+                    #                                  'method_opts']['quadrants'])
                     self.aaButtons[0].setEnabled(self.dm['defaults'][self.dm.level]['method_opts']['size_1x1'] !=
-                                                 self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
+                                                 self.dm['stack'][self.dm.zpos]['levels'][self.dm.level][
+                                                     'swim_settings'][
                                                      'method_opts']['size_1x1'])
                     self.aaButtons[1].setEnabled(self.dm['defaults'][self.dm.level]['method_opts']['size_2x2'] !=
-                                                 self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
+                                                 self.dm['stack'][self.dm.zpos]['levels'][self.dm.level][
+                                                     'swim_settings'][
                                                      'method_opts']['size_2x2'])
                     self.aaButtons[2].setEnabled(self.dm['defaults'][self.dm.level]['iterations'] !=
-                                                 self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings']['iterations'])
+                                                 self.dm['stack'][self.dm.zpos]['levels'][self.dm.level][
+                                                     'swim_settings']['iterations'])
                     self.aaButtons[3].setEnabled(self.dm['defaults'][self.dm.level]['whitening'] !=
-                                                 self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
+                                                 self.dm['stack'][self.dm.zpos]['levels'][self.dm.level][
+                                                     'swim_settings'][
                                                      'whitening'])
                     self.aaButtons[4].setEnabled((self.dm['defaults'][self.dm.level]['clobber'] !=
-                                                 self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
-                                                     'clobber']) or (self.dm['defaults'][self.dm.level]['clobber_size'] !=
-                                                                     self.dm['stack'][self.dm.zpos]['levels'][self.dm.level][
-                                                                         'swim_settings']['clobber_size']))
+                                                  self.dm['stack'][self.dm.zpos]['levels'][self.dm.level][
+                                                      'swim_settings'][
+                                                      'clobber']) or (
+                                                             self.dm['defaults'][self.dm.level]['clobber_size'] !=
+                                                             self.dm['stack'][self.dm.zpos]['levels'][self.dm.level][
+                                                                 'swim_settings']['clobber_size']))
                     self.aaButtons[5].setEnabled(self.dm['defaults'][self.dm.level]['method_opts']['quadrants'] !=
-                                                 self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
+                                                 self.dm['stack'][self.dm.zpos]['levels'][self.dm.level][
+                                                     'swim_settings'][
                                                      'method_opts']['quadrants'])
                 except:
                     print_exception()
@@ -198,13 +224,13 @@ class ProjectTab(QWidget):
             # if self.dm.is_aligned():
             #     self.gifPlayer.start()
         elif index == 2:
-            self.project_table.initTableData()
+            self.snr_plot.initSnrPlot()
         elif index == 3:
+            self.project_table.initTableData()
+        elif index == 4:
+            self.treeview.collapseAll()
             self.updateTreeWidget()
             self.treeview_model.jumpToLayer()
-            self.treeview.collapseAll()
-        elif index == 4:
-            self.snr_plot.initSnrPlot()
         self.parent.dataUpdateWidgets() #Todo might be redundant thumbail redraws
         QApplication.processEvents()
 
@@ -2414,13 +2440,13 @@ class ProjectTab(QWidget):
 
         self.parent.bRegenZarr.setEnabled(self.dm.is_aligned())
         # self.gifPlayer.labNull.setText(('Not Aligned.','No Data.')[self.dm.is_aligned()])
-
+        self.bPull.setVisible((self.dm.scale != self.dm.coarsest_scale_key()) and self.dm.is_alignable())
 
         ready = self.dm['level_data'][self.dm.scale]['alignment_ready']
         if self.dm.is_alignable() and ready:
             self.swMethod.setCurrentIndex(0)
             # self.btnsSWIM.show()
-            self.bPull.setVisible((self.dm.scale != self.dm.coarsest_scale_key()) and self.dm.is_alignable())
+            # self.bPull.setVisible((self.dm.scale != self.dm.coarsest_scale_key()) and self.dm.is_alignable())
             self.bSWIM.show()
             self.bSaveSettings.show()
             ss = self.dm['stack'][self.dm.zpos]['levels'][self.dm.scale]['swim_settings']

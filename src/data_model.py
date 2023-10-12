@@ -1550,11 +1550,19 @@ class DataModel:
         #     if self.include(s=s, l=i):
         #         if (not self['stack'][i]['levels'][s]['data_comports']) or (not self['stack'][i]['levels'][s]['cafm_comports']):
         #             answer.append(i)
+        if not self.is_zarr_generated(s=s):
+            return list(range(len(self)))
+
+
         for i in range(len(self)):
-            if self.include(s=s, l=i):
-                # if not os.path.exists(self.path_aligned(s=s, l=i)):
-                if not os.path.exists(self.path_aligned_cafm(s=s, l=i)):
-                    answer.append(i)
+            if not self.zarrCafmHashComports(s=s, l=i):
+                answer.append(i)
+
+
+            # if self.include(s=s, l=i):
+            #     # if not os.path.exists(self.path_aligned(s=s, l=i)):
+            #     if not os.path.exists(self.path_aligned_cafm(s=s, l=i)):
+            #         answer.append(i)
 
         data_dn_comport = self.needsAlignIndexes()
         if len(data_dn_comport):
@@ -1751,6 +1759,16 @@ class DataModel:
         if s == None: s = self.level
         if l == None: l = self.zpos
         return self.ssHash(s=s, l=l) == self.ssSavedHash(s=s, l=l)
+
+    def zarrCafmHashComports(self, s=None, l=None):
+        if s == None: s = self.level
+        if l == None: l = self.zpos
+        cur_cafm_hash = str(self.cafmHash(s=s, l=l))
+        zarr_cafm_hash = self.zattrs[str(l)][1]
+        # if cur_cafm_hash == zarr_cafm_hash:
+        #     logger.info(f"Cache hit {cur_cafm_hash}! Zarr is correct at index {l}.")
+        return cur_cafm_hash == zarr_cafm_hash
+
 
 
     def set_whitening(self, f: float, s=None, l=None) -> None:
@@ -2132,6 +2150,12 @@ class DataModel:
         self['level_data'][cur_level]['method_presets']['manual'] = copy.deepcopy(
             self['level_data'][prev_level]['method_presets']['manual'])
         self['level_data'][cur_level]['method_presets']['manual']['size'] *= sf
+
+        self['defaults'][cur_level].update(copy.deepcopy(self['defaults'][prev_level]))
+        self['defaults'][cur_level]['method_opts']['size_1x1'][0] *= sf
+        self['defaults'][cur_level]['method_opts']['size_1x1'][1] *= sf
+        self['defaults'][cur_level]['method_opts']['size_2x2'][0] *= sf
+        self['defaults'][cur_level]['method_opts']['size_2x2'][1] *= sf
 
         try:
             # for d in self():

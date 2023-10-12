@@ -40,6 +40,7 @@ numcodecs.blosc.use_threads = False
 __all__ = ['MAViewer']
 
 logger = logging.getLogger(__name__)
+logger.propagate = False
 
 # t = Timer()
 

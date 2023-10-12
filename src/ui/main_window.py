@@ -1148,10 +1148,7 @@ class MainWindow(QMainWindow):
             index = self.dm.zpos
         self.align(
             dm=dm,
-            align_indexes=[index],
-            regen_indexes=[index],
-            align=align,
-            regenerate=regenerate
+            indexes=[index],
         )
 
 
@@ -1199,6 +1196,11 @@ class MainWindow(QMainWindow):
     def align(self, dm, indexes=()):
     # def align(self, dm, align_indexes=(), regen_indexes=(), scale=None, renew_od=False, reallocate_zarr=False,
     #           align=True, regenerate=True, ignore_bb=False):
+        ready = self.dm['level_data'][self.dm.scale]['alignment_ready']
+        if not ready:
+            logger.warning("Not ready to align yet!")
+            return
+
         self.set_status('Aligning...')
         logger.critical('')
         scale = dm.scale
@@ -1353,7 +1355,7 @@ class MainWindow(QMainWindow):
             self.leJump.setEnabled(True)
             self.boxScale.setEnabled(True)
 
-            self.bAlign.setEnabled(self.dm.is_alignable())
+            self.bAlign.setEnabled(self.dm.is_alignable() and self.dm['level_data'][self.dm.scale]['alignment_ready'])
             # self.bAlign.setVisible(not self.dm.is_aligned())
 
             if len(self.dm.scales) == 1:
@@ -1484,9 +1486,9 @@ class MainWindow(QMainWindow):
         n1 = len(_needsAlignIndexes)
         n2 = len(_needsGenerateIndexes)
         n3 = len(_hasUnsavedChangesIndexes)
-        s1 = (' '.join(map(str, _needsAlignIndexes)), '%d (total)' % n1)[n1 > 5]
-        s2 = (' '.join(map(str, _needsGenerateIndexes)), '%d (total)' % n2)[n2 > 5]
-        s3 = (' '.join(map(str, _hasUnsavedChangesIndexes)), '%d (total)' % n3)[n3 > 5]
+        s1 = (', '.join(map(str, _needsAlignIndexes)), '%d (total)' % n1)[n1 > 5]
+        s2 = (', '.join(map(str, _needsGenerateIndexes)), '%d (total)' % n2)[n2 > 5]
+        s3 = (', '.join(map(str, _hasUnsavedChangesIndexes)), '%d (total)' % n3)[n3 > 5]
         if sum([n1, n2, n3]):
             msg = []
             if n1:
