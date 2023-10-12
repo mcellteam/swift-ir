@@ -32,6 +32,15 @@ from . import data_model
 from .data_model import *
 __all__.extend(data_model.__all__)
 
+from . import align
+from .align import *
+__all__.extend(align.__all__)
+
+from . import scale
+from .scale import *
+
+__all__.extend(scale.__all__)
+
 
 from . import swiftir
 from .swiftir import *

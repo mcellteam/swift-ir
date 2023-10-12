@@ -6,6 +6,7 @@ import sys
 import time
 import copy
 import glob
+import imageio
 import logging
 import platform
 import datetime
@@ -20,7 +21,12 @@ import psutil
 from functools import lru_cache
 # import shutil
 # from src.funcs_image import ImageSize
+from src.swiftir import applyAffine
 import src.config as cfg
+
+import warnings
+
+warnings.filterwarnings("ignore")
 
 import shelve  # !!! # https://docs.python.org/3/library/shelve.html
 
@@ -360,10 +366,18 @@ class align_recipe:
         # snr_list = snr.tolist()
         try:
             afm = self.ingredients[-1].afm
+            # afm = self.ingredients[-1]._afm
             snr = self.ingredients[-1].snr
             # snr_report = self.ingredients[-1].snr_report
         except:
             print_exception()
+
+
+        # print(f"self.ingredients[-1].afm = {self.ingredients[-1].afm}")
+        # try:
+        #     _afm = self.ingredients[-1]._afm
+        # except:
+        #     print_exception()
 
         try:
             snr_list = snr.tolist()
@@ -390,11 +404,21 @@ class align_recipe:
             mr['snr_mean'] = 0.0
 
         mr['snr_average'] = sum(snr_list) / len(snr_list)
+
         try:
+            print(f"afm[{self.index}]: {afm.tolist()}")
             mr['affine_matrix'] = afm.tolist()
+
         except:
-            print_exception(f"\nindex = {self.index}\ntype(afm) = {afm}\nafm={afm}")
+            print_exception(extra=f"index: {self.index}, afm = {afm.tolist()}")
+
+        # try:
+        #     mr['inverse_matrix'] = _afm.tolist()
+        # except:
+        #     print_exception(extra=f"index: {self.index}, _afm = {_afm.tolist()}")
+
         mr['init_afm'] = self.ss['init_afm']
+
         try:
             mr['swim_pos'] = self.ingredients[-1].psta.tolist()
         except:
@@ -413,26 +437,30 @@ class align_recipe:
         mr['swim_args'] = {} #Temporary
         for i,ing in enumerate(self.ingredients):
             try: mr['swim_args']['ing%d' % i] = ing.multi_swim_arg_str()
-            except: mr['swim_args']['ing%d' % i] = 'Null'
+            except: mr['swim_args']['ing%d' % i] = 'null'
 
         for i, ing in enumerate(self.ingredients):
             mr['ing%d' % i] = {}
             try: mr['ing%d' % i]['ww'] = ing.ww
-            except: mr['ing%d' % i]['ww'] = 'Null'
+            except: mr['ing%d' % i]['ww'] = 'null'
             try: mr['ing%d' % i]['psta'] = ing.psta.tolist()
-            except: mr['ing%d' % i]['psta'] = 'Null'
+            except: mr['ing%d' % i]['psta'] = 'null'
             try: mr['ing%d' % i]['pmov'] = ing.pmov.tolist()
-            except: mr['ing%d' % i]['pmov'] = 'Null'
+            except: mr['ing%d' % i]['pmov'] = 'null'
             try: mr['ing%d' % i]['adjust_x'] = ing.adjust_x
-            except: mr['ing%d' % i]['adjust_x'] = 'Null'
+            except: mr['ing%d' % i]['adjust_x'] = 'null'
             try: mr['ing%d' % i]['adjust_y'] = ing.adjust_y
-            except: mr['ing%d' % i]['adjust_y'] = 'Null'
+            except: mr['ing%d' % i]['adjust_y'] = 'null'
             try: mr['ing%d' % i]['afm'] = ing.afm.tolist()
-            except: mr['ing%d' % i]['afm'] = 'Null'
+            except: mr['ing%d' % i]['afm'] = 'null'
             try: mr['ing%d' % i]['t_swim'] = ing.t_swim
-            except: mr['ing%d' % i]['t_swim'] = 'Null'
+            except: mr['ing%d' % i]['t_swim'] = 'null'
             try: mr['ing%d' % i]['t_mir'] = ing.t_mir
-            except: mr['ing%d' % i]['t_mir'] = 'Null'
+            except: mr['ing%d' % i]['t_mir'] = 'null'
+            try: mr['ing%d' % i]['afm'] = ing.afm.tolist()
+            except: mr['ing%d' % i]['afm'] = 'null'
+            try: mr['ing%d' % i]['afm'] = ing._afm.tolist()
+            except: mr['ing%d' % i]['afm'] = 'null'
 
         # if self.ss['dev_mode']:
         if self.config['dev_mode']:
@@ -445,19 +473,19 @@ class align_recipe:
             mr['mir_err'] = {}
             for i,ing in enumerate(self.ingredients):
                 try: mr['swim_args']['ing%d' % i] = ing.multi_swim_arg_str()
-                except: mr['swim_args']['ing%d' % i] = 'Null'
+                except: mr['swim_args']['ing%d' % i] = 'null'
                 try: mr['swim_out']['ing%d' % i] = ing.swim_output
-                except: mr['swim_out']['ing%d' % i] = 'Null'
+                except: mr['swim_out']['ing%d' % i] = 'null'
                 try: mr['swim_err']['ing%d' % i] = ing.swim_err_lines
-                except: mr['swim_err']['ing%d' % i] = 'Null'
+                except: mr['swim_err']['ing%d' % i] = 'null'
                 try: mr['mir_toks']['ing%d' % i] = ing.mir_toks
-                except: mr['mir_toks']['ing%d' % i] = 'Null'
+                except: mr['mir_toks']['ing%d' % i] = 'null'
                 try: mr['mir_script']['ing%d' % i] = ing.mir_script
-                except: mr['mir_script']['ing%d' % i] = 'Null'
+                except: mr['mir_script']['ing%d' % i] = 'null'
                 try: mr['mir_out']['ing%d' % i] = ing.mir_out_lines
-                except: mr['mir_out']['ing%d' % i] = 'Null'
+                except: mr['mir_out']['ing%d' % i] = 'null'
                 try: mr['mir_err']['ing%d' % i] = ing.mir_err_lines
-                except: mr['mir_err']['ing%d' % i] = 'Null'
+                except: mr['mir_err']['ing%d' % i] = 'null'
 
         # return self.data
         return mr
@@ -514,8 +542,11 @@ class align_ingredient:
         return s
 
 
-    def set_swim_results(self, swim_stdout, swim_stderr):
-        toks = swim_stdout.replace('(', ' ').replace(')', ' ').strip().split()
+    # def set_swim_results(self, swim_stdout, swim_stderr):
+    # def set_swim_results(self, swim_stdout):
+    def set_swim_results(self):
+        # toks = swim_stdout.replace('(', ' ').replace(')', ' ').strip().split()
+        toks = self.swim_out_toks()
         self.snr = float(toks[0][0:-1])
         self.base_x = float(toks[2])
         self.base_y = float(toks[3])
@@ -552,6 +583,10 @@ class align_ingredient:
 
         if self.last:
             self.reduce_matches()
+            try:
+                self.generate_output()
+            except:
+                print_exception()
         return self.afm
 
 
@@ -568,8 +603,10 @@ class align_ingredient:
         whiten = str(self.recipe.ss['whitening'])
         use_clobber = self.recipe.ss['clobber']
         clobber_px = self.recipe.ss['clobber_size']
-        afm = '%.6f %.6f %.6f %.6f' % (
-                self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
+        # afm = '%.6f %.6f %.6f %.6f' % (
+        #         self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
+        afm = '%f %f %f %f' % (
+            self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
 
         for i in range(len(self.psta[0])):
             # if m == 'grid_custom':
@@ -622,8 +659,10 @@ class align_ingredient:
             if m in ('manual_hint'):
                 args.append('%s %s' % (self.pmov[0][i], self.pmov[1][i]))
             else:
-                self.adjust_x = '%.6f' % (self.cx + self.afm[0, 2])
-                self.adjust_y = '%.6f' % (self.cy + self.afm[1, 2])
+                # self.adjust_x = '%.6f' % (self.cx + self.afm[0, 2])
+                # self.adjust_y = '%.6f' % (self.cy + self.afm[1, 2])
+                self.adjust_x = '%f' % (self.cx + self.afm[0, 2])
+                self.adjust_y = '%f' % (self.cy + self.afm[1, 2])
                 args.append('%s %s' % (self.adjust_x, self.adjust_y))
             r = self.recipe.initial_rotation
             if abs(r) > 0:
@@ -686,60 +725,85 @@ class align_ingredient:
 
     def ingest_swim_output(self, swim_output):
 
-        if (len(swim_output) == 1) and \
-                (self.recipe.method in ('default-grid', 'custom-grid')):
-            toks = swim_output[0].replace(
-                '(', ' ').replace(')', ' ').strip().split()
-            self.dx = float(toks[8])
-            self.dy = float(toks[9])
-            aim = copy.deepcopy(self.afm)
-            aim[0, 2] += self.dx
-            aim[1, 2] += self.dy
-            self.afm = aim
-            self.snr = np.array([])
-            return self.afm
-        else:
+        self.mir_script = ""
+        snr_list = []
+        # if (len(swim_output) == 1) and (self.recipe.method in ('default-grid', 'custom-grid')): #1010-
+        # if (len(swim_output) == 1) and (self.recipe.method == 'grid'):
+        # if len(swim_output) == 1:
+        #     toks = swim_output[0].replace(
+        #         '(', ' ').replace(')', ' ').strip().split()
+        #     # print(f"\n\n{toks}\n"
+        #     #       f"2: {toks[2]}\n"
+        #     #       f"3: {toks[3]}\n"
+        #     #       f"4: {toks[4]}\n"
+        #     #       f"5: {toks[5]}\n"
+        #     #       f"6: {toks[6]}\n")
+        #     # self.dx = float(toks[8])
+        #     # self.dy = float(toks[9])
+        #     self.adjust_x = float(toks[5])
+        #     self.adjust_y = float(toks[6])
+        #     aim = copy.deepcopy(self.afm)
+        #     aim[0, 2] += self.adjust_x
+        #     aim[1, 2] += self.adjust_y
+        #     # aim[0, 2] += self.dx
+        #     # aim[1, 2] += self.dy
+        #     self.mir_toks = [toks[k] for k in [2, 3, 5, 6]]
+        #     self.mir_script += ' '.join(self.mir_toks) + '\n'
+        #     self.afm = aim
+        #     # self.snr = np.array([])
+        #     snr_list.append(float(toks[0][0:-1]))
+        #     return self.afm
+        # else:
             # loop over SWIM output to build the MIR script:
-            self.mir_script = ""
-            snr_list = []
-            for i,l in enumerate(swim_output):
-                toks = l.replace('(', ' ').replace(')', ' ').strip().split()
-                logger.critical(f"SWIM output tokens, line {i}: {str(toks)}")
-                self.mir_toks[i] = str(toks)
-                try:
-                    mir_toks = [toks[k] for k in [2, 3, 5, 6]]
-                except:
-                    print_exception(
-                        extra=f"#{self.recipe.index}\n"
-                              f"mir toks are: {str(toks)}\n"
-                              f"swim_output: {swim_output}"
-                    )
-                self.mir_script += ' '.join(mir_toks) + '\n'
-                snr_list.append(float(toks[0][0:-1]))
-            self.mir_script += 'R\n'
-            t0 = time.time()
-            out, err = run_command(
-                self.recipe.mir_c,
-                cmd_input=self.mir_script,
-                desc=f'MIR compose affine',
-            )
-            self.t_mir = time.time() - t0
-            self.mir_out_lines = out.strip().split('\n')
-            self.mir_err_lines = err.strip().split('\n')
-            aim = np.eye(2, 3, dtype=np.float32)
-            for line in self.mir_out_lines:
-                toks = line.strip().split()
-                if (toks[0] == 'AI'):
-                    aim[0, 0] = float(toks[1])
-                    aim[0, 1] = float(toks[2])
-                    aim[0, 2] = float(toks[3]) + self.swim_drift
-                    aim[1, 0] = float(toks[4])
-                    aim[1, 1] = float(toks[5])
-                    aim[1, 2] = float(toks[6]) + self.swim_drift
 
-            self.afm = aim
-            self.snr = np.array(snr_list)
-            return self.afm
+        for i,l in enumerate(swim_output):
+            toks = l.replace('(', ' ').replace(')', ' ').strip().split()
+            logger.critical(f"SWIM output tokens, line {i}: {str(toks)}")
+            self.mir_toks[i] = str(toks)
+            try:
+                mir_toks = [toks[k] for k in [2, 3, 5, 6]]
+            except:
+                print_exception(
+                    extra=f"#{self.recipe.index}\n"
+                          f"mir toks are: {str(toks)}\n"
+                          f"swim_output: {swim_output}"
+                )
+            self.mir_script += ' '.join(mir_toks) + '\n'
+            snr_list.append(float(toks[0][0:-1]))
+
+        self.mir_script += 'R\n'
+        t0 = time.time()
+        out, err = run_command(
+            self.recipe.mir_c,
+            cmd_input=self.mir_script,
+            desc=f'MIR compose affine',
+        )
+        self.t_mir = time.time() - t0
+        self.mir_out_lines = out.strip().split('\n')
+        self.mir_err_lines = err.strip().split('\n')
+        aim = np.eye(2, 3, dtype=np.float32)
+        _afm = np.eye(2, 3, dtype=np.float32)
+        for line in self.mir_out_lines:
+            toks = line.strip().split()
+            if (toks[0] == 'AI'):
+                aim[0, 0] = float(toks[1])
+                aim[0, 1] = float(toks[2])
+                aim[0, 2] = float(toks[3]) + self.swim_drift
+                aim[1, 0] = float(toks[4])
+                aim[1, 1] = float(toks[5])
+                aim[1, 2] = float(toks[6]) + self.swim_drift
+            if (toks[0] == 'AF'):
+                _afm[0, 0] = float(toks[1])
+                _afm[0, 1] = float(toks[2])
+                _afm[0, 2] = float(toks[3]) + self.swim_drift
+                _afm[1, 0] = float(toks[4])
+                _afm[1, 1] = float(toks[5])
+                _afm[1, 2] = float(toks[6]) + self.swim_drift
+        self._afm = _afm
+        # self.afm = _afm
+        self.afm = aim
+        self.snr = np.array(snr_list)
+        return self.afm
 
 
     def run_manual_mir(self):
@@ -762,6 +826,7 @@ class align_ingredient:
             f'\n==========\nManual MIR script:\n{mir_script_mp}\n'
             f'stdout >>\n{mir_mp_out_lines}\nstderr >>\n{mir_mp_err_lines}')
         afm = np.eye(2, 3, dtype=np.float32)
+        _afm = np.eye(2, 3, dtype=np.float32)
         self.mir_out_lines = mir_mp_out_lines
         for line in mir_mp_out_lines:
             toks = line.strip().split()
@@ -772,7 +837,15 @@ class align_ingredient:
                 afm[1, 0] = float(toks[4])
                 afm[1, 1] = float(toks[5])
                 afm[1, 2] = float(toks[6])
-
+            if (toks[0] == 'AF'):
+                _afm[0, 0] = float(toks[1])
+                _afm[0, 1] = float(toks[2])
+                _afm[0, 2] = float(toks[3])
+                _afm[1, 0] = float(toks[4])
+                _afm[1, 1] = float(toks[5])
+                _afm[1, 2] = float(toks[6])
+        self._afm = _afm
+        # self.afm = _afm
         self.afm = afm
         self.snr = np.zeros(len(self.psta[0]))
         return self.afm
@@ -830,6 +903,80 @@ class align_ingredient:
                     os.remove(fn)
             except:
                 print_exception()
+
+    def generate_output(self):
+
+        ifp = self.recipe.ss['path_thumb_src']
+        ofd = self.recipe.ss['wd']
+        fn, ext = os.path.splitext(self.recipe.ss['name'])
+        ofp = os.path.join(ofd, fn + '.thumb' + ext)
+        if os.path.exists(ofp):
+            logger.info(f'Cache hit (transformed img, afm): {ofp}')
+            return
+        os.makedirs(os.path.dirname(ofd), exist_ok=True)
+
+        scale = self.recipe.ss['level']
+        tn_scale = self.recipe.ss['thumbnail_scale_factor']
+        sf = int(self.recipe.ss['level'][1:]) / tn_scale
+        w, h = self.recipe.ss['img_size']
+        rect = [0, 0, w * sf, h * sf]  # might need to swap w/h for Zarr
+
+        # Todo add flag to force regenerate
+        os.makedirs(os.path.dirname(ofp), exist_ok=True)
+        afm = copy.deepcopy(self.afm)
+        afm[0][2] *= sf
+        afm[1][2] *= sf
+
+        # cafm_ofp = os.path.join(ofd, fn + '.cafm.thumb' + ext)
+        # # if not os.path.exists(cafm_ofp):
+        # os.makedirs(os.path.dirname(cafm_ofp), exist_ok=True)
+        # cafm = copy.deepcopy(dm.cafm(s=scale, l=i))
+        # cafm[0][2] *= sf
+        # cafm[1][2] *= sf
+        # tasks_cafm.append([ifp, cafm_ofp, rect, cafm, 128])
+
+        border = 128  # Todo get exact median greyscale value
+
+        bb_x, bb_y = rect[2], rect[3]
+        afm = np.array([afm[0][0], afm[0][1], afm[0][2], afm[1][0], afm[1][1],
+                        afm[1][2]], dtype='float64').reshape((-1, 3))
+        p1 = applyAffine(afm, (0, 0))  # Transform Origin To Output Space
+        p2 = applyAffine(afm, (rect[0], rect[1]))  # Transform BB Lower Left To Output Space
+        offset_x, offset_y = p2 - p1  # Offset Is Difference of 'p2' and 'p1'
+        a = afm[0][0]
+        c = afm[0][1]
+        e = afm[0][2] + offset_x
+        b = afm[1][0]
+        d = afm[1][1]
+        f = afm[1][2] + offset_y
+        mir_script = \
+            'B %d %d 1\n' \
+            'Z %g\n' \
+            'F %s\n' \
+            'A %g %g %g %g %g %g\n' \
+            'RW %s\n' \
+            'E' % (bb_x, bb_y, border, ifp, a, c, e, b, d, f, ofp)
+        # print(f"\n{mir_script}\n")
+        o = run_command(self.recipe.mir_c, arg_list=[], cmd_input=mir_script)
+
+        im0 = self.recipe.ss['path_thumb']
+        im1 = self.recipe.ss['path_thumb_src_ref']
+        if not os.path.exists(im0):
+            logger.error(f'(gif) thumbnail not found: {im0}')
+            return
+        if not os.path.exists(im1):
+            logger.error(f'(gif) thumbnail not found: {im0}')
+            return
+        try:
+            images = [imageio.imread(im0), imageio.imread(im1)]
+            try:
+                imageio.mimsave(self.recipe.ss['path_gif'], images, format='GIF', duration=1, loop=0)
+            except:
+                print_exception(extra='imagio.mimsave warning')
+        except:
+            print_exception()
+
+
 
 
 def run_command(cmd, arg_list=(), cmd_input=None, desc=''):

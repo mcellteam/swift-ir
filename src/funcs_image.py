@@ -445,19 +445,18 @@ def InitCafm(bias_funcs):
 
 
 # def SetSingleCafm(d, scale, c_afm, bias_mat=None, method='grid'):
-def SetSingleCafm(dm, scale, index, c_afm, bias_mat=None, method='grid'):
+def SetSingleCafm(dm, scale, index, c_afm, include, bias_mat=None, method='grid'):
     '''Calculate and set the value of the cafm (with optional bias) for a single section data dict'''
     # atrm = layer_dict['alignment']
-    include = dm['stack'][index]['levels'][scale]['saved_swim_settings']['include']
     try:
         if include:
             # afm = np.array(d['levels'][scale]['results']['affine_matrix'])
-            afm = np.array(cfg.pt.ht.get(dm.saved_swim_settings(s=scale,l=index)))
-            print(f'index {index} afm: {str(afm)}, cafm: {pprint.pformat(c_afm)}')
+            afm = np.array(dm.ht.get(dm.saved_swim_settings(s=scale,l=index)))
+            # print(f'index {index} afm: {str(afm)}, cafm: {pprint.pformat(c_afm)}')
         else:
             afm = identityAffine()
     except:
-        siz = len(cfg.pt.ht.data)
+        siz = len(dm.ht.data)
         print_exception(extra=f"afm not found for index: {index}, table size: {siz}")
         afm = identityAffine()
         # atrm['method_results']['affine_matrix'] = afm.tolist() #0802-
@@ -467,6 +466,7 @@ def SetSingleCafm(dm, scale, index, c_afm, bias_mat=None, method='grid'):
     if type(bias_mat) != type(None):
         c_afm = composeAffine(bias_mat, c_afm)
     dm['stack'][index]['levels'][scale]['cafm'] = c_afm.tolist()
+    # dm.ht_cafm.put()
     dm['stack'][index]['levels'][scale]['afm'] = afm.tolist()
     # Register cumualtive affine hash
     # d['cafm_hash'] = hashstring(str(c_afm.tolist()))
@@ -510,7 +510,8 @@ def SetStackCafm(dm, scale, poly_order=None):
                 bias_mat = BiasMat(i, bias_funcs)
             # method = d['levels'][scale]['swim_settings']['method_opts']['method']
             method = d['levels'][scale]['saved_swim_settings']['method_opts']['method']
-            c_afm = SetSingleCafm(dm, scale, i, c_afm, bias_mat=bias_mat, method=method) # <class
+            include = dm['stack'][i]['levels'][scale]['saved_swim_settings']['include']
+            c_afm = SetSingleCafm(dm, scale, i, c_afm, include, bias_mat=bias_mat, method=method) # <class
             # 'numpy.ndarray'>
 
         if bi < bias_iters - 1:

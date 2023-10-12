@@ -4,6 +4,7 @@ import os
 import json
 import copy
 import time
+import pprint
 import inspect
 import logging
 import textwrap
@@ -31,6 +32,7 @@ class ProjectTable(QWidget):
         super().__init__(parent)
         caller = inspect.stack()[1].function
         logger.info(f'caller: {caller}')
+        self.parent = parent
         self.dm = dm
         # self.INITIAL_ROW_HEIGHT = 128
         self.INITIAL_ROW_HEIGHT = 70
@@ -67,7 +69,7 @@ class ProjectTable(QWidget):
         # self.data.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch) # Fails on TACC for some reason
         # self.tableFinishedLoading.connect(self.onTableFinishedLoading)
         # self.onTableFinishedLoading.connect(lambda: logger.critical("\n\n\nTable finished loading!\n\n"))
-        # self.onTableFinishedLoading.connect(lambda:cfg.mw.set_status("Table finished loading."))
+        # self.onTableFinishedLoading.connect(lambda:self.parent.parent.set_status("Table finished loading."))
         header = self.table.horizontalHeader()
         header.setFrameStyle(QFrame.Box | QFrame.Plain)
         header.setStyleSheet("QHeaderView::section { border-bottom: 1px solid gray; }");
@@ -150,7 +152,7 @@ class ProjectTable(QWidget):
         caller = inspect.stack()[1].function
         logger.info(f'[{caller}]')
         if caller not in ('initTableData', 'updateTableData'):
-            if cfg.project_tab.wTabs.currentIndex() == 2:
+            if self.parent.wTabs.currentIndex() == 2:
                 self.dm.zpos = self.table.currentIndex().row()
 
 
@@ -196,7 +198,7 @@ class ProjectTable(QWidget):
         self.table.setRowCount(len(self.dm))
         self.set_column_headers() #Critical
         cnt = 0
-        cfg.mw.resetPbar((self.dm.count, 'Loading Table'))
+        self.parent.parent.resetPbar((self.dm.count, 'Loading Table'))
         try:
             for row in range(0, len(self.dm)):
                 if cfg.CancelProcesses:
@@ -223,7 +225,7 @@ class ProjectTable(QWidget):
             self.updateTableDimensions(self.row_height_slider.value())
 
             # self.data.setUpdatesEnabled(True)
-            cfg.mw.hidePbar()
+            self.parent.parent.hidePbar()
 
             self.setUpdatesEnabled(True)
 
@@ -242,7 +244,7 @@ class ProjectTable(QWidget):
 
     def updateTableData(self):
         logger.info('')
-        cfg.mw.resetPbar((self.dm.count, 'Updating Table'))
+        self.parent.parent.resetPbar((self.dm.count, 'Updating Table'))
 
         if self.btn_splash_load_table.isVisible():
             self.initTableData()
@@ -268,12 +270,12 @@ class ProjectTable(QWidget):
         finally:
             siz = self.dm.image_size()
             self.scaleLabel.setText(f"{self.dm.level_pretty()} | {siz[0]}x{siz[1]}px")
-            cfg.mw.hidePbar()
+            self.parent.parent.hidePbar()
             if cur_selection != -1:
                 self.table.selectRow(cur_selection)
             self.table.verticalScrollBar().setValue(cur_scroll_pos)
             cfg.nProcessDone += 1
-            cfg.main_window.updatePbar(cfg.nProcessDone)
+            self.parent.parent.updatePbar(cfg.nProcessDone)
 
             # self.data.setUpdatesEnabled(True)
 
@@ -321,12 +323,12 @@ class ProjectTable(QWidget):
 
     def jump_to_edit(self, requested) -> None:
         self.dm.zpos = requested
-        cfg.pt.wTabs.setCurrentIndex(1)
+        self.parent.wTabs.setCurrentIndex(1)
 
 
     def jump_to_view(self, requested) -> None:
         self.dm.zpos = requested
-        cfg.pt.wTabs.setCurrentIndex(0)
+        self.parent.wTabs.setCurrentIndex(0)
 
     def request_refresh(self, requested) -> None:
         self.set_row_data(row=requested)
@@ -365,11 +367,12 @@ class ProjectTable(QWidget):
 
 
     def set_row_data(self, row):
-        scale = self.dm.level
-        snr_4x = copy.deepcopy(self.dm.snr_components(s=scale, l=row))
+        print(f"row: {row}")
+        snr_4x = copy.deepcopy(self.dm.snr_components(s=self.dm.level, l=row))
         logger.critical(f"SNR: {snr_4x}")
-        row_data = self.get_row_data(s=scale, l=row)
-        method = self.dm.method(s=scale, l=row)
+        row_data = self.get_row_data(s=self.dm.level, l=row)
+        pprint.pprint(row_data)
+        method = self.dm.method(s=self.dm.level, l=row)
         if 'grid' in method:
             regions = copy.deepcopy(self.dm.get_grid_regions(l=row))
         # for j, item in enumerate(row):
@@ -457,23 +460,26 @@ class ProjectTable(QWidget):
             elif col == 3:
                 self.table.setItem(row, col, QTableWidgetItem(str(row_data[col])))
             elif col == 4:
+                print(f"4: snr_4x = {snr_4x}")
                 if os.path.exists(row_data[col]):
                     # tn = ThumbnailFast(self, path=row_data[col], name='reference-data', level=scale, z=row)
-                    tn = ThumbnailFast(self, path=row_data[col], name='reference-data', s=scale, l=row)
+                    tn = ThumbnailFast(self, path=row_data[col], name='reference-data', s=self.dm.level, l=row)
                     if self.dm.skipped(l=row):
                         tn.set_no_image()
                     self.table.setCellWidget(row, col, tn)
                 else:
                     logger.warning(f"Path DNE: {row_data[col]}")
             elif col == 5:
+                print(f"5: snr_4x = {snr_4x}")
                 if os.path.exists(row_data[col]):
-                    tn = ThumbnailFast(self, path=row_data[col], name='transforming-data', s=scale, l=row)
+                    tn = ThumbnailFast(self, path=row_data[col], name='transforming-data', s=self.dm.level, l=row)
                     if self.dm.skipped(l=row):
                         tn.set_no_image()
                     self.table.setCellWidget(row, col, tn)
                 else:
                     logger.warning(f"Path DNE: {row_data[col]}")
             elif col == 6:
+                print(f"6: snr_4x = {snr_4x}")
                 if os.path.exists(row_data[col]):
                     tn = ThumbnailFast(self, path=row_data[col])
                     if self.dm.skipped(l=row):
@@ -482,6 +488,9 @@ class ProjectTable(QWidget):
                 else:
                     logger.warning(f"Path DNE: {row_data[col]}")
             elif col == 7:
+                print(f"7: snr_4x = {snr_4x}")
+
+
                 try:
                     # if method == 'grid_custom':
                     if 'grid' in method:
@@ -563,7 +572,7 @@ class ProjectTable(QWidget):
                     font-size: 11px;
                 """)
                 self.all_notes.append(notes)
-                notes.textEdited.connect(lambda index=row, txt=notes.toPlainText(): self.setNotes(index, txt))
+                notes.textChanged.connect(lambda index=row, txt=notes.toPlainText(): self.setNotes(index, txt))
                 self.table.setCellWidget(row, col, notes)
             else:
                 self.table.setItem(row, col, QTableWidgetItem(str(row_data[col])))
@@ -573,12 +582,12 @@ class ProjectTable(QWidget):
         logger.info('')
         for r in self.getSelectedRows():
             self.dm.zpos = r
-            cfg.main_window.alignOne(dm=self.dm)
+            self.parent.parent.alignOne(dm=self.dm)
             QApplication.processEvents()
-            if cfg.pt.wTabs.currentIndex() == 0:
-                cfg.emViewer.set_layer(self.dm.zpos)
-            elif cfg.pt.wTabs.currentIndex() == 1:
-                cfg.editorViewer.set_layer(self.dm.zpos)
+            if self.parent.wTabs.currentIndex() == 0:
+                self.parent.emViewer.set_layer(self.dm.zpos)
+            elif self.parent.wTabs.currentIndex() == 1:
+                self.parent.editorViewer.set_layer(self.dm.zpos)
 
     # btn.clicked.connect(lambda state, x=zpos: self.jump_to_manual(x))
 
@@ -588,7 +597,7 @@ class ProjectTable(QWidget):
                     f"index  = {index}\n"
                     f"txt    = {txt}")
         self.dm.save_notes(text=txt, l=index)
-        cfg.main_window.statusBar.showMessage('Note Saved!', 3000)
+        self.parent.parent.statusBar.showMessage('Note Saved!', 3000)
         self.all_notes[index].update()
 
 
@@ -745,4 +754,4 @@ class ImageWidget(QWidget):
         painter.drawImage(option.rect.x(), option.rect.y(), scaled)
 
 
-# cfg.pt.project_table.setImage(2,3,'/Users/joelyancey/glanceem_swift/test_projects/test2/scale_4/thumbnails_aligned/funky4.tif')
+# self.parent.project_table.setImage(2,3,'/Users/joelyancey/glanceem_swift/test_projects/test2/scale_4/thumbnails_aligned/funky4.tif')

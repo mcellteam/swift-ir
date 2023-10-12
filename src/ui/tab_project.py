@@ -84,11 +84,13 @@ class ProjectTab(QWidget):
         self.dm.signals.dataChanged.connect(lambda: self.cbDefaults.setChecked(self.dm.isDefaults()))
         self.dm.signals.dataChanged.connect(lambda: self.cbSaved.setChecked(self.dm.ssSavedComports()))
         # self.dm.signals.dataChanged.connect(lambda: self.bSaveSettings.setEnabled(not self.dm.ssSavedComports()))
-        self.dm.signals.dataChanged.connect(lambda: self.bSaveSettings.setEnabled(not self.dm.ssSavedComports() and self.ht.haskey(self.dm.swim_settings())))
+        self.dm.signals.dataChanged.connect(lambda: self.bSaveSettings.setEnabled(not self.dm.ssSavedComports() and self.dm.ht.haskey(self.dm.swim_settings())))
         # self.dm.signals.dataChanged.connect(lambda: self.cbSaved.setText(('Saved settings (revert)', 'Saved settings')[self.dm.ssSavedComports()]))
 
+        self.dm.loadHashTable()
 
-        self.ht = HashTable(self.dm.data_location)
+        self.dataUpdateMA()
+        self.updateZarrRadiobuttons()
 
     # def _updateSaveButton(self):
     #     # Todo this would be faster as a dictionary lookup
@@ -99,29 +101,32 @@ class ProjectTab(QWidget):
     def updateAaButtons(self):
         logger.info('')
         # if self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings']['method_opts']['method'] == 'grid':
-        try:
+        alignment_ready = self.dm['level_data'][self.dm.scale]['alignment_ready']
+
+        if alignment_ready:
             if self.twMethod.currentIndex() == 0:
-                self.aaButtons[0].setEnabled(self.dm['defaults'][self.dm.level]['method_opts']['size_1x1'] !=
-                                             self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
-                                                 'method_opts']['size_1x1'])
-                self.aaButtons[1].setEnabled(self.dm['defaults'][self.dm.level]['method_opts']['size_2x2'] !=
-                                             self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
-                                                 'method_opts']['size_2x2'])
-                self.aaButtons[2].setEnabled(self.dm['defaults'][self.dm.level]['iterations'] !=
-                                             self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings']['iterations'])
-                self.aaButtons[3].setEnabled(self.dm['defaults'][self.dm.level]['whitening'] !=
-                                             self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
-                                                 'whitening'])
-                self.aaButtons[4].setEnabled((self.dm['defaults'][self.dm.level]['clobber'] !=
-                                             self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
-                                                 'clobber']) or (self.dm['defaults'][self.dm.level]['clobber_size'] !=
-                                                                 self.dm['stack'][self.dm.zpos]['levels'][self.dm.level][
-                                                                     'swim_settings']['clobber_size']))
-                self.aaButtons[5].setEnabled(self.dm['defaults'][self.dm.level]['method_opts']['quadrants'] !=
-                                             self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
-                                                 'method_opts']['quadrants'])
-        except:
-            print_exception()
+                try:
+                    self.aaButtons[0].setEnabled(self.dm['defaults'][self.dm.level]['method_opts']['size_1x1'] !=
+                                                 self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
+                                                     'method_opts']['size_1x1'])
+                    self.aaButtons[1].setEnabled(self.dm['defaults'][self.dm.level]['method_opts']['size_2x2'] !=
+                                                 self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
+                                                     'method_opts']['size_2x2'])
+                    self.aaButtons[2].setEnabled(self.dm['defaults'][self.dm.level]['iterations'] !=
+                                                 self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings']['iterations'])
+                    self.aaButtons[3].setEnabled(self.dm['defaults'][self.dm.level]['whitening'] !=
+                                                 self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
+                                                     'whitening'])
+                    self.aaButtons[4].setEnabled((self.dm['defaults'][self.dm.level]['clobber'] !=
+                                                 self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
+                                                     'clobber']) or (self.dm['defaults'][self.dm.level]['clobber_size'] !=
+                                                                     self.dm['stack'][self.dm.zpos]['levels'][self.dm.level][
+                                                                         'swim_settings']['clobber_size']))
+                    self.aaButtons[5].setEnabled(self.dm['defaults'][self.dm.level]['method_opts']['quadrants'] !=
+                                                 self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
+                                                     'method_opts']['quadrants'])
+                except:
+                    print_exception()
 
     def load_data_from_treeview(self):
         self.datamodel = DataModel(self.treeview_model.to_json())
@@ -141,7 +146,7 @@ class ProjectTab(QWidget):
         self.datamodel['state']['blink'] = False
         index = self.wTabs.currentIndex()
         self.dm['state']['current_tab'] = index
-        self.gifPlayer.stop()
+        # self.gifPlayer.stop()
         if index == 0:
             # self.parent.setdw_thumbs(True)
             # self.parent.setdw_matches(False)
@@ -154,7 +159,9 @@ class ProjectTab(QWidget):
             self.editorViewer.set_layer()
             self.set_transforming() #0802+
             self.update_match_list_widgets() #0726+
-            self.gifPlayer.start()
+            self.gifPlayer.set()
+            # if self.dm.is_aligned():
+            #     self.gifPlayer.start()
         elif index == 2:
             self.snr_plot.initSnrPlot()
         elif index == 3:
@@ -188,8 +195,8 @@ class ProjectTab(QWidget):
                     self.dSnr_plot.wipePlot()
 
             self.gifPlayer.set()
-            if self.dm.is_aligned():
-                self.gifPlayer.start()
+            # if self.dm.is_aligned():
+            #     self.gifPlayer.start()
         elif index == 2:
             self.project_table.initTableData()
         elif index == 3:
@@ -229,13 +236,13 @@ class ProjectTab(QWidget):
             if self.parent.pm.cmbSelectSeries.count() > 0:
                 self.parent.pm.viewer.initViewer()
         else:
-            self.updateNgLayoutCombox()
+
             self.lNotAligned.setVisible(self.dm.is_aligned())
 
             if self.wTabs.currentIndex() == 1 or init_all:
                 # self.MA_webengine_ref.setUrl(QUrl("http://localhost:8888/"))
                 # self.editorWebengine.setUrl(QUrl("http://localhost:8888/"))
-                self.editorViewer = cfg.editorViewer = MAViewer(dm=self.dm, role='tra', webengine=self.editorWebengine)
+                self.editorViewer = cfg.editorViewer = MAViewer(parent=self, dm=self.dm, role='tra', webengine=self.editorWebengine)
                 self.editorViewer.signals.badStateChange.connect(self.set_transforming)
                 self.editorViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314
                 self.editorViewer.signals.ptsChanged.connect(self.update_match_list_widgets)
@@ -249,11 +256,16 @@ class ProjectTab(QWidget):
                 # logger.info(f"Local Volume:\n{self.editorViewer.LV.info()}")
 
             if self.wTabs.currentIndex() == 0 or init_all:
-                self.viewer = cfg.emViewer = EMViewer(dm=self.dm, webengine=self.webengine)
+                self.updateZarrRadiobuttons()
+                self.updateNgLayoutCombox()
+
+                path = (self.dm.path_zarr_transformed(), self.dm.path_zarr_raw())[self.rbZarrRaw.isChecked()]
+
+                self.viewer = cfg.emViewer = EMViewer(parent=self, dm=self.dm, webengine=self.webengine, path=path)
                 self.viewer.initZoom(self.webengine.width(), self.webengine.height())
                 # self.viewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314 #Todo
                 self.viewer.signals.layoutChanged.connect(self.slot_layout_changed)
-                cfg.emViewer.signals.zoomChanged.connect(self.slot_zoom_changed)
+                self.viewer.signals.zoomChanged.connect(self.slot_zoom_changed)
                 # logger.info(f"Local Volume:\n{cfg.LV.info()}")
 
         self.parent.set_status('')
@@ -353,7 +365,7 @@ class ProjectTab(QWidget):
         # self.wSliderZdisplay.addWidget(vlab)
 
         self.editorWebengine = WebEngine(ID='tra')
-        self.editorWebengine.setFocusPolicy(Qt.NoFocus)
+        # self.editorWebengine.setFocusPolicy(Qt.NoFocus) #1011-
         self.editorWebengine.setStyleSheet("background-color: #000000;")
         self.editorWebengine.page().setBackgroundColor(Qt.transparent) #0726+
         self.editorWebengine.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -541,7 +553,7 @@ class ProjectTab(QWidget):
 
         self.bSaveSettings = QPushButton('Save')
         self.bSaveSettings.setFocusPolicy(Qt.NoFocus)
-        # self.bSaveSettings.setFixedHeight(14)
+        self.bSaveSettings.setFixedHeight(16)
         def fn_bSaveSettings():
             logger.info('')
             self.dm.saveSettings()
@@ -579,7 +591,8 @@ class ProjectTab(QWidget):
         self.bPull = QPushButton('Pull Settings From Coarser Resolution')
         self.bPull.setFocusPolicy(Qt.NoFocus)
         self.bPull.setFixedHeight(16)
-        self.bPull.clicked.connect(self.pullSettings)
+        self.bPull.clicked.connect(self.dm.pullSettings)
+        self.bPull.clicked.connect(self.dataUpdateMA)
         # msg = "Re-pull (propagate) settings from previous scale level."
         tip = "Pull (re-propagate) all SWIM settings from the next coarsest resolution level."
         tip = '\n'.join(textwrap.wrap(tip, width=35))
@@ -606,7 +619,7 @@ class ProjectTab(QWidget):
         self.bSWIM = QPushButton('Align')
         # self.bSWIM.setStyleSheet("font-size: 10px; background-color: #9fdf9f;")
         self.bSWIM.setToolTip(tip)
-        # self.bSWIM.setFixedHeight(14)
+        self.bSWIM.setFixedHeight(16)
         self.bSWIM.setFocusPolicy(Qt.NoFocus)
         self.bSWIM.clicked.connect(lambda: self.bSWIM.setEnabled(False))
         self.bSWIM.clicked.connect(lambda: self.bTransform.setEnabled(False))
@@ -619,7 +632,7 @@ class ProjectTab(QWidget):
         self.bTransform = QPushButton('Transform (Generates Images)')
         # self.bTransform.setStyleSheet("font-size: 10px; background-color: #9fdf9f;")
         self.bTransform.setToolTip(tip)
-        # self.bTransform.setFixedHeight(14)
+        self.bTransform.setFixedHeight(16)
         self.bTransform.setFocusPolicy(Qt.NoFocus)
         self.bTransform.clicked.connect(lambda: self.bSWIM.setEnabled(False))
         self.bTransform.clicked.connect(lambda: self.bTransform.setEnabled(False))
@@ -1649,6 +1662,34 @@ class ProjectTab(QWidget):
         self.lNotAligned.setStyleSheet("QLabel { background-color: rgba(0, 0, 0, 0.5); font-size: 12px; color: #a30000; font-weight: 600;"
                                  "border-radius: 4px; font-family: Tahoma, sans-serif; padding: 4px; } ")
 
+
+        self.labZarrSource = QLabel(' Series: ')
+        self.labZarrSource.setStyleSheet("font-size: 11px; font-weight: 600; padding: 4px;")
+
+        # .setStyleSheet("color: #f3f6fb; font-size: 10px; background-color: rgba(0, 0, 0, 0.5); border-radius: 4px;")
+        # style = "QRadioButton{font-size: 11px; font-weight: 600; border: 1px solid #339933; " \
+        #         "border-radius: 2px; background-color: #161c20; color: #f3f6fb;} " \
+        #         "QRadioButton:disabled{background-color: grey;} QRadioButton::indicator{width: 12px; height: 12px; color: #339933;}"
+
+
+        self.rbZarrRaw = QRadioButton('Raw')
+        self.rbZarrRaw.clicked.connect(self.initNeuroglancer)
+        # self.rbZarrRaw.setStyleSheet(style)
+
+        self.rbZarrTransformed = QRadioButton('Transformed')
+        self.rbZarrTransformed.clicked.connect(self.initNeuroglancer)
+        # self.rbZarrTransformed.setStyleSheet(style)
+
+
+        self.bgZarrSelect = QButtonGroup()
+        self.bgZarrSelect.addButton(self.rbZarrRaw)
+        self.bgZarrSelect.addButton(self.rbZarrTransformed)
+        self.bgZarrSelect.setExclusive(True)
+
+        # self.rbwZarr = HW(self.rbZarrRaw, self.rbZarrTransformed)
+        # self.rbwZarr.layout.setSpacing(6)
+        # self.rbwZarr.setStyleSheet("font-size: 11px;")
+
         self.toolbarNg = QToolBar()
         self.toolbarNg.setStyleSheet("")
         self.toolbarNg.setFixedHeight(23)
@@ -1660,6 +1701,14 @@ class ProjectTab(QWidget):
         self.toolbarNg.addWidget(self.cmbNgAccessories)
         self.toolbarNg.addWidget(self.wZoom)
         self.toolbarNg.addWidget(self.ew0)
+        # self.toolbarNg.addWidget(self.rbwZarr)
+        self.toolbarNg.addSeparator()
+        self.toolbarNg.addWidget(self.labZarrSource)
+        self.toolbarNg.addWidget(self.rbZarrRaw)
+        self.toolbarNg.addSeparator()
+        self.toolbarNg.addWidget(self.rbZarrTransformed)
+        self.toolbarNg.addSeparator()
+
         self.toolbarNg.addWidget(self.lNotAligned)
         self.toolbarNg.addWidget(self.ew1)
         self.toolbarNg.addWidget(self.bcWidget)
@@ -1932,7 +1981,7 @@ class ProjectTab(QWidget):
         self.wWebengineEditor = HW(self.ngVertLab, self.ng_widget, self.zoomSliderAndLabel)
         # self.wWebengineEditor.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        self.warning_data = WarningNotice(self, 'Some data is out of sync.', fixbutton=True, symbol='×')
+        self.warning_data = WarningNotice(self, '<b>Warning:</b> Some data is out of sync.', fixbutton=True, symbol='×')
 
         self.warning_data.fixbutton.clicked.connect(self.fixAll)
         self.warning_data.fixbutton.setText('Fix All')
@@ -1940,34 +1989,38 @@ class ProjectTab(QWidget):
 
         self.glGifPlayer = QGridLayout()
         self.glGifPlayer.addWidget(self.gifPlayer, 0, 0)
-        self.glGifPlayer.setContentsMargins(10,10,10,10)
+        # self.glGifPlayer.addWidget(self.gifPlayer, 0, 0, 2, 2)
+        # self.glGifPlayer.addWidget(self.slrGif, 1, 1, 1, 1)
+        # self.glGifPlayer.setContentsMargins(10,10,10,10)
+        self.glGifPlayer.setContentsMargins(2,2,2,2)
 
         self.wGifPlayer = QWidget()
         self.wGifPlayer.setMinimumSize(QSize(128,128))
-        self.wGifPlayer.setStyleSheet("background-color: #000000;")
+        # self.wGifPlayer.setStyleSheet("background-color: #000000;")
         self.wGifPlayer.setLayout(self.glGifPlayer)
 
         self.checkboxes = HW(self.cbDefaults, self.cbSaved)
 
         # self.cpanelEditor = HW(self.bTransform, self.bSWIM, self.bSaveSettings)
-        self.btnsSWIM = HW(self.bSWIM, self.bSaveSettings)
+        self.btnsSWIM = VW(HW(self.bSWIM, self.bSaveSettings), self.bPull)
         self.btnsSWIM.layout.setContentsMargins(2,2,2,2)
         self.btnsSWIM.layout.setSpacing(2)
 
-        self.wRightPanel = VW(
+        self.vblRightPanel = VBL(
             self.warning_data,
             # self.wRadiobuttons,
             self.swMethod,
             self.checkboxes,
             self.btnsSWIM,
-            self.bPull,
             # self.bRevertSettings,
             self.wGifPlayer,
             # self.gbOutputSettings,
             )
-        self.wRightPanel.setMaximumWidth(380)
-        self.wRightPanel.layout.setContentsMargins(4,4,4,4)
-        self.wRightPanel.setFocusPolicy(Qt.NoFocus)
+        self.gbRightPanel = QGroupBox()
+        self.gbRightPanel.setLayout(self.vblRightPanel)
+
+        self.gbRightPanel.setMaximumWidth(380)
+        # self.wRightPanel.setFocusPolicy(Qt.NoFocus)
         # self.wRightPanel.setStyleSheet("""
         # QWidget{
         #     font-size: 10px;
@@ -2003,7 +2056,7 @@ class ProjectTab(QWidget):
 
         self.wEditAlignment = QSplitter(Qt.Orientation.Horizontal)
         self.wEditAlignment.addWidget(self.wWebengineEditor)
-        self.wEditAlignment.addWidget(self.wRightPanel)
+        self.wEditAlignment.addWidget(self.gbRightPanel)
         self.wEditAlignment.setCollapsible(0, False)
         self.wEditAlignment.setCollapsible(1, False)
         self.wEditAlignment.setStretchFactor(0, 99)
@@ -2020,61 +2073,12 @@ class ProjectTab(QWidget):
     def fixAll(self):
         logger.info('')
         to_align = self.dm.needsAlignIndexes()
-        to_regenerate = self.dm.needsGenerateIndexes()
-        logger.info(f'\nAlign indexes: {pprint.pformat(to_align)}\n'
-                    f'Regenerate indexes: {pprint.pformat(to_regenerate)}')
-        self.parent.align(dm=self.datamodel, align_indexes=to_align, regen_indexes=to_regenerate, ignore_bb=True)
+        # to_regenerate = self.dm.needsGenerateIndexes()
+        logger.info(f'\nAlign indexes: {pprint.pformat(to_align)}')
+        self.parent.align(dm=self.dm, indexes=to_align)
 
-    def pullSettings(self):
-        logger.info('')
-        levels = self.dm.levels
-        cur_level = self.dm.level
-        prev_level = levels[levels.index(cur_level) + 1]
-        # sf = self.lvl(cur_level) / self.lvl(prev_level)
-        sf = int(self.dm.lvl(prev_level) / self.dm.lvl(cur_level))
-        try:
-            # for d in self.dm():
-            for i in range(len(self.dm)):
-                prev_settings = self.dm.swim_settings(s=prev_level, l=i)
-                self.dm['stack'][i]['levels'][cur_level]['swim_settings'] = copy.deepcopy(prev_settings)
-                ss = self.dm['stack'][i]['levels'][cur_level]['swim_settings']
-                try:
-                    init_afm = copy.deepcopy(self.ht.get(self.dm.saved_swim_settings(s=prev_level, l=i)))
-                except:
-                    print_exception(extra=f'Section #{i}. Using identity instead...')
-                    init_afm = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
-                init_afm[0][2] *= sf
-                init_afm[1][2] *= sf
-                ss = copy.deepcopy(prev_settings)
-                # d['levels'][cur_level]['swim_settings']['img_size'] = self.dm['series']['size_xy'][cur_level]
-                ss['init_afm'] = init_afm
-                mo = ss['method_opts']
-                method = mo['method']
-                if method == 'grid':
-                    mo['size_1x1'][0] *= sf
-                    mo['size_1x1'][1] *= sf
-                    mo['size_2x2'][0] *= sf
-                    mo['size_2x2'][1] *= sf
-                elif method == 'manual':
-                    mo['size'] *= sf
-                    p1 = mo['points']['ng_coords']['tra']
-                    p2 = mo['points']['ng_coords']['ref']
-                    p3 = mo['points']['mir_coords']['tra']
-                    p4 = mo['points']['mir_coords']['ref']
-                    for i, p in enumerate(p1):
-                        p1[i] = [(x*sf, y*sf) for x,y in p]
-                    for i, p in enumerate(p2):
-                        p2[i] = [(x * sf, y * sf) for x, y in p]
-                    for i, p in enumerate(p3):
-                        p3[i] = [(x * sf, y * sf) for x, y in p]
-                    for i, p in enumerate(p4):
-                        p4[i] = [(x * sf, y * sf) for x, y in p]
-        except:
-            print_exception()
-        else:
-            self.dm['level_data'][cur_level]['ready'] = True
-            self.dataUpdateMA()
-        logger.info('<<')
+
+        self.parent.regenZarr()
 
 
                     
@@ -2364,21 +2368,38 @@ class ProjectTab(QWidget):
     def updateWarnings(self):
         logger.info('')
         if self.dm.is_aligned():
-            logger.info(f"[{caller_name()}] Updating warnings UI...")
-            # w1 = not self.dm.is_aligned() and not self.dm.is_generated()
-            # w2 = not self.dm.ssSavedComports()
-            to_align = self.dm.needsAlignIndexes()
-            to_generate = self.dm.needsGenerateIndexes()
-            w2 = (len(to_align) > 0) or (len(to_generate) > 0)
-            # self.warning_cafm.setVisible(w1)
-            self.warning_data.setVisible(w2)
-            if w2:
-                # self.warning_data.label.setText(f"{len(to_align)} alignments ({' '.join(map(str,to_align))}), "
-                #                                 f"and {len(to_generate)} generated images "
-                #                                 f"({' '.join(map(str,to_generate))}) are out of sync.")
-                self.warning_data.label.setText(f"{len(to_align)} alignments and {len(to_generate)} "
-                                                f"generated images are out of sync.")
+            ready = self.dm['level_data'][self.dm.scale]['alignment_ready']
+            if ready:
+                logger.info(f"[{caller_name()}] Updating warnings UI...")
+                # w1 = not self.dm.is_aligned() and not self.dm.is_zarr_generated()
+                # w2 = not self.dm.ssSavedComports()
+                to_align = self.dm.needsAlignIndexes()
+                to_generate = self.dm.needsGenerateIndexes()
+                w2 = (len(to_align) > 0) or (len(to_generate) > 0)
+                # self.warning_cafm.setVisible(w1)
+                self.warning_data.setVisible(w2)
+                if w2:
+                    # self.warning_data.label.setText(f"{len(to_align)} alignments ({' '.join(map(str,to_align))}), "
+                    #                                 f"and {len(to_generate)} generated images "
+                    #                                 f"({' '.join(map(str,to_generate))}) are out of sync.")
+                    self.warning_data.label.setText(f"{len(to_align)} alignments and {len(to_generate)} "
+                                                    f"generated images are out of sync.")
+        else:
+            self.warning_data.hide()
 
+    def updateZarrRadiobuttons(self):
+        isGenerated = self.dm.is_zarr_generated()
+        self.parent.bExport.setVisible(self.dm.is_zarr_generated())
+        self.gbGrid.setTitle(f'Level {self.dm.lvl()} Grid Alignment Settings')
+        # self.cbDefaults.setText(f'Uses defaults')
+        self.cbDefaults.setText(f'Default settings')
+        # ready = self.dm.is_alignable()
+        if isGenerated:
+            self.rbZarrTransformed.setEnabled(True)
+            self.rbZarrTransformed.setChecked(True)
+        else:
+            self.rbZarrTransformed.setEnabled(False)
+            self.rbZarrRaw.setChecked(True)
 
     @Slot()
     def dataUpdateMA(self):
@@ -2391,30 +2412,20 @@ class ProjectTab(QWidget):
         # self.gbOutputSettings.setTitle(f'Level {self.dm.lvl()} Output Settings')
         # self.gbGrid.setTitle(f'Level {self.dm.lvl()} SWIM Settings')
 
-        self.gbGrid.setTitle(f'Level {self.dm.lvl()} Grid Alignment Settings')
-        # self.cbDefaults.setText(f'Uses defaults')
-        self.cbDefaults.setText(f'Default settings')
-        ready = self.dm['level_data'][self.dm.scale]['ready']
-        if ready:
+        self.bRegenZarr.setEnabled(self.dm.is_aligned())
+
+
+        ready = self.dm['level_data'][self.dm.scale]['alignment_ready']
+        if self.dm.is_alignable() and ready:
             self.swMethod.setCurrentIndex(0)
-            self.checkboxes.show()
-            self.btnsSWIM.show()
+            # self.btnsSWIM.show()
+            self.bPull.setVisible((self.dm.scale != self.dm.coarsest_scale_key()) and self.dm.is_alignable())
+            self.bSWIM.show()
+            self.bSaveSettings.show()
             ss = self.dm['stack'][self.dm.zpos]['levels'][self.dm.scale]['swim_settings']
-            # self.cbDefaults.setEnabled(True)
-            # self.le1x1.setEnabled(True)
-            # self.slider1x1.setEnabled(True)
-            # self.le2x2.setEnabled(True)
-            # self.slider2x2.setEnabled(True)
-            # self.leWhitening.setEnabled(True)
-            # self.leIterations.setEnabled(True)
-            # self.cbClobber.setEnabled(True)
-            # self.leClobber.setEnabled(True)
-            # self.leMatch.setEnabled(True)
-            # self.sliderMatch.setEnabled(True)
             if self.dm.current_method == 'grid':
                 # self.swMethod.setCurrentIndex(0)
                 self.twMethod.setCurrentIndex(0)
-
 
                 siz1x1 = ss['method_opts']['size_1x1']
                 # min_dim = min(self.dm.image_size())
@@ -2457,11 +2468,10 @@ class ProjectTab(QWidget):
 
             self.cbDefaults.setChecked(self.dm.isDefaults())
             self.cbSaved.setChecked(self.dm.ssHash() == self.dm.ssSavedHash())
-            self.bPull.setVisible((self.dm.scale != self.dm.coarsest_scale_key()) and self.dm.is_alignable())
 
             self.bTransform.setEnabled(self.dm.is_aligned())
             # self.bSWIM.setEnabled(self.dm.is_aligned() and not os.path.exists(self.dm.path_aligned()))
-            self.bSaveSettings.setEnabled(not self.dm.ssSavedComports() and self.ht.haskey(self.dm.swim_settings())) #Critical
+            self.bSaveSettings.setEnabled(not self.dm.ssSavedComports() and self.dm.ht.haskey(self.dm.swim_settings())) #Critical
 
             self.leWhitening.setText(str(ss['whitening']))
             self.leIterations.setText(str(ss['iterations']))
@@ -2473,25 +2483,11 @@ class ProjectTab(QWidget):
                 self.refreshLogs()
 
         else:
-            # self.cbDefaults.setEnabled(False)
-            # self.cbSaved.setEnabled(False)
-            # self.le1x1.setEnabled(False)
-            # self.slider1x1.setEnabled(False)
-            # self.le2x2.setEnabled(False)
-            # self.slider2x2.setEnabled(False)
-            # self.leWhitening.setEnabled(False)
-            # self.leIterations.setEnabled(False)
-            # self.cbClobber.setEnabled(False)
-            # self.leClobber.setEnabled(False)
-            # self.leMatch.setEnabled(False)
-            # self.sliderMatch.setEnabled(False)
-            # self.bSWIM.setEnabled(False)
-            # self.bTransform.setEnabled(False)
-            # self.bPush.setEnabled(False)
-            # self.bPull.setEnabled(False)
             self.swMethod.setCurrentIndex(1)
+            self.swMethod.setCurrentIndex(1)
+            self.bSWIM.hide()
+            self.bSaveSettings.hide()
             self.checkboxes.hide()
-            self.btnsSWIM.hide()
         self.updateWarnings()
         if hasattr(self, 'editorViewer'):
             self.editorViewer.drawSWIMwindow() #1009+
@@ -2777,7 +2773,7 @@ class ProjectTab(QWidget):
     def initUI_table(self):
         '''Layer View Widget'''
         logger.info('')
-        self.project_table = ProjectTable(self, dm=self.dm)
+        self.project_table = ProjectTable(parent=self, dm=self.dm)
         self.project_table.updatePbar.connect(self.parent.pbar.setValue)
         # self.project_table.setStyleSheet("color: #f3f6fb;")
         vbl = VBL()
@@ -2820,6 +2816,7 @@ class ProjectTab(QWidget):
     def initUI_JSON(self):
         '''JSON Project View'''
         logger.info('')
+        self.treeview_model = JsonModel(parent=self)
         self.treeview = QTreeView()
         self.treeview.expanded.connect(lambda index: self.get_treeview_data(index))
 
@@ -2830,7 +2827,6 @@ class ProjectTab(QWidget):
         self.treeview.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         # self.treeview.header().resizeSection(0, 380)
         # self.treeview.header().setSectionResizeMode(QHeaderView.ResizeToContents)
-        self.treeview_model = JsonModel()
         # self.treeview_model.signals.dataModelChanged.connect(self.load_data_from_treeview) #0716-
         self.treeview.setModel(self.treeview_model)
         self.treeview.setAlternatingRowColors(True)

@@ -221,6 +221,7 @@ def update_preferences_model():
 
     cfg.settings.setdefault('locations', [])
     cfg.settings.setdefault('alignments', [])
+    cfg.settings.setdefault('gif_speed', 50)
 
     cfg.settings.setdefault('series_combo_text', None)
     cfg.settings.setdefault('alignment_combo_text', None)

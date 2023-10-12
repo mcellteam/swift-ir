@@ -436,9 +436,11 @@ class AbstractEMViewer(neuroglancer.Viewer):
 # class EMViewer(neuroglancer.Viewer):
 class EMViewer(AbstractEMViewer):
 
-    def __init__(self, dm, **kwags):
+    def __init__(self, parent, dm, path, **kwags):
         super().__init__(**kwags)
+        self.parent = parent
         self.dm = dm
+        self.path = path
         self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
         self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
 
@@ -457,30 +459,28 @@ class EMViewer(AbstractEMViewer):
             logger.info(f'\n\n[DEV] [{caller}] [{self.type}] Initializing Neuroglancer...\n')
         self._blockStateChanged = False
 
+
+        if not os.path.exists(os.path.join(self.path,'.zarray')):
+            cfg.main_window.warn('Zarr (.zarray) Not Found: %s' % self.path)
+            logger.warning('Zarr (.zarray) Not Found: %s' % self.path)
+            return
+
+        logger.info(f'Zarr path: {self.path}')
+
         if not nglayout:
+            # requested = getData('state,neuroglancer,layout')
             requested = getData('state,neuroglancer,layout')
+
             mapping = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
-              'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
-            nglayout = mapping[requested]
+                       'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
+            # nglayout = mapping[requested]
+            if self.path == self.dm.path_zarr_transformed():
+                nglayout = mapping['4panel']
+            else:
+                nglayout = mapping['xy']
 
-        # zd = ('img_src.zarr', 'img_aligned.zarr')[self.dm.is_aligned()] #Todo this is wrong
-        if self.dm.is_aligned():
-            path = os.path.join(self.dm.data_location, 'zarr', self.dm.level)
-        else:
-            path = os.path.join(self.dm.series_location, 'zarr', self.dm.level)
-        if not os.path.exists(os.path.join(path,'.zarray')):
-            cfg.main_window.warn('Zarr (.zarray) Not Found: %s' % path)
-            logger.warning('Zarr (.zarray) Not Found: %s' % path)
-            return
 
-        assert os.path.exists(path)
-        nfiles = sum(1 for entry in os.listdir(path) if os.path.isfile(os.path.join(path,entry)))
-        try:
-            assert nfiles > 1
-        except:
-            print_exception()
-            return
-        self.tensor = cfg.tensor = get_zarr_tensor(path).result()
+        self.tensor = cfg.tensor = get_zarr_tensor(self.path).result()
         # self.tensor = cfg.tensor = await get_zarr_tensor(path).result()
 
         self.coordinate_space = self.getCoordinateSpace()

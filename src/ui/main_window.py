@@ -3,34 +3,22 @@
 GlanceEM-SWiFT - A software tool for image alignment that is under active development.
 """
 import os
-import shutil
 import sys
 import copy
 import json
 import time
-import pprint
-import timeit
 import datetime
-from math import sqrt
 import threading
 import inspect
 import logging
 import textwrap
-import tracemalloc
 import getpass
 from pathlib import Path
-import zarr
-import dis
-import stat
 import psutil
-import resource
-import platform
 from math import floor
 import multiprocessing
 import subprocess
 from collections import OrderedDict
-import asyncio
-import numpy as np
 # from guppy import hpy; h=hpy()
 import neuroglancer as ng
 
@@ -58,27 +46,24 @@ from qtpy.QtWidgets import *
 import src.config as cfg
 import src.resources.icons_rc
 import src.shaders
-from src.thumbnailer import Thumbnailer
 # from src.data_model import DataModel
 # from src.generate_scales import GenerateScales
-from src.helpers import setOpt, getOpt, getData, setData, print_exception, get_scale_val, \
-    natural_sort, tracemalloc_start, tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, \
-    exist_aligned_zarr, configure_project_paths, isNeuroglancerRunning, \
-    update_preferences_model, delete_recursive, is_mac, hotkey, make_affine_widget_HTML, \
-    caller_name, is_joel, is_tacc, run_command, addLoggingLevel, check_macos_isdark_theme, dt
-from src.ui.dialogs import AskContinueDialog, ConfigAppDialog, NewConfigureProjectDialog, \
-    open_project_dialog, export_affines_dialog, mendenhall_dialog, RechunkDialog, ExitAppDialog, SaveExitAppDialog
+from src.helpers import getData, setData, print_exception, get_scale_val, \
+    tracemalloc_start, tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, \
+    exist_aligned_zarr, isNeuroglancerRunning, \
+    update_preferences_model, is_mac, hotkey, make_affine_widget_HTML, \
+    is_joel, is_tacc, run_command, check_macos_isdark_theme
+from src.ui.dialogs import export_affines_dialog, ExitAppDialog
 from src.ui.process_monitor import HeadupDisplay
-from src.ui.align import AlignWorker
-from src.ui.scale import ScaleWorker
-from src.ui.generate_zarr import ZarrWorker
-from src.viewer_em import PMViewer
+from src.align import AlignWorker
+from src.scale import ScaleWorker
+from src.generate_zarr import ZarrWorker
 from src.ui.models.json_tree import JsonModel
 from src.ui.toggle_switch import ToggleSwitch
 from src.ui.tab_browser import WebBrowser
 from src.ui.tab_project import ProjectTab
 from src.ui.tab_open_project import OpenProject
-from src.ui.layouts import HBL, VBL, GL, HW, VW, HSplitter, VSplitter, QVLine, QHLine
+from src.ui.layouts import HBL, VBL, HW, VW, QVLine
 from src.funcs_image import SetStackCafm
 from src.ui.python_console import PythonConsoleWidget
 from src.ui.webpage import QuickWebPage
@@ -336,10 +321,10 @@ class MainWindow(QMainWindow):
         # if self._isProjectTab():
         #     self.pt.fn_hwidgetChanged()
         #     logger.critical('Resizing things, isProjectTab...')
-        #     h = cfg.project_tab.wEditAlignment.height()
+        #     h = self.pt.wEditAlignment.height()
         #     # self.pt.sideTabs.setFixedWidth(int(.26 * self.width()))
         #     ms_w = int(h/4 + 0.5)
-        #     tn_w = int((h - cfg.project_tab.tn_ref_lab.height() - cfg.project_tab.tn_ref_lab.height()) / 2 + 0.5)
+        #     tn_w = int((h - self.pt.tn_ref_lab.height() - self.pt.tn_ref_lab.height()) / 2 + 0.5)
         #     self.pt.ms_widget.setFixedWidth(ms_w)
         #     self.pt.match_widget.setFixedWidth(ms_w)
         #     self.pt.tn_widget.setFixedWidth(tn_w)
@@ -380,13 +365,13 @@ class MainWindow(QMainWindow):
 
     def cleanupAfterCancel(self):
         logger.critical('Cleaning Up After Multiprocessing Tasks Were Canceled...')
-        # cfg.project_tab.snr_plot.initSnrPlot()
+        # self.pt.snr_plot.initSnrPlot()
         self.wPbar.hide()
-        # cfg.project_tab.updateTreeWidget()
+        # self.pt.updateTreeWidget()
         self.dataUpdateWidgets()
         self.updateEnabledButtons()
         if self.dwSnr.isVisible():
-            cfg.project_tab.dSnr_plot.initSnrPlot()
+            self.pt.dSnr_plot.initSnrPlot()
 
     def hardRestartNg(self):
         caller = inspect.stack()[1].function
@@ -397,8 +382,8 @@ class MainWindow(QMainWindow):
             if ng.is_server_running():
                 logger.info('Stopping Neuroglancer...')
                 ng.server.stop()
-            elif cfg.project_tab:
-                cfg.project_tab.initNeuroglancer()
+            elif self.pt:
+                self.pt.initNeuroglancer()
             elif cfg.zarr_tab:
                 cfg.zarr_tab.load()
         if cfg.USE_DELAY:
@@ -1031,7 +1016,8 @@ class MainWindow(QMainWindow):
         if scale == None:
             scale = self.dm.scale
         if indexes == None: indexes = list(range(0,len(self.dm)))
-        self.align(scale=scale, regen_indexes=indexes, align=False, regenerate=True, ignore_bb=ignore_bb)
+        # self.align(scale=scale, indexes=indexes, align=False, regenerate=True, ignore_bb=ignore_bb)
+        self.align(dm=self.dm, indexes=indexes)
 
 
     def verify_alignment_readiness(self) -> bool:
@@ -1120,7 +1106,7 @@ class MainWindow(QMainWindow):
             self.pm.refresh()
         except:
             print_exception()
-        cfg.project_tab.initNeuroglancer()
+        self.pt.initNeuroglancer()
 
         dt = time.time() - t0
         logger.info(f'  Elapsed Time         : {dt:.2f}s')
@@ -1147,13 +1133,14 @@ class MainWindow(QMainWindow):
             ntasks = 4 * len(alignThese)
             for s in alignThese:
                 self.dm.level = s
-                # cfg.project_tab.initNeuroglancer()
-                cfg.project_tab.refreshTab()
+                # self.pt.initNeuroglancer()
+                self.pt.refreshTab()
                 self.dataUpdateWidgets()
-                self.alignAll(dm=self.dm)
+                self.alignAll()
 
 
     def alignOne(self, dm=None, index=None, regenerate=False, align=True):
+    # def alignOne(self, dm=None, index=None, regenerate=False, align=True):
         self.tell('Aligning Section #%d (%s)...' % (self.dm.zpos, self.dm.level_pretty()))
         if dm == None:
             dm = self.dm
@@ -1169,27 +1156,27 @@ class MainWindow(QMainWindow):
 
 
     @Slot()
-    def alignAll(self, dm=None):
-
+    def alignAll(self):
 
         if self._isProjectTab():
             if self.dm.is_alignable():
                 logger.info('\n\nAligning All...\n')
-                if dm == None:
-                    dm = self.dm
                 indexes = list(range(0,len(self.dm)))
-                self.align(dm=dm, align_indexes=indexes, regen_indexes=indexes, reallocate_zarr=True)
+                self.align(dm=self.dm, indexes=indexes)
             else:
                 logger.warning("This scale is not alignable!")
 
     @Slot()
     def regenZarr(self):
+
+        renew = not self.dm['level_data'][cfg.data.level]['zarr_made']
+
         if self._isProjectTab():
             if self.dm.is_aligned():
                 logger.info('Regenerating Zarr...')
                 self.bRegenZarr.setEnabled(False)
                 self._zarrThread = QThread()
-                self._zarrworker = ZarrWorker(dm=self.dm, ht=self.pt.ht)
+                self._zarrworker = ZarrWorker(dm=self.dm, renew=renew)
                 self._zarrThread.started.connect(self._zarrworker.run)  # Step 5: Connect signals and slots
                 self._zarrThread.finished.connect(self._zarrThread.deleteLater)
                 self._zarrworker.moveToThread(self._zarrThread)  # Step 4: Move worker to the thread
@@ -1200,19 +1187,21 @@ class MainWindow(QMainWindow):
                 self._zarrworker.finished.connect(self._zarrThread.quit)
                 self._zarrworker.finished.connect(self._autosave)
                 self._zarrworker.finished.connect(lambda: self.wPbar.hide())
+                self._zarrworker.finished.connect(lambda: self.dm.setZarrMade(True))
                 self._zarrworker.finished.connect(lambda: self.bRegenZarr.setEnabled(True))
                 self._zarrworker.finished.connect(self.dataUpdateWidgets)
+                self._zarrworker.finished.connect(lambda: self.pt.initNeuroglancer(init_all=True))
                 self._zarrworker.finished.connect(lambda: print('Finished'))
                 self._zarrThread.start()  # Step 6: Start the thread
 
 
     @Slot()
-    def align(self, dm, align_indexes=(), regen_indexes=(), scale=None, renew_od=False, reallocate_zarr=False,
-              align=True, regenerate=True, ignore_bb=False):
+    def align(self, dm, indexes=()):
+    # def align(self, dm, align_indexes=(), regen_indexes=(), scale=None, renew_od=False, reallocate_zarr=False,
+    #           align=True, regenerate=True, ignore_bb=False):
         self.set_status('Aligning...')
         logger.critical('')
-        if scale == None:
-            scale = dm.scale
+        scale = dm.scale
 
         if self._working == True:
             self.warn('Another Process is Already Running')
@@ -1237,8 +1226,8 @@ class MainWindow(QMainWindow):
 
         self.shutdownNeuroglancer()
 
-        self.tell(f'Aligning {len(align_indexes)} pairs')
-        self.tell(f'Regenerating {len(regen_indexes)} images')
+        self.tell(f'Aligning {len(indexes)} pairs')
+        self.tell(f'Regenerating {len(indexes)} images')
         self.tell("%s Affines (%s)..." % (('Initializing', 'Refining')[dm.isRefinement()], dm.level_pretty(s=scale)))
         # logger.info(f'Aligning indexes:{indexes}, {self.dm.level_pretty(scale)}...')
         self._snr_before = self.dm.snr_list()
@@ -1255,16 +1244,10 @@ class MainWindow(QMainWindow):
         self._alignThread = QThread()  # Step 2: Create a QThread object
         logger.info("Starting background worker...")
         self._alignworker = AlignWorker(
-            path=None,
-            align_indexes=align_indexes,
-            regen_indexes=regen_indexes,
-            scale=scale,
-            align=align,
-            regenerate=regenerate,
-            renew_od=renew_od,
-            reallocate_zarr=reallocate_zarr,
             dm=dm,
-            ht=self.pt.ht
+            path=None,
+            scale=scale,
+            indexes=indexes,
         )  # Step 3: Create a worker object
         logger.info("Connecting worker signals...")
         self._alignThread.started.connect(self._alignworker.run)  # Step 5: Connect signals and slots
@@ -1282,7 +1265,7 @@ class MainWindow(QMainWindow):
         self._alignworker.finished.connect(lambda: self.bAlign.setEnabled(True))
 
         if dm.is_aligned():
-            self._alignworker.finished.connect(lambda: self.present_snr_results(align_indexes))
+            self._alignworker.finished.connect(lambda: self.present_snr_results(indexes))
         self._alignworker.finished.connect(lambda: print(self._alignworker.dm))
         self._alignThread.start()  # Step 6: Start the thread
 
@@ -1323,7 +1306,6 @@ class MainWindow(QMainWindow):
         self._scaleworker.finished.connect(self._refresh)
         self._scaleworker.finished.connect(lambda: self.pm.bConfirmImport.setEnabled(True))
         def fn():
-            cfg.settings['series_combo_text'] = os.path.basename(out)
             self.saveUserPreferences()
             self.pm.refresh()
         self._scaleworker.finished.connect(fn)
@@ -1468,7 +1450,7 @@ class MainWindow(QMainWindow):
             self.bLeftArrow.setEnabled(cur > 0)
             self.bRightArrow.setEnabled(cur < len(self.dm) - 1)
             if self.dwSnr.isVisible():
-                cfg.project_tab.dSnr_plot.updateLayerLinePos()
+                self.pt.dSnr_plot.updateLayerLinePos()
             if cfg.emViewer:
                 cfg.emViewer.set_layer(self.dm.zpos)
             self.dataUpdateWidgets()
@@ -1493,6 +1475,30 @@ class MainWindow(QMainWindow):
         if self._working:
             logger.warning("Busy working! Not going to update the entire interface rn.")
             return
+
+        logger.info('')
+
+        _needsAlignIndexes = self.dm.needsAlignIndexes()
+        _needsGenerateIndexes = self.dm.needsGenerateIndexes()
+        _hasUnsavedChangesIndexes = self.dm.hasUnsavedChangesIndexes()
+        n1 = len(_needsAlignIndexes)
+        n2 = len(_needsGenerateIndexes)
+        n3 = len(_hasUnsavedChangesIndexes)
+        s1 = (' '.join(map(str, _needsAlignIndexes)), '%d (total)' % n1)[n1 > 5]
+        s2 = (' '.join(map(str, _needsGenerateIndexes)), '%d (total)' % n2)[n2 > 5]
+        s3 = (' '.join(map(str, _hasUnsavedChangesIndexes)), '%d (total)' % n3)[n3 > 5]
+        if sum([n1, n2, n3]):
+            msg = []
+            if n1:
+                msg.append(f"Alignment not in sync: {s1}")
+            if n2:
+                msg.append(f"Zarr not in sync: {s2}")
+            if n3:
+                msg.append(f"Unsaved changes: {s3}")
+            self.statusBar.showMessage(" // ".join(msg))
+        else:
+            self.statusBar.clearMessage()
+
 
 
         if self._isProjectTab():
@@ -1537,7 +1543,7 @@ class MainWindow(QMainWindow):
             self.updateDwMatches()
 
             if self.pt.wTabs.currentIndex() == 0:
-                cfg.project_tab._overlayLab.setVisible(self.dm.skipped()) #Todo find/fix
+                self.pt._overlayLab.setVisible(self.dm.skipped()) #Todo find/fix
                 if hasattr(cfg, 'emViewer'):
                     try:
                         if floor(cfg.emViewer.state.position[0]) != self.dm.zpos:
@@ -1548,9 +1554,9 @@ class MainWindow(QMainWindow):
                     logger.warning("no attribute: 'emViewer'!")
 
             elif self.pt.wTabs.currentIndex() == 1:
-                cfg.project_tab.dataUpdateMA()
+                self.pt.dataUpdateMA()
 
-                cfg.editorViewer.set_layer()
+                self.pt.editorViewer.set_layer()
 
                 self.pt.lab_filename.setText(f"[{self.dm.zpos}] Name: {self.dm.name()} - {self.dm.level_pretty()}")
                 self.pt.cl_tra.setText(f'[{self.dm.zpos}] {self.dm.name()} (Transforming)')
@@ -1565,27 +1571,27 @@ class MainWindow(QMainWindow):
 
 
             elif self.pt.wTabs.currentIndex() == 2:
-                cfg.project_tab.snr_plot.updateLayerLinePos()
+                self.pt.snr_plot.updateLayerLinePos()
 
             elif self.pt.wTabs.currentIndex() == 4:
-                cfg.project_tab.treeview_model.jumpToLayer()
+                self.pt.treeview_model.jumpToLayer()
 
 
 
             #Todo come back to how to make this work without it getting stuck in a loop
-            # if cfg.project_tab.wTabs.currentIndex() == 2:
-            #     cfg.project_tab.project_table.data.selectRow(cur)
+            # if self.pt.wTabs.currentIndex() == 2:
+            #     self.pt.project_table.data.selectRow(cur)
 
-        self.setFocus()
+        # self.setFocus()
 
     # br = '&nbsp;'
     # a = """<span style='color: #ffe135;'>"""
     # b = """</span>"""
     # nl = '<br>'
     #
-    # if cfg.project_tab.detailsSNR.isVisible():
+    # if self.pt.detailsSNR.isVisible():
     #     if (self.dm.zpos == 0) or self.dm.skipped() or self.dm.snr() == 0:
-    #         cfg.project_tab.detailsSNR.setText(
+    #         self.pt.detailsSNR.setText(
     #             f"Avg. SNR{br * 2}: N/A{nl}"
     #             f"Prev.{br}SNR{br}: N/A{nl}"
     #             f"Components{nl}"
@@ -1604,7 +1610,7 @@ class MainWindow(QMainWindow):
     #                 q1 = ('%.3f' % components[1]).rjust(9)
     #                 q2 = ('%.3f' % components[2]).rjust(9)
     #                 q3 = ('%.3f' % components[3]).rjust(9)
-    #                 cfg.project_tab.detailsSNR.setText(
+    #                 self.pt.detailsSNR.setText(
     #                     f"Avg. SNR{br * 2}:{a}{str0}{b}{nl}"
     #                     f"Prev.{br}SNR{br}:{str1}{nl}"
     #                     f"Components{nl}"
@@ -1620,7 +1626,7 @@ class MainWindow(QMainWindow):
     #                 for i in range(len(components)):
     #                     txt += f'{nl}%d:{br * 10}%.3f' % (i, components[i])
     #
-    #                 cfg.project_tab.detailsSNR.setText(txt)
+    #                 self.pt.detailsSNR.setText(txt)
     #         except:
     #             print_exception()
 
@@ -1667,7 +1673,7 @@ class MainWindow(QMainWindow):
     def view_historical_alignment(self):
         logger.info('view_historical_alignment:')
         name = self._hstry_listWidget.currentItem().text()
-        if cfg.project_tab:
+        if self.pt:
             if name:
                 path = os.path.join(self.dm.data_location, self.dm.level, 'history', name)
                 with open(path, 'r') as f:
@@ -1812,7 +1818,7 @@ class MainWindow(QMainWindow):
                     self.updateEnabledButtons()
                     self.dataUpdateWidgets()
                     self.pt.dataUpdateMA()
-                    cfg.project_tab.refreshTab()
+                    self.pt.refreshTab()
                     if self.dwSnr.isVisible():
                         self.pt.dSnr_plot.initSnrPlot()
             else:
@@ -1820,7 +1826,7 @@ class MainWindow(QMainWindow):
 
 
     def export_afms(self):
-        if cfg.project_tab:
+        if self.pt:
             if self.dm.is_aligned():
                 file = export_affines_dialog()
                 if file == None:
@@ -1886,9 +1892,9 @@ class MainWindow(QMainWindow):
             setData('state,neuroglancer,layout', '4panel')
         else:
             setData('state,neuroglancer,layout', 'xy')
-        self.pt = cfg.project_tab = cfg.pt = ProjectTab(self, path=dm.data_location, datamodel=dm)
-        cfg.dataById[id(cfg.project_tab)] = dm
-        self.addGlobTab(cfg.project_tab, name, switch_to=switch_to)
+        self.pt = self.pt = cfg.pt = ProjectTab(self, path=dm.data_location, datamodel=dm)
+        cfg.dataById[id(self.pt)] = dm
+        self.addGlobTab(self.pt, name, switch_to=switch_to)
         logger.info(f'\n\nLoading project:\n%s\n' % os.path.basename(self.dm.data_location))
         self.tell("Loading Project '%s'..." % self.dm.data_location)
         self.alignAllAction.setText(f"Align + Generate All: Level {self.dm.scale}")
@@ -2003,7 +2009,7 @@ class MainWindow(QMainWindow):
 
                 self.saveUserPreferences()
                 logger.info('Pickling alignment data...')
-                cfg.pt.ht.pickle()
+                self.dm.ht.pickle()
 
             except:
                 print_exception()
@@ -2089,6 +2095,7 @@ class MainWindow(QMainWindow):
         logger.info('Performing Shutdown Instructions...')
 
         self._autosave(silently=True)
+        self._timerWorker._running = False
 
         self.settings.setValue("geometry", self.saveGeometry())
         self.settings.setValue("windowState", self.saveState())
@@ -2211,17 +2218,17 @@ class MainWindow(QMainWindow):
 
         # logger.info('')
         if self._isProjectTab():
-            cur = cfg.project_tab.wTabs.currentIndex()
+            cur = self.pt.wTabs.currentIndex()
             if cur == 1:
                 new_cs_scale = cfg.editorViewer.zoom() * 1.1
                 logger.info(f'new_cs_scale: {new_cs_scale}')
                 cfg.editorViewer.set_zoom(new_cs_scale)
-                cfg.project_tab.zoomSlider.setValue(1 / new_cs_scale)
+                self.pt.zoomSlider.setValue(1 / new_cs_scale)
             elif cur == 0:
                 new_cs_scale = cfg.emViewer.zoom() * 1.1
                 logger.info(f'new_cs_scale: {new_cs_scale}')
                 cfg.emViewer.set_zoom(new_cs_scale)
-                cfg.project_tab.zoomSlider.setValue(1 / new_cs_scale)
+                self.pt.zoomSlider.setValue(1 / new_cs_scale)
 
     def incrementZoomIn(self):
         # logger.info('')
@@ -2229,17 +2236,17 @@ class MainWindow(QMainWindow):
             return
 
         if self._isProjectTab():
-            cur = cfg.project_tab.wTabs.currentIndex()
+            cur = self.pt.wTabs.currentIndex()
             if cur == 1:
                 new_cs_scale = cfg.editorViewer.zoom() * 0.9
                 logger.info(f'new_cs_scale: {new_cs_scale}')
                 cfg.editorViewer.set_zoom(new_cs_scale)
-                cfg.project_tab.zoomSlider.setValue(1 / new_cs_scale)
+                self.pt.zoomSlider.setValue(1 / new_cs_scale)
             elif cur == 0:
                 new_cs_scale = cfg.emViewer.zoom() * 0.9
                 logger.info(f'new_cs_scale: {new_cs_scale}')
                 cfg.emViewer.set_zoom(new_cs_scale)
-                cfg.project_tab.zoomSlider.setValue(1 / new_cs_scale)
+                self.pt.zoomSlider.setValue(1 / new_cs_scale)
 
     # def initShortcuts(self):
     #     logger.info('')
@@ -2321,7 +2328,7 @@ class MainWindow(QMainWindow):
         self.addGlobTab(browser, 'Debug Chromium')
 
     def get_ng_state(self):
-        if cfg.project_tab:
+        if self.pt:
             try:
                 if ng.is_server_running():
                     txt = json.dumps(cfg.emViewer.state.to_json(), indent=2)
@@ -2333,7 +2340,7 @@ class MainWindow(QMainWindow):
                 print_exception()
 
     def get_ng_state_raw(self):
-        if cfg.project_tab:
+        if self.pt:
             try:
                 if ng.is_server_running():
                     return f"Raw Viewer State:\n{cfg.emViewer.config_state.raw_state}"
@@ -2350,7 +2357,7 @@ class MainWindow(QMainWindow):
             print_exception()
 
     def dump_ng_details(self):
-        if cfg.project_tab:
+        if self.pt:
             if not ng.is_server_running():
                 logger.warning('Neuroglancer is not running')
                 return
@@ -2424,11 +2431,11 @@ class MainWindow(QMainWindow):
                     if layer + x in range(0,len(self.dm)):
                         self.pt.project_table.set_row_data(row=layer + x)
 
-                if cfg.project_tab.wTabs.currentIndex() == 4:
-                    cfg.project_tab.snr_plot.initSnrPlot()
+                if self.pt.wTabs.currentIndex() == 4:
+                    self.pt.snr_plot.initSnrPlot()
 
                 if self.dwSnr.isVisible():
-                    cfg.project_tab.dSnr_plot.initSnrPlot()
+                    self.pt.dSnr_plot.initSnrPlot()
 
                 self.dataUpdateWidgets()
 
@@ -2440,11 +2447,11 @@ class MainWindow(QMainWindow):
 
 
     def print_all_matchpoints(self):
-        if cfg.project_tab:
+        if self.pt:
             self.dm.print_all_manpoints()
 
     def show_all_matchpoints(self):
-        if cfg.project_tab:
+        if self.pt:
             no_mps = True
             for i, l in enumerate(self.dm.stack()):
                 r = l['images']['ref']['metadata']['man_points']
@@ -2468,23 +2475,23 @@ class MainWindow(QMainWindow):
         self.tell('\n\n' + '\n'.join(sys.path))
 
     def show_snr_list(self) -> None:
-        if cfg.project_tab:
+        if self.pt:
             s = self.dm.curScale_val()
             lst = ' | '.join(map(str, self.dm.snr_list()))
             self.tell('\n\nSNR List for Scale %d:\n%s\n' % (s, lst.split(' | ')))
 
     # def show_zarr_info(self) -> None:
-    #     if cfg.project_tab:
+    #     if self.pt:
     #         z = zarr.open(os.path.join(self.dm.series_location, 'img_aligned.zarr'))
     #         self.tell('\n' + str(z.tree()) + '\n' + str(z.info))
     #
     # def show_zarr_info_aligned(self) -> None:
-    #     if cfg.project_tab:
+    #     if self.pt:
     #         z = zarr.open(os.path.join(self.dm.series_location, 'img_aligned.zarr'))
     #         self.tell('\n' + str(z.info) + '\n' + str(z.tree()))
     #
     # def show_zarr_info_source(self) -> None:
-    #     if cfg.project_tab:
+    #     if self.pt:
     #         z = zarr.open(os.path.join(self.dm.series_location, 'img_src.zarr'))
     #         self.tell('\n' + str(z.info) + '\n' + str(z.tree()))
 
@@ -2504,23 +2511,23 @@ class MainWindow(QMainWindow):
     #     cfg.SHADER = '''void main () {
     #       emitGrayscale(toNormalized(getDataValue()));
     #     }'''
-    #     cfg.project_tab.initNeuroglancer()
+    #     self.pt.initNeuroglancer()
 
     def set_shader_default(self):
         self.dm['rendering']['shader'] = src.shaders.shader_default_
-        cfg.project_tab.initNeuroglancer()
+        self.pt.initNeuroglancer()
 
     def set_shader_colormapJet(self):
         self.dm['rendering']['shader'] = src.shaders.colormapJet
-        cfg.project_tab.initNeuroglancer()
+        self.pt.initNeuroglancer()
 
     def set_shader_test1(self):
         self.dm['rendering']['shader'] = src.shaders.shader_test1
-        cfg.project_tab.initNeuroglancer()
+        self.pt.initNeuroglancer()
 
     def set_shader_test2(self):
         self.dm['rendering']['shader'] = src.shaders.shader_test2
-        cfg.project_tab.initNeuroglancer()
+        self.pt.initNeuroglancer()
 
     def onProfilingTimer(self):
         cpu_percent = psutil.cpu_percent()
@@ -3024,7 +3031,58 @@ class MainWindow(QMainWindow):
             # b.setLayoutDirection(Qt.RightToLeft)
             b.setStyleSheet("QToolButton { text-align: right; margin-left: 4px;}")
 
+        self.bExport = QPushButton('Export ')
+        tip = """Export series to Zarr & TIFF"""
+        tip = '\n'.join(textwrap.wrap(tip, width=35))
+        self.bExport.setToolTip(tip)
+        self.bExport.setIconSize(QSize(15,15))
+        self.bExport.setIcon(qta.icon('mdi.export', color='#141414', color_disabled='#f3f6fb'),)
+        self.bExport.setLayoutDirection(Qt.RightToLeft)
+        # self.bExport.setStyleSheet("QPushButton{color: #141414; font-size: 11px; font-weight: 600; background-color: #b3e6b3; "
+        #                            "border: 1px solid #141414; border-radius: 2px; padding: 2px;} QPushButton:disabled{color: #f3f6fb; background-color: #a3a3a3; border: none;}")
+        self.bExport.setVisible(False)
+
+        self.wExport = HW(ExpandingHWidget(self), self.bExport)
+
         # self.tbb3demdata.setIconSize(QSize(40,20))
+
+        self._timerWorker = TimerWorker()
+        self._timerThread = QThread()
+        self._timerWorker.everySecond.connect(self.onSecondPassed)
+        self._timerWorker.moveToThread(self._timerThread)
+        self._timerWorker.finished.connect(self._timerThread.quit)
+        self._timerThread.started.connect(self._timerWorker.secondCounter)
+        self._timerThread.start()
+
+        self.lcdTimer = QLCDNumber()
+        self.lcdTimer.setFixedSize(QSize(80, 20))
+        self.lcdTimer.setDigitCount(8)
+        self.lcdTimer.display("00:00:00")
+        self.lcdTimer.setStyleSheet("""QLCDNumber
+                                                   { border: none;
+                                                   background: none;
+                                                   }""")
+        palette = self.lcdTimer.palette()
+
+        # foreground color
+        # palette.setColor(palette.WindowText, QColor(85, 85, 255))
+        palette.setColor(palette.WindowText, QColor('#161c20'))
+        # background color
+        palette.setColor(palette.Background, QColor('#f3f6fb'))
+        # "light" border
+        palette.setColor(palette.Light, QColor('#141414'))
+        # "dark" border
+        palette.setColor(palette.Dark, QColor('#141414'))
+
+        # set the palette
+        self.lcdTimer.setPalette(palette)
+
+
+
+        self.wLcdTimer = HW(ExpandingHWidget(self), self.lcdTimer)
+
+        # https://stackoverflow.com/questions/6783194/background-thread-with-qthread-in-pyqt
+
 
         self.toolbar.addWidget(self.tbbMenu)
         self.toolbar.addWidget(self.tbbProjects)
@@ -3046,8 +3104,21 @@ class MainWindow(QMainWindow):
         self.toolbar.addWidget(self.tbbGlossary)
         self.toolbar.addWidget(self.tbbReportBug)
         self.toolbar.addWidget(self.tbb3demdata)
+        self.toolbar.addWidget(self.wLcdTimer)
 
         # self.toolbar.addWidget(self.tbbTestThread)
+
+    def onSecondPassed(self, val):
+        def secs_to_hrsminsec(secs: int):
+            mins = secs // 60
+            secs %= 60
+            hrs = mins // 60
+            mins %= 60
+            hrsminsec = f'{hrs:02}:{mins:02}:{secs:02}'
+            return hrsminsec
+        # logger.info(f'time: {val}')
+        self.lcdTimer.display(secs_to_hrsminsec(val))
+        self.lcdTimer.update()
 
     def updateOutputSettings(self):
         if self.wOutputSettings.isVisible():
@@ -3096,7 +3167,7 @@ class MainWindow(QMainWindow):
                 self.fullScreenAction.setIcon(qta.icon('mdi.fullscreen-exit', color='#ede9e8'))
             if self._isProjectTab():
                 if self.pt.wTabs.currentIndex() in (0, 1):
-                    cfg.project_tab.initNeuroglancer()
+                    self.pt.initNeuroglancer()
 
 
     def set_elapsed(self, t, desc=""):
@@ -3122,9 +3193,9 @@ class MainWindow(QMainWindow):
         indexes = list(range(0, self.globTabs.count()))
         for i in indexes:
             self.globTabs.setTabEnabled(i, True)
-        if cfg.project_tab:
+        if self.pt:
             for i in range(0, 5):
-                cfg.project_tab.wTabs.setTabEnabled(i, True)
+                self.pt.wTabs.setTabEnabled(i, True)
         # self._btn_refreshTab.setEnabled(True)
 
     def lookForTabID(self, search):
@@ -3229,12 +3300,13 @@ class MainWindow(QMainWindow):
         caller = inspect.stack()[1].function
         logger.info(f'changing tab to tab of type {self._getTabType()}')
 
-        # cfg.project_tab = None
+        # self.pt = None
         # cfg.zarr_tab = None
         self.stopPlaybackTimer()
         self.reloadComboScale()
         [b.setEnabled(False) for b in self._lower_tb_buttons]
         # QApplication.restoreOverrideCursor()
+
 
         if not self._isProjectTab():
             self.statusBar.clearMessage()
@@ -3249,19 +3321,20 @@ class MainWindow(QMainWindow):
                 self.setdw_matches(False)
             if self.dwThumbs.isVisible():
                 self.setdw_thumbs(False)
+            self.bExport.setVisible(False)
 
         elif self._isProjectTab():
             self.dm = self.dm = self.globTabs.currentWidget().datamodel
             # self.dm.signals.zposChanged.connect(self.updateSlidrZpos)
-            cfg.project_tab = self.pt = self.globTabs.currentWidget()
+            self.pt = self.pt = self.globTabs.currentWidget()
             self.pt.initNeuroglancer() #0815-
             self.updateLowest8widget()
             [b.setEnabled(True) for b in self._lower_tb_buttons]
             try:
                 if cfg.emViewer:
-                    cfg.emViewer = cfg.project_tab.viewer
-                if hasattr(cfg.project_tab, 'editorViewer'):
-                    cfg.editorViewer = cfg.project_tab.editorViewer
+                    cfg.emViewer = self.pt.viewer
+                if hasattr(self.pt, 'editorViewer'):
+                    cfg.editorViewer = self.pt.editorViewer
             except:
                 print_exception()
 
@@ -3271,6 +3344,7 @@ class MainWindow(QMainWindow):
             self.dwSnr.setWidget(self.pt.dSnr_plot)
             if self.dwSnr.isVisible():
                 self.pt.dSnr_plot.initSnrPlot()
+            self.bExport.setVisible(self.dm.is_zarr_generated())
 
         elif self._getTabType() == 'ZarrTab':
             logger.info('Loading Zarr Tab...')
@@ -4045,7 +4119,7 @@ class MainWindow(QMainWindow):
         #         self.tell('Rechunking Time: %.2f' % dt)
         #         logger.info('Rechunking Time: %.2f' % dt)
         #
-        #         cfg.project_tab.initNeuroglancer()
+        #         self.pt.initNeuroglancer()
         #
         #     else:
         #         logger.info('Rechunking Canceled')
@@ -4135,7 +4209,7 @@ class MainWindow(QMainWindow):
             logger.info('')
             self.timerPlayback.setInterval(int(1000 / self.sbFPS.value()))
             if hasattr(cfg,'data'):
-                if cfg.project_tab:
+                if self.pt:
                     if self.sldrZpos.value() < len(self.dm) - 1:
                         self.dm.zpos += 1
                     else:
@@ -4193,7 +4267,7 @@ class MainWindow(QMainWindow):
         p.setColor(QPalette.Text, QColor("#141414"))
         self.bAlign.setPalette(p)
 
-        self.bRegenZarr = QPushButton('Regen Zarr')
+        self.bRegenZarr = QPushButton('Transform 3D')
         self.bRegenZarr.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.bRegenZarr.clicked.connect(self.regenZarr)
         p = self.bRegenZarr.palette()
@@ -4430,7 +4504,7 @@ class MainWindow(QMainWindow):
         self._hstry_treeview = QTreeView()
         self._hstry_treeview.setStyleSheet('background-color: #ffffff;')
         self._hstry_treeview.setObjectName('treeview')
-        self.projecthistory_model = JsonModel()
+        self.projecthistory_model = JsonModel(parent=self)
         self._hstry_treeview.setModel(self.projecthistory_model)
         self._hstry_treeview.header().setSectionResizeMode(0, QHeaderView.Stretch)
         self._hstry_treeview.setAlternatingRowColors(True)
@@ -4953,8 +5027,8 @@ class MainWindow(QMainWindow):
         logger.info('')
         self.hud.setContentsMargins(0, 0, 0, 0)
         self._tool_hstry.setMinimumWidth(128)
-        # cfg.project_tab._transformationWidget.setFixedWidth(248)
-        # cfg.project_tab._transformationWidget.setFixedSize(248,100)
+        # self.pt._transformationWidget.setFixedWidth(248)
+        # self.pt._transformationWidget.setFixedSize(248,100)
 
     def initStatusBar(self):
         logger.info('')
@@ -5231,9 +5305,9 @@ class MainWindow(QMainWindow):
         # elif key == Qt.Key_Tab:
         #     logger.info('')
         #     if self._isProjectTab():
-        #         new_index = (cfg.project_tab.wTabs.currentIndex()+1)%4
+        #         new_index = (self.pt.wTabs.currentIndex()+1)%4
         #         logger.info(f'new index: {new_index}')
-        #         cfg.project_tab.wTabs.setCurrentIndex(new_index)
+        #         self.pt.wTabs.setCurrentIndex(new_index)
 
         elif key == Qt.Key_Delete:
             if self._isOpenProjTab():
@@ -5408,6 +5482,22 @@ class AspectWidget(QWidget):
 
         self.setContentsMargins(h_margin, v_margin, h_margin, v_margin)
 
+
+class TimerWorker(QObject):
+    finished = Signal()
+    everySecond = Signal(int)
+
+    @Slot()
+    def secondCounter(self):
+        self._countup = 0
+        self._running = True
+        while self._running:
+            time.sleep(1)
+            if self._running:
+                self._countup += 1
+                self.everySecond.emit(self._countup)
+
+        self.finished.emit()
 
 '''
 #indicators css
