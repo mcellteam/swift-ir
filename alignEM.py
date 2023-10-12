@@ -34,9 +34,9 @@ print('alignEM:')
 import os, sys, getpass
 
 # if not getpass.getuser() in ('joelyancey', 'joely', 'jyancey', 'tmbartol', 'tbartol', 'bartol', 'ama8447', 'aalario'):
-if not getpass.getuser() in ('joelyancey', 'joely', 'jyancey', 'tmbartol', 'tbartol', 'bartol'):
-    print("Please do not use this version of alignEM yet, thank you. Bye!")
-    sys.exit()
+# if not getpass.getuser() in ('joelyancey', 'joely', 'jyancey', 'tmbartol', 'tbartol', 'bartol'):
+#     print("Please do not use this version of alignEM yet, thank you. Bye!")
+#     sys.exit()
 
 hashseed = os.getenv('PYTHONHASHSEED')
 if not hashseed:
