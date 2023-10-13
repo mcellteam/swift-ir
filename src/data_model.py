@@ -383,7 +383,11 @@ class DataModel:
     def get_grid_regions(self, s=None, l=None):
         if s == None: s = self.level
         if l == None: l = self.zpos
-        assert self['stack'][l]['levels'][s]['swim_settings']['method_opts']['method'] == 'grid'
+        try:
+            assert self['stack'][l]['levels'][s]['swim_settings']['method_opts']['method'] == 'grid'
+        except:
+            print_exception(extra=f"[{s}, {l}] method: {self['stack'][l]['levels'][s]['swim_settings']['method_opts']['method']}")
+            return None
         return self['stack'][l]['levels'][s]['swim_settings']['method_opts']['quadrants']
 
 
@@ -1192,6 +1196,7 @@ class DataModel:
         if s == None: s = self.scale
         if l == None: l = self.zpos
         logger.info(f"Writing manual points to project dictionary for section #{l}: {matchpoints}")
+        # ex. [(397.7689208984375, 546.7693481445312), (nan, nan), (nan, nan)]
         # lvls  = [x for x in self.lvls() if x <= self.lvl()]
         # scales      = [get_scale_key(x) for x in lvls]
         glob_coords = [None,None,None]
@@ -1266,6 +1271,7 @@ class DataModel:
 
         # ref = [(z, x[0], x[1]) for x in mps['ref']]
         # base = [(z, x[0], x[1]) for x in mps['base']]
+        logger.info(f"Returning: {d}")
         return d
 
 
@@ -2139,6 +2145,10 @@ class DataModel:
                                       'ref': ((None, None), (None, None), (None, None))},
                         'mir_coords': {'tra': ((None, None), (None, None), (None, None)),
                                        'ref': ((None, None), (None, None), (None, None))},
+                        # 'ng_coords': {'tra': [[None, None], [None, None], [None, None]],
+                        #               'ref': [[None, None], [None, None], [None, None]]},
+                        # 'mir_coords': {'tra': [[None, None], [None, None], [None, None]],
+                        #                'ref': [[None, None], [None, None], [None, None]]},
                     }
                 },
                 grid={

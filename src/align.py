@@ -27,8 +27,10 @@ import neuroglancer as ng
 # import imagecodecs
 import numcodecs
 numcodecs.blosc.use_threads = False
-import libtiff
+# import libtiff
 # libtiff.libtiff_ctypes.suppress_warnings()
+import warnings
+warnings.filterwarnings("ignore") #Works for supressing tiffile invalid offset warning
 # sys.path.insert(1, os.path.dirname(os.path.split(os.path.realpath(__file__))[0]))
 # sys.path.insert(1, os.path.split(os.path.realpath(__file__))[0])
 from src.data_model import DataModel
@@ -58,6 +60,8 @@ except Exception as e:
 __all__ = ['AlignWorker']
 
 logger = logging.getLogger(__name__)
+
+logging.getLogger('tifffile').propagate = False
 
 
 
@@ -117,6 +121,8 @@ class AlignWorker(QObject):
     def align(self):
         """Long-running task."""
         logger.critical('\n\nAligning...\n')
+
+
 
 
         scale = self.scale

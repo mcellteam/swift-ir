@@ -40,7 +40,7 @@ numcodecs.blosc.use_threads = False
 __all__ = ['MAViewer']
 
 logger = logging.getLogger(__name__)
-logger.propagate = False
+# logger.propagate = False
 
 # t = Timer()
 
@@ -227,7 +227,6 @@ class MAViewer(neuroglancer.Viewer):
         path = os.path.join(self.dm['info']['images_location'], 'zarr', 's' + str(sf))
 
         if not os.path.exists(path):
-            cfg.main_window.warn('Data Store Not Found: %s' % path)
             logger.warning('Data Store Not Found: %s' % path); return
 
         try:
@@ -235,7 +234,7 @@ class MAViewer(neuroglancer.Viewer):
             # self.store
             # self.store = await get_zarr_tensor(path)
         except Exception as e:
-            cfg.main_window.warn('Unable to Load Data Store at %s' % path)
+            logger.error('Unable to Load Data Store at %s' % path)
             raise e
 
         t2 = time.time()
@@ -443,18 +442,18 @@ class MAViewer(neuroglancer.Viewer):
 
 
 
-    def pt2ann(self, points: list):
-        annotations = []
-        lineweight = cfg.main_window.mp_marker_lineweight_spinbox.value()
-        size = cfg.main_window.mp_marker_size_spinbox.value()
-        for i, point in enumerate(points):
-            annotations.append(ng.PointAnnotation(id=repr(point),
-                                                  point=point,
-                                                  props=[self.colors[i % 3],
-                                                         size,
-                                                         lineweight]))
-        self.annotations = annotations
-        return annotations
+    # def pt2ann(self, points: list):
+    #     annotations = []
+    #     lineweight = cfg.main_window.mp_marker_lineweight_spinbox.value()
+    #     size = cfg.main_window.mp_marker_size_spinbox.value()
+    #     for i, point in enumerate(points):
+    #         annotations.append(ng.PointAnnotation(id=repr(point),
+    #                                               point=point,
+    #                                               props=[self.colors[i % 3],
+    #                                                      size,
+    #                                                      lineweight]))
+    #     self.annotations = annotations
+    #     return annotations
 
 
 
@@ -495,7 +494,6 @@ class MAViewer(neuroglancer.Viewer):
 
     def swim(self, s):
         logger.info('Running SWIM...')
-        # cfg.main_window.alignOne()
         self.signals.swimAction.emit()
 
 
@@ -573,17 +571,15 @@ class MAViewer(neuroglancer.Viewer):
 
     def setMpData(self):
         '''Copy local manual points into project dictionary'''
-        cfg.main_window.statusBar.showMessage('Manual Correspondence Points Stored!', 3000)
         l = [None,None,None]
         for i,p in enumerate(self.pts[self.role]):
-            logger.info(f"p = {p}")
             if p:
                 _, x, y = p.point.tolist()
-                logger.info(f"x = {x}, y = {y}")
-                l[i] = (x, y)
+                if not math.isnan(x):
+                    print(f"x = {x}, y = {y}")
+                    l[i] = (x, y)
 
-        logger.info(f"Setting manpoints: {l}\n"
-                        f"pts: {self.pts}\n")
+        # print(f"Setting point selections: {l}\npts: {self.pts}")
         self.dm.set_manpoints(self.role, l)
         # for p in self.pts['ref']:
         #     _, x, y = p.point.tolist()
@@ -919,4 +915,26 @@ if __name__ == '__main__':
     11:46:55 [viewer_ma.drawSWIMwindow:450] DA: [0.5, 720.0, 512.0]
     11:46:55 [viewer_ma.drawSWIMwindow:452] half_w = 512.0
     11:46:55 [viewer_ma.drawSWIMwindow:453] half_h = 256.0
+    
+    
+    
+    
+    
+setMpData
+    
+x = 468.5921936035156, y = 395.48431396484375
+p = PointAnnotation({"type": "point", "id": "(17, nan, nan)", "point": [17.0, NaN, NaN], "props": ["#ffe135", 3, 8]})
+x = nan, y = nan
+p = PointAnnotation({"type": "point", "id": "(17, nan, nan)", "point": [17.0, NaN, NaN], "props": ["#42d4f4", 3, 8]})
+x = nan, y = nan
+
+
+    
+    
+    
+    
+    
+    
+    
+    
     '''
