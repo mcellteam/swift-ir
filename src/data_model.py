@@ -79,13 +79,13 @@ class Signals(QObject):
 class DataModel:
 
     """ Encapsulate datamodel dictionary and wrap with methods for convenience """
-    def __init__(self, data=None, data_location=None, series_location=None, read_only=False, initialize=False, series_info=None):
+    def __init__(self, data=None, data_location=None, images_location=None, read_only=False, initialize=False, images_info=None):
         self._current_version = cfg.VERSION
         if data:
             self._data = data  # Load project data from file
         elif initialize:
             try:
-                series_info
+                images_info
             except NameError:
                 logger.warning(f"'series_info' argument is needed to initialize data model."); return
             try:
@@ -93,10 +93,10 @@ class DataModel:
             except NameError:
                 logger.warning(f"'data_location' argument is needed to initialize data model."); return
             self._data = {}
-            self.initializeStack(series_info=series_info, series_location=series_location, data_location=data_location)
+            self.initializeStack(images_info=images_info, images_location=images_location, data_location=data_location)
         if not read_only:
-            if series_location:
-                self.series_location = series_location
+            if images_location:
+                self.images_location = images_location
             self.ht = None
             self._data['modified'] = date_time()
             self.signals = Signals()
@@ -144,7 +144,7 @@ class DataModel:
 
     def __len__(self):
         try:
-            return self['series']['count']
+            return self['images']['count']
         except:
             logger.warning('No Images Found')
 
@@ -203,23 +203,23 @@ class DataModel:
         self['modified'] = val
 
     @property
-    def series_location(self):
-        '''Set alignment data series_location.'''
-        return self['info']['series_location']
+    def images_location(self):
+        '''Set alignment data images_location.'''
+        return self['info']['images_location']
 
-    @series_location.setter
-    def series_location(self, p):
-        '''Get alignment data series_location.'''
-        self['info']['series_location'] = p
+    @images_location.setter
+    def images_location(self, p):
+        '''Get alignment data images_location.'''
+        self['info']['images_location'] = p
 
     @property
     def data_location(self):
-        '''Set alignment data series_location.'''
+        '''Set alignment data images_location.'''
         return self['info']['data_location']
 
     @data_location.setter
     def data_location(self, p):
-        '''Get alignment data series_location.'''
+        '''Get alignment data images_location.'''
         self['info']['data_location'] = p
 
     def dest(self) -> str:
@@ -228,12 +228,12 @@ class DataModel:
     @property
     def scales(self) -> list[str]:
         '''Get scale levels list.'''
-        return natural_sort(self['series']['levels'])
+        return natural_sort(self['images']['levels'])
 
     @property
     def levels(self) -> list[str]:
         '''Get scale levels list.'''
-        return natural_sort(self['series']['levels'])
+        return natural_sort(self['images']['levels'])
 
     @property
     def source_path(self):
@@ -277,33 +277,33 @@ class DataModel:
     @property
     def cname(self) -> str:
         '''Get compression type'''
-        return self['series']['cname']
+        return self['images']['cname']
 
     @cname.setter
     def cname(self, x:str):
         '''Set compression type'''
-        self['series']['cname'] = x
+        self['images']['cname'] = x
 
     @property
     def clevel(self) -> int:
         '''Get compression level'''
-        return int(self['series']['clevel'])
+        return int(self['images']['clevel'])
 
     @clevel.setter
     def clevel(self, x:int):
         '''Set compression level'''
-        self['series']['clevel'] = x
+        self['images']['clevel'] = x
 
 
     def chunkshape(self, level=None) -> tuple:
         '''Get chunk shape.'''
         if level == None: level = self.level
-        return tuple(self['series']['chunkshape'][level])
+        return tuple(self['images']['chunkshape'][level])
 
     def set_chunkshape(self, x, level:str=None):
         '''Set chunk shape.'''
         if level == None: level = self.level
-        self['series']['chunkshape'][level] = x
+        self['images']['chunkshape'][level] = x
 
     @property
     def brightness(self):
@@ -347,9 +347,9 @@ class DataModel:
     #     self['state']['gif_speed'] = s
 
     @property
-    def series(self):
-        '''Returns the original series info for the alignment'''
-        return self['series']
+    def images(self):
+        '''Returns the original images info for the alignment'''
+        return self['images']
 
 
     @property
@@ -467,7 +467,7 @@ class DataModel:
     def path(self, s=None, l=None):
         if s == None: s = self.level
         if l == None: l = self.zpos
-        return os.path.join(self.series_location, 'tiff', s, self.name(s=s, l=l))
+        return os.path.join(self.images_location, 'tiff', s, self.name(s=s, l=l))
 
     def path_ref(self, s=None, l=None):
         if s == None: s = self.level
@@ -475,7 +475,7 @@ class DataModel:
         if l == self.first_unskipped():
             return self.path(s=s, l=l)
         else:
-            return os.path.join(self.series_location, 'tiff', s, self.name_ref(s=s, l=l))
+            return os.path.join(self.images_location, 'tiff', s, self.name_ref(s=s, l=l))
 
     def path_zarr_transformed(self, s=None):
         if s == None: s = self.level
@@ -483,7 +483,7 @@ class DataModel:
 
     def path_zarr_raw(self, s=None):
         if s == None: s = self.level
-        return os.path.join(self.series_location, 'zarr', s)
+        return os.path.join(self.images_location, 'zarr', s)
 
 
     def path_aligned(self, s=None, l=None) -> str:
@@ -523,14 +523,14 @@ class DataModel:
     def path_thumb_src(self, s=None, l=None) -> str:
         if s == None: s = self.level
         if l == None: l = self.zpos
-        path = os.path.join(self['info']['series_location'], 'thumbs', self.name(s=s, l=l))
+        path = os.path.join(self['info']['images_location'], 'thumbs', self.name(s=s, l=l))
         return path
 
     def path_thumb_src_ref(self, s=None, l=None) -> str:
         if s == None: s = self.level
         if l == None: l = self.zpos
         i = self.get_ref_index(l=l)
-        path = os.path.join(self['info']['series_location'], 'thumbs', self.name(s=s, l=i))
+        path = os.path.join(self['info']['images_location'], 'thumbs', self.name(s=s, l=i))
         return path
 
     def path_thumb(self, s=None, l=None) -> str:
@@ -784,7 +784,7 @@ class DataModel:
 
     def basefilenames(self):
         '''Returns filenames as absolute paths'''
-        return natural_sort([os.path.basename(p) for p in self.series['paths']])
+        return natural_sort([os.path.basename(p) for p in self.images['paths']])
 
 
     def clobber(self):
@@ -1639,11 +1639,11 @@ class DataModel:
 
     def resolution(self, s=None):
         if s == None: s = self.level
-        return self['series']['resolution'][s]
+        return self['images']['resolution'][s]
 
     def set_resolution(self, s, res_x:int, res_y:int, res_z:int):
         if s == None: s = self.level
-        self['series']['resolution'][s] = (res_z, res_y, res_x)
+        self['images']['resolution'][s] = (res_z, res_y, res_x)
 
 
     def get_user_zarr_settings(self):
@@ -1656,7 +1656,7 @@ class DataModel:
         '''Get downscales list (similar to scales() but with scale_1 removed).
         Faster than O(n*m) performance.
         Preserves order of scales.'''
-        downscales = natural_sort(self['series']['levels'])
+        downscales = natural_sort(self['images']['levels'])
         downscales.remove('s1')
         return downscales
 
@@ -1967,15 +1967,15 @@ class DataModel:
 
     def image_size(self, s=None) -> tuple:
         if s == None: s = self.level
-        return tuple(self['series']['size_xy'][s])
+        return tuple(self['images']['size_xy'][s])
 
     def size_xy(self, s=None) -> tuple:
         if s == None: s = self.level
-        return tuple(self['series']['size_xy'][s])
+        return tuple(self['images']['size_xy'][s])
 
     def size_zyx(self, s=None) -> tuple:
         if s == None: s = self.level
-        return tuple(self['series']['size_zyx'][s])
+        return tuple(self['images']['size_zyx'][s])
 
 
     def has_bb(self, s=None) -> bool:
@@ -2015,7 +2015,7 @@ class DataModel:
     def coarsest_scale_key(self) -> str:
         '''Return the coarsest level key. '''
         #Confirmed
-        return natural_sort(self['series']['levels'])[-1]
+        return natural_sort(self['images']['levels'])[-1]
 
 
     def finer_scales(self, s=None, include_self=True):
@@ -2112,7 +2112,7 @@ class DataModel:
     def getMethodPresets(self) -> dict:
         logger.info('')
 
-        fullsize = np.array(self['series']['size_xy'][self.levels[0]], dtype=int)
+        fullsize = np.array(self['images']['size_xy'][self.levels[0]], dtype=int)
         s1_size_1x1 = fullsize * cfg.DEFAULT_AUTO_SWIM_WINDOW_PERC
 
         d = {v: {} for v in self.levels}
@@ -2195,7 +2195,7 @@ class DataModel:
                 init_afm[0][2] *= sf
                 init_afm[1][2] *= sf
                 # ss = copy.deepcopy(prev_settings)
-                # d['levels'][cur_level]['swim_settings']['img_size'] = self['series']['size_xy'][cur_level]
+                # d['levels'][cur_level]['swim_settings']['img_size'] = self['images']['size_xy'][cur_level]
                 ss['init_afm'] = init_afm
                 mo = ss['method_opts']
                 method = mo['method']
@@ -2225,26 +2225,26 @@ class DataModel:
         logger.info(f"\n\n{pprint.pformat(self['stack'][i]['levels'][cur_level]['swim_settings'])}\n")
 
 
-    def initializeStack(self, series_info, series_location, data_location):
+    def initializeStack(self, images_info, images_location, data_location):
         logger.critical(f"\n\nInitializing data model ({data_location})...\n")
 
-        levels = natural_sort(series_info['levels'])
-        paths = natural_sort(series_info['paths'])
+        levels = natural_sort(images_info['levels'])
+        paths = natural_sort(images_info['paths'])
         top_level = levels[0]
         bottom_level = levels[-1]
         identity_matrix = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
 
         self._data.update(
             info={
-                'series_location': series_location,
+                'images_location': images_location,
                 'data_location': data_location,
                 'version': cfg.VERSION,
                 'created': date_time(),
                 'system': {'node': platform.node()},
                 'alignment_uuid': str(uuid.uuid4()),
-                'series_uuid': series_info['uuid']
+                'series_uuid': images_info['uuid']
             },
-            series=series_info,
+            images=images_info,
             stack=[],
             # defaults={'levels': {v: {} for v in self.levels}},
             current={
@@ -2298,7 +2298,7 @@ class DataModel:
             defaults={s: {} for s in levels}
         )
 
-        for i in range(self.count):
+        for i in range(len(paths)):
             basename = os.path.basename(paths[i])
             self['stack'].append({})
             self['stack'][i].update(
@@ -2321,7 +2321,7 @@ class DataModel:
                         'level': level,
                         'include': True,
                         'is_refinement': self.isRefinement(level=level),
-                        'img_size': self['series']['size_xy'][level],
+                        'img_size': self['images']['size_xy'][level],
                         'init_afm': identity_matrix,
                     },
                     swim_settings={
@@ -2330,7 +2330,7 @@ class DataModel:
                         'level': level,
                         'include': True,
                         'is_refinement': self.isRefinement(level=level),
-                        'img_size': self['series']['size_xy'][level],
+                        'img_size': self['images']['size_xy'][level],
                         'init_afm': identity_matrix,
                     },
                     points_buffer=None,

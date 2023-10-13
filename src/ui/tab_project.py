@@ -259,7 +259,7 @@ class ProjectTab(QWidget):
         if self.parent._isOpenProjTab():
             # self.parent.pm.loadCombos()
             self.parent.pm.viewer = cfg.pmViewer = PMViewer(webengine=self.parent.pm.webengine)
-            if self.parent.pm.cmbSelectSeries.count() > 0:
+            if self.parent.pm.cmbSelectImages.count() > 0:
                 self.parent.pm.viewer.initViewer()
         else:
 
@@ -296,7 +296,6 @@ class ProjectTab(QWidget):
 
         self.parent.set_status('')
         self.parent.hud.done()
-        self.updateWarnings()
         # self.setZmag(10)
         # QApplication.processEvents() #1009-
 
@@ -1111,7 +1110,7 @@ class ProjectTab(QWidget):
         self.bLock.toggled.connect(fn_bLock)
 
         # tip = """Similar to the Default Grid method, but the user is able to avoid image defects
-        # by adjusting the grid shape and series_location and adding or removing quadrants of the grid.
+        # by adjusting the grid shape and images_location and adding or removing quadrants of the grid.
         # An affine transformation requires at least 3 regions (quadrants)."""
 
         tip = """User provides an alignment hint for SWIM by selecting 3 matching regions (manual correspondence). 
@@ -2032,7 +2031,7 @@ class ProjectTab(QWidget):
         self.btnsSWIM.layout.setSpacing(2)
 
         self.vblRightPanel = VBL(
-            self.warning_data,
+            # self.warning_data,
             # self.wRadiobuttons,
             self.swMethod,
             self.checkboxes,
@@ -2390,28 +2389,6 @@ class ProjectTab(QWidget):
         return False
 
 
-    def updateWarnings(self):
-        logger.info('')
-        if self.dm.is_aligned():
-            ready = self.dm['level_data'][self.dm.scale]['alignment_ready']
-            if ready:
-                logger.info(f"[{caller_name()}] Updating warnings UI...")
-                # w1 = not self.dm.is_aligned() and not self.dm.is_zarr_generated()
-                # w2 = not self.dm.ssSavedComports()
-                to_align = self.dm.needsAlignIndexes()
-                to_generate = self.dm.needsGenerateIndexes()
-                w2 = (len(to_align) > 0) or (len(to_generate) > 0)
-                # self.warning_cafm.setVisible(w1)
-                self.warning_data.setVisible(w2)
-                if w2:
-                    # self.warning_data.label.setText(f"{len(to_align)} alignments ({' '.join(map(str,to_align))}), "
-                    #                                 f"and {len(to_generate)} generated images "
-                    #                                 f"({' '.join(map(str,to_generate))}) are out of sync.")
-                    self.warning_data.label.setText(f"{len(to_align)} alignments and {len(to_generate)} "
-                                                    f"generated images are out of sync.")
-        else:
-            self.warning_data.hide()
-
     def updateZarrRadiobuttons(self):
         logger.info('')
         isGenerated = self.dm.is_zarr_generated()
@@ -2517,7 +2494,6 @@ class ProjectTab(QWidget):
             self.bSWIM.hide()
             self.bSaveSettings.hide()
             self.checkboxes.hide()
-        self.updateWarnings()
         if hasattr(self, 'editorViewer'):
             self.editorViewer.drawSWIMwindow() #1009+
 

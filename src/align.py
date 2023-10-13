@@ -133,7 +133,7 @@ class AlignWorker(QObject):
         else:
             logger.info(f'REFINING affine for {len(indexes)} alignment pairs...')
 
-        scratchpath = os.path.join(dm.series_location, 'logs', 'scratch.log')
+        scratchpath = os.path.join(dm.images_location, 'logs', 'scratch.log')
         if os.path.exists(scratchpath):
             os.remove(scratchpath)
 
@@ -153,7 +153,7 @@ class AlignWorker(QObject):
             ss['dir_signals'] = dm.dir_signals(s=scale, l=zpos)
             ss['dir_matches'] = dm.dir_matches(s=scale, l=zpos)
             ss['dir_tmp'] = dm.dir_tmp(s=scale, l=zpos)
-            ss['thumbnail_scale_factor'] = dm.series['thumbnail_scale_factor']
+            ss['thumbnail_scale_factor'] = dm.images['thumbnail_scale_factor']
             ss['path_thumb'] = dm.path_thumb(s=scale, l=zpos)
             ss['path_thumb_src'] = dm.path_thumb_src(s=scale, l=zpos)
             ss['path_thumb_src_ref'] = dm.path_thumb_src_ref(s=scale, l=zpos)
@@ -204,7 +204,7 @@ class AlignWorker(QObject):
             #     'verbose_swim': cfg.VERBOSE_SWIM,
             #     'log_recipe_to_file': cfg.LOG_RECIPE_TO_FILE,
             #     'target_thumb_size': cfg.TARGET_THUMBNAIL_SIZE,
-            #     'series_location': cfg.data.series_location,
+            #     'images_location': cfg.data.images_location,
             # }
 
             # for i in range(len(tasks)):
@@ -215,7 +215,7 @@ class AlignWorker(QObject):
                 'verbose_swim': cfg.VERBOSE_SWIM,
                 'log_recipe_to_file': cfg.LOG_RECIPE_TO_FILE,
                 'target_thumb_size': cfg.TARGET_THUMBNAIL_SIZE,
-                'series_location':dm.series_location,
+                'images_location':dm.images_location,
                 'data_location': dm.data_location,
             }
 
@@ -363,13 +363,13 @@ class AlignWorker(QObject):
     #     # SetStackCafm(dm, scale=scale, poly_order=dm.poly_order)
     #
     #     #Todo a similar option should be added back in later for forcing regeneration of all output
-    #     # od = os.path.join(dm.series_location, 'tiff', scale)
+    #     # od = os.path.join(dm.images_location, 'tiff', scale)
     #     # if self._renew_od:
     #     #     renew_directory(directory=od)
     #     # print_example_cafms(scale_dict)
     #
     #     # try:
-    #     #     bias_path = os.path.join(dm.series_location, level, 'bias_data')
+    #     #     bias_path = os.path.join(dm.images_location, level, 'bias_data')
     #     #     save_bias_analysis(layers=dm.get_iter(level=level), bias_path=bias_path)
     #     # except:
     #     #     print_exception()
@@ -381,7 +381,7 @@ class AlignWorker(QObject):
     #     #     rect = dm.set_calculate_bounding_rect(s=scale)  # Only after SetStackCafm
     #     # else:
     #
-    #     tn_scale = dm.series['thumbnail_scale_factor']  # =16 for 256 target size w/ volume josef
+    #     tn_scale = dm.images['thumbnail_scale_factor']  # =16 for 256 target size w/ volume josef
     #
     #     sf = dm.lvl(s=scale) / tn_scale
     #

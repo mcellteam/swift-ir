@@ -393,12 +393,12 @@ def count_files(dest, scales):
     return result
 
 
-#/Users/joelyancey/.alignem_data/series/0816_DW02_3imgs/scale_24/img_src/SYGQK_003.tif
+#/Users/joelyancey/.alignem_data/images/0816_DW02_3imgs/scale_24/img_src/SYGQK_003.tif
 
 
 """
 
-23:25:33 [scale.preallocate_zarr:231] zarr_od=/Users/joelyancey/alignem_data/series/seriesU/zarr
+23:25:33 [scale.preallocate_zarr:231] zarr_od=/Users/joelyancey/alignem_data/images/seriesU/zarr
 23:25:33 [scale.preallocate_zarr:232] name=s1
 23:25:33 [scale.preallocate_zarr:233] shape=(5, 4096, 4096)
 23:25:33 [scale.preallocate_zarr:234] dtype=|u1
@@ -409,8 +409,8 @@ opts={
 'count': 5, 
 'paths': ['/Users/joelyancey/glanceem_swift/test_images/dummy1.tif', 
     ...'/Users/joelyancey/glanceem_swift/test_images/dummy5.tif'], 
-'tiff_path': '/Users/joelyancey/alignem_data/series/seriesU/tiff', 
-'zarr_path': '/Users/joelyancey/alignem_data/series/seriesU/zarr', 
+'tiff_path': '/Users/joelyancey/alignem_data/images/seriesU/tiff', 
+'zarr_path': '/Users/joelyancey/alignem_data/images/seriesU/zarr', 
 'lvls': [24, 6, 2, 1], 
 'scale_keys': ['s24', 's6', 's2', 's1'], 
 'levels': 

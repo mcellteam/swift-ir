@@ -7,9 +7,9 @@ AlignEM Overview
 
 AlignEM is a Python program for managing alignment projects.
 
-An alignment project is typically a series of images representing
+An alignment project is typically a images of images representing
 sections or slices through a 3-D object. AlignEM provides the ability
-to import a series of such images, view them as a "stack", and apply
+to import a images of such images, view them as a "stack", and apply
 an alignment alogorithm to generate aligned images. The following images
 show a stack of original (unaligned) images on the left, and a stack of
 aligned images on the right.

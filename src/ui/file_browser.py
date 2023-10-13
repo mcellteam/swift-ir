@@ -126,7 +126,7 @@ class FileBrowser(QWidget):
             action.triggered.connect(lambda: cfg.pm.openAlignment(selected))
             menu.addAction(action)
 
-        if ext in ('.alignment', '.series'):
+        if ext in ('.alignment', '.images'):
             action = QAction()
             action.setText(f"Delete {selected}")
             action.triggered.connect(self.onDelete)
@@ -189,7 +189,7 @@ class FileBrowser(QWidget):
         else:   cfg.mw.tell(f'Root directory set to {self._root}')
 
     def setRootSeries(self):
-        self._root = cfg.settings['series_root']
+        self._root = cfg.settings['images_root']
         try:    self.treeview.setRootIndex(self.model.index(self._root))
         except: logger.warning('Directory cannot be accessed')
         else:   cfg.mw.tell(f'Root directory set to {self._root}')
@@ -268,7 +268,7 @@ class FileBrowser(QWidget):
         self.bSetRootSpecial.setFixedHeight(12)
         self.bSetRootSpecial.clicked.connect(self.setRootSpecial)
 
-        # self.bSetRootSeries = QPushButton('Series Root')
+        # self.bSetRootSeries = QPushButton('Images Root')
         # self.bSetRootSeries.setFixedHeight(16)
         # self.bSetRootSeries.clicked.connect(self.setRootSeries)
         #
@@ -281,9 +281,9 @@ class FileBrowser(QWidget):
             self.buttonSetRoot_corral_projects.setFixedHeight(14)
             self.buttonSetRoot_corral_projects.clicked.connect(self.setRoot_corral_projects)
 
-            self.buttonSetRoot_corral_images = QPushButton('EM_Series')
-            self.buttonSetRoot_corral_images.setFixedHeight(14)
-            self.buttonSetRoot_corral_images.clicked.connect(self.setRoot_corral_images)
+            # self.buttonSetRoot_corral_images = QPushButton('EM_Series')
+            # self.buttonSetRoot_corral_images.setFixedHeight(14)
+            # self.buttonSetRoot_corral_images.clicked.connect(self.setRoot_corral_images)
 
             self.buttonSetRoot_corral_root = QPushButton('Corral')
             self.buttonSetRoot_corral_root.setFixedHeight(14)
@@ -295,9 +295,9 @@ class FileBrowser(QWidget):
             self.setVisibilityContentSourcesCpanel(not self.wContentRoot.isVisible())
 
             if self.wContentRoot.isVisible():
-                self.leNewSeries.setText(cfg.settings['series_root'])
+                self.leNewSeries.setText(cfg.settings['images_root'])
                 self.leNewAlignments.setText(cfg.settings['alignments_root'])
-                self.teSeriesSearchPaths.setText('\n'.join(cfg.settings['series_search_paths']))
+                self.teSeriesSearchPaths.setText('\n'.join(cfg.settings['images_search_paths']))
                 self.teAlignmentsSearchPaths.setText('\n'.join(cfg.settings['alignments_search_paths']))
         self.bSetContentSources.clicked.connect(fn)
 
@@ -306,7 +306,7 @@ class FileBrowser(QWidget):
                 self.btns0.addWidget(self.bSetRootSpecial)
 
         self.combobox = QComboBox()
-        # self.combobox.setPlaceholderText("Select series_location...")
+        # self.combobox.setPlaceholderText("Select images_location...")
         self.combobox.setToolTip("Saved Locations")
         # self.combobox.setEditable(True)
         # self.combobox.completer().setCompletionMode(QCompleter.PopupCompletion)
@@ -339,12 +339,12 @@ class FileBrowser(QWidget):
         self.wPath = HW(self.lePath, self.bGo)
         self.wPath.setFixedHeight(16)
 
-        tip = "Location where new series will be created."
+        tip = "Location where new images will be created."
         tip = '\n'.join(textwrap.wrap(tip, width=35))
         self.leNewSeries = QLineEdit()
         self.leNewSeries.setFixedHeight(16)
         self.leNewSeries.setReadOnly(False)
-        lab = BoldLabel('Series Root:')
+        lab = BoldLabel('Images Root:')
         lab.setAlignment(Qt.AlignBottom)
         self.wNewSeries = VW(lab, self.leNewSeries)
         self.wNewSeries.layout.setAlignment(Qt.AlignVCenter)
@@ -361,15 +361,14 @@ class FileBrowser(QWidget):
         self.wNewAlignments.layout.setAlignment(Qt.AlignVCenter)
         self.wNewAlignments.setToolTip(tip)
 
-        tip = "List of filesystem locations to search for series."
+        tip = "List of filesystem locations to search for images."
         tip = '\n'.join(textwrap.wrap(tip, width=35))
         self.teSeriesSearchPaths = QTextEdit()
         self.teSeriesSearchPaths.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # self.teSeriesSearchPaths.setMinimumHeight(40)
         # self.teSeriesSearchPaths.setMaximumHeight(80)
         self.teSeriesSearchPaths.setReadOnly(False)
-        # lab = BoldLabel('Series Search Paths (Recursive):')
-        lab = BoldLabel('Series Search Paths:')
+        lab = BoldLabel('Images (.images) Search Paths:')
         lab.setAlignment(Qt.AlignBottom)
         self.wSeriesSearchPaths = VW(lab, self.teSeriesSearchPaths)
         self.wSeriesSearchPaths.setToolTip(tip)
@@ -431,16 +430,16 @@ class FileBrowser(QWidget):
         logger.info(f'Saving search paths and content roots...')
         try:
             d = {
-                'series_root': self.leNewSeries.text(),
-                'series_search_paths': self.teSeriesSearchPaths.toPlainText().split('\n'),
+                'images_root': self.leNewSeries.text(),
+                'images_search_paths': self.teSeriesSearchPaths.toPlainText().split('\n'),
                 'alignments_root': self.leNewAlignments.text(),
                 'alignments_search_paths': self.teAlignmentsSearchPaths.toPlainText().split('\n'),
             }
             cfg.settings.update(d)
             pprint.pprint(d)
-            p = cfg.settings['series_root']
+            p = cfg.settings['images_root']
             if not os.path.exists(p):
-                cfg.mw.tell(f"Creating series directory {p}")
+                cfg.mw.tell(f"Creating images directory {p}")
                 os.makedirs(p, exist_ok=True)
 
             p = cfg.settings['alignments_root']
@@ -448,7 +447,7 @@ class FileBrowser(QWidget):
                 cfg.mw.tell(f"Creating alignments directory {p}")
                 os.makedirs(p, exist_ok=True)
 
-            for path in cfg.settings['series_search_paths']:
+            for path in cfg.settings['images_search_paths']:
                 if not os.path.isdir(path):
                     cfg.mw.warn(f"'{path}' is not a directory and will be ignored. ")
 
@@ -470,7 +469,7 @@ class FileBrowser(QWidget):
         try:
             if cur == 'Saved locations...':
                 return
-            elif cur == 'Series Root':
+            elif cur == 'Images Root':
                 self.setRootSeries()
             elif cur == 'Alignments Root':
                 self.setRootAlignments()
@@ -518,7 +517,7 @@ class FileBrowser(QWidget):
         #     aslist = os.path.normpath(path).split(os.sep)
         # self.combobox.addItems([])
 
-        items = ['Saved locations...', 'Series Root', 'Alignments Root']
+        items = ['Saved locations...', 'Images Root', 'Alignments Root']
         items.extend(cfg.settings['saved_paths'])
         if is_tacc():
             items.extend(['$SCRATCH', '$WORK', 'Corral'])

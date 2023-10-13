@@ -76,7 +76,7 @@ class Flicker(QLabel):
     def onTimer(self):
         self.cur = 1 - self.cur
         self.set()
-        # logger.info(f'Timer is timing cur = {self.cur}, {self.series[self.cur]} ...')
+        # logger.info(f'Timer is timing cur = {self.cur}, {self.images[self.cur]} ...')
 
 
     def start(self):

@@ -223,7 +223,7 @@ def update_preferences_model():
     cfg.settings.setdefault('alignments', [])
     cfg.settings.setdefault('gif_speed', 50)
 
-    cfg.settings.setdefault('series_combo_text', None)
+    cfg.settings.setdefault('images_combo_text', None)
     cfg.settings.setdefault('alignment_combo_text', None)
     cfg.settings.setdefault('notes', {})
     cfg.settings['notes'].setdefault('global_notes', '')
@@ -233,8 +233,8 @@ def update_preferences_model():
         logger.info(f"Making content root directory: {DEFAULT_CONTENT_ROOT}")
         os.makedirs(DEFAULT_CONTENT_ROOT, exist_ok=True)
 
-    p = os.path.join(DEFAULT_CONTENT_ROOT, 'series')
-    cfg.settings.setdefault('series_root', p)
+    p = os.path.join(DEFAULT_CONTENT_ROOT, 'images')
+    cfg.settings.setdefault('images_root', p)
     if not os.path.isdir(p):
         logger.info(f"Making default alignments directory: {p}")
         os.makedirs(p, exist_ok=True)
@@ -244,13 +244,13 @@ def update_preferences_model():
     if not os.path.isdir(p):
         os.makedirs(p, exist_ok=True)
 
-    cfg.settings.setdefault('series_search_paths', [os.path.join(DEFAULT_CONTENT_ROOT, 'series')])
+    cfg.settings.setdefault('images_search_paths', [os.path.join(DEFAULT_CONTENT_ROOT, 'images')])
     cfg.settings.setdefault('alignments_search_paths', [os.path.join(DEFAULT_CONTENT_ROOT, 'alignments')])
     cfg.settings.setdefault('current_filebrowser_root', DEFAULT_CONTENT_ROOT)
     cfg.settings.setdefault('previous_filebrowser_root', DEFAULT_CONTENT_ROOT)
 
     cfg.settings.setdefault('saved_paths', [
-        os.path.join(DEFAULT_CONTENT_ROOT, 'series'),
+        os.path.join(DEFAULT_CONTENT_ROOT, 'images'),
         os.path.join(DEFAULT_CONTENT_ROOT, 'alignments'),
     ])
 
@@ -1010,7 +1010,7 @@ def is_not_hidden(path):
 
 def print_project_tree() -> None:
     '''Recursive function that lists datamodel directory contents as a tree.'''
-    paths = Treeview.make_tree(Path(cfg.data.series_location))
+    paths = Treeview.make_tree(Path(cfg.data.images_location))
     for path in paths:
         print(path.displayable())
 

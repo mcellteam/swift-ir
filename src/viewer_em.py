@@ -416,7 +416,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
                 future.add_done_callback(lambda f: print(f'Callback: {f.result().domain}'))
                 self.tensor = cfg.tensor = cfg.al_tensor = future.result()
             else:
-                path = os.path.join(self.dm.series_location, 'zarr', 's' + str(sf))
+                path = os.path.join(self.dm.images_location, 'zarr', 's' + str(sf))
                 future = get_zarr_tensor(path)
                 future.add_done_callback(lambda f: print(f'Callback: {f.result().domain}'))
                 self.tensor = cfg.tensor = cfg.unal_tensor = future.result()
@@ -485,11 +485,11 @@ class EMViewer(AbstractEMViewer):
         # logger.critical(f"nglayout = {nglayout}")
         # logger.critical(f"self.path = {self.path}")
 
-        # 04:54:47 [viewer_em.initViewer:468] Zarr path: /Users/joelyancey/alignem_data/series/r34_full_series.series/zarr/s4
+        # 04:54:47 [viewer_em.initViewer:468] Zarr path: /Users/joelyancey/alignem_data/images/r34_full_series.images/zarr/s4
         # 04:54:47 [viewer_em.initViewer:469] nglayout = None
         # 04:54:47 [viewer_em.initViewer:484] nglayout = yz
-        # 04:54:47 [viewer_em.initViewer:485] self.path = /Users/joelyancey/alignem_data/series/r34_full_series.series/zarr/s4
-        # 04:54:47 INFO [funcs_zarr.get_zarr_tensor:57] Requested: /Users/joelyancey/alignem_data/series/r34_full_series.series/zarr/s4
+        # 04:54:47 [viewer_em.initViewer:485] self.path = /Users/joelyancey/alignem_data/images/r34_full_series.images/zarr/s4
+        # 04:54:47 INFO [funcs_zarr.get_zarr_tensor:57] Requested: /Users/joelyancey/alignem_data/images/r34_full_series.images/zarr/s4
 
 
 
@@ -694,9 +694,9 @@ class PMViewer(AbstractEMViewer):
     def initExample(self):
         logger.info('')
         self.initViewer(path=self._example_path)
-        # self.post_message("No series have been imported yet. This is just an example.")
+        # self.post_message("No images have been imported yet. This is just an example.")
         with self.config_state.txn() as cs:
-            cs.status_messages['message'] = "No series have been imported yet. This is just an example."
+            cs.status_messages['message'] = "No images have been imported yet. This is just an example."
 
 
     def initViewer(self, path_l=None, path_r=None):
@@ -718,7 +718,7 @@ class PMViewer(AbstractEMViewer):
         # except:
         #     self.tensor = get_zarr_tensor(self._example_path).result()
         #     with self.config_state.txn() as cs:
-        #         cs.status_messages['message'] = "No series have been imported yet. This is just an example."
+        #         cs.status_messages['message'] = "No images have been imported yet. This is just an example."
         #     print_exception()
 
         if self.path_l:
@@ -789,7 +789,7 @@ class PMViewer(AbstractEMViewer):
             s.show_layer_panel = False
             # if self.path_l:
             #     if hasattr(self, 'LV_l'):
-            #         s.status_messages['msg0'] = f'series    : {path_l}'
+            #         s.status_messages['msg0'] = f'images    : {path_l}'
             # if self.path_r:
             #     if hasattr(self, 'LV_r'):
             #         s.status_messages['msg1'] = f'alignment : {path_r}'
