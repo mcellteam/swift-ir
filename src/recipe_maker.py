@@ -115,6 +115,17 @@ class align_recipe:
         self.path_ref = self.ss['path_reference']
         self.configure_logging()
         self.method = self.ss['method_opts']['method']
+        self._return_afm = True
+        if self.method == 'manual':
+            self.mir_coords = self.ss['method_opts']['points']['mir_coords']
+            self.mc_ref = self.mir_coords['ref']
+            self.n_pts_ref = sum(1 for _ in filter(None.__ne__, self.mc_ref))
+            self.mc_tra = self.mir_coords['tra']
+            self.n_pts_tra = sum(1 for _ in filter(None.__ne__, self.mc_tra))
+            if (self.n_pts_ref != 3) or (self.n_pts_tra != 3):
+                self._return_afm = False
+
+
         self.index = self.ss['index']
         self.ingredients = []
         self.initial_rotation = float(self.ss['initial_rotation'])
@@ -298,37 +309,40 @@ class align_recipe:
             pts = self.ss['method_opts']['points']['mir_coords']['ref']
             man_psta = np.array([p for p in pts if p]).transpose()
             self.clr_indexes = [i for i,p in enumerate(pts) if p]
-            if self.method == 'manual_hint':
-                self.add_ingredients([
-                    align_ingredient(
-                        mode='MIR',
-                        ww=[ww,ww],
-                        psta=man_psta,
-                        pmov=man_pmov),
-                    align_ingredient(
-                        mode='SWIM-Manual',
-                        ww=[ww,ww],
-                        psta=man_psta,
-                        pmov=man_pmov,
-                        ID='Manual-a'),
-                    align_ingredient(
-                        mode='SWIM-Manual',
-                        ww=[ww,ww],
-                        psta=man_psta,
-                        pmov=man_pmov,
-                        ID='Manual-b',
-                        last=True)])
-            elif self.method == 'manual_strict':
-                self.add_ingredients([
-                    align_ingredient(
-                        mode='MIR',
-                        ww=[ww,ww],
-                        psta=man_psta,
-                        pmov=man_pmov,
-                        last=True)])
+            # if self.method == 'manual_hint':
+            self.add_ingredients([
+                align_ingredient(
+                    mode='MIR',
+                    ww=[ww,ww],
+                    psta=man_psta,
+                    pmov=man_pmov),
+                align_ingredient(
+                    mode='SWIM-Manual',
+                    ww=[ww,ww],
+                    psta=man_psta,
+                    pmov=man_pmov,
+                    ID='Manual-a'),
+                align_ingredient(
+                    mode='SWIM-Manual',
+                    ww=[ww,ww],
+                    psta=man_psta,
+                    pmov=man_pmov,
+                    ID='Manual-b',
+                    last=True)])
+            # elif self.method == 'manual_strict':
+            #     self.add_ingredients([
+            #         align_ingredient(
+            #             mode='MIR',
+            #             ww=[ww,ww],
+            #             psta=man_psta,
+            #             pmov=man_pmov,
+            #             last=True)])
 
 
     def execute_recipe(self):
+
+        if self.ss['solo']:
+            print(f"\nExecuting recipe (# ingredients: {len(self.ingredients)})...\n")
 
         # if not os.path.exists(self.signals_dir):
         #     os.makedirs(self.signals_dir, exist_ok=True)
@@ -364,58 +378,40 @@ class align_recipe:
         # snr_report = 'SNR: %.1f (+-%.1f n:%d)  <%.1f  %.1f>' % (
         #     snr.mean(), snr.std(), len(snr), snr.min(), snr.max())
 
+        mr = {}
+        mr['index'] = self.index
+        mr['datetime'] = time
+        mr['method'] = self.method
+        # mr['memory_mb'] = self.megabytes()
+        # mr['memory_gb'] = self.gigabytes()
+
         # afm = self.ingredients[-1].afm
         # snr = self.ingredients[-1].snr
         # snr_report = self.ingredients[-1].snr_report
         # snr_list = snr.tolist()
-        try:
-            afm = self.ingredients[-1].afm
-            # afm = self.ingredients[-1]._afm
-            snr = self.ingredients[-1].snr
-            # snr_report = self.ingredients[-1].snr_report
-        except:
-            print_exception()
+        mr['complete'] = self._return_afm
+        if self._return_afm:
+            try:
+                afm = self.ingredients[-1].afm
+                logger.info(f"afm[{self.index}]: {afm.tolist()}")
+            except:
+                print_exception(extra=f"index: {self.index}, afm = {afm.tolist()}")
 
+        mr['affine_matrix'] = afm.tolist()
 
-        # print(f"self.ingredients[-1].afm = {self.ingredients[-1].afm}")
-        # try:
-        #     _afm = self.ingredients[-1]._afm
-        # except:
-        #     print_exception()
-
-        try:
-            snr_list = snr.tolist()
-        except:
-            snr_list = list(snr)
-        # mr = self.data['method_results'] #0928-
-        mr = {}
-        mr['index'] = self.index
+        try:    snr = self.ingredients[-1].snr
+        except: print_exception()
+        try:    snr_list = snr.tolist()
+        except: snr_list = list(snr)
         mr['snr'] = snr_list
-        # mr['snr_report'] = str(snr_report)
-        try:
-            mr['std_deviation'] = snr.std()
-        except:
-            mr['std_deviation'] = 0.0
-
-        try:
-            mr['snr_std_deviation'] = snr.std()
-        except:
-            mr['snr_std_deviation'] = 0.0
-
-        try:
-            mr['snr_mean'] = snr.mean()
-        except:
-            mr['snr_mean'] = 0.0
+        try:    mr['std_deviation'] = snr.std()
+        except: mr['std_deviation'] = 0.0
+        try:    mr['snr_std_deviation'] = snr.std()
+        except: mr['snr_std_deviation'] = 0.0
+        try:    mr['snr_mean'] = snr.mean()
+        except: mr['snr_mean'] = 0.0
 
         mr['snr_average'] = sum(snr_list) / len(snr_list)
-
-        try:
-            logger.info(f"afm[{self.index}]: {afm.tolist()}")
-            sys.stdout.flush()
-            mr['affine_matrix'] = afm.tolist()
-
-        except:
-            print_exception(extra=f"index: {self.index}, afm = {afm.tolist()}")
 
         # try:
         #     mr['inverse_matrix'] = _afm.tolist()
@@ -428,13 +424,6 @@ class align_recipe:
             mr['swim_pos'] = self.ingredients[-1].psta.tolist()
         except:
             pass
-
-        mr['datetime'] = time
-        # mr['whiten'] = self.ss['whiten']
-        # mr['swim_iters'] = self.ss['swim_iters']
-        mr['method'] = self.method
-        mr['memory_mb'] = self.megabytes()
-        mr['memory_gb'] = self.gigabytes()
 
         if self.method == 'grid':
             mr['quadrants'] = self.ss['method_opts']['quadrants']
@@ -566,6 +555,9 @@ class align_ingredient:
 
 
     def execute_ingredient(self):
+        if self.recipe.ss['solo']:
+            print('\nExecuting ingredient...\n')
+
         # Returns an affine matrix
         # if self.recipe.method in ('manual','manual_strict'):
         if self.recipe.method == 'manual_hint':
@@ -588,6 +580,12 @@ class align_ingredient:
 
         if self.last:
             self.reduce_matches()
+            if self.recipe.method == 'manual':
+                if (self.recipe.n_pts_ref == 3) and (self.recipe.n_pts_tra == 3):
+                    pass
+                else:
+                    return self.afm
+
             try:
                 self.generate_output()
             except:
@@ -596,6 +594,10 @@ class align_ingredient:
 
 
     def get_swim_args(self):
+
+        if self.recipe.ss['solo']:
+            print('\nGetting SWIM args...\n')
+
         self.cx = int(self.recipe.ss['img_size'][0] / 2.0)
         self.cy = int(self.recipe.ss['img_size'][1] / 2.0)
         basename = os.path.basename(self.recipe.ss['path'])
@@ -676,11 +678,13 @@ class align_ingredient:
             # args.append(self.recipe.ss['extra_args'])
             multi_arg_str.append(args())
 
-        # print(f"{multi_arg_str()}")
+        print(f"{multi_arg_str()}")
         return multi_arg_str
 
 
     def run_swim(self):
+        if self.recipe.ss['solo']:
+            print('\nSwimming...\n')
         self.multi_swim_arg_str = self.get_swim_args()
         logging.getLogger('recipemaker').critical(
             f'Multi-SWIM Argument String:\n{self.multi_swim_arg_str()}')

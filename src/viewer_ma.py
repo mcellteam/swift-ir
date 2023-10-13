@@ -537,30 +537,32 @@ class MAViewer(neuroglancer.Viewer):
         self.setMpData()
 
         # self._selected_index[self.role] = self.getNextPoint(self.role)
-        select_by = self.dm['state']['neuroglancer']['region_selection']['select_by']
-        logger.info(f"select by: {select_by}")
+        self.select_by = self.dm['state']['neuroglancer']['region_selection']['select_by']
+        logger.info(f"select by: {self.select_by}")
 
 
-        if select_by == 'sticky':
+        if self.select_by == 'sticky':
             pass
-        elif select_by == 'cycle':
-            self._selected_index[self.role] = (self._selected_index[self.role] + 1) % 3
+        elif self.select_by == 'cycle':
+            # self._selected_index[self.role] = (self._selected_index[self.role] + 1) % 3
             if self.numPts(self.role) == 3:
                 if self.dm['state']['tra_ref_toggle'] == 1:
                     # self._selected_index['ref'] = 0
-                    cfg.pt.set_reference()
+                    self.parent.set_reference()
                 else:
                     # self._selected_index['tra'] = 0
-                    cfg.pt.set_transforming()
+                    self.parent.set_transforming()
+            else:
+                self._selected_index[self.role] = (self._selected_index[self.role] + 1) % 3
 
-        elif select_by == 'zigzag':
+        elif self.select_by == 'zigzag':
             if self.dm['state']['tra_ref_toggle'] == 1:
                 # self._selected_index['ref'] = (self._selected_index[self.role] + 1) % 3
                 self._selected_index['ref'] = self._selected_index[self.role]
-                cfg.pt.set_reference()
+                self.parent.set_reference()
             else:
                 self._selected_index['tra'] = (self._selected_index[self.role] + 1) % 3
-                cfg.pt.set_transforming()
+                self.parent.set_transforming()
 
         self.signals.ptsChanged.emit()
         logger.info('%s Match Point Added: %s' % (self.role, str(coords)))

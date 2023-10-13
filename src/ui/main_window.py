@@ -1100,10 +1100,7 @@ class MainWindow(QMainWindow):
                     self.pt.snr_plot.initSnrPlot()
             else:
                 setData('state,neuroglancer,layout', 'xy')
-        try:
-            self.pm.refresh()
-        except:
-            print_exception()
+
         self.pt.initNeuroglancer()
 
         dt = time.time() - t0

@@ -1174,6 +1174,7 @@ class ProjectTab(QWidget):
             for b in bg.buttons():
                 if b.isChecked():
                     self.dm['state']['neuroglancer']['region_selection']['select_by'] = b.objectName()
+                    return
         bg.buttonClicked.connect(fn)
         bg.addButton(self.rbCycle)
         bg.addButton(self.rbZigzag)
