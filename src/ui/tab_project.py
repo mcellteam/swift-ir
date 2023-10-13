@@ -178,7 +178,6 @@ class ProjectTab(QWidget):
             # self.parent.setdw_matches(False)
             pass
         elif index == 1:
-            self.updateTimingsWidget()
             # self.parent.setdw_thumbs(False) #BEFORE init neuroglancer
             # self.parent.setdw_matches(True) #BEFORE init neuroglancer
             self.initNeuroglancer() #Todo necessary for now
@@ -212,7 +211,6 @@ class ProjectTab(QWidget):
             logger.critical('Refreshing editor tab...')
             self.shutdownNeuroglancer()
             self.initNeuroglancer()
-            self.updateTimingsWidget()
             self.set_transforming()  # 0802+
             if self.parent.dwSnr.isVisible():
                 if self.dm.is_aligned():
@@ -1145,11 +1143,6 @@ class ProjectTab(QWidget):
         self.gbGrid.setLayout(self.flGrid)
         # self.gbGrid.setAlignment(Qt.AlignBottom)
         self.gbGrid.setAlignment(Qt.AlignCenter)
-
-        self.sa_runtimes = QScrollArea()
-        self.sa_runtimes.setWidgetResizable(True)
-        self.sa_runtimes.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.sa_runtimes.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
         self.MA_use_global_defaults_lab = QLabel('Global defaults will be used.')
         self.MA_use_global_defaults_lab.setStyleSheet('font-size: 13px; font-weight: 600;')
@@ -2192,8 +2185,6 @@ class ProjectTab(QWidget):
         logger.info('')
         if self.te_logs.isVisible():
             self.refreshLogs()
-        if self.sa_runtimes.isVisible():
-            self.updateTimingsWidget()
 
 
     def fn_toggleTargKarg(self):
@@ -2545,7 +2536,8 @@ class ProjectTab(QWidget):
                     self.lw_ref.item(i).setIcon(QIcon())
 
                 for i, p in enumerate(self.dm.manpoints_mir('tra')):
-                    if p[0]:
+                    # if p[0]:
+                    if p and p[0]:
                         x, y = p[0], p[1]
                         msg = '%d: x=%.1f, y=%.1f' % (i, x, y)
                         self.lw_tra.item(i).setText(msg)
@@ -2558,7 +2550,8 @@ class ProjectTab(QWidget):
                 # self.lw_ref.update()
                 # # for i, p in enumerate(self.editorViewer.ref_pts):
                 for i, p in enumerate(self.dm.manpoints_mir('ref')):
-                    if p[0]:
+                    # if p[0]:
+                    if p and p[0]:
                         x, y = p[0], p[1]
                         msg = '%d: x=%.1f, y=%.1f' % (i, x, y)
                         self.lw_ref.item(i).setText(msg)
@@ -3146,25 +3139,6 @@ class ProjectTab(QWidget):
         state = copy.deepcopy(cfg.emViewer.state)
         state.showSlices = False
         cfg.emViewer.set_state(state)
-
-
-    def updateTimingsWidget(self):
-        logger.info('')
-        try:
-            fl_l = QFormLayout()
-            fl_l.setContentsMargins(0, 0, 0, 0)
-            fl_l.setVerticalSpacing(1)
-            for t in self.dm.timings:
-                fl_l.addRow(t[0], QLabel(t[1]))
-            w = QWidget()
-            w.setContentsMargins(0, 0, 0, 0)
-            w.setStyleSheet("""QLabel{color: #161c20; font-size: 8px;}""")
-            w.setLayout(fl_l)
-            self.sa_runtimes.setWidget(w)
-        except:
-            print_exception()
-            logger.warning('Timing details failed to update')
-
 
 
     def jump_to_manual(self, requested) -> None:

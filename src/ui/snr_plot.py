@@ -361,6 +361,7 @@ class SnrPlot(QWidget):
                     y_axis.append(self.dm.snr(s=s, l=i))
         logger.info(f"get_everything_comport_axis_data dt={time() - t0:.3g}")
         # logger.info(f"\nx-axis: {x_axis}\ny-axis: {y_axis}")
+        self._pts_all_comport = (x_axis, y_axis)
         return x_axis, y_axis
 
     def get_cafm_no_comport_axis_data(self, s=None) -> tuple:
@@ -380,6 +381,7 @@ class SnrPlot(QWidget):
                     y_axis.append(self.dm.snr(s=s, l=i))
         logger.info(f"get_cafm_no_comport_axis_data dt={time() - t0:.3g}")
         # logger.info(f"\nx-axis: {x_axis}\ny-axis: {y_axis}")
+        self._pts_cafm_nocomport = (x_axis, y_axis)
         return x_axis, y_axis
 
     def get_data_no_comport_axis_data(self, s=None) -> tuple:
@@ -400,6 +402,7 @@ class SnrPlot(QWidget):
                     y_axis.append(self.dm.snr(s=s, l=i))
         logger.info(f"get_data_no_comport_axis_data dt={time()-t0:.3g}")
         # logger.info(f"\nx-axis: {x_axis}\ny-axis: {y_axis}")
+        self._pts_data_nocomport = (x_axis, y_axis)
         return x_axis, y_axis
 
 
@@ -494,6 +497,8 @@ class SnrPlot(QWidget):
         )
         self.ghost_points[s].addPoints(x_axis, y_axis)
         self.ghost_points[s].setZValue(0)
+
+        self._pts_ghost = (x_axis, y_axis)
         self.plot.addItem(self.ghost_points[s])
 
     def plotSingleScale(self, s=None):

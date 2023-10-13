@@ -24,9 +24,13 @@ from functools import lru_cache
 from src.swiftir import applyAffine
 import src.config as cfg
 
-import warnings
+# import warnings
+# warnings.filterwarnings("ignore")
+#
+# import libtiff
+# libtiff.libtiff_ctypes.suppress_warnings()
 
-warnings.filterwarnings("ignore")
+logging.getLogger('tifffile').propagate = False
 
 import shelve  # !!! # https://docs.python.org/3/library/shelve.html
 
@@ -406,7 +410,8 @@ class align_recipe:
         mr['snr_average'] = sum(snr_list) / len(snr_list)
 
         try:
-            print(f"afm[{self.index}]: {afm.tolist()}")
+            logger.info(f"afm[{self.index}]: {afm.tolist()}")
+            sys.stdout.flush()
             mr['affine_matrix'] = afm.tolist()
 
         except:

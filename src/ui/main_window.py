@@ -1087,7 +1087,6 @@ class MainWindow(QMainWindow):
 
         if self._isProjectTab():
             # self._showSNRcheck()
-            self.pt.updateTimingsWidget()
             self.cbBB.setChecked(self.dm.has_bb())
             if self.dm.is_aligned():
                 setData('state,neuroglancer,layout', '4panel')
@@ -1225,7 +1224,7 @@ class MainWindow(QMainWindow):
             # time.sleep(2)
             del self._alignworker
 
-        self.shutdownNeuroglancer()
+        # self.shutdownNeuroglancer() #1013-
 
         self.tell(f'Aligning {len(indexes)} pairs')
         self.tell(f'Regenerating {len(indexes)} images')
