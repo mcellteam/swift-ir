@@ -74,7 +74,7 @@ def cached(func):
 
 
 @lru_cache(maxsize=None)
-# @persist_to_file(fn=os.path.join(cfg.CONFIG.series_location, 'cache.data'))
+# @persist_to_file(fn=os.path.join(cfg.CONFIG.images_location, 'cache.data'))
 def run_recipe(data):
     '''Assemble and execute an alignment recipe
     :param data: data for one pairwise alignment as Python dictionary.'''
@@ -504,7 +504,7 @@ class align_ingredient:
     2)  If ingredient mode is 'SWIM-Manual', then this is a SWIM to refine the
         alignment of a 'Manual-Hint' using manually specified windows.
     3)  If mode is 'SWIM' then perform a SWIM region matching ingredient using
-        ww and psta specify the size and series_location of windows in im_sta.
+        ww and psta specify the size and images_location of windows in im_sta.
         Corresponding windows (pmov) are contructed from psta and projected
         onto im_mov. Then perform matching to initializeStack or refine the afm.
         If psta contains only one point then return a translation matrix.
@@ -596,7 +596,7 @@ class align_ingredient:
         basename = os.path.basename(self.recipe.ss['path'])
         fn, ext = os.path.splitext(basename)
         multi_arg_str = ArgString(sep='\n')
-        # dir_scale = os.path.join(self.recipe.config['series_location'], self.recipe.ss['level']) #1008-
+        # dir_scale = os.path.join(self.recipe.config['images_location'], self.recipe.ss['level']) #1008-
         self.ms_paths = []
         m = self.recipe.method
         iters = str(self.recipe.ss['iterations'])

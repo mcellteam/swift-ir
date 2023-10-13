@@ -134,7 +134,7 @@ class NgBootstrap():
         try:
             assert os.path.exists(searchpath)
         except:
-            log.error(f"Required metadata file .zarray not found at series_location {searchpath}.")
+            log.error(f"Required metadata file .zarray not found at images_location {searchpath}.")
             return
 
         with self.viewer.txn() as s:

@@ -21,7 +21,7 @@ alignEM provides functionality for downscaling and the ability to pass alignment
 
 <b>Q: What format is the output of alignEM?</b>
 <br/>
-A: Scaled image series and generated alignments are always stored in two formats: TIFF and Zarr.Zarr is an open-source format for the storage of chunked, compressed, N-dimensional arrays with an interface similar to NumPy. It has a Nature Methods paper:<br/><a href='https://www.nature.com/articles/s41592-021-01326-w'>https://www.nature.com/articles/s41592-021-01326-w</a>
+A: Scaled image images and generated alignments are always stored in two formats: TIFF and Zarr.Zarr is an open-source format for the storage of chunked, compressed, N-dimensional arrays with an interface similar to NumPy. It has a Nature Methods paper:<br/><a href='https://www.nature.com/articles/s41592-021-01326-w'>https://www.nature.com/articles/s41592-021-01326-w</a>
 <br/><br/>
 <img src="file:src/resources/sfn2022fig.png" alt="alignEM-disk-storage" style="height:220px;">
 <br/><br/>
@@ -29,8 +29,8 @@ For more information about Zarr: <b>Help > Zarr Help</b>
 <br/><br/>
 
 <b>Q: What is meant by "scales"?</b><br/>
-A: In alignEM a &quot;scale&quot; simply means a downsampled (of decreased resolution) copy of an image series.<br/><br/>
-<b>Q: Why should data be scaled at all? Is it okay to align the full resolution series with brute force?</b><br/>
+A: In alignEM a &quot;scale&quot; simply means a downsampled (of decreased resolution) copy of an image images.<br/><br/>
+<b>Q: Why should data be scaled at all? Is it okay to align the full resolution images with brute force?</b><br/>
 A: You could, but EM images tend to run large. A more efficient workflow is to:<br/> &nbsp; 1) generate a hierarchy of downsampled images from the full resolution images<br/> &nbsp; 2) align the lowest resolution images first<br/> &nbsp; 3) pass the computed affines to the scale of next-highest resolution, and repeat until the full resolution images are in alignment. In these FAQs this is referred to as &quot;climbing the scale hierarchy&quot;&quot;<br/><br/>
 
 <b>Q: Is it possible to generate a new scale pyramid without starting a new project?</b>

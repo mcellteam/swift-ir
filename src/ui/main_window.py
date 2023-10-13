@@ -1088,7 +1088,6 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             # self._showSNRcheck()
             self.pt.updateTimingsWidget()
-            self.pt.updateWarnings()
             self.cbBB.setChecked(self.dm.has_bb())
             if self.dm.is_aligned():
                 setData('state,neuroglancer,layout', '4panel')
@@ -1306,7 +1305,7 @@ class MainWindow(QMainWindow):
         self._scaleworker.finished.connect(self._scaleworker.deleteLater)
         self._scaleworker.finished.connect(lambda: self.wPbar.hide())
         self._scaleworker.finished.connect(self._refresh)
-        self._scaleworker.finished.connect(lambda: self.pm.bConfirmImport.setEnabled(True))
+        self._scaleworker.finished.connect(lambda: self.pm.bCreateImages.setEnabled(True))
         def fn():
             self.saveUserPreferences()
             self.pm.refresh()
@@ -1367,7 +1366,7 @@ class MainWindow(QMainWindow):
                 if cur_index == 0:
                     self.bArrowDown.setEnabled(True)
                     self.bArrowUp.setEnabled(False)
-                elif len(self.dm['series']['levels']) == cur_index + 1:
+                elif len(self.dm['images']['levels']) == cur_index + 1:
                     self.bArrowDown.setEnabled(False)
                     self.bArrowUp.setEnabled(True)
                 else:
@@ -1815,7 +1814,6 @@ class MainWindow(QMainWindow):
                     else:
                         setData('state,neuroglancer,layout', 'xy')
 
-                    self.pt.updateWarnings()
                     self.pt.project_table.veil()
                     self.alignAllAction.setText(f"Align + Generate All: Level {self.dm.scale}")
                     self.updateEnabledButtons()
@@ -1872,7 +1870,7 @@ class MainWindow(QMainWindow):
             if self.globTabs.widget(i).__class__.__name__ == 'OpenProject':
                 self.globTabs.setCurrentIndex(i)
                 return
-        self.globTabs.addTab(self.pm, 'Series Manager')
+        self.globTabs.addTab(self.pm, 'Alignment Manager')
 
     def detachNeuroglancer(self):
         logger.info('')
@@ -1987,7 +1985,7 @@ class MainWindow(QMainWindow):
                     self.dm.data_location = saveas
                 # data_cp = copy.deepcopy(self.dm._data) #0828-
 
-                # data_cp.make_paths_relative(start=self.dm.series_location)
+                # data_cp.make_paths_relative(start=self.dm.images_location)
                 # data_cp_json = data_cp.to_dict()
                 name,_ = os.path.splitext(os.path.basename(self.dm.data_location))
                 path = os.path.join(self.dm.data_location, name + '.swiftir')
@@ -2005,8 +2003,8 @@ class MainWindow(QMainWindow):
                 #     user = getpass.getuser()
                 #     tstamp = datetime.datetime.now().strftime('%Y%m%d')
                 #     fn = f"pf_{tstamp}_{node}_{user}_" + os.path.basename(name)
-                #     series_location = "/work/08507/joely/ls6/log_db"
-                #     of = os.path.join(series_location, fn)
+                #     images_location = "/work/08507/joely/ls6/log_db"
+                #     of = os.path.join(images_location, fn)
                 #     with open(of, 'w') as f:
                 #         f.write(jde.encode(data_cp))
 
@@ -2485,17 +2483,17 @@ class MainWindow(QMainWindow):
 
     # def show_zarr_info(self) -> None:
     #     if self.pt:
-    #         z = zarr.open(os.path.join(self.dm.series_location, 'img_aligned.zarr'))
+    #         z = zarr.open(os.path.join(self.dm.images_location, 'img_aligned.zarr'))
     #         self.tell('\n' + str(z.tree()) + '\n' + str(z.info))
     #
     # def show_zarr_info_aligned(self) -> None:
     #     if self.pt:
-    #         z = zarr.open(os.path.join(self.dm.series_location, 'img_aligned.zarr'))
+    #         z = zarr.open(os.path.join(self.dm.images_location, 'img_aligned.zarr'))
     #         self.tell('\n' + str(z.info) + '\n' + str(z.tree()))
     #
     # def show_zarr_info_source(self) -> None:
     #     if self.pt:
-    #         z = zarr.open(os.path.join(self.dm.series_location, 'img_src.zarr'))
+    #         z = zarr.open(os.path.join(self.dm.images_location, 'img_src.zarr'))
     #         self.tell('\n' + str(z.info) + '\n' + str(z.tree()))
 
     def show_hide_developer_console(self):
@@ -2916,11 +2914,11 @@ class MainWindow(QMainWindow):
             self.setdw_matches(False)
             self.setdw_snr(False)
             # self.globTabs.addTab(OpenProject(), 'Project Manager')
-            self.globTabs.insertTab(0, self.pm, 'Series Manager')
+            self.globTabs.insertTab(0, self.pm, 'Alignment Manager')
             self._switchtoOpenProjectTab()
 
 
-        self.tbbProjects.setToolTip("Series Manager")
+        self.tbbProjects.setToolTip("Alignment Manager")
         # menu = QMenu()
         # projectsMenu = menu.addMenu("New Project")
         # action = QAction('From Folder', self)
@@ -3035,7 +3033,7 @@ class MainWindow(QMainWindow):
             b.setStyleSheet("QToolButton { text-align: right; margin-left: 4px;}")
 
         self.bExport = QPushButton('Export ')
-        tip = """Export series to Zarr & TIFF"""
+        tip = """Export images to Zarr & TIFF"""
         tip = '\n'.join(textwrap.wrap(tip, width=35))
         self.bExport.setToolTip(tip)
         self.bExport.setIconSize(QSize(15,15))
@@ -4024,17 +4022,17 @@ class MainWindow(QMainWindow):
     # def printExportInstructionsTIFF(self):
     #     work = os.getenv('WORK')
     #     user = os.getenv('USER')
-    #     tiffs = os.path.join(self.dm.series_location, 'scale_1', 'img_src')
-    #     self.hud.post(f'Use the follow command to copy-export full resolution TIFFs to another series_location on the filesystem:\n\n'
+    #     tiffs = os.path.join(self.dm.images_location, 'scale_1', 'img_src')
+    #     self.hud.post(f'Use the follow command to copy-export full resolution TIFFs to another images_location on the filesystem:\n\n'
     #                   f'    rsync -atvr {tiffs} {user}@ls6.tacc.utexas.edu:{work}/data')
     #
     #
     # def printExportInstructionsZarr(self):
     #     work = os.getenv('WORK')
     #     user = os.getenv('USER')
-    #     zarr = os.path.join(self.dm.series_location, 'img_aligned.zarr', 's1')
+    #     zarr = os.path.join(self.dm.images_location, 'img_aligned.zarr', 's1')
     #     self.hud.post(
-    #         f'Use the follow command to copy-export full resolution Zarr to another series_location on the filesystem:\n\n'
+    #         f'Use the follow command to copy-export full resolution Zarr to another images_location on the filesystem:\n\n'
     #         f'    rsync -atvr {zarr} {user}@ls6.tacc.utexas.edu:{work}/data\n\n'
     #         f'Note: AlignEM supports the opening and re-opening of arbitrary Zarr files in Neuroglancer')
 
@@ -4065,11 +4063,11 @@ class MainWindow(QMainWindow):
     def rechunk(self):
         # if self._isProjectTab():
         #     if self.dm.is_aligned_and_generated():
-        #         target = os.path.join(self.dm.series_location, 'img_aligned.zarr', 's%d' % self.dm.lvl())
-        #         _src = os.path.join(self.dm.series_location, 'img_aligned.zarr', '_s%d' % self.dm.lvl())
+        #         target = os.path.join(self.dm.images_location, 'img_aligned.zarr', 's%d' % self.dm.lvl())
+        #         _src = os.path.join(self.dm.images_location, 'img_aligned.zarr', '_s%d' % self.dm.lvl())
         #     else:
-        #         target = os.path.join(self.dm.series_location, 'img_src.zarr', 's%d' % self.dm.lvl())
-        #         _src = os.path.join(self.dm.series_location, 'img_src.zarr', '_s%d' % self.dm.lvl())
+        #         target = os.path.join(self.dm.images_location, 'img_src.zarr', 's%d' % self.dm.lvl())
+        #         _src = os.path.join(self.dm.images_location, 'img_src.zarr', '_s%d' % self.dm.lvl())
         #
         #     dlg = RechunkDialog(self, target=target)
         #     if dlg.exec():
@@ -4404,7 +4402,7 @@ class MainWindow(QMainWindow):
             if self.dw_hud.isVisible():
                 self.setUpdatesEnabled(False)
                 loc_hud = self.dockWidgetArea(self.dw_hud)
-                # logger.info(f'dw_monitor series_location: {loc_hud}')
+                # logger.info(f'dw_monitor images_location: {loc_hud}')
                 if loc_hud in (1,2):
                     self.dw_hud.setFeatures(
                         QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetClosable)
@@ -5020,7 +5018,7 @@ class MainWindow(QMainWindow):
 
     def _initProjectManager(self):
         self.pm = cfg.pm = OpenProject()
-        self.globTabs.addTab(self.pm, 'Series Manager')
+        self.globTabs.addTab(self.pm, 'Alignment Manager')
         # self.globTabs.tabBar().setTabButton(0, QTabBar.RightSide,None)
         # self._setLastTab()
 
@@ -5560,9 +5558,9 @@ A: Yes, but its forte is aligning EM images which tend to be large, and greyscal
    from lower level levels to higher ones.
 
 Q: What are scales?
-A: In alignEM a "level" means a downsampled (or decreased resolution) series of images.
+A: In alignEM a "level" means a downsampled (or decreased resolution) images of images.
 
-Q: Why should data be scaled? Is it okay to align the full resolution series with brute force?
+Q: Why should data be scaled? Is it okay to align the full resolution images with brute force?
 A: You could, but EM images tend to run large. A more efficient workflow is to:
    1) generate a hierarchy of downsampled images from the full resolution images
    2) align the lowest resolution images first

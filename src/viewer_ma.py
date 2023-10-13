@@ -224,7 +224,7 @@ class MAViewer(neuroglancer.Viewer):
         # self.restoreManAlignPts()
 
         sf = self.dm.lvl(s=self.dm.level)
-        path = os.path.join(self.dm['info']['series_location'], 'zarr', 's' + str(sf))
+        path = os.path.join(self.dm['info']['images_location'], 'zarr', 's' + str(sf))
 
         if not os.path.exists(path):
             cfg.main_window.warn('Data Store Not Found: %s' % path)
