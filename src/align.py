@@ -165,6 +165,7 @@ class AlignWorker(QObject):
             ss['path_thumb_src_ref'] = dm.path_thumb_src_ref(s=scale, l=zpos)
             ss['path_gif'] = dm.path_gif(s=scale, l=zpos)
             ss['wd'] = dm.writeDir(s=scale, l=zpos)
+            ss['solo'] = len(indexes) == 1
             # print(f"path : {ss['path']}")
             # print(f" ref : {ss['path_reference']}")
 
@@ -201,7 +202,7 @@ class AlignWorker(QObject):
 
         if cfg.USE_POOL_FOR_SWIM:
             ctx = mp.get_context('forkserver')
-            desc = f"Computing Affines ({len(tasks)} tasks)"
+            desc = f"Aligning ({len(tasks)} tasks)"
             self.initPbar.emit((len(tasks), desc))
             all_results = []
 
@@ -290,34 +291,34 @@ class AlignWorker(QObject):
 
         for i,r in enumerate(all_results):
             index = r['index']
-            afm = r['affine_matrix']
-            # afm = r['_affine_matrix']
-            try:
-                assert np.array(afm).shape == (2, 3)
-                # assert np.array(r['affine_matrix']).all() != np.array([[1., 0., 0.], [0., 1., 0.]]).all()
-            except:
-                print_exception(extra=f"Alignment failed at index {index}")
-                continue
+            if r['complete']:
+                afm = r['affine_matrix']
+                # afm = r['_affine_matrix']
+                try:
+                    assert np.array(afm).shape == (2, 3)
+                    # assert np.array(r['affine_matrix']).all() != np.array([[1., 0., 0.], [0., 1., 0.]]).all()
+                except:
+                    print_exception(extra=f"Alignment failed at index {index}")
+                    continue
 
-            dm['stack'][index]['levels'][scale]['results'] = r
+                dm['stack'][index]['levels'][scale]['results'] = r
 
-            ss = dm.swim_settings(s=scale, l=index)
-            # key = HashableDict(ss)
-            # index = r['index']
-            # key = dm.swim_settings(s=scale, l=index)
-
-            # value = r
-            # value = r['affine_matrix']
-            print(f"afm {index}: {afm}")
-            if afm != ident:
-                # self.ht.put(key, value)
-                self.dm.ht.put(ss, afm)
-            wd = dm.ssDir(s=scale, l=index)  # write directory
-            wp = os.path.join(wd, 'results.json')  # write path
-            os.makedirs(wd, exist_ok=True)
-            with open(wp, 'w') as f:
-                jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
-                f.write(jde.encode(r))
+                ss = dm.swim_settings(s=scale, l=index)
+                # key = HashableDict(ss)
+                # index = r['index']
+                # key = dm.swim_settings(s=scale, l=index)
+                # value = r
+                # value = r['affine_matrix']
+                print(f"afm {index}: {afm}")
+                if afm != ident:
+                    # self.ht.put(key, value)
+                    self.dm.ht.put(ss, afm)
+                wd = dm.ssDir(s=scale, l=index)  # write directory
+                wp = os.path.join(wd, 'results.json')  # write path
+                os.makedirs(wd, exist_ok=True)
+                with open(wp, 'w') as f:
+                    jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
+                    f.write(jde.encode(r))
 
         # SetStackCafm(dm, scale=scale, poly_order=dm.poly_order)
         # dm.set_stack_cafm()

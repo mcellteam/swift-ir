@@ -474,7 +474,7 @@ class OpenProject(QWidget):
 
 
     def _getAlignmentUUID(self, directory=None):
-        logger.info('')
+        # logger.info('')
         if directory == None:
             directory = self.cmbSelectAlignment.currentText()
         name,_ = os.path.splitext(os.path.basename(directory))
