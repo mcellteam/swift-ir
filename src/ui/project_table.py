@@ -382,6 +382,9 @@ class ProjectTable(QWidget):
 
         self._ms = []
 
+        if row in (0,1,2,3):
+            logger.critical(f"\n\n==== ROW {row} ====\nsnr: {snr_4x}\nrow data: {row_data}")
+
         for col in range(0, len(row_data)):
 
             if col == 0:

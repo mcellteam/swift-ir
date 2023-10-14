@@ -665,7 +665,7 @@ class ProjectTab(QWidget):
         self.lw_gb_l = GroupBox("Transforming")
         def fn():
             logger.info('')
-            if self.dm['state']['tra_ref_toggle'] == 0:
+            if self.dm['state']['tra_ref_toggle'] == 'ref':
                 self.set_transforming()
         self.lw_gb_l.clicked.connect(fn)
         vbl = VBL()
@@ -678,7 +678,7 @@ class ProjectTab(QWidget):
         self.lw_gb_r = GroupBox("Reference")
         def fn():
             logger.info('')
-            if self.dm['state']['tra_ref_toggle'] == 1:
+            if self.dm['state']['tra_ref_toggle'] == 'tra':
                 self.set_reference()
         self.lw_gb_r.clicked.connect(fn)
         vbl = VBL()
@@ -794,11 +794,11 @@ class ProjectTab(QWidget):
                 if (val % 2) == 1:
                     self.slider1x1.setValue(val - 1)
                     return
-                self.dm.set_swim_1x1_size(val)
-                self.le1x1.setText(str(self.dm.swim_1x1_size()[0]))
-                self.le2x2.setText(str(self.dm.swim_2x2_size()[0]))
+                self.dm.set_size1x1(val)
+                self.le1x1.setText(str(self.dm.size1x1()[0]))
+                self.le2x2.setText(str(self.dm.size2x2()[0]))
                 # self.slider2x2.setMaximum(int(val / 2 + 0.5))2
-                self.slider2x2.setValue(int(self.dm.swim_2x2_size()[0]))
+                self.slider2x2.setValue(int(self.dm.size2x2()[0]))
                 self.editorViewer.drawSWIMwindow()
                 if self.tn_widget.isVisible():
                     self.tn_ref.update()
@@ -813,8 +813,8 @@ class ProjectTab(QWidget):
 
         def fn_le1x1():
             logger.info('')
-            # self.dm.set_swim_1x1_size(int(self.le1x1.text()))
-            # self.dm.set_swim_1x1_size(int(self.le1x1.text()))
+            # self.dm.set_size1x1(int(self.le1x1.text()))
+            # self.dm.set_size1x1(int(self.le1x1.text()))
             txt = self.le1x1.text()
             if txt:
                 self.slider1x1.setValue(int(txt))
@@ -833,9 +833,9 @@ class ProjectTab(QWidget):
             if caller in ('main','fn_le2x2'):
                 logger.info('')
                 val = int(self.slider2x2.value())
-                self.dm.set_swim_2x2_size(val)
-                self.le2x2.setText(str(self.dm.swim_2x2_size()[0]))
-                self.slider2x2.setValue(int(self.dm.swim_2x2_size()[0]))
+                self.dm.set_size2x2(val)
+                self.le2x2.setText(str(self.dm.size2x2()[0]))
+                self.slider2x2.setValue(int(self.dm.size2x2()[0]))
                 self.editorViewer.drawSWIMwindow()
                 if self.tn_widget.isVisible():
                     self.tn_ref.update()
@@ -849,7 +849,7 @@ class ProjectTab(QWidget):
 
         def fn_le2x2():
             logger.info('')
-            # self.dm.set_swim_2x2_size(int(self.le2x2.text()))
+            # self.dm.set_size2x2(int(self.le2x2.text()))
             txt = self.le2x2.text()
             if txt:
                 self.slider2x2.setValue(int(txt))
@@ -1148,7 +1148,7 @@ class ProjectTab(QWidget):
         self.MA_use_global_defaults_lab.setStyleSheet('font-size: 13px; font-weight: 600;')
         self.MA_use_global_defaults_lab.setAlignment(Qt.AlignCenter)
 
-        self.lab_region_selection = QLabel("⇧ + click to select 3 matching regions")
+        self.lab_region_selection = QLabel("Alt + click to select 3 matching regions")
         # self.lab_region_selection = QLabel("")
         self.lab_region_selection.setStyleSheet("font-size: 10px; font-weight: 600; color: #161c20; padding: 1px;")
 
@@ -2099,12 +2099,16 @@ class ProjectTab(QWidget):
         self.parent.regenZarr()
 
 
-                    
+    def set_viewer_role(self, role):
+        if role == 'ref':
+            self.set_reference()
+        elif role == 'tra':
+            self.set_transforming()
 
     def set_reference(self):
         # logger.critical('')
         logger.info('')
-        self.dm['state']['tra_ref_toggle'] = 0
+        self.dm['state']['tra_ref_toggle'] = 'ref'
         if self.dm.skipped():
             self.parent.warn('This section does not have a reference because it is excluded.')
             return
@@ -2153,7 +2157,7 @@ class ProjectTab(QWidget):
 
     def set_transforming(self):
         logger.info('')
-        self.dm['state']['tra_ref_toggle'] = 1
+        self.dm['state']['tra_ref_toggle'] = 'tra'
         self.editorViewer.role = 'tra'
         self.editorViewer.set_layer()
         # self.editorViewer._selected_index['tra'] = self.editorViewer.getNextPoint('tra')
@@ -2561,7 +2565,7 @@ class ProjectTab(QWidget):
 
                 self.lw_ref.update()
 
-                # if self.dm['state']['tra_ref_toggle'] == 1:
+                # if self.dm['state']['tra_ref_toggle'] == 'tra':
                 color = cfg.glob_colors[self.editorViewer._selected_index['tra']]
                 index = self.editorViewer._selected_index['tra']
 
@@ -2575,7 +2579,7 @@ class ProjectTab(QWidget):
                 self.lw_tra.item(index).setSelected(True)
                 self.lw_tra.item(index).setIcon(qta.icon('fa.arrow-left', color='#161c20'))
 
-                # elif self.dm['state']['tra_ref_toggle'] == 0:
+                # elif self.dm['state']['tra_ref_toggle'] == 'ref':
                 color = cfg.glob_colors[self.editorViewer._selected_index['ref']]
                 index = self.editorViewer._selected_index['ref']
                 if self.editorViewer.numPts('ref') < 3:

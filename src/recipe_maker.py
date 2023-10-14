@@ -24,9 +24,9 @@ from functools import lru_cache
 from src.swiftir import applyAffine
 import src.config as cfg
 
-# import warnings
-# warnings.filterwarnings("ignore")
-#
+import warnings
+warnings.filterwarnings("ignore")
+
 # import libtiff
 # libtiff.libtiff_ctypes.suppress_warnings()
 
@@ -83,20 +83,18 @@ def run_recipe(data):
     '''Assemble and execute an alignment recipe
     :param data: data for one pairwise alignment as Python dictionary.'''
 
-    # global CONFIG
-    # CONFIG = data[1]
-    # recipe = align_recipe(swim_settings=data[0], config=data[1])
-    # recipe = align_recipe(swim_settings=data[0])
-    # recipe = align_recipe(tuple(data[0]))
-    # recipe = align_recipe(data[0])
     recipe = align_recipe(data)
     recipe.assemble_recipe()
     recipe.execute_recipe()
-    # results = recipe.set_results()
     try:
         mr = recipe.set_results()
     except:
         print_exception(extra=f"Something went wrong (Section #{data['index']})...")
+        mr = {
+            'affine_matrix': np.array([[1., 0., 0.], [0., 1., 0.]]).tolist(),
+            'index': data['index'],
+            'complete': False
+        }
     return mr
 
 
@@ -112,6 +110,7 @@ class align_recipe:
         self.ss = swim_settings
         # self._hash = hash(swim_settings)
         self.path = self.ss['path']
+        self.solo = self.ss['solo']
         self.path_ref = self.ss['path_reference']
         self.configure_logging()
         self.method = self.ss['method_opts']['method']
@@ -341,7 +340,7 @@ class align_recipe:
 
     def execute_recipe(self):
 
-        if self.ss['solo']:
+        if self.solo:
             print(f"\nExecuting recipe (# ingredients: {len(self.ingredients)})...\n")
 
         # if not os.path.exists(self.signals_dir):
@@ -357,7 +356,7 @@ class align_recipe:
         self.afm = np.array(self.ss['init_afm'])
 
         if (self.path_ref == self.path) or (self.path_ref == ''):
-            logger.warning(extra=f'Image #{self.index} Has No Reference!')
+            logger.warning(f'Image #{self.index} Has No Reference!')
             return
 
         for i, ingredient in enumerate(self.ingredients):
@@ -393,9 +392,10 @@ class align_recipe:
         if self._return_afm:
             try:
                 afm = self.ingredients[-1].afm
-                logger.info(f"afm[{self.index}]: {afm.tolist()}")
-            except:
-                print_exception(extra=f"index: {self.index}, afm = {afm.tolist()}")
+                print(f"afm[{self.index}]: {afm.tolist()}")
+            except AttributeError:
+                logger.warning(f"[{self.index}] No afm found! {type(afm)}")
+                afm = np.array([[1., 0., 0.], [0., 1., 0.]])
 
         mr['affine_matrix'] = afm.tolist()
 
@@ -555,7 +555,7 @@ class align_ingredient:
 
 
     def execute_ingredient(self):
-        if self.recipe.ss['solo']:
+        if self.recipe.solo:
             print('\nExecuting ingredient...\n')
 
         # Returns an affine matrix
@@ -595,7 +595,7 @@ class align_ingredient:
 
     def get_swim_args(self):
 
-        if self.recipe.ss['solo']:
+        if self.recipe.solo:
             print('\nGetting SWIM args...\n')
 
         self.cx = int(self.recipe.ss['img_size'][0] / 2.0)
@@ -610,10 +610,10 @@ class align_ingredient:
         whiten = str(self.recipe.ss['whitening'])
         use_clobber = self.recipe.ss['clobber']
         clobber_px = self.recipe.ss['clobber_size']
-        # afm = '%.6f %.6f %.6f %.6f' % (
-        #         self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
-        afm = '%f %f %f %f' % (
-            self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
+        afm = '%.6f %.6f %.6f %.6f' % (
+                self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
+        # afm = '%f %f %f %f' % (
+        #     self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
 
         for i in range(len(self.psta[0])):
             # if m == 'grid_custom':
@@ -678,14 +678,14 @@ class align_ingredient:
             # args.append(self.recipe.ss['extra_args'])
             multi_arg_str.append(args())
 
-        print(f"{multi_arg_str()}")
+        # print(f"{multi_arg_str()}")
         return multi_arg_str
 
 
     def run_swim(self):
-        if self.recipe.ss['solo']:
-            print('\nSwimming...\n')
         self.multi_swim_arg_str = self.get_swim_args()
+        # if self.recipe.solo:
+        #     print(f'\nSwimming...\n{self.multi_swim_arg_str()}\n')
         logging.getLogger('recipemaker').critical(
             f'Multi-SWIM Argument String:\n{self.multi_swim_arg_str()}')
         arg = "%dx%d" % (self.ww[0], self.ww[1])
@@ -864,7 +864,6 @@ class align_ingredient:
         tnLogger = logging.getLogger('tnLogger')
         tnLogger.critical("Reducing Matches...")
 
-
         src = self.recipe.dir_tmp
         od = self.recipe.matches_dir
 
@@ -872,7 +871,6 @@ class align_ingredient:
         fn, ext = os.path.splitext(self.recipe.ss['path'])
         method = self.recipe.method
         od_pattern = os.path.join(od, '%s_%s_[tk]_%d%s' % (fn, method, self.recipe.index, ext))
-
 
         logger.critical(f"src         = {src}")
         logger.critical(f"fn          = {fn}")

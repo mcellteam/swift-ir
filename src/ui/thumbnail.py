@@ -203,8 +203,8 @@ class ThumbnailFast(QLabel):
 
                     if 'grid' in method:
                         regions = cfg.data.get_grid_custom_regions(s=s, l=l)
-                        ww1x1 = cfg.data.swim_1x1_size(s=s, l=l)
-                        ww2x2 = cfg.data.swim_2x2_size(s=s, l=l)
+                        ww1x1 = cfg.data.size1x1(s=s, l=l)
+                        ww2x2 = cfg.data.size2x2(s=s, l=l)
 
                         a = [(img_size[0] - ww1x1[0])/2 + ww2x2[0]/2, (img_size[1] - ww1x1[1])/2 + ww2x2[1]/2]
                         b = [img_size[0] - a[0], img_size[1] - a[1]]

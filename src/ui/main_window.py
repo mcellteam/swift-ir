@@ -192,7 +192,7 @@ class MainWindow(QMainWindow):
         if not cfg.NO_SPLASH:
             self.show_splash()
 
-        self.bPbarStop.setEnabled(cfg.DAEMON_THREADS)
+        self.bStopPbar.setEnabled(cfg.DAEMON_THREADS)
 
         # self.settings = QSettings("cnl", "alignem")
         # # if not self.settings.value("geometry") == None:
@@ -753,7 +753,6 @@ class MainWindow(QMainWindow):
                     else:
                         self.pt.msList[i].set_no_image()
                         # self.pt.msList[i].update()
-            logger.info('<< setSignalsPixmaps')
             self.dwMatches.update()
                         
         
@@ -849,7 +848,6 @@ class MainWindow(QMainWindow):
                     #     self.pt.match_thumbnails[i].set_no_image()
                     #     print_exception()
 
-            logger.info('<< setTargKargPixmaps')
             self.dwMatches.update()
 
     def callbackDwVisibilityChanged(self):
@@ -1096,6 +1094,7 @@ class MainWindow(QMainWindow):
                 if self.pt.wTabs.currentIndex() == 1:
                     self.pt.gifPlayer.set()
                 self.setdw_snr(True)  # Also initializes
+                self.setdw_matches(True)
                 if self.pt.wTabs.currentIndex() == 2:
                     self.pt.snr_plot.initSnrPlot()
             else:
@@ -1388,7 +1387,7 @@ class MainWindow(QMainWindow):
     def layer_left(self):
         if self._isProjectTab():
             if self.pt.wTabs.currentIndex() == 1:
-                if self.dm['state']['tra_ref_toggle'] == 0:
+                if self.dm['state']['tra_ref_toggle'] == 'ref':
                     self.pt.set_transforming()
             requested = self.dm.zpos - 1
             logger.info(f'requested: {requested}')
@@ -1398,7 +1397,7 @@ class MainWindow(QMainWindow):
     def layer_right(self):
         if self._isProjectTab():
             if self.pt.wTabs.currentIndex() == 1:
-                if self.dm['state']['tra_ref_toggle'] == 0:
+                if self.dm['state']['tra_ref_toggle'] == 'ref':
                     self.pt.set_transforming()
             requested = self.dm.zpos + 1
             if requested < len(self.dm):
@@ -4013,7 +4012,7 @@ class MainWindow(QMainWindow):
     #     if caller == 'main':
     #         logger.info(f'caller: {caller}')
     #         # self.dm.set_swim_window_global(float(self.pt.leSwimWindow.value()) / 100.)
-    #         self.dm.set_swim_1x1_size(self.pt.leSwimWindow.value())
+    #         self.dm.set_size1x1(self.pt.leSwimWindow.value())
 
     # def printExportInstructionsTIFF(self):
     #     work = os.getenv('WORK')
@@ -5041,15 +5040,15 @@ class MainWindow(QMainWindow):
         self.pbar.setFixedHeight(13)
         self.pbar.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.pbar.setTextVisible(True)
-        self.bPbarStop = QPushButton('Stop')
-        self.bPbarStop.setStyleSheet("font-size: 8px;")
-        self.bPbarStop.setFixedSize(36, 12)
-        self.bPbarStop.setIconSize(QSize(11, 11))
-        self.bPbarStop.setToolTip('Cancel running tasks')
-        self.bPbarStop.setIcon(qta.icon('mdi.cancel'))
-        self.bPbarStop.clicked.connect(self.cancelTasks)
-        # self.wPbar = HW(ExpandingHWidget(self), self.pbar, self.bPbarStop)
-        self.wPbar = HW(self.pbar, self.bPbarStop)
+        self.bStopPbar = QPushButton('Stop')
+        self.bStopPbar.setStyleSheet("font-size: 8px;")
+        self.bStopPbar.setFixedSize(36, 12)
+        self.bStopPbar.setIconSize(QSize(11, 11))
+        self.bStopPbar.setToolTip('Cancel running tasks')
+        self.bStopPbar.setIcon(qta.icon('mdi.cancel'))
+        self.bStopPbar.clicked.connect(self.cancelTasks)
+        # self.wPbar = HW(ExpandingHWidget(self), self.pbar, self.bStopPbar)
+        self.wPbar = HW(self.pbar, self.bStopPbar)
         self.wPbar.layout.setAlignment(Qt.AlignRight)
         # self.wPbar.layout.setAlignment(Qt.AlignCenter)
         self.wPbar.layout.setContentsMargins(4, 0, 4, 0)
@@ -5063,14 +5062,16 @@ class MainWindow(QMainWindow):
     def cancelTasks(self):
         logger.critical("STOP TASKS requested!")
         self._working = False
-        try:
-            self._alignworker.stop()
-        except:
-            logger.warning('Unable to stop _alignworker or no _alignworker to stop')
-        try:
-            self._scaleworker.stop()
-        except:
-            logger.warning('Unable to stop _scaleworker or no _scaleworker to stop')
+        if hasattr(self, '_alignworker'):
+            try:
+                self._alignworker.stop()
+            except:
+                logger.warning('Unable to stop _alignworker or no _alignworker to stop')
+        if hasattr(self, '_scaleworker'):
+            try:
+                self._scaleworker.stop()
+            except:
+                logger.warning('Unable to stop _scaleworker or no _scaleworker to stop')
 
         self.cleanupAfterCancel()
 
@@ -5188,7 +5189,7 @@ class MainWindow(QMainWindow):
                 # self.setUpdatesEnabled(False)
                 if self.pt.wTabs.currentIndex() == 1:
                     logger.info(f"Slash pressed! toggle:[{self.dm['state']['tra_ref_toggle']}]")
-                    if self.dm['state']['tra_ref_toggle'] == 1:
+                    if self.dm['state']['tra_ref_toggle'] == 'tra':
                         self.pt.set_reference()
                     else:
                         self.pt.set_transforming()

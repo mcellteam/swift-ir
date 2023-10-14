@@ -98,13 +98,21 @@ class DataModel:
             if images_location:
                 self.images_location = images_location
             self.ht = None
-            self._data['modified'] = date_time()
+            self._upgradeDatamodel()
             self.signals = Signals()
             self.signals.dataChanged.connect(lambda: logger.critical('emission!'))
 
     def loadHashTable(self):
         logger.info('')
         self.ht = cfg.ht = HashTable(self)
+
+    def _upgradeDatamodel(self):
+        logger.info('Upgrading data model...')
+        self._data['modified'] = date_time()
+        for i in range(len(self)):
+            for level in self.levels:
+                pass
+
 
     def __iter__(self):
         for item in self['stack'][self.zpos]['levels'][self.level]:
@@ -1195,22 +1203,29 @@ class DataModel:
          scaling factor then sets the same points for all scale levels above the current level.'''
         if s == None: s = self.scale
         if l == None: l = self.zpos
-        logger.info(f"Writing manual points to project dictionary for section #{l}: {matchpoints}")
+        logger.critical(f"Writing points to data: {matchpoints}")
         # ex. [(397.7689208984375, 546.7693481445312), (nan, nan), (nan, nan)]
         # lvls  = [x for x in self.lvls() if x <= self.lvl()]
         # scales      = [get_scale_key(x) for x in lvls]
         glob_coords = [None,None,None]
         fac = self.lvl()
         for i,p in enumerate(matchpoints):
+            # (774.73145, 667.3542)
+            # (None, None)
             if p:
-                glob_coords[i] = (p[0] * fac, p[1] * fac)
+                try:
+                    glob_coords[i] = (p[0] * fac, p[1] * fac)
+                except:
+                    print_exception(extra=f"p: {p}")
 
         # set manual points in Neuroglancer coordinate system
+        logger.critical(f"glob coords: {glob_coords}")
         fac = self.lvl(s)
         coords = [None,None,None]
         for i,p in enumerate(glob_coords):
             if p:
-                coords[i] = (p[0] / fac, p[1] / fac)
+                if p[0]:
+                    coords[i] = (p[0] / fac, p[1] / fac)
         logger.info(f'Setting manual points for {s}: {coords}')
         # self._data['stack'][z]['levels'][level]['swim_settings']['match_points'][role] = coords
         self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']['points']['ng_coords'][role] = coords
@@ -1260,12 +1275,14 @@ class DataModel:
         for i in range(0,3):
             try:
                 if mps['ref'][i]:
-                    d['ref'][i] = (l, mps['ref'][i][0], mps['ref'][i][1])
+                    # d['ref'][i] = (l, mps['ref'][i][0], mps['ref'][i][1])
+                    d['ref'][i] = (l + 0.5, mps['ref'][i][0], mps['ref'][i][1])
             except:
                 print_exception()
             try:
                 if mps['tra'][i]:
-                    d['tra'][i] = (l, mps['tra'][i][0], mps['tra'][i][1])
+                    # d['tra'][i] = (l, mps['tra'][i][0], mps['tra'][i][1])
+                    d['tra'][i] = (l + 0.5, mps['tra'][i][0], mps['tra'][i][1])
             except:
                 print_exception()
 
@@ -1859,7 +1876,7 @@ class DataModel:
             self['stack'][i]['levels'][self.level]['swim_settings']['clobber_size'] = tup[1]
 
 
-    def swim_1x1_size(self, s=None, l=None):
+    def size1x1(self, s=None, l=None):
         '''Returns the SWIM Window in pixels'''
         if s == None: s = self.level
         if l == None: l = self.zpos
@@ -1867,7 +1884,7 @@ class DataModel:
         assert self['stack'][l]['levels'][s]['swim_settings']['method_opts']['method'] == 'grid'
         return self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']['size_1x1']
 
-    def set_swim_1x1_size(self, pixels=None, silent=False):
+    def set_size1x1(self, pixels=None, silent=False):
         '''Sets the SWIM Window for the Current Section across all scales.'''
         # if pixels == None:
         #     self.set_auto_swim_windows_to_default(current_only=True)
@@ -1880,7 +1897,7 @@ class DataModel:
         pixels = pixels
         pixels_y = (pixels / img_w) * img_h
         self._data['stack'][self.zpos]['levels'][self.level]['swim_settings']['method_opts']['size_1x1'] = [pixels,pixels_y]
-        if (self.swim_2x2_size()[0] * 2) > pixels:
+        if (self.size2x2()[0] * 2) > pixels:
             self._data['stack'][self.zpos]['levels'][self.level]['swim_settings']['method_opts']['size_2x2'] = [int(pixels / 2  + 0.5), int(pixels_y / 2 + 0.5)]
         if not silent:
             self.signals.dataChanged.emit()
@@ -1898,7 +1915,7 @@ class DataModel:
     #             self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']['size_1x1'] = [int(pixels[0] * sf + 0.5), int(pixels[1] * sf + 0.5)]
 
 
-    def swim_2x2_size(self, s=None, l=None):
+    def size2x2(self, s=None, l=None):
         '''Returns the SWIM Window in pixels'''
         if s == None: s = self.level
         if l == None: l = self.zpos
@@ -1906,7 +1923,7 @@ class DataModel:
         return self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']['size_2x2']
 
 
-    def set_swim_2x2_size(self, pixels=None, silent=False):
+    def set_size2x2(self, pixels=None, silent=False):
         '''Returns the SWIM Window in pixels'''
         caller = inspect.stack()[1].function
         # if pixels == None:
@@ -1918,10 +1935,10 @@ class DataModel:
         img_w, img_h = self.image_size(s=self.level)
         pixels_y = (pixels / img_w) * img_h
 
-        if (2 * pixels) <= self.swim_1x1_size()[0]:
+        if (2 * pixels) <= self.size1x1()[0]:
             self._data['stack'][self.zpos]['levels'][self.level]['swim_settings']['method_opts']['size_2x2'] = [pixels, pixels_y]
         else:
-            force_pixels = [int(self.swim_1x1_size()[0] / 2 + 0.5), int(self.swim_1x1_size()[1] / 2 + 0.5)]
+            force_pixels = [int(self.size1x1()[0] / 2 + 0.5), int(self.size1x1()[1] / 2 + 0.5)]
             if (force_pixels[0] % 2) == 1:
                 force_pixels[0] -= 1
                 force_pixels[1] -= 1
@@ -2166,6 +2183,12 @@ class DataModel:
         pass
 
     def pullSettings(self):
+        '''
+        Saving pulls the scaling factor-adjusted 'saved_swim_settings' from previous scale.
+        'saved_swim_settings' is populated on the first 'Align All' of each scale, so will always be available.
+
+        '''
+
         levels = self.levels
         cur_level = self.level
         prev_level = levels[levels.index(cur_level) + 1]
@@ -2194,7 +2217,7 @@ class DataModel:
         try:
             # for d in self():
             for i in range(len(self)):
-                prev_settings = self.swim_settings(s=prev_level, l=i)
+                prev_settings = self._data['stack'][i]['levels'][prev_level]['swim_settings']
                 self['stack'][i]['levels'][cur_level]['swim_settings'] = copy.deepcopy(prev_settings)
                 ss = self['stack'][i]['levels'][cur_level]['swim_settings']
                 try:
@@ -2287,7 +2310,7 @@ class DataModel:
                         'select_by': 'cycle',  # cycle, zigzag, or sticky
                     }
                 },
-                'tra_ref_toggle': 1,
+                'tra_ref_toggle': 'tra',
                 'targ_karg_toggle': 1,
                 'annotate_match_signals': True,
             },
@@ -2321,6 +2344,7 @@ class DataModel:
             )
             for level in levels:
                 self['stack'][i]['levels'][level].update(
+                    initialized=False,
                     data_comports=True,
                     cafm_comports=True,
                     cafm_hash=None,
@@ -2343,7 +2367,7 @@ class DataModel:
                         'img_size': self['images']['size_xy'][level],
                         'init_afm': identity_matrix,
                     },
-                    points_buffer=None,
+                    points={},
                     results={
                         'snr': 0.0,
                         'snr_std_deviation': 0.0,

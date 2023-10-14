@@ -72,8 +72,8 @@ def dt(ident='timer'):
     tstart = time.time()
     yield
     elapsed = (time.time() - tstart) * 1000
-    result = f"{ident}: {elapsed:.6g}s"
-    print(result)
+    result = f"\n\n{ident}: {elapsed:.6g}s\n"
+    logger.critical(result)
     return result
 
 
@@ -566,7 +566,7 @@ def timer(func):
         t2 = time()
         # print(f'Function {func.__name__!r} executed in {(t2-t1):.4f}level')
         function = f'Function {func.__name__!r}'.ljust(35, ' ')
-        result = f'executed in {(t2 - t1):.4f}level'
+        result = f'executed in {(t2 - t1):.4f}s'
         print(function + result)
         return result
 
