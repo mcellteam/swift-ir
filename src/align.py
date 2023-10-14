@@ -184,8 +184,10 @@ class AlignWorker(QObject):
             #     # tasks.append(copy.deepcopy(ss))
             # else:
             #     logger.info(f"EXCLUDING section #{i}")
-
-            tasks.append(copy.deepcopy(ss))
+            if self.dm.ht.haskey(self.dm.swim_settings(s=scale, l=i)):
+                logger.info(f"[{i}] Cache hit!")
+            else:
+                tasks.append(copy.deepcopy(ss))
 
         # delete_correlation_signals(dm=dm, scale=scale, indexes=indexes)
         # delete_matches(dm=dm, scale=scale, indexes=indexes)

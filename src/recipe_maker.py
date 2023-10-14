@@ -185,18 +185,6 @@ class align_recipe:
         # Example: psta_2x2 = [[256. 768. 256. 768.] [256. 256. 768. 768.]]
 
         if 'grid' in self.method:
-            # nx, ny = 2, 2
-            # pa = np.zeros((2, nx * ny))  # Point Array (2x4) points
-            # sx = int(self.ss['img_size'][0] / 2.0) #init window size
-            # sy = int(self.ss['img_size'][1] / 2.0)
-            # for x in range(nx):
-            #     for y in range(ny):
-            #         pa[0, x + nx * y] = int(0.5 * sx + sx * x)  # Pt Array 2x4
-            #         pa[1, x + nx * y] = int(0.5 * sy + sy * y)  # Pt Array 2x4
-            # psta_2x2 = pa
-            # ww_1x1 = self.ss['grid']['size_1x1']
-            # # ww_2x2 = [int(ww_1x1[0]/2), int(ww_1x1[1]/2)]
-            # ww_2x2 = self.ss['grid']['size_1x1']
 
             # from previous 'custom-grid' method
             ww_1x1 = self.ss['method_opts']['size_1x1']
@@ -215,15 +203,6 @@ class align_recipe:
 
             if self.ss['is_refinement']:
                 '''Perform affine refinement'''
-                # if self.ss['level'] == 'scale_1':
-                #     self.add_ingredients([
-                #         align_ingredient(
-                #             mode='SWIM-Grid',
-                #             ww=ww_2x2,
-                #             psta=psta_2x2,
-                #             ID='g2x2',
-                #             last=True)])
-                # else:
                 self.add_ingredients([
                     align_ingredient(
                         mode='SWIM-Grid',
@@ -260,49 +239,8 @@ class align_recipe:
                         psta=psta_2x2,
                         ID='g2x2-d',
                         last=True)])
-        # if 'grid' in self.method:
-        # # elif self.method == 'grid_custom':
-        #     ww_1x1 = self.ss['method_opts']['size_1x1']
-        #     ww_2x2 = self.ss['method_opts']['size_2x2']
-        #     x1 = ((self.ss['img_size'][0] - ww_1x1[0]) / 2) + (ww_2x2[0] / 2)
-        #     x2 = self.ss['img_size'][0] - x1
-        #     y1 = ((self.ss['img_size'][1] - ww_1x1[1]) / 2) + (ww_2x2[1] / 2)
-        #     y2 = self.ss['img_size'][1] - y1
-        #     cps = [(x1, y1), (x2, y1), (x1, y2), (x2, y2)]
-        #     nx, ny = 2, 2
-        #     pa = np.zeros((2, nx * ny))  # Point Array (2x4) points
-        #     for i,p in enumerate(cps):
-        #         pa[0,i] = int(p[0])
-        #         pa[1,i] = int(p[1])
-        #     psta_2x2 = pa
-        #
-        #     self.add_ingredients([
-        #         align_ingredient(
-        #             mode='SWIM-Grid',
-        #             ww=ww_1x1,
-        #             psta=psta_1,
-        #             ID='g1x1'),
-        #         align_ingredient(
-        #             mode='SWIM-Grid',
-        #             ww=ww_2x2,
-        #             psta=psta_2x2,
-        #             ID='g2x2-a'),
-        #         align_ingredient(
-        #             mode='SWIM-Grid',
-        #             ww=ww_2x2,
-        #             psta=psta_2x2,
-        #             ID='g2x2-c'),
-        #         align_ingredient(
-        #             mode='SWIM-Grid',
-        #             ww=ww_2x2,
-        #             psta=psta_2x2,
-        #             ID='g2x2-d',
-        #             last=True),
-        #     ])
         else:
             ww = self.ss['method_opts']['size']
-            #sanitize lists of None elements
-            # pts = self.ss['match_points_mir']['base']
             pts = self.ss['method_opts']['points']['mir_coords']['tra']
             man_pmov = np.array([p for p in pts if p]).transpose()
             pts = self.ss['method_opts']['points']['mir_coords']['ref']
@@ -342,13 +280,6 @@ class align_recipe:
 
         if self.solo:
             print(f"\nExecuting recipe (# ingredients: {len(self.ingredients)})...\n")
-
-        # if not os.path.exists(self.signals_dir):
-        #     os.makedirs(self.signals_dir, exist_ok=True)
-        # if not os.path.exists(self.matches_dir):
-        #     os.makedirs(self.matches_dir, exist_ok=True)
-        # if not os.path.exists(self.dir_tmp):
-        #     os.makedirs(self.dir_tmp, exist_ok=True)
         os.makedirs(self.signals_dir, exist_ok=True)
         os.makedirs(self.matches_dir, exist_ok=True)
         os.makedirs(self.dir_tmp, exist_ok=True)
@@ -645,14 +576,10 @@ class align_ingredient:
             args.add_flag(flag='-b', arg=b_arg)
             if self.last:
                 k_arg_name = '%s_%s_k_%d%s' % (fn, m, ind, ext)
-                # k_arg_path = os.path.join(dir_scale, 'matches_raw', k_arg_name)
-                # k_arg_path = os.path.join(dir_scale, 'matches', k_arg_name)
                 k_arg_path = os.path.join(self.recipe.dir_tmp, k_arg_name)
                 args.add_flag(flag='-k', arg=k_arg_path)
                 self.matches_filenames.append(k_arg_path)
                 t_arg_name = '%s_%s_t_%d%s' % (fn, m, ind, ext)
-                # t_arg_path = os.path.join(dir_scale, 'matches_raw', t_arg_name)
-                # t_arg_path = os.path.join(dir_scale, 'matches', t_arg_name)
                 t_arg_path = os.path.join(self.recipe.dir_tmp, t_arg_name)
                 args.add_flag(flag='-t', arg=t_arg_path)
                 self.matches_filenames.append(t_arg_path)
@@ -666,10 +593,10 @@ class align_ingredient:
             if m in ('manual_hint'):
                 args.append('%s %s' % (self.pmov[0][i], self.pmov[1][i]))
             else:
-                # self.adjust_x = '%.6f' % (self.cx + self.afm[0, 2])
-                # self.adjust_y = '%.6f' % (self.cy + self.afm[1, 2])
-                self.adjust_x = '%f' % (self.cx + self.afm[0, 2])
-                self.adjust_y = '%f' % (self.cy + self.afm[1, 2])
+                self.adjust_x = '%.6f' % (self.cx + self.afm[0, 2])
+                self.adjust_y = '%.6f' % (self.cy + self.afm[1, 2])
+                # self.adjust_x = '%f' % (self.cx + self.afm[0, 2])
+                # self.adjust_y = '%f' % (self.cy + self.afm[1, 2])
                 args.append('%s %s' % (self.adjust_x, self.adjust_y))
             r = self.recipe.initial_rotation
             if abs(r) > 0:
@@ -872,11 +799,11 @@ class align_ingredient:
         method = self.recipe.method
         od_pattern = os.path.join(od, '%s_%s_[tk]_%d%s' % (fn, method, self.recipe.index, ext))
 
-        logger.critical(f"src         = {src}")
-        logger.critical(f"fn          = {fn}")
-        logger.critical(f"od          = {od}")
-        logger.critical(f"method      = {od}")
-        logger.critical(f"od_pattern  = {od_pattern}")
+        tnLogger.critical(f"src         = {src}")
+        tnLogger.critical(f"fn          = {fn}")
+        tnLogger.critical(f"od          = {od}")
+        tnLogger.critical(f"method      = {od}")
+        tnLogger.critical(f"od_pattern  = {od_pattern}")
 
         for tn in glob.glob(od_pattern):
             logger.info(f'Removing {tn}...')
@@ -887,7 +814,6 @@ class align_ingredient:
 
         tnLogger.info('Reducing the following thumbnails:\n%s' %str(self.matches_filenames))
         # logger.info(f'Reducing {len(self.matches_filenames)} total match images...')
-
 
         try:
             # siz_x, siz_y = ImageSize(next(absFilePaths(src)))

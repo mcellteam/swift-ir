@@ -130,6 +130,7 @@ class OpenProject(QWidget):
         # self.cmbSelectAlignment.setEditable(True)
         # self.cmbSelectAlignment.completer().setCompletionMode(QCompleter.PopupCompletion)
         self.cmbSelectAlignment.setCursor(QCursor(Qt.PointingHandCursor))
+        self.cmbSelectAlignment.textActivated.connect(self.initPMviewer)
         # self.cmbSelectAlignment.addItems(["None"])
 
         self.cmbSelectImages = QComboBox()
