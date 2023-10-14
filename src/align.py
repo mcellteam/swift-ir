@@ -64,8 +64,6 @@ logger = logging.getLogger(__name__)
 logging.getLogger('tifffile').propagate = False
 
 
-
-
 class AlignWorker(QObject):
     finished = Signal()
     progress = Signal(int)
@@ -108,6 +106,7 @@ class AlignWorker(QObject):
         self._mutex.lock()
         self._running = False
         self._mutex.unlock()
+        self.finished.emit()
 
 
     def run(self):
@@ -121,9 +120,6 @@ class AlignWorker(QObject):
     def align(self):
         """Long-running task."""
         logger.critical('\n\nAligning...\n')
-
-
-
 
         scale = self.scale
         indexes = self.indexes
@@ -148,40 +144,48 @@ class AlignWorker(QObject):
         first_unskipped = dm.first_unskipped(s=scale)
 
         tasks = []
-        for zpos, sec in [(i, dm()[i]) for i in indexes]:
-            zpos = dm().index(sec)
+        for i, sec in [(i, dm()[i]) for i in indexes]:
+            i = dm().index(sec)
             for key in ['swim_args', 'swim_out', 'swim_err', 'mir_toks', 'mir_script', 'mir_out', 'mir_err']:
                 sec['levels'][scale]['results'].pop(key, None)
             # ss = sec['levels'][scale]['swim_settings']
-            ss = copy.deepcopy(dm.swim_settings(s=scale, l=zpos))
-            ss['path'] = dm.path(s=scale, l=zpos)
-            ss['path_reference'] = dm.path_ref(s=scale, l=zpos)
-            ss['dir_signals'] = dm.dir_signals(s=scale, l=zpos)
-            ss['dir_matches'] = dm.dir_matches(s=scale, l=zpos)
-            ss['dir_tmp'] = dm.dir_tmp(s=scale, l=zpos)
+            ss = copy.deepcopy(dm.swim_settings(s=scale, l=i))
+            ss['path'] = dm.path(s=scale, l=i)
+            ss['path_reference'] = dm.path_ref(s=scale, l=i)
+            ss['dir_signals'] = dm.dir_signals(s=scale, l=i)
+            ss['dir_matches'] = dm.dir_matches(s=scale, l=i)
+            ss['dir_tmp'] = dm.dir_tmp(s=scale, l=i)
             ss['thumbnail_scale_factor'] = dm.images['thumbnail_scale_factor']
-            ss['path_thumb'] = dm.path_thumb(s=scale, l=zpos)
-            ss['path_thumb_src'] = dm.path_thumb_src(s=scale, l=zpos)
-            ss['path_thumb_src_ref'] = dm.path_thumb_src_ref(s=scale, l=zpos)
-            ss['path_gif'] = dm.path_gif(s=scale, l=zpos)
-            ss['wd'] = dm.writeDir(s=scale, l=zpos)
+            ss['path_thumb'] = dm.path_thumb(s=scale, l=i)
+            ss['path_thumb_src'] = dm.path_thumb_src(s=scale, l=i)
+            ss['path_thumb_src_ref'] = dm.path_thumb_src_ref(s=scale, l=i)
+            ss['path_gif'] = dm.path_gif(s=scale, l=i)
+            ss['wd'] = dm.writeDir(s=scale, l=i)
             ss['solo'] = len(indexes) == 1
             # print(f"path : {ss['path']}")
             # print(f" ref : {ss['path_reference']}")
 
-            wd = dm.ssDir(s=scale, l=zpos)  # write directory
+            wd = dm.ssDir(s=scale, l=i)  # write directory
             os.makedirs(wd, exist_ok=True)
             wp = os.path.join(wd, 'swim_settings.json')  # write path
             with open(wp, 'w') as f:
                 jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
-                f.write(jde.encode(dm.swim_settings(s=scale, l=zpos)))
+                f.write(jde.encode(dm.swim_settings(s=scale, l=i)))
 
-            # if (len(indexes) == len(dm)) or (ss['include'] and (zpos != first_unskipped)):
-            if ss['include'] and (zpos != first_unskipped):
-                tasks.append(copy.deepcopy(ss))
-                # tasks.append(copy.deepcopy(ss))
-            else:
-                logger.info(f"EXCLUDING section #{zpos}")
+            if not ss['include']:
+                continue
+
+            # if (len(indexes) == len(dm)) or (ss['include'] and (i != first_unskipped)):
+            # if dm['stack'][i]['levels'][scale]['initialized']:
+
+
+            # if i != first_unskipped:
+            #     tasks.append(copy.deepcopy(ss))
+            #     # tasks.append(copy.deepcopy(ss))
+            # else:
+            #     logger.info(f"EXCLUDING section #{i}")
+
+            tasks.append(copy.deepcopy(ss))
 
         # delete_correlation_signals(dm=dm, scale=scale, indexes=indexes)
         # delete_matches(dm=dm, scale=scale, indexes=indexes)
@@ -254,9 +258,9 @@ class AlignWorker(QObject):
             task_queue.start(cpus)
             align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'recipe_maker.py')
             logger.info('adding tasks to the queue...')
-            for zpos, sec in [(i, dm()[i]) for i in indexes]:
-                if sec['include'] and (zpos != first_unskipped):
-                # if zpos != first_unskipped:
+            for i, sec in [(i, dm()[i]) for i in indexes]:
+                if sec['include'] and (i != first_unskipped):
+                # if i != first_unskipped:
                     # encoded_data = json.dumps(copy.deepcopy(sec))
                     encoded_data = json.dumps(sec['levels'][scale])
                     task_args = [sys.executable, align_job, encoded_data]
@@ -291,6 +295,13 @@ class AlignWorker(QObject):
 
         for i,r in enumerate(all_results):
             index = r['index']
+            initialized = dm['stack'][index]['levels'][scale]['initialized']
+            if not initialized:
+                p = dm.path_aligned(s=scale, l=index)
+                if os.path.exists(p):
+                    dm['stack'][index]['levels'][scale]['initialized'] = True
+                else:
+                    logger.warning(f"Failed to initialize [{index}] '{p}'")
             if r['complete']:
                 afm = r['affine_matrix']
                 # afm = r['_affine_matrix']

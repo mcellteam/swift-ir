@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import copy
 import os
 import shutil
 import time
@@ -97,6 +97,11 @@ class ZarrWorker(QObject):
 
         make_all = len(list(self.dm.zattrs.keys())) == 0
 
+        '''If it is an align all, then we want to set and store bounding box / poly bias'''
+        outputHash = hash(HashableDict(self.dm['level_data'][scale]['output_settings']))
+        z.attrs['output_settings_hash'] = outputHash
+        z.attrs['output_settings'] = copy.deepcopy(self.dm['level_data'][scale]['output_settings'])
+
         indexes = []
         for i in range(len(self.dm)):
             # cur_ss_hash = str(self.dm.ssSavedHash(s=scale,l=i))
@@ -108,7 +113,6 @@ class ZarrWorker(QObject):
             if make_all:
                 indexes.append(i)
                 continue
-
 
             if self.dm.zarrCafmHashComports(s=scale, l=i):
                 logger.info(f"Cache hit {cur_cafm_hash}! Zarr is correct at index {i}.")
@@ -163,7 +167,7 @@ class ZarrWorker(QObject):
         """Blocking"""
         ctx = mp.get_context('forkserver')
         # initPbar
-        desc = f"Transforming images ({len(tasks)} tasks)"
+        desc = f"Applying cumulative affine ({len(tasks)} tasks)"
         self.initPbar.emit((len(tasks), desc))
         all_results = []
         i = 0
@@ -281,7 +285,7 @@ class ZarrWorker(QObject):
             logger.info('Stopping Neuroglancer...')
             ng.server.stop()
 
-        desc = f"Copy-convert to Zarr ({len(tasks)} tasks)"
+        desc = f"Copy-converting to Zarr ({len(tasks)} tasks)"
         ctx = mp.get_context('forkserver')
         self.initPbar.emit((len(tasks), desc))
         # QApplication.processEvents()
@@ -419,3 +423,11 @@ def run_command(cmd, arg_list=None, cmd_input=None):
     cmd_stdout, cmd_stderr = cmd_proc.communicate(cmd_input)
     # logger.info(f"\nSTDOUT:\n{cmd_stdout}\n\nSTDERR:\n{cmd_stderr}\n")
     return ({'out': cmd_stdout, 'err': cmd_stderr, 'rc': cmd_proc.returncode})
+
+
+
+class HashableDict(dict):
+    def __hash__(self):
+        # return abs(hash(str(sorted(self.items()))))
+        return abs(hash(str(sorted(self.items()))))
+

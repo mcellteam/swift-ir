@@ -734,8 +734,8 @@ class OpenProject(QWidget):
         logger.info(f'[{caller}]')
         self.viewer = cfg.pmViewer = PMViewer(webengine=self.webengine)
         if self.cmbSelectImages.currentText():
-            path_l, path_r = self.get_pmviewer_paths()
-            self.viewer.initViewer(path_l=path_l, path_r=path_r)
+            self.path_l, self.path_r = self.get_pmviewer_paths()
+            self.viewer.initViewer(path_l=self.path_l, path_r=self.path_r)
             # self.viewer.initZoom(w=w, h=h)
         else:
             self.viewer.initViewer(path_l=None, path_r=None)
@@ -894,8 +894,8 @@ class OpenProject(QWidget):
                 w, h = int(self.webengine.width() / 2), self.webengine.height()
                 if self.cmbSelectImages.currentText():
                     self.viewer = cfg.pmViewer = PMViewer(webengine=self.webengine)
-                    path_l, path_r = self.get_pmviewer_paths()
-                    self.viewer.initViewer(path_l=path_l, path_r=path_r)
+                    self.path_l, self.path_r = self.get_pmviewer_paths()
+                    self.viewer.initViewer(path_l=self.path_l, path_r=self.path_r)
                     # self.viewer.initZoom(w=w, h=h)
                 #     self.w_cmbSelectAlignment.setVisible(True)
                 # else:
@@ -977,7 +977,7 @@ class OpenProject(QWidget):
             self.webengine.setFocus()
 
     def get_pmviewer_paths(self):
-        path_l, path_r = None, None
+        self.path_l, self.path_r = None, None
         try:
 
             images = self.cmbSelectImages.currentText()
@@ -988,14 +988,14 @@ class OpenProject(QWidget):
                 scale = keys[-1]
                 logger.info(f"scale to set: {scale}")
                 if self.cmbSelectImages.count() > 0:
-                    path_l = os.path.join(images, 'zarr', scale)
+                    self.path_l = os.path.join(images, 'zarr', scale)
                     # if self.cmbSelectAlignment.currentText() != 'None':
                     if self.cmbSelectAlignment.currentText():
                         # coarsest_aligned = self.getCoarsestAlignedScale(alignment_file)
-                        path_r = os.path.join(alignment, 'zarr', scale)
+                        self.path_r = os.path.join(alignment, 'zarr', scale)
         except:
             print_exception()
-        return path_l, path_r
+        return self.path_l, self.path_r
 
 
     # def onComboLevel(self):

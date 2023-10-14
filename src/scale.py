@@ -83,6 +83,7 @@ class ScaleWorker(QObject):
         self._mutex.lock()
         self._running = False
         self._mutex.unlock()
+        self.finished.emit()
 
 
     def run(self):

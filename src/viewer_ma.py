@@ -17,6 +17,7 @@ import datetime
 import argparse
 import asyncio
 import functools
+import sys
 import time
 from collections import OrderedDict
 from functools import cache
@@ -31,7 +32,7 @@ from qtpy.QtCore import QObject, Signal, Slot, QUrl
 from qtpy.QtWidgets import QApplication
 from qtpy.QtWebEngineWidgets import *
 from src.funcs_zarr import get_zarr_tensor
-from src.helpers import getOpt, getData, setData, print_exception, is_joel, is_tacc, caller_name
+from src.helpers import getOpt, getData, setData, print_exception, is_joel, is_tacc, caller_name, dt
 import src.config as cfg
 
 ng.server.debug = cfg.DEBUG_NEUROGLANCER
@@ -74,9 +75,11 @@ class MAViewer(neuroglancer.Viewer):
         self.cs_scale = None
         # self.pts = OrderedDict()
         self.pts = {'ref':[None,None,None], 'tra': [None,None,None]}
+        self.pts2 = {'ref':[None,None,None], 'tra': [None,None,None]}
         self._selected_index = {'ref': 0, 'tra': 0}
         # self._selected_index = 0
         self.colors = cfg.glob_colors
+        self._mkr_size = 10
         self._crossSectionScale = 1
         self._mpCount = 0
         self._zmag_set = 0
@@ -295,10 +298,12 @@ class MAViewer(neuroglancer.Viewer):
 
         with self.config_state.txn() as s:
             # s.input_event_bindings.slice_view['dblclick0'] = 'add_manpoint'
-            s.input_event_bindings.slice_view['shift+click0'] = 'add_manpoint'
-            # s.input_event_bindings.slice_view['mousedown0'] = 'add_manpoint' #this works
+            # s.input_event_bindings.slice_view['shift+click0'] = 'add_manpoint'
+            # s.input_event_bindings.slice_view['enter'] = 'add_manpoint'             #this works
+            s.input_event_bindings.slice_view['alt+click0'] = 'add_manpoint'
+            # s.input_event_bindings.slice_view['mousedown0'] = 'add_manpoint'       #this works
             # s.input_event_bindings.slice_view['at:control+mousedown0'] = 'add_manpoint'
-            s.input_event_bindings.viewer['keys'] = 'swim'
+            # s.input_event_bindings.viewer['keys'] = 'swim'
             s.show_ui_controls = False
             # s.show_ui_controls = True
             s.show_panel_borders = False
@@ -466,16 +471,16 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def getNextUnusedColor(self, role):
-        # return self.colors[len(self.pts[role])]
         return self.colors[self.getNextPoint(role)]
 
     def getNextPoint(self, role):
-        # return self.colors[len(self.pts[role])]
-        return next((i for i, v in enumerate(self.pts[role]) if not v), 0)
+        # return next((i for i, v in enumerate(self.pts[role]) if not v), 0)
+        return next((i for i, v in enumerate(self.pts2[role]) if not v), 0)
 
     def numPts(self, role):
         n = 0
-        for pt in self.pts[role]:
+        # for pt in self.pts[role]:
+        for pt in self.pts2[role]:
             if pt:
                 n += 1
         return n
@@ -493,7 +498,7 @@ class MAViewer(neuroglancer.Viewer):
             self.set_state(state)
 
     def swim(self, s):
-        logger.info('Running SWIM...')
+        logger.info('[futures] Emitting SWIM signal...')
         self.signals.swimAction.emit()
 
 
@@ -519,86 +524,75 @@ class MAViewer(neuroglancer.Viewer):
             logger.warning('Coordinates are dimensionless! =%s' % str(coords))
             return
         _, y, x = s.mouse_voxel_coordinates
-        # z = 0.1
-        # z = 0.5
         pt_index = self._selected_index[self.role]
+        logger.critical(f"Adding point: {(self.index + 0.5, y, x)}")
+        self.pts2[self.role][pt_index] = (self.index + 0.5, y, x)
 
-        # logger.info(f'pt_index = {pt_index}')
 
+        # self.setMpData()
+        l = [None, None, None]
+        # for i,p in enumerate(self.pts[self.role]):
+        logger.critical(f"Preparing these points for data : {self.pts2[self.role]}")
+        for i, p in enumerate(self.pts2[self.role]):
+            if p:
+                if p[1]:
+                    l[i] = (p[1], p[2])
+        logger.critical(f"Writing these points to data    : {l}")
+        # 01:05:25 [viewer_ma.add_matchpoint:539] l    : [(235.56079, 436.60748), None, None]
 
-        props = [self.colors[pt_index],
-                 getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'),
-                 getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'), ]
-        # self.pts[self.getNextUnusedColor()] = ng.PointAnnotation(id=repr((z,y,x)), point=(z,y,x), props=props)
-        ann = ng.PointAnnotation(id=repr((self.index + 0.5,y,x)), point=(self.index + 0.5,y,x), props=props)
-        # logger.info(ann.to_json())
-        self.pts[self.role][pt_index] = ann
-
-        self.setMpData()
+        self.dm.set_manpoints(self.role, l)
 
         # self._selected_index[self.role] = self.getNextPoint(self.role)
         self.select_by = self.dm['state']['neuroglancer']['region_selection']['select_by']
-        logger.info(f"select by: {self.select_by}")
 
-
+        _other_role = {'tra', 'ref'}.difference(self.role).pop()
         if self.select_by == 'sticky':
             pass
         elif self.select_by == 'cycle':
-            # self._selected_index[self.role] = (self._selected_index[self.role] + 1) % 3
-            if self.numPts(self.role) == 3:
-                if self.dm['state']['tra_ref_toggle'] == 1:
-                    # self._selected_index['ref'] = 0
-                    self.parent.set_reference()
-                else:
-                    # self._selected_index['tra'] = 0
-                    self.parent.set_transforming()
-            else:
+            if self.numPts(self.role) < 3:
                 self._selected_index[self.role] = (self._selected_index[self.role] + 1) % 3
-
-        elif self.select_by == 'zigzag':
-            if self.dm['state']['tra_ref_toggle'] == 1:
-                # self._selected_index['ref'] = (self._selected_index[self.role] + 1) % 3
-                self._selected_index['ref'] = self._selected_index[self.role]
-                self.parent.set_reference()
             else:
-                self._selected_index['tra'] = (self._selected_index[self.role] + 1) % 3
-                self.parent.set_transforming()
+                if self.numPts(_other_role) < 3:
+                    self.parent.set_viewer_role(_other_role)
+        elif self.select_by == 'zigzag':
+            self._selected_index['tra'] = (self._selected_index[self.role] + 1) % 3
+            self.parent.set_viewer_role(_other_role)
 
-        self.signals.ptsChanged.emit()
+        # elif self.select_by == 'zigzag':
+        #     if self.dm['state']['tra_ref_toggle'] == 'tra':
+        #         self._selected_index['ref'] = self._selected_index[self.role]
+        #         self.parent.set_reference()
+        #     else:
+        #         self._selected_index['tra'] = (self._selected_index[self.role] + 1) % 3
+        #         self.parent.set_transforming()
+
+
+        # self.signals.ptsChanged.emit()
         logger.info('%s Match Point Added: %s' % (self.role, str(coords)))
-        # self.drawSWIMwindow()
-        # logger.info(f'dict = {self.dm.manpoints_pretty()}')
-        logger.critical('\n\n<-- add_matchpoint <--\n')
+        self.drawSWIMwindow()
 
 
-    def setMpData(self):
-        '''Copy local manual points into project dictionary'''
-        l = [None,None,None]
-        for i,p in enumerate(self.pts[self.role]):
-            if p:
-                _, x, y = p.point.tolist()
-                if not math.isnan(x):
-                    print(f"x = {x}, y = {y}")
-                    l[i] = (x, y)
-
-        # print(f"Setting point selections: {l}\npts: {self.pts}")
-        self.dm.set_manpoints(self.role, l)
-        # for p in self.pts['ref']:
-        #     _, x, y = p.point.tolist()
-        #     pts.append((x, y))
-        # self.dm.set_manpoints('ref', pts)
+    # def setMpData(self):
+    #     '''Copy local manual points into project dictionary'''
+    #     l = [None,None,None]
+    #     # for i,p in enumerate(self.pts[self.role]):
+    #     logger.critical(f"{self.pts2[self.role]}")
+    #     for i,p in enumerate(self.pts2[self.role]):
+    #         if p:
+    #             l[i] = (p[2], p[1])
+    #
+    #     self.dm.set_manpoints(self.role, l)
 
 
-
-    def draw_point_annotations(self):
-        logger.info('Drawing point annotations...')
-        try:
-            anns = self.pts[self.role]
-            if anns:
-                with self.txn() as s:
-                    s.layers['ann_points'].annotations = anns
-        except:
-            logger.warning('Unable to draw donut annotations or none to draw')
+    # def draw_point_annotations(self):
+    #     logger.info('Drawing point annotations...')
+    #     try:
+    #         anns = self.pts[self.role]
+    #         if anns:
+    #             with self.txn() as s:
+    #                 s.layers['ann_points'].annotations = anns
+    #     except:
+    #         logger.warning('Unable to draw donut annotations or none to draw')
 
 
     def undrawSWIMwindows(self):
@@ -618,169 +612,134 @@ class MAViewer(neuroglancer.Viewer):
         if z == None:
             z = self.dm.zpos
 
-
-
         if z == self.dm.first_unskipped():
             return
 
         self._blockStateChanged = True
-
         # self.setMpData() #0805+
-
-        self.undrawSWIMwindows()
+        # self.undrawSWIMwindows()
+        ms = self._mkr_size
 
         caller = inspect.stack()[1].function
         logger.info(f"[{caller}] Drawing SWIM windows...")
+        method = self.dm.current_method
 
-
-        # marker_size = 1
-        marker_size = 0
-
-
-        # if self.role == 'ref':
-        #     self.index = self.dm.get_ref_index()
-        # elif self.role == 'tra':
-        #     self.index = self.dm.zpos  #
-
-        # if self.dm.current_method == 'manual-hint':
-        #     self.draw_point_annotations()
-        #     return
-        #
-
-        # if self.dm.current_method == 'grid-custom':
-        if self.dm.current_method == 'grid':
+        if method == 'grid':
             logger.info('Method: SWIM Grid Alignment')
-
-            img_siz = self.dm.image_size()
-            img_w, img_h = img_siz[0], img_siz[1]
-            ww_full = self.dm.swim_1x1_size() # full window width
-            ww_2x2 = self.dm.swim_2x2_size() # 2x2 window width
-
-            offset_x1 = ((img_w - ww_full[0]) / 2) + (ww_2x2[0] / 2)
-            offset_x2 = img_w - offset_x1
-            offset_y1 = ((img_h - ww_full[1]) / 2) + (ww_2x2[1] / 2)
-            offset_y2 = img_h - offset_y1
-
-            cps = []
-            colors = []
+            ww1x1 = tuple(self.dm.size1x1()) # full window width
+            ww2x2 = tuple(self.dm.size2x2()) # 2x2 window width
+            w, h = self.dm.image_size()
+            p = self.getCenterpoints(w, h, ww1x1, ww2x2)
             regions = self.dm.quadrants
-            # logger.info(f'regions: {regions}')
-            if regions[0]:
-                # quadrant 1
-                cps.append((offset_x2, offset_y1))
-                colors.append(self.colors[0])
-            if regions[1]:
-                # quadrant 2
-                cps.append((offset_x1, offset_y1))
-                colors.append(self.colors[1])
-            if regions[2]:
-                # quadrant 3
-                cps.append((offset_x2, offset_y2))
-                colors.append(self.colors[2])
-            if regions[3]:
-                # quadrant 4
-                cps.append((offset_x1, offset_y2))
-                colors.append(self.colors[3])
+            colors = self.colors[0:sum(regions)]
+            cps = [x for i, x in enumerate(p) if regions[i]]
+            ww_x = ww2x2[0] - 4
+            ww_y = ww2x2[1] - 4
+            z = self.index + 0.5
 
             annotations = []
             for i, pt in enumerate(cps):
-                # if regions[i]:
-                annotations.extend(
-                    self.makeRect(
-                        prefix=str(i),
-                        z_index=self.index,
-                        coords=pt,
-                        ww_x=ww_2x2[0] - 4,
-                        ww_y=ww_2x2[1] - 4,
-                        color=colors[i],
-                        marker_size=marker_size
-                    )
-                )
+                clr = colors[i]
+                a, b, c, d = self.getRect2(pt, ww_x, ww_y)
+                annotations.extend([
+                    ng.LineAnnotation(id=str(i) + '_L1', pointA=(z,) + a, pointB=(z,) + b, props=[clr, ms]),
+                    ng.LineAnnotation(id=str(i) + '_L2', pointA=(z,) + b, pointB=(z,) + c, props=[clr, ms]),
+                    ng.LineAnnotation(id=str(i) + '_L3', pointA=(z,) + c, pointB=(z,) + d, props=[clr, ms]),
+                    ng.LineAnnotation(id=str(i) + '_L4', pointA=(z,) + d, pointB=(z,) + a, props=[clr, ms])
+                ])
 
-        elif self.dm.current_method == 'manual':
+        elif method == 'manual':
             logger.info('Method: SWIM Match Region Alignment')
             self.restoreManAlignPts()
-            # pts = list(self.pts.items())
-            try:
-                assert len(self.pts[self.role]) == len(self.dm.manpoints()[self.role])
-            except:
-                print_exception(extra=f"""len(self.pts[{self.role}]) = {len(self.pts[self.role])}\n
-                len(self.dm.manpoints()[{self.role}]) = {len(self.dm.manpoints()[self.role])}""")
             annotations = []
-            #Todo make this configurable, and check swim settings for manual 'mode'
-            if self.dm.current_method == 'manual_strict':
-                ww_x = 16
-                ww_y = 16
-            else:
-                ww_x = ww_y = self.dm.manual_swim_window_px()
+            #Todo add this functionality, make it configurable
+            # if self.dm.current_method == 'manual_strict':
+            #     ww_x = 16
+            #     ww_y = 16
+            # else:
+            #     ww_x = ww_y = self.dm.manual_swim_window_px()
+            ww_x = ww_y = self.dm.manual_swim_window_px()
 
-            for i, pt in enumerate(self.pts[self.role]):
+            for i, pt in enumerate(self.pts2[self.role]):
+                # 0: (122, None, None)
+                logger.critical(f"{i}: {pt}")
+                sys.stdout.flush()
                 if pt:
-                    annotations.extend(
-                        self.makeRect(
-                            prefix=str(i),
-                            z_index=self.index,
-                            coords=(pt.point[2], pt.point[1]),
+                    if pt[1]:
+                        A, B, C, D = self.getRect2(
+                            # coords=(pt.point[2], pt.point[1]),
+                            coords=(pt[2], pt[1]),
                             ww_x=ww_x,
                             ww_y=ww_y,
-                            color=cfg.glob_colors[i],
-                            marker_size=marker_size
                         )
-                    )
+                        A = (self.index + 0.5,) + A
+                        B = (self.index + 0.5,) + B
+                        C = (self.index + 0.5,) + C
+                        D = (self.index + 0.5,) + D
+                        c = self.colors[i]
+                        annotations.extend([
+                            ng.LineAnnotation(id=str(i) + '_L1', pointA=A, pointB=B, props=[c, ms]),
+                            ng.LineAnnotation(id=str(i) + '_L2', pointA=B, pointB=C, props=[c, ms]),
+                            ng.LineAnnotation(id=str(i) + '_L3', pointA=C, pointB=D, props=[c, ms]),
+                            ng.LineAnnotation(id=str(i) + '_L4', pointA=D, pointB=A, props=[c, ms])
+                        ])
 
-        if self.dm.current_method in ('grid','manual'):
-            with self.txn() as s:
-                # for i,ann in enumerate(annotations):
-                s.layers['SWIM'] = ng.LocalAnnotationLayer(
-                    dimensions=self.coordinate_space,
-                    annotation_properties=[
-                        ng.AnnotationPropertySpec(id='color', type='rgb', default='#ffff66', ),
-                        # ng.AnnotationPropertySpec(id='size', cur_method='float32', default=1, )
-                        ng.AnnotationPropertySpec(id='size', type='float32', default=5, )
-                    ],
-                    annotations=annotations,
-                    shader='''
-                        void main() {
-                          setColor(prop_color());
-                          setPointMarkerSize(prop_size());
-                        }
-                    ''',
-                )
-            self._blockStateChanged = False
-            # QApplication.processEvents()
+        with self.txn() as s:
+            # for i,ann in enumerate(annotations):
+            s.layers['SWIM'] = ng.LocalAnnotationLayer(
+                annotations=annotations,
+                dimensions=self.coordinate_space,
+                annotationColor='blue',
+                annotation_properties=[
+                    ng.AnnotationPropertySpec(id='color', type='rgb', default='#ffff66', ),
+                    # ng.AnnotationPropertySpec(id='size', cur_method='float32', default=1, )
+                    ng.AnnotationPropertySpec(id='size', type='float32', default=0, )
+                ],
+                shader='''
+                    void main() {
+                      setColor(prop_color());
+                      setPointMarkerSize(prop_size());
+                    }
+                ''',
+            )
 
-    # @cache
-    def makeRect(self, prefix, z_index, coords, ww_x, ww_y, color, marker_size):
-        segments = []
+        self._blockStateChanged = False
+
+
+    @cache
+    def getCenterpoints(self, w, h, ww1x1, ww2x2):
+        d_x1 = ((w - ww1x1[0]) / 2) + (ww2x2[0] / 2)
+        d_x2 = w - d_x1
+        d_y1 = ((h - ww1x1[1]) / 2) + (ww2x2[1] / 2)
+        d_y2 = h - d_y1
+        p1 = (d_x2, d_y1)
+        p2 = (d_x1, d_y1)
+        p3 = (d_x2, d_y2)
+        p4 = (d_x1, d_y2)
+        return p1, p2, p3, p4
+
+
+    @cache
+    def getRect2(self, coords, ww_x, ww_y):
         x, y = coords[0], coords[1]
-        hw = int(ww_x / 2) # Half-width
-        hh = int(ww_y / 2) # Half-height
-        A = (z_index + 0.5, y + hh, x - hw)
-        B = (z_index + 0.5, y + hh, x + hw)
-        C = (z_index + 0.5, y - hh, x + hw)
-        D = (z_index + 0.5, y - hh, x - hw)
-
-        segments.append(ng.LineAnnotation(id=prefix + '_L1', pointA=A, pointB=B, props=[color, marker_size]))
-        segments.append(ng.LineAnnotation(id=prefix + '_L2', pointA=B, pointB=C, props=[color, marker_size]))
-        segments.append(ng.LineAnnotation(id=prefix + '_L3', pointA=C, pointB=D, props=[color, marker_size]))
-        segments.append(ng.LineAnnotation(id=prefix + '_L4', pointA=D, pointB=A, props=[color, marker_size]))
-        return segments
+        hw = int(ww_x / 2)  # Half-width
+        hh = int(ww_y / 2)  # Half-height
+        A = (y + hh, x - hw)
+        B = (y + hh, x + hw)
+        C = (y - hh, x + hw)
+        D = (y - hh, x - hw)
+        return A, B, C, D
 
 
     def restoreManAlignPts(self):
-        logger.info(">>>> restoreManAlignPts >>>>")
-        self.pts[self.role] = [None,None,None]
+        self.pts2[self.role] = [None,None,None]
         pts_data = self.dm.getmpFlat(l=self.dm.zpos)[self.role]
         for i, p in enumerate(pts_data):
             if p:
-                props = [self.colors[i], getOpt('neuroglancer,MATCHPOINT_MARKER_LINEWEIGHT'),
-                         getOpt('neuroglancer,MATCHPOINT_MARKER_SIZE'), ]
-                self.pts[self.role][i] = ng.PointAnnotation(id=str(p), point=p, props=props)
-        logger.info("<<<< restoreManAlignPts <<<<")
+                self.pts2[self.role][i] = p
 
 
     def set_brightness(self, val=None):
-        logger.info('')
         state = copy.deepcopy(self.state)
         for layer in state.layers:
             if val: layer.shaderControls['brightness'] = val
@@ -789,32 +748,12 @@ class MAViewer(neuroglancer.Viewer):
         self.set_state(state)
 
     def set_contrast(self, val=None):
-        logger.info('')
         state = copy.deepcopy(self.state)
         for layer in state.layers:
             if val: layer.shaderControls['contrast'] = val
             else:   layer.shaderControls['contrast'] = self.dm.contrast
             # layer.volumeRendering = True
         self.set_state(state)
-
-    def set_zmag(self, val=10):
-        self._blockStateChanged = True
-        try:
-            state = copy.deepcopy(self.state)
-            state.relativeDisplayScales = {'z': 2}
-            self.set_state(state)
-        except:
-            logger.warning('Unable to set Z-mag')
-            print_exception()
-        self._blockStateChanged = False
-
-
-    def _set_zmag(self):
-        try:
-            with self.txn() as s:
-                s.relativeDisplayScales = {"z": 10}
-        except:
-            print_exception()
 
 
     def initZoom(self):
@@ -825,11 +764,7 @@ class MAViewer(neuroglancer.Viewer):
             with self.txn() as s:
                 s.crossSectionScale = self.cs_scale
         else:
-            # QApplication.processEvents()
-            # _, tensor_y, tensor_x = cfg.tensor.shape
             _, tensor_y, tensor_x = self.store.shape
-            # widget_w = cfg.mw.geometry().width()
-            # widget_h = cfg.mw.geometry().height() / 2
             if cfg.project_tab:
                 widget_w = cfg.project_tab.ng_widget.width()
                 widget_h = cfg.project_tab.ng_widget.height()
@@ -841,8 +776,6 @@ class MAViewer(neuroglancer.Viewer):
             scale_h = ((res_y * tensor_y) / widget_h) * 1e-9  # nm/pixel (subtract height of ng toolbar)
             scale_w = ((res_x * tensor_x) / widget_w) * 1e-9  # nm/pixel (subtract width of sliders)
             cs_scale = max(scale_h, scale_w)
-
-            # logger.info(f'Setting crossSectionScale to max of {scale_h} and {scale_w}...')
 
             # logger.info(f'________{self.role}________')
             # logger.info(f'widget_w       = {widget_w}')
