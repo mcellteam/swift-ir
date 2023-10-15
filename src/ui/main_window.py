@@ -1081,11 +1081,10 @@ class MainWindow(QMainWindow):
 
         self.updateEnabledButtons()
         self.updateLowest8widget()
-        # self.dataUpdateWidgets()
+        self.dataUpdateWidgets() #1015+
 
         if self._isProjectTab():
             # self._showSNRcheck()
-            self.cbBB.setChecked(self.dm.has_bb())
             if self.dm.is_aligned():
                 setData('state,neuroglancer,layout', '4panel')
                 if not self.dm['level_data'][self.dm.level]['aligned']:
@@ -1345,6 +1344,7 @@ class MainWindow(QMainWindow):
             self.wToggleExclude.setEnabled(True)
             self.leJump.setEnabled(True)
             self.boxScale.setEnabled(True)
+            self.cbBB.setChecked(self.dm.has_bb())
 
             # self.bAlign.setEnabled(self.dm.is_alignable() and self.dm['level_data'][self.dm.scale]['alignment_ready'])
             self.bAlign.setEnabled(True)
@@ -5089,7 +5089,7 @@ class MainWindow(QMainWindow):
         if x == None: x = 1
         self.pbar.setValue(x)
         self.pbar.update() #1015+
-        sys.stdout.flush()
+        sys.stdout.flush() #1015+
 
     def hidePbar(self):
         logger.info('')
