@@ -5002,7 +5002,7 @@ class MainWindow(QMainWindow):
 
 
     def _initProjectManager(self):
-        self.pm = cfg.pm = OpenProject()
+        self.pm = cfg.pm = OpenProject(parent=self)
         self.globTabs.addTab(self.pm, 'Alignment Manager')
         # self.globTabs.tabBar().setTabButton(0, QTabBar.RightSide,None)
         # self._setLastTab()
