@@ -258,7 +258,8 @@ class ScaleWorker(QObject):
             self._timing_results['t_scale_convert'][s] = dt
             logger.info(f"Elapsed Time: {dt:.3g}s")
 
-        self.hudMessage.emit('**** Autoscaling Complete ****')
+        # self.hudMessage.emit('**** Autoscaling Complete ****')
+        self.hudMessage.emit(f'<span style="color: #FFFF66;"><b>**** Autoscaling Complete ****</b></span>')
         logger.info('**** Autoscaling Complete ****')
         self.finished.emit()
 

@@ -336,13 +336,13 @@ class AlignWorker(QObject):
         # SetStackCafm(dm, scale=scale, poly_order=dm.poly_order)
         # dm.set_stack_cafm()
 
-        if not self.running():
-            self.finished.emit()
-            return
 
         t_elapsed = time.time() - t0
         dm.t_align = t_elapsed
         logger.info(f"Elapsed Time, SWIM to compute affines: {t_elapsed:.3g}")
+
+        self.hudMessage.emit(f'<span style="color: #FFFF66;"><b>**** Alignment Complete ****</b></span>')
+        self.finished.emit()
 
 
         # Todo make this better
