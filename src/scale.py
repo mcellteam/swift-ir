@@ -101,12 +101,13 @@ class ScaleWorker(QObject):
         # iscale2_c = os.path.join(Path(cur_path).parent.absolute(), 'lib', get_bindir(), 'iscale2')
         iscale2_c = os.path.join(Path(cur_path).absolute(), 'lib', get_bindir(), 'iscale2')
 
-        self.hudMessage.emit(f'Reducing {len(self.paths)} images...')
+        self.hudMessage.emit(f'Batch multiprocessing {len(self.paths)} images...')
 
         ctx = mp.get_context('forkserver')
         for s, siz in deepcopy(self.scales):
             sv = get_scale_val(s)
             if s != 's1':
+                self.hudMessage.emit(f'Reducing {s}...')
                 desc = f'Reducing {s}...'
                 logger.info(desc)
                 tasks = []
@@ -192,6 +193,7 @@ class ScaleWorker(QObject):
 
             zarr_od = os.path.abspath(os.path.join(self.out, 'zarr'))
             # renew_directory(directory=zarr_od, gui=False)
+            self.hudMessage.emit(f"Converting {s} to Zarr...")
             desc = f"Converting {s} to Zarr..."
             logger.info(desc)
             tasks = []
