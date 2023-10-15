@@ -27,8 +27,8 @@ import neuroglancer as ng
 # import imagecodecs
 import numcodecs
 numcodecs.blosc.use_threads = False
-# import libtiff
-# libtiff.libtiff_ctypes.suppress_warnings()
+import libtiff
+libtiff.libtiff_ctypes.suppress_warnings()
 import warnings
 warnings.filterwarnings("ignore") #Works for supressing tiffile invalid offset warning
 # sys.path.insert(1, os.path.dirname(os.path.split(os.path.realpath(__file__))[0]))
