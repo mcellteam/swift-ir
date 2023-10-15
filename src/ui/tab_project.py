@@ -231,7 +231,7 @@ class ProjectTab(QWidget):
             self.updateTreeWidget()
             self.treeview_model.jumpToLayer()
         self.parent.dataUpdateWidgets() #Todo might be redundant thumbail redraws
-        QApplication.processEvents()
+        # QApplication.processEvents() #1015-
 
 
     def shutdownNeuroglancer(self):

@@ -191,9 +191,7 @@ class GifPlayer(QWidget):
         self.label.setMovie(self.movie)
         # self.label.update()
         self.movie.start()
-        cfg.mw.saveUserPreferences(silent=True)
-        QApplication.processEvents()
-
+        # cfg.mw.saveUserPreferences(silent=True) #1015-
 
 
     def start(self):

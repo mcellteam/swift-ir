@@ -278,7 +278,6 @@ class DataModel:
                 self['current']['z_position'] = int(index)
                 logger.info(f"[{index}] Z-position Changed!")
                 self.signals.zposChanged.emit()
-                QApplication.processEvents()
         else:
             logger.warning(f'\nINDEX OUT OF RANGE: {index} [caller: {inspect.stack()[1].function}]\n')
 
