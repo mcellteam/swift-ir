@@ -64,7 +64,6 @@ from src.ui.tab_browser import WebBrowser
 from src.ui.tab_project import ProjectTab
 from src.ui.tab_open_project import OpenProject
 from src.ui.layouts import HBL, VBL, HW, VW, QVLine
-from src.funcs_image import SetStackCafm
 from src.ui.python_console import PythonConsoleWidget
 from src.ui.webpage import QuickWebPage
 
@@ -2358,12 +2357,7 @@ class MainWindow(QMainWindow):
                 self.dm.linkReference(level=self.dm.level)
 
                 # if getData('state,blink'):
-
-                SetStackCafm( #Critical0802+
-                    self.dm,
-                    scale=self.dm.scale,
-                    poly_order=self.dm.poly_order
-                )
+                self.dm.set_stack_cafm()
 
                 self.pt.project_table.set_row_data(row=layer)
 
@@ -4444,22 +4438,22 @@ class MainWindow(QMainWindow):
         vbl.setSpacing(1)
         self._tool_hstry.setLayout(vbl)
 
-        self._hstry_treeview = QTreeView()
-        self._hstry_treeview.setStyleSheet('background-color: #ffffff;')
-        self._hstry_treeview.setObjectName('treeview')
-        self.projecthistory_model = JsonModel(parent=self)
-        self._hstry_treeview.setModel(self.projecthistory_model)
-        self._hstry_treeview.header().setSectionResizeMode(0, QHeaderView.Stretch)
-        self._hstry_treeview.setAlternatingRowColors(True)
-        self.exit_projecthistory_view_button = QPushButton("Back")
-        self.exit_projecthistory_view_button.setFixedSize(normal_button_size)
-        self.exit_projecthistory_view_button.clicked.connect(self.back_callback)
-        gl = QGridLayout()
-        gl.addWidget(self._hstry_treeview, 0, 0, 1, 2)
-        gl.addWidget(self.exit_projecthistory_view_button, 1, 0, 1, 1)
-        self.historyview_widget = QWidget()
-        self.historyview_widget.setObjectName('historyview_widget')
-        self.historyview_widget.setLayout(gl)
+        # self._hstry_treeview = QTreeView()
+        # self._hstry_treeview.setStyleSheet('background-color: #ffffff;')
+        # self._hstry_treeview.setObjectName('treeview')
+        # self.projecthistory_model = JsonModel(parent=self)
+        # self._hstry_treeview.setModel(self.projecthistory_model)
+        # self._hstry_treeview.header().setSectionResizeMode(0, QHeaderView.Stretch)
+        # self._hstry_treeview.setAlternatingRowColors(True)
+        # self.exit_projecthistory_view_button = QPushButton("Back")
+        # self.exit_projecthistory_view_button.setFixedSize(normal_button_size)
+        # self.exit_projecthistory_view_button.clicked.connect(self.back_callback)
+        # gl = QGridLayout()
+        # gl.addWidget(self._hstry_treeview, 0, 0, 1, 2)
+        # gl.addWidget(self.exit_projecthistory_view_button, 1, 0, 1, 1)
+        # self.historyview_widget = QWidget()
+        # self.historyview_widget.setObjectName('historyview_widget')
+        # self.historyview_widget.setLayout(gl)
 
         self.ng_widget = QWidget()
         self.ng_widget.setObjectName('ng_widget')
