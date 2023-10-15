@@ -64,7 +64,7 @@ from src.ui.tab_browser import WebBrowser
 from src.ui.tab_project import ProjectTab
 from src.ui.tab_open_project import OpenProject
 from src.ui.layouts import HBL, VBL, HW, VW, QVLine
-from src.ui.python_console import PythonConsoleWidget
+# from src.ui.python_console import PythonConsoleWidget
 from src.ui.webpage import QuickWebPage
 
 __all__ = ['MainWindow']
@@ -147,7 +147,7 @@ class MainWindow(QMainWindow):
 
         # self.initThreadpool(timeout=250)
         self.menu = QMenu()
-        self.pythonConsole = PythonConsoleWidget()
+        # self.pythonConsole = PythonConsoleWidget()
         # f = QFont()
         # f.setFamily('Ubuntu')
         # f.setPointSize(9)
@@ -4642,10 +4642,8 @@ class MainWindow(QMainWindow):
         self.globTabs.currentChanged.connect(self._onGlobTabChange)
 
         # self.pythonConsole = PythonConsole()
-        # self.pythonConsole.pyconsole.set_color_linux()
-        self.pythonConsole.pyconsole.set_color_none()
-        self.pythonConsole.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        # self.pythonConsole.resize(QSize(600,600))
+        # self.pythonConsole.pyconsole.set_color_none()
+        # self.pythonConsole.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
         self.dwPython = DockWidget('Python', self)
         self.dwPython.visibilityChanged.connect(self.callbackDwVisibilityChanged)
@@ -4691,7 +4689,7 @@ class MainWindow(QMainWindow):
                             margin: 0px;
                             border-width: 0px;
                         }""")
-        self.dwPython.setWidget(self.pythonConsole)
+        # self.dwPython.setWidget(self.pythonConsole)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.dwPython)
         self.dwPython.hide()
 
