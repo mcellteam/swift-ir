@@ -345,8 +345,10 @@ class OpenProject(QWidget):
         self.labImgCount = QLabel()
         self.labImgCount.setStyleSheet("color: #339933;")
         self.labImgCount.hide()
-
-        vbl = VBL(self.wNameImages, self.labImgCount, self.wImagesConfig)
+        self.cbCalGrid = QCheckBox('Image 0 is calibration grid')
+        self.cbCalGrid.setChecked(False)
+        self.wMiddle = HW(ExpandingHWidget(self), self.labImgCount, self.cbCalGrid)
+        vbl = VBL(self.wNameImages, self.wMiddle, self.wImagesConfig)
         vbl.setSpacing(4)
         self.gbCreateImages = QGroupBox()
         self.gbCreateImages.setLayout(vbl)
@@ -490,11 +492,12 @@ class OpenProject(QWidget):
 
         logpath = os.path.join(out, 'logs')
         os.makedirs(logpath, exist_ok=True)
-        open(os.path.join(logpath, 'exceptions.log'), 'a').close()
+        # open(os.path.join(logpath, 'exceptions.log'), 'a').close()
 
         has_cal_grid = self.iid_dialog.cb_cal_grid.isChecked()
         cal_grid_path = None
-        if has_cal_grid:
+        # if has_cal_grid:
+        if self.cbCalGrid.isChecked():
             logger.info('Linking to calibration grid image...')
             cal_grid_path = self._NEW_IMAGES_PATHS[0]
             cal_grid_name = os.path.basename(cal_grid_path)
@@ -783,7 +786,7 @@ class OpenProject(QWidget):
         if os.path.exists(str(_im_path)):
             logger.critical(f"alignments known: {al_known}")
             if len(al_known) == 0:
-                self.cmbSelectAlignment.setPlaceholderText(f"No Alignments (.alignment) Found for '{_im_name}'.")
+                self.cmbSelectAlignment.setPlaceholderText(f"No Alignments (.alignment) Found for '{_im_name}'")
             else:
                 self.cmbSelectAlignment.setPlaceholderText(f"{len(al_known)} Alignments (.alignment) of '{_im_name}' Found")
         else:
@@ -809,16 +812,14 @@ class OpenProject(QWidget):
         mem = cfg.preferences['alignment_combo_text']
         if mem in valid:
             self.cmbSelectAlignment.setCurrentText(mem)
-        n_valid = len(valid)
+        logger.critical(f"valid: {valid} (?)")
         if os.path.exists(str(_im_path)):
-            if n_valid == 0:
-                self.cmbSelectAlignment.setPlaceholderText(f"No Alignments (.alignment) of '{_im_name}' Found")
+            if len(valid):
+                self.cmbSelectAlignment.setPlaceholderText(f"{len(valid)} Alignments (.alignment) of '{_im_name}' Found")
             else:
-                self.cmbSelectAlignment.setPlaceholderText(f"{n_valid} Alignments (.alignment) of '{_im_name}' Found")
+                self.cmbSelectAlignment.setPlaceholderText(f"No Alignments (.alignment) of '{_im_name}' Found")
         else:
             self.cmbSelectAlignment.setPlaceholderText("")
-
-        # cfg.preferences['alignment_combo_text'] = self.cmbSelectAlignment.currentText()
 
 
     def loadLevelsCombo(self):
@@ -1729,7 +1730,9 @@ class ImagesConfig(QWidget):
         # self.scale_instructions_label.setStyleSheet("font-size: 11px;")
         self.scales_input.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
 
+        # wScaling = HW(QLabel('Scale Levels: '), self.scales_input, ExpandingHWidget(self))
         wScaling = HW(QLabel('Scale Levels: '), self.scales_input)
+        wScaling.layout.setAlignment(Qt.AlignHCenter)
         # wScaling.layout.setAlignment(Qt.AlignLeft)
 
         '''Voxel Size (Resolution) Fields'''
@@ -1743,20 +1746,19 @@ class ImagesConfig(QWidget):
         self.leResX.setValidator(QIntValidator())
         self.leResY.setValidator(QIntValidator())
         self.leResZ.setValidator(QIntValidator())
-        self.wResolution = HW(QLabel("x:"), self.leResX,
-                              QLabel("y:"), self.leResY,
-                              QLabel("z:"), self.leResZ)
-
-        ws = (HW(QLabel("x:"), self.leResX),
-              HW(QLabel("y:"), self.leResY),
-              HW(QLabel("z:"), self.leResZ)
-              )
-        for w in ws:
-            w.layout.setAlignment(Qt.AlignHCenter)
-
-        self.wResolution = HW(*ws)
-        self.wResolution.layout.setAlignment(Qt.AlignCenter)
-        self.wResolution.layout.setSpacing(4)
+        l1 = QLabel("x:")
+        l1.setAlignment(Qt.AlignRight)
+        l2 = QLabel("y:")
+        l2.setAlignment(Qt.AlignRight)
+        l3 = QLabel("z:")
+        l3.setAlignment(Qt.AlignRight)
+        few = [HW(l1, self.leResX), HW(l2, self.leResY), HW(l3, self.leResZ)]
+        for one in few:
+            one.layout.setAlignment(Qt.AlignHCenter)
+            one.setStyleSheet("font-size: 9px;")
+        self.wResolution = HW(*few)
+        # self.wResolution.layout.setAlignment(Qt.AlignCenter)
+        # self.wResolution.layout.setSpacing(4)
         self.wResolution.setToolTip(tip)
 
         wVoxelSize = HW(QLabel('Voxel Size (nm): '), self.wResolution)
@@ -1795,22 +1797,24 @@ class ImagesConfig(QWidget):
         self.leChunkY.setValidator(QIntValidator())
         self.leChunkZ.setValidator(QIntValidator())
 
-        ws = (HW(QLabel("x:"), self.leChunkX),
-              HW(QLabel("y:"), self.leChunkY),
-              HW(QLabel("z:"), self.leChunkZ)
-              )
-
-        for w in ws:
-            w.layout.setAlignment(Qt.AlignHCenter)
-
-        self.chunk_shape_widget = HW(*ws)
-        self.chunk_shape_widget.layout.setSpacing(4)
-        # self.chunk_shape_widget.layout.setSpacing(4)
+        l1 = QLabel("x:")
+        l1.setAlignment(Qt.AlignRight)
+        l2 = QLabel("y:")
+        l2.setAlignment(Qt.AlignRight)
+        l3 = QLabel("z:")
+        l3.setAlignment(Qt.AlignRight)
+        few = [HW(l1, self.leChunkX), HW(l2, self.leChunkY), HW(l3, self.leChunkZ)]
+        for one in few:
+            one.layout.setAlignment(Qt.AlignHCenter)
+            one.setStyleSheet("font-size: 9px;")
+        self.wChunk = HW(*few)
+        self.wChunk.layout.setSpacing(4)
+        # self.wChunk.layout.setSpacing(4)
         txt = "The way volumetric data will be stored. Zarr is an open-source " \
               "format for the storage of chunked, compressed, N-dimensional " \
               "arrays with an interface similar to NumPy."
         txt = '\n'.join(textwrap.wrap(txt, width=60))
-        wChunk = HW(QLabel('Chunk: '), self.chunk_shape_widget)
+        wChunk = HW(QLabel('Chunk: '), self.wChunk)
         wChunk.setToolTip(txt)
         wChunk.layout.setAlignment(Qt.AlignCenter)
 

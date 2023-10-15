@@ -179,7 +179,7 @@ class ImportImagesDialog(QFileDialog):
         self.extra_layout = QVBoxLayout()
         self.extra_layout.addWidget(self.imageDimensionsLabel, alignment=Qt.AlignRight)
         self.extra_layout.addWidget(self.cb_display_thumbs, alignment=Qt.AlignRight)
-        # self.extra_layout.addWidget(self.cb_cal_grid, alignment=Qt.AlignRight)
+        # self.extra_layout.addWidget(self.cbCalGrid, alignment=Qt.AlignRight)
         self.layout().addLayout(self.box, 1, 3, 1, 1)
         self.layout().addLayout(self.extra_layout, 3, 3, 1, 1)
         self.layout().addLayout(HBL(self.cb_cal_grid), 4, 0, 1, 3)
