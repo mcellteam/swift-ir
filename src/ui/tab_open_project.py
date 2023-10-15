@@ -348,7 +348,7 @@ class OpenProject(QWidget):
         self.labImgCount.hide()
         self.cbCalGrid = QCheckBox('Image 0 is calibration grid')
         self.cbCalGrid.setChecked(False)
-        self.wMiddle = HW(ExpandingHWidget(self), self.labImgCount, self.cbCalGrid)
+        self.wMiddle = HW(ExpandingHWidget(self), self.labImgCount, QLabel('  '),self.cbCalGrid)
         vbl = VBL(self.wNameImages, self.wMiddle, self.wImagesConfig)
         vbl.setSpacing(4)
         self.gbCreateImages = QGroupBox()
@@ -495,9 +495,7 @@ class OpenProject(QWidget):
         os.makedirs(logpath, exist_ok=True)
         # open(os.path.join(logpath, 'exceptions.log'), 'a').close()
 
-        has_cal_grid = self.iid_dialog.cb_cal_grid.isChecked()
         cal_grid_path = None
-        # if has_cal_grid:
         if self.cbCalGrid.isChecked():
             logger.info('Linking to calibration grid image...')
             cal_grid_path = self._NEW_IMAGES_PATHS[0]
@@ -1059,7 +1057,7 @@ class OpenProject(QWidget):
             filenames = self.iid_dialog.selectedFiles()
             if len(filenames) > 0:
                 # self.labImgCount.setText(f"{len(filenames)} images selected from {os.path.dirname(filenames[0])}")
-                self.labImgCount.setText(f"{len(filenames)} images selected")
+                self.labImgCount.setText(f"{len(filenames)} images selected  ")
                 self.labImgCount.show()
                 self.bSelect.setStyleSheet("")
                 if self.leNameImages.text():
