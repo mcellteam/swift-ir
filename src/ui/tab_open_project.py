@@ -699,7 +699,7 @@ class OpenProject(QWidget):
                 reply = QMessageBox.question(self, "Quit", f"Delete this alignment?\n\n'{path}'",
                                              QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
                 if reply == QMessageBox.Yes:
-                    cfg.mw.tell(f'Removing alignment at {path}')
+                    cfg.mw.tell(f'Starting subprocess: removing {path}...')
                     try:
                         if path.endswith('.alignment'):
                             run_subprocess(["rm", "-rf", path])
@@ -743,6 +743,7 @@ class OpenProject(QWidget):
     def onMinusImages(self):
         path = self.cmbSelectImages.currentText()
         if os.path.isdir(path):
+            cfg.mw.tell(f'Starting subprocess: removing {path}...')
             logger.warning(f"Removing images at: {path}...")
             reply = QMessageBox.question(self, "Quit", f"Delete this images?\n\n'{path}'",
                                          QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
