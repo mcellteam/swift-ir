@@ -1880,14 +1880,12 @@ class MainWindow(QMainWindow):
         '''Functions that only need to be run once per project
                 Do not automatically save, there is nothing to save yet'''
         logger.info('')
+        self.setUpdatesEnabled(False)
         self.dm = cfg.data = dm
         cfg.preferences['last_alignment_opened'] = dm.data_location
-        dm.scale = dm.coarsest_scale_key()
+        # dm.scale = dm.coarsest_scale_key() #1015-
         name,_ = os.path.splitext(os.path.basename(dm.data_location))
-        if self.dm.is_aligned():
-            setData('state,neuroglancer,layout', '4panel')
-        else:
-            setData('state,neuroglancer,layout', 'xy')
+        setData('state,neuroglancer,layout', ('xy','4panel')[self.dm.is_aligned()])
         self.pt = self.pt = cfg.pt = ProjectTab(self, path=dm.data_location, datamodel=dm)
         cfg.dataById[id(self.pt)] = dm
         self.addGlobTab(self.pt, name, switch_to=switch_to)
@@ -1895,7 +1893,9 @@ class MainWindow(QMainWindow):
         self.tell("Loading Project '%s'..." % self.dm.data_location)
         self.alignAllAction.setText(f"Align + Generate All: Level {self.dm.scale}")
         if switch_to:
-            self.setdw_snr(True)
+            if self.dm.is_aligned():
+                self.setdw_snr(True)
+                self.setdw_matches(True)
             # self.setdw_thumbs(True)
             # self.setdw_matches(False)
         self.hud.done()
