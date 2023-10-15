@@ -1949,12 +1949,12 @@ class MainWindow(QMainWindow):
         caller = inspect.stack()[1].function
         logger.info(f'/*======== Saving Automatically [{caller}] ========*/')
         if self._isProjectTab():
-            self.tell('Saving Project...')
             try:
                 self._saveProjectToFile()
+                self.tell('Project Saved!')
                 self._unsaved_changes = False
             except:
-                self.warn('Unable To Save')
+                self.warn('Failed To Save')
                 print_exception()
 
             else:
