@@ -226,7 +226,7 @@ class ThumbnailFast(QLabel):
                             rect = get_rect(sf, b[0], b[1], ww2x2[0], self.r.getCoords())
                             qp.drawRect(rect)
 
-                    elif method == 'manual_hint':
+                    elif method == 'manual':
                         pts = []
                         ww = cfg.data.manual_swim_window_px(s=s, l=l)
                         if self.name in ('reference','reference-data'):
@@ -377,6 +377,7 @@ class CorrSignalThumbnail(QLabel):
         # self.setStyleSheet("background-color: #dadada;")
         # self.setStyleSheet("background-color: #3d1f05;")
         # self.setStyleSheet("background-color: #f3e9df; font-size: 10px; font-family: 'Andale Mono','Ubuntu Mono',  monospace;")
+        self.setStyleSheet("background-color: #f3e9df; font-size: 10px; font-family: 'Tahoma';")
 
         self.setAutoFillBackground(True)
 
