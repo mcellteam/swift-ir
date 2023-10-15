@@ -1472,26 +1472,26 @@ class MainWindow(QMainWindow):
 
         logger.info('')
 
-        _needsAlignIndexes = self.dm.needsAlignIndexes()
-        _needsGenerateIndexes = self.dm.needsGenerateIndexes()
-        _hasUnsavedChangesIndexes = self.dm.hasUnsavedChangesIndexes()
-        n1 = len(_needsAlignIndexes)
-        n2 = len(_needsGenerateIndexes)
-        n3 = len(_hasUnsavedChangesIndexes)
-        s1 = (', '.join(map(str, _needsAlignIndexes)), '%d (total)' % n1)[n1 > 5]
-        s2 = (', '.join(map(str, _needsGenerateIndexes)), '%d (total)' % n2)[n2 > 5]
-        s3 = (', '.join(map(str, _hasUnsavedChangesIndexes)), '%d (total)' % n3)[n3 > 5]
-        if sum([n1, n2, n3]):
-            msg = []
-            if n1:
-                msg.append(f"Alignment not in sync: {s1}")
-            if n2:
-                msg.append(f"Zarr not in sync: {s2}")
-            if n3:
-                msg.append(f"Unsaved changes: {s3}")
-            self.statusBar.showMessage(" // ".join(msg))
-        else:
-            self.statusBar.clearMessage()
+        # _needsAlignIndexes = self.dm.needsAlignIndexes()
+        # _needsGenerateIndexes = self.dm.needsGenerateIndexes()
+        # _hasUnsavedChangesIndexes = self.dm.hasUnsavedChangesIndexes()
+        # n1 = len(_needsAlignIndexes)
+        # n2 = len(_needsGenerateIndexes)
+        # n3 = len(_hasUnsavedChangesIndexes)
+        # s1 = (', '.join(map(str, _needsAlignIndexes)), '%d (total)' % n1)[n1 > 5]
+        # s2 = (', '.join(map(str, _needsGenerateIndexes)), '%d (total)' % n2)[n2 > 5]
+        # s3 = (', '.join(map(str, _hasUnsavedChangesIndexes)), '%d (total)' % n3)[n3 > 5]
+        # if sum([n1, n2, n3]):
+        #     msg = []
+        #     if n1:
+        #         msg.append(f"Alignment not in sync: {s1}")
+        #     if n2:
+        #         msg.append(f"Zarr not in sync: {s2}")
+        #     if n3:
+        #         msg.append(f"Unsaved changes: {s3}")
+        #     self.statusBar.showMessage(" // ".join(msg))
+        # else:
+        #     self.statusBar.clearMessage()
 
 
 
