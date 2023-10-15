@@ -22,7 +22,7 @@ from functools import lru_cache
 # import shutil
 # from src.funcs_image import ImageSize
 from src.swiftir import applyAffine
-import src.config as cfg
+# import src.config as cfg
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -30,7 +30,8 @@ warnings.filterwarnings("ignore")
 import libtiff
 libtiff.libtiff_ctypes.suppress_warnings()
 
-logging.getLogger('tifffile').propagate = False
+tifffileLogger = logging.getLogger('tifffile')
+tifffileLogger.propagate = False
 
 # https://stackoverflow.com/questions/15585493/store-the-cache-to-a-file-functools-lru-cache-in-python-3-2
 
