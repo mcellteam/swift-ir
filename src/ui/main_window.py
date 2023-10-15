@@ -1569,61 +1569,13 @@ class MainWindow(QMainWindow):
 
             elif self.pt.wTabs.currentIndex() == 4:
                 self.pt.treeview_model.jumpToLayer()
+            self.setFocus()
 
 
 
             #Todo come back to how to make this work without it getting stuck in a loop
             # if self.pt.wTabs.currentIndex() == 2:
             #     self.pt.project_table.data.selectRow(cur)
-
-        # self.setFocus()
-
-    # br = '&nbsp;'
-    # a = """<span style='color: #ffe135;'>"""
-    # b = """</span>"""
-    # nl = '<br>'
-    #
-    # if self.pt.detailsSNR.isVisible():
-    #     if (self.dm.zpos == 0) or self.dm.skipped() or self.dm.snr() == 0:
-    #         self.pt.detailsSNR.setText(
-    #             f"Avg. SNR{br * 2}: N/A{nl}"
-    #             f"Prev.{br}SNR{br}: N/A{nl}"
-    #             f"Components{nl}"
-    #             f"Top,Left{br * 2}: N/A{nl}"
-    #             f"Top,Right{br}: N/A{nl}"
-    #             f"Btm,Left{br * 2}: N/A{nl}"
-    #             f"Btm,Right{br}: N/A"
-    #         )
-    #     else:
-    #         try:
-    #             components = self.dm.snr_components()
-    #             str0 = ('%.3f' % self.dm.snr()).rjust(9)
-    #             str1 = ('%.3f' % self.dm.snr_prev()).rjust(9)
-    #             if self.dm.method() in ('grid-default', 'grid-custom'):
-    #                 q0 = ('%.3f' % components[0]).rjust(9)
-    #                 q1 = ('%.3f' % components[1]).rjust(9)
-    #                 q2 = ('%.3f' % components[2]).rjust(9)
-    #                 q3 = ('%.3f' % components[3]).rjust(9)
-    #                 self.pt.detailsSNR.setText(
-    #                     f"Avg. SNR{br * 2}:{a}{str0}{b}{nl}"
-    #                     f"Prev.{br}SNR{br}:{str1}{nl}"
-    #                     f"Components{nl}"
-    #                     f"Top,Left{br * 2}:{q0}{nl}"
-    #                     f"Top,Right{br}:{q1}{nl}"
-    #                     f"Btm,Left{br * 2}:{q2}{nl}"
-    #                     f"Btm,Right{br}:{q3}"
-    #                 )
-    #             elif self.dm.method() in ('manual-hint', 'manual-strict'):
-    #                 txt = f"Avg. SNR{br * 2}:{a}{str0}{b}{nl}" \
-    #                       f"Prev. SNR{br}:{str1}{nl}" \
-    #                       f"Components"
-    #                 for i in range(len(components)):
-    #                     txt += f'{nl}%d:{br * 10}%.3f' % (i, components[i])
-    #
-    #                 self.pt.detailsSNR.setText(txt)
-    #         except:
-    #             print_exception()
-
 
 
     def updateNotes(self):
