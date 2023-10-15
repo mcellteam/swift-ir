@@ -89,7 +89,8 @@ class ScaleWorker(QObject):
     def run(self):
 
         print(f'\n######## Reducing Source Images ########\n')
-        logger.critical(f"src = {self.src}")
+
+
 
         # Todo This should check for source files before doing anything
         if not self.running():
@@ -100,7 +101,7 @@ class ScaleWorker(QObject):
         # iscale2_c = os.path.join(Path(cur_path).parent.absolute(), 'lib', get_bindir(), 'iscale2')
         iscale2_c = os.path.join(Path(cur_path).absolute(), 'lib', get_bindir(), 'iscale2')
 
-        logger.info(f'Reducing {len(self.paths)} images...')
+        self.hudMessage.emit(f'Reducing {len(self.paths)} images...')
 
         ctx = mp.get_context('forkserver')
         for s, siz in deepcopy(self.scales):
