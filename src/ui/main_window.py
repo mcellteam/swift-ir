@@ -390,12 +390,13 @@ class MainWindow(QMainWindow):
             time.sleep(cfg.DELAY_AFTER)
 
 
-    def _refresh(self):
+    def _refresh(self, silently=False):
         caller = inspect.stack()[1].function
         logger.info(f'')
         self.setUpdatesEnabled(True)
         if not self._working:
-            self.tell('Refreshing...')
+            if not silently:
+                self.tell('Refreshing...')
             if self._isProjectTab():
                 self.pt.refreshTab()
             elif self._isOpenProjTab():
