@@ -190,10 +190,13 @@ QProgressBar {
     padding: 0px;
 }
 
+
+/*
 QProgressBar::chunk {
 	background-color: qlineargradient(spread:pad, x1:0.5, y1:0.7, x2:0.5, y2:0.3, stop:0 rgba(0, 200, 0, 255), stop:1 rgba(30, 230, 30, 255));
 	border-radius: 10px;
 }
+*/
 
 
 QDockWidget {
@@ -253,7 +256,7 @@ QMenu {
 	font-size: 10px;
 }
 
-/* affects main menu top-of-window*/
+/* affects main menu top-of-window */
 QMenuBar::item {
   	spacing: 4px;
 	padding: 2px 2px;
@@ -276,37 +279,38 @@ QMenu::item {
   	height: 8px;
 }
 
-
+/*
 QMenuBar {
     background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 lightgray, stop:1 darkgray);
 }
+*/
 
 QMenuBar::item {
-spacing: 3px; /* spacing between menu bar items */
-padding: 1px 4px;
-background: transparent;
-border-radius: 4px;
+    spacing: 3px; /* spacing between menu bar items */
+    padding: 1px 4px;
+    background: transparent;
+    border-radius: 4px;
 }
 
 QMenuBar::item:selected { /* when selected using mouse or keyboard */
-background: #a8a8a8;
+    background: #a8a8a8;
 }
 
 QMenuBar::item:pressed {
-background: #888888;
+    background: #888888;
 }
 
-/* Menus - context items and menubar items /
+/* Menus - context items and menubar items */
 QMenu {
-background-color: rgb(149, 166, 174); / grau */
+    background-color: rgb(149, 166, 174); /* grau */
 }
 
 QMenu::item {
-background-color: transparent;
+    background-color: transparent;
 }
 
 QMenu::item:selected {
-background-color: rgb(163, 3, 47); /* rot */
+    background-color: rgb(163, 3, 47); /* rot */
 }
 
 
@@ -319,7 +323,7 @@ QTreeView{
     font-size: 9px;
 }
 
-QTreeView::item { padding: 0px }
+QTreeView::item { padding: 0px; }
 
 
 QHeaderView::section {

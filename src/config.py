@@ -7,7 +7,7 @@ import getpass
 
 __all__ = ['data']
 
-VERSION = '0.5.49'
+VERSION = '0.5.50'
 
 LOOP = None
 
