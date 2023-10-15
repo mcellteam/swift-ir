@@ -1197,6 +1197,7 @@ class MainWindow(QMainWindow):
                 self.tell("Pulling settings from reduced scale level automatically...")
                 self.dm.pullSettings()
 
+        self._saveProjectToFile(silently=True)
         logger.critical('')
         scale = dm.scale
 
@@ -1749,27 +1750,29 @@ class MainWindow(QMainWindow):
             # logger.warning(f"[{caller}] level change blocked by _scales_combobox_switch switch")
             return
         if not self._working:
-            if caller in ('main', 'scale_down', 'scale_up'):
-                if self._isProjectTab():
-                    # logger.info(f'[{caller}]')
-                    requested = self.dm.scales[self.boxScale.currentIndex()]
-                    self.dm.scale = requested
-                    if self.dm.is_aligned():
-                        setData('state,neuroglancer,layout', '4panel')
-                    else:
-                        setData('state,neuroglancer,layout', 'xy')
+            # if caller in ('main', 'scale_down', 'scale_up'):
+            if self._isProjectTab():
+                # logger.info(f'[{caller}]')
+                requested = self.dm.scales[self.boxScale.currentIndex()]
+                self.dm.scale = requested
+                if self.dm.is_aligned():
+                    setData('state,neuroglancer,layout', '4panel')
+                else:
+                    setData('state,neuroglancer,layout', 'xy')
 
-                    # self.pt.cmbViewerScale.setCurrentIndex(self.dm.levels.index(self.dm.level))
-                    if self.pt.wTabs.currentIndex() == 3:
-                        self.pt.project_table.initTableData()
-                    # self.pt.project_table.veil()
-                    self.alignAllAction.setText(f"Align + Generate All: Level {self.dm.scale}")
-                    self.updateEnabledButtons()
-                    self.dataUpdateWidgets()
-                    self.pt.dataUpdateMA()
-                    self.pt.refreshTab()
-                    if self.dwSnr.isVisible():
-                        self.pt.dSnr_plot.initSnrPlot()
+                if self.dwSnr.isVisible():
+                    self.pt.dSnr_plot.initSnrPlot()
+
+                # self.pt.cmbViewerScale.setCurrentIndex(self.dm.levels.index(self.dm.level))
+                if self.pt.wTabs.currentIndex() == 3:
+                    self.pt.project_table.initTableData()
+                # self.pt.project_table.veil()
+                self.alignAllAction.setText(f"Align + Generate All: Level {self.dm.scale}")
+                self.updateEnabledButtons()
+                self.dataUpdateWidgets()
+                self.pt.dataUpdateMA()
+                self.pt.refreshTab()
+
             else:
                 logger.warning(f"[{caller}] scale change disallowed")
 

@@ -184,9 +184,9 @@ class AlignWorker(QObject):
 
         if is_tacc():
             cpus = get_n_tacc_cores(n_tasks=len(tasks))
-            # if is_tacc() and (scale == 's1'):
-            #     # cpus = 34
-            #     cpus = cfg.SCALE_1_CORES_LIMIT
+            if is_tacc() and (scale == 's1'):
+                # cpus = 34
+                cpus = min(cfg.SCALE_1_CORES_LIMIT, cpus)
         else:
             cpus = psutil.cpu_count(logical=False) - 2
 
