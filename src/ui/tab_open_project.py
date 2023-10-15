@@ -565,9 +565,7 @@ class OpenProject(QWidget):
         cfg.mw.tell(f'Importing {len(self._NEW_IMAGES_PATHS)} Images...')
         scales_str = self.wImagesConfig.scales_input.text().strip()
         scale_vals = list(map(int,scales_str.split(' ')))
-
         # makedirs_exist_ok(dirname, exist_ok=True)
-
         tiff_path = os.path.join(out, 'tiff')
         zarr_path = os.path.join(out, 'zarr')
         thumbs_path = os.path.join(out, 'thumbs')
@@ -626,7 +624,6 @@ class OpenProject(QWidget):
         opts.update(self.wImagesConfig.getSettings())
         logger.info(pformat(opts))
 
-
         full_scale_size = ImageSize(self._NEW_IMAGES_PATHS[0])
         opts['size_zyx'] = {}
         opts['size_xy'] = {}
@@ -636,22 +633,15 @@ class OpenProject(QWidget):
             opts['size_zyx'][key] = (count, siz[1], siz[0])
             opts['size_xy'][key] = siz
 
-
-
-
         siz_x, siz_y = ImageSize(opts['paths'][1])
         # siz_x, siz_y = ImageIOSize(next(absFilePaths(src)))
         sf = int(max(siz_x, siz_y) / cfg.TARGET_THUMBNAIL_SIZE)
         opts['thumbnail_scale_factor'] = sf
-
         jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
         with open(os.path.join(out, 'info.json'), 'w') as f:
             f.write(jde.encode(copy.deepcopy(opts)))
-
         cfg.mw.autoscaleSeries(src, out, opts)
-
         cfg.settings['images_combo_text'] = out
-
         logger.info('done')
 
 
@@ -664,7 +654,6 @@ class OpenProject(QWidget):
         name         = self.leNameAlignment.text()
         if not name.endswith('.alignment'):
             name += '.alignment'
-
 
         out = os.path.join(cfg.settings['alignments_root'], name)
 
@@ -698,7 +687,7 @@ class OpenProject(QWidget):
         #Todo also need to pass in the images location, which may have moved
         dm = DataModel(data_location=out, images_location=images_path, initialize=True, images_info=info)
         dt = time.time() - t0
-        logger.info(f'Time Elapsed (initialize data model): {dt:.3g} seconds')
+        logger.info(f'Time Elapsed (initialize data model): {dt:.3g}s')
 
         initLogFiles(out)
         # makedirs_exist_ok(out, exist_ok=True)

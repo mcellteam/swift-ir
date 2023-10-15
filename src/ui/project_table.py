@@ -213,7 +213,7 @@ class ProjectTable(QWidget):
         except:
             print_exception()
         finally:
-            logger.critical(f"\n\nTIME ELAPSED: {time.time() - t0:.1f}level\n")
+            logger.critical(f"\n\nTIME ELAPSED: {time.time() - t0:.1f}s\n")
             # self.btn_splash_load_table.setText("Load Table")
             # siz = self.dm.image_size()
             # self.scaleLabel.setText(f"{self.dm.level_pretty()} | {siz[0]}x{siz[1]}px")
@@ -382,8 +382,8 @@ class ProjectTable(QWidget):
 
         self._ms = []
 
-        if row in (0,1,2,3):
-            logger.critical(f"\n\n==== ROW {row} ====\nsnr: {snr_4x}\nrow data: {row_data}")
+        # if row in (0,1,2,3):
+        #     logger.critical(f"\n\n==== ROW {row} ====\nsnr: {snr_4x}\nrow data: {row_data}")
 
         for col in range(0, len(row_data)):
 

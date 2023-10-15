@@ -61,12 +61,15 @@ class WorkerSignals(QObject):
 
 
 class MAViewer(neuroglancer.Viewer):
-    def __init__(self, parent, dm, role='tra', webengine=None):
+    def __init__(self, parent, dm, role='tra', quality=None, webengine=None):
         super().__init__()
         self.parent = parent
         self.dm = dm
         self.index = None
         self.role = role
+        self.quality = quality
+        self.quality_lvl = self.dm.lvl(self.quality)
+        self.fac = self.dm.lvl() / self.quality_lvl
         self.webengine = webengine
         self.signals = WorkerSignals()
         self.created = datetime.datetime.now()
@@ -183,9 +186,12 @@ class MAViewer(neuroglancer.Viewer):
             else:
                 self.index=self.dm.zpos
 
-        with self.txn() as s:
-            vc = s.voxel_coordinates
-            vc[0] = self.index + 0.5
+        try:
+            with self.txn() as s:
+                vc = s.voxel_coordinates
+                vc[0] = self.index + 0.5
+        except:
+            print_exception()
 
         # if self.dm.method in ('manual-hint', 'manual-strict'):
         #     self.restoreManAlignPts() #Todo study this. Temp fix. #0805-
@@ -227,13 +233,20 @@ class MAViewer(neuroglancer.Viewer):
         # self.restoreManAlignPts()
 
         sf = self.dm.lvl(s=self.dm.level)
-        path = os.path.join(self.dm['info']['images_location'], 'zarr', 's' + str(sf))
+        if self.quality:
+            path = os.path.join(self.dm['info']['images_location'], 'zarr', self.quality)
+        else:
+            path = os.path.join(self.dm['info']['images_location'], 'zarr', self.dm.level)
 
         if not os.path.exists(path):
             logger.warning('Data Store Not Found: %s' % path); return
 
         try:
+            # self.store = self.tensor = get_zarr_tensor(path).result()
             self.store = self.tensor = get_zarr_tensor(path).result()
+            # self.store = self._store[:,yind,xind]
+            # logger.critical(f"{self.store.shape}")
+            # self.store = self.store[0:len(self.dm),yind,xind]
             # self.store
             # self.store = await get_zarr_tensor(path)
         except Exception as e:
@@ -252,7 +265,7 @@ class MAViewer(neuroglancer.Viewer):
                 dimensions=self.coordinate_space,
                 voxel_offset=[0, 0, 0],
                 max_downsampling=cfg.max_downsampling,
-                max_downsampled_size = cfg.max_downsampled_size
+                max_downsampled_size=cfg.max_downsampled_size
                 # max_downsampling_scales=cfg.max_downsampling_scales  # Goes a LOT slower when set to 1
             )
         else:
@@ -260,6 +273,7 @@ class MAViewer(neuroglancer.Viewer):
                 volume_type='image',
                 # data=self.store[self.index:self.index + 1, :, :],
                 data=self.store[:, :, :],
+                # data=self.store,
                 dimensions=self.coordinate_space,
                 voxel_offset=[0, 0, 0],
                 # max_downsampling_scales=cfg.max_downsampling_scales  # Goes a LOT slower when set to 1
@@ -417,23 +431,32 @@ class MAViewer(neuroglancer.Viewer):
         if self._blockStateChanged:
             return
 
+        try:
+            assert hasattr(self,'index')
+        except AssertionError:
+            logger.warning('State changed too early! Index not set.')
+            return
+
+
         logger.info('state changed!')
 
         self._blockStateChanged = True
+        try:
+            if self.role == 'ref':
+                if floor(self.state.position[0]) != self.index:
+                    logger.warning(f"[{self.role}] Illegal state change")
+                    self.signals.badStateChange.emit() #New
+                    return
 
-        if self.role == 'ref':
-            if floor(self.state.position[0]) != self.index:
-                logger.warning(f"[{self.role}] Illegal state change")
-                self.signals.badStateChange.emit() #New
-                return
-
-        elif self.role == 'tra':
-            if floor(self.state.position[0]) != self.index:
-                self.index = floor(self.state.position[0])
-                self.drawSWIMwindow(z=self.index) #NeedThis #0803
-                # self.dm.zpos = self.index
-                # self._blockStateChanged = False
-                self.signals.zVoxelCoordChanged.emit(self.index)
+            elif self.role == 'tra':
+                if floor(self.state.position[0]) != self.index:
+                    self.index = floor(self.state.position[0])
+                    self.drawSWIMwindow(z=self.index) #NeedThis #0803
+                    # self.dm.zpos = self.index
+                    # self._blockStateChanged = False
+                    self.signals.zVoxelCoordChanged.emit(self.index)
+        except:
+            print_exception()
 
 
         # if self.dm.lvl() > 2:
@@ -524,6 +547,8 @@ class MAViewer(neuroglancer.Viewer):
             logger.warning('Coordinates are dimensionless! =%s' % str(coords))
             return
         _, y, x = s.mouse_voxel_coordinates
+        y *= self.fac
+        x *= self.fac
         pt_index = self._selected_index[self.role]
         logger.critical(f"Adding point: {(self.index + 0.5, y, x)}")
         self.pts2[self.role][pt_index] = (self.index + 0.5, y, x)
@@ -558,16 +583,7 @@ class MAViewer(neuroglancer.Viewer):
             self._selected_index['tra'] = (self._selected_index[self.role] + 1) % 3
             self.parent.set_viewer_role(_other_role)
 
-        # elif self.select_by == 'zigzag':
-        #     if self.dm['state']['tra_ref_toggle'] == 'tra':
-        #         self._selected_index['ref'] = self._selected_index[self.role]
-        #         self.parent.set_reference()
-        #     else:
-        #         self._selected_index['tra'] = (self._selected_index[self.role] + 1) % 3
-        #         self.parent.set_transforming()
-
-
-        # self.signals.ptsChanged.emit()
+        self.signals.ptsChanged.emit()
         logger.info('%s Match Point Added: %s' % (self.role, str(coords)))
         self.drawSWIMwindow()
 
@@ -620,21 +636,27 @@ class MAViewer(neuroglancer.Viewer):
         # self.undrawSWIMwindows()
         ms = self._mkr_size
 
+        fac = self.dm.lvl() / self.quality_lvl
+
         caller = inspect.stack()[1].function
         logger.info(f"[{caller}] Drawing SWIM windows...")
         method = self.dm.current_method
 
         if method == 'grid':
             logger.info('Method: SWIM Grid Alignment')
-            ww1x1 = tuple(self.dm.size1x1()) # full window width
-            ww2x2 = tuple(self.dm.size2x2()) # 2x2 window width
-            w, h = self.dm.image_size()
+            # ww1x1 = tuple(self.dm.size1x1()) # full window width
+            # ww2x2 = tuple(self.dm.size2x2()) # 2x2 window width
+            _ww1x1 = self.dm.size1x1()  # full window width
+            _ww2x2 = self.dm.size2x2()  # 2x2 window width
+            ww1x1 = (_ww1x1[0] * fac, _ww1x1[1] * fac)  # full window width
+            ww2x2 = (_ww2x2[0] * fac, _ww2x2[1] * fac)  # 2x2 window width
+            w, h = self.dm.image_size(s=self.quality)
             p = self.getCenterpoints(w, h, ww1x1, ww2x2)
             regions = self.dm.quadrants
             colors = self.colors[0:sum(regions)]
             cps = [x for i, x in enumerate(p) if regions[i]]
-            ww_x = ww2x2[0] - 4
-            ww_y = ww2x2[1] - 4
+            ww_x = ww2x2[0] - (24 // self.quality_lvl)
+            ww_y = ww2x2[1] - (24 // self.quality_lvl)
             z = self.index + 0.5
 
             annotations = []
@@ -765,13 +787,10 @@ class MAViewer(neuroglancer.Viewer):
                 s.crossSectionScale = self.cs_scale
         else:
             _, tensor_y, tensor_x = self.store.shape
-            if cfg.project_tab:
-                widget_w = cfg.project_tab.ng_widget.width()
-                widget_h = cfg.project_tab.ng_widget.height()
-            else:
-                widget_w = widget_h = cfg.mw.globTabs.height() - 30
-
-            res_z, res_y, res_x = self.dm.resolution(s=self.dm.level) # nm per imagepixel
+            widget_w = self.parent.ng_widget.width()
+            widget_h = self.parent.ng_widget.height()
+            # res_z, res_y, res_x = self.dm.resolution(s=self.dm.level) # nm per imagepixel
+            res_z, res_y, res_x = self.dm.resolution(s=self.quality) # nm per imagepixel
             # tissue_h, tissue_w = res_y*frame[0], res_x*frame[1]  # nm of sample
             scale_h = ((res_y * tensor_y) / widget_h) * 1e-9  # nm/pixel (subtract height of ng toolbar)
             scale_w = ((res_x * tensor_x) / widget_w) * 1e-9  # nm/pixel (subtract width of sliders)

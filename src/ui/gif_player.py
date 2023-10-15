@@ -92,7 +92,7 @@ class GifPlayer(QWidget):
         self.labNull = QLabel('No Data.')
         self.labNull.setAlignment(Qt.AlignCenter)
 
-        self.labSlr = QLabel('Flicker Speed: ')
+        self.labSlr = QLabel('Blink Speed: ')
 
         self.slrGif = QSlider(Qt.Horizontal, self)
         # self.slrGif.setStyleSheet("""
