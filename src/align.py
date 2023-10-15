@@ -220,14 +220,28 @@ class AlignWorker(QObject):
                 'data_location': dm.data_location,
             }
 
-            cpus=cfg.TACC_MAX_CPUS
-            logger.info(f'max # workers: {cpus}')
-            with ThreadPoolExecutor(max_workers=cpus) as pool:
-                for i, result in enumerate(tqdm.tqdm(pool.map(run_recipe, tasks),
-                                                     total=len(tasks),
-                                                     desc=desc, position=0,
-                                                     leave=True)):
+            # logger.info(f'max # workers: {cpus}')
+            # with ThreadPoolExecutor(max_workers=cpus) as pool:
+            #     for i, result in enumerate(tqdm.tqdm(pool.map(run_recipe, tasks),
+            #                                          total=len(tasks),
+            #                                          desc=desc, position=0,
+            #                                          leave=True)):
+            #         all_results.append(result)
+            #         self.progress.emit(i)
+            #         if not self.running():
+            #             break
+
+            all_results = []
+            i = 0
+            with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
+                for result in tqdm.tqdm(
+                        pool.imap_unordered(run_recipe, tasks),
+                        total=len(tasks),
+                        desc=desc,
+                        position=0,
+                        leave=True):
                     all_results.append(result)
+                    i += 1
                     self.progress.emit(i)
                     if not self.running():
                         break
