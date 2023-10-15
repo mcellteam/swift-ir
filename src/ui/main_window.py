@@ -4646,6 +4646,9 @@ class MainWindow(QMainWindow):
         self.globTabs.tabCloseRequested[int].connect(self._onGlobTabClose)
         self.globTabs.currentChanged.connect(self._onGlobTabChange)
 
+        import pyqtgraph.console
+        self.pythonConsole = pyqtgraph.console.ConsoleWidget()
+
         # self.pythonConsole = PythonConsole()
         # self.pythonConsole.pyconsole.set_color_none()
         # self.pythonConsole.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -4694,7 +4697,7 @@ class MainWindow(QMainWindow):
                             margin: 0px;
                             border-width: 0px;
                         }""")
-        # self.dwPython.setWidget(self.pythonConsole)
+        self.dwPython.setWidget(self.pythonConsole)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.dwPython)
         self.dwPython.hide()
 
