@@ -1222,7 +1222,7 @@ class MainWindow(QMainWindow):
             # time.sleep(2)
             del self._alignworker
 
-        # self.shutdownNeuroglancer() #1013-
+        self.shutdownNeuroglancer() #1013-
 
         self.tell("%s Affines (%s)..." % (('Initializing', 'Refining')[dm.isRefinement()], dm.level_pretty(s=scale)))
         # logger.info(f'Aligning indexes:{indexes}, {self.dm.level_pretty(scale)}...')
