@@ -341,9 +341,12 @@ if __name__ == "__main__":
 
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--enable-logging --log-level=3' # suppress JS warnings
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=0'
+    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --no-sandbox --num-raster-threads=%s ' \
+    #                                            '--enable-logging --log-level=3' % \
+    #                                           cfg.QTWEBENGINE_RASTER_THREADS
     os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --no-sandbox --num-raster-threads=%s ' \
-                                               '--enable-logging --log-level=3' % \
-                                              cfg.QTWEBENGINE_RASTER_THREADS
+                                               '--enable-logging --log-level=0' % \
+                                               cfg.QTWEBENGINE_RASTER_THREADS
     os.environ['OPENBLAS_NUM_THREADS'] = '1'
     # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
     os.environ['LIBTIFF_STRILE_ARRAY_MAX_RESIZE_COUNT'] = '1000000000'
