@@ -195,7 +195,8 @@ class AlignWorker(QObject):
         # f_recipe_maker = f'{os.path.split(os.path.realpath(__file__))[0]}/src/recipe_maker.py'
 
         if cfg.USE_POOL_FOR_SWIM:
-            ctx = mp.get_context('forkserver')
+            # ctx = mp.get_context('forkserver')
+            ctx = mp.get_context('spawn')
             desc = f"Aligning ({len(tasks)} tasks)"
             self.initPbar.emit((len(tasks), desc))
             all_results = []

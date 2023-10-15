@@ -422,6 +422,7 @@ class MainWindow(QMainWindow):
     def tell(self, message):
         hudlogger.info(f"[HUD] {message}")
         self.hud.post(message, level=logging.INFO)
+        QApplication.processEvents()
         self.update()
 
     def warn(self, message):

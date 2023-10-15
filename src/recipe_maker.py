@@ -22,6 +22,7 @@ import psutil
 # from src.funcs_image import ImageSize
 # from src.swiftir import applyAffine
 # import src.config as cfg
+from functools import wraps
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -39,7 +40,7 @@ __all__ = ['run_recipe']
 
 logger = logging.getLogger(__name__)
 
-from functools import wraps
+
 
 
 def applyAffine(afm, xy):
