@@ -18,10 +18,9 @@ import hashlib
 import json
 import atexit
 import psutil
-from functools import lru_cache
 # import shutil
 # from src.funcs_image import ImageSize
-from src.swiftir import applyAffine
+# from src.swiftir import applyAffine
 # import src.config as cfg
 
 import warnings
@@ -41,6 +40,38 @@ __all__ = ['run_recipe']
 logger = logging.getLogger(__name__)
 
 from functools import wraps
+
+
+def applyAffine(afm, xy):
+    '''APPLYAFFINE - Apply affine transform to a point
+    xy_ = APPLYAFFINE(afm, xy) applies the affine matrix AFM to the point XY
+    Affine matrix must be a 2x3 numpy array. XY may be a list or an array.'''
+    if not type(xy) == np.ndarray:
+        xy = np.array([xy[0], xy[1]])
+    return np.matmul(afm[0:2, 0:2], xy) + reptoshape(afm[0:2, 2], xy)
+
+
+def reptoshape(mat, pattern):
+    '''REPTOSHAPE - Repeat a matrix to match shape of other matrix
+    REPTOSHAPE(mat, pattern) returns a copy of the matrix MAT replicated
+    to match the shape of PATTERNS. For instance, if MAT is an N-vector
+    or an Nx1 matrix, and PATTERN is NxK, the output will be an NxK matrix
+    of which each the columns is filled with the contents of MAT.
+    Higher dimensional cases are handled as well, but non-singleton dimensions
+    of MAT must always match the corresponding dimension of PATTERN.'''
+    ps = [x for x in pattern.shape]
+    ms = [x for x in mat.shape]
+    while len(ms) < len(ps):
+        ms.append(1)
+    mat = np.reshape(mat, ms)
+    for d in range(len(ps)):
+        if ms[d] == 1:
+            mat = np.repeat(mat, ps[d], d)
+        elif ms[d] != ps[d]:
+            raise ValueError('Cannot broadcast' + str(mat.shape) + ' to '
+                             + str(pattern.shape))
+    return mat
+
 
 def cached(func):
     func.cache = {}

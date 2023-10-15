@@ -237,7 +237,8 @@ class AlignWorker(QObject):
 
             all_results = []
             i = 0
-            with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
+            # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
+            with ctx.Pool(processes=cpus) as pool:
                 for result in tqdm.tqdm(
                         pool.imap_unordered(run_recipe, tasks),
                         total=len(tasks),
