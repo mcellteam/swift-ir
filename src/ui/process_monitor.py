@@ -237,7 +237,7 @@ class HeadupDisplay(QWidget):
         self.theme = 'dark'
 
         self.textedit.setStyleSheet("""
-            background-color:  #161c20;
+            background-color:  #141414;
             color: #f3f6fb;
             /*border-style: inset;*/
             /*border-color: #d3dae3;  light off-white */
