@@ -1193,10 +1193,10 @@ class MainWindow(QMainWindow):
             self.warn("Please pull settings before aligning (Edit Alignment > Pull Settings)")
             return
 
-
-        if not self.dm.is_aligned():
-            self.tell("Pulling settings from reduced scale level automatically...")
-            self.dm.pullSettings()
+        if self.dm.level != self.dm.coarsest_scale_key():
+            if not self.dm.is_aligned():
+                self.tell("Pulling settings from reduced scale level automatically...")
+                self.dm.pullSettings()
 
         logger.critical('')
         scale = dm.scale
