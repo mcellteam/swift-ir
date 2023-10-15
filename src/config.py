@@ -16,8 +16,12 @@ CONFIG = None
 '''Default Window Size'''
 WIDTH, HEIGHT = 1200, 720
 
-max_downsampling=1024  # default=64
-max_downsampled_size=2056  # default=128
+# max_downsampling=1024  # default=64
+# max_downsampled_size=2056  # default=128
+# # max_downsampling_scales=1
+
+max_downsampling = 64  # default=64
+max_downsampled_size = 128  # default=128
 # max_downsampling_scales=1
 
 DEBUG_MP = 0
@@ -28,8 +32,8 @@ LOG_RECIPE_TO_FILE = 0
 TACC_MAX_CPUS = 58 # x3 is > 304
 # QTWEBENGINE_RASTER_THREADS = 1024
 # QTWEBENGINE_RASTER_THREADS = 128
-QTWEBENGINE_RASTER_THREADS = 64
-TARGET_THUMBNAIL_SIZE = 64
+QTWEBENGINE_RASTER_THREADS = 128
+TARGET_THUMBNAIL_SIZE = 256
 USE_EXTRA_THREADING = True
 UI_UPDATE_DELAY = 300 #ms
 USE_POOL_FOR_SWIM = True
