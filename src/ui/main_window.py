@@ -1265,11 +1265,12 @@ class MainWindow(QMainWindow):
 
 
     @Slot()
-    def autoscaleSeries(self, src, out, opts):
+    def autoscaleImages(self, src, out, opts):
         if self._working == True:
             self.warn('Another Process is Already Running')
             return
         logger.info('\n\nAutoscaling...\n')
+        self.tell("Creating a new .images group...")
         self._scaleThread = QThread()  # Step 2: Create a QThread object
         scale_keys = opts['levels']
         scales = zip(scale_keys[::-1], [opts['size_xy'][s] for s in scale_keys[::-1]])
