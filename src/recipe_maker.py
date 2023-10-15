@@ -99,12 +99,13 @@ class align_recipe:
 
     # def __init__(self, swim_settings, config):
     def __init__(self, swim_settings):
-        # self.data = data
+        self.ss = swim_settings
         # self.config = config
-        self.config = cfg.CONFIG
+        # self.config = cfg.CONFIG
+        self.config = self.ss['config']
         # self.ss = self.data['swim_settings']
         # self.ss = dict(swim_settings)
-        self.ss = swim_settings
+
         # self._hash = hash(swim_settings)
         self.index = self.ss['index']
         self.path = self.ss['path']
@@ -631,7 +632,9 @@ class align_ingredient:
         self.t_swim = time.time() - t0
         self.swim_output = out.strip().split('\n')
         self.swim_err_lines = err.strip().split('\n')
+        print(f"CPU %: {psutil.cpu_percent()}")
         return self.swim_output
+
 
 
     def crop_match_signals(self):
@@ -891,6 +894,40 @@ class align_ingredient:
             print_exception()
 
 
+# def run_command_swim(cmd, arg_list=(), cmd_input=None, desc=''):
+#     print(f"cmd_input: {cmd_input}")
+#
+#     cmd_arg_list = [cmd]
+#     cmd_arg_list.extend(arg_list)
+#     cmd_str = ''
+#     for arg in cmd_arg_list:
+#         cmd_str += ' ' + str(arg)
+#
+#     # result = sp.run(cmd_arg_list, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True, capture_output=True, text=True)
+#     outs, errs = [], []
+#     for input in cmd_input.splitlines():
+#         command = [cmd_str + ' ' + input]
+#         print(f"command: {command}")
+#         result = sp.run(command, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
+#         out = result.stdout.splitlines()
+#         err = result.stderr.splitlines()
+#         outs.append(out)
+#         errs.append(err)
+#         print('output : ', out)
+#         print('error  : ', err)
+#
+#     # print(f"result: {result}")
+#
+#     # logging.getLogger('recipemaker').critical(
+#     #     f"\n======== Run Command [PID: {cmd_proc.pid}] ========\n"
+#     #     f"Description     : {desc}\n"
+#     #     f"Running command : {cmd_arg_list}\n"
+#     #     f"Passing data    : {cmd_input}\n\n"
+#     #     f">> stdout\n{cmd_stdout}\n>> stderr\n{cmd_stderr}\n"
+#     # )
+#
+#     # time.sleep(.01)
+#     return outs, errs
 
 
 def run_command(cmd, arg_list=(), cmd_input=None, desc=''):
@@ -906,14 +943,7 @@ def run_command(cmd, arg_list=(), cmd_input=None, desc=''):
         ) as cmd_proc:
         # env=os.environ.copy()) as cmd_proc:
         cmd_stdout, cmd_stderr = cmd_proc.communicate(cmd_input)
-    logging.getLogger('recipemaker').critical(
-        f"\n======== Run Command [PID: {cmd_proc.pid}] ========\n"
-        f"Description     : {desc}\n"
-        f"Running command : {cmd_arg_list}\n"
-        f"Passing data    : {cmd_input}\n\n"
-        f">> stdout\n{cmd_stdout}\n>> stderr\n{cmd_stderr}\n"
-    )
-    # time.sleep(.01)
+
     return cmd_stdout, cmd_stderr
 
 
