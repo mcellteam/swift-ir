@@ -516,7 +516,7 @@ class OpenProject(QWidget):
         thumbs_path = os.path.join(out, 'thumbs')
 
         for sv in scale_vals:
-            cfg.mw.tell('Making new images directories for scale %s...' % sv)
+            cfg.mw.tell('Making directory structure for level %d...' % sv)
             os.makedirs(os.path.join(tiff_path,   's%d' % sv), exist_ok=True)
             os.makedirs(os.path.join(zarr_path,   's%d' % sv), exist_ok=True)
             os.makedirs(os.path.join(thumbs_path, 's%d' % sv), exist_ok=True)
@@ -586,7 +586,7 @@ class OpenProject(QWidget):
         jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
         with open(os.path.join(out, 'info.json'), 'w') as f:
             f.write(jde.encode(copy.deepcopy(opts)))
-        cfg.mw.autoscaleSeries(src, out, opts)
+        cfg.mw.autoscaleImages(src, out, opts)
         cfg.preferences['images_combo_text'] = out
         logger.info('done')
 
