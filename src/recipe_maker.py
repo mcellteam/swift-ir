@@ -430,6 +430,7 @@ class align_recipe:
             mr['mir_script'] = {}
             mr['mir_out'] = {}
             mr['mir_err'] = {}
+            mr['crop_str_mir'] = {}
             for i,ing in enumerate(self.ingredients):
                 try: mr['swim_args']['ing%d' % i] = ing.multi_swim_arg_str()
                 except: mr['swim_args']['ing%d' % i] = 'null'
@@ -445,6 +446,8 @@ class align_recipe:
                 except: mr['mir_out']['ing%d' % i] = 'null'
                 try: mr['mir_err']['ing%d' % i] = ing.mir_err_lines
                 except: mr['mir_err']['ing%d' % i] = 'null'
+                try: mr['crop_str_mir']['ing%d' % i] = ing.mir_err_lines
+                except: mr['crop_str_mir']['ing%d' % i] = 'null'
 
         # return self.data
         return mr
