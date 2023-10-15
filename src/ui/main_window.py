@@ -464,7 +464,7 @@ class MainWindow(QMainWindow):
         self.uiUpdateTimer = QTimer()
         self.uiUpdateTimer.setSingleShot(True)
         self.uiUpdateTimer.timeout.connect(self.dataUpdateWidgets)
-        self.uiUpdateTimer.setInterval(cfg.UI_UPDATE_DELAY)
+        self.uiUpdateTimer.setInterval(cfg.UI_UPDATE_TIMEOUT)
 
         self._unsaved_changes = False
         self._working = False
@@ -2062,13 +2062,13 @@ class MainWindow(QMainWindow):
             except:
                 self.warn('Having trouble shutting down neuroglancer')
 
-        if cfg.USE_EXTRA_THREADING:
-            try:
-                self.tell('Waiting For Threadpool...')
-                result = QThreadPool.globalInstance().waitForDone(msecs=500)
-            except:
-                print_exception()
-                self.warn(f'Having trouble shutting down threadpool')
+        # if cfg.USE_EXTRA_THREADING:
+        #     try:
+        #         self.tell('Waiting For Threadpool...')
+        #         result = QThreadPool.globalInstance().waitForDone(msecs=500)
+        #     except:
+        #         print_exception()
+        #         self.warn(f'Having trouble shutting down threadpool')
 
         # if cfg.DEV_MODE:
         self.tell('Shutting Down Python Console Kernel...')
