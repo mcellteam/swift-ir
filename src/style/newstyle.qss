@@ -123,6 +123,7 @@ QMainWindow::separator:hover {
 }
 
 QToolTip {
+    font-size: 11px;
     color: #f3f6fb;
     background-color: #339933;
     font-weight: 600;
