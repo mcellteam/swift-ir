@@ -185,7 +185,6 @@ def delete_recursive(dir, keep_core_dirs=False):
         shutil.rmtree(d, ignore_errors=True, onerror=handleError)
         cfg.main_window.updatePbar(cfg.nProcessDone)
         cfg.main_window.update()
-        QApplication.processEvents()
     shutil.rmtree(dir, ignore_errors=True, onerror=handleError)
 
     # cfg.main_window.hidePbar()

@@ -928,7 +928,7 @@ class MainWindow(QMainWindow):
         if state:
             self.setSignalsPixmaps()
             self.setTargKargPixmaps()
-            QApplication.processEvents()
+            # QApplication.processEvents() #1015-
             h = self.dwThumbs.height() - self.pt.tn_ref_lab.height() - self.pt.tn_tra_lab.height()
             w = int(h / 2 + .5) - 10
             self.pt.tn_widget.setMaximumWidth(w)
@@ -949,7 +949,7 @@ class MainWindow(QMainWindow):
         if state:
             self.setSignalsPixmaps()
             self.setTargKargPixmaps()
-            QApplication.processEvents()
+            # QApplication.processEvents() #1015-
             h = self.dwMatches.height() - self.pt.mwTitle.height()
             self.pt.match_widget.setMaximumWidth(int(h /2 + .5) - 4)
 
@@ -5072,7 +5072,8 @@ class MainWindow(QMainWindow):
     def setPbar(self, n:int):
         '''New method to replace historical pbar functionality 2023-08-09'''
         self.pbar.setValue(n)
-        QApplication.processEvents() #1007-
+        # QApplication.processEvents() #1007-
+        self.pbar.update()
 
     def resetPbar(self, data:tuple):
         '''New method to replace historical pbar functionality 2023-08-09'''

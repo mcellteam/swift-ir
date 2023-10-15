@@ -376,7 +376,7 @@ class CorrSignalThumbnail(QLabel):
         }
         # self.setStyleSheet("background-color: #dadada;")
         # self.setStyleSheet("background-color: #3d1f05;")
-        self.setStyleSheet("background-color: #f3e9df; font-size: 10px; font-family: 'Andale Mono','Ubuntu Mono',  monospace;")
+        # self.setStyleSheet("background-color: #f3e9df; font-size: 10px; font-family: 'Andale Mono','Ubuntu Mono',  monospace;")
 
         self.setAutoFillBackground(True)
 
@@ -457,7 +457,7 @@ class CorrSignalThumbnail(QLabel):
                     qp.drawArc(arcRect, 30*16 + 270*16, spanAngle*16)
 
                     font = QFont()
-                    # font.setFamily('Ubuntu')
+                    font.setFamily('Ubuntu')
                     # font.setFamily('Helvetica')
                     fsize = max(int(pm.height() / 10 + 0.5), 5)
                     font.setPointSize(fsize)
