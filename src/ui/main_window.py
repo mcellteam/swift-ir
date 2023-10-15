@@ -1950,7 +1950,7 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             try:
                 self._saveProjectToFile()
-                self.tell('Project Saved!')
+                # self.tell('Project Saved!')
                 self._unsaved_changes = False
             except:
                 self.warn('Failed To Save')
@@ -2006,6 +2006,8 @@ class MainWindow(QMainWindow):
                 self.saveUserPreferences()
                 logger.info('Pickling alignment data...')
                 self.dm.ht.pickle()
+                if not silently:
+                    self.tell('Alignment Saved!')
 
             except:
                 print_exception()
