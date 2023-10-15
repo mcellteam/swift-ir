@@ -5086,28 +5086,10 @@ class MainWindow(QMainWindow):
 
 
     def updatePbar(self, x=None):
-        # caller = inspect.stack()[1].function
-        # logger.info(f"x = {x}")
-        if x == None: x = 9
+        if x == None: x = 1
         self.pbar.setValue(x)
-        # try:
-        #     if self._isProjectTab():
-        #         if caller == "collect_results":
-        #             if "Transforms" in self.pbar.text():
-        #                 if self.dwMatches:
-        #                     # else:
-        #                     self.setSignalsPixmaps(z=x - 1)
-        #                     self.setTargKargPixmaps(z=x - 1)
-        #
-        # except:
-        #     print_exception()
-        # finally:
-        #     QApplication.processEvents()
-        # QApplication.processEvents()
-
-    # def setPbarText(self, text: str):
-    #     self.pbar.setFormat('(%p%) ' + text)
-    #     self.pbarLabel.setText('(Task %d/%d)' % (cfg.nProcessDone, cfg.nProcessSteps))
+        self.pbar.update() #1015+
+        sys.stdout.flush()
 
     def hidePbar(self):
         logger.info('')
