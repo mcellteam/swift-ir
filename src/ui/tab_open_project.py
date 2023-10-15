@@ -129,6 +129,10 @@ class OpenProject(QWidget):
         self.cmbLevel.currentIndexChanged.connect(self.onComboLevel)
 
         self.cmbSelectAlignment = QComboBox()
+        self.cmbSelectAlignment.setStyleSheet("""QComboBox QAbstractItemView {
+    border: 2px solid darkgray;
+    selection-background-color: lightgray;
+}""")
         self.cmbSelectAlignment.setToolTip("Select Alignment (.alignment)")
         # self.cmbSelectAlignment.setPlaceholderText("Select Alignment...")
         self.cmbSelectAlignment.setPlaceholderText("")
