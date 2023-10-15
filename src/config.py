@@ -20,8 +20,8 @@ WIDTH, HEIGHT = 1200, 720
 # max_downsampled_size=2056  # default=128
 # # max_downsampling_scales=1
 
-max_downsampling = 64  # default=64
-max_downsampled_size = 128  # default=128
+max_downsampling = 512  # default=64
+max_downsampled_size = 1024  # default=128
 # max_downsampling_scales=1
 
 DEBUG_MP = 0
