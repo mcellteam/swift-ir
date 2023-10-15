@@ -643,7 +643,6 @@ class MAViewer(neuroglancer.Viewer):
         method = self.dm.current_method
         annotations = []
         if method == 'grid':
-            logger.info('Method: SWIM Grid Alignment')
             # ww1x1 = tuple(self.dm.size1x1()) # full window width
             # ww2x2 = tuple(self.dm.size2x2()) # 2x2 window width
             _ww1x1 = self.dm.size1x1()  # full window width
@@ -670,7 +669,6 @@ class MAViewer(neuroglancer.Viewer):
                 ])
 
         elif method == 'manual':
-            logger.info('Method: SWIM Match Region Alignment')
             self.restoreManAlignPts()
             #Todo add this functionality, make it configurable
             # if self.dm.current_method == 'manual_strict':
