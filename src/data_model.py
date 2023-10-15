@@ -2382,7 +2382,6 @@ class DataModel:
 
         self['level_data'][bottom_level].update(
             #Todo output preferences will need to propagate
-            zarr_made=False,
             swim_presets=swim_presets,
             method_presets=method_presets[bottom_level],
             output_settings={
@@ -2398,6 +2397,7 @@ class DataModel:
 
         for level in levels:
             self['level_data'][level].update(
+                zarr_made=False,
                 initial_snr=None,
                 aligned=False,
                 alignment_ready=(level == self.coarsest_scale_key()),
