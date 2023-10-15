@@ -767,7 +767,7 @@ class PMViewer(AbstractEMViewer):
             s.crossSectionBackgroundColor = '#000000'
             # s.gpu_memory_limit = -1
             # s.system_memory_limit = -1
-            s.gpu_memory_limit = 2 * 1024 * 1024 * 1024
+            s.gpu_memory_limit = 2 * 1024 * 1024 * 1024 * 1024
             # s.system_memory_limit = -1
             s.show_default_annotations = True
             s.show_axis_lines = True
