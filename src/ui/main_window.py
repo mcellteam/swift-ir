@@ -1073,7 +1073,7 @@ class MainWindow(QMainWindow):
     def onAlignmentEnd(self):
         #Todo make this atomic for scale that was just aligned. Cant be current scale.
         caller = inspect.stack()[1].function
-        logger.critical(f'\n\n[{caller}] Running Post-Alignment Tasks...\n')
+        self.tell(f'Running post-alignment tasks...')
         t0 = time.time()
         self._working = False
         self.updateDwMatches()
@@ -1104,9 +1104,7 @@ class MainWindow(QMainWindow):
 
         dt = time.time() - t0
         logger.info(f'  Elapsed Time         : {dt:.2f}s')
-        # self.setFocus()
-        self.statusBar.showMessage("Alignment Complete!", msecs=3000)
-        logger.critical(f"[{caller}] Alignment Complete!")
+        logger.info(f"Alignment Complete")
 
 
     def onFixAll(self):
