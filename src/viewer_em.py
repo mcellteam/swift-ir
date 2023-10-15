@@ -42,7 +42,7 @@ import numpy as np
 ng.server.debug = cfg.DEBUG_NEUROGLANCER
 numcodecs.blosc.use_threads = False
 
-__all__ = ['EMViewer', 'PMViewer', 'EMViewerMendenhall']
+__all__ = ['EMViewer', 'PMViewer']
 
 logger = logging.getLogger(__name__)
 logger.propagate = False
@@ -639,7 +639,7 @@ class EMViewer(AbstractEMViewer):
 #         sf = self.dm.lvl(level=self.dm.level_key)
 #         self.ref_l, self.base_l, self.aligned_l = 'ref_%d' % sf, 'base_%d' % sf, 'aligned_%d' % sf
 #         with self.txn() as s:
-#             '''other settings:
+#             '''other preferences:
 #             s.displayDimensions = ["z", "y", "x"]
 #             s.perspective_orientation
 #             s.concurrent_downloads = 512'''
@@ -690,13 +690,6 @@ class PMViewer(AbstractEMViewer):
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
         self.type = 'PMViewer'
         self._example_path = example_zarr()
-
-    def initExample(self):
-        logger.info('')
-        self.initViewer(path=self._example_path)
-        # self.post_message("No images have been imported yet. This is just an example.")
-        with self.config_state.txn() as cs:
-            cs.status_messages['message'] = "No images have been imported yet. This is just an example."
 
 
     def initViewer(self, path_l=None, path_r=None):
@@ -755,6 +748,8 @@ class PMViewer(AbstractEMViewer):
                     # max_downsampling_scales=cfg.max_downsampling_scales #Goes a LOT slower when set to 1
                 )
             except:
+                # with self.config_state.txn() as s:
+                #     s.status_messages['message'] = f'No Data'
                 print_exception()
 
         logger.info('Adding layers...')
@@ -784,7 +779,7 @@ class PMViewer(AbstractEMViewer):
         with self.config_state.txn() as s:
             # s.status_messages['message'] = ''
             s.show_ui_controls = False
-            s.status_messages = None
+            # s.status_messages = None
             s.show_panel_borders = False
             s.show_layer_panel = False
             # if self.path_l:
@@ -796,57 +791,6 @@ class PMViewer(AbstractEMViewer):
 
         logger.info('Setting URL...')
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
-
-
-
-
-class EMViewerMendenhall(AbstractEMViewer):
-
-    def __init__(self, **kwags):
-        super().__init__(**kwags)
-        # self.shared_state.add_changed_callback(self.on_state_changed)
-        # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
-        self.type = 'EMViewerMendenhall'
-
-    def initViewer(self):
-        logger.info('Initializing Neuroglancer - Mendenhall...')
-        path = os.path.join(self.dm.dest(), 'mendenhall.zarr', 'grp')
-        scales = [50, 2, 2]
-        coordinate_space = ng.CoordinateSpace(names=['z', 'y', 'x'], units=['nm', 'nm', 'nm'], scales=scales, )
-        cfg.men_tensor = get_zarr_tensor(path).result()
-        self.json_unal_dataset = cfg.men_tensor.spec().to_json()
-        logger.debug(self.json_unal_dataset)
-        logger.info('Instantiating Viewer...')
-        image_size = self.dm.image_size()
-        widget_size = cfg.main_window.globTabs.size()
-
-        widget_height = widget_size[3]
-        tissue_h = 2 * image_size[1]  # nm
-        scale_h = (tissue_h / widget_height) * 1e-9  # nm/pixel
-        tissue_w = 2 * image_size[0]  # nm
-        scale_w = (tissue_w / image_size[0]) * 1e-9  # nm/pixel
-        cross_section_scale = max(scale_h, scale_w)
-
-        with self.txn() as s:
-            s.layers['layer'] = ng.ImageLayer(source=cfg.menLV)
-            s.crossSectionBackgroundColor = '#808080'
-            s.gpu_memory_limit = -1
-            s.system_memory_limit = -1
-
-
-
-        self.webengine.setUrl(QUrl(self.get_viewer_url()))
-
-
-        # dt = time.time() - t0
-        # # logger.critical('Loading Time: %.4f' %dt)
-
-
-    # def set_rds(self):
-    #     with self.txn() as s:
-    #         s.relative_display_scales = {'z': 14}
-
-
 
 
 

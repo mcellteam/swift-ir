@@ -419,7 +419,7 @@ opts={
     's6': {'size_zyx': [5, 682, 682], 'size_xy': [682, 682]}, 
     's2': {'size_zyx': [5, 2048, 2048], 'size_xy': [2048, 2048]}, 
     's1': {'size_zyx': [5, 4096, 4096], 'size_xy': [4096, 4096]}}, 
-'settings': 
+'preferences': 
     {'scale_factors': [24, 6, 2, 1], 
     'clevel': 5, 
     'cname': 'none', 

@@ -40,13 +40,13 @@ class Config():
         self.bind = '127.0.0.1'
         self.port = 9000
 
-        # Neuroglancer server settings, configurable from here
+        # Neuroglancer server preferences, configurable from here
         self.gpu_memory_limit = -1
         self.system_memory_limit = -1
         self.concurrent_downloads = 512
         self.neuroglancer_server_debug = True  # verbose neuroglancer
 
-        # TensorStore settings
+        # TensorStore preferences
         self.cache_pool_total_bytes_limit = 250_000_000_000  # Lonestar6: 256 GB (3200 MT/level) DDR4
         self.dtype = 'uint8'
         self.driver = 'zarr'

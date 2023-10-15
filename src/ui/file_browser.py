@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 class FileBrowser(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.parent = parent
         self.treeview = QTreeView()
         self.treeview.expanded.connect(self.onExpanded)
         self.treeview.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -113,8 +114,8 @@ class FileBrowser(QWidget):
         action = QAction()
         action.setText(f"Save {selected} to My Locations")
         def fn():
-            if selected not in cfg.settings['saved_paths']:
-                cfg.settings['saved_paths'].append(selected)
+            if selected not in cfg.preferences['saved_paths']:
+                cfg.preferences['saved_paths'].append(selected)
 
         action.triggered.connect(fn)
         menu.addAction(action)
@@ -142,7 +143,7 @@ class FileBrowser(QWidget):
         menu.exec_(self.treeview.viewport().mapToGlobal(position))
 
     def setRootLastKnownRoot(self):
-        self._root = cfg.settings['current_filebrowser_root']
+        self._root = cfg.preferences['current_filebrowser_root']
         logger.critical(f'Setting filebrowser root to {self._root}')
         try:    self.treeview.setRootIndex(self.model.index(self._root))
         except: logger.warning('Directory cannot be accessed')
@@ -189,13 +190,13 @@ class FileBrowser(QWidget):
         else:   cfg.mw.tell(f'Root directory set to {self._root}')
 
     def setRootSeries(self):
-        self._root = cfg.settings['images_root']
+        self._root = cfg.preferences['images_root']
         try:    self.treeview.setRootIndex(self.model.index(self._root))
         except: logger.warning('Directory cannot be accessed')
         else:   cfg.mw.tell(f'Root directory set to {self._root}')
 
     def setRootAlignments(self):
-        self._root = cfg.settings['alignments_root']
+        self._root = cfg.preferences['alignments_root']
         try:    self.treeview.setRootIndex(self.model.index(self._root))
         except: logger.warning('Directory cannot be accessed')
         else:   cfg.mw.tell(f'Root directory set to {self._root}')
@@ -295,10 +296,10 @@ class FileBrowser(QWidget):
             self.setVisibilityContentSourcesCpanel(not self.wContentRoot.isVisible())
 
             if self.wContentRoot.isVisible():
-                self.leNewSeries.setText(cfg.settings['images_root'])
-                self.leNewAlignments.setText(cfg.settings['alignments_root'])
-                self.teSeriesSearchPaths.setText('\n'.join(cfg.settings['images_search_paths']))
-                self.teAlignmentsSearchPaths.setText('\n'.join(cfg.settings['alignments_search_paths']))
+                self.leNewSeries.setText(cfg.preferences['images_root'])
+                self.leNewAlignments.setText(cfg.preferences['alignments_root'])
+                self.teSeriesSearchPaths.setText('\n'.join(cfg.preferences['images_search_paths']))
+                self.teAlignmentsSearchPaths.setText('\n'.join(cfg.preferences['alignments_search_paths']))
         self.bSetContentSources.clicked.connect(fn)
 
         if is_joel():
@@ -435,27 +436,28 @@ class FileBrowser(QWidget):
                 'alignments_root': self.leNewAlignments.text(),
                 'alignments_search_paths': self.teAlignmentsSearchPaths.toPlainText().split('\n'),
             }
-            cfg.settings.update(d)
+            cfg.preferences.update(d)
             pprint.pprint(d)
-            p = cfg.settings['images_root']
+            p = cfg.preferences['images_root']
             if not os.path.exists(p):
                 cfg.mw.tell(f"Creating images directory {p}")
                 os.makedirs(p, exist_ok=True)
 
-            p = cfg.settings['alignments_root']
+            p = cfg.preferences['alignments_root']
             if not os.path.exists(p):
                 cfg.mw.tell(f"Creating alignments directory {p}")
                 os.makedirs(p, exist_ok=True)
 
-            for path in cfg.settings['images_search_paths']:
+            for path in cfg.preferences['images_search_paths']:
                 if not os.path.isdir(path):
                     cfg.mw.warn(f"'{path}' is not a directory and will be ignored. ")
 
-            for path in cfg.settings['alignments_search_paths']:
+            for path in cfg.preferences['alignments_search_paths']:
                 if not os.path.isdir(path):
                     cfg.mw.warn(f"'{path}' is not a directory and will be ignored. ")
 
             cfg.mw.saveUserPreferences(silent=True)
+            self.parent._updateWatchPaths()
             self.wContentRoot.hide()
             cfg.mw.statusBar.showMessage('Preferences saved!', 3000)
         except:
@@ -486,27 +488,26 @@ class FileBrowser(QWidget):
         except:
             print_exception()
 
+
     def onPathChanged(self):
         logger.info('')
         cur = self.lePath.text()
         self.bGo.setEnabled(os.path.exists(cur) and (cur != self._root))
-        self.bPlus.setEnabled(os.path.exists(cur) and cur not in cfg.settings['saved_paths'])
-
+        self.bPlus.setEnabled(os.path.exists(cur) and cur not in cfg.preferences['saved_paths'])
 
 
     def selectionChanged(self):
         requested = self.getSelectionPath()
         logger.info(f'Selection changed! {requested}')
         self.lePath.setText(requested)
-        # self.bPlus.setEnabled((self.getSelectionPath() not in cfg.settings['saved_paths']) and os.path.isdir(requested))
-
+        # self.bPlus.setEnabled((self.getSelectionPath() not in cfg.preferences['saved_paths']) and os.path.isdir(requested))
 
 
     def onPathCombo(self):
         requested = self.combobox.currentText()
         self.lePath.setText(requested)
         self.navigateTo(requested)
-        self.bPlus.setEnabled((self.getSelectionPath() not in cfg.settings['saved_paths']) and os.path.isdir(requested))
+        self.bPlus.setEnabled((self.getSelectionPath() not in cfg.preferences['saved_paths']) and os.path.isdir(requested))
 
 
     def loadCombobox(self):
@@ -518,7 +519,7 @@ class FileBrowser(QWidget):
         # self.combobox.addItems([])
 
         items = ['Saved locations...', 'Images Root', 'Alignments Root']
-        items.extend(cfg.settings['saved_paths'])
+        items.extend(cfg.preferences['saved_paths'])
         if is_tacc():
             items.extend(['$SCRATCH', '$WORK', 'Corral'])
 
@@ -530,13 +531,12 @@ class FileBrowser(QWidget):
         self.bGo.setEnabled(os.path.exists(cur) and (cur != self._root))
 
 
-
     def onMinus(self):
         requested = self.combobox.currentText()
         if requested:
             logger.info(f"Removing path: {self.getSelectionPath()}")
             try:
-                cfg.settings['saved_paths'].remove(requested)
+                cfg.preferences['saved_paths'].remove(requested)
             except:
                 logger.warning(f"Nothing to remove!")
             cfg.mw.saveUserPreferences(silent=True)
@@ -546,9 +546,9 @@ class FileBrowser(QWidget):
         requested = self.lePath.text()
         if requested:
             if os.path.exists(requested) and os.path.isdir(requested):
-                if requested not in cfg.settings['saved_paths']:
+                if requested not in cfg.preferences['saved_paths']:
                     cfg.mw.tell(f"Adding path: {requested}")
-                    cfg.settings['saved_paths'].append(requested)
+                    cfg.preferences['saved_paths'].append(requested)
                 else:
                     cfg.mw.warn(f"Path is already saved! {requested}")
             else:

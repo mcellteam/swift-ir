@@ -194,11 +194,11 @@ class MainWindow(QMainWindow):
 
         self.bStopPbar.setEnabled(cfg.DAEMON_THREADS)
 
-        # self.settings = QSettings("cnl", "alignem")
-        # # if not self.settings.value("geometry") == None:
-        # #     self.restoreGeometry(self.settings.value("geometry"))
-        # if not self.settings.value("windowState") == None:
-        #     self.restoreState(self.settings.value("windowState"))
+        # self.preferences = QSettings("cnl", "alignem")
+        # # if not self.preferences.value("geometry") == None:
+        # #     self.restoreGeometry(self.preferences.value("geometry"))
+        # if not self.preferences.value("windowState") == None:
+        #     self.restoreState(self.preferences.value("windowState"))
 
         # QApplication.setFont(QFont("Calibri"))
         # self.font = QFont("Tahoma")
@@ -331,7 +331,7 @@ class MainWindow(QMainWindow):
 
 
     def restore_tabs(self, settings):
-        '''self.restore_tabs(self.settings)'''
+        '''self.restore_tabs(self.preferences)'''
         finfo = QFileInfo(settings.fileName())
         if finfo.exists() and finfo.isFile():
             for w in qApp.allWidgets():
@@ -344,7 +344,7 @@ class MainWindow(QMainWindow):
 
 
     def save_tabs(self, settings):
-        '''self.save_tabs(self.settings)'''
+        '''self.save_tabs(self.preferences)'''
         for w in qApp.allWidgets():
             mo = w.metaObject()
             if w.objectName() != "":
@@ -1882,7 +1882,7 @@ class MainWindow(QMainWindow):
                 Do not automatically save, there is nothing to save yet'''
         logger.info('')
         self.dm = cfg.data = dm
-        cfg.settings['last_alignment_opened'] = dm.data_location
+        cfg.preferences['last_alignment_opened'] = dm.data_location
         dm.scale = dm.coarsest_scale_key()
         name,_ = os.path.splitext(os.path.basename(dm.data_location))
         if self.dm.is_aligned():
@@ -1909,13 +1909,13 @@ class MainWindow(QMainWindow):
         self.settings.setValue("geometry", self.saveGeometry())
         self.settings.setValue("windowState", self.saveState())
         # if self._isProjectTab():
-        #     self.settings.setValue("hsplitter_tn_ngSizes", self.pt.splitter_ngPlusSideControls.saveState())
+        #     self.preferences.setValue("hsplitter_tn_ngSizes", self.pt.splitter_ngPlusSideControls.saveState())
         userpreferencespath = os.path.join(os.path.expanduser('~'), '.swiftrc')
         if not os.path.exists(userpreferencespath):
             open(userpreferencespath, 'a').close()
         try:
             f = open(userpreferencespath, 'w')
-            json.dump(cfg.settings, f, indent=2)
+            json.dump(cfg.preferences, f, indent=2)
             f.close()
         except:
             self.warn(f'Unable to save current user preferences. Using defaults instead.')
@@ -1925,7 +1925,7 @@ class MainWindow(QMainWindow):
         userpreferencespath = os.path.join(os.path.expanduser('~'), '.swiftrc')
         if os.path.exists(userpreferencespath):
             os.remove(userpreferencespath)
-        cfg.settings = {}
+        cfg.preferences = {}
         update_preferences_model()
         self.saveUserPreferences()
 
@@ -2180,17 +2180,6 @@ class MainWindow(QMainWindow):
     def browser_3dem_community(self):
         self.browser_web.setUrl(QUrl(
             'https://3dem.org/workbench/data/tapis/community/data-3dem-community/'))
-
-    def invalidate_all(self, s=None):
-        if ng.is_server_running():
-            if s == None: s = self.dm.level
-            if self.dm.is_mendenhall():
-                cfg.emViewer.menLV.invalidate()
-            else:
-                cfg.refLV.invalidate()
-                cfg.baseLV.invalidate()
-                if exist_aligned_zarr(s):
-                    cfg.alLV.invalidate()
 
 
     def startStopTimer(self):
@@ -4552,7 +4541,7 @@ class MainWindow(QMainWindow):
                         self.dm.save_notes(text=self.notes.toPlainText())
                         self.statusBar.showMessage('Note Saved!', 3000)
                 else:
-                    cfg.settings['notes']['global_notes'] = self.notes.toPlainText()
+                    cfg.preferences['notes']['global_notes'] = self.notes.toPlainText()
                 self.notes.update()
 
         self.notes = QTextEdit()
