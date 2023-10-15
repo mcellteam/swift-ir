@@ -545,7 +545,7 @@ class EMViewer(AbstractEMViewer):
         with self.txn() as s:
             s.layout.type = nglayout
             # s.gpu_memory_limit = -1
-            # s.system_memory_limit = -1
+            s.system_memory_limit = -1
             # s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
             # if self.dm.lvl() < 6:
             #     s.show_scale_bar = True
@@ -766,8 +766,8 @@ class PMViewer(AbstractEMViewer):
                 s.layers['layer1'] = ng.ImageLayer()
             s.crossSectionBackgroundColor = '#000000'
             # s.gpu_memory_limit = -1
-            # s.system_memory_limit = -1
-            s.gpu_memory_limit = 2 * 1024 * 1024 * 1024 * 1024
+            s.system_memory_limit = -1
+            # s.gpu_memory_limit = 2 * 1024 * 1024 * 1024 * 1024
             # s.system_memory_limit = -1
             s.show_default_annotations = True
             s.show_axis_lines = True

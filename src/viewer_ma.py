@@ -283,7 +283,7 @@ class MAViewer(neuroglancer.Viewer):
 
         with self.txn() as s:
             s.layout.type = 'yz'
-            s.gpu_memory_limit = -1
+            # s.gpu_memory_limit = -1
             s.system_memory_limit = -1
             # level.show_scale_bar = False
             s.show_scale_bar = True
