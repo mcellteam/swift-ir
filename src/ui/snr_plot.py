@@ -506,7 +506,8 @@ class SnrPlot(QWidget):
         logger.info(f'Plotting scale level {s}...')
         # logger.info(f'[{self.dock}] plotSingleScale (level_key: {level}):')
         # x_axis, y_axis = self.get_axis_data(level=level)
-        x_axis, y_axis = self.get_everything_comport_axis_data(s=s)
+        # x_axis, y_axis = self.get_everything_comport_axis_data(s=s)
+        x_axis, y_axis = self.get_axis_data(s=s)
         if not self.dock:
             x_axis = [x+self._getScaleOffset(s=s) for x in x_axis]
         brush = self._plot_brushes[self.dm.scales[::-1].index(s)]
@@ -577,7 +578,7 @@ class SnrPlot(QWidget):
                 brush=pg.mkBrush('#f3f6fb'),
                 # brush=None,
                 hoverable=True,
-                tip='Bla bla bla\nSection #: {x:.3g}\nSNR: {y:.3g}'.format,
+                tip='Section #: {x:.3g}\nSNR: {y:.3g}'.format,
                 # tip='cafm_no_comport\nx: {x:.3g}\ny: {y:.3g}\nWarnings:\n{self.dm.is_zarr_generated(x)}'.format,
                 hoverSize=10,
                 # hoverPen=pg.mkPen('#ff0000', width=3),
@@ -609,7 +610,7 @@ class SnrPlot(QWidget):
                 pen=pg.mkPen('#f3f6fb', width=2),
                 brush=None,
                 hoverable=True,
-                tip='Bla bla bla\nSection #: {x:.3g}\nSNR: {y:.3g}'.format,
+                tip='Section #_: {x:.3g}\nSNR: {y:.3g}'.format,
                 # data=[self.dm.data_comports(level=self.dm.scale, z=z) for z in self.get_data_no_comport_axis_data()[0]],
                 # tip='data_no_comport\nx: {x:.3g}\ny: {y:.3g}\nWarnings:\n{self.dm.data_comports(x)}'.format,
                 hoverSize=11,

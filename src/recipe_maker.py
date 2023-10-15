@@ -27,12 +27,10 @@ import src.config as cfg
 import warnings
 warnings.filterwarnings("ignore")
 
-# import libtiff
-# libtiff.libtiff_ctypes.suppress_warnings()
+import libtiff
+libtiff.libtiff_ctypes.suppress_warnings()
 
 logging.getLogger('tifffile').propagate = False
-
-import shelve  # !!! # https://docs.python.org/3/library/shelve.html
 
 # https://stackoverflow.com/questions/15585493/store-the-cache-to-a-file-functools-lru-cache-in-python-3-2
 

@@ -610,7 +610,7 @@ class OpenProject(QWidget):
         opts = {
             'name': series_name,
             'uuid': str(uuid.uuid4()),
-            'images_location': out,
+            # 'images_location': out,
             'created': datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
             'scale_factors': scale_vals,
             'levels': level_keys,
