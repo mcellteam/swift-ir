@@ -1194,7 +1194,6 @@ class MainWindow(QMainWindow):
             self.warn("Please pull settings before aligning (Edit Alignment > Pull Settings)")
             return
 
-        self.tell('Aligning...')
         logger.critical('')
         scale = dm.scale
 

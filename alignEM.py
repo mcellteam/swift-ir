@@ -352,7 +352,7 @@ if __name__ == "__main__":
 
 
     # os.environ['QT_SCALE_FACTOR'] = '1' # scale the entire application
-    os.environ["QT_ENABLE_HIGHDPI_SCALING"] = '1'
+    # os.environ["QT_ENABLE_HIGHDPI_SCALING"] = '1' #1015-
     # os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = '1'
 
     # os.environ["QT_DEBUG_PLUGINS"] = "1" ##
