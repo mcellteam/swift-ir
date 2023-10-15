@@ -737,7 +737,8 @@ class MAViewer(neuroglancer.Viewer):
                 s.crossSectionScale = self.cs_scale
         else:
             _, tensor_y, tensor_x = self.store.shape
-            w, h = self.parent.ng_widget.size()
+            w = self.parent.ng_widget.width()
+            h = self.parent.ng_widget.height()
             # res_z, res_y, res_x = self.dm.resolution(s=self.dm.level) # nm per imagepixel
             res_z, res_y, res_x = self.dm.resolution(s=self.quality) # nm per imagepixel
             # tissue_h, tissue_w = res_y*frame[0], res_x*frame[1]  # nm of sample

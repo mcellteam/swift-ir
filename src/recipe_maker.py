@@ -75,7 +75,6 @@ def cached(func):
 
 
 
-@lru_cache(maxsize=None)
 # @persist_to_file(fn=os.path.join(cfg.CONFIG.images_location, 'cache.data'))
 def run_recipe(data):
     '''Assemble and execute an alignment recipe
