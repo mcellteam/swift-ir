@@ -2248,6 +2248,9 @@ class DataModel:
                         p3[i] = [(x * sf, y * sf) for x, y in p]
                     for i, p in enumerate(p4):
                         p4[i] = [(x * sf, y * sf) for x, y in p]
+                #Critical #1015+
+                self['stack'][i]['levels'][cur_level]['saved_swim_settings'].update(copy.deepcopy(
+                    self['stack'][i]['levels'][cur_level]['swim_settings']))
         except:
             print_exception()
         else:
