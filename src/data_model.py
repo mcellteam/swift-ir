@@ -614,7 +614,11 @@ class DataModel:
         #     logger.warning('Reference is an empty string')
         #     return self.get_index(self._data['stack'][l]['levels'][self.level]['swim_settings']['path'])
         # return self.get_index(reference)
-        return self.swim_settings(s=s, l=l)['reference_index']
+        try:
+            return self.swim_settings(s=s, l=l)['reference_index']
+        except:
+            print_exception()
+            return None
 
     def is_zarr_generated(self, s=None):
         '''Returns whether Zarr has been generated/exported'''
@@ -1347,13 +1351,6 @@ class DataModel:
     def set_stack_cafm(self, s=None):
         if s == None: s = self.level
         SetStackCafm(self, scale=s, poly_order=self.poly_order)
-
-
-
-    def cafm_registered_hash(self, s=None, l=None):
-        if s == None: s = self.level
-        if l == None: l = self.zpos
-        return self['stack'][l]['levels'][s]['cafm_hash']
 
 
     # #Deprecated now registering cafm hash in SetStackCafm
@@ -2298,6 +2295,7 @@ class DataModel:
                 'current_tab': 0,
                 'gif_speed': 100,
                 'zarr_viewing': 'raw',
+                'viewer_quality': bottom_level,
                 'neuroglancer': {
                     'layout': '4panel',
                     'zoom': 1.0,
@@ -2345,9 +2343,6 @@ class DataModel:
             for level in levels:
                 self['stack'][i]['levels'][level].update(
                     initialized=False,
-                    data_comports=True,
-                    cafm_comports=True,
-                    cafm_hash=None,
                     cafm=identity_matrix,
                     saved_swim_settings={
                         'index': i,
@@ -2375,11 +2370,6 @@ class DataModel:
                         'affine_matrix': identity_matrix,
                     }
                 )
-                self['level_data'][level].update(
-                    initial_snr=None,
-                    aligned=False,
-                    alignment_ready=(level == self.coarsest_scale_key()),
-                )
 
         swim_presets = self.getSwimPresets()
         method_presets = self.getMethodPresets()
@@ -2402,6 +2392,13 @@ class DataModel:
             },
             results={},
         )
+
+        for level in levels:
+            self['level_data'][level].update(
+                initial_snr=None,
+                aligned=False,
+                alignment_ready=(level == self.coarsest_scale_key()),
+            )
 
         for i in range(len(self)):
             self['stack'][i]['levels'][bottom_level]['saved_swim_settings'].update(

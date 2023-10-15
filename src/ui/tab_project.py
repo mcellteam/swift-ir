@@ -180,6 +180,7 @@ class ProjectTab(QWidget):
         elif index == 1:
             # self.parent.setdw_thumbs(False) #BEFORE init neuroglancer
             # self.parent.setdw_matches(True) #BEFORE init neuroglancer
+            self.cmbViewerScale.setCurrentIndex(self.dm.levels.index(self.dm.level))
             self.initNeuroglancer() #Todo necessary for now
             self.editorViewer.set_layer()
             self.set_transforming() #0802+
@@ -266,7 +267,9 @@ class ProjectTab(QWidget):
             if self.wTabs.currentIndex() == 1 or init_all:
                 # self.MA_webengine_ref.setUrl(QUrl("http://localhost:8888/"))
                 # self.editorWebengine.setUrl(QUrl("http://localhost:8888/"))
-                self.editorViewer = cfg.editorViewer = MAViewer(parent=self, dm=self.dm, role='tra', webengine=self.editorWebengine)
+                # level = self.dm.levels[self.cmbViewerScale.currentIndex()]
+                level = self.dm['state']['viewer_quality']
+                self.editorViewer = cfg.editorViewer = MAViewer(parent=self, dm=self.dm, role='tra', quality=level, webengine=self.editorWebengine)
                 self.editorViewer.signals.badStateChange.connect(self.set_transforming)
                 self.editorViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314
                 self.editorViewer.signals.ptsChanged.connect(self.update_match_list_widgets)
@@ -392,8 +395,7 @@ class ProjectTab(QWidget):
         self.editorWebengine.setStyleSheet("background-color: #000000;")
         self.editorWebengine.page().setBackgroundColor(Qt.transparent) #0726+
         self.editorWebengine.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-
-        # setWebengineProperties(self.editorWebengine)
+        setWebengineProperties(self.editorWebengine)
         self.editorWebengine.setMouseTracking(True)
         # self.editorWebengine.setFocusPolicy(Qt.NoFocus) #0726-
 
@@ -1378,7 +1380,35 @@ class ProjectTab(QWidget):
         self.swMethod.addWidget(self.twMethod)
         self.swMethod.addWidget(self.wPlaceholder)
 
+        # self.labViewerScale = QLabel('Viewer Resolution:')
+        self.cmbViewerScale = QComboBox()
+        lst = []
+        lst.append('Full Quality %d x %dpx' % (self.dm.image_size(s=self.dm.levels[0])))
+        for level in self.dm.levels[1:]:
+            # lvl = self.dm.lvl(s=level)
+            # siz = self.dm.image_size(s=level)
+            # lst.append('%d / %d x %dpx' % (lvl, siz[0], siz[1]))
+            # lst.append('%d x %dpx' % (siz[0], siz[1]))
+            siz = self.dm.image_size(s=level)
+            lst.append('1/%d Quality %d x %dpx' % (self.dm.lvl(level), siz[0], siz[1]))
+        self.cmbViewerScale.addItems(lst)
 
+        self.cmbViewerScale.setCurrentIndex(self.dm.levels.index(self.dm['state']['viewer_quality']))
+
+        def fn_cmbViewerScale():
+            caller = inspect.stack()[1].function
+            logger.info(f"[{caller}]")
+            if caller == 'main':
+                level = self.dm.levels[self.cmbViewerScale.currentIndex()]
+                siz = self.dm.image_size(s=level)
+                self.dm['state']['viewer_quality'] = level
+                self.parent.tell('Viewing quality set to 1/%d (%d x %dpx)' % (self.dm.lvl(level), siz[0], siz[1]))
+                self.initNeuroglancer()
+
+        self.cmbViewerScale.currentIndexChanged.connect(fn_cmbViewerScale)
+
+        # self.wCmbViewerScale = HW(self.cmbViewerScale)
+        # self.wCmbViewerScale.layout.setAlignment(Qt.AlignTop | Qt.AlignCenter)
 
         self.cl_tra = ClickLabel(' Transforming ')
         self.cl_tra.setFocusPolicy(Qt.NoFocus)
@@ -1410,7 +1440,8 @@ class ProjectTab(QWidget):
         self.labAlignTo.setStyleSheet('background-color: #ede9e8; color: #161c20; font-size: 11px; font-weight: 600; '
                                       'border-radius: 2px; padding-left: 1px; padding-right: 1px;')
 
-        self.wSwitchRefTra = HW(self.cl_tra, self.labAlignTo, self.cl_ref)
+        # self.wSwitchRefTra = HW(self.cl_tra, self.labAlignTo, self.cl_ref)
+        self.wSwitchRefTra = HW(self.cl_tra, self.cmbViewerScale, self.cl_ref)
         self.wSwitchRefTra.setFixedHeight(15)
 
         # https://codeloop.org/pyqt5-make-multi-document-interface-mdi-application/
@@ -1449,7 +1480,17 @@ class ProjectTab(QWidget):
         # self.gl_sw_main.addWidget(self.editorWebengine, 0, 0, 3, 3)
         # self.gl_sw_main.addWidget(self._overlayLab, 0, 0, 3, 3)
 
-        self.ng_widget = VW(self.wSwitchRefTra, self.editorWebengine)
+
+        self.wNeuroglancer = QWidget()
+        self.glNeuroglancer = GL()
+        self.glNeuroglancer.addWidget(self.editorWebengine, 0, 0, 3, 3)
+        # self.glNeuroglancer.addWidget(self.wCmbViewerScale, 0, 1, 1, 1)
+        # self.glNeuroglancer.addWidget(self.cmbViewerScale, 0, 1, 1, 1)
+
+        self.wNeuroglancer.setLayout(self.glNeuroglancer)
+
+        # self.ng_widget = VW(self.wSwitchRefTra, self.editorWebengine)
+        self.ng_widget = VW(self.wSwitchRefTra, self.wNeuroglancer)
 
         ngFont = QFont('Tahoma')
         ngFont.setBold(True)

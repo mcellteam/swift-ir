@@ -109,9 +109,13 @@ class align_recipe:
         # self.ss = dict(swim_settings)
         self.ss = swim_settings
         # self._hash = hash(swim_settings)
+        self.index = self.ss['index']
         self.path = self.ss['path']
         self.solo = self.ss['solo']
         self.path_ref = self.ss['path_reference']
+        if self.index == 143:
+            print(f"\npath     : {self.path}\n"
+                  f"path ref : {self.path_ref}\n")
         self.configure_logging()
         self.method = self.ss['method_opts']['method']
         self._return_afm = True
@@ -125,7 +129,6 @@ class align_recipe:
                 self._return_afm = False
 
 
-        self.index = self.ss['index']
         self.ingredients = []
         self.initial_rotation = float(self.ss['initial_rotation'])
         # self.afm = np.array([[1., 0., 0.], [0., 1., 0.]])
@@ -491,7 +494,7 @@ class align_ingredient:
 
         # Returns an affine matrix
         # if self.recipe.method in ('manual','manual_strict'):
-        if self.recipe.method == 'manual_hint':
+        if self.recipe.method == 'manual':
             self.clr_indexes = copy.deepcopy(self.recipe.clr_indexes)
         if self.mode == 'MIR':
             self.afm = self.run_manual_mir()
@@ -518,7 +521,7 @@ class align_ingredient:
                     return self.afm
 
             try:
-                self.generate_output()
+                self.transform()
             except:
                 print_exception()
         return self.afm
@@ -531,6 +534,7 @@ class align_ingredient:
 
         self.cx = int(self.recipe.ss['img_size'][0] / 2.0)
         self.cy = int(self.recipe.ss['img_size'][1] / 2.0)
+
         basename = os.path.basename(self.recipe.ss['path'])
         fn, ext = os.path.splitext(basename)
         multi_arg_str = ArgString(sep='\n')
@@ -541,6 +545,8 @@ class align_ingredient:
         whiten = str(self.recipe.ss['whitening'])
         use_clobber = self.recipe.ss['clobber']
         clobber_px = self.recipe.ss['clobber_size']
+        if self.recipe.index == 143:
+            print(f"\n[{self.recipe.index}] Ingredient: {self.ID}  afm: {self.afm}\n")
         afm = '%.6f %.6f %.6f %.6f' % (
                 self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
         # afm = '%f %f %f %f' % (
@@ -552,7 +558,7 @@ class align_ingredient:
                 if self.ID != 'g1x1':
                     if not self.recipe.ss['method_opts']['quadrants'][i]:
                         continue
-            if m == 'manual_hint':
+            if m == 'manual':
                 ind = self.clr_indexes.pop(0)
             else:
                 ind = i
@@ -585,18 +591,20 @@ class align_ingredient:
                 self.matches_filenames.append(t_arg_path)
             # args.append(self.recipe.ss['extra_kwargs'])
             args.append(self.recipe.path_ref)
-            if m in ('manual_hint'):
+            if m == 'manual':
                 args.append('%s %s' % (self.psta[0][i], self.psta[1][i]))
             else:
                 args.append('%s %s' % (self.cx, self.cy))
             args.append(self.recipe.path)
-            if m in ('manual_hint'):
+            if m == 'manual':
                 args.append('%s %s' % (self.pmov[0][i], self.pmov[1][i]))
             else:
                 self.adjust_x = '%.6f' % (self.cx + self.afm[0, 2])
                 self.adjust_y = '%.6f' % (self.cy + self.afm[1, 2])
                 # self.adjust_x = '%f' % (self.cx + self.afm[0, 2])
                 # self.adjust_y = '%f' % (self.cy + self.afm[1, 2])
+                # self.adjust_x = '%.6f' % (self.afm[0, 2])
+                # self.adjust_y = '%.6f' % (self.afm[1, 2])
                 args.append('%s %s' % (self.adjust_x, self.adjust_y))
             r = self.recipe.initial_rotation
             if abs(r) > 0:
@@ -661,85 +669,72 @@ class align_ingredient:
 
     def ingest_swim_output(self, swim_output):
 
+        if swim_output == '':
+            logger.warning("NO SWIM OUTPUT!")
+            self.snr = np.zeros(len(self.psta[0]))
+            return self.afm
+
         self.mir_script = ""
         snr_list = []
         # if (len(swim_output) == 1) and (self.recipe.method in ('default-grid', 'custom-grid')): #1010-
-        # if (len(swim_output) == 1) and (self.recipe.method == 'grid'):
+        if (len(swim_output) == 1) and (self.recipe.method == 'grid'):
         # if len(swim_output) == 1:
-        #     toks = swim_output[0].replace(
-        #         '(', ' ').replace(')', ' ').strip().split()
-        #     # print(f"\n\n{toks}\n"
-        #     #       f"2: {toks[2]}\n"
-        #     #       f"3: {toks[3]}\n"
-        #     #       f"4: {toks[4]}\n"
-        #     #       f"5: {toks[5]}\n"
-        #     #       f"6: {toks[6]}\n")
-        #     # self.dx = float(toks[8])
-        #     # self.dy = float(toks[9])
-        #     self.adjust_x = float(toks[5])
-        #     self.adjust_y = float(toks[6])
-        #     aim = copy.deepcopy(self.afm)
-        #     aim[0, 2] += self.adjust_x
-        #     aim[1, 2] += self.adjust_y
-        #     # aim[0, 2] += self.dx
-        #     # aim[1, 2] += self.dy
-        #     self.mir_toks = [toks[k] for k in [2, 3, 5, 6]]
-        #     self.mir_script += ' '.join(self.mir_toks) + '\n'
-        #     self.afm = aim
-        #     # self.snr = np.array([])
-        #     snr_list.append(float(toks[0][0:-1]))
-        #     return self.afm
-        # else:
+            toks = swim_output[0].replace('(', ' ').replace(')', ' ').strip().split()
+            # print(f""
+            #       # f"\n\n{toks}\n"
+            #       # f"2: {toks[2]}\n"
+            #       # f"3: {toks[3]}\n"
+            #       # f"4: {toks[4]}\n"
+            #       f"5: {toks[5]}\n"
+            #       f"6: {toks[6]}\n")
+            self.dx = float(toks[8])
+            self.dy = float(toks[9])
+            aim = copy.deepcopy(self.afm)
+            # aim[0, 2] += self.dx
+            # aim[1, 2] += self.dy
+            aim[0, 2] += float(toks[5]) - self.cx
+            aim[1, 2] += float(toks[6]) - self.cy
+            self.afm = aim
+            self.snr = np.array([])
+            snr_list.append(float(toks[0][0:-1]))
+            if self.recipe.index == 143:
+                print(f"Returning afm: {self.afm}")
+            return self.afm
+
+        else:
             # loop over SWIM output to build the MIR script:
 
-        for i,l in enumerate(swim_output):
-            toks = l.replace('(', ' ').replace(')', ' ').strip().split()
-            logger.critical(f"SWIM output tokens, line {i}: {str(toks)}")
-            self.mir_toks[i] = str(toks)
-            try:
+            for i,l in enumerate(swim_output):
+                toks = l.replace('(', ' ').replace(')', ' ').strip().split()
+                logger.critical(f"SWIM output tokens, line {i}: {str(toks)}")
+                self.mir_toks[i] = str(toks)
                 mir_toks = [toks[k] for k in [2, 3, 5, 6]]
-            except:
-                print_exception(
-                    extra=f"#{self.recipe.index}\n"
-                          f"mir toks are: {str(toks)}\n"
-                          f"swim_output: {swim_output}"
-                )
-            self.mir_script += ' '.join(mir_toks) + '\n'
-            snr_list.append(float(toks[0][0:-1]))
+                self.mir_script += ' '.join(mir_toks) + '\n'
+                snr_list.append(float(toks[0][0:-1]))
 
-        self.mir_script += 'R\n'
-        t0 = time.time()
-        out, err = run_command(
-            self.recipe.mir_c,
-            cmd_input=self.mir_script,
-            desc=f'MIR compose affine',
-        )
-        self.t_mir = time.time() - t0
-        self.mir_out_lines = out.strip().split('\n')
-        self.mir_err_lines = err.strip().split('\n')
-        aim = np.eye(2, 3, dtype=np.float32)
-        _afm = np.eye(2, 3, dtype=np.float32)
-        for line in self.mir_out_lines:
-            toks = line.strip().split()
-            if (toks[0] == 'AI'):
-                aim[0, 0] = float(toks[1])
-                aim[0, 1] = float(toks[2])
-                aim[0, 2] = float(toks[3]) + self.swim_drift
-                aim[1, 0] = float(toks[4])
-                aim[1, 1] = float(toks[5])
-                aim[1, 2] = float(toks[6]) + self.swim_drift
-            if (toks[0] == 'AF'):
-                _afm[0, 0] = float(toks[1])
-                _afm[0, 1] = float(toks[2])
-                _afm[0, 2] = float(toks[3]) + self.swim_drift
-                _afm[1, 0] = float(toks[4])
-                _afm[1, 1] = float(toks[5])
-                _afm[1, 2] = float(toks[6]) + self.swim_drift
-        self._afm = _afm
-        # self.afm = _afm
-        self.afm = aim
-        self.snr = np.array(snr_list)
-        return self.afm
+            self.mir_script += 'R\n'
+            t0 = time.time()
+            out, err = run_command(
+                self.recipe.mir_c,
+                cmd_input=self.mir_script,
+                desc=f'MIR compose affine',
+            )
+            self.t_mir = time.time() - t0
+            self.mir_out_lines = out.strip().split('\n')
+            self.mir_err_lines = err.strip().split('\n')
+            aim = np.eye(2, 3, dtype=np.float32)
+            for line in self.mir_out_lines:
+                toks = line.strip().split()
+                if (toks[0] == 'AI'):
+                    aim[0, 0] = float(toks[1])
+                    aim[0, 1] = float(toks[2])
+                    aim[0, 2] = float(toks[3]) + self.swim_drift
+                    aim[1, 0] = float(toks[4])
+                    aim[1, 1] = float(toks[5])
+                    aim[1, 2] = float(toks[6]) + self.swim_drift
+            self.afm = aim
+            self.snr = np.array(snr_list)
+            return self.afm
 
 
     def run_manual_mir(self):
@@ -762,7 +757,6 @@ class align_ingredient:
             f'\n==========\nManual MIR script:\n{mir_script_mp}\n'
             f'stdout >>\n{mir_mp_out_lines}\nstderr >>\n{mir_mp_err_lines}')
         afm = np.eye(2, 3, dtype=np.float32)
-        _afm = np.eye(2, 3, dtype=np.float32)
         self.mir_out_lines = mir_mp_out_lines
         for line in mir_mp_out_lines:
             toks = line.strip().split()
@@ -773,15 +767,6 @@ class align_ingredient:
                 afm[1, 0] = float(toks[4])
                 afm[1, 1] = float(toks[5])
                 afm[1, 2] = float(toks[6])
-            if (toks[0] == 'AF'):
-                _afm[0, 0] = float(toks[1])
-                _afm[0, 1] = float(toks[2])
-                _afm[0, 2] = float(toks[3])
-                _afm[1, 0] = float(toks[4])
-                _afm[1, 1] = float(toks[5])
-                _afm[1, 2] = float(toks[6])
-        self._afm = _afm
-        # self.afm = _afm
         self.afm = afm
         self.snr = np.zeros(len(self.psta[0]))
         return self.afm
@@ -790,20 +775,19 @@ class align_ingredient:
     def reduce_matches(self):
         tnLogger = logging.getLogger('tnLogger')
         tnLogger.critical("Reducing Matches...")
-
         src = self.recipe.dir_tmp
         od = self.recipe.matches_dir
-
         #Special handling since they are variable in # and never 1:1 with project files
         fn, ext = os.path.splitext(self.recipe.ss['path'])
         method = self.recipe.method
-        od_pattern = os.path.join(od, '%s_%s_[tk]_%d%s' % (fn, method, self.recipe.index, ext))
+        od_pattern = os.path.join(od, '%s_%s_[tk]_%d%s'
+                                      's' % (fn, method, self.recipe.index, ext))
 
-        tnLogger.critical(f"src         = {src}")
-        tnLogger.critical(f"fn          = {fn}")
-        tnLogger.critical(f"od          = {od}")
-        tnLogger.critical(f"method      = {od}")
-        tnLogger.critical(f"od_pattern  = {od_pattern}")
+        tnLogger.critical(f"\nsrc         = {src}\n"
+                          f"fn          = {fn}\n"
+                          f"od          = {od}\n"
+                          f"method      = {od}\n"
+                          f"od_pattern  = {od_pattern}")
 
         for tn in glob.glob(od_pattern):
             logger.info(f'Removing {tn}...')
@@ -837,7 +821,7 @@ class align_ingredient:
             except:
                 print_exception()
 
-    def generate_output(self):
+    def transform(self):
 
         ifp = self.recipe.ss['path_thumb_src']
         ofd = self.recipe.ss['wd']

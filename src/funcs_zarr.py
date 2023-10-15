@@ -64,7 +64,7 @@ def get_zarr_tensor(zarr_path):
     # else:
     #     total_bytes_limit = 6_000_000_000
     # total_bytes_limit = (20_000_000_000, 200_000_000_000_000)['.tacc.utexas.edu' in platform.node()]
-    total_bytes_limit = 1_000_000_000 #0726+
+    total_bytes_limit = 1_000_000_000_000 #0726+
     future = ts.open({
         'dtype': 'uint8',
         'driver': 'zarr',
@@ -75,8 +75,8 @@ def get_zarr_tensor(zarr_path):
         },
         'context': {
             'cache_pool': {'total_bytes_limit': total_bytes_limit},
-            'data_copy_concurrency': {'limit': 512}, #0726+
-            'file_io_concurrency': {'limit': 512}, #0726+
+            # 'data_copy_concurrency': {'limit': 512}, #0726+
+            # 'file_io_concurrency': {'limit': 512}, #0726+
         },
         # 'recheck_cached_data': 'open',
         'recheck_cached_data': True, #0726 revert to default (True)

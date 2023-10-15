@@ -1222,8 +1222,6 @@ class MainWindow(QMainWindow):
 
         # self.shutdownNeuroglancer() #1013-
 
-        self.tell(f'Aligning {len(indexes)} pairs')
-        self.tell(f'Regenerating {len(indexes)} images')
         self.tell("%s Affines (%s)..." % (('Initializing', 'Refining')[dm.isRefinement()], dm.level_pretty(s=scale)))
         # logger.info(f'Aligning indexes:{indexes}, {self.dm.level_pretty(scale)}...')
         self._snr_before = self.dm.snr_list()
@@ -1809,7 +1807,10 @@ class MainWindow(QMainWindow):
                     else:
                         setData('state,neuroglancer,layout', 'xy')
 
-                    self.pt.project_table.veil()
+                    # self.pt.cmbViewerScale.setCurrentIndex(self.dm.levels.index(self.dm.level))
+                    if self.pt.wTabs.currentIndex() == 3:
+                        self.pt.project_table.initTableData()
+                    # self.pt.project_table.veil()
                     self.alignAllAction.setText(f"Align + Generate All: Level {self.dm.scale}")
                     self.updateEnabledButtons()
                     self.dataUpdateWidgets()

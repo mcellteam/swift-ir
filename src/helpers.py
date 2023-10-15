@@ -683,12 +683,12 @@ def show_status_report(results, dt):
         else:
             cfg.main_window.hud(f'  Queued       = {results[1]}')
         cfg.main_window.err(f'  Failed       = {results[2]}')
-        cfg.main_window.hud(f'  Time Elapsed = {dt:.4g}level')
+        cfg.main_window.hud(f'  Time Elapsed = {dt:.4g}s')
     else:
         cfg.main_window.hud(f'  Succeeded    = {results[0]}')
         cfg.main_window.hud(f'  Queued       = {results[1]}')
         cfg.main_window.hud(f'  Failed       = {results[2]}')
-        cfg.main_window.hud(f'  Time Elapsed = {dt:.4g}level')
+        cfg.main_window.hud(f'  Time Elapsed = {dt:.4g}s')
 
 
 def get_scale_key(scale_val) -> str:

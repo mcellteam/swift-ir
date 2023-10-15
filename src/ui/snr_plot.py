@@ -564,7 +564,8 @@ class SnrPlot(QWidget):
         # self.snr_points[level].sigClicked.connect(lambda: self.onSnrClick2(level))
         self.snr_points[s].sigClicked.connect(self.onSnrClick)
 
-        if self.dock:
+        # if self.dock:
+        if 0:
 
             # logger.critical("Plotting cafm no comports data points...")
             self.no_comport_cafm_points[s] = pg.ScatterPlotItem(
