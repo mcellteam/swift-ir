@@ -44,8 +44,9 @@ logger = logging.getLogger(__name__)
 
 class OpenProject(QWidget):
 
-    def __init__(self, **kwargs):
+    def __init__(self, parent, **kwargs):
         super().__init__(**kwargs)
+        self.parent = parent
         self.setMinimumHeight(100)
         self.filebrowser = FileBrowser(parent=self)
         self.filebrowser.setContentsMargins(2,2,2,2)
@@ -496,7 +497,8 @@ class OpenProject(QWidget):
         # open(os.path.join(logpath, 'exceptions.log'), 'a').close()
 
         cal_grid_path = None
-        if self.cbCalGrid.isChecked():
+        has_cal_grid = self.cbCalGrid.isChecked()
+        if has_cal_grid:
             logger.info('Linking to calibration grid image...')
             cal_grid_path = self._NEW_IMAGES_PATHS[0]
             cal_grid_name = os.path.basename(cal_grid_path)
@@ -523,6 +525,7 @@ class OpenProject(QWidget):
 
         t0 = time.time()
         logger.info('Symbolically linking full scale images...')
+        self.parent.tell('Symbolically linking full scale images...')
         for img in self._NEW_IMAGES_PATHS:
             fn = img
             ofn = os.path.join(out, 'tiff', 's1', os.path.split(fn)[1])
