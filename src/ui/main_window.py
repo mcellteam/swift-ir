@@ -1849,10 +1849,10 @@ class MainWindow(QMainWindow):
         logger.info(f'\n\nLoading project:\n%s\n' % os.path.basename(self.dm.data_location))
         self.tell("Loading Project '%s'..." % self.dm.data_location)
         self.alignAllAction.setText(f"Align + Generate All: Level {self.dm.scale}")
-        if switch_to:
-            if self.dm.is_aligned():
-                self.setdw_snr(True)
-                self.setdw_matches(True)
+        # if switch_to:
+        #     if self.dm.is_aligned():
+                # self.setdw_snr(True)
+                # self.setdw_matches(True)
             # self.setdw_thumbs(True)
             # self.setdw_matches(False)
         self.hud.done()
