@@ -251,9 +251,9 @@ class ProjectTab(QWidget):
             logger.warning(f"[{caller}] UNABLE TO INITIALIZE NEUROGLANCER AT THIS TIME... BUSY WORKING!")
             return
 
-        self.parent.set_status('Initializing Neuroglancer...')
-        if DEV:
-            logger.critical(f"[DEV][{caller_name()}] Initializing Neuroglancer...")
+        # self.parent.set_status('Initializing Neuroglancer...')
+        # if DEV:
+        #     logger.critical(f"[DEV][{caller_name()}] Initializing Neuroglancer...")
 
         if self.parent._isOpenProjTab():
             # self.parent.pm.updateCombos()

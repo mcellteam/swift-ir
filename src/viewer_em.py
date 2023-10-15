@@ -546,6 +546,7 @@ class EMViewer(AbstractEMViewer):
             s.layout.type = nglayout
             # s.gpu_memory_limit = -1
             s.system_memory_limit = -1
+            s.concurrent_downloads = 10000
             # s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
             # if self.dm.lvl() < 6:
             #     s.show_scale_bar = True
