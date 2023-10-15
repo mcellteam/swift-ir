@@ -162,8 +162,8 @@ class ImportImagesDialog(QFileDialog):
             color: #141414; 
             padding: 2px;
         """)
-        self.cb_cal_grid = QCheckBox('Image 0 is calibration grid')
-        self.cb_cal_grid.setChecked(False)
+        # self.cb_cal_grid = QCheckBox('Image 0 is calibration grid')
+        # self.cb_cal_grid.setChecked(False)
 
         self.cb_display_thumbs = QCheckBox('Display Thumbnails')
         self.cb_display_thumbs.setChecked(True)
@@ -182,7 +182,7 @@ class ImportImagesDialog(QFileDialog):
         # self.extra_layout.addWidget(self.cbCalGrid, alignment=Qt.AlignRight)
         self.layout().addLayout(self.box, 1, 3, 1, 1)
         self.layout().addLayout(self.extra_layout, 3, 3, 1, 1)
-        self.layout().addLayout(HBL(self.cb_cal_grid), 4, 0, 1, 3)
+        # self.layout().addLayout(HBL(self.cb_cal_grid), 4, 0, 1, 3)
         self.layout().setContentsMargins(2,2,2,2)
         self.layout().setHorizontalSpacing(2)
         self.layout().setVerticalSpacing(0)
@@ -404,15 +404,6 @@ class ConfigAppDialog(QDialog):
     def initUI(self):
         layout = QVBoxLayout()
         self.setLayout(layout)
-
-        # tsWidget = QWidget()
-        # tsLayout = QHBoxLayout()
-        # tsLayout.setContentsMargins(4, 2, 4, 2)
-        # tsWidget.setLayout(tsLayout)
-        # self.tsCheckbox = QCheckBox()
-        # self.tsCheckbox.setChecked(cfg.USE_TENSORSTORE)
-        # tsLayout.addWidget(QLabel('Enable Tensorstore Backend: '))
-        # tsLayout.addWidget(self.tsCheckbox, alignment=Qt.AlignRight)
 
         headlessWidget = QWidget()
         headlessLayout = QHBoxLayout()
@@ -804,11 +795,6 @@ class NewConfigureProjectDialog(QDialog):
         cfg.mw.gb_config.setFixedWidth(400)
         cfg.mw.gb_config.setFixedHeight(320)
         self.fl_config = QFormLayout()
-        # self.fl_config.setVerticalSpacing(4)
-        # self.fl_config.setHorizontalSpacing(6)
-        # self.fl_config.setFormAlignment(Qt.AlignmentFlag.AlignRight)
-        # self.fl_config.setSpacing(2)
-        # self.fl_config.setContentsMargins(0, 0, 0, 0)
         self.fl_config.addRow('Scale Factors:', self.scales_input)
         self.fl_config.addWidget(self.scale_instructions_label)
         self.fl_config.addRow('Voxel Size (nm):', self.resolution_widget)
@@ -818,18 +804,10 @@ class NewConfigureProjectDialog(QDialog):
         self.fl_config.addRow('Bounding Box:', self.bounding_rectangle_checkbox)
         cfg.mw.gb_config.setLayout(self.fl_config)
 
-
         hbl = QHBoxLayout()
-        # hbl.addWidget(cfg.mw.gb_config, alignment=Qt.AlignHCenter | Qt.AlignTop)
-        # hbl.addWidget(cfg.mw.gb_storage_options, alignment=Qt.AlignHCenter | Qt.AlignTop)
         hbl.addWidget(cfg.mw.gb_config, alignment=Qt.AlignLeft | Qt.AlignTop)
         hbl.addWidget(cfg.mw.gb_storage_options, alignment=Qt.AlignLeft | Qt.AlignTop)
         hbl.addWidget(ExpandingWidget(self))
-        # if cfg.data['data']['has_cal_grid']:
-        #     path = cfg.data['data']['cal_grid_path']
-        #     tn = ThumbnailFast(self, path)
-        #     hbl.addWidget(tn, alignment=Qt.AlignHCenter | Qt.AlignTop)
-
 
         w = QWidget()
         w.setLayout(hbl)
