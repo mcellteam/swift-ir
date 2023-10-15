@@ -2195,6 +2195,7 @@ class DataModel:
         self['level_data'][cur_level]['output_settings'] = copy.deepcopy(
             self['level_data'][prev_level]['output_settings'])
 
+
         # Todo need to add 'Align All' functionality for manual alignment preferences (region size)
         self['level_data'][cur_level]['method_presets'] = copy.deepcopy(
             self['level_data'][prev_level]['method_presets'])
