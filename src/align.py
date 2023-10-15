@@ -292,7 +292,12 @@ class AlignWorker(QObject):
                 if os.path.exists(p):
                     dm['stack'][index]['levels'][scale]['initialized'] = True
                 else:
-                    logger.warning(f"Failed to initialize [{index}] '{p}'")
+                    logger.warning(f"Failed to generate [{index}] '{p}'")
+                    try:
+                        logger.warning(f"  afm: {r['affine_matrix']}")
+                    except:
+                        logger.warning("No Affine")
+                    continue
             if r['complete']:
                 afm = r['affine_matrix']
                 # afm = r['_affine_matrix']
