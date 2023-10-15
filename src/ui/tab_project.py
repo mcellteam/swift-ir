@@ -2530,8 +2530,8 @@ class ProjectTab(QWidget):
             self.bSWIM.hide()
             self.bSaveSettings.hide()
             self.checkboxes.hide()
-        if hasattr(self, 'editorViewer'):
-            self.editorViewer.drawSWIMwindow() #1009+
+        # if hasattr(self, 'editorViewer'):
+        #     self.editorViewer.drawSWIMwindow() #1009+
 
 
     # def updateEnabledButtonsMA(self):
@@ -2559,6 +2559,7 @@ class ProjectTab(QWidget):
     #             realign_tip = 'SWIM alignment requires at least three regions to form an affine'
     #
     #     self.parent._btn_alignOne.setToolTip('\n'.join(textwrap.wrap(realign_tip, width=35)))
+
 
     def update_match_list_widgets(self):
         #Innocent
