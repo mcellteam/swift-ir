@@ -1222,13 +1222,10 @@ class MainWindow(QMainWindow):
             # time.sleep(2)
             del self._alignworker
 
-        self.shutdownNeuroglancer() #1013-
-
         self.tell("%s Affines (%s)..." % (('Initializing', 'Refining')[dm.isRefinement()], dm.level_pretty(s=scale)))
         # logger.info(f'Aligning indexes:{indexes}, {self.dm.level_pretty(scale)}...')
         self._snr_before = self.dm.snr_list()
 
-        # self.shutdownNeuroglancer()
         logger.info("Setting mp debugging...")
         if cfg.DEBUG_MP:
             # if 1:
