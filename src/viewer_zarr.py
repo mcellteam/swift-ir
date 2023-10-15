@@ -105,7 +105,7 @@ class ZarrViewer(neuroglancer.Viewer):
 
         with self.txn() as s:
             s.layout.type = layout
-            s.gpu_memory_limit = -1
+            # s.gpu_memory_limit = -1
             s.system_memory_limit = -1
             s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
             s.show_axis_lines = getOpt('neuroglancer,SHOW_AXIS_LINES')
