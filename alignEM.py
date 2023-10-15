@@ -184,8 +184,8 @@ def main():
     # logger.critical('new cwd: %level' % os.getcwd())
 
     logger.info('Setting Qt.AA_ShareOpenGLContexts')
-    QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created. #2230-
-    QCoreApplication.setAttribute(Qt.AA_UseOpenGLES)
+    # QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) #1015- # must be set before QCoreApplication is created. #2230-
+    # QCoreApplication.setAttribute(Qt.AA_UseOpenGLES) #1015-
 
     QCoreApplication.setApplicationName("alignEM")
 
