@@ -165,27 +165,16 @@ class AlignWorker(QObject):
 
             wd = dm.ssDir(s=scale, l=i)  # write directory
             os.makedirs(wd, exist_ok=True)
-            wp = os.path.join(wd, 'swim_settings.json')  # write path
-            with open(wp, 'w') as f:
-                jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
-                f.write(jde.encode(dm.swim_settings(s=scale, l=i)))
 
-            if not ss['include']:
-                continue
-
-            # if (len(indexes) == len(dm)) or (ss['include'] and (i != first_unskipped)):
-            # if dm['stack'][i]['levels'][scale]['initialized']:
-
-
-            # if i != first_unskipped:
-            #     tasks.append(copy.deepcopy(ss))
-            #     # tasks.append(copy.deepcopy(ss))
-            # else:
-            #     logger.info(f"EXCLUDING section #{i}")
-            if self.dm.ht.haskey(self.dm.swim_settings(s=scale, l=i)):
-                logger.info(f"[{i}] Cache hit!")
-            else:
-                tasks.append(copy.deepcopy(ss))
+            if ss['include']:
+                if not self.dm.ht.haskey(self.dm.swim_settings(s=scale, l=i)):
+                    wp = os.path.join(wd, 'swim_settings.json')  # write path
+                    with open(wp, 'w') as f:
+                        jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
+                        f.write(jde.encode(dm.swim_settings(s=scale, l=i)))
+                    tasks.append(copy.deepcopy(ss))
+                else:
+                    logger.info(f"[{i}] Cache hit!")
         self.hudMessage.emit(f'Batch multiprocessing {len(tasks)} alignment jobs...')
 
         # delete_correlation_signals(dm=dm, scale=scale, indexes=indexes)
@@ -231,9 +220,8 @@ class AlignWorker(QObject):
                 'data_location': dm.data_location,
             }
 
-            # logger.info(f'max # workers: {cpus}')
+            cpus=cfg.TACC_MAX_CPUS
             logger.info(f'max # workers: {cpus}')
-            cpus=16
             with ThreadPoolExecutor(max_workers=cpus) as pool:
                 for i, result in enumerate(tqdm.tqdm(pool.map(run_recipe, tasks),
                                                      total=len(tasks),
