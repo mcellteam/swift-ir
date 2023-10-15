@@ -685,7 +685,6 @@ class MainWindow(QMainWindow):
                     self.pt.msList[i].set_no_image()
 
             method = self.dm.method(l=z)
-            logger.info(f"method: {method}")
             # if method == 'grid_custom':
             if method == 'grid':
                 regions = self.dm.quadrants
@@ -1195,7 +1194,7 @@ class MainWindow(QMainWindow):
             logger.warning("Not ready to align yet!")
             return
 
-        self.set_status('Aligning...')
+        self.tell('Aligning...')
         logger.critical('')
         scale = dm.scale
 
