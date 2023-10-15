@@ -800,7 +800,6 @@ class OpenProject(QWidget):
 
     def loadAlignmentCombo(self):
         logger.info('')
-        self.cmbSelectAlignment.clear()
         cur_items = [self.cmbSelectAlignment.itemText(i) for i in range(self.cmbSelectAlignment.count())]
         if sorted(cur_items) == sorted(self._watchAlignments.known):
             logger.info(".alignments combobox is current!"); return
