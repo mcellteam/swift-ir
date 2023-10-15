@@ -1251,6 +1251,8 @@ class MainWindow(QMainWindow):
         self._alignworker.initPbar.connect(self.resetPbar)
         self._alignworker.hudMessage.connect(self.tell)
         self._alignworker.hudWarning.connect(self.warn)
+
+        self._alignworker.finished.connect(lambda: print("Complete"))
         self._alignworker.finished.connect(self._alignThread.quit)
         self._alignworker.finished.connect(self._autosave)
         self._alignworker.finished.connect(lambda: self.wPbar.hide())

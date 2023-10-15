@@ -11,8 +11,8 @@ from qtconsole.inprocess import QtInProcessKernelManager
 from qtpy.QtWidgets import QApplication, QSizePolicy, QWidget, QVBoxLayout
 from qtpy.QtCore import Qt, QSize
 from qtpy.QtGui import QFont
-from src.helpers import is_tacc
-import src.config as cfg
+# from src.helpers import is_tacc
+# import src.config as cfg
 
 class PythonConsole(RichJupyterWidget):
 
@@ -109,10 +109,10 @@ class PythonConsoleWidget(QWidget):
         self.setStyleSheet("font-family: 'Ubuntu Mono', 'Andale Mono', monospace;"
                            "font-size: 9px;")
 
-    def sizeHint(self):
-        # return self.minimumSizeHint()
-        width = int(cfg.main_window.width() / 2) - 10
-        return QSize(width, 90)
+    # def sizeHint(self):
+    #     # return self.minimumSizeHint()
+    #     width = int(cfg.main_window.width() / 2) - 10
+    #     return QSize(width, 90)
 
 
 
