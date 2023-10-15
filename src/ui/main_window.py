@@ -850,7 +850,7 @@ class MainWindow(QMainWindow):
             self.dwMatches.update()
 
     def callbackDwVisibilityChanged(self):
-        logger.info('')
+        logger.debug('')
         # caller = inspect.stack()[1].function
         # logger.info(f'[{caller}] [{caller_name()}] {self.dwPython.isVisible()} {self.dw_hud.isVisible()} {self.dwNotes.isVisible()}')
         self.tbbPython.setChecked(self.dwPython.isVisible())
