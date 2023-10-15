@@ -295,7 +295,6 @@ class ProjectTab(QWidget):
                 self.viewer.signals.zoomChanged.connect(self.slot_zoom_changed)
                 # logger.info(f"Local Volume:\n{cfg.LV.info()}")
 
-        self.parent.set_status('')
         self.parent.hud.done()
         # self.setZmag(10)
         # QApplication.processEvents() #1009-
@@ -395,7 +394,7 @@ class ProjectTab(QWidget):
         self.editorWebengine.setStyleSheet("background-color: #000000;")
         self.editorWebengine.page().setBackgroundColor(Qt.transparent) #0726+
         self.editorWebengine.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        setWebengineProperties(self.editorWebengine)
+        # setWebengineProperties(self.editorWebengine)
         self.editorWebengine.setMouseTracking(True)
         # self.editorWebengine.setFocusPolicy(Qt.NoFocus) #0726-
 
