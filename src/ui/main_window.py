@@ -1200,6 +1200,7 @@ class MainWindow(QMainWindow):
         self._saveProjectToFile(silently=True)
         logger.critical('')
         scale = dm.scale
+        self.shutdownNeuroglancer()
 
         if self._working == True:
             self.warn('Another Process is Already Running')
