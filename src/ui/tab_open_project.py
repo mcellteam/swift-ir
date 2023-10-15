@@ -311,6 +311,7 @@ class OpenProject(QWidget):
         self.leNameImages.setPalette(pal)
         self.leNameImages.textEdited.connect(self.updateImportImagesUI)
 
+        # self.bSelect = QPushButton("Select Images (TIFF)")
         self.bSelect = QPushButton("Select Images")
         self.bSelect.setCursor(QCursor(Qt.PointingHandCursor))
         self.bSelect.clicked.connect(self.selectImages)
