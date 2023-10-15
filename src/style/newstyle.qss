@@ -191,12 +191,12 @@ QProgressBar {
 }
 
 
-/*
+
 QProgressBar::chunk {
 	background-color: qlineargradient(spread:pad, x1:0.5, y1:0.7, x2:0.5, y2:0.3, stop:0 rgba(0, 200, 0, 255), stop:1 rgba(30, 230, 30, 255));
 	border-radius: 10px;
 }
-*/
+
 
 
 QDockWidget {
