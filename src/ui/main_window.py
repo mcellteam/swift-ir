@@ -1191,6 +1191,7 @@ class MainWindow(QMainWindow):
         ready = self.dm['level_data'][self.dm.scale]['alignment_ready']
         if not ready:
             logger.warning("Not ready to align yet!")
+            self.warn("Please pull settings before aligning (Edit Alignment > Pull Settings)")
             return
 
         self.tell('Aligning...')
