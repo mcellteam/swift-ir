@@ -121,7 +121,7 @@ class OpenProject(QWidget):
         self.bMinusImages.clicked.connect(self.onMinusImages)
 
         self.cmbLevel = QComboBox()
-        self.cmbLevel.setToolTip("Scale level")
+        self.cmbLevel.setToolTip("Scale Level")
         self.cmbLevel.setFixedSize(QSize(44, 18))
         self.cmbLevel.setCursor(QCursor(Qt.PointingHandCursor))
         self.cmbLevel.setFocusPolicy(Qt.NoFocus)

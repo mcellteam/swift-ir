@@ -89,8 +89,8 @@ git fetch
 git checkout remotes/origin/fb30_joel
 echo "Pulling changes..."
 git pull
-echo "Most recent commit:"
-git log -1
+#echo "Most recent commit:"
+#git log -1
 #python3 $WORK/swift-ir/alignEM.py
 
 if [ "$DEBUG" = "1" ] ; then
