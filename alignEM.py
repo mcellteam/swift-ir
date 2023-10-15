@@ -345,7 +345,7 @@ if __name__ == "__main__":
     #                                            '--enable-logging --log-level=3' % \
     #                                           cfg.QTWEBENGINE_RASTER_THREADS
     os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --no-sandbox --num-raster-threads=%s ' \
-                                               '--enable-logging --log-level=4' % \
+                                               '--enable-logging --log-level=3' % \
                                                cfg.QTWEBENGINE_RASTER_THREADS
     os.environ['OPENBLAS_NUM_THREADS'] = '1'
     # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
