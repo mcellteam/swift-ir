@@ -182,7 +182,7 @@ class GifPlayer(QWidget):
     def set_speed(self, val):
         # self.movie.stop()
         # self.movie.start()
-        logger.info(f'Setting animation speed: {val}')
+        # logger.info(f'Setting animation speed: {val}')
         self.movie.stop()
         cfg.preferences['gif_speed'] = val
         self.movie.setSpeed(val)

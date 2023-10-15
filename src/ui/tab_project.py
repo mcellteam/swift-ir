@@ -317,7 +317,7 @@ class ProjectTab(QWidget):
             logger.info(f"Layout changed! requested: {requested}")
         setData('state,neuroglancer,layout', requested)
         self.comboNgLayout.setCurrentText(requested)
-        self.parent.tell(f'Neuroglancer Layout (set from native NG controls): {requested}')
+        # self.parent.tell(f'Neuroglancer Layout (set from native NG controls): {requested}')
 
     def slot_zoom_changed(self, val):
         caller = inspect.stack()[1].function

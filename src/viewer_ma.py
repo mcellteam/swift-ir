@@ -641,7 +641,7 @@ class MAViewer(neuroglancer.Viewer):
         caller = inspect.stack()[1].function
         logger.info(f"[{caller}] Drawing SWIM windows...")
         method = self.dm.current_method
-
+        annotations = []
         if method == 'grid':
             logger.info('Method: SWIM Grid Alignment')
             # ww1x1 = tuple(self.dm.size1x1()) # full window width
@@ -659,7 +659,6 @@ class MAViewer(neuroglancer.Viewer):
             ww_y = ww2x2[1] - (24 // self.quality_lvl)
             z = self.index + 0.5
 
-            annotations = []
             for i, pt in enumerate(cps):
                 clr = colors[i]
                 a, b, c, d = self.getRect2(pt, ww_x, ww_y)
@@ -673,7 +672,6 @@ class MAViewer(neuroglancer.Viewer):
         elif method == 'manual':
             logger.info('Method: SWIM Match Region Alignment')
             self.restoreManAlignPts()
-            annotations = []
             #Todo add this functionality, make it configurable
             # if self.dm.current_method == 'manual_strict':
             #     ww_x = 16
