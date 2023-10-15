@@ -2227,6 +2227,7 @@ class DataModel:
                 # ss = copy.deepcopy(prev_settings)
                 # d['levels'][cur_level]['swim_settings']['img_size'] = self['images']['size_xy'][cur_level]
                 ss['init_afm'] = init_afm
+                ss['level'] = cur_level
                 mo = ss['method_opts']
                 method = mo['method']
                 if method == 'grid':
@@ -2255,7 +2256,6 @@ class DataModel:
             print_exception()
         else:
             self['level_data'][cur_level]['alignment_ready'] = True
-        logger.info(f"\n\n{pprint.pformat(self['stack'][i]['levels'][cur_level]['swim_settings'])}\n")
 
 
     def initializeStack(self, images_info, images_location, data_location):
