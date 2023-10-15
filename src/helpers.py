@@ -96,7 +96,7 @@ def update_meta():
 def getOpt(lookup):
     if isinstance(lookup, str):
         lookup = lookup.split(',')
-    return reduce(operator.getitem, lookup, cfg.settings)
+    return reduce(operator.getitem, lookup, cfg.preferences)
 
 
 def setOpt(lookup, val):
@@ -135,7 +135,7 @@ def count_widgets(name_or_type) -> int:
 
 def sanitizeSavedPaths():
     # logger.info("Sanitizing paths...")
-    # paths = cfg.settings['saved_paths']
+    # paths = cfg.preferences['saved_paths']
     # n_start = len(paths)
     # sanitized = []
     # for path in paths:
@@ -144,7 +144,7 @@ def sanitizeSavedPaths():
     # n_end = len(sanitized)
     # if n_start != n_end:
     #     logger.warning(f"{n_start - n_end} saved paths were found to be invalid and will be forgotten")
-    # cfg.settings['saved_paths'] = sanitized
+    # cfg.preferences['saved_paths'] = sanitized
     pass
 
 def delete_recursive(dir, keep_core_dirs=False):
@@ -198,58 +198,58 @@ def update_preferences_model():
         DEFAULT_CONTENT_ROOT = os.path.join(os.getenv('SCRATCH', "SCRATCH not found"), 'alignem_data')
     else:
         DEFAULT_CONTENT_ROOT = os.path.join(os.path.expanduser('~'), 'alignem_data')
-    cfg.settings.pop('search_paths', None)
-    if 'state' in cfg.settings:
-        cfg.settings.pop('state', None)
-    if 'ui' in cfg.settings:
-        cfg.settings.pop('ui', None)
-    cfg.settings.pop('search_paths', None)
+    cfg.preferences.pop('search_paths', None)
+    if 'state' in cfg.preferences:
+        cfg.preferences.pop('state', None)
+    if 'ui' in cfg.preferences:
+        cfg.preferences.pop('ui', None)
+    cfg.preferences.pop('search_paths', None)
 
-    cfg.settings.setdefault('neuroglancer', {})
-    cfg.settings['neuroglancer'].setdefault('SHOW_UI_CONTROLS', False)
-    cfg.settings['neuroglancer'].setdefault('USE_CUSTOM_BACKGROUND', False)
-    cfg.settings['neuroglancer'].setdefault('CUSTOM_BACKGROUND_COLOR', None)
-    cfg.settings['neuroglancer'].setdefault('USE_DEFAULT_DARK_BACKGROUND', True)
-    cfg.settings['neuroglancer'].setdefault('SHOW_YELLOW_FRAME', False)
-    cfg.settings['neuroglancer'].setdefault('SHOW_SCALE_BAR', False)
-    cfg.settings['neuroglancer'].setdefault('SHOW_AXIS_LINES', False)
-    cfg.settings['neuroglancer'].setdefault('MATCHPOINT_MARKER_SIZE', 8)
-    cfg.settings['neuroglancer'].setdefault('MATCHPOINT_MARKER_LINEWEIGHT', 3)
-    cfg.settings['neuroglancer'].setdefault('SHOW_SWIM_WINDOW', True)
-    cfg.settings['neuroglancer'].setdefault('SHOW_HUD_OVERLAY', True)
-    cfg.settings['neuroglancer'].setdefault('NEUTRAL_CONTRAST_MODE', False)
+    cfg.preferences.setdefault('neuroglancer', {})
+    cfg.preferences['neuroglancer'].setdefault('SHOW_UI_CONTROLS', False)
+    cfg.preferences['neuroglancer'].setdefault('USE_CUSTOM_BACKGROUND', False)
+    cfg.preferences['neuroglancer'].setdefault('CUSTOM_BACKGROUND_COLOR', None)
+    cfg.preferences['neuroglancer'].setdefault('USE_DEFAULT_DARK_BACKGROUND', True)
+    cfg.preferences['neuroglancer'].setdefault('SHOW_YELLOW_FRAME', False)
+    cfg.preferences['neuroglancer'].setdefault('SHOW_SCALE_BAR', False)
+    cfg.preferences['neuroglancer'].setdefault('SHOW_AXIS_LINES', False)
+    cfg.preferences['neuroglancer'].setdefault('MATCHPOINT_MARKER_SIZE', 8)
+    cfg.preferences['neuroglancer'].setdefault('MATCHPOINT_MARKER_LINEWEIGHT', 3)
+    cfg.preferences['neuroglancer'].setdefault('SHOW_SWIM_WINDOW', True)
+    cfg.preferences['neuroglancer'].setdefault('SHOW_HUD_OVERLAY', True)
+    cfg.preferences['neuroglancer'].setdefault('NEUTRAL_CONTRAST_MODE', False)
 
-    cfg.settings.setdefault('locations', [])
-    cfg.settings.setdefault('alignments', [])
-    cfg.settings.setdefault('gif_speed', 50)
+    cfg.preferences.setdefault('locations', [])
+    cfg.preferences.setdefault('alignments', [])
+    cfg.preferences.setdefault('gif_speed', 50)
 
-    cfg.settings.setdefault('images_combo_text', None)
-    cfg.settings.setdefault('alignment_combo_text', None)
-    cfg.settings.setdefault('notes', {})
-    cfg.settings['notes'].setdefault('global_notes', '')
+    cfg.preferences.setdefault('images_combo_text', None)
+    cfg.preferences.setdefault('alignment_combo_text', None)
+    cfg.preferences.setdefault('notes', {})
+    cfg.preferences['notes'].setdefault('global_notes', '')
 
-    cfg.settings.setdefault('content_root', DEFAULT_CONTENT_ROOT)
+    cfg.preferences.setdefault('content_root', DEFAULT_CONTENT_ROOT)
     if not os.path.isdir(DEFAULT_CONTENT_ROOT):
         logger.info(f"Making content root directory: {DEFAULT_CONTENT_ROOT}")
         os.makedirs(DEFAULT_CONTENT_ROOT, exist_ok=True)
 
     p = os.path.join(DEFAULT_CONTENT_ROOT, 'images')
-    cfg.settings.setdefault('images_root', p)
+    cfg.preferences.setdefault('images_root', p)
     if not os.path.isdir(p):
         logger.info(f"Making default alignments directory: {p}")
         os.makedirs(p, exist_ok=True)
 
     p = os.path.join(DEFAULT_CONTENT_ROOT, 'alignments')
-    cfg.settings.setdefault('alignments_root', p)
+    cfg.preferences.setdefault('alignments_root', p)
     if not os.path.isdir(p):
         os.makedirs(p, exist_ok=True)
 
-    cfg.settings.setdefault('images_search_paths', [os.path.join(DEFAULT_CONTENT_ROOT, 'images')])
-    cfg.settings.setdefault('alignments_search_paths', [os.path.join(DEFAULT_CONTENT_ROOT, 'alignments')])
-    cfg.settings.setdefault('current_filebrowser_root', DEFAULT_CONTENT_ROOT)
-    cfg.settings.setdefault('previous_filebrowser_root', DEFAULT_CONTENT_ROOT)
+    cfg.preferences.setdefault('images_search_paths', [os.path.join(DEFAULT_CONTENT_ROOT, 'images')])
+    cfg.preferences.setdefault('alignments_search_paths', [os.path.join(DEFAULT_CONTENT_ROOT, 'alignments')])
+    cfg.preferences.setdefault('current_filebrowser_root', DEFAULT_CONTENT_ROOT)
+    cfg.preferences.setdefault('previous_filebrowser_root', DEFAULT_CONTENT_ROOT)
 
-    cfg.settings.setdefault('saved_paths', [
+    cfg.preferences.setdefault('saved_paths', [
         os.path.join(DEFAULT_CONTENT_ROOT, 'images'),
         os.path.join(DEFAULT_CONTENT_ROOT, 'alignments'),
     ])
@@ -263,11 +263,11 @@ def initialize_user_preferences():
         if os.path.exists(userpreferencespath):
             logger.info(f"Loading user preferences from '{userpreferencespath}'...")
             with open(userpreferencespath, 'r') as f:
-                cfg.settings = json.load(f)
+                cfg.preferences = json.load(f)
         else:
             logger.critical(f'Creating user preferences from defaults...')
             open(userpreferencespath, 'a').close()
-            cfg.settings = {}
+            cfg.preferences = {}
     except:
         print_exception()
 
@@ -278,7 +278,7 @@ def initialize_user_preferences():
     '''save user preferences to file'''
     try:
         f = open(userpreferencespath, 'w')
-        json.dump(cfg.settings, f, indent=2)
+        json.dump(cfg.preferences, f, indent=2)
         f.close()
     except:
         print_exception()
@@ -289,7 +289,7 @@ def reset_user_preferences():
     userpreferencespath = os.path.join(os.path.expanduser('~'), '.swiftrc')
     if os.path.exists(userpreferencespath):
         os.remove(userpreferencespath)
-    cfg.settings = {}
+    cfg.preferences = {}
     update_preferences_model()
 
 
@@ -352,7 +352,7 @@ def cleanup_project_list(paths: list) -> list:
 #     logger.info('>>>> get_project_list >>>>')
 #     try:
 #         # convert_projects_model()
-#         return cfg.settings['projects']
+#         return cfg.preferences['projects']
 #     except:
 #         print_exception()
 #     finally:
@@ -370,7 +370,7 @@ def convert_projects_model():
             projectpaths = [line.rstrip() for line in f]
 
             logger.critical(f"Projects found in old file: {projectpaths}")
-            cfg.settings['projects'] = projectpaths
+            cfg.preferences['projects'] = projectpaths
             # cfg.mw.saveUserPreferences()
             try:
                 os.remove(userprojectspath)
@@ -389,14 +389,14 @@ def configure_project_paths():
         #     lines = f.readlines()
         # paths = [line.rstrip() for line in lines]
         # convert_projects_model()
-        paths = cfg.settings['projects']
+        paths = cfg.preferences['projects']
         logger.critical(f'paths: {paths}')
         cleanpaths = cleanup_project_list(paths)
         logger.critical(f'cleanpaths: {cleanpaths}')
         # with open(userprojectspath, 'w') as f:
         #     for p in cleanpaths:
         #         f.write(f"{p}\n")
-        cfg.settings['projects'] = cleanpaths
+        cfg.preferences['projects'] = cleanpaths
         if cleanpaths:
             logger.info('alignEM knows about the following projects:\n\n'
                         '  %s\n' % '\n  '.join(cleanpaths))

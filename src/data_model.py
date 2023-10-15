@@ -1667,7 +1667,7 @@ class DataModel:
 
 
     def get_user_zarr_settings(self):
-        '''Returns user settings for cname, clevel, chunkshape as tuple (in that order).'''
+        '''Returns user preferences for cname, clevel, chunkshape as tuple (in that order).'''
         return (self.cname, self.clevel, self.chunkshape())
 
 
@@ -1762,14 +1762,14 @@ class DataModel:
 
 
     def swim_settings(self, s=None, l=None):
-        '''Returns SWIM settings as a hashable dictionary'''
+        '''Returns SWIM preferences as a hashable dictionary'''
         if s == None: s = self.level
         if l == None: l = self.zpos
         return HashableDict(self._data['stack'][l]['levels'][s]['swim_settings'])
         # return self._data['stack'][l]['levels'][s]['swim_settings']
 
     def saved_swim_settings(self, s=None, l=None):
-        '''Returns the Saved SWIM settings as a hashable dictionary'''
+        '''Returns the Saved SWIM preferences as a hashable dictionary'''
         if s == None: s = self.level
         if l == None: l = self.zpos
         return HashableDict(self._data['stack'][l]['levels'][s]['saved_swim_settings'])
@@ -1784,14 +1784,14 @@ class DataModel:
 
 
     def ssHash(self, s=None, l=None):
-        '''Returns SWIM settings as a hashable dictionary'''
+        '''Returns SWIM preferences as a hashable dictionary'''
         if s == None: s = self.level
         if l == None: l = self.zpos
         # return abs(hash(HashableDict(self.swim_settings(s=s, l=l))))
         return abs(hash(self.swim_settings(s=s, l=l)))
 
     def ssSavedHash(self, s=None, l=None):
-        '''Returns the Saved SWIM settings as a hashable dictionary'''
+        '''Returns the Saved SWIM preferences as a hashable dictionary'''
         if s == None: s = self.level
         if l == None: l = self.zpos
         return abs(hash(self.saved_swim_settings(s=s, l=l)))
@@ -2099,7 +2099,7 @@ class DataModel:
         new_settings = self.getSWIMSettings()
         self['defaults'][s].update(copy.deepcopy(new_settings))
         for l in range(0, len(self)):
-            #Check if default settings are in use for each layer, if so, update with new settings
+            #Check if default preferences are in use for each layer, if so, update with new preferences
             if self.isDefaults(l=l):
                 self['stack'][l]['levels'][self.level]['swim_settings'].update(copy.deepcopy(new_settings))
         self.signals.dataChanged.emit()
@@ -2108,7 +2108,7 @@ class DataModel:
         if s == None: s = self.level
         if l == None: l = self.zpos
         def_settings = copy.deepcopy(self['defaults'][s])
-        logger.info(f"Applying default settings...")
+        logger.info(f"Applying default preferences...")
         self['stack'][l]['levels'][s]['swim_settings'].update(def_settings)
         self.signals.dataChanged.emit()
 
@@ -2189,14 +2189,14 @@ class DataModel:
         levels = self.levels
         cur_level = self.level
         prev_level = levels[levels.index(cur_level) + 1]
-        logger.critical(f'\n\nPulling settings from resolution level {prev_level} to {cur_level}...\n')
+        logger.critical(f'\n\nPulling preferences from resolution level {prev_level} to {cur_level}...\n')
         # sf = self.lvl(cur_level) / self.lvl(prev_level)
         sf = int(self.lvl(prev_level) / self.lvl(cur_level))
 
         self['level_data'][cur_level]['output_settings'] = copy.deepcopy(
             self['level_data'][prev_level]['output_settings'])
 
-        # Todo need to add 'Align All' functionality for manual alignment settings (region size)
+        # Todo need to add 'Align All' functionality for manual alignment preferences (region size)
         self['level_data'][cur_level]['method_presets'] = copy.deepcopy(
             self['level_data'][prev_level]['method_presets'])
         self['level_data'][cur_level]['method_presets']['grid']['size_1x1'][0] *= sf
@@ -2378,7 +2378,7 @@ class DataModel:
             method_presets[bottom_level]['grid']))
 
         self['level_data'][bottom_level].update(
-            #Todo output settings will need to propagate
+            #Todo output preferences will need to propagate
             zarr_made=False,
             swim_presets=swim_presets,
             method_presets=method_presets[bottom_level],

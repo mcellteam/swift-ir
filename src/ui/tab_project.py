@@ -85,7 +85,7 @@ class ProjectTab(QWidget):
         self.dm.signals.dataChanged.connect(lambda: self.cbSaved.setChecked(self.dm.ssSavedComports()))
         # self.dm.signals.dataChanged.connect(lambda: self.bSaveSettings.setEnabled(not self.dm.ssSavedComports()))
         self.dm.signals.dataChanged.connect(lambda: self.bSaveSettings.setEnabled(not self.dm.ssSavedComports() and self.dm.ht.haskey(self.dm.swim_settings())))
-        # self.dm.signals.dataChanged.connect(lambda: self.cbSaved.setText(('Saved settings (revert)', 'Saved settings')[self.dm.ssSavedComports()]))
+        # self.dm.signals.dataChanged.connect(lambda: self.cbSaved.setText(('Saved preferences (revert)', 'Saved preferences')[self.dm.ssSavedComports()]))
 
         self.dm.loadHashTable()
 
@@ -256,7 +256,7 @@ class ProjectTab(QWidget):
             logger.critical(f"[DEV][{caller_name()}] Initializing Neuroglancer...")
 
         if self.parent._isOpenProjTab():
-            # self.parent.pm.loadCombos()
+            # self.parent.pm.updateCombos()
             self.parent.pm.viewer = cfg.pmViewer = PMViewer(webengine=self.parent.pm.webengine)
             if self.parent.pm.cmbSelectImages.count() > 0:
                 self.parent.pm.viewer.initViewer()
@@ -604,12 +604,12 @@ class ProjectTab(QWidget):
         # tip = '\n'.join(textwrap.wrap(tip, width=35))
         # self.bRevertSettings.setToolTip(tip)
 
-        # self.bPush = QPushButton('Export as default settings')
+        # self.bPush = QPushButton('Export as default preferences')
         # self.bPush.setFocusPolicy(Qt.NoFocus)
         # # self.bPush.setFixedHeight(16)
         # self.bPush.clicked.connect(self.onPushSettings)
-        # msg = "Use these as default settings for the current and finer scale levels."
-        # tip = "Push (forward-propagate) these SWIM settings as defaults for this and finer resolution levels."
+        # msg = "Use these as default preferences for the current and finer scale levels."
+        # tip = "Push (forward-propagate) these SWIM preferences as defaults for this and finer resolution levels."
         # tip = '\n'.join(textwrap.wrap(tip, width=35))
         # self.bPush.setToolTip(tip)
 
@@ -618,8 +618,8 @@ class ProjectTab(QWidget):
         self.bPull.setFixedHeight(16)
         self.bPull.clicked.connect(self.dm.pullSettings)
         self.bPull.clicked.connect(self.dataUpdateMA)
-        # msg = "Re-pull (propagate) settings from previous scale level."
-        tip = "Pull (re-propagate) all SWIM settings from the next coarsest resolution level."
+        # msg = "Re-pull (propagate) preferences from previous scale level."
+        tip = "Pull (re-propagate) all SWIM preferences from the next coarsest resolution level."
         tip = '\n'.join(textwrap.wrap(tip, width=35))
         self.bPull.setToolTip(tip)
 
@@ -1030,14 +1030,14 @@ class ProjectTab(QWidget):
         self.cbDefaults.toggled.connect(self.onDefaultsCheckbox)
         self.cbDefaults.setFixedHeight(14)
 
-        self.cbSaved = QCheckBox('Saved settings')
+        self.cbSaved = QCheckBox('Saved preferences')
         self.cbSaved.setFixedHeight(14)
         def fn_cbSaved():
             logger.info('')
             caller = inspect.stack()[1].function
             if caller == 'main':
                 if self.cbSaved.isChecked():
-                    logger.info('Updating displayed data to match saved SWIM settings...')
+                    logger.info('Updating displayed data to match saved SWIM preferences...')
                     # ss = self.dm.swim_settings()
                     self.dm['stack'][self.dm.zpos]['levels'][self.dm.scale]['swim_settings'].update(
                         copy.deepcopy(self.dm.saved_swim_settings()))
@@ -2432,7 +2432,7 @@ class ProjectTab(QWidget):
         self.parent.bExport.setVisible(self.dm.is_zarr_generated())
         self.gbGrid.setTitle(f'Level {self.dm.lvl()} Grid Alignment Settings')
         # self.cbDefaults.setText(f'Uses defaults')
-        self.cbDefaults.setText(f'Default settings')
+        self.cbDefaults.setText(f'Default preferences')
         # ready = self.dm.is_alignable()
         if isGenerated:
             self.rbZarrTransformed.setEnabled(True)
@@ -2494,7 +2494,7 @@ class ProjectTab(QWidget):
                 # self.swMethod.setCurrentIndex(1)
                 self.twMethod.setCurrentIndex(1)
                 self.swMethod.setCurrentIndex(0)
-                # Todo check swim settings for manual mode, either 'point' or 'region'
+                # Todo check swim preferences for manual mode, either 'point' or 'region'
                 if self.dm.current_method == 'manual_strict':
                     self.rb_MA_strict.setChecked(True)
                 else:

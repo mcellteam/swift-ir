@@ -184,7 +184,7 @@ class GifPlayer(QWidget):
         # self.movie.start()
         logger.info(f'Setting animation speed: {val}')
         self.movie.stop()
-        cfg.settings['gif_speed'] = val
+        cfg.preferences['gif_speed'] = val
         self.movie.setSpeed(val)
         self.leSlr.setText('%d' % val)
         self.slrGif.setValue(val)
@@ -235,8 +235,8 @@ class GifPlayer(QWidget):
         # self.movie.frameChanged.connect(lambda: print(f"frame changed! {self.movie.currentFrameNumber()}"))
         self.movie.setFileName(self.path)
         self.label.setMovie(self.movie)
-        speed = max(5, cfg.settings['gif_speed'])
-        # cfg.settings['gif_speed'] = speed
+        speed = max(5, cfg.preferences['gif_speed'])
+        # cfg.preferences['gif_speed'] = speed
         self.set_speed(speed)
         # self.leSlr.setText('%d' % speed)
         # self.movie.setSpeed(speed)

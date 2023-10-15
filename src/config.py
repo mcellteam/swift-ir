@@ -115,7 +115,7 @@ CODE_MODE = 'c'
 # HTTP_PORT = 9000
 MV = True
 
-settings = None
+preferences = None
 selected_file = None
 tasks_remaining = None
 tasks_total = None
