@@ -231,7 +231,9 @@ class AlignWorker(QObject):
                 'data_location': dm.data_location,
             }
 
+            # logger.info(f'max # workers: {cpus}')
             logger.info(f'max # workers: {cpus}')
+            cpus=16
             with ThreadPoolExecutor(max_workers=cpus) as pool:
                 for i, result in enumerate(tqdm.tqdm(pool.map(run_recipe, tasks),
                                                      total=len(tasks),
