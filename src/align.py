@@ -121,6 +121,7 @@ class AlignWorker(QObject):
         """Long-running task."""
         logger.critical('\n\nAligning...\n')
 
+
         scale = self.scale
         indexes = self.indexes
         dm = self.dm
@@ -130,10 +131,7 @@ class AlignWorker(QObject):
                             f"ss saved hash : {dm.ssSavedHash(l=5)}\n"
                             f"cafm hash    : {dm.cafmHash(l=5)}")
 
-        if scale == dm.coarsest_scale_key():
-            logger.info(f'INITIALIZING affine for {len(indexes)} alignment pairs...')
-        else:
-            logger.info(f'REFINING affine for {len(indexes)} alignment pairs...')
+
 
         scratchpath = os.path.join(dm.images_location, 'logs', 'scratch.log')
         if os.path.exists(scratchpath):
@@ -188,6 +186,7 @@ class AlignWorker(QObject):
                 logger.info(f"[{i}] Cache hit!")
             else:
                 tasks.append(copy.deepcopy(ss))
+        self.hudMessage.emit(f'Batch multiprocessing {len(tasks)} alignment jobs...')
 
         # delete_correlation_signals(dm=dm, scale=scale, indexes=indexes)
         # delete_matches(dm=dm, scale=scale, indexes=indexes)
