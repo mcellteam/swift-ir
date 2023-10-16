@@ -423,13 +423,13 @@ class DataModel:
     #Todo this isn't right!
     @property
     def defaults(self):
-        return self['defaults'][self.level]
+        return self['level_data'][self.level]['defaults']
 
     @defaults.setter
     def defaults(self, d, level=None):
         if level == None:
             level = self.level
-        self['defaults'][level] = d
+        self['level_data'][level]['defaults'] = d
 
     # layer['swim_settings']].setdefault('karg', False)
 
@@ -1413,8 +1413,8 @@ class DataModel:
     def isDefaults(self, s=None, l=None):
         if s == None: s = self.level
         if l == None: l = self.zpos
-        _cur = copy.deepcopy(cfg.data['stack'][l]['levels'][s]['swim_settings'])
-        _def = copy.deepcopy(cfg.data['defaults'][s])
+        _cur = copy.deepcopy(self['stack'][l]['levels'][s]['swim_settings'])
+        _def = copy.deepcopy(self['level_data'][s]['defaults'])
         to_remove = ('index', 'name', 'level', 'is_refinement', 'img_size', 'init_afm', 'reference_index', 'reference_name')
         for k in to_remove:
             _cur.pop(k, None)
@@ -1825,7 +1825,7 @@ class DataModel:
         val = ensure_even(val)
         img_w, img_h = self.image_size(s=self.level)
         val_y = ensure_even(int((val / img_w) * img_h))
-        self['defaults'][self.level]['method_opts']['size_1x1'] = [val, val_y]
+        self['level_data'][self.level]['defaults']['method_opts']['size_1x1'] = [val, val_y]
         cfg.mw.tell(f"Setting default 1x1 SWIM window: x,y = {val},{val_y}")
         for i in range(len(self)):
             if self['stack'][i]['levels'][self.level]['swim_settings']['method_opts']['method'] == 'grid':
@@ -1835,7 +1835,7 @@ class DataModel:
         val = ensure_even(val)
         img_w, img_h = self.image_size(s=self.level)
         val_y = ensure_even(int((val / img_w) * img_h))
-        self['defaults'][self.level]['method_opts']['size_2x2'] = [val, val_y]
+        self['level_data'][self.level]['defaults']['method_opts']['size_2x2'] = [val, val_y]
         cfg.mw.tell(f"Setting default 2x2 SWIM window: x,y = {val},{val_y}")
         for i in range(len(self)):
             if self['stack'][i]['levels'][self.level]['swim_settings']['method_opts']['method'] == 'grid':
@@ -1843,20 +1843,20 @@ class DataModel:
 
     def aaQuadrants(self, lst):
         cfg.mw.tell(f"Setting default SWIM grid quadrants: {lst}")
-        self['defaults'][self.level]['method_opts']['quadrants'] = lst
+        self['level_data'][self.level]['defaults']['method_opts']['quadrants'] = lst
         for i in range(len(self)):
             if self['stack'][i]['levels'][self.level]['swim_settings']['method_opts']['method'] == 'grid':
                 self['stack'][i]['levels'][self.level]['swim_settings']['method_opts']['quadrants'] = lst
 
     def aaIters(self, val):
         cfg.mw.tell(f"Setting default SWIM iterations: {val}")
-        self['defaults'][self.level]['iterations'] = val
+        self['level_data'][self.level]['defaults']['iterations'] = val
         for i in range(len(self)):
             self['stack'][i]['levels'][self.level]['swim_settings']['iterations'] = val
 
     def aaWhitening(self, val):
         cfg.mw.tell(f"Setting default SWIM whitening factor: {val}")
-        self['defaults'][self.level]['whitening'] = val
+        self['level_data'][self.level]['defaults']['whitening'] = val
         for i in range(len(self)):
             self['stack'][i]['levels'][self.level]['swim_settings']['whitening'] = val
 
@@ -1865,8 +1865,8 @@ class DataModel:
             cfg.mw.tell(f"Setting default fixed-pattern noise clobber: {tup[0]}, {tup[1]}")
         else:
             cfg.mw.tell(f"Setting default fixed-pattern noise clobber: {tup[0]}")
-        self['defaults'][self.level]['clobber'] = tup[0]
-        self['defaults'][self.level]['clobber_size'] = tup[1]
+        self['level_data'][self.level]['defaults']['clobber'] = tup[0]
+        self['level_data'][self.level]['defaults']['clobber_size'] = tup[1]
         for i in range(len(self)):
             self['stack'][i]['levels'][self.level]['swim_settings']['clobber'] = tup[0]
             self['stack'][i]['levels'][self.level]['swim_settings']['clobber_size'] = tup[1]
@@ -2096,7 +2096,7 @@ class DataModel:
         logger.info('')
         if s == None: s = self.scale
         new_settings = self.getSWIMSettings()
-        self['defaults'][s].update(copy.deepcopy(new_settings))
+        self['level_data'][self.level]['defaults'].update(copy.deepcopy(new_settings))
         for l in range(0, len(self)):
             #Check if default preferences are in use for each layer, if so, update with new preferences
             if self.isDefaults(l=l):
@@ -2106,7 +2106,7 @@ class DataModel:
     def applyDefaults(self, s=None, l=None):
         if s == None: s = self.level
         if l == None: l = self.zpos
-        def_settings = copy.deepcopy(self['defaults'][s])
+        def_settings = copy.deepcopy(self['level_data'][self.level]['defaults'])
         logger.info(f"Applying default preferences...")
         self['stack'][l]['levels'][s]['swim_settings'].update(def_settings)
         self.signals.dataChanged.emit()
@@ -2208,8 +2208,8 @@ class DataModel:
         mp['manual'] = copy.deepcopy(self['level_data'][prev_level]['method_presets']['manual'])
         mp['manual']['size'] *= sf
 
-        defaults = self['defaults'][cur_level]
-        defaults.update(copy.deepcopy(self['defaults'][prev_level]))
+        defaults = self['level_data'][self.level]['defaults']
+        defaults.update(copy.deepcopy(self['level_data'][prev_level]['defaults']))
         defaults['method_opts']['size_1x1'][0] *= sf
         defaults['method_opts']['size_1x1'][1] *= sf
         defaults['method_opts']['size_2x2'][0] *= sf
@@ -2385,8 +2385,7 @@ class DataModel:
 
         swim_presets = self.getSwimPresets()
         method_presets = self.getMethodPresets()
-
-        self['defaults'][bottom_level].update(copy.deepcopy(swim_presets), method_opts=copy.deepcopy(
+        self['level_data'][bottom_level]['defaults'].update(copy.deepcopy(swim_presets), method_opts=copy.deepcopy(
             method_presets[bottom_level]['grid']))
 
         self['level_data'][bottom_level].update(
