@@ -105,52 +105,19 @@ class ProjectTab(QWidget):
 
         if alignment_ready:
             if self.twMethod.currentIndex() == 0:
+                def_dl = self.dm['defaults'][self.dm.level]
+                def_mo = self.dm['defaults'][self.dm.level]['method_opts']
+                dl = self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]
+                mo = dl['swim_settings']['method_opts']
                 try:
-                    # self.aaButtons[0].setEnabled(self.dm['defaults'][self.dm.level]['method_opts']['size_1x1'] !=
-                    #                              self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
-                    #                                  'method_opts']['size_1x1'])
-                    # self.aaButtons[1].setEnabled(self.dm['defaults'][self.dm.level]['method_opts']['size_2x2'] !=
-                    #                              self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
-                    #                                  'method_opts']['size_2x2'])
-                    # self.aaButtons[2].setEnabled(self.dm['defaults'][self.dm.level]['iterations'] !=
-                    #                              self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings']['iterations'])
-                    # self.aaButtons[3].setEnabled(self.dm['defaults'][self.dm.level]['whitening'] !=
-                    #                              self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
-                    #                                  'whitening'])
-                    # self.aaButtons[4].setEnabled((self.dm['defaults'][self.dm.level]['clobber'] !=
-                    #                              self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
-                    #                                  'clobber']) or (self.dm['defaults'][self.dm.level]['clobber_size'] !=
-                    #                                                  self.dm['stack'][self.dm.zpos]['levels'][self.dm.level][
-                    #                                                      'swim_settings']['clobber_size']))
-                    # self.aaButtons[5].setEnabled(self.dm['defaults'][self.dm.level]['method_opts']['quadrants'] !=
-                    #                              self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings'][
-                    #                                  'method_opts']['quadrants'])
-                    self.aaButtons[0].setEnabled(self.dm['defaults'][self.dm.level]['method_opts']['size_1x1'] !=
-                                                 self.dm['stack'][self.dm.zpos]['levels'][self.dm.level][
-                                                     'swim_settings'][
-                                                     'method_opts']['size_1x1'])
-                    self.aaButtons[1].setEnabled(self.dm['defaults'][self.dm.level]['method_opts']['size_2x2'] !=
-                                                 self.dm['stack'][self.dm.zpos]['levels'][self.dm.level][
-                                                     'swim_settings'][
-                                                     'method_opts']['size_2x2'])
-                    self.aaButtons[2].setEnabled(self.dm['defaults'][self.dm.level]['iterations'] !=
-                                                 self.dm['stack'][self.dm.zpos]['levels'][self.dm.level][
-                                                     'swim_settings']['iterations'])
-                    self.aaButtons[3].setEnabled(self.dm['defaults'][self.dm.level]['whitening'] !=
-                                                 self.dm['stack'][self.dm.zpos]['levels'][self.dm.level][
-                                                     'swim_settings'][
-                                                     'whitening'])
-                    self.aaButtons[4].setEnabled((self.dm['defaults'][self.dm.level]['clobber'] !=
-                                                  self.dm['stack'][self.dm.zpos]['levels'][self.dm.level][
-                                                      'swim_settings'][
-                                                      'clobber']) or (
-                                                             self.dm['defaults'][self.dm.level]['clobber_size'] !=
-                                                             self.dm['stack'][self.dm.zpos]['levels'][self.dm.level][
-                                                                 'swim_settings']['clobber_size']))
-                    self.aaButtons[5].setEnabled(self.dm['defaults'][self.dm.level]['method_opts']['quadrants'] !=
-                                                 self.dm['stack'][self.dm.zpos]['levels'][self.dm.level][
-                                                     'swim_settings'][
-                                                     'method_opts']['quadrants'])
+                    self.aaButtons[5].setEnabled(def_mo['quadrants'] != mo['quadrants'])
+                    self.aaButtons[0].setEnabled(def_mo['size_1x1'] != mo['size_1x1'])
+                    self.aaButtons[1].setEnabled(def_mo['size_2x2'] != mo['size_2x2'])
+                    self.aaButtons[2].setEnabled(def_dl['iterations'] != dl['swim_settings']['iterations'])
+                    self.aaButtons[3].setEnabled(def_dl['whitening'] != dl['swim_settings']['whitening'])
+                    self.aaButtons[4].setEnabled((def_dl['clobber'] != dl['swim_settings']['clobber']) or
+                                                 (def_dl['clobber_size'] != dl['swim_settings']['clobber_size']))
+
                 except:
                     print_exception()
 
@@ -283,8 +250,7 @@ class ProjectTab(QWidget):
                 # logger.info(f"Local Volume:\n{self.editorViewer.LV.info()}")
 
             if self.wTabs.currentIndex() == 0 or init_all:
-                # self.updateZarrRadiobuttons()
-                self.updateNgLayoutCombox()
+                self.comboNgLayout.setCurrentText(getData('state,neuroglancer,layout'))
 
                 path = (self.dm.path_zarr_transformed(), self.dm.path_zarr_raw())[self.rbZarrRaw.isChecked()]
 
@@ -298,13 +264,6 @@ class ProjectTab(QWidget):
         self.parent.hud.done()
         # self.setZmag(10)
         # QApplication.processEvents() #1009-
-
-    def updateNgLayoutCombox(self):
-        logger.info('')
-        try:
-            self.comboNgLayout.setCurrentText(getData('state,neuroglancer,layout'))
-        except:
-            print_exception()
 
 
 
@@ -1026,10 +985,12 @@ class ProjectTab(QWidget):
         self.wClobber.setMaximumWidth(104)
 
         self.cbDefaults = QCheckBox('Defaults for this resolution level.')
+        self.cbDefaults.setFocusPolicy(Qt.NoFocus)
         self.cbDefaults.toggled.connect(self.onDefaultsCheckbox)
         self.cbDefaults.setFixedHeight(14)
 
         self.cbSaved = QCheckBox('Saved preferences')
+        self.cbSaved.setFocusPolicy(Qt.NoFocus)
         self.cbSaved.setFixedHeight(14)
         def fn_cbSaved():
             logger.info('')
@@ -1045,6 +1006,13 @@ class ProjectTab(QWidget):
                 self.dataUpdateMA()
 
         self.cbSaved.toggled.connect(fn_cbSaved)
+
+
+        self.cbIgnoreCache = QCheckBox('Ignore cache')
+        self.cbIgnoreCache.setFocusPolicy(Qt.NoFocus)
+        self.cbIgnoreCache.toggled.connect(self.onDefaultsCheckbox)
+        self.cbIgnoreCache.setFixedHeight(14)
+        self.cbIgnoreCache.setEnabled(False)
 
 
 
@@ -2057,7 +2025,7 @@ class ProjectTab(QWidget):
         # self.wGifPlayer.setStyleSheet("background-color: #000000;")
         self.wGifPlayer.setLayout(self.glGifPlayer)
 
-        self.checkboxes = HW(self.cbDefaults, self.cbSaved)
+        self.checkboxes = HW(self.cbDefaults, self.cbSaved, self.cbIgnoreCache)
 
         # self.cpanelEditor = HW(self.bTransform, self.bSWIM, self.bSaveSettings)
         self.btnsSWIM = VW(HW(self.bSWIM, self.bSaveSettings), self.bPull)

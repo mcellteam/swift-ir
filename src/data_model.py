@@ -2178,44 +2178,51 @@ class DataModel:
     def initLevel(self, level):
         pass
 
+
+    #### Pulls the settings from the previous scale level ####
     def pullSettings(self):
         '''
         Saving pulls the scaling factor-adjusted 'saved_swim_settings' from previous scale.
         'saved_swim_settings' is populated on the first 'Align All' of each scale, so will always be available.
 
         '''
+        logger.critical("\n\nPulling settings...\n")
+        if self.level == self.coarsest_scale_key():
+            logger.error("Cannot pull SWIM settings from any other resolution level. \n"
+                         "This is the coarsest resolution level.")
 
         levels = self.levels
         cur_level = self.level
         prev_level = levels[levels.index(cur_level) + 1]
-        logger.critical(f'\n\nPulling preferences from resolution level {prev_level} to {cur_level}...\n')
-        # sf = self.lvl(cur_level) / self.lvl(prev_level)
+        logger.critical(f'Translating alignment configuration from resolution level {prev_level} to resolution level {cur_level}..')
+        cfg.mw.tell(f'Translating alignment configuration from resolution level {prev_level} to resolution level {cur_level}..')
         sf = int(self.lvl(prev_level) / self.lvl(cur_level))
 
-        self['level_data'][cur_level]['output_settings'] = copy.deepcopy(
-            self['level_data'][prev_level]['output_settings'])
+        os = self['level_data'][cur_level]['output_settings']
+        os.update(copy.deepcopy(self['level_data'][prev_level]['output_settings']))
 
+        mp = self['level_data'][cur_level]['method_presets'] # method presets, cur level
+        mp.update(copy.deepcopy(self['level_data'][prev_level]['method_presets']))
+        mp['grid']['size_1x1'][0] *= sf
+        mp['grid']['size_2x2'][1] *= sf
+        mp['manual'] = copy.deepcopy(self['level_data'][prev_level]['method_presets']['manual'])
+        mp['manual']['size'] *= sf
 
-        # Todo need to add 'Align All' functionality for manual alignment preferences (region size)
-        self['level_data'][cur_level]['method_presets'] = copy.deepcopy(
-            self['level_data'][prev_level]['method_presets'])
-        self['level_data'][cur_level]['method_presets']['grid']['size_1x1'][0] *= sf
-        self['level_data'][cur_level]['method_presets']['grid']['size_2x2'][1] *= sf
-        self['level_data'][cur_level]['method_presets']['manual'] = copy.deepcopy(
-            self['level_data'][prev_level]['method_presets']['manual'])
-        self['level_data'][cur_level]['method_presets']['manual']['size'] *= sf
-
-        self['defaults'][cur_level].update(copy.deepcopy(self['defaults'][prev_level]))
-        self['defaults'][cur_level]['method_opts']['size_1x1'][0] *= sf
-        self['defaults'][cur_level]['method_opts']['size_1x1'][1] *= sf
-        self['defaults'][cur_level]['method_opts']['size_2x2'][0] *= sf
-        self['defaults'][cur_level]['method_opts']['size_2x2'][1] *= sf
+        defaults = self['defaults'][cur_level]
+        defaults.update(copy.deepcopy(self['defaults'][prev_level]))
+        defaults['method_opts']['size_1x1'][0] *= sf
+        defaults['method_opts']['size_1x1'][1] *= sf
+        defaults['method_opts']['size_2x2'][0] *= sf
+        defaults['method_opts']['size_2x2'][1] *= sf
 
         try:
-            # for d in self():
             for i in range(len(self)):
-                prev_settings = self._data['stack'][i]['levels'][prev_level]['swim_settings']
-                self['stack'][i]['levels'][cur_level]['swim_settings'] = copy.deepcopy(prev_settings)
+                prev_settings = copy.deepcopy(self._data['stack'][i]['levels'][prev_level]['swim_settings'])
+                prev_settings.pop('level')
+                prev_settings.pop('init_afm')
+                prev_settings.pop('img_size')
+                prev_settings.pop('is_refinement')
+                self['stack'][i]['levels'][cur_level]['swim_settings'] = prev_settings
                 ss = self['stack'][i]['levels'][cur_level]['swim_settings']
                 try:
                     init_afm = copy.deepcopy(self.ht.get(self.saved_swim_settings(s=prev_level, l=i)))
@@ -2228,6 +2235,8 @@ class DataModel:
                 # d['levels'][cur_level]['swim_settings']['img_size'] = self['images']['size_xy'][cur_level]
                 ss['init_afm'] = init_afm
                 ss['level'] = cur_level
+                ss['img_size'] = self.image_size(cur_level)
+                ss['is_refinement'] = self.image_size(cur_level)
                 mo = ss['method_opts']
                 method = mo['method']
                 if method == 'grid':
@@ -2384,15 +2393,6 @@ class DataModel:
             #Todo output preferences will need to propagate
             swim_presets=swim_presets,
             method_presets=method_presets[bottom_level],
-            output_settings={
-                'bounding_box': {
-                    'use': False,
-                    'has': False,
-                    'size': None,
-                },
-                'polynomial_bias': cfg.DEFAULT_CORRECTIVE_POLYNOMIAL,
-            },
-            results={},
         )
 
         for level in levels:
@@ -2401,7 +2401,18 @@ class DataModel:
                 initial_snr=None,
                 aligned=False,
                 alignment_ready=(level == self.coarsest_scale_key()),
+                output_settings={
+                    'bounding_box': {
+                        'use': False,
+                        'has': False,
+                        'size': None,
+                    },
+                    'polynomial_bias': cfg.DEFAULT_CORRECTIVE_POLYNOMIAL,
+                },
+                results={},
+
             )
+
 
         for i in range(len(self)):
             self['stack'][i]['levels'][bottom_level]['saved_swim_settings'].update(

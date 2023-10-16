@@ -146,7 +146,7 @@ class OpenProject(QWidget):
 
         self.cmbSelectImages = QComboBox()
         self.cmbSelectImages.setToolTip("Select Images (.images)")
-        self.cmbSelectImages.setPlaceholderText("Select Images...")
+        self.cmbSelectImages.setPlaceholderText("Select Images (.images)...")
         self.cmbSelectImages.setFocusPolicy(Qt.NoFocus)
         self.cmbSelectImages.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # self.cmbSelectImages.setEditable(True)
@@ -351,9 +351,7 @@ class OpenProject(QWidget):
         self.labImgCount = QLabel()
         self.labImgCount.setStyleSheet("color: #339933;")
         self.labImgCount.hide()
-        self.cbCalGrid = QCheckBox('Image 0 is calibration grid')
-        self.cbCalGrid.setChecked(False)
-        self.wMiddle = HW(ExpandingHWidget(self), self.labImgCount, QLabel('  '),self.cbCalGrid)
+        self.wMiddle = HW(ExpandingHWidget(self), self.labImgCount)
         vbl = VBL(self.wNameImages, self.wMiddle, self.wImagesConfig)
         vbl.setSpacing(4)
         self.gbCreateImages = QGroupBox()
@@ -489,10 +487,10 @@ class OpenProject(QWidget):
 
         out = os.path.join(cfg.preferences['images_root'], name)
 
-        zarr_settings = self.wImagesConfig.getSettings()
-        # logger.info(f"Scale levels & Zarr preferences:\n{zarr_settings}")
+        glog_settings = self.wImagesConfig.getSettings()
+        # logger.info(f"Scale levels & Zarr preferences:\n{glog_settings}")
         try:
-            logger.info(f"Scale levels & Zarr preferences:\n{json.dumps(zarr_settings, indent=4)}")
+            logger.info(f"Scale levels & Zarr preferences:\n{json.dumps(glog_settings, indent=4)}")
         except:
             print_exception()
 
@@ -501,20 +499,17 @@ class OpenProject(QWidget):
         # open(os.path.join(logpath, 'exceptions.log'), 'a').close()
 
         cal_grid_path = None
-        has_cal_grid = self.cbCalGrid.isChecked()
-        if has_cal_grid:
-            logger.info('Linking to calibration grid image...')
+        if glog_settings['has_cal_grid']:
             cal_grid_path = self._NEW_IMAGES_PATHS[0]
             cal_grid_name = os.path.basename(cal_grid_path)
             self._NEW_IMAGES_PATHS = self._NEW_IMAGES_PATHS[1:]
-            logger.info('Copying calibration grid image...')
+            cfg.mw.tell(f"Copying calibration grid image '{cal_grid_name}'")
             shutil.copyfile(cal_grid_path, os.path.join(out, cal_grid_name))
 
         src = os.path.dirname(self._NEW_IMAGES_PATHS[0])
         cfg.mw.tell(f'Importing {len(self._NEW_IMAGES_PATHS)} Images...')
         scales_str = self.wImagesConfig.scales_input.text().strip()
         scale_vals = list(map(int,scales_str.split(' ')))
-        # makedirs_exist_ok(dirname, exist_ok=True)
         tiff_path = os.path.join(out, 'tiff')
         zarr_path = os.path.join(out, 'zarr')
         thumbs_path = os.path.join(out, 'thumbs')
@@ -560,13 +555,12 @@ class OpenProject(QWidget):
         opts = {
             'name': series_name,
             'uuid': str(uuid.uuid4()),
-            # 'images_location': out,
             'created': datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
             'scale_factors': scale_vals,
             'levels': level_keys,
             'count': count,
             'cal_grid': {
-                'has': has_cal_grid,
+                'has': glog_settings['has_cal_grid'],
                 'path': cal_grid_path,
             },
             'paths': self._NEW_IMAGES_PATHS,
@@ -647,7 +641,7 @@ class OpenProject(QWidget):
         logger.info(f"Levels: {info['levels']}")
         n = info['count']
 
-        cfg.mw.hud('Generating directory structure for alignment data...')
+        cfg.mw.hud('Making directory structure for data...')
         for k in info['levels']:
             os.makedirs(os.path.join(out, 'zarr',        k), exist_ok=True)
         for i in range(n):
@@ -756,6 +750,9 @@ class OpenProject(QWidget):
                     if path.endswith('.images'):
                         cfg.mw.tell(f'Deleting images {path}...')
                         run_subprocess(["rm", "-rf", path])
+                        run_subprocess(["rm", "-rf", path])
+                        run_subprocess(["rm", "-rf", path])
+
                     else:
                         logger.warning(f"\n\nCANNOT REMOVE THIS PATH: {path}\n")
                 except:
@@ -888,7 +885,7 @@ class OpenProject(QWidget):
             alignment = self.cmbSelectAlignment.currentText()
             scale = self.cmbLevel.currentText()
             keys = self.getScaleKeys(x=images)
-            if scale:
+            if scale and keys:
                 scale = keys[-1]
                 logger.info(f"scale to set: {scale}")
                 if self.cmbSelectImages.count() > 0:
@@ -989,7 +986,6 @@ class OpenProject(QWidget):
 
         elif validate_tiff_folder(path):
             self._buttonProjectFromTiffFolder1.setEnabled(True)
-            self.cbCalGrid.show()
             self.validity_label.hide()
 
         elif path == '':
@@ -998,7 +994,6 @@ class OpenProject(QWidget):
         else:
             self.validity_label.show()
             self._buttonProjectFromTiffFolder1.setEnabled(False)
-            self.cbCalGrid.hide()
             self._buttonOpen.setEnabled(False)
             self._buttonDelete.setEnabled(False)
             # self._buttonOpen.hide()
@@ -1091,7 +1086,6 @@ class OpenProject(QWidget):
         # logger.info('')
         self.selectionReadout.setText(path)
         self._buttonProjectFromTiffFolder1.setEnabled(validate_tiff_folder(path))
-        self.cbCalGrid.setVisible(validate_tiff_folder(path))
 
         if validate_project_selection(path) | validate_zarr_selection(path):
             self.validity_label.hide()
@@ -1286,301 +1280,6 @@ def getSideBarPlacesImportImages():
     return places
 
 
-# class TableWidget(QTableWidget):
-#     def __init__(self, parent=None):
-#         # super(TableWidget, self).__init__(parent)
-#         super().__init__()
-#         self.parent = parent
-#
-#     def keyPressEvent(self, event):
-#         print(event.key())
-#         if event.key() == Qt.Key_Delete:
-#             # self.parent.parent.delete_projects()
-#             cfg.mw._getTabObject().delete_projects()
-#         else:
-#             super().keyPressEvent(event)
-
-
-#
-# class UserProjects(QWidget):
-#     def __init__(self, parent, **kwargs):
-#         super().__init__(**kwargs)
-#         self.parent = parent
-#
-#         # self.initial_row_height = 64
-#         # self.ROW_HEIGHT = 64
-#         self.ROW_HEIGHT = 64
-#
-#         self.counter1 = 0
-#         self.counter2 = 0
-#         # self.counter3 = 0
-#         # self.setFocusPolicy(Qt.StrongFocus)
-#
-#         self.data = QTableWidget()
-#         self.data.setFocusPolicy(Qt.NoFocus)
-#         self.data.setEditTriggers(QAbstractItemView.NoEditTriggers)
-#         # self.data.setAlternatingRowColors(True)
-#         # self.data = TableWidget(self)
-#
-#         # self.data.setShowGrid(False)
-#         self.data.setSortingEnabled(True)
-#         self.data.setWordWrap(True)
-#         self.data.horizontalHeader().setHighlightSections(False)
-#         self.data.horizontalHeader().setStretchLastSection(True)
-#         self.data.setEditTriggers(QAbstractItemView.NoEditTriggers)
-#         self.data.setSelectionBehavior(QAbstractItemView.SelectRows)
-#         self.data.verticalHeader().setVisible(False)
-#         # self.data.horizontalHeader().setDefaultAlignment(Qt.Alignment(Qt.TextWordWrap))
-#         self.data.horizontalHeader().setDefaultAlignment(Qt.AlignLeft)
-#         def countCurrentItemChangedCalls(): self.counter2 += 1
-#         self.data.currentItemChanged.connect(countCurrentItemChangedCalls)
-#         self.data.currentItemChanged.connect(self.parent.userSelectionChanged)
-#         def countItemClickedCalls(): self.counter1 += 1
-#         self.data.itemClicked.connect(countItemClickedCalls)
-#         self.data.itemClicked.connect(self.parent.userSelectionChanged)
-#         # def onDoubleClick(): self.parent.openAlignment()
-#         # self.data.itemDoubleClicked.connect(self.parent.openAlignment)
-#         self.data.doubleClicked.connect(self.parent.openAlignment) #Critical this always emits
-#         self.data.itemSelectionChanged.connect(self.parent.userSelectionChanged)  # Works!
-#         # self.data.itemSelectionChanged.connect(lambda: print('itemselectionChanged was emitted!'))  # Works!
-#         # self.data.itemPressed.connect(lambda: print('itemPressed was emitted!'))
-#         # self.data.cellActivated.connect(lambda: print('cellActivated was emitted!'))
-#         # self.data.currentItemChanged.connect(lambda: print('currentItemChanged was emitted!'))
-#         # self.data.itemDoubleClicked.connect(lambda: print('itemDoubleClicked was emitted!'))
-#         # self.data.cellChanged.connect(lambda: print('cellChanged was emitted!'))
-#         # self.data.cellClicked.connect(lambda: print('cellClicked was emitted!'))
-#         # self.data.itemChanged.connect(lambda: print('itemChanged was emitted!'))
-#
-#         self.data.setColumnCount(11)
-#         self.set_headers()
-#
-#         self.layout = QVBoxLayout()
-#         self.layout.setContentsMargins(0, 0, 0, 0)
-#         self.layout.addWidget(self.data)
-#         # self.layout.addWidget(controls)
-#         self.setLayout(self.layout)
-#         self.set_data()
-#
-#         self.data.setMouseTracking(True)
-#
-#         self.current_hover = [0, 0]
-#         self.data.cellEntered.connect(self.cellHover)
-#
-#     def cellHover(self, row, column):
-#         self.current_hover = [row, column]
-#
-#     # btn.clicked.connect(lambda state, x=zpos: self.jump_to_manual(x))
-#
-#     # def setNotes(self, index, txt):
-#     #     caller = inspect.stack()[1].function
-#     #     if caller != 'updateNotes':
-#     #         self.statusBar.showMessage('Note Saved!', 3000)
-#     #
-#     #         # cfg.data.save_notes(text=txt, z=index)
-#     #     else:
-#     #         cfg.preferences['notes']['global_notes'] = self.notes.toPlainText()
-#     #     self.notes.update()
-#
-#
-#
-#
-#     def updateRowHeight(self, h):
-#         for section in range(self.data.verticalHeader().count()):
-#             self.data.verticalHeader().resizeSection(section, h)
-#         self.data.setColumnWidth(1, h)
-#         self.data.setColumnWidth(2, h)
-#         self.data.setColumnWidth(3, h)
-#         # self.data.setColumnWidth(10, h)
-#
-#
-#     # def userSelectionChanged(self):
-#     #     caller = inspect.stack()[1].function
-#     #     # if caller == 'initTableData':
-#     #     #     return
-#     #     row = self.data.currentIndex().row()
-#     #     try:
-#     #         path = self.data.item(row,9).text()
-#     #     except:
-#     #         cfg.selected_file = ''
-#     #         logger.warning(f'No file path at project_table.currentIndex().row()! '
-#     #                        f'caller: {caller} - Returning...')
-#     #         return
-#     #     logger.info(f'path: {path}')
-#     #     cfg.selected_file = path
-#     #     cfg.mw.setSelectionPathText(path)
-#     #     # logger.info(f'counter1={self.counter1}, counter2={self.counter2}')
-#
-#
-#     def set_headers(self):
-#         self.data.setHorizontalHeaderLabels([
-#             "Location",
-#             "First\nSection",
-#             "Last\nSection",
-#             "Calibration\nGrid",
-#             "Created",
-#             "Last\nOpened",
-#             "#\nImgs",
-#             "Image\nSize (px)",
-#             "Disk Space\n(Bytes)",
-#             "Disk Space\n(Gigabytes)",
-#             "Tags"
-#         ])
-#
-#         header = self.data.horizontalHeader()
-#         header.setFrameStyle(QFrame.Box | QFrame.Plain)
-#         header.setStyleSheet("QHeaderView::section { border-bottom: 1px solid gray; }");
-#         self.data.setHorizontalHeader(header)
-#
-#
-#     def set_data(self):
-#         logger.info('')
-#
-#         configure_project_paths()
-#         # logger.info(">>>> set_data >>>>")
-#         # caller = inspect.stack()[1].function
-#         # logger.info(f'[{caller}]')
-#         self.data.clear()
-#         self.data.clearContents()
-#         font0 = QFont()
-#         # font0.setBold(True)
-#         font0.setPointSize(9)
-#
-#         font1 = QFont()
-#         # font1.setBold(True)
-#         font1.setPointSize(9)
-#         self.data.setRowCount(0)
-#         for i, row in enumerate(self.get_data()):
-#             # logger.info(f'>>>> row #{i} >>>>')
-#             self.data.insertRow(i)
-#             for j, item in enumerate(row):
-#                 if j == 0:
-#                     twi = QTableWidgetItem(str(item))
-#                     twi.setFont(font1)
-#                     self.data.setItem(i, j, twi)
-#                 elif j in (1,2,3):
-#                     # logger.info(f"j={j}, path={item}")
-#                     if item == 'No Thumbnail':
-#                         thumbnail = ThumbnailFast(self)
-#                         self.data.setCellWidget(i, j, thumbnail)
-#                     else:
-#                         thumbnail = ThumbnailFast(self, path=item)
-#                         self.data.setCellWidget(i, j, thumbnail)
-#                 elif j in (4,5):
-#                     item.replace("_", " ")
-#                     item.replace('-', ':')
-#                     # item = item[9:].replace('-', ':')
-#                     twi = QTableWidgetItem(item)
-#                     twi.setFont(font0)
-#                     self.data.setItem(i, j, twi)
-#                 elif j in (6,7):
-#                     twi = QTableWidgetItem(str(item))
-#                     twi.setFont(font0)
-#                     # twi.setTextAlignment(Qt.AlignCenter)
-#                     self.data.setItem(i, j, twi)
-#                 else:
-#                     twi = QTableWidgetItem(str(item))
-#                     twi.setFont(font0)
-#                     self.data.setItem(i, j, twi)
-#         self.data.setColumnWidth(0, 220)
-#         self.data.setColumnWidth(1, self.ROW_HEIGHT) # <first thumbnail>
-#         self.data.setColumnWidth(2, self.ROW_HEIGHT) # <last thumbnail>
-#         self.data.setColumnWidth(3, self.ROW_HEIGHT) # <last thumbnail>
-#         self.data.setColumnWidth(4, 100)
-#         self.data.setColumnWidth(5, 100)
-#         self.data.setColumnWidth(6, 36)
-#         self.data.setColumnWidth(7, 70)
-#         self.data.setColumnWidth(8, 70)
-#         self.data.setColumnWidth(9, 70)
-#         # self.data.setColumnWidth(10, self.ROW_HEIGHT) # <extra thumbnail>
-#         # self.data.setColumnWidth(10, 70) # <extra thumbnail>
-#         # self.data.setColumnWidth(10, 100)
-#         # self.updateRowHeight(self.ROW_HEIGHT) #0508-
-#
-#         self.set_headers()
-#
-#         # logger.info("<<<< set_data <<<<")
-#         for section in range(self.data.verticalHeader().count()):
-#             self.data.verticalHeader().resizeSection(section, self.ROW_HEIGHT)
-#
-#         self.data.sortByColumn(4, Qt.DescendingOrder)
-#
-#         logger.info('----Table Data Set----')
-#
-#
-#
-#     def get_data(self):
-#         caller = inspect.stack()[1].function
-#         logger.info(f'[{caller}]')
-#         # logger.info('>>>> get_data >>>>')
-#         # logger.info(f'caller: {caller}')
-#         self.project_paths = cfg.preferences['projects']
-#         # self.project_paths = []
-#         projects, thumbnail_first, thumbnail_last, created, modified, \
-#         n_sections, images_location, img_dimensions, bytes, gigabytes, extra = \
-#             [], [], [], [], [], [], [], [], [], [], []
-#
-#         logger.info(f'# saved projects: {len(self.project_paths)}')
-#         for p in self.project_paths:
-#             logger.info(f'Collecting {p}...')
-#
-#             try:
-#                 with open(p, 'r') as f:
-#                     dm = DataModel(data=json.load(f), quietly=True)
-#             except:
-#                 # print_exception()
-#                 logger.error('Unable to locate or load data model: %level' % p)
-#
-#             try:    created.append(dm.created)
-#             except: created.append('Unknown')
-#             try:    modified.append(dm.modified)
-#             except: modified.append('Unknown')
-#             try:    n_sections.append(len(dm))
-#             except: n_sections.append('Unknown')
-#             try:    img_dimensions.append(dm.image_size('scale_1'))
-#             except: img_dimensions.append('Unknown')
-#             try:    projects.append(os.path.basename(p))
-#             except: projects.append('Unknown')
-#             project_dir = os.path.splitext(p)[0]
-#             try:
-#                 if getOpt(lookup='ui,FETCH_PROJECT_SIZES'):
-#                     logger.info('Getting project size...')
-#                     _bytes = get_bytes(project_dir)
-#                     bytes.append(_bytes)
-#                     gigabytes.append('%.4f' % float(_bytes / 1073741824))
-#                 else:
-#                     bytes.append('N/A')
-#                     gigabytes.append('N/A')
-#             except:
-#                 bytes.append('Unknown')
-#                 gigabytes.append('Unknown')
-#             thumb_path = os.path.join(project_dir, 'thumbnails')
-#             absolute_content_paths = list_paths_absolute(thumb_path)
-#             try:    thumbnail_first.append(absolute_content_paths[0])
-#             except: thumbnail_first.append('No Thumbnail')
-#             try:    thumbnail_last.append(absolute_content_paths[-1])
-#             except: thumbnail_last.append('No Thumbnail')
-#             try:    images_location.append(p)
-#             except: images_location.append('Unknown')
-#             extra_toplevel_paths = glob(f'{project_dir}/*.tif')
-#             # logger.critical(f"extra_toplevel_paths = {extra_toplevel_paths}")
-#             #Todo refactor this
-#             # if extra_toplevel_paths != []:
-#             if dm['data']['has_cal_grid']:
-#                 extra.append(dm['data']['cal_grid_path'])
-#             else:
-#                 extra.append('No Thumbnail')
-#
-#         # logger.info('<<<< get_data <<<<')
-#         # return zip(projects, images_location, thumbnail_first, thumbnail_last, created, modified,
-#         #            n_sections, img_dimensions, bytes, gigabytes, extra)
-#         return zip(images_location, thumbnail_first, thumbnail_last, extra, created, modified,
-#                    n_sections, img_dimensions, bytes, gigabytes)
-#
-#             # logger.info('Getting project images_location...')
-#         logger.info('<<<<')
-
-
-
 UrlRole = Qt.UserRole + 1
 EnabledRole = Qt.UserRole + 2
 class StyledItemDelegate(QStyledItemDelegate):
@@ -1696,7 +1395,6 @@ class ImagesConfig(QWidget):
         self.parent = parent
         self._settings = {}
         self.initUI()
-        # self.setStyleSheet("""font-size: 10px; color: #f3f6fb;""")
 
     def getSettings(self):
 
@@ -1705,12 +1403,12 @@ class ImagesConfig(QWidget):
         self._settings['scale_factors'] = sorted(list(map(int, self.scales_input.text().strip().split(' '))))
         self._settings['clevel'] = int(self.leClevel.text())
         self._settings['cname'] = self.cname_combobox.currentText()
+        self._settings['has_cal_grid'] = self.cbCalGrid.isChecked()
         chunkshape = (int(self.leChunkZ.text()),
                       int(self.leChunkY.text()),
                       int(self.leChunkX.text()))
         self._settings['chunkshape'] = {}
         self._settings['resolution'] = {}
-        # if cfg.data['data']['has_cal_grid']:
         for sv in self._settings['scale_factors']:
             res_x = int(self.leResX.text()) * sv
             res_y = int(self.leResY.text()) * sv
@@ -1736,10 +1434,8 @@ class ImagesConfig(QWidget):
         # self.scale_instructions_label.setStyleSheet("font-size: 11px;")
         self.scales_input.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
 
-        # wScaling = HW(QLabel('Scale Levels: '), self.scales_input, ExpandingHWidget(self))
         wScaling = HW(QLabel('Scale Levels: '), self.scales_input)
         wScaling.layout.setAlignment(Qt.AlignHCenter)
-        # wScaling.layout.setAlignment(Qt.AlignLeft)
 
         '''Voxel Size (Resolution) Fields'''
         tip = "Resolution or size of each voxel (nm)"
@@ -1824,7 +1520,10 @@ class ImagesConfig(QWidget):
         wChunk.setToolTip(txt)
         wChunk.layout.setAlignment(Qt.AlignCenter)
 
-        hbl = HBL(wScaling, wVoxelSize, wCompression, wChunk, )
+        self.cbCalGrid = QCheckBox('Image 0 is calibration grid')
+        self.cbCalGrid.setChecked(False)
+
+        hbl = HBL(wScaling, wVoxelSize, wCompression, wChunk, self.cbCalGrid)
 
         # hbl.setSpacing(12)
         self.setLayout(hbl)
