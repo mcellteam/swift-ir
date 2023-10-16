@@ -2398,6 +2398,7 @@ class DataModel:
                 },
                 results={},
             )
+            self.linkReference(level=level)
 
         self['level_data'][bottom_level]['defaults'].update(copy.deepcopy(swim_presets), method_opts=copy.deepcopy(
             method_presets[bottom_level]['grid']))
@@ -2419,8 +2420,6 @@ class DataModel:
                 method_opts=copy.deepcopy(method_presets[bottom_level]['grid']),
             )
 
-
-        self.linkReference(level=bottom_level)
 
     def setZarrMade(self, b, s=None):
         if s == None: s = self.level
