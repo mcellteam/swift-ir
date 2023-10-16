@@ -668,7 +668,9 @@ class align_ingredient:
         self.t_swim = time.time() - t0
         self.swim_output = out.strip().split('\n')
         self.swim_err_lines = err.strip().split('\n')
-        print(f"CPU %: {psutil.cpu_percent()}")
+        mem = psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2
+        # print(f"CPU %: {psutil.cpu_percent()} Mem: {mem:.3g}  {getCurrentMemoryUsage()}KB {type(getCurrentMemoryUsage())}")
+        print(f"CPU %: {psutil.cpu_percent()} Mem: {mem:.3g}")
         return self.swim_output
 
 
@@ -1045,6 +1047,13 @@ def natural_sort(l):
     return sorted(l, key=alphanum_key)
 
 
+# def getCurrentMemoryUsage():
+#     ''' Memory usage in kB '''
+#
+#     with open('/proc/self/status') as f:
+#         memusage = f.read().split('VmRSS:')[1].split('\n')[0][:-3]
+#
+#     return int(memusage.strip())
 
 if __name__ == '__main__':
     logger = logging.getLogger(__name__)

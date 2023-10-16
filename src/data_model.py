@@ -266,7 +266,7 @@ class DataModel:
     @property
     def zpos(self):
         '''Get global Z-position.'''
-        return self['current']['z_position']
+        return self['state']['z_position']
 
     @zpos.setter
     def zpos(self, index):
@@ -275,7 +275,7 @@ class DataModel:
         # self['data']['Current Section (Index)'] = index
         if int(index) in range(0, len(self)):
             if int(index) != self.zpos:
-                self['current']['z_position'] = int(index)
+                self['state']['z_position'] = int(index)
                 logger.info(f"[{index}] Z-position Changed!")
                 self.signals.zposChanged.emit()
         else:
@@ -330,20 +330,20 @@ class DataModel:
 
     @property
     def level(self):
-        return self['current']['level']
+        return self['state']['level']
 
     @level.setter
     def level(self, s:str):
-        self['current']['level'] = s
+        self['state']['level'] = s
 
 
     @property
     def scale(self):
-        return self['current']['level']
+        return self['state']['level']
 
     @scale.setter
     def scale(self, s):
-        self['current']['level'] = s
+        self['state']['level'] = s
 
     # @property
     # def gif_speed(self):
@@ -1653,9 +1653,6 @@ class DataModel:
             return self.lvl
         return 's%d' % v
 
-    # def get_level_key(self):
-    #     return self['current'].get('level')
-
     def resolution(self, s=None):
         if s == None: s = self.level
         return self['images']['resolution'][s]
@@ -2289,10 +2286,6 @@ class DataModel:
             images=images_info,
             stack=[],
             # defaults={'levels': {v: {} for v in self.levels}},
-            current={
-                'level': bottom_level,
-                'z_position': 0
-            },
             # defaults={s: {} for s in levels},
             # defaults={},
             level_data={s: {} for s in levels},
@@ -2303,6 +2296,8 @@ class DataModel:
                 't_thumbs': 0.0
             },
             state={
+                'level': bottom_level,
+                'z_position': 0,
                 'padlock': False,
                 'current_tab': 0,
                 'gif_speed': 100,
@@ -2338,7 +2333,6 @@ class DataModel:
             protected = {
                 'results': {},
             },
-            defaults={s: {} for s in levels}
         )
 
         for i in range(len(paths)):
@@ -2385,17 +2379,11 @@ class DataModel:
 
         swim_presets = self.getSwimPresets()
         method_presets = self.getMethodPresets()
-        self['level_data'][bottom_level]['defaults'].update(copy.deepcopy(swim_presets), method_opts=copy.deepcopy(
-            method_presets[bottom_level]['grid']))
 
-        self['level_data'][bottom_level].update(
-            #Todo output preferences will need to propagate
-            swim_presets=swim_presets,
-            method_presets=method_presets[bottom_level],
-        )
 
         for level in levels:
             self['level_data'][level].update(
+                defaults={},
                 zarr_made=False,
                 initial_snr=None,
                 aligned=False,
@@ -2409,8 +2397,16 @@ class DataModel:
                     'polynomial_bias': cfg.DEFAULT_CORRECTIVE_POLYNOMIAL,
                 },
                 results={},
-
             )
+
+        self['level_data'][bottom_level]['defaults'].update(copy.deepcopy(swim_presets), method_opts=copy.deepcopy(
+            method_presets[bottom_level]['grid']))
+
+        self['level_data'][bottom_level].update(
+            # Todo output preferences will need to propagate
+            swim_presets=swim_presets,
+            method_presets=method_presets[bottom_level],
+        )
 
 
         for i in range(len(self)):

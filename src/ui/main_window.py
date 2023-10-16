@@ -490,7 +490,6 @@ class MainWindow(QMainWindow):
             self._icon_color = '#39ff14'
             qta.set_defaults(color='#daebfe')
             rel_path = 'src/style/newstyle_dark.qss'
-            logger.info("applying theme: src/style/newstyle_dark.qss...")
             # self.pythonConsole.setStyleSheet("""
             # font-size: 10px;
             # font-family: 'Andale Mono', 'Ubuntu Mono', monospace;
@@ -499,7 +498,6 @@ class MainWindow(QMainWindow):
             self._icon_color = '#161c20'
             qta.set_defaults(color='#161c20')
             rel_path = 'src/style/newstyle.qss'
-            logger.info("applying theme: src/style/newstyle.qss...")
             # self.pythonConsole.setStyleSheet("""
             # font-size: 10px;
             # font-family: 'Andale Mono', 'Ubuntu Mono', monospace;
@@ -862,7 +860,7 @@ class MainWindow(QMainWindow):
 
 
     def setdw_python(self, state):
-        logger.info('')
+        logger.debug('')
         # caller = inspect.stack()[1].function
         # logger.info(f'[{caller}], state={state}')
         self.setUpdatesEnabled(False)
@@ -876,7 +874,7 @@ class MainWindow(QMainWindow):
 
 
     def setdw_hud(self, state):
-        logger.info('')
+        logger.debug('')
         self.tbbHud.setChecked(state)
         self.setUpdatesEnabled(False)
         self.dw_hud.setVisible(state)
@@ -890,7 +888,7 @@ class MainWindow(QMainWindow):
 
 
     def setdw_thumbs(self, state):
-        logger.info('')
+        logger.debug('')
         # caller = inspect.stack()[1].function
         # logger.info(f"[{caller}]")
         if not self._isProjectTab():
@@ -915,7 +913,7 @@ class MainWindow(QMainWindow):
 
 
     def setdw_matches(self, state):
-        logger.info('')
+        logger.debug('')
         if not self._isProjectTab():
             state = False
         self.tbbMatches.setChecked(state)
@@ -935,7 +933,7 @@ class MainWindow(QMainWindow):
 
 
     def setdw_notes(self, state):
-        logger.info('')
+        logger.debug('')
         # self.setUpdatesEnabled(False)
         self.dwNotes.setVisible(state)
         tip1 = f"Show Notepad {hotkey('Z')}"
@@ -949,7 +947,7 @@ class MainWindow(QMainWindow):
 
 
     def setdw_snr(self, state):
-        logger.info('')
+        logger.debug('')
         if not self._isProjectTab():
             state = False
 
@@ -1318,7 +1316,7 @@ class MainWindow(QMainWindow):
     
     def updateEnabledButtons(self) -> None:
         caller = inspect.stack()[1].function
-        logger.info(f'[{caller}]')
+        logger.info('')
         self.wCpanel.hide()
 
         if self._isProjectTab():
@@ -1628,7 +1626,7 @@ class MainWindow(QMainWindow):
         # logger.info(f'caller: {caller}')
         try:
             if self._isProjectTab() or self._isZarrTab():
-                logger.info('')
+                # logger.info('')
                 self.leJump.setValidator(QIntValidator(0, len(self.dm) - 1))
                 self.sldrZpos.setRange(0, len(self.dm) - 1)
                 self.sldrZpos.setValue(self.dm.zpos)
@@ -1677,7 +1675,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def reloadComboScale(self) -> None:
         caller = inspect.stack()[1].function
-        logger.info(f'[{caller}]')
+        # logger.info(f'[{caller}]')
         self.boxScale.clear()
         if self._isProjectTab():
             if hasattr(cfg, 'data'):

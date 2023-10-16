@@ -168,7 +168,7 @@ class ProjectTab(QWidget):
 
     # def _refresh(self, index=None):
     def refreshTab(self):
-        logger.critical('\n\nRefreshing...\n')
+        logger.info('')
         index = self.wTabs.currentIndex()
         self.datamodel['state']['blink'] = False
         # self.matchPlayTimer.stop()
@@ -2408,7 +2408,7 @@ class ProjectTab(QWidget):
     @Slot()
     def dataUpdateMA(self):
         caller = inspect.stack()[1].function
-        logger.critical(f"[{caller}]")
+        logger.info(f"[{caller}]")
         # if DEV:
         #     logger.critical(f"[DEV] called by {caller_name()}")
 

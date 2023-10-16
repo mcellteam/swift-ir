@@ -41,6 +41,7 @@ __all__ = ['OpenProject']
 
 logger = logging.getLogger(__name__)
 
+DEV = is_joel()
 
 class OpenProject(QWidget):
 
@@ -250,7 +251,6 @@ class OpenProject(QWidget):
         self.wNameAlignment.hide()
 
         '''Step 1/3'''
-        logger.info('Creating name_dialog...')
         self.name_dialog = QFileDialog()
         # self.name_dialog.setContentsMargins(2,2,2,2)
         self.name_dialog.setWindowFlags(Qt.FramelessWindowHint)
@@ -258,8 +258,6 @@ class OpenProject(QWidget):
         self.name_dialog.layout().setContentsMargins(2,2,2,2)
         self.name_dialog.layout().setHorizontalSpacing(2)
         self.name_dialog.layout().setVerticalSpacing(2)
-
-        logger.info('Setting name filter...')
         self.name_dialog.setNameFilter("Text Files (*.swiftir)")
         self.name_dialog.setLabelText(QFileDialog.Accept, "Create")
         self.name_dialog.setViewMode(QFileDialog.Detail)
@@ -267,7 +265,6 @@ class OpenProject(QWidget):
         self.name_dialog.setModal(True)
         # self.name_dialog.setFilter(QDir.AllEntries | QDir.Hidden)
 
-        logger.info('Getting sidebar URLs...')
         urls = self.name_dialog.sidebarUrls()
 
         corral_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/3dem-1076/Projects_AlignEM'
@@ -287,7 +284,6 @@ class OpenProject(QWidget):
                 if os.path.exists('/Volumes/3dem_data'):
                     urls.append(QUrl.fromLocalFile('/Volumes/3dem_data'))
 
-        logger.info('Settings sidebar URLs...')
         self.name_dialog.setSidebarUrls(urls)
 
         places = getSideBarPlacesProjectName()
@@ -427,7 +423,6 @@ class OpenProject(QWidget):
 
 
     def getScaleKeys(self, x):
-        logger.info('')
         basename,_ = os.path.splitext(os.path.basename(x))
         info_path = os.path.join(x, 'info.json')
         if os.path.isfile(info_path):
@@ -452,8 +447,6 @@ class OpenProject(QWidget):
                 uuid = data['info']['series_uuid']
             except json.decoder.JSONDecodeError:
                 logger.warning('JSON decoder error!')
-        else:
-            logger.warning(f"path does not exist: {path}")
         return uuid
 
 
@@ -657,7 +650,7 @@ class OpenProject(QWidget):
 
     def refresh(self):
         caller = inspect.stack()[1].function
-        logger.info(f"[{caller}] Refreshing...")
+        logger.info(f"[{caller}]")
         self.resetView() #0830+
         self.updateCombos()
         self.initPMviewer()
@@ -765,7 +758,6 @@ class OpenProject(QWidget):
         self.refresh()
 
     def _updateWatchPaths(self):
-        logger.info('')
         [self._watchImages.watch(sp) for sp in cfg.preferences['images_search_paths']]
         [self._watchAlignments.watch(sp) for sp in cfg.preferences['alignments_search_paths']]
 
@@ -774,11 +766,10 @@ class OpenProject(QWidget):
     def updateCombos(self):
         '''Loading this combobox triggers the loading of the alignment and scales comboboxes'''
         caller = inspect.stack()[1].function
-        logger.info(f'[{caller}]')
         shown = [self.cmbSelectImages.itemText(i) for i in range(self.cmbSelectImages.count())]
         known = self._watchImages.known
         if sorted(shown) == sorted(known):
-            logger.info(".images combobox is current!"); return
+            logger.info("null return"); return
         self.cmbSelectImages.clear()
         self.cmbSelectImages.addItems(known)
         mem = cfg.preferences['images_combo_text']
@@ -788,7 +779,6 @@ class OpenProject(QWidget):
         _im_name = os.path.basename(_im_path)
         al_known = self._watchAlignments.known
         if os.path.exists(str(_im_path)):
-            logger.critical(f"alignments known: {al_known}")
             if len(al_known) == 0:
                 self.cmbSelectAlignment.setPlaceholderText(f"No Alignments (.alignment) Found for '{_im_name}'")
             else:
@@ -801,10 +791,10 @@ class OpenProject(QWidget):
         self.update()
 
     def loadAlignmentCombo(self):
-        logger.info('')
+        # logger.info('')
         cur_items = [self.cmbSelectAlignment.itemText(i) for i in range(self.cmbSelectAlignment.count())]
         if sorted(cur_items) == sorted(self._watchAlignments.known):
-            logger.info(".alignments combobox is current!"); return
+            logger.info("null return"); return
         _im_path = self.cmbSelectImages.currentText()
         _im_name = os.path.basename(_im_path)
         _uuid = self._getImagesUUID(_im_path)
@@ -815,7 +805,6 @@ class OpenProject(QWidget):
         mem = cfg.preferences['alignment_combo_text']
         if mem in valid:
             self.cmbSelectAlignment.setCurrentText(mem)
-        logger.critical(f"valid: {valid} (?)")
         if os.path.exists(str(_im_path)):
             if len(valid):
                 self.cmbSelectAlignment.setPlaceholderText(f"{len(valid)} Alignments (.alignment) of '{_im_name}' Found")
@@ -826,7 +815,7 @@ class OpenProject(QWidget):
 
 
     def loadLevelsCombo(self):
-        logger.info('')
+        # logger.info('')
         self.cmbLevel.clear()
         cur_series = self.cmbSelectImages.currentText()
         if cur_series:
@@ -887,7 +876,6 @@ class OpenProject(QWidget):
             keys = self.getScaleKeys(x=images)
             if scale and keys:
                 scale = keys[-1]
-                logger.info(f"scale to set: {scale}")
                 if self.cmbSelectImages.count() > 0:
                     self.path_l = os.path.join(images, 'zarr', scale)
                     # if self.cmbSelectAlignment.currentText() != 'None':

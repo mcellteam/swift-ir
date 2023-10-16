@@ -633,7 +633,7 @@ class MAViewer(neuroglancer.Viewer):
 
             for i, pt in enumerate(self.pts2[self.role]):
                 # 0: (122, None, None)
-                logger.critical(f"{i}: {pt}")
+                # logger.critical(f"{i}: {pt}")
                 sys.stdout.flush()
                 if pt:
                     if pt[1]:
