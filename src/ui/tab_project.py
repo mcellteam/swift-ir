@@ -238,7 +238,7 @@ class ProjectTab(QWidget):
                 level = self.dm['state']['viewer_quality']
                 self.editorViewer = cfg.editorViewer = MAViewer(parent=self, dm=self.dm, role='tra', quality=level, webengine=self.editorWebengine)
                 self.editorViewer.signals.badStateChange.connect(self.set_transforming)
-                self.editorViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314
+                # self.editorViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314
                 self.editorViewer.signals.ptsChanged.connect(self.update_match_list_widgets)
                 # self.editorViewer.signals.ptsChanged.connect(self.updateWarnings)
                 self.editorViewer.signals.zVoxelCoordChanged.connect(lambda zpos: setattr(self.dm, 'zpos', zpos))
@@ -258,7 +258,7 @@ class ProjectTab(QWidget):
                 self.viewer.initZoom(self.webengine.width(), self.webengine.height())
                 # self.viewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314 #Todo
                 self.viewer.signals.layoutChanged.connect(self.slot_layout_changed)
-                self.viewer.signals.zoomChanged.connect(self.slot_zoom_changed)
+                # self.viewer.signals.zoomChanged.connect(self.slot_zoom_changed)
                 # logger.info(f"Local Volume:\n{cfg.LV.info()}")
 
         self.parent.hud.done()
@@ -2718,6 +2718,7 @@ class ProjectTab(QWidget):
 
     def onZoomSlider(self):
         caller = inspect.stack()[1].function
+        logger.critical(f'caller: {caller}')
         if caller not in ('slotUpdateZoomSlider', 'setValue'):  # Original #0314
             val = 1 / self.zoomSlider.value()
             if self.dm['state']['current_tab'] == 1:
@@ -2733,8 +2734,8 @@ class ProjectTab(QWidget):
 
     def slotUpdateZoomSlider(self):
         # Lets only care about REF <--> wSlider
-        # caller = inspect.stack()[1].function
-        # logger.info(f'caller: {caller}')
+        caller = inspect.stack()[1].function
+        logger.critical(f'caller: {caller}')
         try:
             if self.dm['state']['current_tab'] == 1:
                 val = self.editorViewer.state.cross_section_scale

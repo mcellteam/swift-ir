@@ -30,7 +30,6 @@ import neuroglancer as ng
 # from neuroglancer import ScreenshotSaver
 from qtpy.QtCore import QObject, Signal, Slot, QUrl
 from qtpy.QtWidgets import QApplication
-from qtpy.QtWebEngineWidgets import *
 from src.funcs_zarr import get_zarr_tensor
 from src.helpers import getOpt, getData, setData, print_exception, is_joel, is_tacc, caller_name, dt
 import src.config as cfg
@@ -149,7 +148,6 @@ class MAViewer(neuroglancer.Viewer):
         return copy.deepcopy(self.state.crossSectionScale)
         # return self.state.crossSectionScale
 
-
     def set_zoom(self, val):
         caller = inspect.stack()[1].function
         logger.info(f'Setting zoom to {caller}')
@@ -157,8 +155,6 @@ class MAViewer(neuroglancer.Viewer):
         with self.txn() as s:
             s.crossSectionScale = val
         self._blockStateChanged = False
-
-
 
     # def set_layer(self, index=None):
     def set_layer(self, zpos=None):
@@ -191,12 +187,6 @@ class MAViewer(neuroglancer.Viewer):
         self._blockStateChanged = False
 
 
-
-
-    def invalidateAlignedLayers(self):
-        cfg.alLV.invalidate()
-
-
     def post_message(self, msg):
         with self.config_state.txn() as s:
             s.status_messages['message'] = msg
@@ -213,14 +203,12 @@ class MAViewer(neuroglancer.Viewer):
         elif self.role == 'tra':
             self.index = self.dm.zpos #
 
-
         self.clear_layers()
 
         t1 = time.time()
 
         # self.restoreManAlignPts()
 
-        sf = self.dm.lvl(s=self.dm.level)
         if self.quality:
             path = os.path.join(self.dm['info']['images_location'], 'zarr', self.quality)
         else:
@@ -254,7 +242,7 @@ class MAViewer(neuroglancer.Viewer):
                 voxel_offset=[0, 0, 0],
                 max_downsampling=cfg.max_downsampling,
                 max_downsampled_size=cfg.max_downsampled_size
-                # max_downsampling_scales=cfg.max_downsampling_scales  # Goes a LOT slower when set to 1
+                # max_downsampling_scales=cfg.max_downsampling_scales  # Ga LOT slower when set to 1
             )
         else:
             self.LV = ng.LocalVolume(
@@ -264,7 +252,7 @@ class MAViewer(neuroglancer.Viewer):
                 # data=self.store,
                 dimensions=self.coordinate_space,
                 voxel_offset=[0, 0, 0],
-                # max_downsampling_scales=cfg.max_downsampling_scales  # Goes a LOT slower when set to 1
+                # max_downsampling_scales=cfg.max_downsampling_scales  # a LOT slower when set to 1
             )
 
         t3 = time.time()
@@ -281,14 +269,6 @@ class MAViewer(neuroglancer.Viewer):
             _, y, x = self.store.shape
             s.voxel_coordinates = [self.index + .5, y / 2, x / 2]
             s.show_default_annotations = False
-            if getOpt('neuroglancer,USE_CUSTOM_BACKGROUND'):
-                s.crossSectionBackgroundColor = getOpt('neuroglancer,CUSTOM_BACKGROUND_COLOR')
-            else:
-                if getOpt('neuroglancer,USE_DEFAULT_DARK_BACKGROUND'):
-                    # level.crossSectionBackgroundColor = '#222222'
-                    s.crossSectionBackgroundColor = '#000000'
-                else:
-                    s.crossSectionBackgroundColor = '#808080'
 
         self.actions.add('add_manpoint', self.add_matchpoint)
         # self.actions.add('swim', self.swim)
@@ -298,10 +278,10 @@ class MAViewer(neuroglancer.Viewer):
         # self.actions.add('swim', self.blinkCallback)
 
         with self.config_state.txn() as s:
+            s.input_event_bindings.slice_view['alt+click0'] = 'add_manpoint'
             # s.input_event_bindings.slice_view['dblclick0'] = 'add_manpoint'
             # s.input_event_bindings.slice_view['shift+click0'] = 'add_manpoint'
-            # s.input_event_bindings.slice_view['enter'] = 'add_manpoint'             #this works
-            s.input_event_bindings.slice_view['alt+click0'] = 'add_manpoint'
+            # s.input_event_bindings.slice_view['enter'] = 'add_manpoint'            #this works
             # s.input_event_bindings.slice_view['mousedown0'] = 'add_manpoint'       #this works
             # s.input_event_bindings.slice_view['at:control+mousedown0'] = 'add_manpoint'
             # s.input_event_bindings.viewer['keys'] = 'swim'
@@ -318,6 +298,7 @@ class MAViewer(neuroglancer.Viewer):
             # s.scale_bar_options.font_name = 'serif'
 
         t5 = time.time()
+        self.setBackground()
         self.drawSWIMwindow()
 
         t6 = time.time()
@@ -325,14 +306,12 @@ class MAViewer(neuroglancer.Viewer):
         if self.webengine:
             self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
-        self.initZoom()
+        # self.initZoom()
 
         self._blockStateChanged = False
         t7 = time.time()
 
         logger.info(f"\ntimings: {t1-t0:.3g}/{t2 - t0:.3g}/{t3 - t0:.3g}/{t4 - t0:.3g}/{t5 - t0:.3g}/{t6 - t0:.3g}/{t7 - t0:.3g}")
-
-
 
     # def blickCallback(self):
     #     logger.info('')
@@ -341,67 +320,20 @@ class MAViewer(neuroglancer.Viewer):
     def text(self):
         txt = ''
 
+
     def setBackground(self):
-        with self.txn() as s:
-            if getOpt('neuroglancer,USE_CUSTOM_BACKGROUND'):
-                s.crossSectionBackgroundColor = getOpt('neuroglancer,CUSTOM_BACKGROUND_COLOR')
-            else:
-                if getOpt('neuroglancer,USE_DEFAULT_DARK_BACKGROUND'):
-                    # s.crossSectionBackgroundColor = '#222222'
-                    s.crossSectionBackgroundColor = '#000000'
-                else:
-                    s.crossSectionBackgroundColor = '#808080'
-
-
-
-    def info(self):
-        n_layers = None
-        txt = '\n\n'
-        try:    txt += f'  caller             = {caller_name()}\n'
-        except: txt += f'  caller             =\n'
-        txt +=         f'  type/role          = {self.type}/{self.role}\n'
-        txt +=         f'  current method     = {self.dm.current_method}\n'
-        try:    txt += f'  _blockStateChanged = {self._blockStateChanged}\n'
-        except: txt += f'  _blockStateChanged =\n'
-        try:    txt += f'  self.dm.zpos      = {self.dm.zpos}\n'
-        except: txt += f'  self.dm.zpos      =\n'
-        try:    txt += f'  index              = {self.index}\n'
-        except: txt += f'  index              =\n'
-        try:    txt += f'  request_layer      = {int(self.state.position[0])}\n'
-        except: txt += f'  request_layer      =\n'
-        try:    txt += f'  new request_layer  = {int(self.state.voxel_coordinates[0])}\n'
-        except: txt += f'  new request_layer  =\n'
-        try:    txt += f'  state.voxel_coords = {self.state.voxel_coordinates}\n'
-        except: txt += f'  state.voxel_coords =\n'
-        try:    txt += f'  state.position     = {self.state.position}\n'
-        except: txt += f'  state.position     =\n'
-        txt += '\n'
         try:
-            n_layers = len(cfg.editorViewer.state.to_json()['layers'])
-            txt += f"  {n_layers} Layers\n"
+            with self.txn() as s:
+                if getOpt('neuroglancer,USE_CUSTOM_BACKGROUND'):
+                    s.crossSectionBackgroundColor = getOpt('neuroglancer,CUSTOM_BACKGROUND_COLOR')
+                else:
+                    if getOpt('neuroglancer,USE_DEFAULT_DARK_BACKGROUND'):
+                        # s.crossSectionBackgroundColor = '#222222'
+                        s.crossSectionBackgroundColor = '#000000'
+                    else:
+                        s.crossSectionBackgroundColor = '#808080'
         except:
-            txt += f'   0 Layers\n'
-        if n_layers:
-            for i in range(n_layers):
-                txt += f"  Layer {i}:\n"
-                name = cfg.editorViewer.state.to_json()['layers'][i]['name']
-                txt += f"    Name: {name}\n"
-                type = cfg.editorViewer.state.to_json()['layers'][i]['type']
-                txt += f"    Type: {type}\n"
-                if type == 'annotation':
-                    n_ann = len(cfg.editorViewer.state.to_json()['layers'][i]['annotations'])
-                    txt += f"    # annotations: {n_ann}\n"
-                    ids = [cfg.editorViewer.state.to_json()['layers'][i]['annotations'][x]['id'] for x in range(n_ann)]
-                    txt += '    ids : '
-                    txt += ', '.join(ids)
-                    txt += '\n'
-                    try:
-                        txt += '    Example: ' + str(cfg.editorViewer.state.to_json()['layers'][i]['annotations'][0]) + '\n'
-                    except:
-                        print_exception()
-
-        return txt
-
+            print_exception()
 
 
     @Slot()
@@ -418,7 +350,6 @@ class MAViewer(neuroglancer.Viewer):
             logger.warning('State changed too early! Index not set.')
             return
 
-
         logger.info('state changed!')
 
         self._blockStateChanged = True
@@ -434,52 +365,20 @@ class MAViewer(neuroglancer.Viewer):
                     self.index = floor(self.state.position[0])
                     self.drawSWIMwindow(z=self.index) #NeedThis #0803
                     # self.dm.zpos = self.index
-                    # self._blockStateChanged = False
                     self.signals.zVoxelCoordChanged.emit(self.index)
         except:
             print_exception()
-
-
-        # if self.dm.lvl() > 2:
-        #     if self.state.relative_display_scales == None:
-        #         self.set_zmag()
-
         self._blockStateChanged = False
-
-
-
-
-
-
-    # def pt2ann(self, points: list):
-    #     annotations = []
-    #     lineweight = cfg.main_window.mp_marker_lineweight_spinbox.value()
-    #     size = cfg.main_window.mp_marker_size_spinbox.value()
-    #     for i, point in enumerate(points):
-    #         annotations.append(ng.PointAnnotation(id=repr(point),
-    #                                               point=point,
-    #                                               props=[self.colors[i % 3],
-    #                                                      size,
-    #                                                      lineweight]))
-    #     self.annotations = annotations
-    #     return annotations
-
-
-
-    # def undrawAnnotations(self):
-    #     try:
-    #         with self.txn() as s:
-    #             s.layers['ann'].annotations = None
-    #     except:
-    #         logger.warning('Unable to undraw annotations')
 
 
     def getNextUnusedColor(self, role):
         return self.colors[self.getNextPoint(role)]
 
+
     def getNextPoint(self, role):
         # return next((i for i, v in enumerate(self.pts[role]) if not v), 0)
         return next((i for i, v in enumerate(self.pts2[role]) if not v), 0)
+
 
     def numPts(self, role):
         n = 0
@@ -501,10 +400,10 @@ class MAViewer(neuroglancer.Viewer):
             state.layers.clear()
             self.set_state(state)
 
+
     def swim(self, s):
         logger.info('[futures] Emitting SWIM signal...')
         self.signals.swimAction.emit()
-
 
 
     def add_matchpoint(self, s):
@@ -556,15 +455,29 @@ class MAViewer(neuroglancer.Viewer):
         logger.info('%s Match Point Added: %s' % (self.role, str(coords)))
         self.drawSWIMwindow()
 
-    # def draw_point_annotations(self):
-    #     logger.info('Drawing point annotations...')
-    #     try:
-    #         anns = self.pts[self.role]
-    #         if anns:
-    #             with self.txn() as s:
-    #                 s.layers['ann_points'].annotations = anns
-    #     except:
-    #         logger.warning('Unable to draw donut annotations or none to draw')
+
+    @cache
+    def getCenterpoints(self, w, h, ww1x1, ww2x2):
+        d_x1 = ((w - ww1x1[0]) / 2) + (ww2x2[0] / 2)
+        d_x2 = w - d_x1
+        d_y1 = ((h - ww1x1[1]) / 2) + (ww2x2[1] / 2)
+        d_y2 = h - d_y1
+        p1 = (d_x2, d_y1)
+        p2 = (d_x1, d_y1)
+        p3 = (d_x2, d_y2)
+        p4 = (d_x1, d_y2)
+        return p1, p2, p3, p4
+
+    @cache
+    def getRect2(self, coords, ww_x, ww_y):
+        x, y = coords[0], coords[1]
+        hw = int(ww_x / 2)  # Half-width
+        hh = int(ww_y / 2)  # Half-height
+        A = (y + hh, x - hw)
+        B = (y + hh, x + hw)
+        C = (y - hh, x + hw)
+        D = (y - hh, x - hw)
+        return A, B, C, D
 
 
     def undrawSWIMwindows(self):
@@ -577,24 +490,19 @@ class MAViewer(neuroglancer.Viewer):
             print_exception()
 
 
-
     # @functools.cache
     def drawSWIMwindow(self, z=None):
         if z == None:
             z = self.dm.zpos
-
         if z == self.dm.first_unskipped():
             return
-
+        # caller = inspect.stack()[1].function
+        # logger.info(f"[{caller}] Drawing SWIM windows...")
         self._blockStateChanged = True
         # self.setMpData() #0805+
-        # self.undrawSWIMwindows()
+        self.undrawSWIMwindows()
         ms = self._mkr_size
-
         fac = self.dm.lvl() / self.quality_lvl
-
-        caller = inspect.stack()[1].function
-        logger.info(f"[{caller}] Drawing SWIM windows...")
         method = self.dm.current_method
         annotations = []
         if method == 'grid':
@@ -604,13 +512,11 @@ class MAViewer(neuroglancer.Viewer):
             ww2x2 = (_ww2x2[0] * fac, _ww2x2[1] * fac)  # 2x2 window width
             w, h = self.dm.image_size(s=self.quality)
             p = self.getCenterpoints(w, h, ww1x1, ww2x2)
-            regions = self.dm.quadrants
-            colors = self.colors[0:sum(regions)]
-            cps = [x for i, x in enumerate(p) if regions[i]]
+            colors = self.colors[0:sum(self.dm.quadrants)]
+            cps = [x for i, x in enumerate(p) if self.dm.quadrants[i]]
             ww_x = ww2x2[0] - (24 // self.quality_lvl)
             ww_y = ww2x2[1] - (24 // self.quality_lvl)
             z = self.index + 0.5
-
             for i, pt in enumerate(cps):
                 clr = colors[i]
                 a, b, c, d = self.getRect2(pt, ww_x, ww_y)
@@ -634,25 +540,16 @@ class MAViewer(neuroglancer.Viewer):
             for i, pt in enumerate(self.pts2[self.role]):
                 # 0: (122, None, None)
                 # logger.critical(f"{i}: {pt}")
-                sys.stdout.flush()
                 if pt:
                     if pt[1]:
-                        A, B, C, D = self.getRect2(
-                            # coords=(pt.point[2], pt.point[1]),
-                            coords=(pt[2], pt[1]),
-                            ww_x=ww_x,
-                            ww_y=ww_y,
-                        )
-                        A = (self.index + 0.5,) + A
-                        B = (self.index + 0.5,) + B
-                        C = (self.index + 0.5,) + C
-                        D = (self.index + 0.5,) + D
-                        c = self.colors[i]
+                        a, b, c, d = self.getRect2(coords=(pt[2], pt[1]), ww_x=ww_x,ww_y=ww_y,)
+                        z = self.index + 0.5
+                        clr = self.colors[i]
                         annotations.extend([
-                            ng.LineAnnotation(id=str(i) + '_L1', pointA=A, pointB=B, props=[c, ms]),
-                            ng.LineAnnotation(id=str(i) + '_L2', pointA=B, pointB=C, props=[c, ms]),
-                            ng.LineAnnotation(id=str(i) + '_L3', pointA=C, pointB=D, props=[c, ms]),
-                            ng.LineAnnotation(id=str(i) + '_L4', pointA=D, pointB=A, props=[c, ms])
+                            ng.LineAnnotation(id=str(i) + '_L1', pointA=(z,) + a, pointB=b, props=[clr, ms]),
+                            ng.LineAnnotation(id=str(i) + '_L2', pointA=(z,) + b, pointB=c, props=[clr, ms]),
+                            ng.LineAnnotation(id=str(i) + '_L3', pointA=(z,) + c, pointB=d, props=[clr, ms]),
+                            ng.LineAnnotation(id=str(i) + '_L4', pointA=(z,) + d, pointB=a, props=[clr, ms])
                         ])
 
         with self.txn() as s:
@@ -664,7 +561,7 @@ class MAViewer(neuroglancer.Viewer):
                 annotation_properties=[
                     ng.AnnotationPropertySpec(id='color', type='rgb', default='#ffff66', ),
                     # ng.AnnotationPropertySpec(id='size', cur_method='float32', default=1, )
-                    ng.AnnotationPropertySpec(id='size', type='float32', default=0, )
+                    ng.AnnotationPropertySpec(id='size', type='float32', default=-1, )
                 ],
                 shader='''
                     void main() {
@@ -676,31 +573,15 @@ class MAViewer(neuroglancer.Viewer):
 
         self._blockStateChanged = False
 
-
-    @cache
-    def getCenterpoints(self, w, h, ww1x1, ww2x2):
-        d_x1 = ((w - ww1x1[0]) / 2) + (ww2x2[0] / 2)
-        d_x2 = w - d_x1
-        d_y1 = ((h - ww1x1[1]) / 2) + (ww2x2[1] / 2)
-        d_y2 = h - d_y1
-        p1 = (d_x2, d_y1)
-        p2 = (d_x1, d_y1)
-        p3 = (d_x2, d_y2)
-        p4 = (d_x1, d_y2)
-        return p1, p2, p3, p4
-
-
-    @cache
-    def getRect2(self, coords, ww_x, ww_y):
-        x, y = coords[0], coords[1]
-        hw = int(ww_x / 2)  # Half-width
-        hh = int(ww_y / 2)  # Half-height
-        A = (y + hh, x - hw)
-        B = (y + hh, x + hw)
-        C = (y - hh, x + hw)
-        D = (y - hh, x - hw)
-        return A, B, C, D
-
+    # def draw_point_annotations(self):
+    #     logger.info('Drawing point annotations...')
+    #     try:
+    #         anns = self.pts[self.role]
+    #         if anns:
+    #             with self.txn() as s:
+    #                 s.layers['ann_points'].annotations = anns
+    #     except:
+    #         logger.warning('Unable to draw donut annotations or none to draw')
 
     def restoreManAlignPts(self):
         self.pts2[self.role] = [None,None,None]
@@ -728,7 +609,7 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def initZoom(self):
-        logger.info(f'[{caller_name()}] [{self.role}] Calling initZoom...')
+        logger.critical(f'[{caller_name()}] [{self.role}] Initializing Zoom...')
         adjust = 1.12
         if self.cs_scale:
             logger.info(f'[{self.role}] Initializing crossSectionScale to self.cs_scale ({self.cs_scale})')
@@ -745,23 +626,76 @@ class MAViewer(neuroglancer.Viewer):
             scale_w = ((res_x * tensor_x) / w) * 1e-9  # nm/pixel (subtract width of sliders)
             cs_scale = max(scale_h, scale_w)
 
-            # logger.info(f'________{self.role}________')
-            # logger.info(f'w       = {w}')
-            # logger.info(f'h       = {h}')
-            # logger.info(f'tensor_x       = {tensor_x}')
-            # logger.info(f'tensor_y       = {tensor_y}')
-            # logger.info(f'res_x          = {res_x}')
-            # logger.info(f'res_y          = {res_y}')
-            # logger.info(f'scale_h        = {scale_h}')
-            # logger.info(f'scale_w        = {scale_w}')
-            # logger.info(f'self.dm.level_key = {self.dm.level_key}')
-            # logger.info(f'cs_scale       = {cs_scale}')
+            logger.critical(f'________{self.role}________\n'
+                        f'store.shape    = {self.store.shape}\n'
+                        f'level          = {self.dm.level}\n'
+                        f'quality        = {self.quality}\n'
+                        f'h, w           = {h}, {w}\n'
+                        f'tensor_y, _x   = {tensor_y}, {tensor_x}\n'
+                        f'res_z, _y, _x  = {res_z}, {res_y}, {res_x}\n'
+                        f'scale_h, _w    = {scale_h}, {scale_h}\n'
+                        f'----------------------\n'
+                        f'cross section scale: {cs_scale}\n'
+                        f'----------------------\n')
 
             # logger.info(f'Initializing crossSectionScale to calculated value times adjust {self.cs_scale} [{self.role}]')
             with self.txn() as s:
                 # s.crossSectionScale = cs_scale * 1.20
                 s.crossSectionScale = cs_scale * adjust
 
+    # def pt2ann(self, points: list):
+    #     annotations = []
+    #     lineweight = cfg.main_window.mp_marker_lineweight_spinbox.value()
+    #     size = cfg.main_window.mp_marker_size_spinbox.value()
+    #     for i, point in enumerate(points):
+    #         annotations.append(ng.PointAnnotation(id=repr(point),
+    #                                               point=point,
+    #                                               props=[self.colors[i % 3],
+    #                                                      size,
+    #                                                      lineweight]))
+    #     self.annotations = annotations
+    #     return annotations
+
+    def info(self):
+        n_layers = None
+        txt = '\n\n'
+        txt += f'  caller             = {caller_name()}\n'
+        txt += f'  type/role          = {self.type}/{self.role}\n'
+        txt += f'  current method     = {self.dm.current_method}\n'
+        txt += f'  _blockStateChanged = {self._blockStateChanged}\n'
+        txt += f'  self.dm.zpos       = {self.dm.zpos}\n'
+        txt += f'  index              = {self.index}\n'
+        try:    txt += f'  state.position     = {self.state.position}\n'
+        except: txt += f'  state.position     =\n'
+        try:    txt += f'  state.voxel_coordinates  = {self.state.voxel_coordinates}\n'
+        except: txt += f'  state.voxel_coordinates  =\n'
+        txt += '\n'
+        try:
+            n_layers = len(cfg.editorViewer.state.to_json()['layers'])
+            txt += f"  {n_layers} Layers\n"
+        except:
+            txt += f'   0 Layers\n'
+        if n_layers:
+            for i in range(n_layers):
+                txt += f"  Layer {i}:\n"
+                name = cfg.editorViewer.state.to_json()['layers'][i]['name']
+                txt += f"    Name: {name}\n"
+                type = cfg.editorViewer.state.to_json()['layers'][i]['type']
+                txt += f"    Type: {type}\n"
+                if type == 'annotation':
+                    n_ann = len(cfg.editorViewer.state.to_json()['layers'][i]['annotations'])
+                    txt += f"    # annotations: {n_ann}\n"
+                    ids = [cfg.editorViewer.state.to_json()['layers'][i]['annotations'][x]['id'] for x in range(n_ann)]
+                    txt += '    ids : '
+                    txt += ', '.join(ids)
+                    txt += '\n'
+                    try:
+                        txt += '    Example: ' + str(
+                            cfg.editorViewer.state.to_json()['layers'][i]['annotations'][0]) + '\n'
+                    except:
+                        print_exception()
+
+        return txt
 
 
 if __name__ == '__main__':

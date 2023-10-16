@@ -21,7 +21,6 @@ import subprocess
 from collections import OrderedDict
 # from guppy import hpy; h=hpy()
 import neuroglancer as ng
-
 import qtawesome as qta
 # from rechunker import rechunk
 from qtpy.QtWebEngineWidgets import *
@@ -64,7 +63,6 @@ from src.ui.tab_browser import WebBrowser
 from src.ui.tab_project import ProjectTab
 from src.ui.tab_open_project import OpenProject
 from src.ui.layouts import HBL, VBL, HW, VW, QVLine
-# from src.ui.python_console import PythonConsoleWidget
 from src.ui.webpage import QuickWebPage
 
 __all__ = ['MainWindow']
@@ -119,7 +117,6 @@ class MainWindow(QMainWindow):
     # finished = Signal()
     updateTable = Signal()
     tabChanged = Signal()
-    cancelMultiprocessing = Signal()
 
     def __init__(self, data=None):
         QMainWindow.__init__(self)
@@ -167,20 +164,13 @@ class MainWindow(QMainWindow):
         self.initLowest8Widget()
         self.initEditorStats()
         self.initToolbar()
-
-
         self.initUI()
 
-        QThreadPool.globalInstance().setMaxThreadCount(1)
+        # QThreadPool.globalInstance().setMaxThreadCount(1)
 
         # self.initMenu()
         self.initWidgetSpacing()
         # self.initShortcuts()
-
-
-
-        # self.finished.connect(self.updateProjectTable)
-        self.cancelMultiprocessing.connect(self.cleanupAfterCancel)
 
         self.activateWindow()
 
@@ -214,9 +204,8 @@ class MainWindow(QMainWindow):
         # self.setCorner(Qt.BottomLeftCorner, Qt.LeftDockWidgetArea )
         # self.setCorner(Qt.BottomLeftCorner, Qt.LeftToolBarArea )
         # self.setCorner(Qt.TopLeftCorner, Qt.LeftDockWidgetArea )
-        # self.setCorner(Qt.BottomRightCorner, Qt.RightDockWidgetArea )
-        self.setCorner(Qt.BottomRightCorner, Qt.BottomDockWidgetArea )
-        # self.setCorner(Qt.BottomRightCorner, Qt.RightDockWidgetArea )
+        self.setCorner(Qt.BottomRightCorner, Qt.RightDockWidgetArea )
+        # self.setCorner(Qt.BottomRightCorner, Qt.BottomDockWidgetArea )
         self.setDockNestingEnabled(True)
 
 
@@ -238,37 +227,9 @@ class MainWindow(QMainWindow):
         # self._shortcutArrowRight.setKey(QKeySequence(Qt.Key_Right))
         self._shortcutArrowRight.setContext(Qt.WidgetShortcut)
 
-        # def fn_main_window_lost_focus():
-        #     logger.warning(f"\n\nMain Window lost its focus to: {self.focusWidget()}!\n")
-        # 
-        # self.focusOutEvent.(fn_main_window_lost_focus)
-        self.focusreasons = {0: 'MouseFocusReason',
-                             1: 'TabFocusReason',
-                             2: 'BacktabFocusReason',
-                             3: 'ActiveWindowFocusReason',
-                             4: 'PopupFocusReason',
-                             5: 'ShortcutFocusReason',
-                             6: 'MenuBarFocusReason',
-                             7: 'OtherFocusReason'}
-
         self._mutex = QMutex()
         self._initProjectManager()
         self.setdw_hud(True)
-
-    # def focusInEvent(self, event):
-    #     logger.warning(f"\nFocus GAINED - reason : ({event.reason()}) {self.focusreasons[event.reason()]}"
-    #                    f"\nFocus belongs to      : {self.focusWidget()}")
-    #
-    # def focusOutEvent(self, event):
-    #     logger.warning(f"\nFocus LOST - reason : ({event.reason()}) {self.focusreasons[event.reason()]}"
-    #                    f"\nFocus belongs to    : {self.focusWidget()}")
-    #     # if type(self.focusWidget()) != QTextEdit:
-    #     #     self.focusW = self.focusWidget()
-    #     # self.setFocus()
-
-    # def pyqtgraph_examples(self):
-    #     pyqtgraph.examples.run()
-
 
     def TO(self):
         return self._getTabObject()
@@ -362,16 +323,6 @@ class MainWindow(QMainWindow):
         qr.moveCenter(cp)
         self.move(qr.topLeft())
         # self.showMaximized(
-
-    def cleanupAfterCancel(self):
-        logger.critical('Cleaning Up After Multiprocessing Tasks Were Canceled...')
-        # self.pt.snr_plot.initSnrPlot()
-        self.wPbar.hide()
-        # self.pt.updateTreeWidget()
-        self.dataUpdateWidgets()
-        self.updateEnabledButtons()
-        if self.dwSnr.isVisible():
-            self.pt.dSnr_plot.initSnrPlot()
 
     def hardRestartNg(self):
         caller = inspect.stack()[1].function
@@ -4392,23 +4343,6 @@ class MainWindow(QMainWindow):
         vbl.setSpacing(1)
         self._tool_hstry.setLayout(vbl)
 
-        # self._hstry_treeview = QTreeView()
-        # self._hstry_treeview.setStyleSheet('background-color: #ffffff;')
-        # self._hstry_treeview.setObjectName('treeview')
-        # self.projecthistory_model = JsonModel(parent=self)
-        # self._hstry_treeview.setModel(self.projecthistory_model)
-        # self._hstry_treeview.header().setSectionResizeMode(0, QHeaderView.Stretch)
-        # self._hstry_treeview.setAlternatingRowColors(True)
-        # self.exit_projecthistory_view_button = QPushButton("Back")
-        # self.exit_projecthistory_view_button.setFixedSize(normal_button_size)
-        # self.exit_projecthistory_view_button.clicked.connect(self.back_callback)
-        # gl = QGridLayout()
-        # gl.addWidget(self._hstry_treeview, 0, 0, 1, 2)
-        # gl.addWidget(self.exit_projecthistory_view_button, 1, 0, 1, 1)
-        # self.historyview_widget = QWidget()
-        # self.historyview_widget.setObjectName('historyview_widget')
-        # self.historyview_widget.setLayout(gl)
-
         self.ng_widget = QWidget()
         self.ng_widget.setObjectName('ng_widget')
         vbl = VBL()
@@ -4458,7 +4392,6 @@ class MainWindow(QMainWindow):
         self.notes.setPlaceholderText('Type any notes here...')
         self.notes.textChanged.connect(fn)
         self.dwNotes = DockWidget('Notes', self)
-
 
         def fn():
             logger.info('')
@@ -4521,28 +4454,8 @@ class MainWindow(QMainWindow):
         self.detailsTitle.setStyleSheet(
             'color: #f3f6fb; font-size: 10px; font-weight: 600; margin-left: 2px; margin-top: 2px;')
 
-
         '''Tabs Global Widget'''
         self.globTabs = QTabWidget(self)
-
-        # self.globTabs.setStyleSheet("""
-        #
-        # QTabBar::close-button {
-        #     image: url(:/icons/close-tab-dark.png);
-        #     subcontrol-origin: padding;
-        #     subcontrol-position: right;
-        #     padding-left: 6px;
-        #     padding-top: 6px;
-        #     padding-bottom: 6px;
-        # }
-        # QTabBar::close-button:!selected {
-        #     image: url(:/icons/close-tab-light.png);
-        #     subcontrol-origin: padding;
-        #     subcontrol-position: right;
-        #     padding-left: 6px;
-        #     padding-top: 6px;
-        #     padding-bottom: 6px;
-        # """)
         self.globTabs.setTabBarAutoHide(True)
         self.globTabs.setTabShape(QTabWidget.Triangular)
         self.globTabs.tabBar().setExpanding(True)
@@ -4550,42 +4463,6 @@ class MainWindow(QMainWindow):
         self.globTabs.setUsesScrollButtons(True)
         self.globTabs.setContentsMargins(0, 0, 0, 0)
         self.globTabs.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # self.globTabs.tabBar().setStyleSheet("""
-        # QTabBar::close {
-        #     image: url(src/resources/close-tab-light.png);
-        #     subcontrol-origin: padding;
-        #     subcontrol-position: right;
-        #     padding: 6px;
-        # }
-        # QTabBar::close:!selected {
-        #
-        #     image: url(src/resources/close-tab-dark.png);
-        #     subcontrol-origin: padding;
-        #     subcontrol-position: right;
-        #     padding: 6px;
-        # }
-        #
-        # QTabBar::tab {
-        #     background-color: qlineargradient(x1:0, y1:0, x2:.5, y2:1, stop:0 #141414, stop:1 #222222);
-        #     color: #f3f6fb;
-        #     min-width: 120px;
-        #     height: 16px;
-        #     padding-left:4px;
-        #     margin-left:4px;
-        #     font-size: 10px;
-        #     border-width: 0px;
-        # }
-        # QTabBar::tab:selected
-        # {
-        #     font-weight: 600;
-        # }
-        # QTabBar::tab:!selected
-        # {
-        #     color: #161c20;
-        #     font-weight: 600;
-        # }
-        # """)
-
         self.globTabs.tabBar().setElideMode(Qt.ElideMiddle)
         self.globTabs.setElideMode(Qt.ElideMiddle)
         self.globTabs.setMovable(True)
@@ -4595,12 +4472,16 @@ class MainWindow(QMainWindow):
         self.globTabs.tabCloseRequested[int].connect(self._onGlobTabClose)
         self.globTabs.currentChanged.connect(self._onGlobTabChange)
 
-        import pyqtgraph.console
-        self.pythonConsole = pyqtgraph.console.ConsoleWidget()
+        if is_mac():
+            from src.ui.python_console import PythonConsoleWidget
+            # self.pythonConsole = PythonConsole()
+            self.pythonConsole = PythonConsoleWidget()
+            self.pythonConsole.pyconsole.set_color_none()
+            self.pythonConsole.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        else:
+            import pyqtgraph.console
+            self.pythonConsole = pyqtgraph.console.ConsoleWidget()
 
-        # self.pythonConsole = PythonConsole()
-        # self.pythonConsole.pyconsole.set_color_none()
-        # self.pythonConsole.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
         self.dwPython = DockWidget('Python', self)
         self.dwPython.visibilityChanged.connect(self.callbackDwVisibilityChanged)
@@ -4955,6 +4836,7 @@ class MainWindow(QMainWindow):
 
     def cancelTasks(self):
         logger.critical("STOP TASKS requested!")
+        self.warn('Cleaning up after multiprocessing tasks were CANCELED...')
         self._working = False
         if hasattr(self, '_alignworker'):
             try:
@@ -4967,7 +4849,14 @@ class MainWindow(QMainWindow):
             except:
                 logger.warning('Unable to stop _scaleworker or no _scaleworker to stop')
 
-        self.cleanupAfterCancel()
+
+        # self.pt.snr_plot.initSnrPlot()
+        self.wPbar.hide()
+        # self.pt.updateTreeWidget()
+        self.dataUpdateWidgets()
+        self.updateEnabledButtons()
+        if self.dwSnr.isVisible():
+            self.pt.dSnr_plot.initSnrPlot()
 
     def setPbarMax(self, x):
         self.pbar.setMaximum(x)
