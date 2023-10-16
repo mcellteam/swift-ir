@@ -350,7 +350,8 @@ class MAViewer(neuroglancer.Viewer):
             logger.warning('State changed too early! Index not set.')
             return
 
-        logger.info('state changed!')
+        # logger.info('state changed!')
+        logger.info('')
 
         self._blockStateChanged = True
         try:
@@ -599,6 +600,7 @@ class MAViewer(neuroglancer.Viewer):
             # layer.volumeRendering = True
         self.set_state(state)
 
+
     def set_contrast(self, val=None):
         state = copy.deepcopy(self.state)
         for layer in state.layers:
@@ -609,7 +611,7 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def initZoom(self):
-        logger.critical(f'[{caller_name()}] [{self.role}] Initializing Zoom...')
+        logger.info(f'[{caller_name()}] [{self.role}] Initializing Zoom...')
         adjust = 1.12
         if self.cs_scale:
             logger.info(f'[{self.role}] Initializing crossSectionScale to self.cs_scale ({self.cs_scale})')

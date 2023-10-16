@@ -1344,6 +1344,17 @@ class ProjectTab(QWidget):
         self.swMethod.addWidget(self.twMethod)
         self.swMethod.addWidget(self.wPlaceholder)
 
+        # self.bFrameZoom = QPushButton()
+        # self.bFrameZoom.setCursor(QCursor(Qt.PointingHandCursor))
+        # self.bFrameZoom.setFixedSize(QSize(18, 18))
+        # self.bFrameZoom.setIcon(qta.icon('msc.zoom-out', color='#161c20'))
+        # def fn():
+        #     try:
+        #         self.editorViewer.initZoom()
+        #     except:
+        #         print_exception()
+        # self.bFrameZoom.clicked.connect(fn)
+
         # self.labViewerScale = QLabel('Viewer Resolution:')
         self.cmbViewerScale = QComboBox()
         lst = []
