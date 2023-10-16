@@ -149,15 +149,23 @@ class AlignWorker(QObject):
             wd = dm.ssDir(s=scale, l=i)  # write directory
             os.makedirs(wd, exist_ok=True)
 
-            if ss['include']:
-                if not self.dm.ht.haskey(self.dm.swim_settings(s=scale, l=i)):
-                    wp = os.path.join(wd, 'swim_settings.json')  # write path
-                    with open(wp, 'w') as f:
-                        jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
-                        f.write(jde.encode(dm.swim_settings(s=scale, l=i)))
-                    tasks.append(copy.deepcopy(ss))
-                else:
-                    logger.info(f"[{i}] Cache hit!")
+            if self.ignore_cache:
+                wp = os.path.join(wd, 'swim_settings.json')  # write path
+                with open(wp, 'w') as f:
+                    jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
+                    f.write(jde.encode(dm.swim_settings(s=scale, l=i)))
+                tasks.append(copy.deepcopy(ss))
+                continue
+            else:
+                if ss['include']:
+                    if not self.dm.ht.haskey(self.dm.swim_settings(s=scale, l=i)):
+                        wp = os.path.join(wd, 'swim_settings.json')  # write path
+                        with open(wp, 'w') as f:
+                            jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
+                            f.write(jde.encode(dm.swim_settings(s=scale, l=i)))
+                        tasks.append(copy.deepcopy(ss))
+                    else:
+                        logger.info(f"[{i}] Cache hit!")
         self.hudMessage.emit(f'Batch multiprocessing {len(tasks)} alignment jobs...')
 
         # delete_correlation_signals(dm=dm, scale=scale, indexes=indexes)

@@ -115,10 +115,14 @@ class ZarrWorker(QObject):
                 indexes.append(i)
                 continue
 
-            if self.dm.zarrCafmHashComports(s=scale, l=i):
-                logger.info(f"Cache hit {cur_cafm_hash}! Zarr is correct at index {i}.")
-            else:
+            if self.ignore_cache:
                 indexes.append(i)
+                continue
+            else:
+                if self.dm.zarrCafmHashComports(s=scale, l=i):
+                    logger.info(f"Cache hit {cur_cafm_hash}! Zarr is correct at index {i}.")
+                else:
+                    indexes.append(i)
 
         if not len(indexes):
             logger.info("\n\nZarr is in sync.\n")

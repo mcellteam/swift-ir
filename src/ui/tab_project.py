@@ -1012,9 +1012,6 @@ class ProjectTab(QWidget):
         self.cbIgnoreCache.setFocusPolicy(Qt.NoFocus)
         self.cbIgnoreCache.toggled.connect(self.onDefaultsCheckbox)
         self.cbIgnoreCache.setFixedHeight(14)
-        self.cbIgnoreCache.setEnabled(False)
-
-
 
         self.flGrid = QFormLayout()
         self.flGrid.setHorizontalSpacing(4)
