@@ -901,7 +901,7 @@ def print_exception(extra=''):
         os.chmod(of, 0o666)
 
 
-def get_img_filenames(path) -> list[str]:
+def get_img_filenames(path) -> list:
     logger.debug('get_img_filenames:')
     logger.debug('Searching in Path: %s ' % path)
     imgs = [x for x in os.listdir(path) if os.path.splitext(x)[1] in (

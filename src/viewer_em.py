@@ -72,9 +72,9 @@ class AbstractEMViewer(neuroglancer.Viewer):
         self.created = datetime.datetime.now()
         # self._layer = None
         try:
-            self._layer = self.dm.zpos
+            self._layer = cfg.data.zpos
         except:
-            logger.warning("setting layer to 0")
+            logger.warning("warning: setting layer to 0")
             self._layer = 0
         # self.scale = self.dm.level
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
