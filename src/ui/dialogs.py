@@ -544,7 +544,8 @@ class NewConfigureProjectDialog(QDialog):
 
             # cfg.data.set_scales_from_string(self.scales_input.text()) #Deprecated
             cfg.data.set_use_bounding_rect(self.bounding_rectangle_checkbox.isChecked())
-            cfg.data['defaults'][cfg.data.scale]['initial_rotation'] = float(self.initial_rotation_input.text())
+            cfg.data['level_data'][cfg.data.scale]['defaults']['initial_rotation'] = float(
+                self.initial_rotation_input.text())
             cfg.data['data']['clevel'] = int(self.clevel_input.text())
             cfg.data['data']['cname'] = self.cname_combobox.currentText()
             cfg.data['data']['chunkshape'] = (int(self.chunk_z_lineedit.text()),
@@ -576,7 +577,8 @@ class NewConfigureProjectDialog(QDialog):
 
             # cfg.data.set_scales_from_string(self.scales_input.text()) #Deprecated
             cfg.data.set_use_bounding_rect(self.bounding_rectangle_checkbox.isChecked())
-            cfg.data['defaults'][cfg.data.scale]['initial_rotation'] = float(self.initial_rotation_input.text())
+            cfg.data['level_data'][cfg.data.scale]['defaults']['initial_rotation'] = float(
+                self.initial_rotation_input.text())
             cfg.data['data']['clevel'] = int(self.clevel_input.text())
             cfg.data['data']['cname'] = self.cname_combobox.currentText()
             cfg.data['data']['chunkshape'] = (int(self.chunk_z_lineedit.text()),

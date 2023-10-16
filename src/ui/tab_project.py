@@ -105,18 +105,18 @@ class ProjectTab(QWidget):
 
         if alignment_ready:
             if self.twMethod.currentIndex() == 0:
-                def_dl = self.dm['defaults'][self.dm.level]
-                def_mo = self.dm['defaults'][self.dm.level]['method_opts']
+                def_dl = self.dm['level_data'][self.dm.level]['defaults']
+                def_mo = self.dm['level_data'][self.dm.level]['defaults']['method_opts']
                 dl = self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]
                 mo = dl['swim_settings']['method_opts']
                 try:
-                    self.aaButtons[5].setEnabled(def_mo['quadrants'] != mo['quadrants'])
                     self.aaButtons[0].setEnabled(def_mo['size_1x1'] != mo['size_1x1'])
                     self.aaButtons[1].setEnabled(def_mo['size_2x2'] != mo['size_2x2'])
                     self.aaButtons[2].setEnabled(def_dl['iterations'] != dl['swim_settings']['iterations'])
                     self.aaButtons[3].setEnabled(def_dl['whitening'] != dl['swim_settings']['whitening'])
                     self.aaButtons[4].setEnabled((def_dl['clobber'] != dl['swim_settings']['clobber']) or
                                                  (def_dl['clobber_size'] != dl['swim_settings']['clobber_size']))
+                    self.aaButtons[5].setEnabled(def_mo['quadrants'] != mo['quadrants'])
 
                 except:
                     print_exception()
@@ -1091,7 +1091,7 @@ class ProjectTab(QWidget):
                 if cur_tab == 0:
                     # self.swMethod.setCurrentIndex(0)
                     # mo = self.dm['level_data'][s]['method_presets']['grid']
-                    mo = self.dm['defaults'][s]['method_opts']
+                    mo = self.dm['level_data'][self.dm.level]['defaults']['method_opts']
                     self.dm['stack'][l]['levels'][s]['swim_settings']['method_opts'] = copy.deepcopy(mo)
                 elif cur_tab == 1:
                     # self.swMethod.setCurrentIndex(1)

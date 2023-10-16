@@ -3014,7 +3014,7 @@ class MainWindow(QMainWindow):
 
     def updateOutputSettings(self):
         if self.wOutputSettings.isVisible():
-            poly = self.dm['defaults'][self.dm.scale]['polynomial_bias']
+            poly = self.dm['level_data'][self.dm.scale]['defaults']['polynomial_bias']
             if (poly == None) or (poly == 'None'):
                 self.boxBias.setCurrentIndex(0)
             else:
