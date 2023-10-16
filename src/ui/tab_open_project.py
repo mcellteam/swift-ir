@@ -682,7 +682,7 @@ class OpenProject(QWidget):
             self.wNameAlignment.hide()
             return
         if not os.path.isdir(self.cmbSelectImages.currentText()):
-            cfg.mw.warn(f"'{self.cmbSelectImages.currentText()}' is not a valid images.")
+            cfg.mw.warn(f"'{self.cmbSelectImages.currentText()}' is not a valid .images series.")
             return
         self.wNameAlignment.show()
         self.leNameAlignment.setFocus()
