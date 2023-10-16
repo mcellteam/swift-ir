@@ -666,8 +666,6 @@ class MainWindow(QMainWindow):
     def setSignalsPixmaps(self, z=None):
 
         if self.dwMatches.isVisible():
-            caller = inspect.stack()[1].function
-            logger.info(f'[{caller}]')
             if not hasattr(cfg, 'data'):
                 return
 
@@ -676,7 +674,8 @@ class MainWindow(QMainWindow):
                 logger.warning('Not a project tab')
                 return
 
-
+            caller = inspect.stack()[1].function
+            # logger.info(f'[{caller}]')
 
             thumbs = self.dm.get_signals_filenames(l=z)
             snr_vals = copy.deepcopy(self.dm.snr_components(l=z))
@@ -731,7 +730,6 @@ class MainWindow(QMainWindow):
                     indexes.append(int(fn[-1]))
 
                 for i in range(0,4):
-
                     if i in indexes:
                         try:
                             try:
@@ -755,21 +753,20 @@ class MainWindow(QMainWindow):
                         self.pt.msList[i].set_no_image()
                         # self.pt.msList[i].update()
             self.dwMatches.update()
-                        
-        
 
 
     def setTargKargPixmaps(self, z=None):
 
         if self.dwMatches.isVisible():
-            caller = inspect.stack()[1].function
-            logger.info(f'[{caller}]')
 
             if not hasattr(cfg, 'data'):
                 return
 
             if z == None:
                 z = self.dm.zpos
+
+            caller = inspect.stack()[1].function
+            logger.info(f'[{caller}]')
 
             # logger.info('')
             # caller = inspect.stack()[1].function
@@ -831,24 +828,6 @@ class MainWindow(QMainWindow):
                         self.pt.match_thumbnails[i].set_data(path)
                     else:
                         self.pt.match_thumbnails[i].set_no_image()
-
-                    # try:
-                    #     # if DEV:
-                    #     #     logger.info(f'path: {path}')
-                    #     assert os.path.exists(path)
-                    # except:
-                    #     # print_exception(extra=f"path = {path}")
-                    #     # logger.critical('Handling Exception...')
-                    #     self.pt.match_thumbnails[i].set_no_image()
-                    #     continue
-                    # try:
-                    #     self.pt.match_thumbnails[i].path = path
-                    #     # self.pt.match_thumbnails[i].showPixmap()
-                    #     self.pt.match_thumbnails[i].set_data(path)
-                    # except:
-                    #     self.pt.match_thumbnails[i].set_no_image()
-                    #     print_exception()
-
             self.dwMatches.update()
 
     def callbackDwVisibilityChanged(self):
