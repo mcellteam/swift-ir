@@ -912,7 +912,7 @@ class align_ingredient:
         # print(f"\n{mir_script}\n")
         o = run_command(self.recipe.mir_c, arg_list=[], cmd_input=mir_script)
 
-        im0 = self.recipe.ss['path_thumb']
+        im0 = self.recipe.ss['path_thumb_transformed']
         im1 = self.recipe.ss['path_thumb_src_ref']
         if not os.path.exists(im0):
             logger.error(f'(gif) thumbnail not found: {im0}')

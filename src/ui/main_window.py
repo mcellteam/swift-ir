@@ -184,7 +184,8 @@ class MainWindow(QMainWindow):
 
         self.activateWindow()
 
-        self.tell('To Relaunch on Lonestar6:\n\n  source $WORK/swift-ir/tacc_boostrap\n')
+        # self.tell('To Relaunch on Lonestar6:\n\n  source $WORK/swift-ir/tacc_boostrap\n')
+        self.tell('To relaunch on Lonestar6, use command:  alignemdev\n')
 
         logger.debug('\n\nIf this message is seen then the logging level is set to logging.DEBUG\n')
 
@@ -1041,7 +1042,8 @@ class MainWindow(QMainWindow):
             if self.dm.is_aligned():
                 logger.info('Alignment seems successful')
             else:
-                self.warn('Something Went Wrong')
+                logger.info("Returning early...")
+                return
             logger.info('Calculating SNR Diff Values...')
             mean_before = statistics.fmean(snr_before)
             mean_after = statistics.fmean(snr_after)
@@ -1157,6 +1159,10 @@ class MainWindow(QMainWindow):
     @Slot()
     def regenZarr(self):
 
+        _ignore_cache = False
+        if self._isProjectTab():
+            _ignore_cache = self.pt.cbIgnoreCache.isChecked()
+
         renew = not self.dm['level_data'][cfg.data.level]['zarr_made']
 
         if self._isProjectTab():
@@ -1164,7 +1170,7 @@ class MainWindow(QMainWindow):
                 logger.info('Regenerating Zarr...')
                 self.bRegenZarr.setEnabled(False)
                 self._zarrThread = QThread()
-                self._zarrworker = ZarrWorker(dm=self.dm, renew=renew)
+                self._zarrworker = ZarrWorker(dm=self.dm, renew=renew, ignore_cache=_ignore_cache)
                 self._zarrThread.started.connect(self._zarrworker.run)  # Step 5: Connect signals and slots
                 self._zarrThread.finished.connect(self._zarrThread.deleteLater)
                 self._zarrworker.moveToThread(self._zarrThread)  # Step 4: Move worker to the thread
@@ -1187,6 +1193,9 @@ class MainWindow(QMainWindow):
     def align(self, dm, indexes=()):
     # def align(self, dm, align_indexes=(), regen_indexes=(), scale=None, renew_od=False, reallocate_zarr=False,
     #           align=True, regenerate=True, ignore_bb=False):
+        _ignore_cache = False
+        if self._isProjectTab():
+            _ignore_cache = self.pt.cbIgnoreCache.isChecked()
         ready = self.dm['level_data'][self.dm.scale]['alignment_ready']
         if not ready:
             logger.warning("Not ready to align yet!")
@@ -1243,6 +1252,7 @@ class MainWindow(QMainWindow):
             path=None,
             scale=scale,
             indexes=indexes,
+            ignore_cache=_ignore_cache,
         )  # Step 3: Create a worker object
         logger.info("Connecting worker signals...")
         self._alignThread.started.connect(self._alignworker.run)  # Step 5: Connect signals and slots
@@ -1350,7 +1360,6 @@ class MainWindow(QMainWindow):
             self.wToggleExclude.setEnabled(True)
             self.leJump.setEnabled(True)
             self.boxScale.setEnabled(True)
-            self.cbBB.setChecked(self.dm.has_bb())
 
             # self.bAlign.setEnabled(self.dm.is_alignable() and self.dm['level_data'][self.dm.scale]['alignment_ready'])
             self.bAlign.setEnabled(True)
@@ -1465,9 +1474,7 @@ class MainWindow(QMainWindow):
     @Slot(name='dataUpdateWidgets-slot-name')
     def dataUpdateWidgets(self) -> None:
         '''Reads Project Data to Update MainWindow.'''
-        # self.dataUpdateAsync(self)
-        # await self._dataUpdateWidgets()
-
+        # logger.info('')
         # if DEV:
         #     caller = inspect.stack()[1].function
         #     logger.info(f'caller: {caller} sender: {self.sender()}')
@@ -1476,38 +1483,10 @@ class MainWindow(QMainWindow):
             logger.warning("Busy working! Not going to update the entire interface rn.")
             return
 
-        logger.info('')
-
-        # _needsAlignIndexes = self.dm.needsAlignIndexes()
-        # _needsGenerateIndexes = self.dm.needsGenerateIndexes()
-        # _hasUnsavedChangesIndexes = self.dm.hasUnsavedChangesIndexes()
-        # n1 = len(_needsAlignIndexes)
-        # n2 = len(_needsGenerateIndexes)
-        # n3 = len(_hasUnsavedChangesIndexes)
-        # s1 = (', '.join(map(str, _needsAlignIndexes)), '%d (total)' % n1)[n1 > 5]
-        # s2 = (', '.join(map(str, _needsGenerateIndexes)), '%d (total)' % n2)[n2 > 5]
-        # s3 = (', '.join(map(str, _hasUnsavedChangesIndexes)), '%d (total)' % n3)[n3 > 5]
-        # if sum([n1, n2, n3]):
-        #     msg = []
-        #     if n1:
-        #         msg.append(f"Alignment not in sync: {s1}")
-        #     if n2:
-        #         msg.append(f"Zarr not in sync: {s2}")
-        #     if n3:
-        #         msg.append(f"Unsaved changes: {s3}")
-        #     self.statusBar.showMessage(" // ".join(msg))
-        # else:
-        #     self.statusBar.clearMessage()
-
-
-
         if self._isProjectTab():
-
             #CriticalMechanism
             if 'src.data_model.Signals' in str(self.sender()):
-                # <src.data_model.Signals object at 0x13b8b3e20>
                 # timerActive = self.uiUpdateTimer.isActive()
-                # logger.critical(f"uiUpdateTimer active? {timerActive}")
                 if self.uiUpdateTimer.isActive():
                     # logger.warning('Delaying UI Update [viewer_em.WorkerSignals]...')
                     return
@@ -1519,7 +1498,6 @@ class MainWindow(QMainWindow):
                 self.pt.tn_tra.set_data(path=self.dm.path_thumb())
                 self.pt.tn_tra_lab.setText(f'Transforming Section (Thumbnail)\n'
                                           f'[{self.dm.zpos}] {self.dm.name()}')
-
                 if self.dm.skipped():
                     self.pt.tn_ref_lab.setText(f'--')
                     if not self.pt.tn_tra_overlay.isVisible():
@@ -1535,10 +1513,8 @@ class MainWindow(QMainWindow):
                     self.pt.tn_ref.show()
                     self.pt.tn_ref_lab.show()
 
-
             if self.dwNotes.isVisible():
                 self.updateNotes()
-
 
             self.updateDwMatches()
 
@@ -1555,9 +1531,7 @@ class MainWindow(QMainWindow):
 
             elif self.pt.wTabs.currentIndex() == 1:
                 self.pt.dataUpdateMA()
-
                 self.pt.editorViewer.set_layer()
-
                 self.pt.lab_filename.setText(f"[{self.dm.zpos}] Name: {self.dm.name()} - {self.dm.level_pretty()}")
                 self.pt.cl_tra.setText(f'[{self.dm.zpos}] {self.dm.name()} (Transforming)')
                 if self.dm.skipped():
@@ -1569,19 +1543,12 @@ class MainWindow(QMainWindow):
                     except:
                         self.pt.cl_ref.setText(f'Null (Reference)')
 
-
             elif self.pt.wTabs.currentIndex() == 2:
                 self.pt.snr_plot.updateLayerLinePos()
 
             elif self.pt.wTabs.currentIndex() == 4:
                 self.pt.treeview_model.jumpToLayer()
             self.setFocus()
-
-
-
-            #Todo come back to how to make this work without it getting stuck in a loop
-            # if self.pt.wTabs.currentIndex() == 2:
-            #     self.pt.project_table.data.selectRow(cur)
 
 
     def updateNotes(self):
@@ -2074,14 +2041,16 @@ class MainWindow(QMainWindow):
         #         self.warn(f'Having trouble shutting down threadpool')
 
         # if cfg.DEV_MODE:
-        self.tell('Shutting Down Python Console Kernel...')
-        try:
 
-            self.pythonConsole.pyconsole.kernel_client.stop_channels()
-            self.pythonConsole.pyconsole.kernel_manager.shutdown_kernel()
-        except:
-            print_exception()
-            self.warn('Having trouble shutting down Python console kernel')
+        #1015-
+        # self.tell('Shutting Down Python Console Kernel...')
+        # try:
+        #
+        #     self.pythonConsole.pyconsole.kernel_client.stop_channels()
+        #     self.pythonConsole.pyconsole.kernel_manager.shutdown_kernel()
+        # except:
+        #     print_exception()
+        #     self.warn('Having trouble shutting down Python console kernel')
 
         self.tell('Graceful, Goodbye!')
         # time.sleep(1)
@@ -4262,6 +4231,7 @@ class MainWindow(QMainWindow):
         self.bOutputSettings = QToolButton()
         self.bOutputSettings.setText('Output\nSettings')
         self.bOutputSettings.setCheckable(True)
+        self.bOutputSettings.toggled.connect(self.updateOutputSettings)
         self.bOutputSettings.toggled.connect(lambda state: self.wOutputSettings.setVisible(state))
         self.wOutputSettings = HW(QVLine(), self.wPopoutOutputSettings)
         self.wOutputSettings.setContentsMargins(2,0,2,0)

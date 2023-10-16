@@ -52,11 +52,12 @@ class ZarrWorker(QObject):
     hudMessage = Signal(str)
     hudWarning = Signal(str)
 
-    def __init__(self, dm, renew=False):
+    def __init__(self, dm, renew=False, ignore_cache=False):
         super().__init__()
         logger.info('Initializing...')
         self.dm = dm
         self.renew = renew
+        self.ignore_cache = ignore_cache
         self._running = True
         self._mutex = QMutex()
 
