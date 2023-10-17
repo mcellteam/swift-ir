@@ -65,7 +65,7 @@ class AlignWorker(QObject):
         self.scale = scale
         self.path = path
         self.indexes = indexes
-        self.ignore_cache = False
+        self.ignore_cache = ignore_cache
         # self.regen_indexes = regen_indexes
         self.dm = dm
         self.result = None
@@ -107,7 +107,7 @@ class AlignWorker(QObject):
 
     def align(self):
         """Long-running task."""
-        logger.critical('\n\nAligning...\n')
+        logger.critical(f'\n\nAligning (ignore cache? {self.ignore_cache})...\n')
 
         scale = self.scale
         indexes = self.indexes
