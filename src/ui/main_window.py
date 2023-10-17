@@ -175,7 +175,7 @@ class MainWindow(QMainWindow):
         self.activateWindow()
 
         # self.tell('To Relaunch on Lonestar6:\n\n  source $WORK/swift-ir/tacc_boostrap\n')
-        self.tell('To relaunch on Lonestar6, use command:  alignemdev\n')
+        self.tell('To relaunch on Lonestar6, use command:  \n\nalignemdev\n')
 
         logger.debug('\n\nIf this message is seen then the logging level is set to logging.DEBUG\n')
 
