@@ -2266,18 +2266,17 @@ class MainWindow(QMainWindow):
                     self.tell("Exclude: %s" % self.dm.name())
                 else:
                     self.tell("Include: %s" % self.dm.name())
-
-                self.dm.linkReference(level=self.dm.level)
+s                self.dm.linkReference(level=self.dm.level)
 
                 # if getData('state,blink'):
                 self.dm.set_stack_cafm()
 
-                self.pt.project_table.set_row_data(row=layer)
+                # self.pt.project_table.set_row_data(row=layer)
 
-                #Todo Fix this. This is just a kluge to make the data reflect correct data for now.
-                for x in range(0,5):
-                    if layer + x in range(0,len(self.dm)):
-                        self.pt.project_table.set_row_data(row=layer + x)
+                # #Todo Fix this. This is just a kluge to make the data reflect correct data for now.
+                # for x in range(0,5):
+                #     if layer + x in range(0,len(self.dm)):
+                #         self.pt.project_table.set_row_data(row=layer + x)
 
                 if self.pt.wTabs.currentIndex() == 4:
                     self.pt.snr_plot.initSnrPlot()
