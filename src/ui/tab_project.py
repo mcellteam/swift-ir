@@ -149,7 +149,6 @@ class ProjectTab(QWidget):
             # self.parent.setdw_matches(True) #BEFORE init neuroglancer
             self.cmbViewerScale.setCurrentIndex(self.dm.levels.index(self.dm.level))
             self.initNeuroglancer() #Todo necessary for now
-            self.editorViewer.set_layer()
             self.set_transforming() #0802+
             self.update_match_list_widgets() #0726+
             self.gifPlayer.set()
@@ -1112,6 +1111,7 @@ class ProjectTab(QWidget):
                         self.rb_MA_strict.setChecked(True)
                     else:
                         self.rb_MA_hint.setChecked(True)
+                    self.editorWebengine.setFocus()
                 self.parent.dataUpdateWidgets()
 
         self.gbGrid = QGroupBox("Grid Alignment Settings")
@@ -2648,6 +2648,7 @@ class ProjectTab(QWidget):
         self.update_match_list_widgets()
         if self.parent.dwSnr.isVisible():
             self.dSnr_plot.initSnrPlot()
+        self.editorWebengine.setFocus()
 
 
 
@@ -2664,6 +2665,7 @@ class ProjectTab(QWidget):
         self.update_match_list_widgets()
         if self.parent.dwSnr.isVisible():
             self.dSnr_plot.initSnrPlot()
+        self.editorWebengine.setFocus()
 
 
     def deleteAllMp(self):
@@ -2682,6 +2684,8 @@ class ProjectTab(QWidget):
         self.update_match_list_widgets()
         if self.parent.dwSnr.isVisible():
             self.dSnr_plot.initSnrPlot()
+
+        self.editorWebengine.setFocus()
         logger.info('<<<< deleteAllMp')
 
 
