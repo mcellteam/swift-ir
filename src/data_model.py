@@ -2400,24 +2400,24 @@ class DataModel:
             )
             self.linkReference(level=level)
 
-        self['level_data'][bottom_level]['defaults'].update(copy.deepcopy(swim_presets), method_opts=copy.deepcopy(
-            method_presets[bottom_level]['grid']))
+            self['level_data'][level]['defaults'].update(copy.deepcopy(swim_presets), method_opts=copy.deepcopy(
+                method_presets[level]['grid']))
 
-        self['level_data'][bottom_level].update(
-            # Todo output preferences will need to propagate
-            swim_presets=swim_presets,
-            method_presets=method_presets[bottom_level],
-        )
+            self['level_data'][level].update(
+                # Todo output preferences will need to propagate
+                swim_presets=swim_presets,
+                method_presets=method_presets[level],
+            )
 
 
         for i in range(len(self)):
-            self['stack'][i]['levels'][bottom_level]['saved_swim_settings'].update(
+            self['stack'][i]['levels'][level]['saved_swim_settings'].update(
                 copy.deepcopy(swim_presets),
-                method_opts=copy.deepcopy(method_presets[bottom_level]['grid']),
+                method_opts=copy.deepcopy(method_presets[level]['grid']),
             )
-            self['stack'][i]['levels'][bottom_level]['swim_settings'].update(
+            self['stack'][i]['levels'][level]['swim_settings'].update(
                 copy.deepcopy(swim_presets),
-                method_opts=copy.deepcopy(method_presets[bottom_level]['grid']),
+                method_opts=copy.deepcopy(method_presets[level]['grid']),
             )
 
 
