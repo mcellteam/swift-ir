@@ -3371,7 +3371,7 @@ class MainWindow(QMainWindow):
 
         self.saveAction = QAction('&Save Project', self)
         self.saveAction.triggered.connect(self.save)
-        # self.saveAction.setShortcut('Ctrl+S')
+        self.saveAction.setShortcut('Ctrl+S')
         # self.saveAction.setShortcutContext(Qt.ApplicationShortcut)
         # self.addAction(self.saveAction)
         fileMenu.addAction(self.saveAction)
@@ -5046,9 +5046,9 @@ class MainWindow(QMainWindow):
             self.aMatches.trigger()
             # self.setdw_matches(not self.tbbMatches.isChecked())
 
-        elif key == Qt.Key_S:
-            # self.save()
-            self._autosave()
+        # elif key == Qt.Key_S:
+        #     # self.save()
+        #     self._autosave()
 
         elif key == Qt.Key_D:
             if self._isProjectTab():

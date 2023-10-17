@@ -381,6 +381,7 @@ class ProjectTab(QWidget):
         # MA Stage Buffer Widget
 
         self.lw_ref = ListWidget()
+        self.lw_ref.setFocusPolicy(Qt.NoFocus)
         # self.lw_ref.setFocusPolicy(Qt.NoFocus)
         delegate = ListItemDelegate()
         self.lw_ref.setItemDelegate(delegate)
@@ -420,6 +421,7 @@ class ProjectTab(QWidget):
 
 
         self.lw_tra = ListWidget()
+        self.lw_tra.setFocusPolicy(Qt.NoFocus)
         # self.lw_tra.setFocusPolicy(Qt.NoFocus)
         delegate = ListItemDelegate()
         self.lw_tra.setItemDelegate(delegate)
@@ -486,6 +488,7 @@ class ProjectTab(QWidget):
         self.lw_tra.itemSelectionChanged.connect(self.lw_ref.selectionModel().clear)
 
         self.btn_undoRefPts = QPushButton()
+        self.btn_undoRefPts.setFocusPolicy(Qt.NoFocus)
         self.btn_undoRefPts.setFixedSize(QSize(14, 14))
         self.btn_undoRefPts.setIconSize(QSize(13, 13))
         self.btn_undoRefPts.setToolTip('Undo Last Selection')
@@ -500,6 +503,7 @@ class ProjectTab(QWidget):
         self.btn_undoRefPts.clicked.connect(fn)
 
         self.btn_clrRefPts = QPushButton('Clear')
+        self.btn_clrRefPts.setFocusPolicy(Qt.NoFocus)
         self.btn_clrRefPts.setToolTip('Clear All Selections')
         self.btn_clrRefPts.setStyleSheet("""font-size: 9px;""")
         self.btn_clrRefPts.setFixedSize(QSize(36, 14))
@@ -520,15 +524,18 @@ class ProjectTab(QWidget):
         self.btn_undoBasePts.clicked.connect(fn)
 
         self.btn_clrBasePts = QPushButton('Clear')
+        self.btn_clrBasePts.setFocusPolicy(Qt.NoFocus)
         self.btn_clrBasePts.setToolTip('Clear All Selections')
         self.btn_clrBasePts.setStyleSheet("""font-size: 9px;""")
         self.btn_clrBasePts.setFixedSize(QSize(36, 14))
         self.btn_clrBasePts.clicked.connect(self.deleteAllMpBase)
 
         self.btn_clrAllPts = QPushButton('Clear All')
+        self.btn_clrAllPts.setFocusPolicy(Qt.NoFocus)
+        self.btn_clrAllPts.setFixedHeight(16)
         self.btn_clrAllPts.setToolTip('Clear All Selections')
-        self.btn_clrAllPts.setStyleSheet("""font-size: 9px; margin-right: 2px;""")
-        self.btn_clrAllPts.setFixedSize(QSize(48, 14))
+        # self.btn_clrAllPts.setStyleSheet("""font-size: 9px; margin-right: 2px;""")
+        # self.btn_clrAllPts.setFixedSize(QSize(48, 14))
         self.btn_clrAllPts.clicked.connect(self.deleteAllMp)
 
         self.baseNextColorWidget = HW(self.lab_tra, self.lab_nextcolor0,
@@ -866,15 +873,6 @@ class ProjectTab(QWidget):
         self.wwWidget = HW(self.sliderMatch, self.leMatch, self.pxLab)
         self.wwWidget.layout.setSpacing(4)
 
-        self.flManualAlign = QFormLayout()
-        self.flManualAlign.setContentsMargins(0,0,0,0)
-        self.flManualAlign.addRow("Method:", self.radioboxes_MA)
-        self.flManualAlign.addRow("Move Selection:", self.translatePointsWidget)
-        self.flManualAlign.addRow("Window Width:", self.wwWidget)
-
-        self.gbMatch = QGroupBox()
-        # self.gbMatch.setFixedHeight(76)
-        self.gbMatch.setLayout(self.flManualAlign)
 
         ##############
 
@@ -1159,8 +1157,20 @@ class ProjectTab(QWidget):
         bg.addButton(self.rbSticky)
         self.rbCycle.setChecked(True) #Todo
 
-        self.w_rbs_selection = HW(ExpandingWidget(self), self.rbCycle, self.rbZigzag, self.rbSticky,
-                                  self.btn_clrAllPts)
+        # self.w_rbs_selection = HW(ExpandingWidget(self), self.rbCycle, self.rbZigzag, self.rbSticky, self.btn_clrAllPts)
+        self.w_rbs_selection = HW(self.rbCycle, self.rbZigzag, self.rbSticky)
+        self.w_rbs_selection.layout.setSpacing(4)
+
+        self.flManualAlign = QFormLayout()
+        self.flManualAlign.setContentsMargins(0, 0, 0, 0)
+        self.flManualAlign.addRow("Select By:", self.w_rbs_selection)
+        self.flManualAlign.addRow("Move Selection:", self.translatePointsWidget)
+        self.flManualAlign.addRow("Window Width:", self.wwWidget)
+        self.flManualAlign.addRow("Method:", self.radioboxes_MA)
+
+        self.gbMatch = QGroupBox()
+        # self.gbMatch.setFixedHeight(76)
+        self.gbMatch.setLayout(self.flManualAlign)
 
         # self.lab_region_selection2 = QLabel("Note: At least 3 are necessary to for affine.")
         # self.lab_region_selection2 = QLabel("")
@@ -1168,7 +1178,8 @@ class ProjectTab(QWidget):
         self.gbMethodMatch = VW(
             self.lab_region_selection,
             self.MA_sbw,
-            self.w_rbs_selection,
+            self.btn_clrAllPts,
+            # self.w_rbs_selection,
             # self.lab_region_selection2,
             self.gbMatch,
         )
@@ -2046,6 +2057,7 @@ class ProjectTab(QWidget):
         self.wGifPlayer.setLayout(self.glGifPlayer)
 
         self.checkboxes = HW(self.cbDefaults, self.cbSaved, self.cbIgnoreCache)
+        self.checkboxes.layout.setSpacing(4)
 
         # self.cpanelEditor = HW(self.bTransform, self.bSWIM, self.bSaveSettings)
         self.btnsSWIM = VW(HW(self.bSWIM, self.bSaveSettings), self.bPull)
