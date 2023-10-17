@@ -72,6 +72,13 @@ __all__ = ['MainWindow']
 logger = logging.getLogger('root')
 # addLoggingLevel('TRACE', logging.INFO)
 
+if is_joel():
+    # logger.setLevel(logging.DEBUG)
+    logging.root.setLevel(logging.DEBUG)
+else:
+    # logger.setLevel(logging.INFO)
+    logging.root.setLevel(logging.INFO)
+
 DEV = is_joel()
 
 # logger.critical('_Directory of this script: %level' % os.path.dirname(__file__))
@@ -120,6 +127,8 @@ class MainWindow(QMainWindow):
 
     def __init__(self, data=None):
         QMainWindow.__init__(self)
+        logger.debug(f"\nDebugging...\n\n")
+
         self.app = QApplication.instance()
         font = QFont("Tahoma")
         self.app.setFont(font)
@@ -3139,7 +3148,7 @@ class MainWindow(QMainWindow):
         self.tabChanged.emit()
         self.setUpdatesEnabled(False)
         caller = inspect.stack()[1].function
-        logger.info(f'changing tab to tab of type {self._getTabType()}')
+        logger.debug(f'changing tab to tab of type {self._getTabType()}')
 
         # self.pt = None
         # cfg.zarr_tab = None
@@ -3188,7 +3197,7 @@ class MainWindow(QMainWindow):
             self.bExport.setVisible(self.dm.is_zarr_generated())
 
         elif self._getTabType() == 'ZarrTab':
-            logger.info('Loading Zarr Tab...')
+            logger.debug('Loading Zarr Tab...')
             cfg.zarr_tab = self.globTabs.currentWidget()
             cfg.emViewer = cfg.zarr_tab.viewer
             cfg.zarr_tab.viewer.bootstrap()
@@ -3196,7 +3205,7 @@ class MainWindow(QMainWindow):
         elif self._getTabType() == 'OpenProject':
             self.pm.refresh()
         
-        logger.info('Wrapping up...')
+        logger.debug('Wrapping up...')
         # self.updateMenus()
         self.reload_zpos_slider_and_lineedit()  # future changes to image importing will require refactor
         self.reloadComboScale()
@@ -3208,7 +3217,7 @@ class MainWindow(QMainWindow):
 
     def _onGlobTabClose(self, index):
         if not self._working:
-            logger.info(f'Closing Tab: {index}')
+            logger.debug(f'Closing Tab: {index}')
             self.globTabs.removeTab(index)
 
     def _setLastTab(self):
