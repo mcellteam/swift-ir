@@ -100,7 +100,7 @@ class DataModel:
             self.ht = None
             self._upgradeDatamodel()
             self.signals = Signals()
-            self.signals.dataChanged.connect(lambda: logger.critical('emission!'))
+            self.signals.dataChanged.connect(lambda: logger.info('emission!'))
 
     def loadHashTable(self):
         logger.info('')
@@ -1206,7 +1206,7 @@ class DataModel:
          scaling factor then sets the same points for all scale levels above the current level.'''
         if s == None: s = self.scale
         if l == None: l = self.zpos
-        logger.critical(f"Writing points to data: {matchpoints}")
+        # logger.info(f"Writing points to data: {matchpoints}")
         # ex. [(397.7689208984375, 546.7693481445312), (nan, nan), (nan, nan)]
         # lvls  = [x for x in self.lvls() if x <= self.lvl()]
         # scales      = [get_scale_key(x) for x in lvls]
@@ -1222,7 +1222,7 @@ class DataModel:
                     print_exception(extra=f"p: {p}")
 
         # set manual points in Neuroglancer coordinate system
-        logger.critical(f"glob coords: {glob_coords}")
+        # logger.critical(f"glob coords: {glob_coords}")
         fac = self.lvl(s)
         coords = [None,None,None]
         for i,p in enumerate(glob_coords):
