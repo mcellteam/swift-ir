@@ -430,7 +430,7 @@ class align_recipe:
                 except: mr['mir_out']['ing%d' % i] = 'null'
                 try: mr['mir_err']['ing%d' % i] = ing.mir_err_lines
                 except: mr['mir_err']['ing%d' % i] = 'null'
-                try: mr['crop_str_mir']['ing%d' % i] = ing.mir_err_lines
+                try: mr['crop_str_mir']['ing%d' % i] = ing.crop_str_mir
                 except: mr['crop_str_mir']['ing%d' % i] = 'null'
 
         # return self.data
