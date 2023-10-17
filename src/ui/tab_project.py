@@ -589,11 +589,12 @@ class ProjectTab(QWidget):
         # tip = '\n'.join(textwrap.wrap(tip, width=35))
         # self.bPush.setToolTip(tip)
 
-        self.bPull = QPushButton('Pull Settings From Coarser Resolution')
+        self.bPull = QPushButton('Pull All Settings From Coarser Resolution')
         self.bPull.setFocusPolicy(Qt.NoFocus)
         self.bPull.setFixedHeight(16)
         self.bPull.clicked.connect(self.dm.pullSettings)
         self.bPull.clicked.connect(self.dataUpdateMA)
+        self.bPull.clicked.connect(self.editorViewer.drawSWIMwindow)
         # msg = "Re-pull (propagate) preferences from previous scale level."
         tip = "Pull (re-propagate) all SWIM preferences from the next coarsest resolution level."
         tip = '\n'.join(textwrap.wrap(tip, width=35))
