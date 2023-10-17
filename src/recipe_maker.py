@@ -526,11 +526,11 @@ class align_ingredient:
                 self.snr = np.zeros(len(self.psta[0]))
                 return self.afm
 
-            self.crop_match_signals()
             self.afm = self.ingest_swim_output(swim_output)
 
 
         if self.last:
+            self.crop_match_signals()
             self.reduce_matches()
             if self.recipe.method == 'manual':
                 if (self.recipe.n_pts_ref == 3) and (self.recipe.n_pts_tra == 3):
