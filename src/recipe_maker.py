@@ -653,7 +653,8 @@ class align_ingredient:
 
     def crop_match_signals(self):
         px_keep = 128
-        w, h = '%d' % self.ww[0], '%d' % self.ww[1]
+        # w, h = '%d' % self.ww[0], '%d' % self.ww[1]
+        w, h = '%d' % px_keep, '%d' % px_keep
         x1 = '%d' % int((self.ww[0] - px_keep) / 2.0 + 0.5)
         y1 = '%d' % int((self.ww[1] - px_keep) / 2.0 + 0.5)
         x2 = '%d' % int((self.ww[0] / 2) + (px_keep / 2.0) + 0.5)
@@ -673,12 +674,15 @@ class align_ingredient:
                 '\nW', path
             ]
             self.crop_str_mir = ' '.join(self.crop_str_args)
+            # print(self.crop_str_mir)
             logger.critical(f'MIR crop string:\n{self.crop_str_mir}')
             _, _ = run_command(
                 self.recipe.mir_c,
                 cmd_input=self.crop_str_mir,
                 desc=f'Crop match signals'
             )
+            # print(f"out:\n{out}")
+            # print(f"err:\n{err}")
 
 
     def ingest_swim_output(self, swim_output):
