@@ -62,8 +62,8 @@ class MAViewer(neuroglancer.Viewer):
         self.role = role
         self.quality = quality
         self.quality_lvl = self.dm.lvl(self.quality)
-        # self.fac = self.dm.lvl() / self.quality_lvl
-        self.fac = self.quality_lvl / self.dm.lvl()
+        self.fac = self.dm.lvl() / self.quality_lvl
+        # self.fac = self.quality_lvl / self.dm.lvl()
         self.webengine = webengine
         self.signals = WorkerSignals()
         self.created = datetime.datetime.now()
@@ -561,6 +561,9 @@ class MAViewer(neuroglancer.Viewer):
             # else:
             #     ww_x = ww_y = self.dm.manual_swim_window_px()
             ww_x = ww_y = self.dm.manual_swim_window_px()
+
+            ww_x *= fac
+            ww_y *= fac
 
             for i, pt in enumerate(self.pts2[self.role]):
                 # 0: (122, None, None)
