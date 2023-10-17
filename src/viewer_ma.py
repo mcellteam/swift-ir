@@ -280,8 +280,9 @@ class MAViewer(neuroglancer.Viewer):
 
         with self.config_state.txn() as s:
             s.input_event_bindings.slice_view['alt+click0'] = 'add_manpoint'
-            # s.input_event_bindings.slice_view['dblclick0'] = 'add_manpoint'
-            # s.input_event_bindings.slice_view['shift+click0'] = 'add_manpoint'
+            s.input_event_bindings.viewer['alt+click0'] = 'add_manpoint'
+            s.input_event_bindings.slice_view['dblclick0'] = 'add_manpoint'
+            s.input_event_bindings.slice_view['shift+click0'] = 'add_manpoint'
             # s.input_event_bindings.slice_view['enter'] = 'add_manpoint'            #this works
             # s.input_event_bindings.slice_view['mousedown0'] = 'add_manpoint'       #this works
             # s.input_event_bindings.slice_view['at:control+mousedown0'] = 'add_manpoint'
@@ -429,7 +430,8 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def add_matchpoint(self, s):
-        logger.critical('\n\n--> add_matchpoint -->\n')
+        print('\n\n--> add_matchpoint -->\n')
+        # logger.critical('\n\n--> add_matchpoint -->\n')
         if self.dm.method() != 'manual':
             logger.warning('add_matchpoint: User may not select points while aligning with grid.')
             return
@@ -522,7 +524,7 @@ class MAViewer(neuroglancer.Viewer):
         # logger.info(f"[{caller}] Drawing SWIM windows...")
         self._blockStateChanged = True
         # self.setMpData() #0805+
-        self.undrawSWIMwindows()
+        # self.undrawSWIMwindows()
         ms = self._mkr_size
         fac = self.dm.lvl() / self.quality_lvl
         method = self.dm.current_method
@@ -565,15 +567,19 @@ class MAViewer(neuroglancer.Viewer):
                 if pt:
                     if pt[1]:
                         a, b, c, d = self.getRect2(coords=(pt[2], pt[1]), ww_x=ww_x,ww_y=ww_y,)
+                        # print(f"a: {a}\n"
+                        #       f"b: {b}\n"
+                        #       f"c: {c}\n"
+                        #       f"d: {d}")
                         z = self.index + 0.5
                         clr = self.colors[i]
                         annotations.extend([
-                            ng.LineAnnotation(id=str(i) + '_L1', pointA=(z,) + a, pointB=b, props=[clr, ms]),
-                            ng.LineAnnotation(id=str(i) + '_L2', pointA=(z,) + b, pointB=c, props=[clr, ms]),
-                            ng.LineAnnotation(id=str(i) + '_L3', pointA=(z,) + c, pointB=d, props=[clr, ms]),
-                            ng.LineAnnotation(id=str(i) + '_L4', pointA=(z,) + d, pointB=a, props=[clr, ms])
+                            ng.LineAnnotation(id=str(i) + '_L1', pointA=(z,) + a, pointB=(z,) + b, props=[clr, ms]),
+                            ng.LineAnnotation(id=str(i) + '_L2', pointA=(z,) + b, pointB=(z,) + c, props=[clr, ms]),
+                            ng.LineAnnotation(id=str(i) + '_L3', pointA=(z,) + c, pointB=(z,) + d, props=[clr, ms]),
+                            ng.LineAnnotation(id=str(i) + '_L4', pointA=(z,) + d, pointB=(z,) + a, props=[clr, ms])
                         ])
-
+        # print(f"Adding annotation layers...\n{self.pts2}")
         with self.txn() as s:
             # for i,ann in enumerate(annotations):
             s.layers['SWIM'] = ng.LocalAnnotationLayer(
@@ -583,7 +589,7 @@ class MAViewer(neuroglancer.Viewer):
                 annotation_properties=[
                     ng.AnnotationPropertySpec(id='color', type='rgb', default='#ffff66', ),
                     # ng.AnnotationPropertySpec(id='size', cur_method='float32', default=1, )
-                    ng.AnnotationPropertySpec(id='size', type='float32', default=-1, )
+                    ng.AnnotationPropertySpec(id='size', type='float32', default=1, )
                 ],
                 shader='''
                     void main() {
