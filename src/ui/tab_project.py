@@ -243,7 +243,11 @@ class ProjectTab(QWidget):
                 self.editorViewer.signals.zVoxelCoordChanged.connect(lambda zpos: setattr(self.dm, 'zpos', zpos))
                 # self.editorViewer.signals.swimAction.connect(self.parent.alignOne)
                 # self.editorViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314
-                self.editorViewer.signals.zoomChanged.connect(lambda: logger.critical(f"Zoom Slider: {self.zoomSlider.value()} / CS Scale: {self.editorViewer.state.cross_section_scale}"))  # 0314
+                # self.editorViewer.signals.zoomChanged.connect(lambda: logger.critical(f"Zoom Slider: {self.zoomSlider.value()} / CS Scale: {self.editorViewer.state.cross_section_scale}"))  # 0314
+                def zoom_fn(x):
+                    # logger.critical('')
+                    self.zoomSlider.setValue(x)
+                self.editorViewer.signals.zoomChanged.connect(zoom_fn)
                 try:
                     self.dataUpdateMA()
                 except:
