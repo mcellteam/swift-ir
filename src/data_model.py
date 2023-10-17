@@ -1879,12 +1879,6 @@ class DataModel:
 
     def set_size1x1(self, pixels=None, silent=False):
         '''Sets the SWIM Window for the Current Section across all scales.'''
-        # if pixels == None:
-        #     self.set_auto_swim_windows_to_default(current_only=True)
-        # if (pixels % 2) == 1:
-        #     pixels -= 1
-        #     if int(pixels/2) % 2 == 1:
-        #         pixels -= 2
         pixels = ensure_even(pixels)
         img_w, img_h = self.image_size(s=self.level)
         pixels = pixels
@@ -1918,11 +1912,7 @@ class DataModel:
 
     def set_size2x2(self, pixels=None, silent=False):
         '''Returns the SWIM Window in pixels'''
-        caller = inspect.stack()[1].function
-        # if pixels == None:
-        #     self.set_auto_swim_windows_to_default(current_only=True)
-        # if (pixels % 2) == 1:
-        #     pixels -= 1
+        # caller = inspect.stack()[1].function
         pixels = ensure_even(pixels)
 
         img_w, img_h = self.image_size(s=self.level)
@@ -1938,17 +1928,6 @@ class DataModel:
             self._data['stack'][self.zpos]['levels'][self.level]['swim_settings']['method_opts']['size_2x2'] = force_pixels
         if not silent:
             self.signals.dataChanged.emit()
-
-
-    # def propagate_swim_2x2_custom_px(self, indexes:list):
-    #     '''Returns the SWIM Window in pixels'''
-    #     # img_w, img_h = self.image_size(level=self.level)
-    #     for l in indexes:
-    #         pixels = self._data['stack'][l]['levels'][self.level]['swim_settings']['method_opts']['size_2x2']
-    #         for s in self.finer_scales(include_self=False):
-    #             sf = self.lvl() / self.lvl(s)  # level factor
-    #             self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']['size_2x2'] = [int(pixels[0]* sf+ 0.5),
-    #                                                                                           int(pixels[1] * sf + 0.5)]
 
 
     def manual_swim_window_px(self, s=None, l=None) -> int:
@@ -1967,18 +1946,6 @@ class DataModel:
         self['stack'][self.zpos]['levels'][self.level]['swim_settings']['method_opts']['size'] = pixels
         if not silent:
             self.signals.dataChanged.emit()
-
-    # def propagate_manual_swim_window_px(self, indexes) -> None:
-    #     '''Sets the SWIM Window for the Current Layer when using Manual Alignment.'''
-    #     # logger.info('Propagating swim regions to finer scales...')
-    #     for l in indexes:
-    #         pixels = self['stack'][l]['levels'][self.level]['swim_settings']['method_opts']['size']
-    #         for s in self.finer_scales():
-    #             sf = self.lvl() / self.lvl(s)  # level factor
-    #             self['stack'][l]['levels'][s]['swim_settings']['method_opts']['size'] = int(pixels * sf + 0.5)
-    #             #todo
-    #             # self['stack'][z]['levels'][level]['swim_settings']['method_opts']['size'] = (
-    #             #             np.array(pixels) * sf).astype(int).tolist()
 
 
     def image_size(self, s=None) -> tuple:

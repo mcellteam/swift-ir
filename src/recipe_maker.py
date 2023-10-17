@@ -14,16 +14,11 @@ import traceback
 import numpy as np
 import subprocess as sp
 from typing import Dict, Any
+from functools import wraps
 import hashlib
 import json
 import atexit
 import psutil
-# import shutil
-# from src.funcs_image import ImageSize
-# from src.swiftir import applyAffine
-# import src.config as cfg
-from functools import wraps
-
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -133,20 +128,11 @@ class align_recipe:
     # def __init__(self, swim_settings, config):
     def __init__(self, swim_settings):
         self.ss = swim_settings
-        # self.config = config
-        # self.config = cfg.CONFIG
         self.config = self.ss['config']
-        # self.ss = self.data['swim_settings']
-        # self.ss = dict(swim_settings)
-
-        # self._hash = hash(swim_settings)
         self.index = self.ss['index']
         self.path = self.ss['path']
         self.solo = self.ss['solo']
         self.path_ref = self.ss['path_reference']
-        if self.index == 143:
-            print(f"\npath     : {self.path}\n"
-                  f"path ref : {self.path_ref}\n")
         self.configure_logging()
         self.method = self.ss['method_opts']['method']
         self._return_afm = True
@@ -186,7 +172,6 @@ class align_recipe:
         if self.config['log_recipe_to_file']:
             Exceptlogger.addHandler(logging.FileHandler(os.path.join(self.config['data_location'],
                                              'logs', 'exceptions.log')))
-
             MAlogger.addHandler(logging.FileHandler(os.path.join(
                 self.config['data_location'], 'logs', 'manual_align.log')))
             RMlogger.addHandler(logging.FileHandler(os.path.join(
@@ -579,8 +564,6 @@ class align_ingredient:
         whiten = str(self.recipe.ss['whitening'])
         use_clobber = self.recipe.ss['clobber']
         clobber_px = self.recipe.ss['clobber_size']
-        if self.recipe.index == 143:
-            print(f"\n[{self.recipe.index}] Ingredient: {self.ID}  afm: {self.afm}\n")
         afm = '%.6f %.6f %.6f %.6f' % (
                 self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
         # afm = '%f %f %f %f' % (
@@ -635,10 +618,6 @@ class align_ingredient:
             else:
                 self.adjust_x = '%.6f' % (self.cx + self.afm[0, 2])
                 self.adjust_y = '%.6f' % (self.cy + self.afm[1, 2])
-                # self.adjust_x = '%f' % (self.cx + self.afm[0, 2])
-                # self.adjust_y = '%f' % (self.cy + self.afm[1, 2])
-                # self.adjust_x = '%.6f' % (self.afm[0, 2])
-                # self.adjust_y = '%.6f' % (self.afm[1, 2])
                 args.append('%s %s' % (self.adjust_x, self.adjust_y))
             r = self.recipe.initial_rotation
             if abs(r) > 0:
@@ -735,8 +714,6 @@ class align_ingredient:
             self.afm = aim
             self.snr = np.array([])
             snr_list.append(float(toks[0][0:-1]))
-            if self.recipe.index == 143:
-                print(f"Returning afm: {self.afm}")
             return self.afm
 
         else:

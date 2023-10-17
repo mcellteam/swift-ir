@@ -379,7 +379,6 @@ class MAViewer(neuroglancer.Viewer):
         # zoom bug factor = 250000000s
         # caller = inspect.stack()[1].function
         # logger.info(f"[{caller}]")
-
         if self._blockStateChanged:
             return
 
@@ -461,18 +460,18 @@ class MAViewer(neuroglancer.Viewer):
 
         self.dm.set_manpoints(self.role, l)
         # self._selected_index[self.role] = self.getNextPoint(self.role)
-        self.select_by = self.dm['state']['neuroglancer']['region_selection']['select_by']
+        select_by = self.dm['state']['neuroglancer']['region_selection']['select_by']
 
         _other_role = {'tra', 'ref'}.difference(self.role).pop()
-        if self.select_by == 'sticky':
+        if select_by == 'sticky':
             pass
-        elif self.select_by == 'cycle':
+        elif select_by == 'cycle':
             if self.numPts(self.role) < 3:
                 self._selected_index[self.role] = (self._selected_index[self.role] + 1) % 3
             else:
                 if self.numPts(_other_role) < 3:
                     self.parent.set_viewer_role(_other_role)
-        elif self.select_by == 'zigzag':
+        elif select_by == 'zigzag':
             self._selected_index['tra'] = (self._selected_index[self.role] + 1) % 3
             self.parent.set_viewer_role(_other_role)
 
