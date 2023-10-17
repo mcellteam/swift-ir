@@ -318,7 +318,6 @@ class ZarrWorker(QObject):
 
         logger.info("Zarr conversion complete.")
         logger.info(f"Elapsed Time: {t_elapsed:.3g}s")
-        self.finished.emit()
 
 def convert_zarr(task):
     try:
