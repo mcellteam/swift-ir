@@ -2741,7 +2741,7 @@ class ProjectTab(QWidget):
 
     def onZoomSlider(self):
         caller = inspect.stack()[1].function
-        logger.critical(f'caller: {caller}')
+        # logger.info(f'caller: {caller}')
         if caller not in ('slotUpdateZoomSlider', 'setValue'):  # Original #0314
             val = 1 / self.zoomSlider.value()
             if self.dm['state']['current_tab'] == 1:
