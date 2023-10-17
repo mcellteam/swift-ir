@@ -331,7 +331,6 @@ class AlignWorker(QObject):
         dm.t_align = t_elapsed
         logger.info(f"Elapsed Time, SWIM to compute affines: {t_elapsed:.3g}")
         self.hudMessage.emit(f'<span style="color: #FFFF66;"><b>**** Alignment Complete ****</b></span>')
-        self.finished.emit()
 
 
 def run_command(cmd, arg_list=None, cmd_input=None):
