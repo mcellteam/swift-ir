@@ -37,7 +37,6 @@ logger = logging.getLogger(__name__)
 
 
 
-
 def applyAffine(afm, xy):
     '''APPLYAFFINE - Apply affine transform to a point
     xy_ = APPLYAFFINE(afm, xy) applies the affine matrix AFM to the point XY

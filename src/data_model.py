@@ -1889,19 +1889,6 @@ class DataModel:
         if not silent:
             self.signals.dataChanged.emit()
 
-
-
-    # def propagate_swim_1x1_custom_px(self, indexes:list):
-    #     '''Sets the SWIM Window for the Current Section across all scales.'''
-    #     # img_w, img_h = self.image_size(level=self.level)
-    #     # logger.critical(f"caller: {caller_name()}")
-    #     for l in indexes:
-    #         pixels = self._data['stack'][l]['levels'][self.level]['swim_settings']['method_opts']['size_1x1']
-    #         for s in self.finer_scales():
-    #             sf = self.lvl() / self.lvl(s)
-    #             self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']['size_1x1'] = [int(pixels[0] * sf + 0.5), int(pixels[1] * sf + 0.5)]
-
-
     def size2x2(self, s=None, l=None):
         '''Returns the SWIM Window in pixels'''
         if s == None: s = self.level
