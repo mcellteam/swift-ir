@@ -1126,7 +1126,7 @@ class ProjectTab(QWidget):
         self.MA_use_global_defaults_lab.setStyleSheet('font-size: 13px; font-weight: 600;')
         self.MA_use_global_defaults_lab.setAlignment(Qt.AlignCenter)
 
-        self.lab_region_selection = QLabel("Alt + click to select 3 matching regions")
+        self.lab_region_selection = QLabel("Use 's' key to Select 3 matching regions")
         # self.lab_region_selection = QLabel("")
         self.lab_region_selection.setStyleSheet("font-size: 10px; font-weight: 600; color: #161c20; padding: 1px;")
 
