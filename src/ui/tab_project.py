@@ -238,13 +238,21 @@ class ProjectTab(QWidget):
                 level = self.dm['state']['viewer_quality']
                 self.editorViewer = cfg.editorViewer = MAViewer(parent=self, dm=self.dm, role='tra', quality=level, webengine=self.editorWebengine)
                 self.editorViewer.signals.badStateChange.connect(self.set_transforming)
-                # self.editorViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314
                 self.editorViewer.signals.ptsChanged.connect(self.update_match_list_widgets)
                 # self.editorViewer.signals.ptsChanged.connect(self.updateWarnings)
                 self.editorViewer.signals.zVoxelCoordChanged.connect(lambda zpos: setattr(self.dm, 'zpos', zpos))
                 # self.editorViewer.signals.swimAction.connect(self.parent.alignOne)
+                # self.editorViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314
+                self.editorViewer.signals.zoomChanged.connect(lambda: logger.critical(f"Zoom Slider: {self.zoomSlider.value()} / CS Scale: {self.editorViewer.state.cross_section_scale}"))  # 0314
                 try:
                     self.dataUpdateMA()
+                except:
+                    print_exception()
+
+                try:
+                    cur_zoom = self.editorViewer.state.cross_section_scale
+                    logger.critical(f"current zoom: {cur_zoom}")
+                    self.zoomSlider.setValue(cur_zoom)
                 except:
                     print_exception()
                 # logger.info(f"Local Volume:\n{self.editorViewer.LV.info()}")
