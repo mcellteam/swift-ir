@@ -155,7 +155,6 @@ class AlignWorker(QObject):
                     jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
                     f.write(jde.encode(dm.swim_settings(s=scale, l=i)))
                 tasks.append(copy.deepcopy(ss))
-                continue
             else:
                 if ss['include']:
                     if not self.dm.ht.haskey(self.dm.swim_settings(s=scale, l=i)):
