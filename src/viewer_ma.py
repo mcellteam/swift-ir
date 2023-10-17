@@ -281,7 +281,7 @@ class MAViewer(neuroglancer.Viewer):
         with self.config_state.txn() as s:
             s.input_event_bindings.slice_view['alt+click0'] = 'add_manpoint'
             # s.input_event_bindings.viewer['alt+click0'] = 'add_manpoint'
-            s.input_event_bindings.viewer['keys'] = 'add_manpoint'
+            s.input_event_bindings.slice_view['keys'] = 'add_manpoint'
             s.input_event_bindings.slice_view['dblclick0'] = 'add_manpoint'
             # s.input_event_bindings.slice_view['shift+click0'] = 'add_manpoint'
             # s.input_event_bindings.slice_view['enter'] = 'add_manpoint'            #this works
