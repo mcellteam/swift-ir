@@ -81,6 +81,7 @@ class MAViewer(neuroglancer.Viewer):
         self._zmag_set = 0
         # self.shared_state.add_changed_callback(self.on_state_changed)
         self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
+        self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
         self.type = 'MAViewer'
         self._inSync = 0
         self._blockStateChanged = False
@@ -370,6 +371,26 @@ class MAViewer(neuroglancer.Viewer):
         except:
             print_exception()
         self._blockStateChanged = False
+
+    @Slot()
+    def on_state_changed_any(self):
+        # zoom bug factor = 250000000s
+        # caller = inspect.stack()[1].function
+        # logger.info(f"[{caller}]")
+
+        if self._blockStateChanged:
+            return
+
+        if self.state.cross_section_scale:
+            val = (self.state.cross_section_scale, self.state.cross_section_scale * 250000000)[
+                self.state.cross_section_scale < .001]
+            if round(val, 2) != round(getData('state,neuroglancer,zoom'), 2):
+                if getData('state,neuroglancer,zoom') != val:
+                    logger.info(f'emitting zoomChanged! val = {val:.4f}')
+                    setData('state,neuroglancer,zoom', val)
+                    self.signals.zoomChanged.emit(val)
+
+        # self.post_message(f"Voxel Coordinates: {str(self.state.voxel_coordinates)}")
 
 
     def getNextUnusedColor(self, role):

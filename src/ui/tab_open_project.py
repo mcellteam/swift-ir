@@ -1597,9 +1597,9 @@ class FileWatcher(QObject):
         self._searchPaths = preferences[key]
         self._watcher = QFileSystemWatcher(self)
         self._watcher.directoryChanged.connect(self.onDirChanged)
-        self._watcher.directoryChanged.connect(lambda path: print(f"Directory '{path}' changed!"))
+        # self._watcher.directoryChanged.connect(lambda path: print(f"Directory '{path}' changed!"))
         self._watcher.fileChanged.connect(self.onFileChanged)
-        self._watcher.fileChanged.connect(lambda path: print(f"File '{path}' changed!"))
+        # self._watcher.fileChanged.connect(lambda path: print(f"File '{path}' changed!"))
 
         self._known = []
 
@@ -1633,17 +1633,17 @@ class FileWatcher(QObject):
         self._watcher.addPath(path)
 
     def clearWatches(self):
-        print('Clearing watch paths...')
+        # print('Clearing watch paths...')
         self._watcher.removePaths(self.watched)
 
 
     def onDirChanged(self, path):
         self._updateKnown()
-        print(f'onDirChanged: {path}')
+        # print(f'onDirChanged: {path}')
         self.fsChanged.emit(path)
 
     def onFileChanged(self, path):
-        print(f'onFileChanged: {path}')
+        # print(f'onFileChanged: {path}')
         self.fsChanged.emit(path)
 
 
@@ -1656,9 +1656,9 @@ class FsWatcher(QObject):
 
         self._watcher = QFileSystemWatcher(self)
         self._watcher.directoryChanged.connect(self.onDirChanged)
-        self._watcher.directoryChanged.connect(lambda path: print(f"Directory '{path}' changed!"))
+        # self._watcher.directoryChanged.connect(lambda path: print(f"Directory '{path}' changed!"))
         self._watcher.fileChanged.connect(self.onFileChanged)
-        self._watcher.fileChanged.connect(lambda path: print(f"File '{path}' changed!"))
+        # self._watcher.fileChanged.connect(lambda path: print(f"File '{path}' changed!"))
 
         self._known = []
 
@@ -1671,14 +1671,13 @@ class FsWatcher(QObject):
             self.watch(path)
 
     def _updateKnown(self):
-        logger.critical(f"_updateKnown:")
+        # logger.critical(f"_updateKnown:")
         self._loadSearchPaths()
-
         self._known = []
         for path in self.watched:
-            print(f"Searching path {path}...")
+            # print(f"Searching path {path}...")
             found = list(Path(path).glob('*%s' % self._extension))
-            print(f"Found: {found}")
+            # print(f"Found: {found}")
             self._known.extend(map(str, found))
 
     @property
@@ -1693,16 +1692,16 @@ class FsWatcher(QObject):
         self._watcher.addPath(path)
 
     def clearWatches(self):
-        print('Clearing watch paths...')
+        # print('Clearing watch paths...')
         self._watcher.removePaths(self.watched)
 
     def onDirChanged(self, path):
         self._updateKnown()
-        print(f'onDirChanged: {path}')
+        # print(f'onDirChanged: {path}')
         self.fsChanged.emit(path)
 
     def onFileChanged(self, path):
-        print(f'onFileChanged: {path}')
+        # print(f'onFileChanged: {path}')
         self.fsChanged.emit(path)
 
 
