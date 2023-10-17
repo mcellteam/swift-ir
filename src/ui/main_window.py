@@ -2266,7 +2266,7 @@ class MainWindow(QMainWindow):
                     self.tell("Exclude: %s" % self.dm.name())
                 else:
                     self.tell("Include: %s" % self.dm.name())
-s                self.dm.linkReference(level=self.dm.level)
+                self.dm.linkReference(level=self.dm.level)
 
                 # if getData('state,blink'):
                 self.dm.set_stack_cafm()
