@@ -715,7 +715,7 @@ class MainWindow(QMainWindow):
                 z = self.dm.zpos
 
             caller = inspect.stack()[1].function
-            logger.info(f'[{caller}]')
+            # logger.info(f'[{caller}]')
 
             # logger.info('')
             # caller = inspect.stack()[1].function
