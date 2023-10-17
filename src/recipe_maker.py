@@ -647,9 +647,7 @@ class align_ingredient:
         self.t_swim = time.time() - t0
         self.swim_output = out.strip().split('\n')
         self.swim_err_lines = err.strip().split('\n')
-        mem = psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2
-        # print(f"CPU %: {psutil.cpu_percent()} Mem: {mem:.3g}  {getCurrentMemoryUsage()}KB {type(getCurrentMemoryUsage())}")
-        print(f"CPU %: {psutil.cpu_percent()} Mem: {mem:.3g}")
+        print(f"CPU %: {psutil.cpu_percent()}")
         return self.swim_output
 
 
