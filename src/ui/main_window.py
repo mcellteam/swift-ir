@@ -953,7 +953,7 @@ class MainWindow(QMainWindow):
             scale = self.dm.scale
         if indexes == None: indexes = list(range(0,len(self.dm)))
         # self.align(scale=scale, indexes=indexes, align=False, regenerate=True, ignore_bb=ignore_bb)
-        self.align(dm=self.dm, indexes=indexes)
+        self.align(dm=self.dm, indexes=indexes, _ignore_cache=True)
 
 
     def verify_alignment_readiness(self) -> bool:
@@ -1127,11 +1127,10 @@ class MainWindow(QMainWindow):
 
 
     @Slot()
-    def align(self, dm, indexes=()):
+    def align(self, dm, indexes=(), _ignore_cache=False):
     # def align(self, dm, align_indexes=(), regen_indexes=(), scale=None, renew_od=False, reallocate_zarr=False,
     #           align=True, regenerate=True, ignore_bb=False):
-        _ignore_cache = False
-        if self._isProjectTab():
+        if (not _ignore_cache) and self._isProjectTab():
             _ignore_cache = self.pt.cbIgnoreCache.isChecked()
         ready = self.dm['level_data'][self.dm.scale]['alignment_ready']
         if not ready:
