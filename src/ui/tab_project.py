@@ -291,7 +291,7 @@ class ProjectTab(QWidget):
 
     def slot_zoom_changed(self, val):
         caller = inspect.stack()[1].function
-        # logger.info(f'[{caller}]')
+        logger.info(f'[{caller}]')
         if val > 1000:
             val *= 250000000
         logger.info(f"Zoom changed! passed value: {val:.3f}")
@@ -1551,7 +1551,7 @@ class ProjectTab(QWidget):
                 self.colorAction3.setVisible(True)
                 self.colorAction3.setText(f'Custom ({color.name()})')
                 if self.wTabs.currentIndex() == 0:
-                    cfg.emViewer.setBackground()
+                    self.viewer.setBackground()
                 elif self.wTabs.currentIndex() == 1:
                     self.editorViewer.setBackground()
                 # self.initNeuroglancer()
@@ -1569,7 +1569,7 @@ class ProjectTab(QWidget):
             self.colorAction3.setChecked(False)
             # self.colorAction2.setChecked(False)
             if self.wTabs.currentIndex() == 0:
-                cfg.emViewer.setBackground()
+                self.viewer.setBackground()
             elif self.wTabs.currentIndex() == 1:
                 self.editorViewer.setBackground()
             # self.initNeuroglancer()
@@ -1585,7 +1585,7 @@ class ProjectTab(QWidget):
             self.colorAction3.setChecked(False)
             # self.colorAction2.setChecked(False)
             if self.wTabs.currentIndex() == 0:
-                cfg.emViewer.setBackground()
+                self.viewer.setBackground()
             elif self.wTabs.currentIndex() == 1:
                 self.editorViewer.setBackground()
             # self.initNeuroglancer()
@@ -1601,7 +1601,7 @@ class ProjectTab(QWidget):
             self.colorAction3.setChecked(True)
             setOpt('neuroglancer,USE_CUSTOM_BACKGROUND', True)
             if self.wTabs.currentIndex() == 0:
-                cfg.emViewer.setBackground()
+                self.viewer.setBackground()
             elif self.wTabs.currentIndex() == 1:
                 self.editorViewer.setBackground()
 
@@ -1655,7 +1655,7 @@ class ProjectTab(QWidget):
         # self.tbbNgHelp = QToolButton()
         # def fn_ng_help():
         #     logger.info('')
-        #     cfg.emViewer.setHelpMenu(not self.tbbNgHelp.isChecked())
+        #     self.viewer.setHelpMenu(not self.tbbNgHelp.isChecked())
         #     # if self.tbbNgHelp.isChecked():
         #     #     self.tbbNgHelp.setIcon(qta.icon("fa.question", color='#161c20'))
         #     # else:
@@ -1683,7 +1683,7 @@ class ProjectTab(QWidget):
             self.dm['state']['neuroglancer']['show_bounds'] = self.cmbNgAccessories.itemChecked(2)
             self.dm['state']['neuroglancer']['show_axes'] = self.cmbNgAccessories.itemChecked(3)
             self.dm['state']['neuroglancer']['show_scalebar'] = self.cmbNgAccessories.itemChecked(4)
-            cfg.emViewer.updateDisplayAccessories()
+            self.viewer.updateDisplayAccessories()
             if self.cmbNgAccessories.itemChecked(5):
                 self.contrastSlider.setValue(int(self.dm.contrast))
                 self.contrastLE.setText('%d' % self.dm.contrast)
@@ -2365,7 +2365,7 @@ class ProjectTab(QWidget):
             choice = self.comboNgLayout.currentText()
             logger.info('Setting neuroglancer layout to %s' % choice)
             setData('state,neuroglancer,layout', choice)
-            self.parent.tell(f'Neuroglancer Layout: {choice}')
+            self.parent.tell(f'Setting Neuroglancer layout to {choice}')
             try:
                 self.parent.hud("Setting Neuroglancer Layout to '%s'... " % choice)
                 layout_actions = {
@@ -2745,7 +2745,7 @@ class ProjectTab(QWidget):
                 if self.dm['state']['current_tab'] == 1:
                     zoom = self.editorViewer.zoom()
                 else:
-                    zoom = cfg.emViewer.zoom()
+                    zoom = self.viewer.zoom()
                 if zoom == 0:
                     return
                 # val =
@@ -2768,8 +2768,8 @@ class ProjectTab(QWidget):
                     self.editorViewer.set_zoom(val)
             elif self.dm['state']['current_tab'] == 0:
                 try:
-                    if abs(cfg.emViewer.state.cross_section_scale - val) > .0001:
-                        cfg.emViewer.set_zoom(val)
+                    if abs(self.viewer.state.cross_section_scale - val) > .0001:
+                        self.viewer.set_zoom(val)
                 except:
                     print_exception()
 
@@ -2777,12 +2777,12 @@ class ProjectTab(QWidget):
     def slotUpdateZoomSlider(self):
         # Lets only care about REF <--> wSlider
         caller = inspect.stack()[1].function
-        logger.critical(f'caller: {caller}')
+        logger.critical(f'[{caller}]')
         try:
             if self.dm['state']['current_tab'] == 1:
                 val = self.editorViewer.state.cross_section_scale
             else:
-                val = cfg.emViewer.state.cross_section_scale
+                val = self.viewer.state.cross_section_scale
             if val:
                 if val != 0:
                     # new_val = float(sqrt(val))
@@ -2809,9 +2809,9 @@ class ProjectTab(QWidget):
 
             else:
                 # logger.info('val = %d' % val)
-                state = copy.deepcopy(cfg.emViewer.state)
+                state = copy.deepcopy(self.viewer.state)
                 state.relative_display_scales = {'z': val}
-                cfg.emViewer.set_state(state)
+                self.viewer.set_state(state)
             self.parent.update()
         except:
             print_exception()
@@ -3091,8 +3091,8 @@ class ProjectTab(QWidget):
             self.brightnessSlider.setValue(int(self.dm.brightness))
             self.contrastSlider.setValue(int(self.dm.contrast))
             if self.wTabs.currentIndex() == 0:
-                cfg.emViewer.set_brightness()
-                cfg.emViewer.set_contrast()
+                self.viewer.set_brightness()
+                self.viewer.set_contrast()
             elif self.wTabs.currentIndex() == 1:
                 self.editorViewer.set_brightness()
                 self.editorViewer.set_contrast()
@@ -3165,7 +3165,7 @@ class ProjectTab(QWidget):
         if caller == 'main':
             self.dm.brightness = self.brightnessSlider.value() / 100
             if self.wTabs.currentIndex() == 0:
-                cfg.emViewer.set_brightness()
+                self.viewer.set_brightness()
             elif self.wTabs.currentIndex() == 1:
                 self.editorViewer.set_brightness()
 
@@ -3174,7 +3174,7 @@ class ProjectTab(QWidget):
         if caller == 'main':
             self.dm.contrast = self.contrastSlider.value() / 100
             if self.wTabs.currentIndex() == 0:
-                cfg.emViewer.set_contrast()
+                self.viewer.set_contrast()
             elif self.wTabs.currentIndex() == 1:
                 self.editorViewer.set_contrast()
 
@@ -3182,17 +3182,17 @@ class ProjectTab(QWidget):
     #     logger.info('')
     #     logger.info(f'range: {self.normalizedSlider.getRange()}')
     #     self.dm.set_normalize(self.normalizedSlider.getRange())
-    #     state = copy.deepcopy(cfg.emViewer.state)
+    #     state = copy.deepcopy(self.viewer.state)
     #     for layer in state.layers:
     #         layer.shaderControls['normalized'].range = np.array(self.dm.normalize())
     #     # state.layers[0].shader_controls['normalized'] = {'range': np.array([20,50])}
-    #     cfg.emViewer.set_state(state)
+    #     self.viewer.set_state(state)
 
     def fn_volume_rendering(self):
         logger.info('')
-        state = copy.deepcopy(cfg.emViewer.state)
+        state = copy.deepcopy(self.viewer.state)
         state.showSlices = False
-        cfg.emViewer.set_state(state)
+        self.viewer.set_state(state)
 
 
     def jump_to_manual(self, requested) -> None:
