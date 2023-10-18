@@ -476,10 +476,11 @@ class EMViewer(AbstractEMViewer):
             mapping = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
                        'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
             # nglayout = mapping[requested]
-            if self.path == self.dm.path_zarr_transformed():
-                nglayout = mapping['4panel']
-            else:
-                nglayout = mapping['xy']
+            # if self.path == self.dm.path_zarr_transformed():
+            #     nglayout = mapping['4panel']
+            # else:
+            #     nglayout = mapping['xy']
+            nglayout = mapping[getData('state,neuroglancer,layout')]
 
 
         # logger.critical(f"nglayout = {nglayout}")
