@@ -90,7 +90,7 @@ class ProjectTab(QWidget):
         self.dm.loadHashTable()
 
         self.dataUpdateMA()
-        self.updateZarrRadiobuttons()
+
 
     # def _updateSaveButton(self):
     #     # Todo this would be faster as a dictionary lookup
@@ -2533,6 +2533,7 @@ class ProjectTab(QWidget):
             self.bSWIM.hide()
             self.bSaveSettings.hide()
             self.checkboxes.hide()
+        self.updateZarrRadiobuttons()
         # if hasattr(self, 'editorViewer'):
         #     self.editorViewer.drawSWIMwindow() #1009+
 
