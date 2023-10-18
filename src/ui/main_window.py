@@ -1298,7 +1298,8 @@ class MainWindow(QMainWindow):
             self.boxScale.setEnabled(True)
 
             # self.bAlign.setEnabled(self.dm.is_alignable() and self.dm['level_data'][self.dm.scale]['alignment_ready'])
-            self.bAlign.setEnabled(True)
+            # self.bAlign.setEnabled(True)
+            self.bAlign.setEnabled(self.dm.is_alignable())
             # self.bAlign.setVisible(not self.dm.is_aligned())
 
             if len(self.dm.scales) == 1:
@@ -5075,18 +5076,23 @@ class MainWindow(QMainWindow):
                 if self.pt.wTabs.currentIndex() in (0, 1):
                     self.incrementZoomOut()
 
-        # elif key == Qt.Key_Tab:
-        #     logger.info('')
-        #     if self._isProjectTab():
-        #         new_index = (self.pt.wTabs.currentIndex()+1)%4
-        #         logger.info(f'new index: {new_index}')
-        #         self.pt.wTabs.setCurrentIndex(new_index)
+        elif key == Qt.Key_Tab:
+            logger.info('Tab pressed!')
+            # if self._isProjectTab():
+            #     new_index = (self.pt.wTabs.currentIndex()+1)%4
+            #     logger.info(f'new index: {new_index}')
+            #     self.pt.wTabs.setCurrentIndex(new_index)
+
+        elif key == Qt.Key_0:
+            logger.info('Key 0 pressed!')
+            print(f"Focus is on: {self.focusWidget()}")
 
         elif key == Qt.Key_Delete:
             if self._isOpenProjTab():
                 self._getTabObject().delete_projects()
         else:
             super().keyPressEvent(event) # re-raise the event if it doesn't match!
+
 
         if cfg.DEV_MODE:
             dt = time.time() - t0
