@@ -165,6 +165,7 @@ class MAViewer(neuroglancer.Viewer):
         #NotCulpableForFlickerGlitch
         # if self.type != 'EMViewerStage':
         self._blockStateChanged = True
+        self._selected_index = {'ref': 0, 'tra': 0}
 
         if self.role == 'ref':
             if zpos:
@@ -367,6 +368,7 @@ class MAViewer(neuroglancer.Viewer):
 
             elif self.role == 'tra':
                 if floor(self.state.position[0]) != self.index:
+                    self._selected_index = {'ref': 0, 'tra': 0}
                     self.index = floor(self.state.position[0])
                     self.drawSWIMwindow(z=self.index) #NeedThis #0803
                     # self.dm.zpos = self.index
@@ -409,7 +411,10 @@ class MAViewer(neuroglancer.Viewer):
         # for pt in self.pts[role]:
         for pt in self.pts2[role]:
             if pt:
-                n += 1
+                if pt[1]:
+                    n += 1
+
+        logger.info(f"returning {n}")
         return n
 
 
@@ -436,7 +441,7 @@ class MAViewer(neuroglancer.Viewer):
         if self.dm.method() != 'manual':
             logger.warning('add_matchpoint: User may not select points while aligning with grid.')
             return
-
+        print(f"_selected_index = {self._selected_index[self.role]}")
         coords = np.array(s.mouse_voxel_coordinates)
         if coords.ndim == 0:
             logger.warning('Coordinates are dimensionless! =%s' % str(coords))
@@ -447,22 +452,19 @@ class MAViewer(neuroglancer.Viewer):
         y = float(y)
         x = float(x)
         pt_index = self._selected_index[self.role]
-        logger.critical(f"Adding point: {(self.index + 0.5, y, x)}")
         self.pts2[self.role][pt_index] = (self.index + 0.5, y, x)
 
         # self.setMpData()
         l = [None, None, None]
         # for i,p in enumerate(self.pts[self.role]):
-        logger.critical(f"Preparing these points for data : {self.pts2[self.role]}")
         for i, p in enumerate(self.pts2[self.role]):
             if p:
                 if p[1]:
                     l[i] = (p[1], p[2])
-        logger.critical(f"Writing these points to data    : {l}")
+        logger.info(f"Setting these point selections    : {l}")
         # 01:05:25 [viewer_ma.add_matchpoint:539] l    : [(235.56079, 436.60748), None, None]
 
         self.dm.set_manpoints(self.role, l)
-        # self._selected_index[self.role] = self.getNextPoint(self.role)
         select_by = self.dm['state']['neuroglancer']['region_selection']['select_by']
 
         _other_role = {'tra', 'ref'}.difference(self.role).pop()
@@ -477,9 +479,7 @@ class MAViewer(neuroglancer.Viewer):
         elif select_by == 'zigzag':
             self._selected_index['tra'] = (self._selected_index[self.role] + 1) % 3
             self.parent.set_viewer_role(_other_role)
-
         self.signals.ptsChanged.emit()
-        logger.info('%s Match Point Added: %s' % (self.role, str(coords)))
         self.drawSWIMwindow()
 
 
