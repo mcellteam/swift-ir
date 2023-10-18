@@ -2134,7 +2134,7 @@ class DataModel:
 
 
     #### Pulls the settings from the previous scale level ####
-    def pullSettings(self):
+    def pullSettings(self, all=True):
         '''
         Saving pulls the scaling factor-adjusted 'saved_swim_settings' from previous scale.
         'saved_swim_settings' is populated on the first 'Align All' of each scale, so will always be available.
@@ -2169,8 +2169,13 @@ class DataModel:
         defaults['method_opts']['size_2x2'][0] *= sf
         defaults['method_opts']['size_2x2'][1] *= sf
 
+
+        if all:
+            indexes = list(range(len(self)))
+        else:
+            indexes = [self.zpos]
         try:
-            for i in range(len(self)):
+            for i in indexes:
                 prev_settings = copy.deepcopy(self._data['stack'][i]['levels'][prev_level]['swim_settings'])
                 prev_settings.pop('level')
                 prev_settings.pop('init_afm')
