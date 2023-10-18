@@ -54,16 +54,16 @@ class WorkerSignals(QObject):
     badStateChange = Signal()
 
 class MAViewer(neuroglancer.Viewer):
-    def __init__(self, parent, dm, role='tra', quality=None, webengine=None):
+    # def __init__(self, parent, dm, role='tra', quality=None, webengine=None):
+    def __init__(self, parent, dm, role='tra', webengine=None):
         super().__init__()
         self.parent = parent
         self.dm = dm
         self.index = None
         self.role = role
-        self.quality = quality
-        self.quality_lvl = self.dm.lvl(self.quality)
-        self.fac = self.dm.lvl() / self.quality_lvl
-        # self.fac = self.quality_lvl / self.dm.lvl()
+        # self.quality = quality
+        # self.quality_lvl = self.dm.lvl(self.quality)
+        # self.fac = self.dm.lvl() / self.quality_lvl
         self.webengine = webengine
         self.signals = WorkerSignals()
         self.created = datetime.datetime.now()
@@ -211,10 +211,10 @@ class MAViewer(neuroglancer.Viewer):
 
         # self.restoreManAlignPts()
 
-        if self.quality:
-            path = os.path.join(self.dm['info']['images_location'], 'zarr', self.quality)
-        else:
-            path = os.path.join(self.dm['info']['images_location'], 'zarr', self.dm.level)
+        # if self.quality:
+        #     path = os.path.join(self.dm['info']['images_location'], 'zarr', self.quality)
+        # else:
+        path = os.path.join(self.dm['info']['images_location'], 'zarr', self.dm.level)
 
         if not os.path.exists(path):
             logger.warning('Data Store Not Found: %s' % path); return
@@ -442,8 +442,10 @@ class MAViewer(neuroglancer.Viewer):
             logger.warning('Coordinates are dimensionless! =%s' % str(coords))
             return
         _, y, x = s.mouse_voxel_coordinates
-        y *= self.fac
-        x *= self.fac
+        # y *= self.fac
+        # x *= self.fac
+        y = float(y)
+        x = float(x)
         pt_index = self._selected_index[self.role]
         logger.critical(f"Adding point: {(self.index + 0.5, y, x)}")
         self.pts2[self.role][pt_index] = (self.index + 0.5, y, x)
@@ -527,20 +529,26 @@ class MAViewer(neuroglancer.Viewer):
         # self.setMpData() #0805+
         # self.undrawSWIMwindows()
         ms = self._mkr_size
-        fac = self.dm.lvl() / self.quality_lvl
+        # fac = self.dm.lvl() / self.quality_lvl
+        level_val = self.dm.lvl()
         method = self.dm.current_method
         annotations = []
         if method == 'grid':
             _ww1x1 = self.dm.size1x1()  # full window width
             _ww2x2 = self.dm.size2x2()  # 2x2 window width
-            ww1x1 = (_ww1x1[0] * fac, _ww1x1[1] * fac)  # full window width
-            ww2x2 = (_ww2x2[0] * fac, _ww2x2[1] * fac)  # 2x2 window width
-            w, h = self.dm.image_size(s=self.quality)
+            # ww1x1 = (_ww1x1[0] * fac, _ww1x1[1] * fac)  # full window width
+            # ww2x2 = (_ww2x2[0] * fac, _ww2x2[1] * fac)  # 2x2 window width
+            ww1x1 = tuple(_ww1x1)  # full window width
+            ww2x2 = tuple(_ww2x2)  # 2x2 window width
+            # w, h = self.dm.image_size(s=self.quality)
+            w, h = self.dm.image_size(s=self.dm.level)
             p = self.getCenterpoints(w, h, ww1x1, ww2x2)
             colors = self.colors[0:sum(self.dm.quadrants)]
             cps = [x for i, x in enumerate(p) if self.dm.quadrants[i]]
-            ww_x = ww2x2[0] - (24 // self.quality_lvl)
-            ww_y = ww2x2[1] - (24 // self.quality_lvl)
+            # ww_x = ww2x2[0] - (24 // self.quality_lvl)
+            # ww_y = ww2x2[1] - (24 // self.quality_lvl)
+            ww_x = ww2x2[0] - (24 // level_val)
+            ww_y = ww2x2[1] - (24 // level_val)
             z = self.index + 0.5
             for i, pt in enumerate(cps):
                 clr = colors[i]
@@ -562,8 +570,8 @@ class MAViewer(neuroglancer.Viewer):
             #     ww_x = ww_y = self.dm.manual_swim_window_px()
             ww_x = ww_y = self.dm.manual_swim_window_px()
 
-            ww_x *= fac
-            ww_y *= fac
+            # ww_x *= fac
+            # ww_y *= fac
 
             for i, pt in enumerate(self.pts2[self.role]):
                 # 0: (122, None, None)

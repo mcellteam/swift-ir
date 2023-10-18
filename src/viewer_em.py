@@ -782,6 +782,7 @@ class PMViewer(AbstractEMViewer):
         with self.config_state.txn() as s:
             # s.status_messages['message'] = ''
             s.show_ui_controls = False
+            # s.show_ui_controls = True
             # s.status_messages = None
             s.show_panel_borders = False
             s.show_layer_panel = False

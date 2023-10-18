@@ -34,7 +34,7 @@ PaLM by addressing the problem of managing previewmodel parameters (checkpoints)
 https://www.reddit.com/r/worldTechnology/comments/xuw7kk/tensorstore_for_highperformance_scalable_array/
 '''
 
-__all__ = ['preallocate_zarr', 'write_metadata_zarr_multiscale']
+__all__ = ['preallocate_zarr', 'write_metadata_zarr_multiscale', 'write_zarr_multiscale_metadata']
 
 logger = logging.getLogger(__name__)
 
@@ -269,6 +269,36 @@ def write_metadata_zarr_multiscale(path):
             "axes": axes,
             "datasets": datasets,
             "cur_method": "gaussian",
+        }
+    ]
+
+
+def write_zarr_multiscale_metadata(path, scales, resolution):
+    root = zarr.group(store=path)
+    datasets = []
+    for scale in scales:
+        scale_factor = get_scale_val(scale)
+        name = 'level' + str(scale_factor)
+        metadata = {
+            "path": name,
+            "coordinateTransformations": [{
+                "type": "level",
+                "level": [float(resolution[0]), scale_factor * float(resolution[1]), scale_factor * float(resolution[2])]}]
+        }
+        datasets.append(metadata)
+    axes = [
+        {"name": "z", "type": "space", "unit": "nanometer"},
+        {"name": "y", "type": "space", "unit": "nanometer"},
+        {"name": "x", "type": "space", "unit": "nanometer"}
+    ]
+    root.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
+    root.attrs['multiscales'] = [
+        {
+            "version": "0.4",
+            "name": "my_data",
+            "axes": axes,
+            "datasets": datasets,
+            "type": "gaussian",
         }
     ]
 

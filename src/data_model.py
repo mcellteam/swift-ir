@@ -1245,7 +1245,10 @@ class DataModel:
         '''Returns manual correspondence points in MIR format'''
         if s == None: s = self.level
         if l == None: l = self.zpos
-        return self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']['points']['mir_coords'][role]
+        try:
+            return self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']['points']['mir_coords'][role]
+        except:
+            print_exception(extra=f"role: {role}, s={s}, l={l}")
 
     def manpoints_pretty(self, s=None, l=None):
         if s == None: s = self.level
@@ -2202,13 +2205,25 @@ class DataModel:
                     p3 = mo['points']['mir_coords']['tra']
                     p4 = mo['points']['mir_coords']['ref']
                     for i, p in enumerate(p1):
-                        p1[i] = [(x * sf, y * sf) for x, y in p]
+                        if p:
+                            if p[0]:
+                                p1[i][0] *= sf
+                                p1[i][1] *= sf
                     for i, p in enumerate(p2):
-                        p2[i] = [(x * sf, y * sf) for x, y in p]
+                        if p:
+                            if p[0]:
+                                p2[i][0] *= sf
+                                p2[i][1] *= sf
                     for i, p in enumerate(p3):
-                        p3[i] = [(x * sf, y * sf) for x, y in p]
+                        if p:
+                            if p[0]:
+                                p3[i][0] *= sf
+                                p3[i][1] *= sf
                     for i, p in enumerate(p4):
-                        p4[i] = [(x * sf, y * sf) for x, y in p]
+                        if p:
+                            if p[0]:
+                                p4[i][0] *= sf
+                                p4[i][1] *= sf
                 #Critical #1015+
                 self['stack'][i]['levels'][cur_level]['saved_swim_settings'].update(copy.deepcopy(
                     self['stack'][i]['levels'][cur_level]['swim_settings']))

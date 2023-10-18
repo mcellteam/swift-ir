@@ -235,7 +235,8 @@ class ProjectTab(QWidget):
                 # self.editorWebengine.setUrl(QUrl("http://localhost:8888/"))
                 # level = self.dm.levels[self.cmbViewerScale.currentIndex()]
                 level = self.dm['state']['viewer_quality']
-                self.editorViewer = cfg.editorViewer = MAViewer(parent=self, dm=self.dm, role='tra', quality=level, webengine=self.editorWebengine)
+                # self.editorViewer = cfg.editorViewer = MAViewer(parent=self, dm=self.dm, role='tra', quality=level, webengine=self.editorWebengine)
+                self.editorViewer = cfg.editorViewer = MAViewer(parent=self, dm=self.dm, role='tra', webengine=self.editorWebengine)
                 self.editorViewer.signals.badStateChange.connect(self.set_transforming)
                 self.editorViewer.signals.ptsChanged.connect(self.update_match_list_widgets)
                 # self.editorViewer.signals.ptsChanged.connect(self.updateWarnings)
@@ -1383,10 +1384,6 @@ class ProjectTab(QWidget):
         lst = []
         lst.append('Full Quality %d x %dpx' % (self.dm.image_size(s=self.dm.levels[0])))
         for level in self.dm.levels[1:]:
-            # lvl = self.dm.lvl(s=level)
-            # siz = self.dm.image_size(s=level)
-            # lst.append('%d / %d x %dpx' % (lvl, siz[0], siz[1]))
-            # lst.append('%d x %dpx' % (siz[0], siz[1]))
             siz = self.dm.image_size(s=level)
             lst.append('1/%d Quality %d x %dpx' % (self.dm.lvl(level), siz[0], siz[1]))
         self.cmbViewerScale.addItems(lst)
@@ -1403,10 +1400,8 @@ class ProjectTab(QWidget):
                 self.parent.tell('Viewing quality set to 1/%d (%d x %dpx)' % (self.dm.lvl(level), siz[0], siz[1]))
                 self.initNeuroglancer()
 
-        self.cmbViewerScale.currentIndexChanged.connect(fn_cmbViewerScale)
+        # self.cmbViewerScale.currentIndexChanged.connect(fn_cmbViewerScale)
 
-        # self.wCmbViewerScale = HW(self.cmbViewerScale)
-        # self.wCmbViewerScale.layout.setAlignment(Qt.AlignTop | Qt.AlignCenter)
 
         self.cl_tra = ClickLabel(' Transforming ')
         self.cl_tra.setFocusPolicy(Qt.NoFocus)
@@ -1439,7 +1434,8 @@ class ProjectTab(QWidget):
                                       'border-radius: 2px; padding-left: 1px; padding-right: 1px;')
 
         # self.wSwitchRefTra = HW(self.cl_tra, self.labAlignTo, self.cl_ref)
-        self.wSwitchRefTra = HW(self.cl_tra, self.cmbViewerScale, self.cl_ref)
+        # self.wSwitchRefTra = HW(self.cl_tra, self.cmbViewerScale, self.cl_ref)
+        self.wSwitchRefTra = HW(self.cl_tra, self.cl_ref)
         self.wSwitchRefTra.setFixedHeight(15)
 
         # https://codeloop.org/pyqt5-make-multi-document-interface-mdi-application/
@@ -2453,7 +2449,8 @@ class ProjectTab(QWidget):
 
         self.parent.bRegenZarr.setEnabled(self.dm.is_aligned())
         # self.gifPlayer.labNull.setText(('Not Aligned.','No Data.')[self.dm.is_aligned()])
-        self.bPull.setVisible((self.dm.scale != self.dm.coarsest_scale_key()) and self.dm.is_alignable())
+        # self.bPull.setVisible((self.dm.scale != self.dm.coarsest_scale_key()) and self.dm.is_alignable())
+        self.bPull.setVisible(self.dm.scale != self.dm.coarsest_scale_key())
 
         self.gifPlayer.radiobuttons.setVisible(os.path.exists(self.dm.path_cafm_gif()))
 

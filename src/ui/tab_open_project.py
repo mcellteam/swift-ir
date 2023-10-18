@@ -199,7 +199,7 @@ class OpenProject(QWidget):
         self.toolbar.addWidget(VW(self.wSelectImageSeries, self.wSelectAlignment))
 
         self.webengine = WebEngine(ID='pmViewer')
-        self.webengine.setFocusPolicy(Qt.StrongFocus)
+        # self.webengine.setFocusPolicy(Qt.StrongFocus)
         setWebengineProperties(self.webengine)
 
         self.leNameAlignment = QLineEdit()
@@ -878,6 +878,7 @@ class OpenProject(QWidget):
                 scale = keys[-1]
                 if self.cmbSelectImages.count() > 0:
                     self.path_l = os.path.join(images, 'zarr', scale)
+                    # self.path_l = os.path.join(images, 'zarr')
                     # if self.cmbSelectAlignment.currentText() != 'None':
                     if self.cmbSelectAlignment.currentText():
                         # coarsest_aligned = self.getCoarsestAlignedScale(alignment_file)
