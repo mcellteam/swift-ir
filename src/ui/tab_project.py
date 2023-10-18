@@ -381,6 +381,7 @@ class ProjectTab(QWidget):
         # MA Stage Buffer Widget
 
         self.lw_ref = ListWidget()
+        self.lw_ref.clicked.connect(lambda: print("lw_ref clicked!"))
         self.lw_ref.setFocusPolicy(Qt.NoFocus)
         # self.lw_ref.setFocusPolicy(Qt.NoFocus)
         delegate = ListItemDelegate()
@@ -415,12 +416,13 @@ class ProjectTab(QWidget):
             self.update_match_list_widgets()
         self.lw_ref.itemClicked.connect(fn_point_selected)
         self.lab_ref = QLabel('Next Color:   ')
-        self.lab_ref.setStyleSheet('font-size: 10px; background-color: #ede9e8; color: #161c20;')
+        # self.lab_ref.setStyleSheet('font-size: 10px; background-color: #ede9e8; color: #161c20;')
         self.lab_nextcolor1 = QLabel()
         self.lab_nextcolor1.setFixedSize(14, 14)
 
 
         self.lw_tra = ListWidget()
+        self.lw_tra.clicked.connect(lambda: print("lw_tra clicked!"))
         self.lw_tra.setFocusPolicy(Qt.NoFocus)
         # self.lw_tra.setFocusPolicy(Qt.NoFocus)
         delegate = ListItemDelegate()
@@ -455,11 +457,9 @@ class ProjectTab(QWidget):
             self.update_match_list_widgets()
         self.lw_tra.itemClicked.connect(fn_point_selected)
         self.lab_tra = QLabel('Next Color:   ')
-        self.lab_tra.setStyleSheet('font-size: 10px; background-color: #ede9e8; color: #161c20;')
+        # self.lab_tra.setStyleSheet('font-size: 10px; background-color: #ede9e8; color: #161c20;')
         self.lab_nextcolor0 = QLabel()
         self.lab_nextcolor0.setFixedSize(14, 14)
-
-
 
 
         font = QFont()
@@ -503,10 +503,11 @@ class ProjectTab(QWidget):
         self.btn_undoRefPts.clicked.connect(fn)
 
         self.btn_clrRefPts = QPushButton('Clear')
+        # self.btn_clrRefPts = QPushButton()
+        # self.btn_clrRefPts.setIcon(qta.icon('fa.trash'))
         self.btn_clrRefPts.setFocusPolicy(Qt.NoFocus)
-        self.btn_clrRefPts.setToolTip('Clear All Selections')
-        self.btn_clrRefPts.setStyleSheet("""font-size: 9px;""")
-        self.btn_clrRefPts.setFixedSize(QSize(36, 14))
+        self.btn_clrRefPts.setToolTip('Clear Selections')
+        self.btn_clrRefPts.setFixedSize(QSize(34, 16))
         self.btn_clrRefPts.clicked.connect(self.deleteAllMpRef)
 
         self.btn_undoBasePts = QPushButton()
@@ -524,25 +525,34 @@ class ProjectTab(QWidget):
         self.btn_undoBasePts.clicked.connect(fn)
 
         self.btn_clrBasePts = QPushButton('Clear')
+        # self.btn_clrBasePts = QPushButton()
+        # self.btn_clrBasePts.setIcon(qta.icon('fa.trash'))
         self.btn_clrBasePts.setFocusPolicy(Qt.NoFocus)
-        self.btn_clrBasePts.setToolTip('Clear All Selections')
-        self.btn_clrBasePts.setStyleSheet("""font-size: 9px;""")
-        self.btn_clrBasePts.setFixedSize(QSize(36, 14))
+        self.btn_clrBasePts.setToolTip('Clear Selections')
+        self.btn_clrBasePts.setFixedSize(QSize(34, 14))
         self.btn_clrBasePts.clicked.connect(self.deleteAllMpBase)
 
         self.btn_clrAllPts = QPushButton('Clear All')
         self.btn_clrAllPts.setFocusPolicy(Qt.NoFocus)
         self.btn_clrAllPts.setFixedHeight(16)
         self.btn_clrAllPts.setToolTip('Clear All Selections')
-        # self.btn_clrAllPts.setStyleSheet("""font-size: 9px; margin-right: 2px;""")
         # self.btn_clrAllPts.setFixedSize(QSize(48, 14))
+        self.btn_clrAllPts.setFixedSize(QSize(16, 16))
+        self.btn_clrAllPts.setIconSize(QSize(13, 13))
         self.btn_clrAllPts.clicked.connect(self.deleteAllMp)
 
-        self.baseNextColorWidget = HW(self.lab_tra, self.lab_nextcolor0,
-                                      ExpandingWidget(self), self.btn_clrBasePts)
+
+        # self.baseNextColorWidget = HW(self.lab_tra, self.lab_nextcolor0,
+        #                               ExpandingWidget(self), self.btn_clrBasePts)
+        self.wNextColor_l = HW(self.lab_tra, self.lab_nextcolor0)
+        self.wNextColor_l.setFixedWidth(80)
+        self.baseNextColorWidget = HW(self.wNextColor_l, self.btn_clrBasePts)
         self.baseNextColorWidget.setFixedHeight(16)
-        self.refNextColorWidget = HW(self.lab_ref, self.lab_nextcolor1,
-                                     ExpandingWidget(self), self.btn_clrRefPts)
+        # self.refNextColorWidget = HW(self.lab_ref, self.lab_nextcolor1,
+        #                              ExpandingWidget(self), self.btn_clrRefPts)
+        self.wNextColor_r = HW(self.lab_ref, self.lab_nextcolor1)
+        self.wNextColor_r.setFixedWidth(80)
+        self.refNextColorWidget = HW(self.wNextColor_r, self.btn_clrRefPts)
         self.refNextColorWidget.setFixedHeight(16)
 
         self.automatic_label = QLabel()
@@ -642,6 +652,18 @@ class ProjectTab(QWidget):
         self.bTransform.hide()
 
         self.lw_gb_l = GroupBox("Transforming")
+        self.lw_gb_l.setProperty("current", True)
+        # self.lw_gb_l.clicked.connect(lambda: print("lw_gb_l clicked!"))
+        # self.lw_gb_l.setStyleSheet("""
+        #         QWidget{border-width: 3px; border-color: #339933;}
+        #         QWidget:disabled{border-width:1px;}
+        #         QGroupBox {font-weight:600;}
+        #         """)
+        self.lw_gb_l.setStyleSheet("""
+                QWidget[current=true]{border-width: 3px; border-color: #339933;} 
+                QWidget[current=false]{border-width:1px;} 
+                QGroupBox {font-weight:600;}
+                """)
         def fn():
             logger.info('')
             if self.dm['state']['tra_ref_toggle'] == 'ref':
@@ -655,6 +677,17 @@ class ProjectTab(QWidget):
 
         # self.lw_gb_r = GroupBox("Reference")
         self.lw_gb_r = GroupBox("Reference")
+        self.lw_gb_r.setProperty("current", True)
+        # self.lw_gb_r.setStyleSheet("""
+        #         QWidget{border-width: 3px; border-color: #339933;}
+        #         QWidget:disabled{border-width:1px;}
+        #         QGroupBox {font-weight:600;}
+        #         """)
+        self.lw_gb_r.setStyleSheet("""
+                QWidget[current=true]{border-width: 3px; border-color: #339933;} 
+                QWidget[current=false]{border-width:1px;} 
+                QGroupBox {font-weight:600;}
+                """)
         def fn():
             logger.info('')
             if self.dm['state']['tra_ref_toggle'] == 'tra':
@@ -2034,11 +2067,10 @@ class ProjectTab(QWidget):
         self.wWebengineEditor = HW(self.ngVertLab, self.ng_widget, self.zoomSliderAndLabel)
         # self.wWebengineEditor.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        self.warning_data = WarningNotice(self, '<b>Warning:</b> Some data is out of sync.', fixbutton=True, symbol='×')
-
-        self.warning_data.fixbutton.clicked.connect(self.fixAll)
-        self.warning_data.fixbutton.setText('Fix All')
-        self.warning_data.hide()
+        # self.warning_data = WarningNotice(self, '<b>Warning:</b> Some data is out of sync.', fixbutton=True, symbol='×')
+        # self.warning_data.fixbutton.clicked.connect(self.fixAll)
+        # self.warning_data.fixbutton.setText('Fix All')
+        # self.warning_data.hide()
 
         self.glGifPlayer = QGridLayout()
         self.glGifPlayer.addWidget(self.gifPlayer, 0, 0)
@@ -2134,12 +2166,24 @@ class ProjectTab(QWidget):
 
         self.parent.regenZarr()
 
+    def onDefaultsCheckbox(self):
+        caller = inspect.stack()[1].function
+        if caller == 'main':
+            logger.info('')
+            if self.cbDefaults.isChecked():
+                if not self.dm.isDefaults():
+                    self.dm.applyDefaults()
+            else:
+                self.cbDefaults.setChecked(self.dm.isDefaults())
+            self.dataUpdateMA()
+
 
     def set_viewer_role(self, role):
         if role == 'ref':
             self.set_reference()
         elif role == 'tra':
             self.set_transforming()
+
 
     def set_reference(self):
         # logger.critical('')
@@ -2158,37 +2202,21 @@ class ProjectTab(QWidget):
         self.cl_tra.setChecked(False)
         self.lw_ref.setEnabled(True)
         self.lw_tra.setEnabled(False)
-        self.btn_clrBasePts.setEnabled(False)
-        self.btn_undoBasePts.setEnabled(False)
-        self.btn_clrRefPts.setEnabled(True)
-        self.btn_undoRefPts.setEnabled(True)
-        self.lw_gb_r.setAutoFillBackground(True)
-        self.lab_tra.setStyleSheet("color: #4d4d4d;")
-        self.lab_ref.setStyleSheet("color: #161c20;")
-        # self.lw_gb_r.setStyleSheet("""border-width: 3px; border-color: #339933; font-weight: 600;""")
-        # self.lw_gb_l.setStyleSheet("""border-color: #666666; font-weight: 300;""")
-        self.lw_gb_r.setStyleSheet("""QWidget{border-width: 3px; border-color: #339933;} QGroupBox {font-weight: 
-        600;}""")
-        self.lw_gb_l.setStyleSheet("""border-color: #666666; """)
+        # self.btn_clrBasePts.setEnabled(False)
+        # self.btn_undoBasePts.setEnabled(False)
+        # self.btn_clrRefPts.setEnabled(True)
+        # self.btn_undoRefPts.setEnabled(True)
+        # self.lw_gb_r.setAutoFillBackground(True)
+        self.lw_gb_r.setProperty("current", True)
+        self.lw_gb_r.style().unpolish(self.lw_gb_r)
+        self.lw_gb_l.setProperty("current", False)
+        self.lw_gb_l.style().unpolish(self.lw_gb_l)
         self.editorViewer.drawSWIMwindow() #redundant
         for i in list(range(0,3)):
             self.lw_tra.item(i).setForeground(QColor('#666666'))
             self.lw_ref.item(i).setForeground(QColor('#141414'))
+        self.editorWebengine.setFocus()
         logger.info(f"<<<< set_reference <<<<")
-
-
-    def onDefaultsCheckbox(self):
-        caller = inspect.stack()[1].function
-        if caller == 'main':
-            logger.info('')
-            if self.cbDefaults.isChecked():
-                if not self.dm.isDefaults():
-                    self.dm.applyDefaults()
-            else:
-                self.cbDefaults.setChecked(self.dm.isDefaults())
-            self.dataUpdateMA()
-
-
 
 
     def set_transforming(self):
@@ -2203,23 +2231,15 @@ class ProjectTab(QWidget):
         self.cl_ref.setChecked(False)
         self.lw_tra.setEnabled(True)
         self.lw_ref.setEnabled(False)
-        self.btn_clrBasePts.setEnabled(True)
-        self.btn_undoBasePts.setEnabled(True)
-        self.btn_clrRefPts.setEnabled(False)
-        self.btn_undoRefPts.setEnabled(False)
-        self.lw_gb_l.setAutoFillBackground(True)
-        self.lab_ref.setStyleSheet("color: #4d4d4d;")
-        self.lab_tra.setStyleSheet("color: #161c20;")
-        # self.lw_gb_l.setStyleSheet("""border-width: 3px; border-color: #339933; font-weight: 600;""")
-        # self.lw_gb_r.setStyleSheet("""border-color: #666666; font-weight: 300;""")
-
-        self.lw_gb_l.setStyleSheet("""QWidget{border-width: 3px; border-color: #339933;} QGroupBox {font-weight: 
-        600;}""")
-        self.lw_gb_r.setStyleSheet("""border-color: #666666;""")
+        self.lw_gb_r.setProperty("current", False)
+        self.lw_gb_r.style().unpolish(self.lw_gb_r)
+        self.lw_gb_l.setProperty("current", True)
+        self.lw_gb_l.style().unpolish(self.lw_gb_l)
         self.editorViewer.drawSWIMwindow() #redundant
         for i in list(range(0,3)):
             self.lw_tra.item(i).setForeground(QColor('#141414'))
             self.lw_ref.item(i).setForeground(QColor('#666666'))
+        self.editorWebengine.setFocus()
 
 
     def onSideTabChange(self):
@@ -2572,13 +2592,6 @@ class ProjectTab(QWidget):
             if self.twMethod.currentIndex() == 1:
                 # self.setUpdatesEnabled(False)
 
-                # font = QFont()
-                # font.setBold(True)
-                #
-                # self.lw_tra.clear()
-                # self.lw_tra.update()
-                # # for i, p in enumerate(self.editorViewer.tra_pts):
-
                 for i in range(0,3):
                     self.lw_tra.item(i).setText('')
                     self.lw_tra.item(i).setIcon(QIcon())
@@ -2596,9 +2609,6 @@ class ProjectTab(QWidget):
 
                 self.lw_tra.update()
 
-                # self.lw_ref.clear()
-                # self.lw_ref.update()
-                # # for i, p in enumerate(self.editorViewer.ref_pts):
                 for i, p in enumerate(self.dm.manpoints_mir('ref')):
                     # if p[0]:
                     if p and p[0]:

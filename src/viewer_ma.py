@@ -495,6 +495,7 @@ class MAViewer(neuroglancer.Viewer):
         p4 = (d_x1, d_y2)
         return p1, p2, p3, p4
 
+
     @cache
     def getRect2(self, coords, ww_x, ww_y):
         x, y = coords[0], coords[1]
