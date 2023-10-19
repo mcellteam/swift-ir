@@ -150,7 +150,7 @@ class ProjectTab(QWidget):
             self.cmbViewerScale.setCurrentIndex(self.dm.levels.index(self.dm.level))
             self.initNeuroglancer() #Todo necessary for now
             self.set_transforming() #0802+
-            self.update_match_list_widgets() #0726+
+            self._updatePointLists() #0726+
             self.gifPlayer.set()
             # if self.dm.is_aligned():
             #     self.gifPlayer.start()
@@ -238,7 +238,7 @@ class ProjectTab(QWidget):
                 # self.editorViewer = cfg.editorViewer = MAViewer(parent=self, dm=self.dm, role='tra', quality=level, webengine=self.editorWebengine)
                 self.editorViewer = cfg.editorViewer = MAViewer(parent=self, dm=self.dm, role='tra', webengine=self.editorWebengine)
                 self.editorViewer.signals.badStateChange.connect(self.set_transforming)
-                self.editorViewer.signals.ptsChanged.connect(self.update_match_list_widgets)
+                self.editorViewer.signals.ptsChanged.connect(self._updatePointLists)
                 # self.editorViewer.signals.ptsChanged.connect(self.updateWarnings)
                 self.editorViewer.signals.zVoxelCoordChanged.connect(lambda zpos: setattr(self.dm, 'zpos', zpos))
                 # self.editorViewer.signals.swimAction.connect(self.parent.alignOne)
@@ -380,15 +380,22 @@ class ProjectTab(QWidget):
 
         # MA Stage Buffer Widget
 
-        self.lw_ref = ListWidget()
-        self.lw_ref.clicked.connect(lambda: print("lw_ref clicked!"))
-        self.lw_ref.setFocusPolicy(Qt.NoFocus)
-        # self.lw_ref.setFocusPolicy(Qt.NoFocus)
+        class ItemDelegate(QStyledItemDelegate):
+            def paint(self, painter, option, index):
+                option.decorationPosition = QStyleOptionViewItem.Right
+                super(ItemDelegate, self).paint(painter, option, index)
+
+        self.lwReference = ListWidget()
+        self.lwReference.setItemDelegate(ItemDelegate())
+        self.lwReference.clicked.connect(lambda: print("lwReference clicked!"))
+        self.lwReference.setFocusPolicy(Qt.NoFocus)
+        # self.lwReference.setFocusPolicy(Qt.NoFocus)
         delegate = ListItemDelegate()
-        self.lw_ref.setItemDelegate(delegate)
-        self.lw_ref.setFixedHeight(52)
-        self.lw_ref.setIconSize(QSize(12,12))
-        self.lw_ref.setStyleSheet("""
+        self.lwReference.setItemDelegate(ItemDelegate())
+        self.lwReference.setItemDelegate(delegate)
+        self.lwReference.setFixedHeight(52)
+        self.lwReference.setIconSize(QSize(12, 12))
+        self.lwReference.setStyleSheet("""
         QListWidget {
             font-size: 8px; 
             background-color: #ede9e8; 
@@ -399,37 +406,37 @@ class ProjectTab(QWidget):
             border: 1px solid #ffe135;
         }""")
         # palette = QPalette()
-        # palette.setColor(QPalette.Highlight, self.lw_ref.palette().color(QPalette.Base))
-        # palette.setColor(QPalette.HighlightedText, self.lw_ref.palette().color(QPalette.Text))
-        # self.lw_ref.setPalette(palette)
-        self.lw_ref.setSelectionMode(QListWidget.NoSelection)
-        self.lw_ref.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.lw_ref.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.lw_ref.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.lw_ref.installEventFilter(self)
+        # palette.setColor(QPalette.Highlight, self.lwReference.palette().color(QPalette.Base))
+        # palette.setColor(QPalette.HighlightedText, self.lwReference.palette().color(QPalette.Text))
+        # self.lwReference.setPalette(palette)
+        self.lwReference.setSelectionMode(QListWidget.NoSelection)
+        self.lwReference.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.lwReference.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.lwReference.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.lwReference.installEventFilter(self)
         def fn_point_selected(item):
             # self.item = item
-            requested = self.lw_ref.indexFromItem(item).row()
+            requested = self.lwReference.indexFromItem(item).row()
             self.editorViewer._selected_index['tra'] = requested
             self.editorViewer._selected_index['ref'] = requested
             print(f"[transforming] row selected: {requested}")
-            self.update_match_list_widgets()
-        self.lw_ref.itemClicked.connect(fn_point_selected)
+            self._updatePointLists()
+        self.lwReference.itemClicked.connect(fn_point_selected)
         self.lab_ref = QLabel('Next Color:   ')
         # self.lab_ref.setStyleSheet('font-size: 10px; background-color: #ede9e8; color: #161c20;')
-        self.lab_nextcolor1 = QLabel()
-        self.lab_nextcolor1.setFixedSize(14, 14)
+        # self.lab_nextcolor1 = QLabel()
+        # self.lab_nextcolor1.setFixedSize(14, 14)
 
 
-        self.lw_tra = ListWidget()
-        self.lw_tra.clicked.connect(lambda: print("lw_tra clicked!"))
-        self.lw_tra.setFocusPolicy(Qt.NoFocus)
-        # self.lw_tra.setFocusPolicy(Qt.NoFocus)
+        self.lwTransforming = ListWidget()
+        self.lwTransforming.clicked.connect(lambda: print("lwTransforming clicked!"))
+        self.lwTransforming.setFocusPolicy(Qt.NoFocus)
+        # self.lwTransforming.setFocusPolicy(Qt.NoFocus)
         delegate = ListItemDelegate()
-        self.lw_tra.setItemDelegate(delegate)
-        self.lw_tra.setFixedHeight(52)
-        self.lw_tra.setIconSize(QSize(12, 12))
-        self.lw_tra.setStyleSheet("""
+        self.lwTransforming.setItemDelegate(delegate)
+        self.lwTransforming.setFixedHeight(52)
+        self.lwTransforming.setIconSize(QSize(12, 12))
+        self.lwTransforming.setStyleSheet("""
         QListWidget {
             font-size: 8px; 
             background-color: #ede9e8; 
@@ -440,26 +447,26 @@ class ProjectTab(QWidget):
             border: 1px solid #6a6ea9;
         }""")
         # palette = QPalette()
-        # palette.setColor(QPalette.Highlight, self.lw_ref.palette().color(QPalette.Base))
-        # palette.setColor(QPalette.HighlightedText, self.lw_ref.palette().color(QPalette.Text))
-        self.lw_tra.setSelectionMode(QListWidget.NoSelection)
-        # self.lw_tra.setSelectionMode(QListWidget.ExtendedSelection)
-        self.lw_tra.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.lw_tra.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.lw_tra.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.lw_tra.installEventFilter(self)
+        # palette.setColor(QPalette.Highlight, self.lwReference.palette().color(QPalette.Base))
+        # palette.setColor(QPalette.HighlightedText, self.lwReference.palette().color(QPalette.Text))
+        self.lwTransforming.setSelectionMode(QListWidget.NoSelection)
+        # self.lwTransforming.setSelectionMode(QListWidget.ExtendedSelection)
+        self.lwTransforming.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.lwTransforming.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.lwTransforming.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.lwTransforming.installEventFilter(self)
         def fn_point_selected(item):
             # self.item = item
-            requested = self.lw_tra.indexFromItem(item).row()
+            requested = self.lwTransforming.indexFromItem(item).row()
             self.editorViewer._selected_index['tra'] = requested
             self.editorViewer._selected_index['ref'] = requested
             print(f"[transforming] row selected: {requested}")
-            self.update_match_list_widgets()
-        self.lw_tra.itemClicked.connect(fn_point_selected)
+            self._updatePointLists()
+        self.lwTransforming.itemClicked.connect(fn_point_selected)
         self.lab_tra = QLabel('Next Color:   ')
         # self.lab_tra.setStyleSheet('font-size: 10px; background-color: #ede9e8; color: #161c20;')
-        self.lab_nextcolor0 = QLabel()
-        self.lab_nextcolor0.setFixedSize(14, 14)
+        # self.lab_nextcolor0 = QLabel()
+        # self.lab_nextcolor0.setFixedSize(14, 14)
 
 
         font = QFont()
@@ -473,7 +480,7 @@ class ProjectTab(QWidget):
             item.setForeground(QColor('#141414'))
             item.setFont(font)
             # item.setCheckState(2)
-            self.lw_tra.addItem(item)
+            self.lwTransforming.addItem(item)
 
             item = QListWidgetItem()
             item.setSizeHint(QSize(100, 16))
@@ -481,11 +488,11 @@ class ProjectTab(QWidget):
             item.setForeground(QColor('#141414'))
             item.setFont(font)
             # item.setCheckState(2)
-            self.lw_ref.addItem(item)
+            self.lwReference.addItem(item)
 
 
-        self.lw_ref.itemSelectionChanged.connect(self.lw_tra.selectionModel().clear)
-        self.lw_tra.itemSelectionChanged.connect(self.lw_ref.selectionModel().clear)
+        self.lwReference.itemSelectionChanged.connect(self.lwTransforming.selectionModel().clear)
+        self.lwTransforming.itemSelectionChanged.connect(self.lwReference.selectionModel().clear)
 
         self.btn_undoRefPts = QPushButton()
         self.btn_undoRefPts.setFocusPolicy(Qt.NoFocus)
@@ -499,16 +506,8 @@ class ProjectTab(QWidget):
             # self.editorViewer.restoreManAlignPts()
             # self.editorViewer.setMpData()
             self.editorViewer.drawSWIMwindow()
-            self.update_match_list_widgets()
+            self._updatePointLists()
         self.btn_undoRefPts.clicked.connect(fn)
-
-        self.btn_clrRefPts = QPushButton('Clear')
-        # self.btn_clrRefPts = QPushButton()
-        # self.btn_clrRefPts.setIcon(qta.icon('fa.trash'))
-        self.btn_clrRefPts.setFocusPolicy(Qt.NoFocus)
-        self.btn_clrRefPts.setToolTip('Clear Selections')
-        self.btn_clrRefPts.setFixedSize(QSize(34, 16))
-        self.btn_clrRefPts.clicked.connect(self.deleteAllMpRef)
 
         self.btn_undoBasePts = QPushButton()
         self.btn_undoBasePts.setFixedSize(QSize(14, 14))
@@ -521,39 +520,49 @@ class ProjectTab(QWidget):
             # self.editorViewer.restoreManAlignPts()
             # self.editorViewer.setMpData()
             self.editorViewer.drawSWIMwindow()
-            self.update_match_list_widgets()
+            self._updatePointLists()
         self.btn_undoBasePts.clicked.connect(fn)
 
-        self.btn_clrBasePts = QPushButton('Clear')
-        # self.btn_clrBasePts = QPushButton()
-        # self.btn_clrBasePts.setIcon(qta.icon('fa.trash'))
-        self.btn_clrBasePts.setFocusPolicy(Qt.NoFocus)
-        self.btn_clrBasePts.setToolTip('Clear Selections')
-        self.btn_clrBasePts.setFixedSize(QSize(34, 14))
-        self.btn_clrBasePts.clicked.connect(self.deleteAllMpBase)
+        self.bClearRefSelections = QPushButton('Clear')
+        self.bClearRefSelections.setFocusPolicy(Qt.NoFocus)
+        self.bClearRefSelections.setToolTip('Clear Selections')
+        # self.bClearRefSelections.setFixedSize(QSize(30, 14))
+        self.bClearRefSelections.setFixedHeight(14)
+        self.bClearRefSelections.clicked.connect(self.deleteAllMpRef)
 
-        self.btn_clrAllPts = QPushButton('Clear All')
-        self.btn_clrAllPts.setFocusPolicy(Qt.NoFocus)
-        self.btn_clrAllPts.setFixedHeight(16)
-        self.btn_clrAllPts.setToolTip('Clear All Selections')
-        # self.btn_clrAllPts.setFixedSize(QSize(48, 14))
-        self.btn_clrAllPts.setFixedSize(QSize(16, 16))
-        self.btn_clrAllPts.setIconSize(QSize(13, 13))
-        self.btn_clrAllPts.clicked.connect(self.deleteAllMp)
+        self.bClearTraSelections = QPushButton('Clear')
+        self.bClearTraSelections.setFocusPolicy(Qt.NoFocus)
+        self.bClearTraSelections.setToolTip('Clear Selections')
+        # self.bClearTraSelections.setFixedSize(QSize(30, 14))
+        self.bClearTraSelections.setFixedHeight(14)
+        self.bClearTraSelections.clicked.connect(self.deleteAllMpBase)
+
+        self.bClearAllSelections = QPushButton('Clear All')
+        self.bClearAllSelections.setFocusPolicy(Qt.NoFocus)
+        self.bClearAllSelections.setFixedHeight(16)
+        self.bClearAllSelections.setToolTip('Clear All Selections')
+        # self.bClearAllSelections.setFixedSize(QSize(48, 14))
+        self.bClearAllSelections.clicked.connect(self.deleteAllMp)
 
 
         # self.baseNextColorWidget = HW(self.lab_tra, self.lab_nextcolor0,
-        #                               ExpandingWidget(self), self.btn_clrBasePts)
-        self.wNextColor_l = HW(self.lab_tra, self.lab_nextcolor0)
-        self.wNextColor_l.setFixedWidth(80)
-        self.baseNextColorWidget = HW(self.wNextColor_l, self.btn_clrBasePts)
-        self.baseNextColorWidget.setFixedHeight(16)
+        #                               ExpandingWidget(self), self.bClearTraSelections)
+        # self.wNextColor_l = HW(self.lab_tra, self.lab_nextcolor0)
+        # self.wNextColor_l.layout.setSpacing(4)
+        # self.wNextColor_l.layout.setAlignment(Qt.AlignLeft)
+        # self.wNextColor_l.setMaximumWidth(60)
+        # self.baseNextColorWidget = HW(self.wNextColor_l, self.bClearTraSelections)
+        self.baseNextColorWidget = HW(self.bClearTraSelections)
+        self.baseNextColorWidget.setFixedHeight(14)
         # self.refNextColorWidget = HW(self.lab_ref, self.lab_nextcolor1,
-        #                              ExpandingWidget(self), self.btn_clrRefPts)
-        self.wNextColor_r = HW(self.lab_ref, self.lab_nextcolor1)
-        self.wNextColor_r.setFixedWidth(80)
-        self.refNextColorWidget = HW(self.wNextColor_r, self.btn_clrRefPts)
-        self.refNextColorWidget.setFixedHeight(16)
+        #                              ExpandingWidget(self), self.bClearRefSelections)
+        # self.wNextColor_r = HW(self.lab_ref, self.lab_nextcolor1)
+        # self.wNextColor_r.layout.setSpacing(4)
+        # self.wNextColor_r.layout.setAlignment(Qt.AlignLeft)
+        # self.wNextColor_r.setMaximumWidth(60)
+        # self.refNextColorWidget = HW(self.wNextColor_r, self.bClearRefSelections)
+        self.refNextColorWidget = HW(self.bClearRefSelections)
+        self.refNextColorWidget.setFixedHeight(14)
 
         self.automatic_label = QLabel()
         self.automatic_label.setStyleSheet('color: #06470c; font-size: 11px; font-weight: 600;')
@@ -671,7 +680,7 @@ class ProjectTab(QWidget):
         self.lw_gb_l.clicked.connect(fn)
         vbl = VBL()
         vbl.setSpacing(1)
-        vbl.addWidget(self.lw_tra)
+        vbl.addWidget(self.lwTransforming)
         vbl.addWidget(self.baseNextColorWidget)
         self.lw_gb_l.setLayout(vbl)
 
@@ -695,12 +704,13 @@ class ProjectTab(QWidget):
         self.lw_gb_r.clicked.connect(fn)
         vbl = VBL()
         vbl.setSpacing(1)
-        vbl.addWidget(self.lw_ref)
+        vbl.addWidget(self.lwReference)
         vbl.addWidget(self.refNextColorWidget)
         self.lw_gb_r.setLayout(vbl)
         self.labSlash = QLabel('←/→')
         self.labSlash.setStyleSheet("""font-size: 10px; font-weight: 600;""")
         self.MA_sbw = HW(self.lw_gb_l, self.labSlash, self.lw_gb_r)
+        self.MA_sbw.setStyleSheet("QGroupBox{padding: 4px;}")
         self.MA_sbw.layout.setSpacing(0)
         # self.msg_MAinstruct = YellowTextLabel("⇧ + Click - Select 3 corresponding points")
         # self.msg_MAinstruct.setFixedSize(266, 20)
@@ -889,8 +899,6 @@ class ProjectTab(QWidget):
                     self.dSnr_plot.initSnrPlot()
                 self.parent.statusBar.showMessage(f'Manual alignment option now set to: {self.dm.current_method}')
 
-        # self.rb_MA_hint = QRadioButton('Hint')
-        # self.rb_MA_strict = QRadioButton('Strict')
         self.rb_MA_hint = QRadioButton('Match Regions')
         self.rb_MA_strict = QRadioButton('Match Points')
         self.rb_MA_strict.setEnabled(False)
@@ -1147,6 +1155,7 @@ class ProjectTab(QWidget):
                         self.rb_MA_hint.setChecked(True)
                     self.editorWebengine.setFocus()
                 self.parent.dataUpdateWidgets()
+                self.editorWebengine.setFocus()
 
         self.gbGrid = QGroupBox("Grid Alignment Settings")
         self.gbGrid.setMaximumHeight(258)
@@ -1158,9 +1167,12 @@ class ProjectTab(QWidget):
         self.MA_use_global_defaults_lab.setStyleSheet('font-size: 13px; font-weight: 600;')
         self.MA_use_global_defaults_lab.setAlignment(Qt.AlignCenter)
 
-        self.lab_region_selection = QLabel("Use 's' key to Select 3 matching regions")
+        self.lab_region_selection = QLabel("Use 1, 2, 3 keys to select 3 matching regions\n"
+                                           "Use / to toggle transforming and reference sections")
+        self.lab_region_selection.setStyleSheet("QLabel{padding: 2px;}")
         # self.lab_region_selection = QLabel("")
-        self.lab_region_selection.setStyleSheet("font-size: 10px; font-weight: 600; color: #161c20; padding: 1px;")
+        # self.lab_region_selection.setStyleSheet("font-size: 10px; font-weight: 600; color: #161c20; padding: 1px;")
+        # self.lab_region_selection.setStyleSheet("font-size: 10px; font-weight: 600; color: #161c20; padding: 1px;")
 
         self.rbCycle = QRadioButton('cycle')
         self.rbCycle.setObjectName('cycle')
@@ -1191,9 +1203,16 @@ class ProjectTab(QWidget):
         bg.addButton(self.rbSticky)
         self.rbCycle.setChecked(True) #Todo
 
-        # self.w_rbs_selection = HW(ExpandingWidget(self), self.rbCycle, self.rbZigzag, self.rbSticky, self.btn_clrAllPts)
+        select_by = self.dm['state']['neuroglancer']['region_selection']['select_by']
+        if select_by == 'cycle':    self.rbCycle.setChecked(True)
+        elif select_by == 'zigzag': self.rbZigzag.setChecked(True)
+        elif select_by == 'sticky': self.rbSticky.setChecked(True)
+
+        # self.w_rbs_selection = HW(ExpandingWidget(self), self.rbCycle, self.rbZigzag, self.rbSticky, self.bClearAllSelections)
         self.w_rbs_selection = HW(self.rbCycle, self.rbZigzag, self.rbSticky)
         self.w_rbs_selection.layout.setSpacing(4)
+
+
 
         self.flManualAlign = QFormLayout()
         self.flManualAlign.setContentsMargins(0, 0, 0, 0)
@@ -1212,7 +1231,7 @@ class ProjectTab(QWidget):
         self.gbMethodMatch = VW(
             self.lab_region_selection,
             self.MA_sbw,
-            self.btn_clrAllPts,
+            self.bClearAllSelections,
             # self.w_rbs_selection,
             # self.lab_region_selection2,
             self.gbMatch,
@@ -2197,14 +2216,14 @@ class ProjectTab(QWidget):
         self.editorViewer.set_layer()
         # self.editorViewer._selected_index['ref'] = self.editorViewer.getNextPoint('ref')
         # self.editorViewer.restoreManAlignPts()
-        self.update_match_list_widgets()
+        self._updatePointLists()
         self.cl_ref.setChecked(True)
         self.cl_tra.setChecked(False)
-        self.lw_ref.setEnabled(True)
-        self.lw_tra.setEnabled(False)
-        # self.btn_clrBasePts.setEnabled(False)
+        self.lwReference.setEnabled(True)
+        self.lwTransforming.setEnabled(False)
+        # self.bClearTraSelections.setEnabled(False)
         # self.btn_undoBasePts.setEnabled(False)
-        # self.btn_clrRefPts.setEnabled(True)
+        # self.bClearRefSelections.setEnabled(True)
         # self.btn_undoRefPts.setEnabled(True)
         # self.lw_gb_r.setAutoFillBackground(True)
         self.lw_gb_r.setProperty("current", True)
@@ -2213,8 +2232,8 @@ class ProjectTab(QWidget):
         self.lw_gb_l.style().unpolish(self.lw_gb_l)
         self.editorViewer.drawSWIMwindow() #redundant
         for i in list(range(0,3)):
-            self.lw_tra.item(i).setForeground(QColor('#666666'))
-            self.lw_ref.item(i).setForeground(QColor('#141414'))
+            self.lwTransforming.item(i).setForeground(QColor('#666666'))
+            self.lwReference.item(i).setForeground(QColor('#141414'))
         self.editorWebengine.setFocus()
         logger.info(f"<<<< set_reference <<<<")
 
@@ -2226,19 +2245,19 @@ class ProjectTab(QWidget):
         self.editorViewer.set_layer()
         # self.editorViewer._selected_index['tra'] = self.editorViewer.getNextPoint('tra')
         # self.editorViewer.restoreManAlignPts()
-        self.update_match_list_widgets()
+        self._updatePointLists()
         self.cl_tra.setChecked(True)
         self.cl_ref.setChecked(False)
-        self.lw_tra.setEnabled(True)
-        self.lw_ref.setEnabled(False)
+        self.lwTransforming.setEnabled(True)
+        self.lwReference.setEnabled(False)
         self.lw_gb_r.setProperty("current", False)
         self.lw_gb_r.style().unpolish(self.lw_gb_r)
         self.lw_gb_l.setProperty("current", True)
         self.lw_gb_l.style().unpolish(self.lw_gb_l)
         self.editorViewer.drawSWIMwindow() #redundant
         for i in list(range(0,3)):
-            self.lw_tra.item(i).setForeground(QColor('#141414'))
-            self.lw_ref.item(i).setForeground(QColor('#666666'))
+            self.lwTransforming.item(i).setForeground(QColor('#141414'))
+            self.lwReference.item(i).setForeground(QColor('#666666'))
         self.editorWebengine.setFocus()
 
 
@@ -2297,18 +2316,18 @@ class ProjectTab(QWidget):
 
 
     def onTranslate(self):
-        if (self.lw_tra.selectedIndexes() == []) and (self.lw_ref.selectedIndexes() == []):
+        if (self.lwTransforming.selectedIndexes() == []) and (self.lwReference.selectedIndexes() == []):
             self.parent.warn('No points are selected in the list')
             return
 
         selections = []
-        if len(self.lw_ref.selectedIndexes()) > 0:
+        if len(self.lwReference.selectedIndexes()) > 0:
             role = 'ref'
-            for sel in self.lw_ref.selectedIndexes():
+            for sel in self.lwReference.selectedIndexes():
                 selections.append(int(sel.data()[0]))
         else:
             role = 'tra'
-            for sel in self.lw_tra.selectedIndexes():
+            for sel in self.lwTransforming.selectedIndexes():
                 selections.append(int(sel.data()[0]))
 
         pts_old = self.dm.manpoints()[role]
@@ -2324,18 +2343,18 @@ class ProjectTab(QWidget):
         self.editorViewer.drawSWIMwindow()
 
     def onTranslate_x(self):
-        if (self.lw_tra.selectedIndexes() == []) and (self.lw_ref.selectedIndexes() == []):
+        if (self.lwTransforming.selectedIndexes() == []) and (self.lwReference.selectedIndexes() == []):
             self.parent.warn('No points are selected in the list')
             return
 
         selections = []
-        if len(self.lw_ref.selectedIndexes()) > 0:
+        if len(self.lwReference.selectedIndexes()) > 0:
             role = 'ref'
-            for sel in self.lw_ref.selectedIndexes():
+            for sel in self.lwReference.selectedIndexes():
                 selections.append(int(sel.data()[0]))
         else:
             role = 'tra'
-            for sel in self.lw_tra.selectedIndexes():
+            for sel in self.lwTransforming.selectedIndexes():
                 selections.append(int(sel.data()[0]))
 
         pts_old = self.dm.manpoints()[role]
@@ -2352,18 +2371,18 @@ class ProjectTab(QWidget):
         self.editorViewer.drawSWIMwindow()
 
     def onTranslate_y(self):
-        if (self.lw_tra.selectedIndexes() == []) and (self.lw_ref.selectedIndexes() == []):
+        if (self.lwTransforming.selectedIndexes() == []) and (self.lwReference.selectedIndexes() == []):
             self.parent.warn('No points are selected in the list')
             return
 
         selections = []
-        if len(self.lw_ref.selectedIndexes()) > 0:
+        if len(self.lwReference.selectedIndexes()) > 0:
             role = 'ref'
-            for sel in self.lw_ref.selectedIndexes():
+            for sel in self.lwReference.selectedIndexes():
                 selections.append(int(sel.data()[0]))
         else:
             role = 'tra'
-            for sel in self.lw_tra.selectedIndexes():
+            for sel in self.lwTransforming.selectedIndexes():
                 selections.append(int(sel.data()[0]))
 
         pts_old = self.dm.manpoints()[role]
@@ -2515,7 +2534,7 @@ class ProjectTab(QWidget):
                     self.rb_MA_strict.setChecked(True)
                 else:
                     self.rb_MA_hint.setChecked(True)
-                self.update_match_list_widgets()
+                self._updatePointLists()
 
                 img_w, _ = self.dm.image_size()
                 self.leMatch.setValidator(QIntValidator(64, img_w))
@@ -2585,68 +2604,83 @@ class ProjectTab(QWidget):
     #     self.parent._btn_alignOne.setToolTip('\n'.join(textwrap.wrap(realign_tip, width=35)))
 
 
-    def update_match_list_widgets(self):
-        #Innocent
+    def _updatePointLists(self):
         if self.wTabs.currentIndex() == 1:
             # if self.dm.current_method in ('manual-hint', 'manual-strict'):
             if self.twMethod.currentIndex() == 1:
                 # self.setUpdatesEnabled(False)
 
+                nums = {0: 'ri.number-1', 1: 'ri.number-2', 2: 'ri.number-3'}
+                icons = {0: 'key1.png', 1: 'key2.png', 2: 'key3.png'}
+
                 for i in range(0,3):
-                    self.lw_tra.item(i).setText('')
-                    self.lw_tra.item(i).setIcon(QIcon())
-                    self.lw_ref.item(i).setText('')
-                    self.lw_ref.item(i).setIcon(QIcon())
+                    self.lwTransforming.item(i).setText('%d: ' % i)
+                    # self.lwTransforming.item(i).setIcon(QIcon())
+                    # self.lwTransforming.item(i).setIcon(qta.icon(nums[i], color='#161c20'))
+                    self.lwTransforming.item(i).setIcon(qta.icon(nums[i]))
+                    # icon = QIcon(":/icons/" + icons[i])
+                    # self.lwTransforming.item(i).setIcon(icon)
+                    self.lwTransforming.item(i).setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+
+                    self.lwReference.item(i).setText('%d: ' % i)
+                    # self.lwReference.item(i).setIcon(QIcon())
+                    # self.lwReference.item(i).setIcon(qta.icon(nums[i], color='#161c20'))
+                    self.lwReference.item(i).setIcon(qta.icon(nums[i]))
+                    # self.lwReference.item(i).setIcon(icon)
+                    self.lwReference.item(i).setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+                    # self.lwReference.item(i).setStyleSheet
 
                 for i, p in enumerate(self.dm.manpoints_mir('tra')):
                     # if p[0]:
                     if p and p[0]:
-                        x, y = p[0], p[1]
-                        msg = '%d: x=%.1f, y=%.1f' % (i, x, y)
-                        self.lw_tra.item(i).setText(msg)
+                        # msg = '%d: x=%.1f, y=%.1f' % (i, p[0], p[1])
+                        msg = 'x=%.1f, y=%.1f' % (p[0], p[1])
+                        self.lwTransforming.item(i).setText(msg)
                     else:
-                        self.lw_tra.item(i).setText('')
+                        # self.lwTransforming.item(i).setText('%d: ' % i)
+                        self.lwTransforming.item(i).setText('')
 
-                self.lw_tra.update()
+                self.lwTransforming.update()
 
                 for i, p in enumerate(self.dm.manpoints_mir('ref')):
                     # if p[0]:
                     if p and p[0]:
-                        x, y = p[0], p[1]
-                        msg = '%d: x=%.1f, y=%.1f' % (i, x, y)
-                        self.lw_ref.item(i).setText(msg)
+                        # msg = '%d: x=%.1f, y=%.1f' % (i, p[0], p[1])
+                        msg = 'x=%.1f, y=%.1f' % (p[0], p[1])
+                        self.lwReference.item(i).setText(msg)
                     else:
-                        self.lw_ref.item(i).setText('')
+                        # self.lwReference.item(i).setText('%d: ' % i)
+                        self.lwReference.item(i).setText('')
 
-                self.lw_ref.update()
+                self.lwReference.update()
 
                 # if self.dm['state']['tra_ref_toggle'] == 'tra':
                 color = cfg.glob_colors[self.editorViewer._selected_index['tra']]
                 index = self.editorViewer._selected_index['tra']
 
-                if self.editorViewer.numPts('tra') < 3:
-                    self.lab_tra.setText('Next Color:   ')
-                    self.lab_nextcolor0.setStyleSheet(f'''background-color: {color};''')
-                    self.lab_nextcolor0.show()
-                else:
-                    self.lab_tra.setText('Complete!')
-                    self.lab_nextcolor0.hide()
-                self.lw_tra.item(index).setSelected(True)
-                self.lw_tra.item(index).setIcon(qta.icon('fa.arrow-left', color='#161c20'))
+                # if self.editorViewer.numPts('tra') < 3:
+                #     self.lab_tra.setText('Next Color:  ')
+                #     self.lab_nextcolor0.setStyleSheet(f'''background-color: {color};''')
+                #     self.lab_nextcolor0.show()
+                # else:
+                #     self.lab_tra.setText('Complete!')
+                #     self.lab_nextcolor0.hide()
+                self.lwTransforming.item(index).setSelected(True)
+                # self.lwTransforming.item(index).setIcon(qta.icon('fa.arrow-left', color='#161c20'))
 
                 # elif self.dm['state']['tra_ref_toggle'] == 'ref':
-                color = cfg.glob_colors[self.editorViewer._selected_index['ref']]
+                # color = cfg.glob_colors[self.editorViewer._selected_index['ref']]
                 index = self.editorViewer._selected_index['ref']
-                if self.editorViewer.numPts('ref') < 3:
-                    self.lab_ref.setText('Next Color:   ')
-                    self.lab_nextcolor1.setStyleSheet(f'''background-color: {color};''')
-                    self.lab_nextcolor1.show()
-
-                else:
-                    self.lab_ref.setText('Complete!')
-                    self.lab_nextcolor1.hide()
-                self.lw_ref.item(index).setSelected(True)
-                self.lw_ref.item(index).setIcon(qta.icon('fa.arrow-left', color='#161c20'))
+                # if self.editorViewer.numPts('ref') < 3:
+                #     self.lab_ref.setText('Next Color:  ')
+                #     self.lab_nextcolor1.setStyleSheet(f'''background-color: {color};''')
+                #     self.lab_nextcolor1.show()
+                #
+                # else:
+                #     self.lab_ref.setText('Complete!')
+                #     self.lab_nextcolor1.hide()
+                self.lwReference.item(index).setSelected(True)
+                # self.lwReference.item(index).setIcon(qta.icon('fa.arrow-left', color='#161c20'))
 
 
     def deleteAllMpRef(self):
@@ -2659,7 +2693,7 @@ class ProjectTab(QWidget):
         delete_matches(self.dm)
         delete_correlation_signals(self.dm)
         self.parent.dataUpdateWidgets()
-        self.update_match_list_widgets()
+        self._updatePointLists()
         if self.parent.dwSnr.isVisible():
             self.dSnr_plot.initSnrPlot()
         self.editorWebengine.setFocus()
@@ -2676,7 +2710,7 @@ class ProjectTab(QWidget):
         # delete_matches(self.dm)
         # delete_correlation_signals(self.dm)
         self.parent.dataUpdateWidgets()
-        self.update_match_list_widgets()
+        self._updatePointLists()
         if self.parent.dwSnr.isVisible():
             self.dSnr_plot.initSnrPlot()
         self.editorWebengine.setFocus()
@@ -2695,7 +2729,7 @@ class ProjectTab(QWidget):
         # delete_matches(self.dm)
         # delete_correlation_signals(self.dm)
         self.parent.dataUpdateWidgets()
-        self.update_match_list_widgets()
+        self._updatePointLists()
         if self.parent.dwSnr.isVisible():
             self.dSnr_plot.initSnrPlot()
 
@@ -2704,7 +2738,7 @@ class ProjectTab(QWidget):
 
 
     def eventFilter(self, source, event):
-        if event.type() == QEvent.ContextMenu and source is self.lw_ref:
+        if event.type() == QEvent.ContextMenu and source is self.lwReference:
             menu = QMenu()
             # self.deleteMpRefAction = QAction('Delete')
             # # self.deleteMpRefAction.setStatusTip('Delete this manual correspondence point')
@@ -2721,7 +2755,7 @@ class ProjectTab(QWidget):
             if menu.exec_(event.globalPos()):
                 item = source.itemAt(event.pos())
             return True
-        elif event.type() == QEvent.ContextMenu and source is self.lw_tra:
+        elif event.type() == QEvent.ContextMenu and source is self.lwTransforming:
             menu = QMenu()
             # self.deleteMpBaseAction = QAction('Delete')
             # # self.deleteMpBaseAction.setStatusTip('Delete this manual correspondence point')

@@ -11,6 +11,8 @@
         <file alias='tacc-logo.png'>icons/tacc-logo.png</file>
         <file alias='tacc-logo2.png'>icons/tacc-logo2.png</file>
         <file alias='down-right.png'>icons/down-right.png</file>
-
+        <file alias='key1.png'>icons/key1.png</file>
+        <file alias='key2.png'>icons/key2.png</file>
+        <file alias='key3.png'>icons/key3.png</file>
     </qresource>
 </RCC>
