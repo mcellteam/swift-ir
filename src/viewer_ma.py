@@ -70,9 +70,7 @@ class MAViewer(neuroglancer.Viewer):
         # self._settingZoom = True
         # self._layer = self.dm.zpos
         self.cs_scale = None
-        # self.pts = OrderedDict()
-        self.pts = {'ref':[None,None,None], 'tra': [None,None,None]}
-        self.pts2 = {'ref':[None,None,None], 'tra': [None,None,None]}
+        self.pts = {'ref':[None, None, None], 'tra': [None, None, None]}
         self._selected_index = {'ref': 0, 'tra': 0}
         # self._selected_index = 0
         self.colors = cfg.glob_colors
@@ -274,6 +272,9 @@ class MAViewer(neuroglancer.Viewer):
             s.show_default_annotations = False
 
         self.actions.add('add_manpoint', self.add_matchpoint)
+        self.actions.add('addmp1', self.add_matchpoint1)
+        self.actions.add('addmp2', self.add_matchpoint2)
+        self.actions.add('addmp3', self.add_matchpoint3)
         # self.actions.add('swim', self.swim)
 
         t4 = time.time()
@@ -282,9 +283,12 @@ class MAViewer(neuroglancer.Viewer):
 
         with self.config_state.txn() as s:
             s.input_event_bindings.slice_view['alt+click0'] = 'add_manpoint'
-            # s.input_event_bindings.viewer['alt+click0'] = 'add_manpoint'
+            s.input_event_bindings.viewer['control+click0'] = 'add_manpoint'
             s.input_event_bindings.slice_view['keys'] = 'add_manpoint'
             s.input_event_bindings.slice_view['dblclick0'] = 'add_manpoint'
+            s.input_event_bindings.slice_view['digit1'] = 'addmp1'
+            s.input_event_bindings.slice_view['digit2'] = 'addmp2'
+            s.input_event_bindings.slice_view['digit3'] = 'addmp3'
             # s.input_event_bindings.slice_view['shift+click0'] = 'add_manpoint'
             # s.input_event_bindings.slice_view['enter'] = 'add_manpoint'            #this works
             # s.input_event_bindings.slice_view['mousedown0'] = 'add_manpoint'       #this works
@@ -324,21 +328,6 @@ class MAViewer(neuroglancer.Viewer):
 
     def text(self):
         txt = ''
-
-
-    def setBackground(self):
-        try:
-            with self.txn() as s:
-                if getOpt('neuroglancer,USE_CUSTOM_BACKGROUND'):
-                    s.crossSectionBackgroundColor = getOpt('neuroglancer,CUSTOM_BACKGROUND_COLOR')
-                else:
-                    if getOpt('neuroglancer,USE_DEFAULT_DARK_BACKGROUND'):
-                        # s.crossSectionBackgroundColor = '#222222'
-                        s.crossSectionBackgroundColor = '#000000'
-                    else:
-                        s.crossSectionBackgroundColor = '#808080'
-        except:
-            print_exception()
 
 
     @Slot()
@@ -402,19 +391,18 @@ class MAViewer(neuroglancer.Viewer):
 
 
     def getNextPoint(self, role):
-        # return next((i for i, v in enumerate(self.pts[role]) if not v), 0)
-        return next((i for i, v in enumerate(self.pts2[role]) if not v), 0)
+        return next((i for i, v in enumerate(self.pts[role]) if not v), 0)
 
 
     def numPts(self, role):
+        caller = inspect.stack()[1].function
+        # logger.info(f"[{caller}]")
         n = 0
-        # for pt in self.pts[role]:
-        for pt in self.pts2[role]:
+        for pt in self.pts[role]:
             if pt:
                 if pt[1]:
                     n += 1
-
-        logger.info(f"returning {n}")
+        logger.info(f"[{caller}] returning {n} for {role}")
         return n
 
 
@@ -434,8 +422,27 @@ class MAViewer(neuroglancer.Viewer):
         logger.info('[futures] Emitting SWIM signal...')
         self.signals.swimAction.emit()
 
+    def add_matchpoint1(self, s):
+        logger.info('')
+        self._selected_index[self.role] = 0
+        self.add_matchpoint(s, ignore_pointer=True)
 
-    def add_matchpoint(self, s):
+
+    def add_matchpoint2(self, s):
+        logger.info('')
+        self._selected_index[self.role] = 1
+        self.add_matchpoint(s, ignore_pointer=True)
+
+
+    def add_matchpoint3(self, s):
+        logger.info('')
+        self._selected_index[self.role] = 2
+        self.add_matchpoint(s, ignore_pointer=True)
+
+
+
+
+    def add_matchpoint(self, s, ignore_pointer=False):
         print('\n\n--> add_matchpoint -->\n')
         # logger.critical('\n\n--> add_matchpoint -->\n')
         if self.dm.method() != 'manual':
@@ -452,12 +459,11 @@ class MAViewer(neuroglancer.Viewer):
         y = float(y)
         x = float(x)
         pt_index = self._selected_index[self.role]
-        self.pts2[self.role][pt_index] = (self.index + 0.5, y, x)
+        self.pts[self.role][pt_index] = (self.index + 0.5, y, x)
 
         # self.setMpData()
         l = [None, None, None]
-        # for i,p in enumerate(self.pts[self.role]):
-        for i, p in enumerate(self.pts2[self.role]):
+        for i, p in enumerate(self.pts[self.role]):
             if p:
                 if p[1]:
                     l[i] = (p[1], p[2])
@@ -466,19 +472,20 @@ class MAViewer(neuroglancer.Viewer):
 
         self.dm.set_manpoints(self.role, l)
         select_by = self.dm['state']['neuroglancer']['region_selection']['select_by']
-
         _other_role = {'tra', 'ref'}.difference(self.role).pop()
-        if select_by == 'sticky':
-            pass
-        elif select_by == 'cycle':
-            if self.numPts(self.role) < 3:
-                self._selected_index[self.role] = (self._selected_index[self.role] + 1) % 3
-            else:
-                if self.numPts(_other_role) < 3:
-                    self.parent.set_viewer_role(_other_role)
-        elif select_by == 'zigzag':
-            self._selected_index['tra'] = (self._selected_index[self.role] + 1) % 3
-            self.parent.set_viewer_role(_other_role)
+        if not ignore_pointer:
+            if select_by == 'sticky':
+                pass
+            elif select_by == 'cycle':
+                if self.numPts(self.role) < 3:
+                    self._selected_index[self.role] = (self._selected_index[self.role] + 1) % 3
+                else:
+                    if self.numPts(_other_role) < 3:
+                        self.parent.set_viewer_role(_other_role)
+            elif select_by == 'zigzag':
+                if self.role == 'ref':
+                    self._selected_index['tra'] = (self._selected_index[self.role] + 1) % 3
+                self.parent.set_viewer_role(_other_role)
         self.signals.ptsChanged.emit()
         self.drawSWIMwindow()
 
@@ -574,7 +581,7 @@ class MAViewer(neuroglancer.Viewer):
             # ww_x *= fac
             # ww_y *= fac
 
-            for i, pt in enumerate(self.pts2[self.role]):
+            for i, pt in enumerate(self.pts[self.role]):
                 # 0: (122, None, None)
                 # logger.critical(f"{i}: {pt}")
                 if pt:
@@ -592,7 +599,7 @@ class MAViewer(neuroglancer.Viewer):
                             ng.LineAnnotation(id=str(i) + '_L3', pointA=(z,) + c, pointB=(z,) + d, props=[clr, ms]),
                             ng.LineAnnotation(id=str(i) + '_L4', pointA=(z,) + d, pointB=(z,) + a, props=[clr, ms])
                         ])
-        # print(f"Adding annotation layers...\n{self.pts2}")
+        # print(f"Adding annotation layers...\n{self.pts}")
         with self.txn() as s:
             # for i,ann in enumerate(annotations):
             s.layers['SWIM'] = ng.LocalAnnotationLayer(
@@ -625,11 +632,11 @@ class MAViewer(neuroglancer.Viewer):
     #         logger.warning('Unable to draw donut annotations or none to draw')
 
     def restoreManAlignPts(self):
-        self.pts2[self.role] = [None,None,None]
+        self.pts[self.role] = [None, None, None]
         pts_data = self.dm.getmpFlat(l=self.dm.zpos)[self.role]
         for i, p in enumerate(pts_data):
             if p:
-                self.pts2[self.role][i] = p
+                self.pts[self.role][i] = p
 
 
     def set_brightness(self, val=None):
@@ -697,6 +704,20 @@ class MAViewer(neuroglancer.Viewer):
     #                                                      lineweight]))
     #     self.annotations = annotations
     #     return annotations
+
+    def setBackground(self):
+        try:
+            with self.txn() as s:
+                if getOpt('neuroglancer,USE_CUSTOM_BACKGROUND'):
+                    s.crossSectionBackgroundColor = getOpt('neuroglancer,CUSTOM_BACKGROUND_COLOR')
+                else:
+                    if getOpt('neuroglancer,USE_DEFAULT_DARK_BACKGROUND'):
+                        # s.crossSectionBackgroundColor = '#222222'
+                        s.crossSectionBackgroundColor = '#000000'
+                    else:
+                        s.crossSectionBackgroundColor = '#808080'
+        except:
+            print_exception()
 
     def info(self):
         n_layers = None
