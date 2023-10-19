@@ -1168,7 +1168,7 @@ class ProjectTab(QWidget):
         self.MA_use_global_defaults_lab.setAlignment(Qt.AlignCenter)
 
         self.lab_region_selection = QLabel("Use 1, 2, 3 keys to select 3 matching regions\n"
-                                           "Use / to toggle transforming and reference sections")
+                                           "Use / key to toggle transforming and reference sections")
         self.lab_region_selection.setStyleSheet("QLabel{padding: 2px;}")
         # self.lab_region_selection = QLabel("")
         # self.lab_region_selection.setStyleSheet("font-size: 10px; font-weight: 600; color: #161c20; padding: 1px;")
@@ -1216,7 +1216,7 @@ class ProjectTab(QWidget):
 
         self.flManualAlign = QFormLayout()
         self.flManualAlign.setContentsMargins(0, 0, 0, 0)
-        self.flManualAlign.addRow("Select By:", self.w_rbs_selection)
+        # self.flManualAlign.addRow("Select By:", self.w_rbs_selection)
         self.flManualAlign.addRow("Move Selection:", self.translatePointsWidget)
         self.flManualAlign.addRow("Window Width:", self.wwWidget)
         self.flManualAlign.addRow("Method:", self.radioboxes_MA)
