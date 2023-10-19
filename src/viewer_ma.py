@@ -471,21 +471,21 @@ class MAViewer(neuroglancer.Viewer):
         # 01:05:25 [viewer_ma.add_matchpoint:539] l    : [(235.56079, 436.60748), None, None]
 
         self.dm.set_manpoints(self.role, l)
-        select_by = self.dm['state']['neuroglancer']['region_selection']['select_by']
-        _other_role = {'tra', 'ref'}.difference(self.role).pop()
-        if not ignore_pointer:
-            if select_by == 'sticky':
-                pass
-            elif select_by == 'cycle':
-                if self.numPts(self.role) < 3:
-                    self._selected_index[self.role] = (self._selected_index[self.role] + 1) % 3
-                else:
-                    if self.numPts(_other_role) < 3:
-                        self.parent.set_viewer_role(_other_role)
-            elif select_by == 'zigzag':
-                if self.role == 'ref':
-                    self._selected_index['tra'] = (self._selected_index[self.role] + 1) % 3
-                self.parent.set_viewer_role(_other_role)
+        # select_by = self.dm['state']['neuroglancer']['region_selection']['select_by']
+        # _other_role = {'tra', 'ref'}.difference(self.role).pop()
+        # if not ignore_pointer:
+        #     if select_by == 'sticky':
+        #         pass
+        #     elif select_by == 'cycle':
+        #         if self.numPts(self.role) < 3:
+        #             self._selected_index[self.role] = (self._selected_index[self.role] + 1) % 3
+        #         else:
+        #             if self.numPts(_other_role) < 3:
+        #                 self.parent.set_viewer_role(_other_role)
+        #     elif select_by == 'zigzag':
+        #         if self.role == 'ref':
+        #             self._selected_index['tra'] = (self._selected_index[self.role] + 1) % 3
+        #         self.parent.set_viewer_role(_other_role)
         self.signals.ptsChanged.emit()
         self.drawSWIMwindow()
 
