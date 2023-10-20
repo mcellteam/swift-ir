@@ -1938,7 +1938,7 @@ class MainWindow(QMainWindow):
         logger.info('Performing Shutdown Instructions...')
 
         self._autosave(silently=True)
-        self._timerWorker._running = False
+        # self._timerWorker._running = False
 
         self.settings.setValue("geometry", self.saveGeometry())
         self.settings.setValue("windowState", self.saveState())
@@ -2869,40 +2869,38 @@ class MainWindow(QMainWindow):
 
         # self.tbb3demdata.setIconSize(QSize(40,20))
 
-        self._timerWorker = TimerWorker()
-        self._timerThread = QThread()
-        self._timerWorker.everySecond.connect(self.onSecondPassed)
-        self._timerWorker.moveToThread(self._timerThread)
-        self._timerWorker.finished.connect(self._timerThread.quit)
-        self._timerThread.started.connect(self._timerWorker.secondCounter)
-        self._timerThread.start()
+        # self._timerWorker = TimerWorker()
+        # self._timerThread = QThread()
+        # self._timerWorker.everySecond.connect(self.onSecondPassed)
+        # self._timerWorker.moveToThread(self._timerThread)
+        # self._timerWorker.finished.connect(self._timerThread.quit)
+        # self._timerThread.started.connect(self._timerWorker.secondCounter)
+        # self._timerThread.start()
 
-        self.lcdTimer = QLCDNumber()
-        self.lcdTimer.setFixedSize(QSize(80, 20))
-        self.lcdTimer.setDigitCount(8)
-        self.lcdTimer.display("00:00:00")
-        self.lcdTimer.setStyleSheet("""QLCDNumber
-                                                   { border: none;
-                                                   background: none;
-                                                   }""")
-        palette = self.lcdTimer.palette()
+        # self.lcdTimer = QLCDNumber()
+        # self.lcdTimer.setFixedSize(QSize(80, 20))
+        # self.lcdTimer.setDigitCount(8)
+        # self.lcdTimer.display("00:00:00")
+        # self.lcdTimer.setStyleSheet("""QLCDNumber
+        #                                            { border: none;
+        #                                            background: none;
+        #                                            }""")
+        # palette = self.lcdTimer.palette()
+        #
+        # # foreground color
+        # # palette.setColor(palette.WindowText, QColor(85, 85, 255))
+        # palette.setColor(palette.WindowText, QColor('#161c20'))
+        # # background color
+        # palette.setColor(palette.Background, QColor('#f3f6fb'))
+        # # "light" border
+        # palette.setColor(palette.Light, QColor('#141414'))
+        # # "dark" border
+        # palette.setColor(palette.Dark, QColor('#141414'))
+        #
+        # # set the palette
+        # self.lcdTimer.setPalette(palette)
 
-        # foreground color
-        # palette.setColor(palette.WindowText, QColor(85, 85, 255))
-        palette.setColor(palette.WindowText, QColor('#161c20'))
-        # background color
-        palette.setColor(palette.Background, QColor('#f3f6fb'))
-        # "light" border
-        palette.setColor(palette.Light, QColor('#141414'))
-        # "dark" border
-        palette.setColor(palette.Dark, QColor('#141414'))
-
-        # set the palette
-        self.lcdTimer.setPalette(palette)
-
-
-
-        self.wLcdTimer = HW(ExpandingHWidget(self), self.lcdTimer)
+        # self.wLcdTimer = HW(ExpandingHWidget(self), self.lcdTimer)
 
         # https://stackoverflow.com/questions/6783194/background-thread-with-qthread-in-pyqt
 
@@ -2927,23 +2925,20 @@ class MainWindow(QMainWindow):
         self.toolbar.addWidget(self.tbbGlossary)
         self.toolbar.addWidget(self.tbbReportBug)
         self.toolbar.addWidget(self.tbb3demdata)
-        self.toolbar.addWidget(self.wLcdTimer)
+        # self.toolbar.addWidget(self.wLcdTimer)
 
         # self.toolbar.addWidget(self.tbbTestThread)
 
-    def onSecondPassed(self, val):
-        # logger.critical('')
-        def secs_to_hrsminsec(secs: int):
-            mins = secs // 60
-            secs %= 60
-            hrs = mins // 60
-            mins %= 60
-            hrsminsec = f'{hrs:02}:{mins:02}:{secs:02}'
-            return hrsminsec
-        # logger.info(f'time: {val}')
-        self.lcdTimer.display(secs_to_hrsminsec(val))
-        self.lcdTimer.update()
-        # QApplication.processEvents()
+    # def onSecondPassed(self, val):
+    #     def secs_to_hrsminsec(secs: int):
+    #         mins = secs // 60
+    #         secs %= 60
+    #         hrs = mins // 60
+    #         mins %= 60
+    #         hrsminsec = f'{hrs:02}:{mins:02}:{secs:02}'
+    #         return hrsminsec
+    #     self.lcdTimer.display(secs_to_hrsminsec(val))
+    #     self.lcdTimer.update()
 
     def updateOutputSettings(self):
         if self.wOutputSettings.isVisible():
