@@ -2208,7 +2208,7 @@ class DataModel:
     def pullSettings(self, all=True):
         '''
         Saving pulls the scaling factor-adjusted 'saved_swim_settings' from previous scale.
-        'saved_swim_settings' is populated on the first 'Align All' of each scale, so will always be available.
+        'saved_swim_settings' is populated on the first 'Apply All' of each scale, so will always be available.
 
         '''
         logger.critical("\n\nPulling settings...\n")

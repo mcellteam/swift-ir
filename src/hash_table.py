@@ -4,6 +4,10 @@
 import os
 import json
 import pickle
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class HashTable:
     def __init__(self, dm, name='data.pickle'):
@@ -69,7 +73,8 @@ class HashTable:
             for k, v in self.data[hashkey]:
                 if k == key:
                     return v
-        raise KeyError(f"Key '{key}' not found in the hash data.")
+        logger.warning(f"hashkey not found: {hashkey}")
+        # raise KeyError(f"Key '{key}' not found in the hash data.")
 
     def geti(self, i):
         """Retrieve the value associated with the given key."""

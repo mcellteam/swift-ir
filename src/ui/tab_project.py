@@ -205,6 +205,8 @@ class ProjectTab(QWidget):
                     self.dSnr_plot.wipePlot()
 
             self.gifPlayer.set()
+            # self.dataUpdateMA() #1019+ #not necessary... initNeuroglancer does this
+
             # if self.dm.is_aligned():
             #     self.gifPlayer.start()
         elif index == 2:
@@ -660,7 +662,7 @@ class ProjectTab(QWidget):
         self.bPull.setFocusPolicy(Qt.NoFocus)
         self.bPull.setFixedHeight(16)
         self.bPull.clicked.connect(self.dm.pullSettings)
-        self.bPull.clicked.connect(self.dataUpdateMA)
+        self.bPull.clicked.connect(self.refreshTab)
         # msg = "Re-pull (propagate) preferences from previous scale level."
         tip = "Pull (re-propagate) all SWIM preferences from the next coarsest resolution level."
         tip = '\n'.join(textwrap.wrap(tip, width=35))
@@ -1426,7 +1428,7 @@ class ProjectTab(QWidget):
         # self.sa_runtimes.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         # self.sa_runtimes.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
-        self.labPlaceholder = QLabel("This resolution level must be aligned first ('Align All').")
+        self.labPlaceholder = QLabel("This resolution level must be aligned first ('Apply All').")
         self.labPlaceholder.setAlignment(Qt.AlignCenter)
         self.labPlaceholder.setStyleSheet("font-size: 12px;")
         self.wPlaceholder = VW(self.labPlaceholder)
