@@ -165,7 +165,7 @@ class ProjectTab(QWidget):
             # self.parent.setdw_thumbs(False) #BEFORE init neuroglancer
             # self.parent.setdw_matches(True) #BEFORE init neuroglancer
 
-            self.cmbViewerScale.setCurrentIndex(self.dm.levels.index(self.dm.level))
+            self.cboxViewerScale.setCurrentIndex(self.dm.levels.index(self.dm.level))
             self.initNeuroglancer() #Todo necessary for now
             self.set_transforming() #0802+
             self._updatePointLists() #0726+
@@ -250,11 +250,9 @@ class ProjectTab(QWidget):
 
         else:
 
-            self.lNotAligned.setVisible(self.dm.is_aligned())
-
             if self.wTabs.currentIndex() == 1 or init_all:
                 # self.editorWebengine.setUrl(QUrl("http://localhost:8888/"))
-                # level = self.dm.levels[self.cmbViewerScale.currentIndex()]
+                # level = self.dm.levels[self.cboxViewerScale.currentIndex()]
                 # level = self.dm['state']['viewer_quality']
                 # self.editorViewer = cfg.editorViewer = MAViewer(parent=self, dm=self.dm, role='tra', quality=level, webengine=self.editorWebengine)
                 self.editorViewer = self.parent.viewer = MAViewer(parent=self, dm=self.dm, role='tra',
@@ -301,7 +299,7 @@ class ProjectTab(QWidget):
                 self.viewer.signals.arrowRight.connect(self.parent.layer_right)
                 self.viewer.signals.arrowUp.connect(self.parent.incrementZoomIn)
                 self.viewer.signals.arrowDown.connect(self.parent.incrementZoomOut)
-                # self.viewer.signals.zoomChanged.connect(self.slot_zoom_changed)
+                self.viewer.signals.zoomChanged.connect(self.slot_zoom_changed) #Critical updates the lineedit
                 # logger.info(f"Local Volume:\n{cfg.LV.info()}")
 
         self.parent.hud.done()
@@ -1210,7 +1208,7 @@ class ProjectTab(QWidget):
         self.MA_use_global_defaults_lab.setAlignment(Qt.AlignCenter)
 
         self.lab_region_selection = QLabel("Use 1, 2, 3 keys to select 3 matching regions\n"
-                                           "Use Spacebar to toggle transforming and reference sections")
+                                           "Use Spacebar or / to toggle transforming and reference sections")
         self.lab_region_selection.setStyleSheet("QLabel{padding: 2px;}")
         # self.lab_region_selection = QLabel("")
         # self.lab_region_selection.setStyleSheet("font-size: 10px; font-weight: 600; color: #161c20; padding: 1px;")
@@ -1474,27 +1472,27 @@ class ProjectTab(QWidget):
         # self.bFrameZoom.clicked.connect(fn)
 
         # self.labViewerScale = QLabel('Viewer Resolution:')
-        self.cmbViewerScale = QComboBox()
+        self.cboxViewerScale = QComboBox()
         lst = []
         lst.append('Full Quality %d x %dpx' % (self.dm.image_size(s=self.dm.levels[0])))
         for level in self.dm.levels[1:]:
             siz = self.dm.image_size(s=level)
             lst.append('1/%d Quality %d x %dpx' % (self.dm.lvl(level), siz[0], siz[1]))
-        self.cmbViewerScale.addItems(lst)
+        self.cboxViewerScale.addItems(lst)
 
-        self.cmbViewerScale.setCurrentIndex(self.dm.levels.index(self.dm['state']['viewer_quality']))
+        self.cboxViewerScale.setCurrentIndex(self.dm.levels.index(self.dm['state']['viewer_quality']))
 
         def fn_cmbViewerScale():
             caller = inspect.stack()[1].function
             logger.info(f"[{caller}]")
             if caller == 'main':
-                level = self.dm.levels[self.cmbViewerScale.currentIndex()]
+                level = self.dm.levels[self.cboxViewerScale.currentIndex()]
                 siz = self.dm.image_size(s=level)
                 self.dm['state']['viewer_quality'] = level
                 self.parent.tell('Viewing quality set to 1/%d (%d x %dpx)' % (self.dm.lvl(level), siz[0], siz[1]))
                 self.initNeuroglancer()
 
-        # self.cmbViewerScale.currentIndexChanged.connect(fn_cmbViewerScale)
+        # self.cboxViewerScale.currentIndexChanged.connect(fn_cmbViewerScale)
 
 
         self.cl_tra = ClickLabel(' Transforming ')
@@ -1528,7 +1526,7 @@ class ProjectTab(QWidget):
                                       'border-radius: 2px; padding-left: 1px; padding-right: 1px;')
 
         # self.wSwitchRefTra = HW(self.cl_tra, self.labAlignTo, self.cl_ref)
-        # self.wSwitchRefTra = HW(self.cl_tra, self.cmbViewerScale, self.cl_ref)
+        # self.wSwitchRefTra = HW(self.cl_tra, self.cboxViewerScale, self.cl_ref)
         self.wSwitchRefTra = HW(self.cl_tra, self.cl_ref)
         self.wSwitchRefTra.setFixedHeight(15)
 
@@ -1573,7 +1571,7 @@ class ProjectTab(QWidget):
         self.glNeuroglancer = GL()
         self.glNeuroglancer.addWidget(self.editorWebengine, 0, 0, 3, 3)
         # self.glNeuroglancer.addWidget(self.wCmbViewerScale, 0, 1, 1, 1)
-        # self.glNeuroglancer.addWidget(self.cmbViewerScale, 0, 1, 1, 1)
+        # self.glNeuroglancer.addWidget(self.cboxViewerScale, 0, 1, 1, 1)
 
         self.wNeuroglancer.setLayout(self.glNeuroglancer)
 
@@ -1586,8 +1584,8 @@ class ProjectTab(QWidget):
         pal.setColor(QPalette.Text, QColor("#FFFF66"))
 
         self.comboNgLayout = QComboBox(self)
-        self.comboNgLayout.setFixedWidth(84)
-        self.comboNgLayout.setFixedHeight(15)
+        self.comboNgLayout.setFixedWidth(60)
+        self.comboNgLayout.setFixedHeight(16)
         self.comboNgLayout.setFocusPolicy(Qt.NoFocus)
         items = ['4panel', 'xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d']
         self.comboNgLayout.addItems(items)
@@ -1603,8 +1601,10 @@ class ProjectTab(QWidget):
 
         logger.info("Setting NG extended toolbar...")
 
-        self.labNgLayout = QLabel('Layout: ')
-        self.labNgLayout.setStyleSheet("""color: #ede9e8; font-weight: 600; font-size: 10px;""")
+        self.labNgLayout = QLabel('  Layout  ')
+        self.labNgLayout.setStyleSheet("""font-weight: 600;""")
+
+        self.wNgLayout = HW(self.labNgLayout, self.comboNgLayout)
 
         def fn():
             self.setUpdatesEnabled(False)
@@ -1629,7 +1629,7 @@ class ProjectTab(QWidget):
 
         self.tbbColorPicker = QToolButton()
         self.tbbColorPicker.setFixedSize(QSize(74, 16))
-        self.tbbColorPicker.setStyleSheet("color: #f3f6fb; font-size: 10px; background-color: rgba(0, 0, 0, 0.5); border-radius: 2px;")
+        # self.tbbColorPicker.setStyleSheet("color: #f3f6fb; font-size: 10px; background-color: rgba(0, 0, 0, 0.5); border-radius: 2px;")
         self.tbbColorPicker.setText('Background   ')
 
         def openColorDialog():
@@ -1740,7 +1740,7 @@ class ProjectTab(QWidget):
         self.zoomLab = QLabel('  Zoom  ')
         self.zoomLab.setFixedWidth(40)
         self.zoomLab.setAlignment(Qt.AlignCenter)
-        self.zoomLab.setStyleSheet("color: #f3f6fb; font-size: 10px; background-color: rgba(0, 0, 0, 0.5); border-radius: 4px;")
+        self.zoomLab.setStyleSheet("font-weight: 600;")
         self.wZoom = HW(self.zoomLab, self.leZoom)
         self.wZoom.layout.setAlignment(Qt.AlignCenter)
         self.wZoom.layout.setSpacing(4)
@@ -1761,33 +1761,30 @@ class ProjectTab(QWidget):
         # self.tbbNgHelp.setFocusPolicy(Qt.NoFocus)
         # self.tbbNgHelp.setIcon(qta.icon("fa.question", color='#f3f6fb'))
 
-        self.cmbNgAccessories = CheckableComboBox()
-        self.cmbNgAccessories.setFixedWidth(84)
-        self.cmbNgAccessories.setFixedHeight(15)
-        self.cmbNgAccessories.addItem("Show/Hide...")
-        self.cmbNgAccessories.addItem("NG Controls", state=self.dm['state']['neuroglancer']['show_controls'])
-        self.cmbNgAccessories.addItem("Bounds", state=self.dm['state']['neuroglancer']['show_bounds'])
-        self.cmbNgAccessories.addItem("Axes", state=self.dm['state']['neuroglancer']['show_axes'])
-        self.cmbNgAccessories.addItem("Scale Bar", state=self.dm['state']['neuroglancer']['show_scalebar'])
-        self.cmbNgAccessories.addItem("Shader", state=False)
+        self.cboxNgAccessories = CheckableComboBox()
+        self.cboxNgAccessories.setFixedWidth(86)
+        self.cboxNgAccessories.setFixedHeight(16)
+        self.cboxNgAccessories.addItem("Show/Hide...")
+        self.cboxNgAccessories.addItem("NG Controls", state=self.dm['state']['neuroglancer']['show_controls'])
+        self.cboxNgAccessories.addItem("Bounds", state=self.dm['state']['neuroglancer']['show_bounds'])
+        self.cboxNgAccessories.addItem("Axes", state=self.dm['state']['neuroglancer']['show_axes'])
+        self.cboxNgAccessories.addItem("Scale Bar", state=self.dm['state']['neuroglancer']['show_scalebar'])
 
         def cb_itemChanged():
             logger.info('')
-            self.dm['state']['neuroglancer']['show_controls'] = self.cmbNgAccessories.itemChecked(1)
-            self.dm['state']['neuroglancer']['show_bounds'] = self.cmbNgAccessories.itemChecked(2)
-            self.dm['state']['neuroglancer']['show_axes'] = self.cmbNgAccessories.itemChecked(3)
-            self.dm['state']['neuroglancer']['show_scalebar'] = self.cmbNgAccessories.itemChecked(4)
+            self.dm['state']['neuroglancer']['show_controls'] = self.cboxNgAccessories.itemChecked(1)
+            self.dm['state']['neuroglancer']['show_bounds'] = self.cboxNgAccessories.itemChecked(2)
+            self.dm['state']['neuroglancer']['show_axes'] = self.cboxNgAccessories.itemChecked(3)
+            self.dm['state']['neuroglancer']['show_scalebar'] = self.cboxNgAccessories.itemChecked(4)
             self.viewer.updateDisplayAccessories()
-            if self.cmbNgAccessories.itemChecked(5):
-                self.contrastSlider.setValue(int(self.dm.contrast))
-                self.contrastLE.setText('%d' % self.dm.contrast)
-                self.brightnessSlider.setValue(int(self.dm.brightness))
-                self.brightnessLE.setText('%d' % self.dm.brightness)
-                # self.initNeuroglancer() #Critical #Cringe #guarantees sliders will work
-            self._vgap2.setVisible(self.dm['state']['neuroglancer']['show_controls'])
             self.parent.saveUserPreferences(silent=True)
 
-        self.cmbNgAccessories.model().itemChanged.connect(cb_itemChanged)
+        self.cboxNgAccessories.model().itemChanged.connect(cb_itemChanged)
+
+        self.labNgAccessories = QLabel("  Neuroglancer  ")
+        self.labNgAccessories.setStyleSheet("font-weight: 600;")
+
+        self.wNgAccessories = HW(self.labNgAccessories, self.cboxNgAccessories)
 
 
         # ----------------
@@ -1796,24 +1793,8 @@ class ProjectTab(QWidget):
         # self.ew0.setFixedSize(QSize(80, 1))
         # self.ew0.setMaximumWidth(80)
 
-        self._gap1 = QWidget()
-        # self._gap1.setFixedSize(QSize(50, 1))
-        self._gap1.setFixedWidth(50)
-
-        self._vgap2 = QWidget()
-        self._vgap2.setAttribute(Qt.WA_TransparentForMouseEvents)
-        self._vgap2.setFixedSize(QSize(1,24))
-        self._vgap2.setVisible(self.dm['state']['neuroglancer']['show_controls'])
-
-        self.lNotAligned = QLabel("Not Aligned")
-        self.lNotAligned.hide()
-        self.lNotAligned.setStyleSheet("QLabel { background-color: rgba(0, 0, 0, 0.5); font-size: 12px; color: #a30000; font-weight: 600;"
-                                 "border-radius: 4px; font-family: Tahoma, sans-serif; padding: 4px; } ")
-
-
-        self.labZarrSource = QLabel(' Series: ')
-        self.labZarrSource.setStyleSheet("font-size: 11px; font-weight: 600; padding: 4px;")
-
+        self.labZarrSource = QLabel(' Images ')
+        self.labZarrSource.setStyleSheet("font-weight: 600;")
         self.rbZarrRaw = QRadioButton('Raw')
         self.rbZarrRaw.clicked.connect(lambda: setData('state,neuroglancer,layout','xy'))
         self.rbZarrRaw.clicked.connect(self.initNeuroglancer)
@@ -1821,43 +1802,30 @@ class ProjectTab(QWidget):
         self.rbZarrTransformed.clicked.connect(lambda: setData('state,neuroglancer,layout', '4panel'))
         self.rbZarrTransformed.clicked.connect(self.initNeuroglancer)
 
+        self.wZarrSelect = HW(self.labZarrSource, self.rbZarrRaw, self.rbZarrTransformed)
+        self.wZarrSelect.layout.setSpacing(4)
+
         self.bgZarrSelect = QButtonGroup()
         self.bgZarrSelect.addButton(self.rbZarrRaw)
         self.bgZarrSelect.addButton(self.rbZarrTransformed)
         self.bgZarrSelect.setExclusive(True)
 
         self.toolbarNg = QToolBar()
-        self.toolbarNg.setStyleSheet("")
-        self.toolbarNg.setFixedHeight(23)
-        # self.toolbarNg.layout().setAlignment(Qt.AlignCenter)
-        self.toolbarNg.layout().setSpacing(6)
+        self.toolbarNg.setStyleSheet("padding: 0px;")
+        self.toolbarNg.setFixedHeight(20)
         self.toolbarNg.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        self.toolbarNg.setAutoFillBackground(False)
-        self.toolbarNg.addWidget(self.comboNgLayout)
-        self.toolbarNg.addWidget(self.cmbNgAccessories)
+        self.toolbarNg.addSeparator()
+        self.toolbarNg.addWidget(self.wZarrSelect)
+        self.toolbarNg.addSeparator()
+        self.toolbarNg.addWidget(self.wNgLayout)
+        self.toolbarNg.addWidget(self.wNgAccessories)
         self.toolbarNg.addWidget(self.wZoom)
-        self.toolbarNg.addWidget(self.ew0)
-        # self.toolbarNg.addWidget(self.rbwZarr)
-        self.toolbarNg.addSeparator()
-        self.toolbarNg.addWidget(self.labZarrSource)
-        self.toolbarNg.addWidget(self.rbZarrRaw)
-        self.toolbarNg.addSeparator()
-        self.toolbarNg.addWidget(self.rbZarrTransformed)
-        self.toolbarNg.addSeparator()
-
-        self.toolbarNg.addWidget(self.lNotAligned)
-        self.toolbarNg.addWidget(self.ew1)
+        # self.toolbarNg.addWidget(self.ew0)
+        # self.toolbarNg.addWidget(self.ew1)
         self.toolbarNg.addWidget(self.bcWidget)
-        # self.toolbarNg.addWidget(ExpandingWidget(self))
         self.toolbarNg.addWidget(self.bShader)
         self.toolbarNg.addWidget(self.tbbColorPicker)
-        # self.toolbarNg.addWidget(self._gap1)
-
-        # self.sideSliders = VW(self.wSliderZdisplay, self.zoomSliderAndLabel)
-        # self.sideSliders = VW(self.wSliderZdisplay, self.zoomSliderAndLabel)
-        # self.sideSliders.setFixedWidth(16)
-        # self.sideSliders.layout.setSpacing(0)
-        # self.sideSliders.setStyleSheet("""background-color: #222222; color: #ede9e8;""")
+        # self.toolbarNg.addSeparator()
 
         '''REFERENCE AND TRANSFORMING THUMBNAILS WITH PAINTED SWIM REGION ANNOTATIONS'''
         # self.tn_tra_overlay = QLabel('Excluded')
@@ -2156,46 +2124,13 @@ class ProjectTab(QWidget):
         self.gbRightPanel.setLayout(self.vblRightPanel)
 
         self.gbRightPanel.setMaximumWidth(380)
-        # self.wRightPanel.setFocusPolicy(Qt.NoFocus)
-        # self.wRightPanel.setStyleSheet("""
-        # QWidget{
-        #     font-size: 10px;
-        # }
-        # QTabBar::tab {
-        #     font-size: 9px;
-        #     height: 12px;
-        #     width: 64px;
-        #     min-width: 64px;
-        #     max-width: 64px;
-        #     margin-bottom: 0px;
-        #     padding-bottom: 0px;
-        # }
-        # QGroupBox {
-        #     color: #161c20;
-        #     border: 1px solid #161c20;
-        #     font-size: 10px;
-        #     /*font-weight: 600;*/
-        #     border-radius: 2px;
-        #     margin: 2px;
-        #     padding: 2px;
-        #     padding-top: 8px;
-        # }
-        # QGroupBox:title {
-        #     color: #161c20;
-        #     /*font-weight:600;*/
-        #     font-size: 9px;
-        #     subcontrol-origin: margin;
-        #     subcontrol-position: top center;
-        #     margin-bottom: 12px;
-        # }
-        # """)
 
         self.wEditAlignment = QSplitter(Qt.Orientation.Horizontal)
         self.wEditAlignment.addWidget(self.wWebengineEditor)
         self.wEditAlignment.addWidget(self.gbRightPanel)
         self.wEditAlignment.setCollapsible(0, False)
         self.wEditAlignment.setCollapsible(1, False)
-        self.wEditAlignment.setStretchFactor(0, 99)
+        self.wEditAlignment.setStretchFactor(0, 99) #1020-
         # self.wEditAlignment.setStretchFactor(1, 1)
 
         logger.info("<<")
@@ -2583,6 +2518,17 @@ class ProjectTab(QWidget):
             #     self.bSaveAllSettings.setText(f"Save All ({_n_known_unsaved})")
             #
             # self.bSaveAllSettings.setEnabled(not _all_consistent)
+
+            self.lab_filename.setText(f"[{self.dm.zpos}] Name: {self.dm.name()} - {self.dm.level_pretty()}")
+            self.cl_tra.setText(f'[{self.dm.zpos}] {self.dm.name()} (Transforming)')
+            if self.dm.skipped():
+                self.cl_tra.setText(f'[{self.dm.zpos}] {self.dm.name()} (Transforming)')
+                self.cl_ref.setText(f'--')
+            else:
+                try:
+                    self.cl_ref.setText(f'[{self.dm.get_ref_index()}] {self.dm.name_ref()} (Reference)')
+                except:
+                    self.cl_ref.setText(f'Null (Reference)')
 
             self.leWhitening.setText(str(ss['whitening']))
             self.leIterations.setText(str(ss['iterations']))
@@ -3129,13 +3075,6 @@ class ProjectTab(QWidget):
         self.wTabs.setTabsClosable(False)
         self.wTabs.setObjectName('project_tabs')
 
-        # self.glNG = GL()
-        # self.glNG.addWidget(self.webengine, 0, 0, 2, 2)
-        # # self.glNG.addWidget(self.wNG, 0, 0, 1, 2)
-        # self.glNG.addWidget(VW(self._vgap2, self.toolbarNg), 0, 0, 1, 2)
-        # self.glNG.setRowStretch(0,0)
-        # self.glNG.setRowStretch(1,9)
-
         self.vblNG = VBL()
         self.vblNG.addWidget(self.toolbarNg)
         self.vblNG.addWidget(self.webengine)
@@ -3172,14 +3111,14 @@ class ProjectTab(QWidget):
                 self.editorViewer.set_contrast()
 
         self.bResetShaders = QPushButton('Reset')
-        self.bResetShaders.setFixedSize(QSize(40, 15))
+        # self.bResetShaders.setFixedSize(QSize(40, 15))
+        self.bResetShaders.setFixedWidth(40)
         self.bResetShaders.clicked.connect(resetBrightessAndContrast)
 
         # self._btn_volumeRendering = QPushButton('Volume')
         # self._btn_volumeRendering.setFixedSize(QSize(58,20))
         # self._btn_volumeRendering.clicked.connect(self.fn_volume_rendering)
         # self.shaderSideButtons = HW(self.bResetShaders, self._btn_volumeRendering)
-        self.shaderSideButtons = HW(self.bResetShaders)
 
         self.brightnessLE = QLineEdit()
         self.brightnessLE.setAlignment(Qt.AlignCenter)
@@ -3198,12 +3137,11 @@ class ProjectTab(QWidget):
         self.brightnessSlider.valueChanged.connect(self.fn_brightness_control)
         self.brightnessSlider.valueChanged.connect(
             lambda: self.brightnessLE.setText('%d' % self.brightnessSlider.value()))
-        lab = QLabel('  Brightness  ')
-        lab.setStyleSheet("color: #f3f6fb; font-size: 10px; background-color: rgba(0, 0, 0, 0.5); border-radius: 4px;")
-        # lab.setStyleSheet("color: #FFFF66; font-size: 9px;")
-        self.brightnessWidget = HW(lab, self.brightnessSlider, self.brightnessLE)
-        # self.brightnessWidget.layout.setAlignment(Qt.AlignCenter)
-        self.brightnessWidget.layout.setSpacing(4)
+        self.labBrightness = QLabel('  Brightness  ')
+        self.labBrightness.setStyleSheet("font-weight: 600;")
+        self.wBrightness = HW(self.labBrightness, self.brightnessSlider, self.brightnessLE)
+        # self.wBrightness.layout.setSpacing(4)
+        self.wBrightness.setMaximumWidth(180)
 
         self.contrastLE = QLineEdit()
         self.contrastLE.setAlignment(Qt.AlignCenter)
@@ -3222,16 +3160,17 @@ class ProjectTab(QWidget):
         self.contrastSlider.valueChanged.connect(self.fn_contrast_control)
         self.contrastSlider.valueChanged.connect(
             lambda: self.contrastLE.setText('%d' % self.contrastSlider.value()))
-        lab = QLabel('  Contrast  ')
-        lab.setStyleSheet("color: #f3f6fb; font-size: 10px; background-color: rgba(0, 0, 0, 0.5); border-radius: 4px;")
-        # lab.setStyleSheet("color: #FFFF66; font-size: 9px;")
-        self.contrastWidget = HW(lab, self.contrastSlider, self.contrastLE)
-        # self.contrastWidget.layout.setAlignment(Qt.AlignCenter)
-        self.contrastWidget.layout.setSpacing(4)
+        self.labContrast = QLabel('  Contrast  ')
+        self.labContrast.setStyleSheet("font-weight: 600;")
 
-        self.bcWidget = HW(self.brightnessWidget, self.contrastWidget, self.shaderSideButtons)
-        self.bcWidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.bcWidget.layout.setSpacing(4)
+        self.wContrast = HW(self.labContrast, self.contrastSlider, self.contrastLE)
+        # self.wContrast.layout.setSpacing(4)
+        self.wContrast.setMaximumWidth(180)
+
+
+        self.bcWidget = HW(self.wBrightness, self.wContrast, self.bResetShaders)
+        # self.bcWidget.layout.setSpacing(4)
+        self.bcWidget.setMaximumWidth(400)
 
 
     def fn_brightness_control(self):
