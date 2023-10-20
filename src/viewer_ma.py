@@ -52,6 +52,14 @@ class WorkerSignals(QObject):
     ptsChanged = Signal()
     swimAction = Signal()
     badStateChange = Signal()
+    toggleView = Signal()
+    tellMainwindow = Signal(str)
+    warnMainwindow = Signal(str)
+    errMainwindow = Signal(str)
+    arrowLeft = Signal()
+    arrowRight = Signal()
+    arrowUp = Signal()
+    arrowDown = Signal()
 
 class MAViewer(neuroglancer.Viewer):
     # def __init__(self, parent, dm, role='tra', quality=None, webengine=None):
@@ -65,6 +73,7 @@ class MAViewer(neuroglancer.Viewer):
         # self.quality_lvl = self.dm.lvl(self.quality)
         # self.fac = self.dm.lvl() / self.quality_lvl
         self.webengine = webengine
+        self.webengine.setMouseTracking(True)
         self.signals = WorkerSignals()
         self.created = datetime.datetime.now()
         # self._settingZoom = True
@@ -96,6 +105,7 @@ class MAViewer(neuroglancer.Viewer):
 
         self.initViewer()
         # asyncio.ensure_future(self.initViewer())
+        self.webengine.setFocus()
 
 
     def __del__(self):
@@ -271,10 +281,16 @@ class MAViewer(neuroglancer.Viewer):
             s.voxel_coordinates = [self.index + .5, y / 2, x / 2]
             s.show_default_annotations = False
 
-        self.actions.add('add_manpoint', self.add_matchpoint)
-        self.actions.add('addmp1', self.add_matchpoint1)
-        self.actions.add('addmp2', self.add_matchpoint2)
-        self.actions.add('addmp3', self.add_matchpoint3)
+        # self.actions.add('add_manpoint', self.add_matchpoint)
+        self.actions.add('keyLeft', self._onKeyLeft)
+        self.actions.add('keyRight', self._onKeyRight)
+        self.actions.add('keyUp', self._onKeyUp)
+        self.actions.add('keyDown', self._onKeyDown)
+        self.actions.add('key1', self._onKey1)
+        self.actions.add('key2', self._onKey2)
+        self.actions.add('key3', self._onKey3)
+        self.actions.add('keySpace', self._onKeySpace)
+        self.actions.add('controlClick', self._onControlClick)
         # self.actions.add('swim', self.swim)
 
         t4 = time.time()
@@ -282,13 +298,23 @@ class MAViewer(neuroglancer.Viewer):
         # self.actions.add('swim', self.blinkCallback)
 
         with self.config_state.txn() as s:
-            s.input_event_bindings.slice_view['alt+click0'] = 'add_manpoint'
-            s.input_event_bindings.viewer['control+click0'] = 'add_manpoint'
-            s.input_event_bindings.slice_view['keys'] = 'add_manpoint'
-            s.input_event_bindings.slice_view['dblclick0'] = 'add_manpoint'
-            s.input_event_bindings.slice_view['digit1'] = 'addmp1'
-            s.input_event_bindings.slice_view['digit2'] = 'addmp2'
-            s.input_event_bindings.slice_view['digit3'] = 'addmp3'
+            s.input_event_bindings.slice_view['arrowleft'] = 'keyLeft'
+            s.input_event_bindings.slice_view['arrowright'] = 'keyRight'
+            s.input_event_bindings.slice_view['arrowup'] = 'keyUp'
+            s.input_event_bindings.slice_view['arrowdown'] = 'keyDown'
+            # s.input_event_bindings.slice_view['alt+click0'] = 'add_manpoint'
+            # s.input_event_bindings.viewer['control+click0'] = 'add_manpoint'
+            # s.input_event_bindings.slice_view['keys'] = 'add_manpoint'
+            # s.input_event_bindings.slice_view['dblclick0'] = 'add_manpoint'
+            s.input_event_bindings.slice_view['digit1'] = 'key1'
+            s.input_event_bindings.slice_view['digit2'] = 'key2'
+            s.input_event_bindings.slice_view['digit3'] = 'key3'
+            s.input_event_bindings.slice_view['space'] = 'keySpace'
+
+            # s.input_event_bindings.viewer['control+mousedown0'] = 'controlClick'
+            # s.input_event_bindings.viewer['control+click0'] = 'controlClick'
+            # s.input_event_bindings.viewer['at:control+mousedown0'] = 'controlClick'
+            s.input_event_bindings.viewer['control+click'] = 'controlClick'
             # s.input_event_bindings.slice_view['shift+click0'] = 'add_manpoint'
             # s.input_event_bindings.slice_view['enter'] = 'add_manpoint'            #this works
             # s.input_event_bindings.slice_view['mousedown0'] = 'add_manpoint'       #this works
@@ -315,7 +341,7 @@ class MAViewer(neuroglancer.Viewer):
         if self.webengine:
             self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
-        # self.initZoom()
+        self.initZoom()
 
         self._blockStateChanged = False
         t7 = time.time()
@@ -345,7 +371,7 @@ class MAViewer(neuroglancer.Viewer):
             return
 
         # logger.info('state changed!')
-        logger.info('')
+        # logger.info('')
 
         self._blockStateChanged = True
         try:
@@ -422,22 +448,57 @@ class MAViewer(neuroglancer.Viewer):
         logger.info('[futures] Emitting SWIM signal...')
         self.signals.swimAction.emit()
 
-    def add_matchpoint1(self, s):
+    def _onKey1(self, s):
         logger.info('')
         self._selected_index[self.role] = 0
         self.add_matchpoint(s, ignore_pointer=True)
+        self.webengine.setFocus()
 
 
-    def add_matchpoint2(self, s):
+    def _onKey2(self, s):
         logger.info('')
         self._selected_index[self.role] = 1
         self.add_matchpoint(s, ignore_pointer=True)
+        self.webengine.setFocus()
 
 
-    def add_matchpoint3(self, s):
+    def _onKey3(self, s):
         logger.info('')
         self._selected_index[self.role] = 2
         self.add_matchpoint(s, ignore_pointer=True)
+        self.webengine.setFocus()
+
+
+    def _onKeySpace(self, s):
+        logger.info("Native spacebar keybinding intercepted!")
+        # if self.dm.method() == 'manual':
+        self.signals.toggleView.emit()
+        self.webengine.setFocus()
+
+    def _onKeyLeft(self, s):
+        logger.warning("Native arrow LEFT keybinding intercepted!")
+        self.signals.arrowLeft.emit()
+        self.webengine.setFocus()
+
+
+    def _onKeyRight(self, s):
+        logger.warning("Native arrow RIGHT keybinding intercepted!")
+        self.signals.arrowRight.emit()
+        self.webengine.setFocus()
+
+    def _onKeyUp(self, s):
+        logger.warning("Native arrow UP keybinding intercepted!")
+        self.signals.arrowUp.emit()
+        self.webengine.setFocus()
+
+    def _onKeyDown(self, s):
+        logger.warning("Native arrow DOWN keybinding intercepted!")
+        self.signals.arrowDown.emit()
+        self.webengine.setFocus()
+
+    def _onControlClick(self, s):
+        logger.info("Native control+click keybinding intercepted!")
+        self.webengine.setFocus()
 
 
 
@@ -668,24 +729,24 @@ class MAViewer(neuroglancer.Viewer):
             _, tensor_y, tensor_x = self.store.shape
             w = self.parent.ng_widget.width()
             h = self.parent.ng_widget.height()
-            # res_z, res_y, res_x = self.dm.resolution(s=self.dm.level) # nm per imagepixel
-            res_z, res_y, res_x = self.dm.resolution(s=self.quality) # nm per imagepixel
+            res_z, res_y, res_x = self.dm.resolution(s=self.dm.level) # nm per imagepixel
+            # res_z, res_y, res_x = self.dm.resolution(s=self.quality) # nm per imagepixel
             # tissue_h, tissue_w = res_y*frame[0], res_x*frame[1]  # nm of sample
             scale_h = ((res_y * tensor_y) / h) * 1e-9  # nm/pixel (subtract height of ng toolbar)
             scale_w = ((res_x * tensor_x) / w) * 1e-9  # nm/pixel (subtract width of sliders)
             cs_scale = max(scale_h, scale_w)
 
-            logger.critical(f'________{self.role}________\n'
-                        f'store.shape    = {self.store.shape}\n'
-                        f'level          = {self.dm.level}\n'
-                        f'quality        = {self.quality}\n'
-                        f'h, w           = {h}, {w}\n'
-                        f'tensor_y, _x   = {tensor_y}, {tensor_x}\n'
-                        f'res_z, _y, _x  = {res_z}, {res_y}, {res_x}\n'
-                        f'scale_h, _w    = {scale_h}, {scale_h}\n'
-                        f'----------------------\n'
-                        f'cross section scale: {cs_scale}\n'
-                        f'----------------------\n')
+            # logger.critical(f'________{self.role}________\n'
+            #             f'store.shape    = {self.store.shape}\n'
+            #             f'level          = {self.dm.level}\n'
+            #             # f'quality        = {self.quality}\n'
+            #             f'h, w           = {h}, {w}\n'
+            #             f'tensor_y, _x   = {tensor_y}, {tensor_x}\n'
+            #             f'res_z, _y, _x  = {res_z}, {res_y}, {res_x}\n'
+            #             f'scale_h, _w    = {scale_h}, {scale_h}\n'
+            #             f'----------------------\n'
+            #             f'cross section scale: {cs_scale}\n'
+            #             f'----------------------\n')
 
             # logger.info(f'Initializing crossSectionScale to calculated value times adjust {self.cs_scale} [{self.role}]')
             with self.txn() as s:
@@ -734,27 +795,27 @@ class MAViewer(neuroglancer.Viewer):
         except: txt += f'  state.voxel_coordinates  =\n'
         txt += '\n'
         try:
-            n_layers = len(cfg.editorViewer.state.to_json()['layers'])
+            n_layers = len(self.state.to_json()['layers'])
             txt += f"  {n_layers} Layers\n"
         except:
             txt += f'   0 Layers\n'
         if n_layers:
             for i in range(n_layers):
                 txt += f"  Layer {i}:\n"
-                name = cfg.editorViewer.state.to_json()['layers'][i]['name']
+                name = self.state.to_json()['layers'][i]['name']
                 txt += f"    Name: {name}\n"
-                type = cfg.editorViewer.state.to_json()['layers'][i]['type']
+                type = self.state.to_json()['layers'][i]['type']
                 txt += f"    Type: {type}\n"
                 if type == 'annotation':
-                    n_ann = len(cfg.editorViewer.state.to_json()['layers'][i]['annotations'])
+                    n_ann = len(self.state.to_json()['layers'][i]['annotations'])
                     txt += f"    # annotations: {n_ann}\n"
-                    ids = [cfg.editorViewer.state.to_json()['layers'][i]['annotations'][x]['id'] for x in range(n_ann)]
+                    ids = [self.state.to_json()['layers'][i]['annotations'][x]['id'] for x in range(n_ann)]
                     txt += '    ids : '
                     txt += ', '.join(ids)
                     txt += '\n'
                     try:
                         txt += '    Example: ' + str(
-                            cfg.editorViewer.state.to_json()['layers'][i]['annotations'][0]) + '\n'
+                            self.state.to_json()['layers'][i]['annotations'][0]) + '\n'
                     except:
                         print_exception()
 

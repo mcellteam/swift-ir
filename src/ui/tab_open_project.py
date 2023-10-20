@@ -32,6 +32,7 @@ from src.ui.tab_zarr import ZarrTab
 from src.ui.dialogs import ImportImagesDialog
 from src.ui.layouts import HBL, VBL, GL, HW, VW, HSplitter, VSplitter
 from src.ui.tab_project import VerticalLabel
+from src.ui.tab_project import ProjectTab
 from src.viewer_em import PMViewer
 from src.thumbnailer import Thumbnailer
 
@@ -82,6 +83,8 @@ class OpenProject(QWidget):
 
         self.resetView()
         self.refresh()
+
+        self.webengine.setFocus()
 
 
 
@@ -623,6 +626,7 @@ class OpenProject(QWidget):
         t0 = time.time()
         #Todo also need to pass in the images location, which may have moved
         dm = DataModel(data_location=out, images_location=images_path, initialize=True, images_info=info)
+        cfg.preferences['last_alignment_opened'] = dm.data_location
         dt = time.time() - t0
         logger.info(f'Time Elapsed (initialize data model): {dt:.3g}s')
 
@@ -644,7 +648,8 @@ class OpenProject(QWidget):
 
         cfg.mw._saveProjectToFile()
         self.bPlusAlignment.setEnabled(True)
-        cfg.mw.onStartProject(dm, switch_to=True)
+        self.parent.openAlignment(dm)
+
 
 
 
@@ -659,7 +664,7 @@ class OpenProject(QWidget):
     def initPMviewer(self):
         caller = inspect.stack()[1].function
         logger.info(f'[{caller}]')
-        self.viewer = cfg.pmViewer = PMViewer(webengine=self.webengine)
+        self.viewer = self.parent.viewer = PMViewer(webengine=self.webengine)
         if self.cmbSelectImages.currentText():
             self.path_l, self.path_r = self.get_pmviewer_paths()
             self.viewer.initViewer(path_l=self.path_l, path_r=self.path_r)
@@ -667,6 +672,12 @@ class OpenProject(QWidget):
         else:
             self.viewer.initViewer(path_l=None, path_r=None)
             # self.viewer.initZoom(w=w, h=h)
+
+        self.viewer.signals.arrowLeft.connect(self.parent.layer_left)
+        self.viewer.signals.arrowRight.connect(self.parent.layer_right)
+        self.viewer.signals.arrowUp.connect(self.parent.incrementZoomIn)
+        self.viewer.signals.arrowDown.connect(self.parent.incrementZoomOut)
+        self.webengine.setFocus()
 
 
     def onPlusAlignment(self):
@@ -844,7 +855,7 @@ class OpenProject(QWidget):
 
                 w, h = int(self.webengine.width() / 2), self.webengine.height()
                 if self.cmbSelectImages.currentText():
-                    self.viewer = cfg.pmViewer = PMViewer(webengine=self.webengine)
+                    self.viewer = self.parent.viewer = PMViewer(webengine=self.webengine)
                     self.path_l, self.path_r = self.get_pmviewer_paths()
                     self.viewer.initViewer(path_l=self.path_l, path_r=self.path_r)
                     # self.viewer.initZoom(w=w, h=h)
@@ -948,7 +959,7 @@ class OpenProject(QWidget):
 
             initLogFiles(dm.data_location)  # 0805+
             cfg.mw.saveUserPreferences(silent=True)
-            cfg.mw.onStartProject(dm, switch_to=True)
+            self.parent.openAlignment(dm)
 
         else:
             cfg.mw.warn("Invalid Path")
@@ -1006,7 +1017,7 @@ class OpenProject(QWidget):
             self.wImagesConfig.leChunkY.setText(str(cfg.CHUNK_Y))
             self.wImagesConfig.leChunkZ.setText(str(cfg.CHUNK_Z))
             self.wImagesConfig.cname_combobox.setCurrentText(str(cfg.CNAME))
-        self.leNameImages.setFocus(True)
+        self.leNameImages.setFocus()
         self.setUpdatesEnabled(True)
 
 

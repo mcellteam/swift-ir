@@ -72,6 +72,7 @@ def date_time():
 class Signals(QObject):
     zposChanged = Signal()
     dataChanged = Signal()
+    savedChanged = Signal()
     outputSettingsChanged = Signal()
     swimSettingsChanged = Signal()
 
@@ -175,6 +176,12 @@ class DataModel:
         path = os.path.join(self.dest(), 'state_' + date_time() + '.swiftir')
         with open(path, 'w') as f:
             f.write(str(self.to_json()))
+
+    @property
+    def title(self):
+        basename = os.path.basename(self['info']['data_location'])
+        name, _ = os.path.splitext(basename)
+        return name
 
     @property
     def count(self):
@@ -1774,12 +1781,26 @@ class DataModel:
         return HashableDict(self._data['stack'][l]['levels'][s]['saved_swim_settings'])
         # return self._data['stack'][l]['levels'][s]['saved_swim_settings']
 
-    def saveSettings(self, s=None, l=None):
+    def saveSettings(self, s=None, l=None, signal=True):
         if s == None: s = self.level
         if l == None: l = self.zpos
-        self._data['stack'][l]['levels'][s]['saved_swim_settings'].update(copy.deepcopy(
-            self._data['stack'][l]['levels'][s]['swim_settings']))
-        self.set_stack_cafm(s=s)
+        if self.ht.haskey(self.swim_settings(s=s, l=l)):
+            self._data['stack'][l]['levels'][s]['saved_swim_settings'].update(copy.deepcopy(self.swim_settings(s=s, l=l)))
+        else:
+            cfg.mw.err(f"Unable to save settings at index {l}: Alignment result is unknown")
+        # self.set_stack_cafm(s=s) #1019- # Not believe this should be needed
+        if signal:
+            self.signals.savedChanged.emit()
+
+
+    def saveAllSettings(self, s=None):
+        if s == None: s = self.level
+        if l == None: l = self.zpos
+        #Todo #Critical perform checks to see what can actually be saved, i.e. have an affine for
+        for i in range(len(self)):
+            self.saveSettings(s=s, l=i, signal=False)
+        # self.set_stack_cafm(s=s) #1019- # Not believe this should be needed
+        self.signals.savedChanged.emit()
 
 
     def ssHash(self, s=None, l=None):
@@ -1799,6 +1820,37 @@ class DataModel:
         if s == None: s = self.level
         if l == None: l = self.zpos
         return self.ssHash(s=s, l=l) == self.ssSavedHash(s=s, l=l)
+
+    def ssSavedComportsIndexes(self, s=None):
+        if s == None: s = self.level
+        indexes = []
+        for i in range(len(self)):
+            if not self.ssSavedComports(s=s, l=i):
+                indexes.append(i)
+        return indexes
+
+    def restoreSavedSettings(self, s=None, l=None):
+        if s == None: s = self.level
+        if l == None: l = self.zpos
+        self['stack'][l]['levels'][s]['swim_settings'].update(copy.deepcopy(self.saved_swim_settings()))
+        self.signals.savedChanged.emit()
+
+    def unknownAnswerIndexes(self, s=None):
+        if s == None: s = self.level
+        indexes = []
+        for i in range(len(self)):
+            if not self.ht.haskey(self.swim_settings(s=s, l=i)):
+                indexes.append(i)
+        return indexes
+
+    def unknownSavedAnswerIndexes(self, s=None):
+        if s == None: s = self.level
+        indexes = []
+        for i in range(len(self)):
+            if not self.ht.haskey(self.saved_swim_settings(s=s, l=i)):
+                indexes.append(i)
+        return indexes
+
 
     def zarrCafmHashComports(self, s=None, l=None):
         if s == None: s = self.level
@@ -1830,6 +1882,7 @@ class DataModel:
         for i in range(len(self)):
             if self['stack'][i]['levels'][self.level]['swim_settings']['method_opts']['method'] == 'grid':
                 self['stack'][i]['levels'][self.level]['swim_settings']['method_opts']['size_1x1'] = [val, val_y]
+        self.signals.dataChanged.emit()
 
     def aa2x2(self, val):
         val = ensure_even(val)
@@ -1840,6 +1893,7 @@ class DataModel:
         for i in range(len(self)):
             if self['stack'][i]['levels'][self.level]['swim_settings']['method_opts']['method'] == 'grid':
                 self['stack'][i]['levels'][self.level]['swim_settings']['method_opts']['size_2x2'] = [val, val_y]
+        self.signals.dataChanged.emit()
 
     def aaQuadrants(self, lst):
         cfg.mw.tell(f"Setting default SWIM grid quadrants: {lst}")
@@ -1847,18 +1901,21 @@ class DataModel:
         for i in range(len(self)):
             if self['stack'][i]['levels'][self.level]['swim_settings']['method_opts']['method'] == 'grid':
                 self['stack'][i]['levels'][self.level]['swim_settings']['method_opts']['quadrants'] = lst
+        self.signals.dataChanged.emit()
 
     def aaIters(self, val):
         cfg.mw.tell(f"Setting default SWIM iterations: {val}")
         self['level_data'][self.level]['defaults']['iterations'] = val
         for i in range(len(self)):
             self['stack'][i]['levels'][self.level]['swim_settings']['iterations'] = val
+        self.signals.dataChanged.emit()
 
     def aaWhitening(self, val):
         cfg.mw.tell(f"Setting default SWIM whitening factor: {val}")
         self['level_data'][self.level]['defaults']['whitening'] = val
         for i in range(len(self)):
             self['stack'][i]['levels'][self.level]['swim_settings']['whitening'] = val
+        self.signals.dataChanged.emit()
 
     def aaClobber(self, tup):
         if tup[0]:
@@ -1870,6 +1927,7 @@ class DataModel:
         for i in range(len(self)):
             self['stack'][i]['levels'][self.level]['swim_settings']['clobber'] = tup[0]
             self['stack'][i]['levels'][self.level]['swim_settings']['clobber_size'] = tup[1]
+        self.signals.dataChanged.emit()
 
 
     def size1x1(self, s=None, l=None):
@@ -2008,7 +2066,8 @@ class DataModel:
                 return section['levels'][s]['swim_settings']['index']
 
     def linkReference(self, level):
-        logger.critical('Linking reference sections...')
+        caller = inspect.stack()[1].function
+        logger.critical(f'[{caller}] Linking reference sections...')
         skip_list = self.skips_indices(s=level)
         for layer_index in range(len(self)):
             j = layer_index - 1  # Find nearest previous non-skipped z
@@ -2142,8 +2201,13 @@ class DataModel:
         '''
         logger.critical("\n\nPulling settings...\n")
         if self.level == self.coarsest_scale_key():
-            logger.error("Cannot pull SWIM settings from any other resolution level. \n"
+            cfg.mw.err("Cannot pull SWIM settings from a coarser resolution level. \n"
                          "This is the coarsest resolution level.")
+            return
+
+        if not self.is_alignable():
+            cfg.mw.err("Cannot pull SWIM settings until lower resolution levels are aligned.")
+            return
 
         levels = self.levels
         cur_level = self.level

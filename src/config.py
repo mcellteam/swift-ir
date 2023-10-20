@@ -49,7 +49,7 @@ SCALE_1_CORES_LIMIT = 100
 '''Main Objects'''
 # datamodel = None
 data = None
-dataById = {}
+# dataById = {}
 tabsById = {}
 main_window = None
 mw = None
@@ -113,7 +113,6 @@ FAULT_HANDLER = False
 HEADLESS = False
 SUPPORT_NONSQUARE = True
 USE_PYTHON = False
-NO_SPLASH = True
 MP_MODE = False
 THEME = 0
 MP_LINEWEIGHT = 3
