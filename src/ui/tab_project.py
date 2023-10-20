@@ -1194,8 +1194,10 @@ class ProjectTab(QWidget):
                     mo = self.dm['level_data'][s]['method_presets']['manual']  # Todo ...not similar to this
                     self.dm['stack'][l]['levels'][s]['swim_settings']['method_opts'] = copy.deepcopy(mo)
                 # self.parent.dataUpdateWidgets() #1019-
+                self.dataUpdateMA() #1019+ #Critical
                 self.editorViewer.drawSWIMwindow()  # 1019+
                 self.editorWebengine.setFocus()
+
 
         self.gbGrid = QGroupBox("Grid Alignment Settings")
         self.gbGrid.setMaximumHeight(258)
