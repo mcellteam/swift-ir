@@ -3100,7 +3100,7 @@ class MainWindow(QMainWindow):
         projects = []
         for i in range(self.globTabs.count()):
             if 'ProjectTab' in str(self.globTabs.widget(i)):
-                projects.append(self.globTabs.widget(i).datamodel.data_location)
+                projects.append(self.globTabs.widget(i).dm.data_location)
         return projects
 
     def getOpenProjectNames(self):

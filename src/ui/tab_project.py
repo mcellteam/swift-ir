@@ -42,7 +42,7 @@ class ProjectTab(QWidget):
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.parent = parent
         self.viewer = None
-        self.dm = self.parent.dm = cfg.data = dm
+        self.dm = self.datamodel = self.parent.dm = cfg.data = dm
         self.parent.pt = cfg.pt = self
         # self.path = path
         self.path = self.dm.data_location
