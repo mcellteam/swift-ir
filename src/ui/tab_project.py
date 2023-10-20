@@ -121,7 +121,10 @@ class ProjectTab(QWidget):
                 def_dl = self.dm['level_data'][self.dm.level]['defaults']
                 def_mo = self.dm['level_data'][self.dm.level]['defaults']['method_opts']
                 dl = self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]
-                mo = dl['swim_settings']['method_opts']
+                try:
+                    mo = dl['swim_settings']['method_opts']
+                except:
+                    print_exception(extra=f"Level: {self.dm.level} | Section #: {self.dm.zpos}")
                 try:
                     self.aaButtons[0].setEnabled(def_mo['size_1x1'] != mo['size_1x1'])
                     self.aaButtons[1].setEnabled(def_mo['size_2x2'] != mo['size_2x2'])
@@ -2524,6 +2527,7 @@ class ProjectTab(QWidget):
             self.bSWIM.show()
             self.bSaveSettings.show()
             self.bSaveAllSettings.show()
+            self.checkboxes.show()
             ss = self.dm['stack'][self.dm.zpos]['levels'][self.dm.scale]['swim_settings']
             if self.dm.current_method == 'grid':
                 # self.swMethod.setCurrentIndex(0)
@@ -2568,13 +2572,22 @@ class ProjectTab(QWidget):
 
             self.bTransform.setEnabled(self.dm.is_aligned())
             # self.bSWIM.setEnabled(self.dm.is_aligned() and not os.path.exists(self.dm.path_aligned()))
-            _current_saved = self.dm.ssSavedComports()
-            _has_alignment_result = self.dm.ht.haskey(self.dm.swim_settings())
-            self.bSaveSettings.setEnabled(not _current_saved and _has_alignment_result) #Critical
 
-            _all_saved = len(self.dm.ssSavedComportsIndexes()) == 0
 
-            self.bSaveAllSettings.setEnabled(not _all_saved)
+            # _current_saved = self.dm.ssSavedComports()
+            # _has_alignment_result = self.dm.ht.haskey(self.dm.swim_settings())
+            # self.bSaveSettings.setEnabled(not _current_saved and _has_alignment_result) #Critical
+
+            # _known_unsaved_indexes = self.dm.knownAnswerUnsavedIndexes()
+            # _n_known_unsaved = len(_known_unsaved_indexes)
+            # _all_consistent = _n_known_unsaved == 0
+            #
+            # if _all_consistent:
+            #     self.bSaveAllSettings.setText("Save All")
+            # else:
+            #     self.bSaveAllSettings.setText(f"Save All ({_n_known_unsaved})")
+            #
+            # self.bSaveAllSettings.setEnabled(not _all_consistent)
 
             self.leWhitening.setText(str(ss['whitening']))
             self.leIterations.setText(str(ss['iterations']))
@@ -2844,7 +2857,7 @@ class ProjectTab(QWidget):
     def slotUpdateZoomSlider(self):
         # Lets only care about REF <--> wSlider
         caller = inspect.stack()[1].function
-        logger.critical(f'[{caller}]')
+        logger.info(f'[{caller}]')
         try:
             if self.dm['state']['current_tab'] == 1:
                 val = self.editorViewer.state.cross_section_scale

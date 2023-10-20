@@ -1852,6 +1852,18 @@ class DataModel:
         return indexes
 
 
+    def knownAnswerUnsavedIndexes(self, s=None):
+        if s == None: s = self.level
+        indexes = []
+        for i in range(len(self)):
+            if self.ht.haskey(self.swim_settings(s=s, l=i)) and not self.ssSavedComports(s=s, l=i):
+                indexes.append(i)
+        return indexes
+
+
+
+
+
     def zarrCafmHashComports(self, s=None, l=None):
         if s == None: s = self.level
         if l == None: l = self.zpos
@@ -2448,15 +2460,15 @@ class DataModel:
             )
 
 
-        for i in range(len(self)):
-            self['stack'][i]['levels'][level]['saved_swim_settings'].update(
-                copy.deepcopy(swim_presets),
-                method_opts=copy.deepcopy(method_presets[level]['grid']),
-            )
-            self['stack'][i]['levels'][level]['swim_settings'].update(
-                copy.deepcopy(swim_presets),
-                method_opts=copy.deepcopy(method_presets[level]['grid']),
-            )
+            for i in range(len(self)):
+                self['stack'][i]['levels'][level]['saved_swim_settings'].update(
+                    copy.deepcopy(swim_presets),
+                    method_opts=copy.deepcopy(method_presets[level]['grid']),
+                )
+                self['stack'][i]['levels'][level]['swim_settings'].update(
+                    copy.deepcopy(swim_presets),
+                    method_opts=copy.deepcopy(method_presets[level]['grid']),
+                )
 
 
     def setZarrMade(self, b, s=None):
