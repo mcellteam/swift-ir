@@ -1795,7 +1795,6 @@ class DataModel:
 
     def saveAllSettings(self, s=None):
         if s == None: s = self.level
-        if l == None: l = self.zpos
         #Todo #Critical perform checks to see what can actually be saved, i.e. have an affine for
         for i in range(len(self)):
             self.saveSettings(s=s, l=i, signal=False)

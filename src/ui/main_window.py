@@ -19,7 +19,6 @@ from math import floor
 import multiprocessing
 import subprocess
 from collections import OrderedDict
-# from guppy import hpy; h=hpy()
 import neuroglancer as ng
 import qtawesome as qta
 # from rechunker import rechunk
@@ -28,29 +27,12 @@ from qtpy.QtWebEngineWidgets import *
 from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
-
-# from qtpy.QtCore import Qt, QThread, QThreadPool, QEvent, Slot, Signal, QSize, QUrl,  QTimer, QPoint, QRectF, \
-#     QSettings, QObject, QFileInfo, QMutex
-# from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QFont, \
-#     QKeySequence, QMovie, QStandardItemModel, QColor, QCursor, QImage, QPainterPath, QRegion, QPainter
-# from qtpy.QtWidgets import QApplication, qApp, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
-#     QStackedWidget, QGridLayout, QInputDialog, QLineEdit, QPushButton, QMessageBox, \
-#     QComboBox, QSplitter, QTreeView, QHeaderView, QAction, QActionGroup, QProgressBar, \
-#     QShortcut, QGraphicsOpacityEffect, QCheckBox, QSpinBox, QDoubleSpinBox, QRadioButton, QSlider, \
-#     QDesktopWidget, QTextEdit, QToolBar, QListWidget, QMenu, QMenuBar, QTableView, QTabWidget, QStatusBar, QTextBrowser, \
-#     QFormLayout, QGroupBox, QScrollArea, QToolButton, QWidgetAction, QSpacerItem, QButtonGroup, QAbstractButton, \
-#     QApplication, QPlainTextEdit, QTableWidget, QTableWidgetItem, QDockWidget, QMdiArea, QMdiSubWindow
-# import pyqtgraph.examples
-# print('mainwindow:Importing local modules...')
 import src.config as cfg
 import src.resources.icons_rc
 import src.shaders
-# from src.data_model import DataModel
-# from src.generate_scales import GenerateScales
 from src.helpers import getData, setData, print_exception, get_scale_val, \
     tracemalloc_start, tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, \
-    exist_aligned_zarr, isNeuroglancerRunning, \
-    update_preferences_model, is_mac, hotkey, make_affine_widget_HTML, \
+    isNeuroglancerRunning, update_preferences_model, is_mac, hotkey, make_affine_widget_HTML, \
     is_joel, is_tacc, run_command, check_macos_isdark_theme, countcalls
 from src.ui.dialogs import export_affines_dialog, ExitAppDialog
 from src.ui.process_monitor import HeadupDisplay
@@ -174,12 +156,6 @@ class MainWindow(QMainWindow):
         self.initEditorStats()
         self.initToolbar()
         self.initUI()
-
-        # QThreadPool.globalInstance().setMaxThreadCount(1)
-
-        # self.initMenu()
-        # self.initShortcuts()
-
         self.activateWindow()
 
         # self.tell('To Relaunch on Lonestar6:\n\n  source $WORK/swift-ir/tacc_boostrap\n')
@@ -195,16 +171,6 @@ class MainWindow(QMainWindow):
         # if not self.preferences.value("windowState") == None:
         #     self.restoreState(self.preferences.value("windowState"))
 
-        # QApplication.setFont(QFont("Calibri"))
-        # self.font = QFont("Tahoma")
-        # self.app.setFont(self.font)
-
-        # self.setFocusPolicy(Qt.StrongFocus)#1019-
-
-        # QApplication.processEvents()
-        # self.resizeThings()
-
-        # self.setWindowFlags(Qt.FramelessWindowHint)
         self.setCorner(Qt.BottomRightCorner, Qt.RightDockWidgetArea )
         self.setDockNestingEnabled(True)
 
@@ -922,7 +888,6 @@ class MainWindow(QMainWindow):
     # def regenerateOne(self):
     #     self.regenerateAll(scale=self.dm.level, indexes=[self.dm.zpos])
 
-
     def regenerateAll(self, scale=None, indexes=None, ignore_bb=True) -> None:
         '''Note: For now this will always reallocate Zarr, i.e. expects arguments for full stack'''
         logger.info(f'scale: {scale}')
@@ -932,7 +897,6 @@ class MainWindow(QMainWindow):
         if indexes == None: indexes = list(range(0,len(self.dm)))
         # self.align(scale=scale, indexes=indexes, align=False, regenerate=True, ignore_bb=ignore_bb)
         self.align(dm=self.dm, indexes=indexes, _ignore_cache=True)
-
 
     def verify_alignment_readiness(self) -> bool:
         # logger.critical('')
