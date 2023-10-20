@@ -1008,7 +1008,7 @@ class MainWindow(QMainWindow):
                 if self.pt.wTabs.currentIndex() == 1:
                     self.pt.gifPlayer.set()
                 self.setdw_snr(True)  # Also initializes
-                self.setdw_matches(True)
+                # self.setdw_matches(True) #1019-
                 if self.pt.wTabs.currentIndex() == 2:
                     self.pt.snr_plot.initSnrPlot()
 
