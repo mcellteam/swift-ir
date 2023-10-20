@@ -232,7 +232,7 @@ class MainWindow(QMainWindow):
         self.tabChanged.connect(self.stopPlaybackTimer)
 
         self.scaleChanged.connect(self.stopPlaybackTimer)
-        self.scaleChanged.connect(self._refresh)
+        self.scaleChanged.connect(lambda: self._refresh(silently=True))
 
 
     def initSizeAndPos(self, width, height):
