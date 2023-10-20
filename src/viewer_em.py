@@ -52,6 +52,11 @@ logger.propagate = False
 DEV = is_joel()
 
 class WorkerSignals(QObject):
+    arrowLeft = Signal()
+    arrowRight = Signal()
+    arrowUp = Signal()
+    arrowDown = Signal()
+
     result = Signal(str)
     stateChanged = Signal()
     layoutChanged = Signal()
@@ -67,6 +72,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
         super().__init__(**kwargs)
         self.signals = WorkerSignals()
         self.webengine = webengine
+        self.webengine.setMouseTracking(True)
         self.name = name
         self.cs_scale = None
         self.created = datetime.datetime.now()
@@ -85,6 +91,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
         self.rev_mapping = {'yz': 'xy', 'xy': 'yz', 'xz': 'xz', 'yz-3d': 'xy-3d', 'xy-3d': 'yz-3d',
                        'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
 
+        self.webengine.setFocus()
 
     def __repr__(self):
         # return copy.deepcopy(self.state)
@@ -95,6 +102,22 @@ class AbstractEMViewer(neuroglancer.Viewer):
             logger.warning('__del__ called on %s by %s (created: %s)'% (self.type, inspect.stack()[1].function, self.created))
         except:
             logger.warning('__del__ called on %s (created: %s)' %(self.type, self.created))
+
+    def _onKeyLeft(self, s):
+        logger.warning("Native arrow LEFT keybinding intercepted!")
+        self.signals.arrowLeft.emit()
+
+    def _onKeyRight(self, s):
+        logger.warning("Native arrow RIGHT keybinding intercepted!")
+        self.signals.arrowRight.emit()
+
+    def _onKeyUp(self, s):
+        logger.warning("Native arrow UP keybinding intercepted!")
+        self.signals.arrowUp.emit()
+
+    def _onKeyDown(self, s):
+        logger.warning("Native arrow DOWN keybinding intercepted!")
+        self.signals.arrowDown.emit()
 
     @abc.abstractmethod
     def initViewer(self):
@@ -444,14 +467,10 @@ class EMViewer(AbstractEMViewer):
         self.path = path
         self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
         self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
-
         self.tensor = None
-
         self.type = 'EMViewer'
         self.initViewer()
-
         # asyncio.ensure_future(self.initViewer())
-
 
     # async def initViewer(self, nglayout=None):
     def initViewer(self, nglayout=None):
@@ -566,8 +585,17 @@ class EMViewer(AbstractEMViewer):
                 else:
                     s.crossSectionBackgroundColor = '#808080'
 
+        self.actions.add('keyLeft', self._onKeyLeft)
+        self.actions.add('keyRight', self._onKeyRight)
+        self.actions.add('keyUp', self._onKeyUp)
+        self.actions.add('keyDown', self._onKeyDown)
+
 
         with self.config_state.txn() as s:
+            s.input_event_bindings.slice_view['arrowleft'] = 'keyLeft'
+            s.input_event_bindings.slice_view['arrowright'] = 'keyRight'
+            s.input_event_bindings.slice_view['arrowup'] = 'keyUp'
+            s.input_event_bindings.slice_view['arrowdown'] = 'keyDown'
             s.show_ui_controls = getData('state,neuroglancer,show_controls')
             s.show_panel_borders = False
             s.show_layer_panel = False
@@ -593,6 +621,8 @@ class EMViewer(AbstractEMViewer):
             if round(val, 3) != round(getData('state,neuroglancer,zoom'), 3):
                 setData('state,neuroglancer,zoom', val)
                 self.signals.zoomChanged.emit(val)
+
+
 
 
 
@@ -691,7 +721,6 @@ class PMViewer(AbstractEMViewer):
         # self.shared_state.add_changed_callback(self.on_state_changed)
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
         self.type = 'PMViewer'
-        self._example_path = example_zarr()
 
 
     def initViewer(self, path_l=None, path_r=None):
@@ -779,8 +808,16 @@ class PMViewer(AbstractEMViewer):
                 ng.LayerGroupViewer(layout='yz', layers=['layer1'],),
             ])
 
-        logger.info('Configuring layers...')
+        self.actions.add('keyLeft', self._left)
+        self.actions.add('keyRight', self._right)
+        self.actions.add('keyUp', self._onKeyUp)
+        self.actions.add('keyDown', self._onKeyDown)
+
         with self.config_state.txn() as s:
+            s.input_event_bindings.slice_view['arrowleft'] = 'keyLeft'
+            s.input_event_bindings.slice_view['arrowright'] = 'keyRight'
+            s.input_event_bindings.slice_view['arrowup'] = 'keyUp'
+            s.input_event_bindings.slice_view['arrowdown'] = 'keyDown'
             # s.status_messages['message'] = ''
             s.show_ui_controls = False
             # s.show_ui_controls = True
@@ -796,6 +833,18 @@ class PMViewer(AbstractEMViewer):
 
         logger.info('Setting URL...')
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
+
+    def _left(self, s):
+        logger.info('')
+        with self.txn() as s:
+            vc = s.voxel_coordinates
+            vc[0] = max(vc[0] - 1, 0)
+
+    def _right(self, s):
+        logger.info('')
+        with self.txn() as s:
+            vc = s.voxel_coordinates
+            vc[0] = min(vc[0] + 1, self.tensor.shape[0])
 
 
 

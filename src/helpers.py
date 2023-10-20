@@ -51,7 +51,8 @@ __all__ = ['dt', 'is_tacc', 'is_linux', 'is_mac', 'create_paged_tiff', 'check_fo
            'get_scale_key', 'get_scale_val', 'print_project_tree',
            'verify_image_file', 'exist_aligned_zarr', 'get_scales_with_generated_alignments', 'handleError',
            'count_widgets', 'find_allocated_widgets', 'absFilePaths', 'validate_file', 'hotkey',
-           'caller_name','addLoggingLevel', 'sanitizeSavedPaths', 'recursive_key_values', 'check_macos_isdark_theme'
+           'caller_name','addLoggingLevel', 'sanitizeSavedPaths', 'recursive_key_values', 'check_macos_isdark_theme',
+           'countcalls'
            ]
 
 logger = logging.getLogger(__name__)
@@ -1209,6 +1210,24 @@ def file_hash(file_path):
             sha256.update(data)
 
     return sha256.hexdigest()
+
+
+class countcalls:
+    """
+    A decorator that will count and print how many times the decorated function was called
+    """
+
+    def __init__(self, inline_func):
+        self.call_count = 0
+        self.inline_func = inline_func
+
+    def __call__(self, *args, **kwargs):
+        self.call_count += 1
+        self._print_call_count()
+        return self.inline_func(*args, **kwargs)
+
+    def _print_call_count(self):
+        print(f"The {self.inline_func.__name__} called {self.call_count} times")
 
 
 # def load():

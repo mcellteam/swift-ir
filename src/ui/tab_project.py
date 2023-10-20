@@ -35,18 +35,18 @@ DEV = is_joel()
 
 class ProjectTab(QWidget):
 
-    def __init__(self,
-                 parent,
-                 path=None,
-                 datamodel=None):
+    def __init__(self, parent, dm=None):
         super().__init__(parent)
-        logger.info(f'Initializing Project Tab...\nID(datamodel): {id(datamodel)}, Path: {path}')
+        logger.info('Initializing ProjectTab...')
         # self.signals = Signals()
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.parent = parent
-        self.path = path
         self.viewer = None
-        self.datamodel = self.dm = datamodel
+        self.dm = self.parent.dm = cfg.data = dm
+        self.parent.pt = cfg.pt = self
+        # self.path = path
+        self.path = self.dm.data_location
+        setData('state,neuroglancer,layout', ('xy', '4panel')[self.dm.is_zarr_generated()])
         self.setUpdatesEnabled(True)
         # self.webengine = QWebEngineView()
         self.webengine = WebEngine(ID='emViewer')
@@ -58,6 +58,7 @@ class ProjectTab(QWidget):
         self.webengine.setMouseTracking(True)
         self.focusedViewer = None
         # self.setAutoFillBackground(True)
+        self._initNG_calls = 0
         self.indexConfigure = 0
         self.wTable = QWidget()
         self.wTreeview = QWidget()
@@ -75,10 +76,18 @@ class ProjectTab(QWidget):
         self._allow_zoom_change = True
         self.oldPos = None
         self.blinkCur = 0
-        # self.initNeuroglancer(init_all=True)
         self.dm.signals.zposChanged.connect(self.parent.updateSlidrZpos)
         self.dm.signals.zposChanged.connect(self.parent.setSignalsPixmaps)
         self.dm.signals.zposChanged.connect(self.parent.setTargKargPixmaps)
+
+        self.dm.signals.savedChanged.connect(self.parent.setStatusInfo)
+        self.dm.signals.dataChanged.connect(self.parent.setStatusInfo)
+
+        self.dm.signals.savedChanged.connect(self.parent.updateAlignAllButtonText)
+        self.dm.signals.dataChanged.connect(self.parent.updateAlignAllButtonText)
+
+
+
 
         self.dm.signals.dataChanged.connect(self.updateAaButtons)
         self.dm.signals.dataChanged.connect(lambda: self.cbDefaults.setChecked(self.dm.isDefaults()))
@@ -91,11 +100,15 @@ class ProjectTab(QWidget):
 
         self.dataUpdateMA()
 
+        self.installEventFilter(self)
 
-    # def _updateSaveButton(self):
-    #     # Todo this would be faster as a dictionary lookup
-    #     # self.bSaveSettings.setEnabled((not self.dm.ssSavedComports()) and os.path.exists(self.dm.dir_matches()))
-    #     self.bSaveSettings.setEnabled(not self.dm.ssSavedComports())
+
+        self.parent.addGlobTab(self, self.dm.title, switch_to=True)
+
+    def keyPressEvent(self, event):
+        super(ProjectTab, self).keyPressEvent(event)
+        key = event.key()
+        print(f'Project Tab:\n{key} ({event.text()} / {event.nativeVirtualKey()} / modifiers: {event.nativeModifiers()}) was pressed!')
 
 
     def updateAaButtons(self):
@@ -122,8 +135,7 @@ class ProjectTab(QWidget):
                     print_exception()
 
     def load_data_from_treeview(self):
-        self.datamodel = DataModel(self.treeview_model.to_json())
-        self.dm = self.datamodel
+        self.dm = DataModel(self.treeview_model.to_json())
 
     def initGif(self):
         self.gifPlayer = GifPlayer(dm=self.dm)
@@ -134,19 +146,22 @@ class ProjectTab(QWidget):
 
 
     def _onTabChange(self):
-        logger.info('')
+        caller = inspect.stack()[1].function
+        logger.info(f"[{caller}]")
         # QApplication.restoreOverrideCursor()
-        self.datamodel['state']['blink'] = False
+        self.dm['state']['blink'] = False
         index = self.wTabs.currentIndex()
         self.dm['state']['current_tab'] = index
         # self.gifPlayer.stop()
         if index == 0:
+            self.parent.viewer = self.viewer
             # self.parent.setdw_thumbs(True)
             # self.parent.setdw_matches(False)
             pass
         elif index == 1:
             # self.parent.setdw_thumbs(False) #BEFORE init neuroglancer
             # self.parent.setdw_matches(True) #BEFORE init neuroglancer
+
             self.cmbViewerScale.setCurrentIndex(self.dm.levels.index(self.dm.level))
             self.initNeuroglancer() #Todo necessary for now
             self.set_transforming() #0802+
@@ -154,6 +169,7 @@ class ProjectTab(QWidget):
             self.gifPlayer.set()
             # if self.dm.is_aligned():
             #     self.gifPlayer.start()
+            self.parent.viewer = self.editorViewer
         elif index == 2:
             self.snr_plot.initSnrPlot()
         elif index == 3:
@@ -167,9 +183,9 @@ class ProjectTab(QWidget):
 
     # def _refresh(self, index=None):
     def refreshTab(self):
-        logger.info('')
+        logger.info(f'[{inspect.stack()[1].function}]')
         index = self.wTabs.currentIndex()
-        self.datamodel['state']['blink'] = False
+        self.dm['state']['blink'] = False
         # self.matchPlayTimer.stop()
         if index == 0:
             self.shutdownNeuroglancer()
@@ -213,34 +229,40 @@ class ProjectTab(QWidget):
     def initNeuroglancer(self, init_all=False):
         caller = inspect.stack()[1].function
 
+        self._initNG_calls += 1
+        logger.critical(f"[call # {self._initNG_calls}, {caller}] Initializing Neuroglancer...")
+
         if self.parent._working:
             logger.warning(f"[{caller}] UNABLE TO INITIALIZE NEUROGLANCER AT THIS TIME... BUSY WORKING!")
             return
 
-        # self.parent.set_status('Initializing Neuroglancer...')
-        # if DEV:
-        #     logger.critical(f"[DEV][{caller_name()}] Initializing Neuroglancer...")
-
         if self.parent._isOpenProjTab():
+            logger.critical("Initializing PM viewer...")
             # self.parent.pm.updateCombos()
-            self.parent.pm.viewer = cfg.pmViewer = PMViewer(webengine=self.parent.pm.webengine)
+            self.parent.pm.viewer = self.parent.viewer = PMViewer(webengine=self.parent.pm.webengine)
             if self.parent.pm.cmbSelectImages.count() > 0:
                 self.parent.pm.viewer.initViewer()
+
         else:
 
             self.lNotAligned.setVisible(self.dm.is_aligned())
 
             if self.wTabs.currentIndex() == 1 or init_all:
-                # self.MA_webengine_ref.setUrl(QUrl("http://localhost:8888/"))
                 # self.editorWebengine.setUrl(QUrl("http://localhost:8888/"))
                 # level = self.dm.levels[self.cmbViewerScale.currentIndex()]
-                level = self.dm['state']['viewer_quality']
+                # level = self.dm['state']['viewer_quality']
                 # self.editorViewer = cfg.editorViewer = MAViewer(parent=self, dm=self.dm, role='tra', quality=level, webengine=self.editorWebengine)
-                self.editorViewer = cfg.editorViewer = MAViewer(parent=self, dm=self.dm, role='tra', webengine=self.editorWebengine)
+                self.editorViewer = self.parent.viewer = MAViewer(parent=self, dm=self.dm, role='tra',
+                                                                  webengine=self.editorWebengine)
                 self.editorViewer.signals.badStateChange.connect(self.set_transforming)
                 self.editorViewer.signals.ptsChanged.connect(self._updatePointLists)
+                self.editorViewer.signals.toggleView.connect(self.toggle_ref_tra)
                 # self.editorViewer.signals.ptsChanged.connect(self.updateWarnings)
                 self.editorViewer.signals.zVoxelCoordChanged.connect(lambda zpos: setattr(self.dm, 'zpos', zpos))
+                self.editorViewer.signals.arrowLeft.connect(self.parent.layer_left)
+                self.editorViewer.signals.arrowRight.connect(self.parent.layer_right)
+                self.editorViewer.signals.arrowUp.connect(self.parent.incrementZoomIn)
+                self.editorViewer.signals.arrowDown.connect(self.parent.incrementZoomOut)
                 # self.editorViewer.signals.swimAction.connect(self.parent.alignOne)
                 # self.editorViewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314
                 # self.editorViewer.signals.zoomChanged.connect(lambda: logger.critical(f"Zoom Slider: {self.zoomSlider.value()} / CS Scale: {self.editorViewer.state.cross_section_scale}"))  # 0314
@@ -255,7 +277,7 @@ class ProjectTab(QWidget):
 
                 try:
                     cur_zoom = self.editorViewer.state.cross_section_scale
-                    logger.critical(f"current zoom: {cur_zoom}")
+                    # logger.info(f"current zoom: {cur_zoom}")
                     self.zoomSlider.setValue(cur_zoom)
                 except:
                     print_exception()
@@ -270,6 +292,10 @@ class ProjectTab(QWidget):
                 self.viewer.initZoom(self.webengine.width(), self.webengine.height())
                 # self.viewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314 #Todo
                 self.viewer.signals.layoutChanged.connect(self.slot_layout_changed)
+                self.viewer.signals.arrowLeft.connect(self.parent.layer_left)
+                self.viewer.signals.arrowRight.connect(self.parent.layer_right)
+                self.viewer.signals.arrowUp.connect(self.parent.incrementZoomIn)
+                self.viewer.signals.arrowDown.connect(self.parent.incrementZoomOut)
                 # self.viewer.signals.zoomChanged.connect(self.slot_zoom_changed)
                 # logger.info(f"Local Volume:\n{cfg.LV.info()}")
 
@@ -537,12 +563,12 @@ class ProjectTab(QWidget):
         self.bClearTraSelections.setFixedHeight(14)
         self.bClearTraSelections.clicked.connect(self.deleteAllMpBase)
 
-        self.bClearAllSelections = QPushButton('Clear All')
-        self.bClearAllSelections.setFocusPolicy(Qt.NoFocus)
-        self.bClearAllSelections.setFixedHeight(16)
-        self.bClearAllSelections.setToolTip('Clear All Selections')
-        # self.bClearAllSelections.setFixedSize(QSize(48, 14))
-        self.bClearAllSelections.clicked.connect(self.deleteAllMp)
+        # self.bClearAllSelections = QPushButton('Clear All')
+        # self.bClearAllSelections.setFocusPolicy(Qt.NoFocus)
+        # self.bClearAllSelections.setFixedHeight(16)
+        # self.bClearAllSelections.setToolTip('Clear All Selections')
+        # # self.bClearAllSelections.setFixedSize(QSize(48, 14))
+        # self.bClearAllSelections.clicked.connect(self.deleteAllMp)
 
 
         # self.baseNextColorWidget = HW(self.lab_tra, self.lab_nextcolor0,
@@ -572,10 +598,13 @@ class ProjectTab(QWidget):
         vw = VW(lab, self.automatic_label)
         vw.layout.setSpacing(0)
 
+        tip = "Save settings for current section"
+        tip = '\n'.join(textwrap.wrap(tip, width=35))
         self.bSaveSettings = QPushButton('Save')
+        self.bSaveSettings.setToolTip(tip)
         self.bSaveSettings.setFocusPolicy(Qt.NoFocus)
         self.bSaveSettings.setFixedHeight(16)
-        def fn_bSaveSettings():
+        def _save():
             logger.info('')
             self.dm.saveSettings()
             self.parent._autosave(silently=True)  # Critical, as the key will be assumed to exist
@@ -583,11 +612,26 @@ class ProjectTab(QWidget):
             if self.parent.dwSnr.isVisible():
                 self.dSnr_plot.initSnrPlot()
             self.parent.dataUpdateWidgets()
+        self.bSaveSettings.clicked.connect(_save)
 
-        self.bSaveSettings.clicked.connect(fn_bSaveSettings)
-        tip = "Todo: add tool tip"
+        tip = "Save settings for all sections"
         tip = '\n'.join(textwrap.wrap(tip, width=35))
-        self.bSaveSettings.setToolTip(tip)
+        self.bSaveAllSettings = QPushButton('Save All')
+        self.bSaveAllSettings.setToolTip(tip)
+        self.bSaveAllSettings.setFocusPolicy(Qt.NoFocus)
+        self.bSaveAllSettings.setFixedHeight(16)
+
+        def _saveAll():
+            logger.info('')
+            self.dm.saveAllSettings()
+            self.parent._autosave(silently=True)  # Critical, as the key will be assumed to exist
+            # self.dataUpdateMA()
+            if self.parent.dwSnr.isVisible():
+                self.dSnr_plot.initSnrPlot()
+            self.parent.dataUpdateWidgets()
+        self.bSaveAllSettings.clicked.connect(_saveAll)
+        self.bSaveAllSettings.setEnabled(False)
+
 
         # self.bRevertSettings = QPushButton('Revert Settings')
         # self.bRevertSettings.setFocusPolicy(Qt.NoFocus)
@@ -637,7 +681,8 @@ class ProjectTab(QWidget):
         tip = "Perform a SWIM alignment + generate the resulting aligned image"
         tip = '\n'.join(textwrap.wrap(tip, width=35))
         # self.bSWIM = QPushButton('Align (Affine, Match Signals, SNR)')
-        self.bSWIM = QPushButton('Align')
+        # self.bSWIM = QPushButton('Align')
+        self.bSWIM = QPushButton('Apply')
         # self.bSWIM.setStyleSheet("font-size: 10px; background-color: #9fdf9f;")
         self.bSWIM.setToolTip(tip)
         self.bSWIM.setFixedHeight(16)
@@ -712,8 +757,6 @@ class ProjectTab(QWidget):
         self.MA_sbw = HW(self.lw_gb_l, self.labSlash, self.lw_gb_r)
         self.MA_sbw.setStyleSheet("QGroupBox{padding: 4px;}")
         self.MA_sbw.layout.setSpacing(0)
-        # self.msg_MAinstruct = YellowTextLabel("⇧ + Click - Select 3 corresponding points")
-        # self.msg_MAinstruct.setFixedSize(266, 20)
 
         self.gb_stageInfoText = QGroupBox()
         vbl = VBL()
@@ -897,7 +940,6 @@ class ProjectTab(QWidget):
                 self.parent.setTargKargPixmaps()
                 if self.parent.dwSnr.isVisible():
                     self.dSnr_plot.initSnrPlot()
-                self.parent.statusBar.showMessage(f'Manual alignment option now set to: {self.dm.current_method}')
 
         self.rb_MA_hint = QRadioButton('Match Regions')
         self.rb_MA_strict = QRadioButton('Match Points')
@@ -1048,16 +1090,10 @@ class ProjectTab(QWidget):
             caller = inspect.stack()[1].function
             if caller == 'main':
                 if self.cbSaved.isChecked():
-                    logger.info('Updating displayed data to match saved SWIM preferences...')
-                    # ss = self.dm.swim_settings()
-                    self.dm['stack'][self.dm.zpos]['levels'][self.dm.scale]['swim_settings'].update(
-                        copy.deepcopy(self.dm.saved_swim_settings()))
-                else:
-                    self.cbSaved.setChecked(self.dm.ssHash() == self.dm.ssSavedHash())
+                    self.dm.restoreSavedSettings()
+                    self.parent.tell(f'Saved settings restored at index {self.dm.zpos}')
                 self.dataUpdateMA()
-
         self.cbSaved.toggled.connect(fn_cbSaved)
-
 
         self.cbIgnoreCache = QCheckBox('Ignore cache')
         self.cbIgnoreCache.setFocusPolicy(Qt.NoFocus)
@@ -1088,6 +1124,14 @@ class ProjectTab(QWidget):
         self.aaButtons[3].clicked.connect(lambda: self.dm.aaWhitening(float(self.leWhitening.text())))
         self.aaButtons[4].clicked.connect(lambda: self.dm.aaClobber((self.cbClobber.isChecked(), int(self.leClobber.text()))))
         self.aaButtons[5].clicked.connect(lambda: self.dm.aaQuadrants([self.Q1.isClicked, self.Q2.isClicked,self.Q3.isClicked, self.Q4.isClicked]))
+
+        self.aaButtons[0].clicked.connect(self.parent.alignAll)
+        self.aaButtons[1].clicked.connect(self.parent.alignAll)
+        self.aaButtons[2].clicked.connect(self.parent.alignAll)
+        self.aaButtons[3].clicked.connect(self.parent.alignAll)
+        self.aaButtons[4].clicked.connect(self.parent.alignAll)
+        self.aaButtons[5].clicked.connect(self.parent.alignAll)
+
         for b in self.aaButtons:
             b.clicked.connect(self.dataUpdateMA)
 
@@ -1138,23 +1182,14 @@ class ProjectTab(QWidget):
                 logger.info('')
                 l = self.dm.zpos
                 s = self.dm.scale
-                cur_tab = self.twMethod.currentIndex()
-                if cur_tab == 0:
-                    # self.swMethod.setCurrentIndex(0)
-                    # mo = self.dm['level_data'][s]['method_presets']['grid']
-                    mo = self.dm['level_data'][self.dm.level]['defaults']['method_opts']
+                if self.twMethod.currentIndex() == 0:
+                    mo = self.dm['level_data'][s]['defaults']['method_opts'] #Todo why is this
                     self.dm['stack'][l]['levels'][s]['swim_settings']['method_opts'] = copy.deepcopy(mo)
-                elif cur_tab == 1:
-                    # self.swMethod.setCurrentIndex(1)
-                    mo = self.dm['level_data'][s]['method_presets']['manual']
+                elif self.twMethod.currentIndex() == 1:
+                    mo = self.dm['level_data'][s]['method_presets']['manual']  # Todo ...not similar to this
                     self.dm['stack'][l]['levels'][s]['swim_settings']['method_opts'] = copy.deepcopy(mo)
-                    #Todo
-                    if self.dm.current_method == 'manual_strict':
-                        self.rb_MA_strict.setChecked(True)
-                    else:
-                        self.rb_MA_hint.setChecked(True)
-                    self.editorWebengine.setFocus()
-                self.parent.dataUpdateWidgets()
+                # self.parent.dataUpdateWidgets() #1019-
+                self.editorViewer.drawSWIMwindow()  # 1019+
                 self.editorWebengine.setFocus()
 
         self.gbGrid = QGroupBox("Grid Alignment Settings")
@@ -1168,7 +1203,7 @@ class ProjectTab(QWidget):
         self.MA_use_global_defaults_lab.setAlignment(Qt.AlignCenter)
 
         self.lab_region_selection = QLabel("Use 1, 2, 3 keys to select 3 matching regions\n"
-                                           "Use / key to toggle transforming and reference sections")
+                                           "Use Spacebar to toggle transforming and reference sections")
         self.lab_region_selection.setStyleSheet("QLabel{padding: 2px;}")
         # self.lab_region_selection = QLabel("")
         # self.lab_region_selection.setStyleSheet("font-size: 10px; font-weight: 600; color: #161c20; padding: 1px;")
@@ -1231,7 +1266,7 @@ class ProjectTab(QWidget):
         self.gbMethodMatch = VW(
             self.lab_region_selection,
             self.MA_sbw,
-            self.bClearAllSelections,
+            # self.bClearAllSelections,
             # self.w_rbs_selection,
             # self.lab_region_selection2,
             self.gbMatch,
@@ -2107,7 +2142,7 @@ class ProjectTab(QWidget):
         self.checkboxes.layout.setSpacing(4)
 
         # self.cpanelEditor = HW(self.bTransform, self.bSWIM, self.bSaveSettings)
-        self.btnsSWIM = VW(HW(self.bSWIM, self.bSaveSettings), self.bPull)
+        self.btnsSWIM = VW(HW(self.bSWIM, self.bSaveSettings, self.bSaveAllSettings), self.bPull)
         self.btnsSWIM.layout.setContentsMargins(2,2,2,2)
         self.btnsSWIM.layout.setSpacing(2)
 
@@ -2197,11 +2232,23 @@ class ProjectTab(QWidget):
             self.dataUpdateMA()
 
 
+
     def set_viewer_role(self, role):
+        logger.info(f'Setting viewer role: {role}...')
         if role == 'ref':
             self.set_reference()
         elif role == 'tra':
             self.set_transforming()
+
+
+    def toggle_ref_tra(self):
+        logger.info('')
+        if self.wTabs.currentIndex() == 1:
+            # _other_role = {'tra': 'ref', 'ref': 'tra'}[self.editorViewer.role]
+            _other_role = ('ref','tra')[self.editorViewer.role == 'ref']
+            self.set_viewer_role(_other_role)
+
+
 
 
     def set_reference(self):
@@ -2214,18 +2261,11 @@ class ProjectTab(QWidget):
         # self._tra_pt_selected = None
         self.editorViewer.role = 'ref'
         self.editorViewer.set_layer()
-        # self.editorViewer._selected_index['ref'] = self.editorViewer.getNextPoint('ref')
-        # self.editorViewer.restoreManAlignPts()
         self._updatePointLists()
         self.cl_ref.setChecked(True)
         self.cl_tra.setChecked(False)
         self.lwReference.setEnabled(True)
         self.lwTransforming.setEnabled(False)
-        # self.bClearTraSelections.setEnabled(False)
-        # self.btn_undoBasePts.setEnabled(False)
-        # self.bClearRefSelections.setEnabled(True)
-        # self.btn_undoRefPts.setEnabled(True)
-        # self.lw_gb_r.setAutoFillBackground(True)
         self.lw_gb_r.setProperty("current", True)
         self.lw_gb_r.style().unpolish(self.lw_gb_r)
         self.lw_gb_l.setProperty("current", False)
@@ -2243,8 +2283,6 @@ class ProjectTab(QWidget):
         self.dm['state']['tra_ref_toggle'] = 'tra'
         self.editorViewer.role = 'tra'
         self.editorViewer.set_layer()
-        # self.editorViewer._selected_index['tra'] = self.editorViewer.getNextPoint('tra')
-        # self.editorViewer.restoreManAlignPts()
         self._updatePointLists()
         self.cl_tra.setChecked(True)
         self.cl_ref.setChecked(False)
@@ -2307,11 +2345,6 @@ class ProjectTab(QWidget):
         logger.info('')
         if 'grid' in self.dm.method():
             self.dm.quadrants = [self.Q1.isClicked, self.Q2.isClicked, self.Q3.isClicked, self.Q4.isClicked]
-        self.editorViewer.drawSWIMwindow()
-
-    def updateAnnotations(self):
-        if DEV:
-            logger.info(f'[DEV] [{caller_name()}] [{self.dm.zpos}] Updating annotations...')
         self.editorViewer.drawSWIMwindow()
 
 
@@ -2426,8 +2459,6 @@ class ProjectTab(QWidget):
 
     def updateCursor(self):
         QApplication.restoreOverrideCursor()
-        # self.msg_MAinstruct.setText("Toggle 'Mode' to select manual correspondence points")
-
         if self.dm['state']['current_tab'] == 1:
             # if self.tgl_alignMethod.isChecked():
             if self.dm.method() in ('manual_hint', 'manual_strict'):
@@ -2461,7 +2492,7 @@ class ProjectTab(QWidget):
 
 
     def updateZarrRadiobuttons(self):
-        logger.info('')
+        # logger.info('')
         isGenerated = self.dm.is_zarr_generated()
         self.parent.bExport.setVisible(self.dm.is_zarr_generated())
         self.gbGrid.setTitle(f'Level {self.dm.lvl()} Grid Alignment Settings')
@@ -2479,18 +2510,10 @@ class ProjectTab(QWidget):
     def dataUpdateMA(self):
         caller = inspect.stack()[1].function
         logger.info(f"[{caller}]")
-        # if DEV:
-        #     logger.critical(f"[DEV] called by {caller_name()}")
-
-        # self.msg_MAinstruct.setVisible(self.dm.current_method not in ('grid-default', 'grid-custom'))
-        # self.gbOutputSettings.setTitle(f'Level {self.dm.lvl()} Output Settings')
-        # self.gbGrid.setTitle(f'Level {self.dm.lvl()} SWIM Settings')
 
         self.parent.bRegenZarr.setEnabled(self.dm.is_aligned())
-        # self.gifPlayer.labNull.setText(('Not Aligned.','No Data.')[self.dm.is_aligned()])
         # self.bPull.setVisible((self.dm.scale != self.dm.coarsest_scale_key()) and self.dm.is_alignable())
         self.bPull.setVisible(self.dm.scale != self.dm.coarsest_scale_key())
-
         self.gifPlayer.radiobuttons.setVisible(os.path.exists(self.dm.path_cafm_gif()))
 
         ready = self.dm['level_data'][self.dm.scale]['alignment_ready']
@@ -2500,13 +2523,13 @@ class ProjectTab(QWidget):
             # self.bPull.setVisible((self.dm.scale != self.dm.coarsest_scale_key()) and self.dm.is_alignable())
             self.bSWIM.show()
             self.bSaveSettings.show()
+            self.bSaveAllSettings.show()
             ss = self.dm['stack'][self.dm.zpos]['levels'][self.dm.scale]['swim_settings']
             if self.dm.current_method == 'grid':
                 # self.swMethod.setCurrentIndex(0)
                 self.twMethod.setCurrentIndex(0)
 
                 siz1x1 = ss['method_opts']['size_1x1']
-                # min_dim = min(self.dm.image_size())
                 min_dim = self.dm.image_size()[0]
                 self.le1x1.setValidator(QIntValidator(128, min_dim))
                 self.le1x1.setText(str(siz1x1[0]))
@@ -2529,13 +2552,9 @@ class ProjectTab(QWidget):
                 # self.swMethod.setCurrentIndex(1)
                 self.twMethod.setCurrentIndex(1)
                 self.swMethod.setCurrentIndex(0)
-                # Todo check swim preferences for manual mode, either 'point' or 'region'
-                if self.dm.current_method == 'manual_strict':
-                    self.rb_MA_strict.setChecked(True)
-                else:
-                    self.rb_MA_hint.setChecked(True)
+                # Todo update with either 'point' or 'region' selection mode
+                # self.rb_MA_hint.setChecked(self.dm.current_method == 'manual_hint')
                 self._updatePointLists()
-
                 img_w, _ = self.dm.image_size()
                 self.leMatch.setValidator(QIntValidator(64, img_w))
                 self.leMatch.setText(str(ss['method_opts']['size']))  # Todo
@@ -2545,11 +2564,17 @@ class ProjectTab(QWidget):
             self.updateAaButtons()
 
             self.cbDefaults.setChecked(self.dm.isDefaults())
-            self.cbSaved.setChecked(self.dm.ssHash() == self.dm.ssSavedHash())
+            self.cbSaved.setChecked(self.dm.ssSavedComports())
 
             self.bTransform.setEnabled(self.dm.is_aligned())
             # self.bSWIM.setEnabled(self.dm.is_aligned() and not os.path.exists(self.dm.path_aligned()))
-            self.bSaveSettings.setEnabled(not self.dm.ssSavedComports() and self.dm.ht.haskey(self.dm.swim_settings())) #Critical
+            _current_saved = self.dm.ssSavedComports()
+            _has_alignment_result = self.dm.ht.haskey(self.dm.swim_settings())
+            self.bSaveSettings.setEnabled(not _current_saved and _has_alignment_result) #Critical
+
+            _all_saved = len(self.dm.ssSavedComportsIndexes()) == 0
+
+            self.bSaveAllSettings.setEnabled(not _all_saved)
 
             self.leWhitening.setText(str(ss['whitening']))
             self.leIterations.setText(str(ss['iterations']))
@@ -2560,19 +2585,16 @@ class ProjectTab(QWidget):
             if self.te_logs.isVisible():
                 self.refreshLogs()
 
-            if hasattr(self,'editorViewer'):
-                try:
-                    self.editorViewer.drawSWIMwindow()
-                except:
-                    print_exception()
+            if self.wTabs.currentIndex() == 1:
+                self.editorViewer.drawSWIMwindow()
 
         else:
             self.swMethod.setCurrentIndex(1)
-            self.swMethod.setCurrentIndex(1)
             self.bSWIM.hide()
             self.bSaveSettings.hide()
+            self.bSaveAllSettings.hide()
             self.checkboxes.hide()
-        self.updateZarrRadiobuttons()
+        self.updateZarrRadiobuttons() #Todo move this
         # if hasattr(self, 'editorViewer'):
         #     self.editorViewer.drawSWIMwindow() #1009+
 
@@ -3059,14 +3081,14 @@ class ProjectTab(QWidget):
             if self.dSnr_plot.isVisible():
                 logger.critical('')
                 self.dSnr_plot.updateLayerLinePos()
-        # self.datamodel.signals.zposChanged.connect(update_dSnr_zpos)
+        # self.dm.signals.zposChanged.connect(update_dSnr_zpos)
 
         #Todo this results in far too many calls for certain widgets. Figure out something better.
         # def reinit_dSnr():
         #     if self.dSnr_plot.isVisible():
         #         logger.info('Signal received! Reinitializing SNR plot dock widget...')
         #         self.dSnr_plot.initSnrPlot()
-        # self.datamodel.signals.dataChanged.connect(reinit_dSnr)
+        # self.dm.signals.dataChanged.connect(reinit_dSnr)
         self.dSnr_plot.setStyleSheet('background-color: #222222; font-weight: 600; font-size: 12px; color: #ede9e8;')
         self.parent.dwSnr.setWidget(self.dSnr_plot)
 
