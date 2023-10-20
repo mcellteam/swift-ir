@@ -69,6 +69,7 @@ class ProjectTab(QWidget):
         self.initUI_JSON()
         self.initUI_plot()
         self.initTabs()
+        self.updateZarrRadiobuttons()
         self.wTabs.currentChanged.connect(self._onTabChange)
         self.manAlignBufferRef = []
         self.manAlignBufferBase = []
@@ -1812,28 +1813,17 @@ class ProjectTab(QWidget):
         self.labZarrSource = QLabel(' Series: ')
         self.labZarrSource.setStyleSheet("font-size: 11px; font-weight: 600; padding: 4px;")
 
-        # .setStyleSheet("color: #f3f6fb; font-size: 10px; background-color: rgba(0, 0, 0, 0.5); border-radius: 4px;")
-        # style = "QRadioButton{font-size: 11px; font-weight: 600; border: 1px solid #339933; " \
-        #         "border-radius: 2px; background-color: #161c20; color: #f3f6fb;} " \
-        #         "QRadioButton:disabled{background-color: grey;} QRadioButton::indicator{width: 12px; height: 12px; color: #339933;}"
-
-
         self.rbZarrRaw = QRadioButton('Raw')
+        self.rbZarrRaw.clicked.connect(lambda: setData('state,neuroglancer,layout','xy'))
         self.rbZarrRaw.clicked.connect(self.initNeuroglancer)
-        # self.rbZarrRaw.setStyleSheet(style)
-
         self.rbZarrTransformed = QRadioButton('Transformed')
+        self.rbZarrTransformed.clicked.connect(lambda: setData('state,neuroglancer,layout', '4panel'))
         self.rbZarrTransformed.clicked.connect(self.initNeuroglancer)
-        # self.rbZarrTransformed.setStyleSheet(style)
 
         self.bgZarrSelect = QButtonGroup()
         self.bgZarrSelect.addButton(self.rbZarrRaw)
         self.bgZarrSelect.addButton(self.rbZarrTransformed)
         self.bgZarrSelect.setExclusive(True)
-
-        # self.rbwZarr = HW(self.rbZarrRaw, self.rbZarrTransformed)
-        # self.rbwZarr.layout.setSpacing(6)
-        # self.rbwZarr.setStyleSheet("font-size: 11px;")
 
         self.toolbarNg = QToolBar()
         self.toolbarNg.setStyleSheet("")
@@ -2511,6 +2501,7 @@ class ProjectTab(QWidget):
             self.rbZarrTransformed.setEnabled(False)
             self.rbZarrRaw.setChecked(True)
 
+
     @Slot()
     def dataUpdateMA(self):
         caller = inspect.stack()[1].function
@@ -2609,7 +2600,6 @@ class ProjectTab(QWidget):
             self.bSaveSettings.hide()
             self.bSaveAllSettings.hide()
             self.checkboxes.hide()
-        self.updateZarrRadiobuttons() #Todo move this
         # if hasattr(self, 'editorViewer'):
         #     self.editorViewer.drawSWIMwindow() #1009+
 

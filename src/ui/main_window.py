@@ -1012,6 +1012,8 @@ class MainWindow(QMainWindow):
                 if self.pt.wTabs.currentIndex() == 2:
                     self.pt.snr_plot.initSnrPlot()
 
+                self.pt.updateZarrRadiobuttons()
+
         self.pt.initNeuroglancer()
 
         dt = time.time() - t0
@@ -1715,6 +1717,7 @@ class MainWindow(QMainWindow):
 
                 self.updateEnabledButtons()
                 self.dataUpdateWidgets()
+                self.pt.updateZarrRadiobuttons()
                 # self.pt.project_table.veil()
 
                 # self.pt.dataUpdateMA() #1019-
