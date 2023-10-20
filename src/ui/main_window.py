@@ -231,7 +231,6 @@ class MainWindow(QMainWindow):
 
         self.tabChanged.connect(self.stopPlaybackTimer)
 
-        self.scaleChanged.connect(self.updateEnabledButtons)
         self.scaleChanged.connect(self.stopPlaybackTimer)
         self.scaleChanged.connect(self._refresh)
 
@@ -1127,7 +1126,7 @@ class MainWindow(QMainWindow):
                 self.dm.pullSettings()
 
         self._saveProjectToFile(silently=True)
-        logger.critical('')
+        # logger.critical('')
         scale = dm.scale
         self.shutdownNeuroglancer()
 
@@ -1189,10 +1188,7 @@ class MainWindow(QMainWindow):
         self._alignworker.finished.connect(lambda: self.wPbar.hide())
         self._alignworker.finished.connect(self.onAlignmentEnd)
         self._alignworker.finished.connect(self.updateEnabledButtons)
-
-        if dm.is_aligned():
-            self._alignworker.finished.connect(lambda: self.present_snr_results(indexes))
-        self._alignworker.finished.connect(lambda: print(self._alignworker.dm))
+        self._alignworker.finished.connect(lambda: self.present_snr_results(indexes))
         self._alignThread.start()  # Step 6: Start the thread
 
 
@@ -1256,22 +1252,42 @@ class MainWindow(QMainWindow):
         
 
     def updateAlignAllButtonText(self):
+        # logger.critical('')
 
-        _is_alignable = self.dm.is_alignable()
-        _count_unknown_answer_indexes = len(self.dm.unknownAnswerIndexes())
-        _enable = _is_alignable and _count_unknown_answer_indexes > 0
-        logger.critical(f'_enable: {_enable} // _is_alignable: {_is_alignable} // _count_unknown_answer_indexes: {_count_unknown_answer_indexes}')
-        if _enable:
-            self.bAlign.setText(f"Apply All ({_count_unknown_answer_indexes})")
-        else:
-            self.bAlign.setText(f"Apply All")
-        self.bAlign.setEnabled(_enable)
+        if self._isProjectTab():
+
+            _is_alignable = self.dm.is_alignable()
+            _count_unknown_answer_indexes = len(self.dm.unknownAnswerIndexes())
+            _enable = _is_alignable and _count_unknown_answer_indexes > 0
+            # logger.info(f'_enable: {_enable} // _is_alignable: {_is_alignable} // _count_unknown_answer_indexes: {_count_unknown_answer_indexes}')
+            if _enable:
+                self.bAlign.setText(f"Apply All ({_count_unknown_answer_indexes})")
+            else:
+                self.bAlign.setText(f"Apply All")
+            self.bAlign.setEnabled(_enable)
+
+
+            _current_saved = self.dm.ssSavedComports()
+            _has_alignment_result = self.dm.ht.haskey(self.dm.swim_settings())
+            self.pt.bSaveSettings.setEnabled(not _current_saved and _has_alignment_result) #Critical
+
+            _known_unsaved_indexes = self.dm.knownAnswerUnsavedIndexes()
+            _n_known_unsaved = len(_known_unsaved_indexes)
+            _all_consistent = _n_known_unsaved == 0
+
+            if _all_consistent:
+                self.pt.bSaveAllSettings.setText("Save All")
+            else:
+                self.pt.bSaveAllSettings.setText(f"Save All ({_n_known_unsaved})")
+
+            self.pt.bSaveAllSettings.setEnabled(not _all_consistent)
 
 
     
     def updateEnabledButtons(self) -> None:
         caller = inspect.stack()[1].function
         logger.info('')
+
         self.wCpanel.hide()
 
         if self._isProjectTab():
@@ -1445,8 +1461,8 @@ class MainWindow(QMainWindow):
                     self.uiUpdateTimer.start()
                     logger.info('Updating UI on timeout...')
 
-            self._uiUpdateCalls += 1
-            logger.critical(f"[call # {self._uiUpdateCalls}, {caller}] Updating UI...")
+            # self._uiUpdateCalls += 1
+            # logger.critical(f"[call # {self._uiUpdateCalls}, {caller}] Updating UI...")
 
             if self.dwThumbs.isVisible():
                 self.pt.tn_tra.set_data(path=self.dm.path_thumb())
@@ -1696,9 +1712,11 @@ class MainWindow(QMainWindow):
                 # self.pt.cmbViewerScale.setCurrentIndex(self.dm.levels.index(self.dm.level))
                 if self.pt.wTabs.currentIndex() == 3:
                     self.pt.project_table.initTableData()
+
+                self.updateEnabledButtons()
+                self.dataUpdateWidgets()
                 # self.pt.project_table.veil()
-                # self.updateEnabledButtons() #1019-
-                # self.dataUpdateWidgets() #1019-
+
                 # self.pt.dataUpdateMA() #1019-
                 # self.pt.refreshTab() #1019-
                 self.scaleChanged.emit()
