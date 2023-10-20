@@ -46,7 +46,6 @@ class ProjectTab(QWidget):
         self.parent.pt = cfg.pt = self
         # self.path = path
         self.path = self.dm.data_location
-        setData('state,neuroglancer,layout', ('xy', '4panel')[self.dm.is_zarr_generated()])
         self.setUpdatesEnabled(True)
         # self.webengine = QWebEngineView()
         self.webengine = WebEngine(ID='emViewer')
@@ -2488,6 +2487,7 @@ class ProjectTab(QWidget):
 
     def updateZarrRadiobuttons(self):
         # logger.info('')
+        setData('state,neuroglancer,layout', ('xy', '4panel')[self.dm.is_zarr_generated()])
         isGenerated = self.dm.is_zarr_generated()
         self.parent.bExport.setVisible(self.dm.is_zarr_generated())
         self.gbGrid.setTitle(f'Level {self.dm.lvl()} Grid Alignment Settings')
