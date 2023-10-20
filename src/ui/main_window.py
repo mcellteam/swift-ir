@@ -1473,16 +1473,16 @@ class MainWindow(QMainWindow):
             elif self.pt.wTabs.currentIndex() == 1:
                 # self.pt.editorViewer.set_layer()
                 self.pt.dataUpdateMA()
-                self.pt.lab_filename.setText(f"[{self.dm.zpos}] Name: {self.dm.name()} - {self.dm.level_pretty()}")
-                self.pt.cl_tra.setText(f'[{self.dm.zpos}] {self.dm.name()} (Transforming)')
-                if self.dm.skipped():
-                    self.pt.cl_tra.setText(f'[{self.dm.zpos}] {self.dm.name()} (Transforming)')
-                    self.pt.cl_ref.setText(f'--')
-                else:
-                    try:
-                        self.pt.cl_ref.setText(f'[{self.dm.get_ref_index()}] {self.dm.name_ref()} (Reference)')
-                    except:
-                        self.pt.cl_ref.setText(f'Null (Reference)')
+                # self.pt.lab_filename.setText(f"[{self.dm.zpos}] Name: {self.dm.name()} - {self.dm.level_pretty()}")
+                # self.pt.cl_tra.setText(f'[{self.dm.zpos}] {self.dm.name()} (Transforming)')
+                # if self.dm.skipped():
+                #     self.pt.cl_tra.setText(f'[{self.dm.zpos}] {self.dm.name()} (Transforming)')
+                #     self.pt.cl_ref.setText(f'--')
+                # else:
+                #     try:
+                #         self.pt.cl_ref.setText(f'[{self.dm.get_ref_index()}] {self.dm.name_ref()} (Reference)')
+                #     except:
+                #         self.pt.cl_ref.setText(f'Null (Reference)')
 
             elif self.pt.wTabs.currentIndex() == 2:
                 self.pt.snr_plot.updateLayerLinePos()
@@ -1675,7 +1675,7 @@ class MainWindow(QMainWindow):
                 if self.dwSnr.isVisible():
                     self.pt.dSnr_plot.initSnrPlot()
 
-                # self.pt.cmbViewerScale.setCurrentIndex(self.dm.levels.index(self.dm.level))
+                # self.pt.cboxViewerScale.setCurrentIndex(self.dm.levels.index(self.dm.level))
                 if self.pt.wTabs.currentIndex() == 3:
                     self.pt.project_table.initTableData()
 
