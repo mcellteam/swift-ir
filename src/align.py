@@ -143,6 +143,7 @@ class AlignWorker(QObject):
             ss['path_gif'] = dm.path_gif(s=scale, l=i)
             ss['wd'] = dm.writeDir(s=scale, l=i)
             ss['solo'] = len(indexes) == 1
+            ss['img_size'] = dm.image_size(s=scale)
             # print(f"path : {ss['path']}")
             # print(f" ref : {ss['path_reference']}")
 

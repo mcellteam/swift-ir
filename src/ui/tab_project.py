@@ -604,32 +604,32 @@ class ProjectTab(QWidget):
         # self.hwPointsLists.setStyleSheet("QGroupBox{padding: 4px;}")
         self.hwPointsLists.layout.setSpacing(0)
 
-        self.bMove = QPushButton('Move')
-        self.bMove.setFixedSize(QSize(36, 16))
-        self.bMove.setFocusPolicy(Qt.NoFocus)
-        self.bMove.clicked.connect(self.onTranslate)
-
-        self.leMoveRight = QLineEdit()
-        self.leMoveRight.returnPressed.connect(self.onTranslate_x)
-        self.leMoveRight.setFixedSize(QSize(36, 16))
-        self.leMoveRight.setValidator(QIntValidator())
-        self.leMoveRight.setText('0')
-        self.leMoveRight.setAlignment(Qt.AlignCenter)
-
-        self.leMoveUp = QLineEdit()
-        self.leMoveUp.returnPressed.connect(self.onTranslate_y)
-        self.leMoveUp.setFixedSize(QSize(36, 16))
-        self.leMoveUp.setValidator(QIntValidator())
-        self.leMoveUp.setText('0')
-        self.leMoveUp.setAlignment(Qt.AlignCenter)
-
-        self.wMovePoints = HW(
-            HW(QLabel('up:'), self.leMoveUp),
-            HW(QLabel('right:'), self.leMoveRight),
-            self.bMove
-        )
-        self.wMovePoints.layout.setSpacing(6)
-        self.wMovePoints.layout.setAlignment(Qt.AlignRight)
+        # self.bMove = QPushButton('Move')
+        # self.bMove.setFixedSize(QSize(36, 16))
+        # self.bMove.setFocusPolicy(Qt.NoFocus)
+        # self.bMove.clicked.connect(self.onTranslate)
+        #
+        # self.leMoveRight = QLineEdit()
+        # self.leMoveRight.returnPressed.connect(self.onTranslate_x)
+        # self.leMoveRight.setFixedSize(QSize(36, 16))
+        # self.leMoveRight.setValidator(QIntValidator())
+        # self.leMoveRight.setText('0')
+        # self.leMoveRight.setAlignment(Qt.AlignCenter)
+        #
+        # self.leMoveUp = QLineEdit()
+        # self.leMoveUp.returnPressed.connect(self.onTranslate_y)
+        # self.leMoveUp.setFixedSize(QSize(36, 16))
+        # self.leMoveUp.setValidator(QIntValidator())
+        # self.leMoveUp.setText('0')
+        # self.leMoveUp.setAlignment(Qt.AlignCenter)
+        #
+        # self.wMovePoints = HW(
+        #     HW(QLabel('up:'), self.leMoveUp),
+        #     HW(QLabel('right:'), self.leMoveRight),
+        #     self.bMove
+        # )
+        # self.wMovePoints.layout.setSpacing(6)
+        # self.wMovePoints.layout.setAlignment(Qt.AlignRight)
 
         """  MA Settings Tab  """
 
@@ -1026,7 +1026,7 @@ class ProjectTab(QWidget):
         self.flManual = QFormLayout()
         self.flManual.setVerticalSpacing(2)
         self.flManual.setContentsMargins(0, 0, 0, 0)
-        self.flManual.addRow("Move Selection:", self.wMovePoints)
+        # self.flManual.addRow("Move Selection:", self.wMovePoints)
         self.flManual.addRow("Window Width:", self.wwWidget)
         self.flManual.addRow("Method:", self.wHintStrictRBs)
 
