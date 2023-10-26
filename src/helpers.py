@@ -47,12 +47,12 @@ except:
     from utils.text_treeview import Treeview
 
 __all__ = ['dt', 'is_tacc', 'is_linux', 'is_mac', 'create_paged_tiff', 'check_for_binaries', 'delete_recursive',
-           'do_scales_exist', 'make_relative', 'make_absolute', 'get_img_filenames', 'print_exception',
+           'make_relative', 'make_absolute', 'get_img_filenames', 'print_exception',
            'get_scale_key', 'get_scale_val', 'print_project_tree',
-           'verify_image_file', 'exist_aligned_zarr', 'get_scales_with_generated_alignments', 'handleError',
+           'verify_image_file', 'exist_aligned_zarr', 'handleError',
            'count_widgets', 'find_allocated_widgets', 'absFilePaths', 'validate_file', 'hotkey',
            'caller_name','addLoggingLevel', 'sanitizeSavedPaths', 'recursive_key_values', 'check_macos_isdark_theme',
-           'countcalls'
+           'countcalls', 'ensure_even'
            ]
 
 logger = logging.getLogger(__name__)
@@ -109,7 +109,7 @@ def setOpt(lookup, val):
 def getData(lookup):
     if isinstance(lookup, str):
         lookup = lookup.split(',')
-    return reduce(operator.getitem, lookup, cfg.data)
+    return reduce(operator.getitem, lookup, cfg.mw.dm)
 
 
 def setData(lookup, val):
@@ -710,32 +710,12 @@ def get_scale_val(s) -> int:
         logger.warning('Unable to return level value')
 
 
-def do_scales_exist() -> bool:
-    '''Checks whether any stacks of scaled images exist'''
-    try:
-        if any(d.startswith('scale_') for d in os.listdir(cfg.data['data']['series_path'])):
-            return True
-        else:
-            return False
-    except:
-        pass
-
-
-def get_scales_with_generated_alignments(scales) -> list:
-    # logger.info('called by %level' % inspect.stack()[1].function)
-    l = []
-    for s in scales:
-        if exist_aligned_zarr(s):
-            l.append(s)
-    return l
-
-
 def exist_aligned_zarr(scale: str) -> bool:
     '''Returns boolean based on whether arg level is aligned '''
     caller = inspect.stack()[1].function
     logger.info('called by %s' % inspect.stack()[1].function)
-    if hasattr(cfg, 'data'):
-        zarr_path = os.path.join(cfg.data.dest(), 'zarr', 'level' + str(get_scale_val(scale)))
+    try:
+        zarr_path = os.path.join(cfg.mw.dm.dest(), 'zarr', 'level' + str(get_scale_val(scale)))
         if not os.path.isdir(zarr_path):
             # logger.critical(f"Path Not Found: {zarr_path}")
             result = False
@@ -752,8 +732,8 @@ def exist_aligned_zarr(scale: str) -> bool:
             result = True
         logger.critical('Returning Result %r for level %s' % (result, scale))
         return result
-    else:
-        logger.warning(f'called by {caller} but there is no cfg.data!')
+    except:
+        print_exception()
 
 
 
@@ -877,13 +857,6 @@ def print_exception(extra=''):
     txt = f"[{inspect.stack()[1].function}] [{tstamp}]\nError Type/Value : {exi[0]} {exi[1]}\n{traceback.format_exc()}{extra}"
     logger.warning(txt)
 
-    # if cfg.data:
-    #     lf = os.path.join(cfg.data.dest(), 'logs', 'exceptions.log')
-    #     file = Path(lf)
-    #     file.touch(exist_ok=True)
-    #     with open(lf, 'a+') as f:
-    #         f.write('\n' + txt)
-
     if is_tacc():
         node = platform.node()
         user = getpass.getuser()
@@ -920,7 +893,7 @@ def get_img_filenames(path) -> list:
 
 def rename_layers(use_scale, al_dict):
     logger.info('rename_layers:')
-    source_dir = os.path.join(cfg.data.dest(), use_scale, "img_src")
+    source_dir = os.path.join(cfg.mw.dm.dest(), use_scale, "img_src")
     for layer in al_dict:
         image_name = None
         if 'base' in layer['images'].keys():
@@ -1010,7 +983,7 @@ def is_not_hidden(path):
 
 def print_project_tree() -> None:
     '''Recursive function that lists datamodel directory contents as a tree.'''
-    paths = Treeview.make_tree(Path(cfg.data.images_location))
+    paths = Treeview.make_tree(Path(cfg.mw.dm.images_location))
     for path in paths:
         print(path.displayable())
 
@@ -1054,7 +1027,7 @@ def update_skip_annotations():
     # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
     remove_list = []
     add_list = []
-    for sk, scale in cfg.data['data']['scales'].items():
+    for sk, scale in cfg.mw.dm['data']['scales'].items():
         for layer in scale['stack']:
             layer_num = scale['stack'].index(layer)
             for ik, im in layer['images'].items():
@@ -1099,8 +1072,8 @@ DEFAULT_ZARR_STORE = zarr.NestedDirectoryStore
 
 
 def create_paged_tiff():
-    dest = cfg.data.dest()
-    for scale in cfg.data.scales:
+    dest = cfg.mw.dm.dest()
+    for scale in cfg.mw.dm.scales:
         path = os.path.join(dest, scale, 'img_src')
         of = os.path.join(dest, scale + '_img_src.tif')
         files = glob(path + '/*.tif')
@@ -1230,6 +1203,33 @@ class countcalls:
         print(f"The {self.inline_func.__name__} called {self.call_count} times")
 
 
+def ensure_even(vals, extra=None):
+    if isinstance(vals, int) or isinstance(vals, float):
+        # integer
+        vals = int(vals)
+        try:
+            assert vals % 2 == 0
+        except:
+            msg = f"Odd window size: {vals}. Adding one pixel to keep things even for SWIM."
+            if extra: msg = f'[{extra}] ' + msg
+            logger.warning(msg)
+            vals += 1
+            logger.info(f"Modified: {vals}")
+    else:
+        # iterable
+        for i, x in enumerate(vals):
+            vals[i] = int(vals[i])
+            try:
+                assert x % 2 == 0
+            except:
+                msg = f"Odd window size: {x}. Adding one pixel to keep things even for SWIM."
+                if extra: msg = f'[{extra}] ' + msg
+                logger.warning(msg)
+                vals[i] += 1
+                logger.info(f"Modified: {vals[i]}")
+    return vals
+
+
 # def load():
 #     try:
 #         with open('datamodel.json', 'r') as f:
@@ -1300,14 +1300,14 @@ class countcalls:
 
 
 
-# def print_dat_files() -> None:
+# def print_dat_files(dm) -> None:
 #     '''Prints the .dat files for the current level, if they exist .'''
-#     bias_data_path = os.path.join(cfg.datamodel['data']['destination_path'], cfg.datamodel.level, 'bias_data')
+#     bias_data_path = os.path.join(dm['data']['destination_path'], dm.level, 'bias_data')
 #     if are_images_imported():
 #         logger.info('Printing .dat Files')
 #         try:
 #             logger.info("_____________________BIAS DATA_____________________")
-#             logger.info("Scale %d____________________________________________" % get_scale_val(cfg.datamodel.level))
+#             logger.info("Scale %d____________________________________________" % get_scale_val(dm.level))
 #             with open(os.path.join(bias_data_path, 'snr_1.dat'), 'r') as f:
 #                 snr_1 = f.read()
 #                 logger.info('snr_1               : %level' % snr_1)

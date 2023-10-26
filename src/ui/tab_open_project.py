@@ -202,7 +202,7 @@ class OpenProject(QWidget):
         self.toolbar.addWidget(VW(self.wSelectImageSeries, self.wSelectAlignment))
 
         self.webengine = WebEngine(ID='pmViewer')
-        # self.webengine.setFocusPolicy(Qt.StrongFocus)
+        # self.webengine0.setFocusPolicy(Qt.StrongFocus)
         setWebengineProperties(self.webengine)
 
         self.leNameAlignment = QLineEdit()
@@ -947,7 +947,7 @@ class OpenProject(QWidget):
 
             try:
                 with open(path, 'r') as f:
-                    dm = cfg.data = DataModel(data=json.load(f), data_location=data_location, images_location=images_location)
+                    dm = DataModel(data=json.load(f), data_location=data_location, images_location=images_location)
                 # dm.set_defaults()
                 cfg.mw._autosave()
             except:
@@ -1592,7 +1592,7 @@ class ExpandingHWidget(QWidget):
         # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
 class WebEngine(QWebEngineView):
-    def __init__(self, ID='webengine'):
+    def __init__(self, ID='webengine0'):
         QWebEngineView.__init__(self)
         self.ID = ID
         self.grabGesture(Qt.PinchGesture, Qt.DontStartGestureOnChildren)
@@ -1718,11 +1718,11 @@ class FsWatcher(QObject):
 
 
 def setWebengineProperties(webengine):
-    # webengine.preferences().setAttribute(QWebEngineSettings.PluginsEnabled, True)
-    # webengine.preferences().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
-    # webengine.preferences().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
-    # webengine.preferences().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
-    # webengine.preferences().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
+    # webengine0.preferences().setAttribute(QWebEngineSettings.PluginsEnabled, True)
+    # webengine0.preferences().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
+    # webengine0.preferences().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
+    # webengine0.preferences().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
+    # webengine0.preferences().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
     pass
 
 

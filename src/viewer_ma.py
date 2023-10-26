@@ -62,50 +62,40 @@ class WorkerSignals(QObject):
     arrowDown = Signal()
 
 class MAViewer(neuroglancer.Viewer):
-    # def __init__(self, parent, dm, role='tra', quality=None, webengine=None):
-    def __init__(self, parent, dm, role='tra', webengine=None):
+    # def __init__(self, parent, dm, role='tra', quality=None, webengine0=None):
+    def __init__(self, parent, dm, webengine=None):
         super().__init__()
         self.parent = parent
         self.dm = dm
         self.index = None
-        self.role = role
+        self.role = 'tra'
+        self.type = 'MAViewer'
+        self.created = datetime.datetime.now()
+        self.signals = WorkerSignals()
         # self.quality = quality
         # self.quality_lvl = self.dm.lvl(self.quality)
         # self.fac = self.dm.lvl() / self.quality_lvl
         self.webengine = webengine
         self.webengine.setMouseTracking(True)
-        self.signals = WorkerSignals()
-        self.created = datetime.datetime.now()
-        # self._settingZoom = True
+        self._blockStateChanged = False
         # self._layer = self.dm.zpos
         self.cs_scale = None
-        self.pts = {'ref':[None, None, None], 'tra': [None, None, None]}
-        self._selected_index = {'ref': 0, 'tra': 0}
-        # self._selected_index = 0
         self.colors = cfg.glob_colors
-        self._mkr_size = 10
-        self._crossSectionScale = 1
-        self._mpCount = 0
-        self._zmag_set = 0
+        self._mkr_size = 1
         # self.shared_state.add_changed_callback(self.on_state_changed)
         self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
-        self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
-        self.type = 'MAViewer'
-        self._inSync = 0
-        self._blockStateChanged = False
-        self.signals.ptsChanged.connect(self.drawSWIMwindow)
+        # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
 
-        logger.info('viewer constructed!')
+        self.signals.ptsChanged.connect(self.drawSWIMwindow)
 
         self.coordinate_space = ng.CoordinateSpace(
             names=['z', 'y', 'x'],
             units=['nm', 'nm', 'nm'],
-            scales=list(self.dm.resolution(s=self.dm.level)), )
-            # scales=[1,1,1] )
+            scales=list(self.dm.resolution()), )
 
         self.initViewer()
         # asyncio.ensure_future(self.initViewer())
-        self.webengine.setFocus()
+        # self.webengine.setFocus()
 
 
     def __del__(self):
@@ -173,7 +163,6 @@ class MAViewer(neuroglancer.Viewer):
         #NotCulpableForFlickerGlitch
         # if self.type != 'EMViewerStage':
         self._blockStateChanged = True
-        self._selected_index = {'ref': 0, 'tra': 0}
 
         if self.role == 'ref':
             if zpos:
@@ -340,6 +329,7 @@ class MAViewer(neuroglancer.Viewer):
 
         if self.webengine:
             self.webengine.setUrl(QUrl(self.get_viewer_url()))
+            self.webengine.setFocus()
 
         self.initZoom()
 
@@ -374,31 +364,6 @@ class MAViewer(neuroglancer.Viewer):
         # logger.info('')
 
         self._blockStateChanged = True
-        try:
-            if self.role == 'ref':
-                if floor(self.state.position[0]) != self.index:
-                    logger.warning(f"[{self.role}] Illegal state change")
-                    self.signals.badStateChange.emit() #New
-                    return
-
-            elif self.role == 'tra':
-                if floor(self.state.position[0]) != self.index:
-                    self._selected_index = {'ref': 0, 'tra': 0}
-                    self.index = floor(self.state.position[0])
-                    self.drawSWIMwindow(z=self.index) #NeedThis #0803
-                    # self.dm.zpos = self.index
-                    self.signals.zVoxelCoordChanged.emit(self.index)
-        except:
-            print_exception()
-        self._blockStateChanged = False
-
-    @Slot()
-    def on_state_changed_any(self):
-        # zoom bug factor = 250000000s
-        # caller = inspect.stack()[1].function
-        # logger.info(f"[{caller}]")
-        if self._blockStateChanged:
-            return
 
         if self.state.cross_section_scale:
             val = (self.state.cross_section_scale, self.state.cross_section_scale * 250000000)[
@@ -409,28 +374,41 @@ class MAViewer(neuroglancer.Viewer):
                     setData('state,neuroglancer,zoom', val)
                     self.signals.zoomChanged.emit(val)
 
-        # self.post_message(f"Voxel Coordinates: {str(self.state.voxel_coordinates)}")
+        try:
+            if self.role == 'ref':
+                if floor(self.state.position[0]) != self.index:
+                    logger.warning(f"[{self.role}] Illegal state change")
+                    self.signals.badStateChange.emit() #New
+                    return
 
+            elif self.role == 'tra':
+                if floor(self.state.position[0]) != self.index:
+                    self.index = floor(self.state.position[0])
+                    self.drawSWIMwindow(z=self.index) #NeedThis #0803
+                    # self.dm.zpos = self.index
+                    self.signals.zVoxelCoordChanged.emit(self.index)
+        except:
+            print_exception()
+        self._blockStateChanged = False
 
-    def getNextUnusedColor(self, role):
-        return self.colors[self.getNextPoint(role)]
-
-
-    def getNextPoint(self, role):
-        return next((i for i, v in enumerate(self.pts[role]) if not v), 0)
-
-
-    def numPts(self, role):
-        caller = inspect.stack()[1].function
-        # logger.info(f"[{caller}]")
-        n = 0
-        for pt in self.pts[role]:
-            if pt:
-                if pt[1]:
-                    n += 1
-        logger.info(f"[{caller}] returning {n} for {role}")
-        return n
-
+    # @Slot()
+    # def on_state_changed_any(self):
+    #     # zoom bug factor = 250000000s
+    #     # caller = inspect.stack()[1].function
+    #     # logger.info(f"[{caller}]")
+    #     if self._blockStateChanged:
+    #         return
+    #
+    #     if self.state.cross_section_scale:
+    #         val = (self.state.cross_section_scale, self.state.cross_section_scale * 250000000)[
+    #             self.state.cross_section_scale < .001]
+    #         if round(val, 2) != round(getData('state,neuroglancer,zoom'), 2):
+    #             if getData('state,neuroglancer,zoom') != val:
+    #                 logger.info(f'emitting zoomChanged! val = {val:.4f}')
+    #                 setData('state,neuroglancer,zoom', val)
+    #                 self.signals.zoomChanged.emit(val)
+    #
+    #     # self.post_message(f"Voxel Coordinates: {str(self.state.voxel_coordinates)}")
 
     def url(self):
         return self.get_viewer_url()
@@ -450,22 +428,19 @@ class MAViewer(neuroglancer.Viewer):
 
     def _onKey1(self, s):
         logger.info('')
-        self._selected_index[self.role] = 0
-        self.add_matchpoint(s, ignore_pointer=True)
+        self.add_matchpoint(s, id=0, ignore_pointer=True)
         self.webengine.setFocus()
 
 
     def _onKey2(self, s):
         logger.info('')
-        self._selected_index[self.role] = 1
-        self.add_matchpoint(s, ignore_pointer=True)
+        self.add_matchpoint(s, id=1, ignore_pointer=True)
         self.webengine.setFocus()
 
 
     def _onKey3(self, s):
         logger.info('')
-        self._selected_index[self.role] = 2
-        self.add_matchpoint(s, ignore_pointer=True)
+        self.add_matchpoint(s, id=2, ignore_pointer=True)
         self.webengine.setFocus()
 
 
@@ -500,54 +475,26 @@ class MAViewer(neuroglancer.Viewer):
         logger.info("Native control+click keybinding intercepted!")
         self.webengine.setFocus()
 
-
-
-
-    def add_matchpoint(self, s, ignore_pointer=False):
-        print('\n\n--> add_matchpoint -->\n')
-        # logger.critical('\n\n--> add_matchpoint -->\n')
+    def add_matchpoint(self, s, id, ignore_pointer=False):
         if self.dm.method() != 'manual':
-            logger.warning('add_matchpoint: User may not select points while aligning with grid.')
             return
-        print(f"_selected_index = {self._selected_index[self.role]}")
+        print('\n\n--> add_matchpoint -->\n')
         coords = np.array(s.mouse_voxel_coordinates)
         if coords.ndim == 0:
-            logger.warning('Coordinates are dimensionless! =%s' % str(coords))
+            logger.warning(f'Null coordinates! ({coords})')
             return
         _, y, x = s.mouse_voxel_coordinates
-        # y *= self.fac
-        # x *= self.fac
-        y = float(y)
-        x = float(x)
-        pt_index = self._selected_index[self.role]
-        self.pts[self.role][pt_index] = (self.index + 0.5, y, x)
 
-        # self.setMpData()
-        l = [None, None, None]
-        for i, p in enumerate(self.pts[self.role]):
-            if p:
-                if p[1]:
-                    l[i] = (p[1], p[2])
-        logger.info(f"Setting these point selections    : {l}")
-        # 01:05:25 [viewer_ma.add_matchpoint:539] l    : [(235.56079, 436.60748), None, None]
+        frac_y = y / self.store.shape[1]
+        frac_x = x / self.store.shape[2]
 
-        self.dm.set_manpoints(self.role, l)
-        # select_by = self.dm['state']['neuroglancer']['region_selection']['select_by']
-        # _other_role = {'tra', 'ref'}.difference(self.role).pop()
-        # if not ignore_pointer:
-        #     if select_by == 'sticky':
-        #         pass
-        #     elif select_by == 'cycle':
-        #         if self.numPts(self.role) < 3:
-        #             self._selected_index[self.role] = (self._selected_index[self.role] + 1) % 3
-        #         else:
-        #             if self.numPts(_other_role) < 3:
-        #                 self.parent.set_viewer_role(_other_role)
-        #     elif select_by == 'zigzag':
-        #         if self.role == 'ref':
-        #             self._selected_index['tra'] = (self._selected_index[self.role] + 1) % 3
-        #         self.parent.set_viewer_role(_other_role)
+        logger.critical(f"frac_x = {frac_x}, frac_y = {frac_y}")
+
+        self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings']['method_opts']['points']['coords'][self.role][
+            id] = (frac_x, frac_y)
+        logger.critical("Emitting ptsChanged...!")
         self.signals.ptsChanged.emit()
+        logger.critical("Drawing...!")
         self.drawSWIMwindow()
 
 
@@ -588,12 +535,13 @@ class MAViewer(neuroglancer.Viewer):
 
     # @functools.cache
     def drawSWIMwindow(self, z=None):
+        caller = inspect.stack()[1].function
+        logger.critical(f"\n\n[{caller}] Drawing SWIM windows...\n")
         if z == None:
             z = self.dm.zpos
-        if z == self.dm.first_unskipped():
-            return
-        # caller = inspect.stack()[1].function
-        # logger.info(f"[{caller}] Drawing SWIM windows...")
+        # if z == self.dm.first_unskipped(): #1025-
+        #     return
+
         self._blockStateChanged = True
         # self.setMpData() #0805+
         # self.undrawSWIMwindows()
@@ -630,36 +578,30 @@ class MAViewer(neuroglancer.Viewer):
                 ])
 
         elif method == 'manual':
-            self.restoreManAlignPts()
-            #Todo add this functionality, make it configurable
-            # if self.dm.current_method == 'manual_strict':
-            #     ww_x = 16
-            #     ww_y = 16
-            # else:
-            #     ww_x = ww_y = self.dm.manual_swim_window_px()
+            logger.critical("Restoring...")
+            # self.restoreManAlignPts() #necessary for now
             ww_x = ww_y = self.dm.manual_swim_window_px()
 
             # ww_x *= fac
             # ww_y *= fac
 
-            for i, pt in enumerate(self.pts[self.role]):
+            pts = self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings']['method_opts']['points']['coords'][self.role]
+
+            for i, pt in enumerate(pts):
                 # 0: (122, None, None)
-                # logger.critical(f"{i}: {pt}")
+                logger.critical(f"{i}: {pt}")
                 if pt:
-                    if pt[1]:
-                        a, b, c, d = self.getRect2(coords=(pt[2], pt[1]), ww_x=ww_x,ww_y=ww_y,)
-                        # print(f"a: {a}\n"
-                        #       f"b: {b}\n"
-                        #       f"c: {c}\n"
-                        #       f"d: {d}")
-                        z = self.index + 0.5
-                        clr = self.colors[i]
-                        annotations.extend([
-                            ng.LineAnnotation(id=str(i) + '_L1', pointA=(z,) + a, pointB=(z,) + b, props=[clr, ms]),
-                            ng.LineAnnotation(id=str(i) + '_L2', pointA=(z,) + b, pointB=(z,) + c, props=[clr, ms]),
-                            ng.LineAnnotation(id=str(i) + '_L3', pointA=(z,) + c, pointB=(z,) + d, props=[clr, ms]),
-                            ng.LineAnnotation(id=str(i) + '_L4', pointA=(z,) + d, pointB=(z,) + a, props=[clr, ms])
-                        ])
+                    x = self.store.shape[2] * pt[0]
+                    y = self.store.shape[1] * pt[1]
+                    a, b, c, d = self.getRect2(coords=(x, y), ww_x=ww_x,ww_y=ww_y,)
+                    z = self.index + 0.5
+                    clr = self.colors[i]
+                    annotations.extend([
+                        ng.LineAnnotation(id=str(i) + '_L1', pointA=(z,) + a, pointB=(z,) + b, props=[clr, ms]),
+                        ng.LineAnnotation(id=str(i) + '_L2', pointA=(z,) + b, pointB=(z,) + c, props=[clr, ms]),
+                        ng.LineAnnotation(id=str(i) + '_L3', pointA=(z,) + c, pointB=(z,) + d, props=[clr, ms]),
+                        ng.LineAnnotation(id=str(i) + '_L4', pointA=(z,) + d, pointB=(z,) + a, props=[clr, ms])
+                    ])
         # print(f"Adding annotation layers...\n{self.pts}")
         with self.txn() as s:
             # for i,ann in enumerate(annotations):
@@ -681,6 +623,8 @@ class MAViewer(neuroglancer.Viewer):
             )
 
         self._blockStateChanged = False
+        self.webengine.setFocus()
+
 
     # def draw_point_annotations(self):
     #     logger.info('Drawing point annotations...')
@@ -692,12 +636,6 @@ class MAViewer(neuroglancer.Viewer):
     #     except:
     #         logger.warning('Unable to draw donut annotations or none to draw')
 
-    def restoreManAlignPts(self):
-        self.pts[self.role] = [None, None, None]
-        pts_data = self.dm.getmpFlat(l=self.dm.zpos)[self.role]
-        for i, p in enumerate(pts_data):
-            if p:
-                self.pts[self.role][i] = p
 
 
     def set_brightness(self, val=None):
@@ -727,8 +665,8 @@ class MAViewer(neuroglancer.Viewer):
                 s.crossSectionScale = self.cs_scale
         else:
             _, tensor_y, tensor_x = self.store.shape
-            w = self.parent.ng_widget.width()
-            h = self.parent.ng_widget.height()
+            w = self.parent.wNg1.width()
+            h = self.parent.wNg1.height()
             res_z, res_y, res_x = self.dm.resolution(s=self.dm.level) # nm per imagepixel
             # res_z, res_y, res_x = self.dm.resolution(s=self.quality) # nm per imagepixel
             # tissue_h, tissue_w = res_y*frame[0], res_x*frame[1]  # nm of sample

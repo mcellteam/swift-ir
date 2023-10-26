@@ -663,10 +663,6 @@ class DataModel:
         if s == None: s = self.level
         #Todo improve this, cache it or something
 
-        # if level in get_scales_with_generated_alignments(self.levels):
-        #     return True
-        # else:
-        #     return False
         try:
             if len(os.listdir(os.path.join(self.dest(), 'img_aligned.zarr', 's%d' % self.lvl()))) > 3:
                 return True
@@ -1213,7 +1209,9 @@ class DataModel:
          scaling factor then sets the same points for all scale levels above the current level.'''
         if s == None: s = self.scale
         if l == None: l = self.zpos
-        # logger.info(f"Writing points to data: {matchpoints}")
+
+        BEFORE = self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']
+        logger.critical(f"Writing points to data: {matchpoints}")
         # ex. [(397.7689208984375, 546.7693481445312), (nan, nan), (nan, nan)]
         # lvls  = [x for x in self.lvls() if x <= self.lvl()]
         # scales      = [get_scale_key(x) for x in lvls]
@@ -1233,8 +1231,7 @@ class DataModel:
         fac = self.lvl(s)
         coords = [None,None,None]
         for i,p in enumerate(glob_coords):
-            if p:
-                if p[0]:
+            if p and p[0]:
                     coords[i] = (p[0] / fac, p[1] / fac)
         logger.info(f'Setting manual points for {s}: {coords}')
         # self._data['stack'][z]['levels'][level]['swim_settings']['match_points'][role] = coords
@@ -1247,6 +1244,15 @@ class DataModel:
             if p:
                 mir_coords[i] = [img_width - p[1], p[0]]
         self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']['points']['mir_coords'][role] = mir_coords
+
+        self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']['points'].setdefault('coords', {'tra':[None]*3, 'ref':[None]*3})
+
+        AFTER = self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']
+
+        logger.critical(f"\n------------------"
+                        f"\nBefore : {BEFORE}"
+                        f"\n After : {AFTER}"
+                        f"\n------------------")
 
     def manpoints_mir(self, role, s=None, l=None):
         '''Returns manual correspondence points in MIR format'''
@@ -1277,32 +1283,32 @@ class DataModel:
                 logger.info(f'Index: {i}, Base, Match Points: {str(b)}')
 
 
-    def getmpFlat(self, s=None, l=None):
-        if s == None: s = self.level
-        if l == None: l = self.zpos
-        mps = self['stack'][l]['levels'][s]['swim_settings']['method_opts']['points']['ng_coords']
-        # ref = [(0.5, x[0], x[1]) for x in mps['ref']]
-        # base = [(0.5, x[0], x[1]) for x in mps['base']]
-
-        d = {'ref': [None,None,None], 'tra': [None,None,None]}
-        for i in range(0,3):
-            try:
-                if mps['ref'][i]:
-                    # d['ref'][i] = (l, mps['ref'][i][0], mps['ref'][i][1])
-                    d['ref'][i] = (l + 0.5, mps['ref'][i][0], mps['ref'][i][1])
-            except:
-                print_exception()
-            try:
-                if mps['tra'][i]:
-                    # d['tra'][i] = (l, mps['tra'][i][0], mps['tra'][i][1])
-                    d['tra'][i] = (l + 0.5, mps['tra'][i][0], mps['tra'][i][1])
-            except:
-                print_exception()
-
-        # ref = [(z, x[0], x[1]) for x in mps['ref']]
-        # base = [(z, x[0], x[1]) for x in mps['base']]
-        logger.info(f"Returning: {d}")
-        return d
+    # def getmpFlat(self, s=None, l=None):
+    #     if s == None: s = self.level
+    #     if l == None: l = self.zpos
+    #     mps = self['stack'][l]['levels'][s]['swim_settings']['method_opts']['points']['ng_coords']
+    #     # ref = [(0.5, x[0], x[1]) for x in mps['ref']]
+    #     # base = [(0.5, x[0], x[1]) for x in mps['base']]
+    #
+    #     d = {'ref': [None,None,None], 'tra': [None,None,None]}
+    #     for i in range(0,3):
+    #         try:
+    #             if mps['ref'][i]:
+    #                 # d['ref'][i] = (l, mps['ref'][i][0], mps['ref'][i][1])
+    #                 d['ref'][i] = (l + 0.5, mps['ref'][i][0], mps['ref'][i][1])
+    #         except:
+    #             print_exception()
+    #         try:
+    #             if mps['tra'][i]:
+    #                 # d['tra'][i] = (l, mps['tra'][i][0], mps['tra'][i][1])
+    #                 d['tra'][i] = (l + 0.5, mps['tra'][i][0], mps['tra'][i][1])
+    #         except:
+    #             print_exception()
+    #
+    #     # ref = [(z, x[0], x[1]) for x in mps['ref']]
+    #     # base = [(z, x[0], x[1]) for x in mps['base']]
+    #     logger.info(f"Returning: {d}")
+    #     return d
 
 
     def afm(self, s=None, l=None) -> list:
@@ -1430,119 +1436,6 @@ class DataModel:
             _cur.pop(k, None)
         return _cur == _def
 
-
-
-    # def data_comports(self, level=None, z=None):
-    #     #Todo This will be an actual hash comparison
-    #     if level == None: level = self.level
-    #     if z == None: z = self.zpos
-    #     # caller = inspect.stack()[1].function
-    #
-    #     # problems = []
-    #     # method = self.method(s=level, l=z)
-    #     #
-    #     # #Temporary
-    #     # if z == self.first_unskipped():
-    #     #     return True, []
-    #     #
-    #     # # if not self['stack'][z]['levels'][level]['results']['complete']:
-    #     # #     problems.append((f"Alignment method '{method}' is incomplete", 1, 0))
-    #     # #     return False, problems
-    #     #
-    #     # cur = self['stack'][z]['levels'][level]['swim_settings']  # current
-    #     # mem = self['stack'][z]['levels'][level]['alignment_history'][method]['swim_settings'] # memory
-    #     #
-    #     # #Todo refactor, 'recent_method' key
-    #     # try:
-    #     #     last_method_used = self['stack'][z]['levels'][level]['method_results']['method']
-    #     #     if last_method_used != cur['method']:
-    #     #         problems.append(('Method changed', last_method_used, cur['method']))
-    #     # except:
-    #     #     pass
-    #     #
-    #     # if cur['reference'] != mem['reference']:
-    #     #     problems.append(('Reference images differ', cur['reference'], mem['reference']))
-    #     #
-    #     # if cur['use_clobber'] != mem['use_clobber']:
-    #     #     problems.append(("Inconsistent data at clobber fixed pattern ON/OFF (key: use_clobber)", cur['use_clobber'],
-    #     #                      mem['use_clobber']))
-    #     # if cur['use_clobber']:
-    #     #     if cur['clobber_size'] != mem['clobber_size']:
-    #     #         problems.append(("Inconsistent data at clobber size in pixels (key: clobber_size)",
-    #     #                          cur['clobber_size'], mem['clobber_size']))
-    #     #
-    #     # else:
-    #     #     if cur['whitening'] != mem['whitening']:
-    #     #         problems.append(("Inconsistent data at signal whitening magnitude (key: whitening)",
-    #     #                          cur['whitening'], mem['whitening']))
-    #     #     if cur['iterations'] != mem['iterations']:
-    #     #         problems.append(("Inconsistent data at # SWIM iterations (key: swim_iters)",
-    #     #                          cur['iterations'], mem['iterations']))
-    #     #
-    #     # if 'grid' in method:
-    #     #     keys = ['size_1x1', 'size_2x2', 'quadrants']
-    #     #     for key in keys:
-    #     #         if cur['method_opts'][key] != mem['method_opts'][key]:
-    #     #             problems.append((f"Inconsistent data (key: {key})", cur['method_opts'][key], mem['method_opts'][key]))
-    #     #
-    #     # if method in ('manual_hint', 'manual_strict'):
-    #     #     if cur['manual']['points']['mir_coords'] != mem['manual']['points']['mir_coords']:
-    #     #         problems.append((f"Inconsistent match points",
-    #     #                          cur['manual']['points']['mir_coords'], mem['manual']['points']['mir_coords']))
-    #     #
-    #     #     if method == 'manual_hint':
-    #     #         if cur['method_opts']['size'] != mem['method_opts']['size']:
-    #     #             problems.append((f"Inconsistent match region size (key: manual_swim_window_px)",
-    #     #                              cur['method_opts']['size'], mem['method_opts']['size']))
-    #     # answer = len(problems) == 0
-    #     # self['stack'][z]['levels'][level]['data_comports'] = answer
-    #     # return answer, problems
-    #     # # return tuple(comports?, [(reason/key, val1, val2)])
-    #     return (True, [])
-
-    # def updateComportsKeys(self, one=False, forward=False, all=False, indexes=None):
-        # logger.info(f"[{caller_name()}] Updating Comports Keys...")
-        # if one:        to_update = range(self.zpos, self.zpos+1)
-        # elif forward:  to_update = range(self.zpos, len(self))
-        # elif indexes:  to_update = indexes
-        # elif all:      to_update = range(0, len(self))
-        # else:          to_update = range(self.zpos, self.zpos+1)
-        # for i in to_update:
-        #     _data_comports = self['stack'][i]['levels'][self.level]['data_comports']
-        #     _cafm_comports = self['stack'][i]['levels'][self.level]['cafm_comports']
-        #     data_comports = self.data_comports(level=self.level, z=i)[0]
-        #     cafm_comports = self.is_zarr_generated(s=self.level, l=i)
-        #     if _data_comports != data_comports:
-        #         logger.critical(f"Changing 'data_comports' from {_data_comports} to {data_comports} for section #{i}")
-        #     if _cafm_comports != cafm_comports:
-        #         logger.critical(f"Changing 'data_comports' from {_cafm_comports} to {cafm_comports} for section #{i}")
-        #     self['stack'][i]['levels'][self.level]['data_comports'] = data_comports
-        #     self['stack'][i]['levels'][self.level]['cafm_comports'] = cafm_comports
-        # pass
-
-
-    # def data_comports_list(self, s=None):
-    #     if s == None: s = self.level
-    #     # return np.array([self.data_comports(level=level, z=z)[0] for z in range(0, len(self))]).nonzero()[0].tolist()
-    #     return [self['stack'][i]['levels'][s]['data_comports'] for i in range(0,len(self))]
-
-
-    # def data_dn_comport_indexes(self, s=None):
-    #     if s == None: s = self.level
-    #     t0 = time.time()
-    #     # lst = [(not self.data_comports(level=level, z=z)[0]) and (not self.skipped(level=level, z=z)) for z in range(0, len(self))]
-    #     # answer = np.array(lst).nonzero()[0].tolist()
-    #     if not self.is_aligned(s=s):
-    #         # return list(range(len(self)))
-    #         return []
-    #     answer = []
-    #     for i in range(0, len(self)):
-    #         if self.include(s=s, l=i):
-    #             if not self['stack'][i]['levels'][s]['data_comports']:
-    #                 answer.append(i)
-    #     t1 = time.time()
-    #     logger.info(f"dt = {time.time() - t0:.3g} ({t1 - t0:.3g}/{time.time() - t1:.3g})")
-    #     return answer
 
     def needsAlignIndexes(self, s=None):
         if s == None: s = self.level
@@ -1725,19 +1618,21 @@ class DataModel:
             for i in range(0,len(self)):
                 if not self['stack'][i]['levels'][level]['swim_settings']['include']:
                     indexes.append(i)
-                    names.append(os.path.basename(self['stack'][i]['levels'][level]['swim_settings']['path']))
+                    # names.append(os.path.basename(self['stack'][i]['levels'][level]['swim_settings']['path']))
+                    names.append(os.path.basename(self['stack'][i]['levels'][level]['swim_settings']['name']))
             return list(zip(indexes, names))
         except:
             print_exception()
             logger.warning('Unable to To Return Skips List')
             return []
 
-    def skips_indices(self, s=None) -> list:
+    def exclude_indices(self, s=None) -> list:
         if s == None: s = self.level
-        try:
-            return list(list(zip(*self.skips_list(s=s)))[0])
-        except:
-            return []
+        indexes = []
+        for i in range(len(self)):
+            if not self.include(s=s, l=i):
+                indexes.append(i)
+        return indexes
 
     def skips_by_name(self, s=None) -> list[str]:
         '''Returns the list of skipped images for a level'''
@@ -1993,18 +1888,28 @@ class DataModel:
         '''Returns the SWIM Window for the Current Layer.'''
         if s == None: s = self.level
         if l == None: l = self.zpos
-        return int(self['stack'][l]['levels'][s]['swim_settings']['method_opts']['size'])
+        return ensure_even(self['stack'][l]['levels'][s]['swim_settings']['method_opts']['size'] * self.image_size()[0])
 
-    def set_manual_swim_window_px(self, pixels=None, silent=False) -> None:
-        '''Sets the SWIM Window for the Current Layer when using Manual Alignment.'''
-        logger.info(f'Setting Local SWIM Window to [{pixels}] pixels...')
+    # def set_manual_swim_window_px(self, pixels=None, silent=False) -> None:
+    #     '''Sets the SWIM Window for the Current Layer when using Manual Alignment.'''
+    #     logger.info(f'Setting Local SWIM Window to [{pixels}] pixels...')
+    #
+    #     pixels = ensure_even(pixels)
+    #
+    #     dec = float(pixels / self.image_size()[0])
+    #
+    #     self['stack'][self.zpos]['levels'][self.level]['swim_settings']['method_opts']['size'] = dec
+    #     if not silent:
+    #         self.signals.dataChanged.emit()
 
-        if (pixels % 2) == 1:
-            pixels -= 1
-
-        self['stack'][self.zpos]['levels'][self.level]['swim_settings']['method_opts']['size'] = pixels
-        if not silent:
-            self.signals.dataChanged.emit()
+    def set_manual_swim_window_dec(self, dec:float, s=None, l=None):
+        if s == None: s = self.level
+        if l == None: l = self.zpos
+        dec = float(dec)
+        assert dec < 1
+        assert dec > 0
+        self['stack'][self.zpos]['levels'][self.level]['swim_settings']['method_opts']['size'] = dec
+        self.signals.dataChanged.emit()
 
 
     def image_size(self, s=None) -> tuple:
@@ -2079,7 +1984,7 @@ class DataModel:
     def linkReference(self, level):
         caller = inspect.stack()[1].function
         logger.critical(f'[{caller}] Linking reference sections...')
-        skip_list = self.skips_indices(s=level)
+        skip_list = self.exclude_indices(s=level)
         for layer_index in range(len(self)):
             j = layer_index - 1  # Find nearest previous non-skipped z
             while (j in skip_list) and (j >= 0):
@@ -2167,15 +2072,18 @@ class DataModel:
             # Temporary ^. Take first value only. This should perhaps be rectangular, two-value.
             _1x1 = ensure_even(_1x1, extra='1x1 size')
             _2x2 = ensure_even(_2x2, extra='2x2 size')
-            man_ww_full = min(fullsize[0], fullsize[1]) * cfg.DEFAULT_MANUAL_SWIM_WINDOW_PERC
-            _man_ww = ensure_even(man_ww_full / int(level[1:]))
+            # man_ww_full = min(fullsize[0], fullsize[1]) * cfg.DEFAULT_MANUAL_SWIM_WINDOW_PERC
+            # _man_ww = ensure_even(man_ww_full / int(level[1:]))
 
             v.update(
                 manual={
                     'method': 'manual',
                     'mode': 'hint',
-                    'size': _man_ww,
+                    # 'size': _man_ww,
+                    'size': cfg.DEFAULT_MANUAL_SWIM_WINDOW_PERC,
                     'points':{
+                        'coords': {'tra': [None] * 3, 'ref': [None] * 3},
+
                         # 'ng_coords': {'tra': [], 'ref': []},
                         # 'mir_coords': {'tra': [], 'ref': []},
                         'ng_coords': {'tra': ((None, None), (None, None), (None, None)),
@@ -2226,6 +2134,7 @@ class DataModel:
         logger.critical(f'Translating alignment configuration from resolution level {prev_level} to resolution level {cur_level}..')
         cfg.mw.tell(f'Translating alignment configuration from resolution level {prev_level} to resolution level {cur_level}..')
         sf = int(self.lvl(prev_level) / self.lvl(cur_level))
+        logger.critical(f"sf = {sf}")
 
         os = self['level_data'][cur_level]['output_settings']
         os.update(copy.deepcopy(self['level_data'][prev_level]['output_settings']))
@@ -2235,7 +2144,7 @@ class DataModel:
         mp['grid']['size_1x1'][0] *= sf
         mp['grid']['size_2x2'][1] *= sf
         mp['manual'] = copy.deepcopy(self['level_data'][prev_level]['method_presets']['manual'])
-        mp['manual']['size'] *= sf
+        # mp['manual']['size'] *= sf
 
         defaults = self['level_data'][self.level]['defaults']
         defaults.update(copy.deepcopy(self['level_data'][prev_level]['defaults']))
@@ -2270,7 +2179,7 @@ class DataModel:
                 ss['init_afm'] = init_afm
                 ss['level'] = cur_level
                 ss['img_size'] = self.image_size(cur_level)
-                ss['is_refinement'] = self.image_size(cur_level)
+                ss['is_refinement'] = self.isRefinement(level=cur_level)
                 mo = ss['method_opts']
                 method = mo['method']
                 if method == 'grid':
@@ -2278,32 +2187,32 @@ class DataModel:
                     mo['size_1x1'][1] *= sf
                     mo['size_2x2'][0] *= sf
                     mo['size_2x2'][1] *= sf
-                elif method == 'manual':
-                    mo['size'] *= sf
-                    p1 = mo['points']['ng_coords']['tra']
-                    p2 = mo['points']['ng_coords']['ref']
-                    p3 = mo['points']['mir_coords']['tra']
-                    p4 = mo['points']['mir_coords']['ref']
-                    for i, p in enumerate(p1):
-                        if p:
-                            if p[0]:
-                                p1[i][0] *= sf
-                                p1[i][1] *= sf
-                    for i, p in enumerate(p2):
-                        if p:
-                            if p[0]:
-                                p2[i][0] *= sf
-                                p2[i][1] *= sf
-                    for i, p in enumerate(p3):
-                        if p:
-                            if p[0]:
-                                p3[i][0] *= sf
-                                p3[i][1] *= sf
-                    for i, p in enumerate(p4):
-                        if p:
-                            if p[0]:
-                                p4[i][0] *= sf
-                                p4[i][1] *= sf
+                # elif method == 'manual':
+                #     mo['size'] *= sf
+                    # p1 = mo['points']['ng_coords']['tra']
+                    # p2 = mo['points']['ng_coords']['ref']
+                    # p3 = mo['points']['mir_coords']['tra']
+                    # p4 = mo['points']['mir_coords']['ref']
+                    # for i, p in enumerate(p1):
+                    #     if p:
+                    #         if p[0]:
+                    #             p1[i][0] *= sf
+                    #             p1[i][1] *= sf
+                    # for i, p in enumerate(p2):
+                    #     if p:
+                    #         if p[0]:
+                    #             p2[i][0] *= sf
+                    #             p2[i][1] *= sf
+                    # for i, p in enumerate(p3):
+                    #     if p:
+                    #         if p[0]:
+                    #             p3[i][0] *= sf
+                    #             p3[i][1] *= sf
+                    # for i, p in enumerate(p4):
+                    #     if p:
+                    #         if p[0]:
+                    #             p4[i][0] *= sf
+                    #             p4[i][1] *= sf
                 #Critical #1015+
                 self['stack'][i]['levels'][cur_level]['saved_swim_settings'].update(copy.deepcopy(
                     self['stack'][i]['levels'][cur_level]['swim_settings']))

@@ -196,7 +196,7 @@ class ZarrWorker(QObject):
 
 
         logger.info('\n######## Reducing tuples ########\n')
-        Thumbnailer().reduce_tuples(to_reduce, scale_factor=self.dm.images['thumbnail_scale_factor'] // self.dm.lvl(scale))
+        Thumbnailer(self.dm).reduce_tuples(to_reduce, scale_factor=self.dm.images['thumbnail_scale_factor'] // self.dm.lvl(scale))
 
         if not self.running():
             self.finished.emit()

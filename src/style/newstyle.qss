@@ -10,6 +10,11 @@ QStatusBar {
     font-size: 10px;
 }
 
+QListWidget {
+    background-color: #ede9e8;
+    border: none;
+}
+
 
 QGroupBox {
     border: 1px solid #d3d3d3;

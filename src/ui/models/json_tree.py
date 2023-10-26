@@ -3,17 +3,17 @@
 Adapted from Qt Documentation:
 https://doc.qt.io/qtforpython/examples/example_widgets_itemviews_jsonmodel.html
 
-item = self.parent.treeview_model.itemData(self.parent.treeview_model.index(2,0)); print(item)
+item = self.parent.mdlTreeview.itemData(self.parent.mdlTreeview.index(2,0)); print(item)
 
 a = self.parent.treeview.model().index(1, 0)
 b = a.child(0,0) # a is QModelIndex
-self.parent.treeview_model.itemData(b) #b is QModelIndex
+self.parent.mdlTreeview.itemData(b) #b is QModelIndex
 self.parent.treeview.setCurrentIndex(b) # select the item programmatically
 
 # returns the item count (8 here)
-self.parent.treeview_model._rootItem.childCount()
+self.parent.mdlTreeview._rootItem.childCount()
 
-cur_method(self.parent.treeview_model._rootItem):
+cur_method(self.parent.mdlTreeview._rootItem):
 Out[10]: src.ui.models.json_tree.TreeItem
 
 
@@ -22,32 +22,32 @@ Out[10]: src.ui.models.json_tree.TreeItem
 
 
 lst = []
-for i in range(self.parent.treeview_model._rootItem.childCount()):
-    # lst.append(self.parent.treeview_model.index(i,0).data())
-    lst.append(self.parent.treeview_model._rootItem.child(i).key)
+for i in range(self.parent.mdlTreeview._rootItem.childCount()):
+    # lst.append(self.parent.mdlTreeview.index(i,0).data())
+    lst.append(self.parent.mdlTreeview._rootItem.child(i).key)
 
 
-tree_data = self.parent.treeview_model._rootItem.child(1).childCount()
+tree_data = self.parent.mdlTreeview._rootItem.child(1).childCount()
 index_data = lst.index('data')
-modelindex_data = self.parent.treeview_model.index(index_data,0) #  QModelIndex of 'data' key
+modelindex_data = self.parent.mdlTreeview.index(index_data,0) #  QModelIndex of 'data' key
 
-def get_index(findkeys, treeitem=self.parent.treeview_model._rootItem):
+def get_index(findkeys, treeitem=self.parent.mdlTreeview._rootItem):
     print('\nRecursing...')
-    # start w/ self.parent.treeview_model._rootItem
+    # start w/ self.parent.mdlTreeview._rootItem
     print('findkeys = %level' % str(findkeys))
     print('childCount = %level' % str(treeitem.childCount()))
 
     print('Finding key %level...' % str(findkeys[0]))
     lst = []
         for i in range(treeitem.childCount()):
-            # lst.append(self.parent.treeview_model.index(i,0).data())
+            # lst.append(self.parent.mdlTreeview.index(i,0).data())
             lst.append(treeitem.child(i).key)
 
     index = lst.index(findkeys[0])
     findkeys.pop(0)
     if findkeys == []:
         print('Returning %level' % treeitem)
-        return self.parent.treeview_model.index(index,0).data()
+        return self.parent.mdlTreeview.index(index,0).data()
         # return treeitem
     else:
         get_index(findkeys, treeitem=treeitem.child(index))
@@ -180,9 +180,10 @@ class WorkerSignals(QObject):
 class JsonModel(QAbstractItemModel):
     """ An editable previewmodel of Json datamodel """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent, dm=None):
         super().__init__(parent)
         self.parent = parent
+        self.dm = dm
         self._rootItem = TreeItem()
         self._headers = ("key", "value")
         self.signals = WorkerSignals()
@@ -360,8 +361,8 @@ class JsonModel(QAbstractItemModel):
             return item.value
 
     def collapseIndex(self, s=None, l=None):
-        if s == None: s = cfg.data.level
-        if l == None: l = cfg.data.zpos
+        if s == None: s = self.dm.level
+        if l == None: l = self.dm.zpos
         # self.parent.treeview.collapseAll()
         self.collapseAll()
         keys = ['data', 'scales', s, 'stack', l]
@@ -369,7 +370,7 @@ class JsonModel(QAbstractItemModel):
 
 
     def getIndex(self, findkeys, treeitem=None, jump=True, expand=False, collapse=False):
-        # start w/ self.parent.treeview_model._rootItem
+        # start w/ self.parent.mdlTreeview._rootItem
         print(f"\nRecursing... next key: {findkeys}")
         isRoot = 0
         if treeitem == None:
@@ -411,8 +412,8 @@ class JsonModel(QAbstractItemModel):
             self.getIndex(findkeys, treeitem=next_treeitem)
 
     def jumpToLayer(self, s=None, l=None):
-        if s == None: s = cfg.data.level
-        if l == None: l = cfg.data.zpos
+        if s == None: s = self.dm.level
+        if l == None: l = self.dm.zpos
         # self.parent.treeview.collapseAll()
         keys = ['stack', l, 'levels', s]
         # if z !=0:
@@ -422,14 +423,14 @@ class JsonModel(QAbstractItemModel):
         # self.parent.treeview.scrollTo(self.next_treeitem, QAbstractItemView.PositionAtCenter)
 
     # def jumpToScale(self, level=None):
-    #     if level == None: level = cfg.data.level
+    #     if level == None: level = self.dm.level
     #     keys = ['data', 'scales', level]
     #     self.getIndex(findkeys=keys, expand=True)
     #     self.parent.treeview.scrollTo(self.next_treeitem, QAbstractItemView.PositionAtTop)
 
 
     # def jumpToSection(self, sec, s=None):
-    #     if s == None: s = cfg.data.level
+    #     if s == None: s = self.dm.level
     #     keys = ['data', 'scales', s, 'stack', sec]
     #     self.getIndex(findkeys=keys, expand=True)
     #     self.parent.treeview.scrollTo(self.next_treeitem, QAbstractItemView.PositionAtTop)

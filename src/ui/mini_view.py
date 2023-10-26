@@ -19,8 +19,6 @@ class MiniView(QWidget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        # cfg.data = None
-
         self.app = pg.mkQApp()
         self.view = pg.GraphicsLayoutWidget()
         # self.view.setBackground('#ffffff')

@@ -87,37 +87,37 @@ class Joystick(QWidget):
         # if distance_right > 100:
         #     distance_right = 0
 
-        # cfg.emViewer.moveDownBy(y_travel)
-        # cfg.emViewer.moveRightBy(x_travel)
+        # cfg.viewer.moveDownBy(y_travel)
+        # cfg.viewer.moveRightBy(x_travel)
         print(f'Down by: {y_travel:.2f}, right by: {x_travel:.2f}')
 
 
         if 0 <= angle < 180:
-            cfg.emViewer.moveUpBy(y_travel)
-            cfg.emViewer.moveRightBy(x_travel)
-            # cfg.emViewer.moveUpBy(distance_scaled_up)
-            # cfg.emViewer.moveRightBy(distance_scaled_right)
+            cfg.viewer0.moveUpBy(y_travel)
+            cfg.viewer0.moveRightBy(x_travel)
+            # cfg.viewer.moveUpBy(distance_scaled_up)
+            # cfg.viewer.moveRightBy(distance_scaled_right)
             print(f'up by: {y_travel:.2f}, right by: {x_travel:.2f}')
             # print(f'distance scaled up: {distance_scaled_up:.2f}, distance scaled right: {distance_scaled_right:.2f}')
         else:
-            cfg.emViewer.moveDownBy(y_travel)
-            cfg.emViewer.moveRightBy(x_travel)
-            # cfg.emViewer.moveDownBy(distance_scaled_up / 10)
-            # cfg.emViewer.moveLeftBy(distance_scaled_right / 10)
+            cfg.viewer0.moveDownBy(y_travel)
+            cfg.viewer0.moveRightBy(x_travel)
+            # cfg.viewer.moveDownBy(distance_scaled_up / 10)
+            # cfg.viewer.moveLeftBy(distance_scaled_right / 10)
             print(f'down by: {y_travel:.2f}, right by: {x_travel:.2f}')
             # print(f'distance scaled down: {distance_scaled_up:.2f}, distance scaled left: {distance_scaled_right:.2f}')
 
         # if 45 <= angle < 135:
-        #     cfg.emViewer.moveUpBy(distance)
+        #     cfg.viewer.moveUpBy(distance)
         #     return (Direction.Up, distance)
         # elif 135 <= angle < 225:
-        #     cfg.emViewer.moveLeftBy(distance)
+        #     cfg.viewer.moveLeftBy(distance)
         #     return (Direction.Left, distance)
         # elif 225 <= angle < 315:
-        #     cfg.emViewer.moveDownBy(distance)
+        #     cfg.viewer.moveDownBy(distance)
         #     return (Direction.Down, distance)
         # else:
-        #     cfg.emViewer.moveRightBy(distance)
+        #     cfg.viewer.moveRightBy(distance)
         #     return (Direction.Right, distance)
 
 
