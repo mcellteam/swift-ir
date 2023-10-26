@@ -2167,13 +2167,6 @@ class DataModel:
                 prev_settings.pop('is_refinement')
                 self['stack'][i]['levels'][cur_level]['swim_settings'] = prev_settings
                 ss = self['stack'][i]['levels'][cur_level]['swim_settings']
-                try:
-                    init_afm = copy.deepcopy(self.ht.get(self.saved_swim_settings(s=prev_level, l=i)))
-                except:
-                    print_exception(extra=f'Section #{i}. Using identity instead...')
-                    init_afm = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
-                init_afm[0][2] *= sf
-                init_afm[1][2] *= sf
                 # ss = copy.deepcopy(prev_settings)
                 # d['levels'][cur_level]['swim_settings']['img_size'] = self['images']['size_xy'][cur_level]
                 ss['init_afm'] = init_afm
@@ -2187,6 +2180,16 @@ class DataModel:
                     mo['size_1x1'][1] *= sf
                     mo['size_2x2'][0] *= sf
                     mo['size_2x2'][1] *= sf
+                try:
+                    init_afm = copy.deepcopy(self.ht.get(self.saved_swim_settings(s=prev_level, l=i)))
+                except:
+                    print_exception(extra=f'Section #{i}. Using identity instead...')
+                    init_afm = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
+                try:
+                    init_afm[0][2] *= sf
+                    init_afm[1][2] *= sf
+                except:
+                    print_exception()
                 # elif method == 'manual':
                 #     mo['size'] *= sf
                     # p1 = mo['points']['ng_coords']['tra']
