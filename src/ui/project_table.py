@@ -586,9 +586,9 @@ class ProjectTable(QWidget):
             self.parent.parent.alignOne(dm=self.dm)
             QApplication.processEvents()
             if self.parent.wTabs.currentIndex() == 0:
-                self.parent.emViewer.set_layer(self.dm.zpos)
+                self.parent.viewer.set_layer(self.dm.zpos)
             elif self.parent.wTabs.currentIndex() == 1:
-                self.parent.editorViewer.set_layer(self.dm.zpos)
+                self.parent.viewer1.set_layer(self.dm.zpos)
 
     # btn.clicked.connect(lambda state, x=zpos: self.jump_to_manual(x))
 

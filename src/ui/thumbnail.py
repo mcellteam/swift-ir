@@ -168,7 +168,7 @@ class ThumbnailFast(QLabel):
 
 
                 if self.name in self.map_border_color:
-                    if cfg.data['state']['annotate_match_signals']:
+                    if cfg.mw.dm['state']['annotate_match_signals']:
                         qp.setPen(QPen(QColor(self.map_border_color[self.name]), 0, Qt.SolidLine))
                         qp.setBrush(QBrush(QColor(self.map_border_color[self.name])))
                         # qp.drawLines(p1,p2 , p1,p3,  p4,p2 , p4,p3)
@@ -192,19 +192,19 @@ class ThumbnailFast(QLabel):
                         s = self.s
                         l = self.l
                     else:
-                        s = cfg.data.level
-                        l = cfg.data.zpos
+                        s = cfg.mw.dm.level
+                        l = cfg.mw.dm.zpos
 
-                    method = cfg.data.method(s=s, l=l)
+                    method = cfg.mw.dm.method(s=s, l=l)
 
-                    img_size = cfg.data.image_size()
+                    img_size = cfg.mw.dm.image_size()
                     # sf = self.r.getCoords()[2] / img_size[0]  # level_key factor
                     sf = (self.r.getCoords()[2] - self.r.getCoords()[0]) / img_size[0]  # level_key factor
 
                     if 'grid' in method:
-                        regions = cfg.data.get_grid_custom_regions(s=s, l=l)
-                        ww1x1 = cfg.data.size1x1(s=s, l=l)
-                        ww2x2 = cfg.data.size2x2(s=s, l=l)
+                        regions = cfg.mw.dm.get_grid_custom_regions(s=s, l=l)
+                        ww1x1 = cfg.mw.dm.size1x1(s=s, l=l)
+                        ww2x2 = cfg.mw.dm.size2x2(s=s, l=l)
 
                         a = [(img_size[0] - ww1x1[0])/2 + ww2x2[0]/2, (img_size[1] - ww1x1[1])/2 + ww2x2[1]/2]
                         b = [img_size[0] - a[0], img_size[1] - a[1]]
@@ -227,18 +227,22 @@ class ThumbnailFast(QLabel):
                             qp.drawRect(rect)
 
                     elif method == 'manual':
+
+                        #Todo... cant use manpoints_mir...
+
                         pts = []
-                        ww = cfg.data.manual_swim_window_px(s=s, l=l)
+                        # ww = cfg.mw.dm.manual_swim_window_px(s=s, l=l)
+                        ww = cfg.mw.dm.manual_swim_window_px(s=s, l=l)
                         if self.name in ('reference','reference-data'):
                             if self.name == 'reference-data':
-                                pts = cfg.data.manpoints_mir('ref', s=s, l=l)
+                                pts = cfg.mw.dm.manpoints_mir('ref', s=s, l=l)
                             else:
-                                pts = cfg.data.manpoints_mir('ref')
+                                pts = cfg.mw.dm.manpoints_mir('ref')
                         elif self.name in ('transforming', 'transforming-data'):
                             if self.name == 'transforming-data':
-                                pts = cfg.data.manpoints_mir('base', s=s, l=l)
+                                pts = cfg.mw.dm.manpoints_mir('base', s=s, l=l)
                             else:
-                                pts = cfg.data.manpoints_mir('base')
+                                pts = cfg.mw.dm.manpoints_mir('base')
                         for i,pt in enumerate(pts):
                             if pt:
                                 qp.setPen(QPen(QColor(cfg.glob_colors[i]), 2, Qt.DotLine))
@@ -404,7 +408,7 @@ class CorrSignalThumbnail(QLabel):
                 #     return
                 if not self.annotations:
                     return
-                if not cfg.data['state']['annotate_match_signals']:
+                if not cfg.mw.dm['state']['annotate_match_signals']:
                     return
 
                 coords = self.r.getCoords()

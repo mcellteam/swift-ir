@@ -258,11 +258,33 @@ class align_recipe:
                         ID='g2x2-d',
                         last=True)])
         else:
-            ww = self.ss['method_opts']['size']
-            pts = self.ss['method_opts']['points']['mir_coords']['tra']
+            # ww = self.ss['method_opts']['size'] #1025-
+            siz = self.ss['img_size']
+
+            ww = ensure_even(self.ss['method_opts']['size'] * siz[0])
+
+
+
+
+            pts = []
+            for pt in self.ss['method_opts']['points']['coords']['tra']:
+                if pt:
+                    pts.append(
+                        (ensure_even(pt[0] * siz[0]),
+                        ensure_even(pt[1] * siz[1]))
+                    )
             man_pmov = np.array([p for p in pts if p]).transpose()
-            pts = self.ss['method_opts']['points']['mir_coords']['ref']
+
+            pts = []
+            for pt in self.ss['method_opts']['points']['coords']['ref']:
+                if pt:
+                    pts.append(
+                        (ensure_even(pt[0] * siz[0]),
+                         ensure_even(pt[1] * siz[1]))
+                    )
             man_psta = np.array([p for p in pts if p]).transpose()
+
+
             self.clr_indexes = [i for i,p in enumerate(pts) if p]
             # if self.method == 'manual_hint':
             self.add_ingredients([
@@ -1032,6 +1054,34 @@ def natural_sort(l):
 #         memusage = f.read().split('VmRSS:')[1].split('\n')[0][:-3]
 #
 #     return int(memusage.strip())
+
+
+def ensure_even(vals, extra=None):
+    if isinstance(vals, int) or isinstance(vals, float):
+        # integer
+        vals = int(vals)
+        try:
+            assert vals % 2 == 0
+        except:
+            msg = f"Odd window size: {vals}. Adding one pixel to keep things even for SWIM."
+            if extra: msg = f'[{extra}] ' + msg
+            logger.warning(msg)
+            vals += 1
+            logger.info(f"Modified: {vals}")
+    else:
+        # iterable
+        for i, x in enumerate(vals):
+            vals[i] = int(vals[i])
+            try:
+                assert x % 2 == 0
+            except:
+                msg = f"Odd window size: {x}. Adding one pixel to keep things even for SWIM."
+                if extra: msg = f'[{extra}] ' + msg
+                logger.warning(msg)
+                vals[i] += 1
+                logger.info(f"Modified: {vals[i]}")
+    return vals
+
 
 if __name__ == '__main__':
     logger = logging.getLogger(__name__)

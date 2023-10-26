@@ -78,14 +78,13 @@ class AbstractEMViewer(neuroglancer.Viewer):
         self.created = datetime.datetime.now()
         # self._layer = None
         try:
-            self._layer = cfg.data.zpos
+            self._layer = cfg.mw.dm.zpos
         except:
             logger.warning("warning: setting layer to 0")
             self._layer = 0
         # self.scale = self.dm.level
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
         self.type = 'AbstractEMViewer'
-        self._zmag_set = 0
         self._blinkState = 0
         self._blockStateChanged = False
         self.rev_mapping = {'yz': 'xy', 'xy': 'yz', 'xz': 'xz', 'yz-3d': 'xy-3d', 'xy-3d': 'yz-3d',
@@ -291,8 +290,6 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
     def _set_zmag(self):
         # self._blockStateChanged = True
-        # if self._zmag_set < 8:
-        #     self._zmag_set += 1
         try:
             with self.txn() as s:
                 s.relativeDisplayScales = {"z": 10}
@@ -705,7 +702,7 @@ class EMViewer(AbstractEMViewer):
 #         self.set_contrast()
 #         # self.set_zmag()
 #         # self.set_zmag()
-#         self.webengine.setUrl(QUrl(self.get_viewer_url()))
+#         self.webengine0.setUrl(QUrl(self.get_viewer_url()))
 #         w = cfg.project_tab.MA_webengine_stage.geometry().width()
 #         h = cfg.project_tab.MA_webengine_stage.geometry().height()
 #         self.initZoom(w=w, h=h, adjust=1.02)

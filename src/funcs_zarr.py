@@ -24,7 +24,7 @@ numcodecs.blosc.use_threads = False
 # import imagecodecs
 # import dask.array as da
 import src.config as cfg
-from src.helpers import get_scale_val, time_limit, print_exception, get_scales_with_generated_alignments
+from src.helpers import get_scale_val, time_limit, print_exception
 
 '''
 TensorStore has already been used to solve key engineering challenges in scientific computing (e.g., management and 
@@ -84,8 +84,8 @@ def get_zarr_tensor(zarr_path):
     return future
 
 
-def get_zarr_array_layer_view(zarr_path:str, l=None):
-    if l == None: l = cfg.data.zpos
+def get_zarr_array_layer_view(dm, zarr_path:str, l=None):
+    if l == None: l = dm.zpos
     arr = ts.open({
         'driver': 'zarr',
         'kvstore': {
@@ -95,8 +95,8 @@ def get_zarr_array_layer_view(zarr_path:str, l=None):
         'path': 'temp.zarr',
         'metadata': {
             'dtype': '<f4',
-            'shape': list(cfg.data.resolution()),
-            'chunks': list(cfg.data.chunkshape()),
+            'shape': list(dm.resolution()),
+            'chunks': list(dm.chunkshape()),
             'order': 'C',
         },
     }, create=True).result()
@@ -108,11 +108,11 @@ def get_zarr_array_layer_view(zarr_path:str, l=None):
     return view
 
 
-def get_tensor_from_tiff(dir=None, s=None, l=None):
-    if s == None: s = cfg.data.level
-    if l == None: l = cfg.data.zpos
-    fn = os.path.basename(cfg.data.base_image_name(s=s, l=l))
-    path = os.path.join(cfg.data.dest(), s, 'img_src', fn)
+def get_tensor_from_tiff(dm, dir=None, s=None, l=None):
+    if s == None: s = dm.level
+    if l == None: l = dm.zpos
+    fn = os.path.basename(dm.base_image_name(s=s, l=l))
+    path = os.path.join(dm.dest(), s, 'img_src', fn)
     logger.info('Path: %s' % path)
     arr = ts.open({
         'driver': 'tiff',
@@ -246,7 +246,7 @@ def preallocate_zarr(dm, name, group, shape, dtype, overwrite, gui=True, attr=No
 def write_metadata_zarr_multiscale(path):
     root = zarr.group(store=path)
     datasets = []
-    for scale in get_scales_with_generated_alignments(cfg.data.scales):
+    for scale in get_scales_with_generated_alignments(cfg.mw.dm.scales):
         scale_factor = get_scale_val(scale)
         name = 'level' + str(scale_factor)
         metadata = {
@@ -304,10 +304,10 @@ def write_zarr_multiscale_metadata(path, scales, resolution):
 
 
 def write_metadata_zarr_aligned(name='img_aligned.zarr'):
-    zarr_path = os.path.join(cfg.data.dest(), name)
+    zarr_path = os.path.join(cfg.mw.dm.dest(), name)
     root = zarr.group(store=zarr_path)
     datasets = []
-    scale_factor = cfg.data.lvl()
+    scale_factor = cfg.mw.dm.lvl()
     name = 'level' + str(scale_factor)
     metadata = {
         "path": name,
@@ -334,12 +334,12 @@ def write_metadata_zarr_aligned(name='img_aligned.zarr'):
         }
     ]
 
-# def generate_zarr_scales_da():
+# def generate_zarr_scales_da(dm):
 #     logger.info('generate_zarr_scales_da:')
-#     dest = cfg.datamodel.dest()
-#     logger.info('scales = %level' % str(cfg.datamodel.scales))
+#     dest = dm.dest()
+#     logger.info('scales = %level' % str(dm.scales))
 #
-#     for level in cfg.datamodel.scales:
+#     for level in dm.scales:
 #         logger.info('Working On %level' % level)
 #         tif_files = sorted(glob(os.path.join(dest, level, 'img_src', '*.tif')))
 #         # zarrurl = os.path.join(dest, level + '.zarr')
@@ -353,7 +353,7 @@ def write_metadata_zarr_aligned(name='img_aligned.zarr'):
 #     # write_metadata_zarr_multiscale(path=zarr_path)
 #     write_metadata_zarr_aligned(name='img_src.zarr')
 #
-#     # scale_factor = cfg.datamodel.lvl()
+#     # scale_factor = dm.lvl()
 #
 #     # z.attrs['_ARRAY_DIMENSIONS'] = [ "z", "y", "x" ]
 #     # z.attrs['offset'] = [ "0", "0", "0" ]

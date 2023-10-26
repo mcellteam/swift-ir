@@ -66,7 +66,7 @@ class Config():
         self.dtype = 'uint8'
         self.driver = 'zarr'
 
-        # Neuroglancer emViewer options, configurable from here
+        # Neuroglancer viewer options, configurable from here
         self.show_panel_borders = False
         self.show_ui_controls = False
         self.show_scale_bar = True

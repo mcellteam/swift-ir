@@ -216,7 +216,7 @@ class MainWindow(QMainWindow):
     def runUiChecks(self):
         #Todo add UI checks
         if not getData('state,manual_mode'):
-            assert (cfg.emViewer.state.layout.type == self.comboboxNgLayout.currentText())
+            assert (cfg.viewer0.state.layout.type == self.comboboxNgLayout.currentText())
 
 
     def memory(self):
@@ -414,12 +414,6 @@ class MainWindow(QMainWindow):
         self.setStyleSheet(style)
 
 
-    def test(self):
-        if self._isProjectTab():
-            logger.critical(f'id(self.pt)   = {id(self.pt)}')
-            logger.critical(f'self.dm == cfg.dataById[{id(self.pt)}]? {self.dm == cfg.dataById[id(self.pt)]}')
-
-
     def initEditorStats(self):
 
         self.flStats = QFormLayout()
@@ -560,7 +554,7 @@ class MainWindow(QMainWindow):
             self.secSNR.setText('')
 
 
-    def updateDwMatches(self):
+    def updateMS(self):
         if self.dwMatches.isVisible():
             self.setSignalsPixmaps()
             self.setTargKargPixmaps()
@@ -584,8 +578,8 @@ class MainWindow(QMainWindow):
             # logger.info(f'snr_vals = {snr_vals}')
             count = 0
             for i in range(4):
-                if not self.pt.msList[i]._noImage:
-                    self.pt.msList[i].set_no_image()
+                if not self.pt.sigList[i]._noImage:
+                    self.pt.sigList[i].set_no_image()
 
             method = self.dm.method(l=z)
             # if method == 'grid_custom':
@@ -602,27 +596,27 @@ class MainWindow(QMainWindow):
                                 snr = snr_vals[count]
                                 assert snr > 0.0
                             except:
-                                self.pt.msList[i].set_no_image()
+                                self.pt.sigList[i].set_no_image()
                                 continue
                             # logger.info(f'Setting data for {names[i]}, snr={float(snr)}')
-                            self.pt.msList[i].set_data(path=names[i], snr=float(snr))
-                            self.pt.msList[i].update()
+                            self.pt.sigList[i].set_data(path=names[i], snr=float(snr))
+                            self.pt.sigList[i].update()
                             count += 1
                         except:
                             print_exception()
                             logger.warning('There was a problem with index %d...' % i)
                             logger.warning('%s' % (names[i]))
                     else:
-                        self.pt.msList[i].set_no_image()
-                        # self.pt.msList[i].update()
+                        self.pt.sigList[i].set_no_image()
+                        # self.pt.sigList[i].update()
 
             # elif self.dm.current_method == 'manual-hint':
             #     self.dm.snr_components()
             elif method == 'manual_strict':
                 for i in range(4):
-                    if not self.pt.msList[i]._noImage:
-                        self.pt.msList[i].set_no_image()
-                        # self.pt.msList[i].update()
+                    if not self.pt.sigList[i]._noImage:
+                        self.pt.sigList[i].set_no_image()
+                        # self.pt.sigList[i].update()
 
             elif method == 'manual':
                 #Todo #mode check mode for hint vs strict
@@ -639,21 +633,21 @@ class MainWindow(QMainWindow):
                                 assert snr > 0.0
                             except:
                                 # logger.info(f'no SNR data for corr signal index {i}')
-                                self.pt.msList[i].set_no_image()
+                                self.pt.sigList[i].set_no_image()
                                 print_exception()
                                 continue
 
-                            # self.pt.msList[i].set_data(path=thumbs[i], snr=float(snr))
-                            self.pt.msList[i].set_data(path=thumbs.pop(0), snr=float(snr))
+                            # self.pt.sigList[i].set_data(path=thumbs[i], snr=float(snr))
+                            self.pt.sigList[i].set_data(path=thumbs.pop(0), snr=float(snr))
                         except:
                             print_exception()
-                            self.pt.msList[i].set_no_image()
+                            self.pt.sigList[i].set_no_image()
                             logger.warning(f'There was a problem with index {i}, {thumbs[i]}')
                         # finally:
-                        #     self.pt.msList[i].update()
+                        #     self.pt.sigList[i].update()
                     else:
-                        self.pt.msList[i].set_no_image()
-                        # self.pt.msList[i].update()
+                        self.pt.sigList[i].set_no_image()
+                        # self.pt.sigList[i].update()
             self.dwMatches.update()
 
 
@@ -680,14 +674,14 @@ class MainWindow(QMainWindow):
             filename, extension = os.path.splitext(basename)
 
             for i in range(4):
-                self.pt.match_thumbnails[i].set_no_image()
+                self.pt.matchesList[i].set_no_image()
 
             if self.dm.skipped(l=z):
                 return
 
             # for i in range(4):
-            #     if not self.pt.match_thumbnails[i]._noImage:
-            #         self.pt.match_thumbnails[i].set_no_image()
+            #     if not self.pt.matchesList[i]._noImage:
+            #         self.pt.matchesList[i].set_no_image()
 
             if getData('state,targ_karg_toggle'):
                 tkarg = 'k'
@@ -711,25 +705,25 @@ class MainWindow(QMainWindow):
                     # logger.info(f'file  : {files[i]}  exists? : {os.path.exists(files[i])}  use? : {use}')
                     path = os.path.join(self.dm.data_location, 'matches', self.dm.scale, files[i][1])
                     if use and os.path.exists(path):
-                        self.pt.match_thumbnails[i].path = path
+                        self.pt.matchesList[i].path = path
                         try:
-                            # self.pt.match_thumbnails[i].showPixmap()
-                            self.pt.match_thumbnails[i].set_data(path)
+                            # self.pt.matchesList[i].showPixmap()
+                            self.pt.matchesList[i].set_data(path)
                         except:
-                            self.pt.match_thumbnails[i].set_no_image()
+                            self.pt.matchesList[i].set_no_image()
                     else:
-                        self.pt.match_thumbnails[i].set_no_image()
-                    self.pt.match_thumbnails[i].show()
+                        self.pt.matchesList[i].set_no_image()
+                    self.pt.matchesList[i].show()
 
             if self.dm.current_method == 'manual':
-                # self.pt.match_thumbnails[3].hide()
+                # self.pt.matchesList[3].hide()
                 for i in range(0, 3):
                     path = os.path.join(self.dm.data_location, 'matches', self.dm.scale, files[i][1])
                     if os.path.exists(path):
-                        self.pt.match_thumbnails[i].path = path
-                        self.pt.match_thumbnails[i].set_data(path)
+                        self.pt.matchesList[i].path = path
+                        self.pt.matchesList[i].set_data(path)
                     else:
-                        self.pt.match_thumbnails[i].set_no_image()
+                        self.pt.matchesList[i].set_no_image()
             self.dwMatches.update()
 
     def callbackDwVisibilityChanged(self):
@@ -813,7 +807,7 @@ class MainWindow(QMainWindow):
             # QApplication.processEvents() #1015-
             h = self.dwThumbs.height() - self.pt.tn_ref_lab.height() - self.pt.tn_tra_lab.height()
             w = int(h / 2 + .5) - 10
-            self.pt.tn_widget.setMaximumWidth(w)
+            self.pt.tableThumbs.setMaximumWidth(w)
 
 
     def setdw_matches(self, state):
@@ -957,10 +951,10 @@ class MainWindow(QMainWindow):
         self.tell(f'Running post-alignment tasks...')
         t0 = time.time()
         self._working = False
-        self.updateDwMatches()
+        self.updateMS()
         logger.info(f"SNR: {self.dm.snr()}")
 
-        self.updateLowest8widget()
+        # self.updateLowest8widget()
         self.dataUpdateWidgets() #1015+
 
         if self._isProjectTab():
@@ -1048,7 +1042,7 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             _ignore_cache = self.pt.cbIgnoreCache.isChecked()
 
-        renew = not self.dm['level_data'][cfg.data.level]['zarr_made']
+        renew = not self.dm['level_data'][self.dm.level]['zarr_made']
 
         if self._isProjectTab():
             if self.dm.is_aligned():
@@ -1212,7 +1206,7 @@ class MainWindow(QMainWindow):
         self.bArrowUp.setEnabled(True)
         self.cbSkip.setEnabled(True)
         self.cbBB.setEnabled(True)
-        self.boxBias.setEnabled(True)
+        self.cbxBias.setEnabled(True)
         self.startRangeInput.setEnabled(True)
         self.endRangeInput.setEnabled(True)
         
@@ -1260,7 +1254,7 @@ class MainWindow(QMainWindow):
             self.bRegenZarr.setEnabled(self.dm.is_aligned())
             self.wCpanel.show()
             try:
-                self.pt.bSWIM.setEnabled(True)
+                self.pt.bApplyOne.setEnabled(True)
                 self.pt.bTransform.setEnabled(True)
             except:
                 print_exception()
@@ -1377,8 +1371,8 @@ class MainWindow(QMainWindow):
             self.bRightArrow.setEnabled(cur < len(self.dm) - 1)
             if self.dwSnr.isVisible():
                 self.pt.dSnr_plot.updateLayerLinePos()
-            if cfg.emViewer:
-                cfg.emViewer.set_layer(self.dm.zpos)
+            if cfg.viewer0:
+                cfg.viewer0.set_layer(self.dm.zpos)
             self.dataUpdateWidgets()
             if self.pt.wTabs.currentIndex() == 1:
                 self.pt.gifPlayer.set()
@@ -1409,8 +1403,6 @@ class MainWindow(QMainWindow):
         # if DEV:
         #     caller = inspect.stack()[1].function
         #     logger.info(f'caller: {caller} sender: {self.sender()}')
-
-
 
         if self._working:
             logger.warning("Busy working! Not going to update the entire interface rn.")
@@ -1452,7 +1444,7 @@ class MainWindow(QMainWindow):
             if self.dwNotes.isVisible():
                 self.updateNotes()
 
-            self.updateDwMatches()
+            self.updateMS()
 
             # self.setStatusInfo()
 
@@ -1461,34 +1453,34 @@ class MainWindow(QMainWindow):
 
             if self.pt.wTabs.currentIndex() == 0:
                 self.pt._overlayLab.setVisible(self.dm.skipped()) #Todo find/fix
-                # if hasattr(cfg, 'emViewer'):
+                # if hasattr(cfg, 'viewer'):
                 #     try:
-                #         if floor(cfg.emViewer.state.position[0]) != self.dm.zpos:
-                #             cfg.emViewer.set_layer(self.dm.zpos)
+                #         if floor(cfg.viewer.state.position[0]) != self.dm.zpos:
+                #             cfg.viewer.set_layer(self.dm.zpos)
                 #     except:
                 #         print_exception()
                 # else:
-                #     logger.warning("no attribute: 'emViewer'!")
+                #     logger.warning("no attribute: 'viewer'!")
 
             elif self.pt.wTabs.currentIndex() == 1:
-                # self.pt.editorViewer.set_layer()
+                # self.pt.viewer1.set_layer()
                 self.pt.dataUpdateMA()
                 # self.pt.lab_filename.setText(f"[{self.dm.zpos}] Name: {self.dm.name()} - {self.dm.level_pretty()}")
-                # self.pt.cl_tra.setText(f'[{self.dm.zpos}] {self.dm.name()} (Transforming)')
+                # self.pt.clTra.setText(f'[{self.dm.zpos}] {self.dm.name()} (Transforming)')
                 # if self.dm.skipped():
-                #     self.pt.cl_tra.setText(f'[{self.dm.zpos}] {self.dm.name()} (Transforming)')
-                #     self.pt.cl_ref.setText(f'--')
+                #     self.pt.clTra.setText(f'[{self.dm.zpos}] {self.dm.name()} (Transforming)')
+                #     self.pt.clRef.setText(f'--')
                 # else:
                 #     try:
-                #         self.pt.cl_ref.setText(f'[{self.dm.get_ref_index()}] {self.dm.name_ref()} (Reference)')
+                #         self.pt.clRef.setText(f'[{self.dm.get_ref_index()}] {self.dm.name_ref()} (Reference)')
                 #     except:
-                #         self.pt.cl_ref.setText(f'Null (Reference)')
+                #         self.pt.clRef.setText(f'Null (Reference)')
 
             elif self.pt.wTabs.currentIndex() == 2:
                 self.pt.snr_plot.updateLayerLinePos()
 
             elif self.pt.wTabs.currentIndex() == 4:
-                self.pt.treeview_model.jumpToLayer()
+                self.pt.mdlTreeview.jumpToLayer()
             self.setFocus()
 
 
@@ -1578,7 +1570,7 @@ class MainWindow(QMainWindow):
     def ng_layer(self):
         '''The idea behind this was to cache the current layer. Not Being Used Currently'''
         try:
-            index = cfg.emViewer.cur_index
+            index = cfg.viewer0.cur_index
             assert isinstance(index, int)
             return index
         except:
@@ -1675,7 +1667,7 @@ class MainWindow(QMainWindow):
                 if self.dwSnr.isVisible():
                     self.pt.dSnr_plot.initSnrPlot()
 
-                # self.pt.cboxViewerScale.setCurrentIndex(self.dm.levels.index(self.dm.level))
+                # self.pt.cbxViewerScale.setCurrentIndex(self.dm.levels.index(self.dm.level))
                 if self.pt.wTabs.currentIndex() == 3:
                     self.pt.project_table.initTableData()
 
@@ -1740,7 +1732,7 @@ class MainWindow(QMainWindow):
         logger.info('')
         if self._isProjectTab() or self._isZarrTab():
             try:
-                self.detachedNg = QuickWebPage(url=cfg.emViewer.url())
+                self.detachedNg = QuickWebPage(url=cfg.viewer0.url())
             except:
                 logger.info('Cannot open detached neuroglancer view')
 
@@ -1981,7 +1973,7 @@ class MainWindow(QMainWindow):
         with open(html_f, 'r') as f:
             html = f.read()
 
-        # webengine = QWebEngineView()
+        # webengine0 = QWebEngineView()
         webengine = WebEngine(ID=ID)
         webengine.setHtml(html, baseUrl=QUrl.fromLocalFile(os.getcwd() + os.path.sep))
         webengine.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
@@ -2055,14 +2047,14 @@ class MainWindow(QMainWindow):
         # if self._isProjectTab():
         #     cur = self.pt.wTabs.currentIndex()
         #     if cur == 1:
-        #         new_cs_scale = cfg.editorViewer.zoom() * 1.1
+        #         new_cs_scale = cfg.viewer1.zoom() * 1.1
         #         logger.info(f'cross section scale: {new_cs_scale}')
-        #         cfg.editorViewer.set_zoom(new_cs_scale)
+        #         cfg.viewer1.set_zoom(new_cs_scale)
         #         self.pt.zoomSlider.setValue(1 / new_cs_scale)
         #     elif cur == 0:
-        #         new_cs_scale = cfg.emViewer.zoom() * 1.1
+        #         new_cs_scale = cfg.viewer.zoom() * 1.1
         #         logger.info(f'cross section scale: {new_cs_scale}')
-        #         cfg.emViewer.set_zoom(new_cs_scale)
+        #         cfg.viewer.set_zoom(new_cs_scale)
         #         self.pt.zoomSlider.setValue(1 / new_cs_scale)
         # elif self._isOpenProjTab():
         #     new_cs_scale = self.pm.viewer.zoom() * 1.1
@@ -2084,14 +2076,14 @@ class MainWindow(QMainWindow):
         # if self._isProjectTab():
         #     cur = self.pt.wTabs.currentIndex()
         #     if cur == 1:
-        #         new_cs_scale = cfg.editorViewer.zoom() * 0.9
+        #         new_cs_scale = cfg.viewer1.zoom() * 0.9
         #         logger.info(f'cross section scale: {new_cs_scale}')
-        #         cfg.editorViewer.set_zoom(new_cs_scale)
+        #         cfg.viewer1.set_zoom(new_cs_scale)
         #         self.pt.zoomSlider.setValue(1 / new_cs_scale)
         #     elif cur == 0:
-        #         new_cs_scale = cfg.emViewer.zoom() * 0.9
+        #         new_cs_scale = cfg.viewer.zoom() * 0.9
         #         logger.info(f'cross section scale: {new_cs_scale}')
-        #         cfg.emViewer.set_zoom(new_cs_scale)
+        #         cfg.viewer.set_zoom(new_cs_scale)
         #         self.pt.zoomSlider.setValue(1 / new_cs_scale)
         # elif self._isOpenProjTab():
         #     new_cs_scale = self.pm.viewer.zoom() * 0.9
@@ -2186,7 +2178,7 @@ class MainWindow(QMainWindow):
         if self.pt:
             try:
                 if ng.is_server_running():
-                    txt = json.dumps(cfg.emViewer.state.to_json(), indent=2)
+                    txt = json.dumps(cfg.viewer0.state.to_json(), indent=2)
                     return f"Viewer State:\n{txt}"
                 else:
                     return f"Neuroglancer Is Not Running."
@@ -2198,7 +2190,7 @@ class MainWindow(QMainWindow):
         if self.pt:
             try:
                 if ng.is_server_running():
-                    return f"Raw Viewer State:\n{cfg.emViewer.config_state.raw_state}"
+                    return f"Raw Viewer State:\n{cfg.viewer0.config_state.raw_state}"
                 else:
                     return f"Neuroglancer Is Not Running."
             except:
@@ -2216,7 +2208,7 @@ class MainWindow(QMainWindow):
             if not ng.is_server_running():
                 logger.warning('Neuroglancer is not running')
                 return
-            v = cfg.emViewer
+            v = cfg.viewer0
             self.tell("v.position: %s\n" % str(v.state.position))
             self.tell("v.config_state: %s\n" % str(v.config_state))
 
@@ -2944,9 +2936,9 @@ class MainWindow(QMainWindow):
         if self.wOutputSettings.isVisible():
             poly = self.dm['level_data'][self.dm.scale]['defaults']['polynomial_bias']
             if (poly == None) or (poly == 'None'):
-                self.boxBias.setCurrentIndex(0)
+                self.cbxBias.setCurrentIndex(0)
             else:
-                self.boxBias.setCurrentIndex(int(poly) + 1)
+                self.cbxBias.setCurrentIndex(int(poly) + 1)
             self.cbBB.setChecked(self.dm.has_bb())
 
 
@@ -2960,8 +2952,8 @@ class MainWindow(QMainWindow):
         if self.dwThumbs.isVisible():
             h = self.dwThumbs.height() - self.pt.tn_ref_lab.height() - self.pt.tn_tra_lab.height()
             # self.dwThumbs.setMaximumWidth(int(h / 2 + .5) - 10)
-            self.pt.tn_widget.setMaximumWidth(int(h / 2 + .5) - 10)
-            # self.pt.tn_widget.resize(int(h / 2 + .5) - 10, h) #Bad!
+            self.pt.tableThumbs.setMaximumWidth(int(h / 2 + .5) - 10)
+            # self.pt.tableThumbs.resize(int(h / 2 + .5) - 10, h) #Bad!
 
         if self.dwMatches.isVisible():
             h = self.dwMatches.height() - self.pt.mwTitle.height()
@@ -3139,23 +3131,17 @@ class MainWindow(QMainWindow):
             self.bExport.setVisible(False)
 
         elif self._isProjectTab():
-            self.dm = cfg.data = self.globTabs.currentWidget().dm
+            self.dm = self.globTabs.currentWidget().dm
             # self.dm.signals.zposChanged.connect(self.updateSlidrZpos)
             self.pt = cfg.pt = self.globTabs.currentWidget()
             self.viewer = self.pt.viewer
+
             self.pt.initNeuroglancer() #0815-
-            self.updateLowest8widget()
+            # self.updateLowest8widget()
             [b.setEnabled(True) for b in self._lower_tb_buttons]
-            try:
-                if self.pt.wTabs.currentIndex() == 1:
-                    self.viewer = self.pt.editorViewer
-                else:
-                    self.viewer = self.pt.viewer
-            except:
-                print_exception()
 
             # self.pt.dataUpdateMA()
-            self.dwThumbs.setWidget(self.pt.tn_widget)
+            self.dwThumbs.setWidget(self.pt.tableThumbs)
             self.dwMatches.setWidget(self.pt.match_widget)
             self.dwSnr.setWidget(self.pt.dSnr_plot)
             if self.dwSnr.isVisible():
@@ -3165,12 +3151,12 @@ class MainWindow(QMainWindow):
         elif self._getTabType() == 'ZarrTab':
             logger.debug('Loading Zarr Tab...')
             cfg.zarr_tab = self.globTabs.currentWidget()
-            self.viewer = cfg.emViewer = cfg.zarr_tab.viewer
+            self.viewer = cfg.viewer = cfg.zarr_tab.viewer
             cfg.zarr_tab.viewer.bootstrap()
 
-        elif self._getTabType() == 'OpenProject':
-            self.pm.refresh()
-            self.viewer = self.pm.viewer
+        # elif self._getTabType() == 'OpenProject':
+        #     self.pm.refresh()
+        #     self.viewer = self.pm.viewer
         
         logger.debug('Wrapping up...')
         # self.updateMenus()
@@ -3861,12 +3847,12 @@ class MainWindow(QMainWindow):
                 self.dm.set_stack_cafm()
             except:
                 print_exception()
-            if self.boxBias.currentText() == 'None':
+            if self.cbxBias.currentText() == 'None':
                 self.dm.poly_order = None
                 self.tell('Corrective Polynomial Order is set to None')
             else:
-                txt = self.boxBias.currentText()
-                index = self.boxBias.findText(txt)
+                txt = self.cbxBias.currentText()
+                index = self.cbxBias.findText(txt)
                 val = index - 1
                 self.dm.poly_order = val
                 self.tell('Corrective Polynomial Order is set to %d' % val)
@@ -4111,14 +4097,14 @@ class MainWindow(QMainWindow):
         # self.cbBB.toggled.connect(lambda: self.dm.set_use_bounding_rect(self.cbBB.isChecked()))
 
         tip = 'Polynomial bias correction (defaults to None), alters the generated images including their width and height.'
-        self.boxBias = QComboBox(self)
-        self.boxBias.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        self.boxBias.addItems(['None', 'poly 0°', 'poly 1°', 'poly 2°', 'poly 3°', 'poly 4°'])
-        # self.boxBias.setCurrentText(str(cfg.DEFAULT_CORRECTIVE_POLYNOMIAL))
-        self.boxBias.currentIndexChanged.connect(self._valueChangedPolyOrder)
-        self.boxBias.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.boxBias.setFixedSize(QSize(74, 12))
-        self.boxBias.lineEdit()
+        self.cbxBias = QComboBox(self)
+        self.cbxBias.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+        self.cbxBias.addItems(['None', 'poly 0°', 'poly 1°', 'poly 2°', 'poly 3°', 'poly 4°'])
+        # self.cbxBias.setCurrentText(str(cfg.DEFAULT_CORRECTIVE_POLYNOMIAL))
+        self.cbxBias.currentIndexChanged.connect(self._valueChangedPolyOrder)
+        self.cbxBias.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.cbxBias.setFixedSize(QSize(74, 12))
+        self.cbxBias.lineEdit()
 
         self.bRegenerateAll = QPushButton('Regenerate All Output')
         self.bRegenerateAll.clicked.connect(lambda: self.regenerateAll())
@@ -4126,7 +4112,7 @@ class MainWindow(QMainWindow):
         self.bRegenerateAll.setFixedHeight(15)
 
         hw0 = HW(QLabel('Bounding Box: '), self.cbBB, ExpandingHWidget(self), QLabel('Corrective Bias: '),
-                 self.boxBias)
+                 self.cbxBias)
         hw0.layout.setAlignment(Qt.AlignBottom)
         hw1 = HW(self.bRegenerateAll)
         # hw1.layout.setAlignment(Qt.AlignRight)
@@ -4350,8 +4336,8 @@ class MainWindow(QMainWindow):
             if self.dwThumbs.isVisible():
                 h = self.dwThumbs.height() - self.pt.tn_ref_lab.height() - self.pt.tn_tra_lab.height()
                 # self.dwThumbs.setMaximumWidth(int(h / 2 + .5) - 10)
-                self.pt.tn_widget.setMaximumWidth(int(h / 2 + .5) - 10)
-                # self.pt.tn_widget.resize(int(h / 2 + .5) - 10, h) #Bad!
+                self.pt.tableThumbs.setMaximumWidth(int(h / 2 + .5) - 10)
+                # self.pt.tableThumbs.resize(int(h / 2 + .5) - 10, h) #Bad!
             if self.dwMatches.isVisible():
                 h = self.dwMatches.height() - self.pt.mwTitle.height()
                 # self.dwMatches.setMaximumWidth(int(h / 2 + .5) - 4)
@@ -5146,7 +5132,7 @@ class NullWidget(QLabel):
 
 class WebEngine(QWebEngineView):
 
-    def __init__(self, ID='webengine'):
+    def __init__(self, ID='webengine0'):
         QWebEngineView.__init__(self)
         self.ID = ID
         self.grabGesture(Qt.PinchGesture, Qt.DontStartGestureOnChildren)

@@ -20,7 +20,7 @@ class ZarrTab(QWidget):
         log.info('')
         self.parent = parent
         self.path = path
-        self.viewer = cfg.emViewer = ZarrViewer(path=path)
+        self.viewer = cfg.viewer0 = ZarrViewer(path=path)
         self.webengine = QWebEngineView()
         self.load()
 

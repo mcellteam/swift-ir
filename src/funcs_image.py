@@ -28,6 +28,7 @@ __all__ = [
 ]
 
 debug_level = 0
+_set_stack_calls = 0
 
 logger = logging.getLogger(__name__)
 
@@ -479,7 +480,9 @@ def SetSingleCafm(dm, scale, index, c_afm, include, bias_mat=None, method='grid'
 def SetStackCafm(dm, scale, poly_order=None):
     '''Calculate cafm across the whole stack with optional bias correction'''
     caller = inspect.stack()[1].function
-    logger.info(f'[{caller}] Propagating Cumulative Affine (bias: {poly_order})...')
+    global _set_stack_calls
+    _set_stack_calls +=1
+    logger.critical(f'[{caller}] Setting Stack CAFM (call # {_set_stack_calls})...')
 
     # logger.info(f'Setting Stack CAFM (iterator={str(iterator)}, level={level}, poly_order={poly_order})...')
     # cfg.mw.tell('<span style="color: #FFFF66;"><b>Setting Stack CAFM...</b></span>')
@@ -499,7 +502,7 @@ def SetStackCafm(dm, scale, poly_order=None):
     for bi in range(bias_iters):
         # logger.critical(f'\n\nbi = {bi}\n')
         c_afm = c_afm_init
-        for i, d in enumerate(cfg.data()):
+        for i, d in enumerate(dm()):
             # try:
             #     # assert 'affine_matrix' in d['levels'][scale]['results']
             #     cfg.pt.ht.haskey()
@@ -618,7 +621,7 @@ def ComputeBoundingRect(dm, scale=None):
 
     To get result for current level, in the main process, use:
     from src.image_funcs import ComputeBoundingRect, ImageSize
-    ComputeBoundingRect(cfg.datamodel.stack())
+    ComputeBoundingRect(dm.stack())
 
     model_bounds example:
 AlignEM [29]:
@@ -649,14 +652,13 @@ array([[   0,    0],
        [ 997,  580]], dtype=int32)
     '''
     logger.info('Computing Bounding Rect...')
-    if scale == None: scale = cfg.data.level
+    if scale == None: scale = dm.level
 
     if cfg.SUPPORT_NONSQUARE:
         '''Non-square'''
         # model_bounds = None
-        # al_stack = cfg.datamodel.stack()
         model_bounds = [[0,0]] #Todo initializeStack this better
-        siz = cfg.data.image_size(s=scale)
+        siz = dm.image_size(s=scale)
         for item in dm():
             # method = item['levels'][scale]['swim_settings']['method_opts']['method']
             c_afm = np.array(item['levels'][scale]['cafm'])
@@ -671,7 +673,7 @@ array([[   0,    0],
     else:
         '''Old code/square only'''
         model_bounds = None
-        siz = cfg.data.image_size(s=scale)
+        siz = dm.image_size(s=scale)
         for item in dm():
             c_afm = np.array(item['levels'][scale]['cafm'])
             if type(model_bounds) == type(None):

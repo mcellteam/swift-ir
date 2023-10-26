@@ -8,7 +8,7 @@ import logging
 import argparse
 import src.config as cfg
 from src.mp_queue import TaskQueue
-from src.helpers import get_scale_val, get_img_filenames, print_exception, get_scales_with_generated_alignments
+from src.helpers import get_scale_val, get_img_filenames, print_exception
 
 # __all__ = ['generate_multiscale_zarr']
 
@@ -16,16 +16,16 @@ logger = logging.getLogger(__name__)
 
 Z_STRIDE = 1
 
-def generate_multiscale_zarr(src, out):
+def generate_multiscale_zarr(dm, src, out):
     logger.critical('Generating Multiscale Zarr...')
     logger.info('src : %s\nout: %s' % (src, out))
     # Todo conditional handling of skips
     tasks_ = []
-    imgs = sorted(get_img_filenames(os.path.join(src, 'tiff', cfg.data.level)))
+    imgs = sorted(get_img_filenames(os.path.join(src, 'tiff', cfg.mw.dm.level)))  # Todo pass datamodel as argument
     logger.info('# images: %d' % len(imgs))
-    chunkshape = cfg.data.chunkshape(level=cfg.data.level)
+    chunkshape = cfg.mw.dm.chunkshape(level=cfg.mw.dm.level) #Todo pass datamodel as argument
     for ID, img in enumerate(imgs):
-        for scale in get_scales_with_generated_alignments(cfg.data.scales):
+        for scale in get_scales_with_generated_alignments(dm.scales):
             scale_val = get_scale_val(scale)
             path_out = os.path.join(out, 'level' + str(scale_val))
             tasks_.append([ID, img, src, path_out, scale, str(chunkshape)])
@@ -33,7 +33,8 @@ def generate_multiscale_zarr(src, out):
     logger.info('\n(example task)\n%s' % str(tasks[0]))
 
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
-    task_queue = TaskQueue(n_tasks=len(tasks), parent=cfg.main_window, pbar_text='Generating Multiscale Zarr (%d Cores)...' % cpus)
+    task_queue = TaskQueue(n_tasks=len(tasks), parent=cfg.mw, pbar_text='Generating Multiscale Zarr (%d Cores)...' %
+                                                                        cpus)
     task_queue.start(cpus)
     for task in tasks:
         script = 'src/job_convert_zarr.py'

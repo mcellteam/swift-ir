@@ -31,13 +31,14 @@ mp.set_start_method('forkserver', force=True)
 
 class Thumbnailer:
 
-    def __init__(self):
+    def __init__(self, dm=None):
+        self.dm = dm
         self.iscale2_c = os.path.join(get_appdir(), 'lib', get_bindir(), 'iscale2')
 
 
     def reduce_main(self, src, filenames, od):
         print(f'\n######## Reducing Thumbnails: Source Images ########\n')
-        # coarsest_scale = cfg.data.smallest_scale()
+        # coarsest_scale = self.dm.smallest_scale()
 
         d = os.path.dirname(od) #Needed for logging
         dt = -1
@@ -52,7 +53,7 @@ class Thumbnailer:
     # def reduce_aligned(self, dm, indexes, dest, scale):
     #     print(f'\n######## Reducing Thumbnails: Aligned Images ########\n')
     #     to_reduce = []
-    #     baseFileNames = cfg.data.basefilenames()
+    #     baseFileNames = self.dm.basefilenames()
     #     for i, name in enumerate([baseFileNames[i] for i in indexes]):
     #         ifn = dm.path_aligned(s=scale, l=i)
     #         ofn = dm.path_thumb(s=scale, l=i)
@@ -64,14 +65,14 @@ class Thumbnailer:
     #             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), ifn)
     #
     #     if len(to_reduce):
-    #         pbar_text = f'Reducing {cfg.data.level_pretty()} aligned images (count={len(to_reduce)})...'
+    #         pbar_text = f'Reducing {self.dm.level_pretty()} aligned images (count={len(to_reduce)})...'
     #         if cfg.CancelProcesses:
     #             cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
     #         else:
     #             # dt = self.reduce(src=src, od=od, rmdir=False, prefix='', filenames=files, pbar_text=pbar_text, dest=dest)
     #             dt = self.reduce_tuples(to_reduce=to_reduce)
     #             try:
-    #                 cfg.data.t_thumbs_aligned = dt
+    #                 self.dm.t_thumbs_aligned = dt
     #             except:
     #                 pass
 
@@ -80,7 +81,7 @@ class Thumbnailer:
 
         print(f'\n######## Reducing Thumbnails: Correlation Signals ########\n')
 
-        pbar_text = 'Generating %s Signal Spot Thumbnails...' % cfg.data.level_pretty()
+        pbar_text = 'Generating %s Signal Spot Thumbnails...' % self.dm.level_pretty()
         if cfg.CancelProcesses:
             cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
         else:
@@ -94,9 +95,9 @@ class Thumbnailer:
             if not rmdir:
                 #Special handling for corrspot files since they are variable in # and never 1:1 with project files
                 for i in indexes:
-                    basename = os.path.basename(cfg.data.base_image_name(s=cfg.data.scale, l=i))
+                    basename = os.path.basename(self.dm.base_image_name(s=self.dm.scale, l=i))
                     filename, extension = os.path.splitext(basename)
-                    method = cfg.data.section(s=cfg.data.scale, l=i)['swim_settings']['method_opts']['method']
+                    method = self.dm.section(s=self.dm.scale, l=i)['swim_settings']['method_opts']['method']
                     # old_thumbnails = glob(os.path.join(od, '*' + '_' + method + '_' + baseFileNames[i]))
                     search_path = os.path.join(od, '%s_%s_*%s' % (filename, method, extension))
                     # logger.critical(f'\n\n\nSearch Path (Pre-Removal):\n{search_path}\n\n')
@@ -110,7 +111,7 @@ class Thumbnailer:
                             logger.warning('An exception was triggered during removal of expired thumbnail: %s' % tn)
 
             files = []
-            baseFileNames = cfg.data.basefilenames()
+            baseFileNames = self.dm.basefilenames()
             for name in [baseFileNames[i] for i in indexes]:
                 filename, extension = os.path.splitext(name)
                 search_path = os.path.join(src, '%s_*%s' % (filename, extension))
@@ -120,7 +121,7 @@ class Thumbnailer:
             # tnLogger.info('Reducing the following corr spot thumbnails:\n%level' %str(filenames))
             tnLogger.info(f'Reducing {len(files)} corr spot thumbnails...')
 
-            if scale == list(cfg.data.scales)[-1]:
+            if scale == list(self.dm.scales)[-1]:
                 full_size = True
             else:
                 full_size = False
@@ -132,7 +133,7 @@ class Thumbnailer:
                              dest=dest,
                              full_size=full_size
                              )
-            cfg.data.t_thumbs_spot = dt
+            self.dm.t_thumbs_spot = dt
             cfg.main_window.hud.done()
 
 
@@ -140,7 +141,7 @@ class Thumbnailer:
 
         print(f'\n######## Reducing Thumbnails: Matches ########\n')
 
-        pbar_text = 'Reducing %s Matches...' % cfg.data.level_pretty()
+        pbar_text = 'Reducing %s Matches...' % self.dm.level_pretty()
         if cfg.CancelProcesses:
             cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
         else:
@@ -153,9 +154,9 @@ class Thumbnailer:
             if not rmdir:
                 #Special handling for corrspot files since they are variable in # and never 1:1 with project files
                 for i in indexes:
-                    basename = os.path.basename(cfg.data.base_image_name(s=cfg.data.scale, l=i))
+                    basename = os.path.basename(self.dm.base_image_name(s=self.dm.scale, l=i))
                     fn, ext = os.path.splitext(basename)
-                    method = cfg.data.section(s=cfg.data.scale, l=i)['swim_settings']['method_opts']['method']
+                    method = self.dm.section(s=self.dm.scale, l=i)['swim_settings']['method_opts']['method']
                     pattern = os.path.join(od, '%s_%s_[tk]_%d%s' % (fn, method, i, ext))
 
                     originals = glob(pattern)
@@ -169,7 +170,7 @@ class Thumbnailer:
                             logger.warning('An exception was triggered during removal of expired thumbnail: %s' % tn)
 
             files = []
-            baseFileNames = cfg.data.basefilenames()
+            baseFileNames = self.dm.basefilenames()
             for name in [baseFileNames[i] for i in indexes]:
                 fn, ext = os.path.splitext(name)
                 search_path = os.path.join(src, '%s_*%s' % (fn, ext))
@@ -186,12 +187,12 @@ class Thumbnailer:
                              dest=dest,
                              full_size=False
                              )
-            cfg.data.t_thumbs_matches = dt
+            self.dm.t_thumbs_matches = dt
 
             cfg.main_window.tell('Discarding Raw (Full Size) Matches...')
             try:
-                shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.level, 'matches_raw'), ignore_errors=True)
-                shutil.rmtree(os.path.join(cfg.data.dest(), cfg.data.level, 'matches_raw'), ignore_errors=True)
+                shutil.rmtree(os.path.join(self.dm.dest(), self.dm.level, 'matches_raw'), ignore_errors=True)
+                shutil.rmtree(os.path.join(self.dm.dest(), self.dm.level, 'matches_raw'), ignore_errors=True)
             except:
                 print_exception()
 
