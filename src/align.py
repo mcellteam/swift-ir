@@ -144,6 +144,7 @@ class AlignWorker(QObject):
             ss['wd'] = dm.writeDir(s=scale, l=i)
             ss['solo'] = len(indexes) == 1
             ss['img_size'] = dm.image_size(s=scale)
+            ss['is_refinement'] = dm.isRefinement(level=scale)
             # print(f"path : {ss['path']}")
             # print(f" ref : {ss['path_reference']}")
 
