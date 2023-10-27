@@ -116,8 +116,9 @@ class DataModel:
 
 
     def __iter__(self):
-        for item in self['stack'][self.zpos]['levels'][self.level]:
-            yield item
+        for section in cfg.pt.dm['stack']:
+            yield section
+
 
     def __call__(self):
         return self['stack']
@@ -461,6 +462,11 @@ class DataModel:
         cafm_hash = str(self.cafmHash(s=s, l=l))
         path = os.path.join(self.data_location, 'data', str(l), s, ss_hash, cafm_hash)
         return path
+
+    @property
+    def ss(self):
+        '''Return SWIM preferences as copy of dict representing the current section'''
+        return copy.deepcopy(self._data['stack'][self.zpos]['levels'][self.level]['swim_settings'])
 
     def ssDir(self, s=None, l=None) -> str:
         if s == None: s = self.level
@@ -1661,7 +1667,6 @@ class DataModel:
         self._data['stack'][l]['levels'][s]['swim_settings']['iterations'] = val
         self.signals.dataChanged.emit()
 
-
     def swim_settings(self, s=None, l=None):
         '''Returns SWIM preferences as a hashable dictionary'''
         if s == None: s = self.level
@@ -2169,7 +2174,7 @@ class DataModel:
                 ss = self['stack'][i]['levels'][cur_level]['swim_settings']
                 # ss = copy.deepcopy(prev_settings)
                 # d['levels'][cur_level]['swim_settings']['img_size'] = self['images']['size_xy'][cur_level]
-                ss['init_afm'] = init_afm
+
                 ss['level'] = cur_level
                 ss['img_size'] = self.image_size(cur_level)
                 ss['is_refinement'] = self.isRefinement(level=cur_level)
@@ -2190,6 +2195,7 @@ class DataModel:
                     init_afm[1][2] *= sf
                 except:
                     print_exception()
+                ss['init_afm'] = init_afm
                 # elif method == 'manual':
                 #     mo['size'] *= sf
                     # p1 = mo['points']['ng_coords']['tra']

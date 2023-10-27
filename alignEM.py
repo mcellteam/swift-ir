@@ -94,29 +94,29 @@ global app
 # WHITE_LIST = {'src'}      # Look for these words in the file path.
 # EXCLUSIONS = {'<'}          # Ignore <listcomp>, etc. in the function name.
 
-# def tracefunc(frame, event, arg):
+# def tracefunc(getFrameScale, event, arg):
 #     # https://stackoverflow.com/questions/8315389/how-do-i-print-functions-as-they-are-called
 #     if event == "call":
 #         tracefunc.stack_level += 1
 #
-#         unique_id = frame.f_code.co_filename + str(frame.f_lineno)
+#         unique_id = getFrameScale.f_code.co_filename + str(getFrameScale.f_lineno)
 #         if unique_id in tracefunc.memorized:
 #             return
 #
 #         # Part of path MUST be in white list.
-#         if any(x in frame.f_code.co_filename for x in WHITE_LIST) \
+#         if any(x in getFrameScale.f_code.co_filename for x in WHITE_LIST) \
 #                 and \
-#                 not any(x in frame.f_code.co_name for x in EXCLUSIONS):
+#                 not any(x in getFrameScale.f_code.co_name for x in EXCLUSIONS):
 #
-#             if 'self' in frame.f_locals:
-#                 class_name = frame.f_locals['self'].__class__.__name__
-#                 func_name = class_name + '.' + frame.f_code.co_name
+#             if 'self' in getFrameScale.f_locals:
+#                 class_name = getFrameScale.f_locals['self'].__class__.__name__
+#                 func_name = class_name + '.' + getFrameScale.f_code.co_name
 #             else:
-#                 func_name = frame.f_code.co_name
+#                 func_name = getFrameScale.f_code.co_name
 #
 #             func_name = '{name:->{indent}level}()'.format(indent=tracefunc.stack_level * 2, name=func_name)
 #             txt = '{: <40} # {}, {}'.format(
-#                 func_name, frame.f_code.co_filename, frame.f_lineno)
+#                 func_name, getFrameScale.f_code.co_filename, getFrameScale.f_lineno)
 #             print(txt)
 #
 #             tracefunc.memorized.add(unique_id)

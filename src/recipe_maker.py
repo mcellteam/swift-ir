@@ -260,12 +260,7 @@ class align_recipe:
         else:
             # ww = self.ss['method_opts']['size'] #1025-
             siz = self.ss['img_size']
-
             ww = ensure_even(self.ss['method_opts']['size'] * siz[0])
-
-
-
-
             pts = []
             for pt in self.ss['method_opts']['points']['coords']['tra']:
                 if pt:
@@ -338,15 +333,11 @@ class align_recipe:
                 print_exception(extra=f'ERROR ing{i}/{len(self.ingredients)}')
 
 
-
-
     def set_results(self):
 
         time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         afm = np.array([[1., 0., 0.], [0., 1., 0.]])
         snr = np.array([0.0])
-        # snr_report = 'SNR: %.1f (+-%.1f n:%d)  <%.1f  %.1f>' % (
-        #     snr.mean(), snr.std(), len(snr), snr.min(), snr.max())
 
         mr = {}
         mr['index'] = self.index
@@ -531,7 +522,6 @@ class align_ingredient:
     def execute_ingredient(self):
         if self.recipe.solo:
             print('\nExecuting ingredient...\n')
-
         # Returns an affine matrix
         # if self.recipe.method in ('manual','manual_strict'):
         if self.recipe.method == 'manual':
@@ -549,7 +539,6 @@ class align_ingredient:
                 return self.afm
 
             self.afm = self.ingest_swim_output(swim_output)
-
 
         if self.last:
             self.crop_match_signals()

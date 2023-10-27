@@ -5,26 +5,23 @@ data in the directory that is served to any web page running on a machine that
 can connect to the web server'''
 
 import os
+import abc
 import copy
 import math
 import inspect
 import logging
 import datetime
 import argparse
-import abc
 import time
+from math import floor
 import numpy as np
 import numcodecs
 import zarr
-import neuroglancer
 import neuroglancer as ng
+from functools import cache
 # from neuroglancer import ScreenshotSaver
 from qtpy.QtCore import QObject, Signal, Slot, QUrl, QTimer
-from qtpy.QtWidgets import QApplication, QSizePolicy
-from qtpy.QtWebEngineWidgets import *
-from src.funcs_zarr import get_zarr_tensor
-from src.helpers import getOpt, getData, setData, obj_to_string, print_exception, is_joel, is_tacc, caller_name, \
-    example_zarr
+from src.helpers import getOpt, getData, setData, print_exception, is_joel
 import src.config as cfg
 
 
@@ -38,11 +35,14 @@ import threading
 import neuroglancer.write_annotations
 import numpy as np
 
+import tensorstore as ts
+context = ts.Context({'cache_pool': {'total_bytes_limit': 1000000000}})
+
 
 ng.server.debug = cfg.DEBUG_NEUROGLANCER
 numcodecs.blosc.use_threads = False
 
-__all__ = ['EMViewer', 'PMViewer']
+__all__ = ['EMViewer', 'PMViewer', 'MAViewer']
 
 logger = logging.getLogger(__name__)
 logger.propagate = False
@@ -64,148 +64,206 @@ class WorkerSignals(QObject):
     zoomChanged = Signal(float)
     mpUpdate = Signal()
 
+    '''MAviewer'''
+    zVoxelCoordChanged = Signal(int)
+    ptsChanged = Signal()
+    swimAction = Signal()
+    badStateChange = Signal()
+    toggleView = Signal()
+    tellMainwindow = Signal(str)
+    warnMainwindow = Signal(str)
+    errMainwindow = Signal(str)
+
 
 class AbstractEMViewer(neuroglancer.Viewer):
 
-    @abc.abstractmethod
-    def __init__(self, webengine, name=None, **kwargs):
+    # @abc.abstractmethod
+    def __init__(self, parent, webengine, path, dm, res, **kwargs):
         super().__init__(**kwargs)
-        self.signals = WorkerSignals()
+        logger.critical(f"\nCalling AbstractEMViewer __init__ ...\n")
+        self.type = 'AbstractEMViewer'
+        self.created = datetime.datetime.now()
+        self.parent = parent
+        self.path = path
+        self.dm = dm
+        self.res = res
+        self.tensor = None
         self.webengine = webengine
         self.webengine.setMouseTracking(True)
-        self.name = name
-        self.cs_scale = None
-        self.created = datetime.datetime.now()
-        # self._layer = None
-        try:
-            self._layer = cfg.mw.dm.zpos
-        except:
-            logger.warning("warning: setting layer to 0")
-            self._layer = 0
-        # self.scale = self.dm.level
-        # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
-        self.type = 'AbstractEMViewer'
-        self._blinkState = 0
+        self.signals = WorkerSignals()
+        self._cs_scale = None
+        self.colors = cfg.glob_colors
         self._blockStateChanged = False
-        self.rev_mapping = {'yz': 'xy', 'xy': 'yz', 'xz': 'xz', 'yz-3d': 'xy-3d', 'xy-3d': 'yz-3d',
-                       'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
+        actions = [('keyLeft', self._keyLeft),
+                   ('keyRight', self._keyRight),
+                   ('keyUp', self._keyUp),
+                   ('keyDown', self._keyDown),
+                   ('key1', self._key1),  #abstract
+                   ('key2', self._key2),  #abstract
+                   ('key3', self._key3),  #abstract
+                   ('keySpace', self._keySpace)]
+        for a in actions:
+            self.actions.add(*a)
 
+        with self.config_state.txn() as s:
+            '''DO work: enter, mousedown0, keys, digit1'''
+            '''do NOT work: control+mousedown0, control+click0, at:control+mousedown0'''
+            s.input_event_bindings.viewer['arrowleft'] = 'keyLeft'
+            s.input_event_bindings.viewer['arrowright'] = 'keyRight'
+            s.input_event_bindings.viewer['arrowup'] = 'keyUp'
+            s.input_event_bindings.viewer['arrowdown'] = 'keyDown'
+            s.input_event_bindings.viewer['digit1'] = 'key1'
+            s.input_event_bindings.viewer['digit2'] = 'key2'
+            s.input_event_bindings.viewer['digit3'] = 'key3'
+            s.input_event_bindings.viewer['space'] = 'keySpace'
+            # s.input_event_bindings.slice_view['space'] = 'keySpace'
+            s.show_ui_controls = False
+            s.show_ui_controls = False
+            s.show_panel_borders = False
+            s.show_layer_panel = False
+            s.show_help_button = True
+
+        with self.txn() as s:
+            # s.gpu_memory_limit = -1
+            s.system_memory_limit = -1
+            s.concurrent_downloads = 1024 ** 2
+
+        self.setBackground()
         self.webengine.setFocus()
 
-    def __repr__(self):
-        # return copy.deepcopy(self.state)
-        return self.type
 
     def __del__(self):
         try:
-            logger.warning('__del__ called on %s by %s (created: %s)'% (self.type, inspect.stack()[1].function, self.created))
+            clr = inspect.stack()[1].function
+            logger.warning(f'{self.type} deleted by {clr} ({self.created})')
         except:
-            logger.warning('__del__ called on %s (created: %s)' %(self.type, self.created))
+            logger.warning(f"{self.type} deleted, caller unknown ({self.created})")
 
-    def _onKeyLeft(self, s):
-        logger.warning("Native arrow LEFT keybinding intercepted!")
-        self.signals.arrowLeft.emit()
+    @staticmethod
+    @cache
+    def _convert_layout(type):
+        d = {
+            'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d',
+            'yz-3d': 'xy-3d', 'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'
+        }
+        return d[type]
 
-    def _onKeyRight(self, s):
-        logger.warning("Native arrow RIGHT keybinding intercepted!")
-        self.signals.arrowRight.emit()
-
-    def _onKeyUp(self, s):
-        logger.warning("Native arrow UP keybinding intercepted!")
-        self.signals.arrowUp.emit()
-
-    def _onKeyDown(self, s):
-        logger.warning("Native arrow DOWN keybinding intercepted!")
-        self.signals.arrowDown.emit()
 
     @abc.abstractmethod
     def initViewer(self):
-        pass
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def set_layer(self, z=None):
+        self._blockStateChanged = True
+        if z == None:
+            z = self.dm.zpos
+        try:
+            with self.txn() as s:
+                vc = s.voxel_coordinates
+                vc[0] = z + 0.5
+        except:
+            print_exception()
+        self._blockStateChanged = False
+
+    @abc.abstractmethod
+    def on_state_changed(self):
+        raise NotImplementedError
+
+    def _keyLeft(self, s):
+        self.signals.arrowLeft.emit()
+
+    def _keyRight(self, s):
+        self.signals.arrowRight.emit()
+
+    def _keyUp(self, s):
+        self.signals.arrowUp.emit()
+
+    def _keyDown(self, s):
+        self.signals.arrowDown.emit()
+
+    @abc.abstractmethod
+    def _key1(self, s):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def _key2(self, s):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def _key3(self, s):
+        raise NotImplementedError
+
 
     def getCoordinateSpace(self):
         return ng.CoordinateSpace(
             names=['z', 'y', 'x'],
             units=['nm', 'nm', 'nm'],
-            scales=list(self.dm.resolution(s=self.dm.level)),
+            scales=self.res,
         )
 
-    def getCoordinateSpacePlanar(self):
-        return ng.CoordinateSpace(
-            names=['z', 'y', 'x'],
-            units=['nm', 'nm', 'nm'],
-            scales=list(self.dm.resolution(s=self.dm.level)),
+    def getLocalVolume(self, data, coordinatespace):
+        """
+            data – Source data.
+            volume_type – 'image'/'segmentation', or, guessed from data type.
+            mesh_options – A dict with the following keys specifying options
+                for mesh simplification for 'segmentation' volumes:
+            downsampling – '3d' to use isotropic downsampling, '2d' to
+                downsample separately in XY, XZ, and YZ; or, None.
+            max_downsampling (default=64) – Maximum amount by which on-the-fly
+                downsampling may reduce the volume of a chunk. Ex. 4x4x4
+                downsampling reduces the volume by 64
+            max_downsampled_size (default=128)
+        """
+        lv = ng.LocalVolume(
+            volume_type='image',
+            data=data,
+            voxel_offset=[0, 0, 0],
+            dimensions=coordinatespace,
+            downsampling='3d',
+            max_downsampling=cfg.max_downsampling,
+            max_downsampled_size=cfg.max_downsampled_size,
         )
 
+        return lv
 
-    # @abc.abstractmethod
-    # def on_state_changed(self):
-    #     pass
+    # async def get_zarr_tensor(path):
+    def getTensor(self, path):
+        #Todo can this be made async?
+        '''**All TensorStore indexing operations produce lazy views**
+        https://stackoverflow.com/questions/64924224/getting-a-view-of-a-zarr-array-slice
 
-
-    @Slot()
-    def on_state_changed_any(self):
-        # zoom bug factor = 250000000s
-        # caller = inspect.stack()[1].function
-        # logger.info(f"[{caller}]")
-
-        if self._blockStateChanged:
-            return
-
-        if self.rev_mapping[self.state.layout.type] != getData('state,neuroglancer,layout'):
-            self.signals.layoutChanged.emit()
-
-        if self.state.cross_section_scale:
-            val = (self.state.cross_section_scale, self.state.cross_section_scale * 250000000)[self.state.cross_section_scale < .001]
-            if round(val, 2) != round(getData('state,neuroglancer,zoom'), 2):
-                if getData('state,neuroglancer,zoom') != val:
-                    logger.info(f'emitting zoomChanged! val = {val:.4f}')
-                    setData('state,neuroglancer,zoom', val)
-                    self.signals.zoomChanged.emit(val)
-
-        # self.post_message(f"Voxel Coordinates: {str(self.state.voxel_coordinates)}")
-
-
-    @Slot()
-    def on_state_changed(self):
-        # caller = inspect.stack()[1].function
-
-        if getData('state,neuroglancer,blink'):
-            return
-
-        if self._blockStateChanged:
-            return
-
-        try:
-            if isinstance(self.state.position, np.ndarray):
-                request_layer = int(self.state.position[0])
-                if request_layer != self._layer:
-                    # State Changed, But Layer Is The Same. Supress teh callback
-                    self.dm.zpos = request_layer
-                    self._layer = request_layer
-        except:
-            print_exception()
-
+        :param path: Fully qualified Zarr path
+        :return: A TensorStore future object
+        :rtype: tensorstore.Future
+        '''
+        if not os.path.exists(path):
+            logger.warning(f"Path Not Found: {path}")
+            return None
+        logger.info(f'Requested: {path}')
+        total_bytes_limit = 256_000_000_000  # Lonestar6: 256 GB (3200 MT/level) DDR4
+        future = ts.open({
+            'dtype': 'uint8',
+            'driver': 'zarr',
+            'kvstore': {
+                'driver': 'file',
+                'path': path
+            },
+            'context': {
+                'cache_pool': {'total_bytes_limit': total_bytes_limit},
+                'file_io_concurrency': {'limit': 1024},  # 1027+
+                # 'data_copy_concurrency': {'limit': 512},
+            },
+            # 'recheck_cached_data': 'open',
+            'recheck_cached_data': True,  # default=True
+        })
+        return future
 
     def url(self):
         return self.get_viewer_url()
 
-
-    def blink(self):
-        logger.info(f'self._blinkState = {self._blinkState}, self._blockStateChanged={self._blockStateChanged}')
-        self._blinkState = 1 - self._blinkState
-        if self._blinkState:
-            self.set_layer(self.dm.zpos)
-        else:
-            self.set_layer(self.dm.zpos - self.dm.get_ref_index_offset())
-
-
-    def invalidateAlignedLayers(self):
-        cfg.alLV.invalidate()
-
-
     def position(self):
         return copy.deepcopy(self.state.position)
-        # return self.state.position
 
     def set_position(self, val):
         with self.txn() as s:
@@ -241,92 +299,46 @@ class AbstractEMViewer(neuroglancer.Viewer):
         state.help_panel.visible = bool(b)
         self.set_state(state)
 
+    def _keySpace(self, s):
+        logger.info("Native spacebar keybinding intercepted!")
+        # if self.dm.method() == 'manual':
+        self.signals.toggleView.emit()
+        self.webengine.setFocus()
+
+    def _ctlClick(self, s):
+        logger.info("Native control+click keybinding intercepted!")
+        self.webengine.setFocus()
+
     def zoom(self):
         return copy.deepcopy(self.state.crossSectionScale)
-        # return self.state.crossSectionScale
 
     def set_zoom(self, val):
-        if self.type != 'EMViewerStage':  # Critical!
-            self._blockStateChanged = True
-            with self.txn() as s:
-                s.crossSectionScale = val
-            self._blockStateChanged = False
-
-    def set_layer(self, index=None):
-        # NotCulpableForFlickerGlitch
-        self._blockStateChanged = True
-        # if DEV:
-        #     logger.critical(f'[{caller_name()}] Setting layer:\n'
-        #                     f'index arg={index}\n'
-        #                     f'voxel coords before={self.state.voxel_coordinates}\n'
-        #                     f'...')
-        if index == None:
-            index = self.dm.zpos
-        try:
-            with self.txn() as s:
-                vc = s.voxel_coordinates
-                vc[0] = index + 0.5
-        except:
-            print_exception()
-        self._blockStateChanged = False
-
-
-
-    def set_brightness(self):
-        state = copy.deepcopy(self.state)
-        for layer in state.layers:
-            logger.info(f"Setting brightness: {self.dm.brightness}")
-            layer.shaderControls['brightness'] = self.dm.brightness
-            # layer.volumeRendering = True
-        self.set_state(state)
-
-    def set_contrast(self):
-        state = copy.deepcopy(self.state)
-        for layer in state.layers:
-            logger.info(f"Setting contrast: {self.dm.contrast}")
-            layer.shaderControls['contrast'] = self.dm.contrast
-            #layer.volumeRendering = True
-        self.set_state(state)
-
-    def _set_zmag(self):
-        # self._blockStateChanged = True
-        try:
-            with self.txn() as s:
-                s.relativeDisplayScales = {"z": 10}
-        except:
-            print_exception()
-        # self._blockStateChanged = False
-
-    def set_zmag(self):
-        # logger.info(f'zpos={self.dm.zpos} Setting Z-mag on {self.type}')
         caller = inspect.stack()[1].function
-        # logger.info(f'caller: {caller}')
+        logger.info(f'Setting zoom to {caller}')
         self._blockStateChanged = True
-        try:
-            res = self.dm.resolution()
-            state = copy.deepcopy(self.state)
-            # state.relativeDisplayScales = {'z': res[0] * 1e9, 'y': res[1], 'x': res[2]}
-            state.relativeDisplayScales = {'z': 2}
-            self.set_state(state)
-        except:
-            logger.warning('Unable to set Z-mag')
-            print_exception()
-        else:
-            if DEV:
-                logger.info(f'[{caller}] Successfully set Z-mag!')
+        with self.txn() as s:
+            s.crossSectionScale = val
         self._blockStateChanged = False
 
+    def set_brightness(self, val=None):
+        state = copy.deepcopy(self.state)
+        for layer in state.layers:
+            if val:
+                layer.shaderControls['brightness'] = val
+            else:
+                layer.shaderControls['brightness'] = self.dm.brightness
+        self.set_state(state)
 
-    def updateScaleBar(self):
-        with self.txn() as s:
-            s.show_scale_bar = self.dm['state']['neuroglancer']['show_scalebar']
+    def set_contrast(self, val=None):
+        state = copy.deepcopy(self.state)
+        for layer in state.layers:
+            if val:
+                layer.shaderControls['contrast'] = val
+            else:
+                layer.shaderControls['contrast'] = self.dm.contrast
+        self.set_state(state)
 
-    def updateAxisLines(self):
-        with self.txn() as s:
-            s.show_axis_lines = self.dm['state']['neuroglancer']['show_bounds']
-
-
-    def updateDisplayAccessories(self):
+    def updateDisplayExtras(self):
         with self.txn() as s:
             s.show_default_annotations = self.dm['state']['neuroglancer']['show_bounds']
             s.show_axis_lines = self.dm['state']['neuroglancer']['show_axes']
@@ -342,493 +354,161 @@ class AbstractEMViewer(neuroglancer.Viewer):
                 s.crossSectionBackgroundColor = getOpt('neuroglancer,CUSTOM_BACKGROUND_COLOR')
             else:
                 if getOpt('neuroglancer,USE_DEFAULT_DARK_BACKGROUND'):
-                    # s.crossSectionBackgroundColor = '#222222'
                     s.crossSectionBackgroundColor = '#000000'
                 else:
                     s.crossSectionBackgroundColor = '#808080'
 
-    def updateUIControls(self):
-        with self.config_state.txn() as s:
-            s.show_ui_controls = getData('state,neuroglancer,show_controls')
+    def setUrl(self):
+        self.webengine.setUrl(QUrl(self.get_viewer_url()))
+        self.webengine.setFocus()
 
-
-    # def set_zmag(self):
-    #     if cfg.MP_MODE:
-    #         with self.txn() as s:
-    #             s.relativeDisplayScales = {"z": 10} # this should work, but does not work. ng bug.
 
     def clear_layers(self):
         if self.state.layers:
-            logger.info('Clearing viewer layers...')
+            logger.debug('Clearing viewer layers...')
             state = copy.deepcopy(self.state)
             state.layers.clear()
             self.set_state(state)
 
-    # def initZoom(self, w, h, adjust=1.20):
-    # def initZoom(self, w, h, adjust=1.10):
-    def initZoom(self, w, h, adjust=1.10):
-        #Todo add check for Zarr existence
-
-        # QApplication.processEvents()
-        # logger.info(f'w={w}, h={h}')
-        # self._settingZoom = True
-        # logger.critical(f'initZoom... w={w}, h={h}')
-        # logger.critical(f'initZoom... w_ng_display w={cfg.project_tab.w_ng_display.width()}, w_ng_display h={cfg.project_tab.w_ng_display.height()}')
-        if self.tensor:
-            if self.cs_scale:
-                # logger.info(f'w={w}, h={h}, cs_scale={self.cs_scale}')
-                with self.txn() as s:
-                    s.cross_section_scale = self.cs_scale
-                # logger.critical(f"\n\nself.cs_scale set!! {self.cs_scale}\n\n")
-            else:
-                # logger.info(f'w={w}, h={h}')
-                self.cs_scale = self.get_zoom(w=w, h=h)
-                adjusted = self.cs_scale * adjust
-                with self.txn() as s:
-                    s.cross_section_scale = adjusted
-            # logger.critical(f"self.cs_scale = {self.cs_scale}")
-            self.signals.zoomChanged.emit(self.cs_scale * 250000000)
-        else:
-            logger.warning("Cant set zoom now, no tensor object")
-
-
-    def get_zoom(self, w, h):
+    def getFrameScale(self, w, h):
         assert hasattr(self, 'tensor')
-        try:
-            assert self.tensor != None
-        except:
-            print_exception()
-            return
         _, tensor_y, tensor_x = self.tensor.shape
-        try:
-            res_z, res_y, res_x = self.dm.resolution(s=self.dm.level)  # nm per imagepixel
-        except:
-            res_z, res_y, res_x = [50,2,2]
-            logger.warning("Fell back to default zoom (self.dm may not exist yet)")
+        _, res_y, res_x = self.res  # nm per imagepixel
         scale_h = ((res_y * tensor_y) / h) * 1e-9  # nm/pixel
         scale_w = ((res_x * tensor_x) / w) * 1e-9  # nm/pixel
         cs_scale = max(scale_h, scale_w)
-        # cs_scale = scale_w
         return cs_scale
 
 
-    def reverse_zoom(self):
-        pass
-
-    # 2048 image_pixels x 4 nm/image_pixel = # nanometers
-    #
-
-
-    def get_tensors(self):
-        '''TODO study this #0813'''
-
-        # del cfg.tensor
-        # del cfg.unal_tensor
-        # del cfg.al_tensor
-        cfg.mw.tell('Loading Zarr asynchronously using Tensorstore...')
-        cfg.tensor = self.tensor = None
-        try:
-            # cfg.unal_tensor = get_zarr_tensor(unal_path).result()
-            sf = self.dm.lvl(s=self.dm.level)
-            if self.dm.is_aligned():
-                path = os.path.join(self.dm.data_location, 'zarr', 's' + str(sf))
-                future = get_zarr_tensor(path)
-                future.add_done_callback(lambda f: print(f'Callback: {f.result().domain}'))
-                self.tensor = cfg.tensor = cfg.al_tensor = future.result()
+    def initZoom(self, w, h, adjust=1.10):
+        logger.info('')
+        if self.tensor:
+            if self._cs_scale:
+                logger.info(f'w={w}, h={h}, cs_scale={self._cs_scale}')
+                with self.txn() as s:
+                    s.cross_section_scale = self._cs_scale
             else:
-                path = os.path.join(self.dm.images_location, 'zarr', 's' + str(sf))
-                future = get_zarr_tensor(path)
-                future.add_done_callback(lambda f: print(f'Callback: {f.result().domain}'))
-                self.tensor = cfg.tensor = cfg.unal_tensor = future.result()
-
-        except Exception as e:
-            cfg.mw.warn('Failed to acquire Tensorstore view')
-            print_exception()
-            ### Add funcitonality to recreate Zarr
-            # raise e # raising will ensure crash
+                self._cs_scale = self.getFrameScale(w=w, h=h)
+                adjusted = self._cs_scale * adjust
+                with self.txn() as s:
+                    s.cross_section_scale = adjusted
+            self.signals.zoomChanged.emit(self._cs_scale * 250000000)
         else:
-            cfg.mw.hud.done()
+            logger.warning("Cant set zoom now, no tensor store")
+
 
     def post_message(self, msg):
         with self.config_state.txn() as cs:
             cs.status_messages['message'] = msg
 
 
-# class EMViewer(neuroglancer.Viewer):
 class EMViewer(AbstractEMViewer):
 
-    def __init__(self, parent, dm, path, **kwags):
+    def __init__(self, **kwags):
         super().__init__(**kwags)
-        self.parent = parent
-        self.dm = dm
-        self.path = path
+        logger.info(f"\nCalling EMViewer __init__ ...\n")
         self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
-        self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
-        self.tensor = None
         self.type = 'EMViewer'
         self.initViewer()
         # asyncio.ensure_future(self.initViewer())
+        # self.post_message(f"Voxel Coordinates: {str(self.state.voxel_coordinates)}")
+
+    def on_state_changed(self):
+
+        if not self._blockStateChanged:
+
+            _css = self.state.cross_section_scale
+            if not isinstance(_css, type(None)):
+                val = (_css, _css * 250000000)[_css < .001]
+                if round(val, 2) != round(getData('state,neuroglancer,zoom'), 2):
+                    if getData('state,neuroglancer,zoom') != val:
+                        logger.info(f'emitting zoomChanged! [{val:.4f}]')
+                        setData('state,neuroglancer,zoom', val)
+                        self.signals.zoomChanged.emit(val)
+
+            if isinstance(self.state.position, np.ndarray):
+                requested = int(self.state.position[0])
+                if requested != self.dm.zpos:
+                    self.dm.zpos = requested
+
+            if self.state.layout.type != self._convert_layout(getData('state,neuroglancer,layout')):
+                self.signals.layoutChanged.emit()
 
     # async def initViewer(self, nglayout=None):
-    def initViewer(self, nglayout=None):
+    def initViewer(self):
         caller = inspect.stack()[1].function
-        if DEV:
-            logger.info(f'\n\n[DEV] [{caller}] [{self.type}] Initializing Neuroglancer...\n')
         self._blockStateChanged = False
-
 
         if not os.path.exists(os.path.join(self.path,'.zarray')):
             cfg.main_window.warn('Zarr (.zarray) Not Found: %s' % self.path)
-            logger.warning('Zarr (.zarray) Not Found: %s' % self.path)
             return
 
-        # logger.critical(f'Zarr path: {self.path}')
-        # logger.critical(f"nglayout = {nglayout}")
-
-        if not nglayout:
-            # requested = getData('state,neuroglancer,layout')
-            # requested = getData('state,neuroglancer,layout')
-
-            mapping = {'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d', 'yz-3d': 'xy-3d',
-                       'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'}
-            # nglayout = mapping[requested]
-            # if self.path == self.dm.path_zarr_transformed():
-            #     nglayout = mapping['4panel']
-            # else:
-            #     nglayout = mapping['xy']
-            nglayout = mapping[getData('state,neuroglancer,layout')]
-
-
-        # logger.critical(f"nglayout = {nglayout}")
-        # logger.critical(f"self.path = {self.path}")
-
-        # 04:54:47 [viewer_em.initViewer:468] Zarr path: /Users/joelyancey/alignem_data/images/r34_full_series.images/zarr/s4
-        # 04:54:47 [viewer_em.initViewer:469] nglayout = None
-        # 04:54:47 [viewer_em.initViewer:484] nglayout = yz
-        # 04:54:47 [viewer_em.initViewer:485] self.path = /Users/joelyancey/alignem_data/images/r34_full_series.images/zarr/s4
-        # 04:54:47 INFO [funcs_zarr.get_zarr_tensor:57] Requested: /Users/joelyancey/alignem_data/images/r34_full_series.images/zarr/s4
-
-
-
-        self.tensor = cfg.tensor = get_zarr_tensor(self.path).result()
-        # self.tensor = cfg.tensor = await get_zarr_tensor(path).result()
-
-        self.coordinate_space = self.getCoordinateSpace()
-
-        """ @param max_downsampling: Maximum amount by which on-the-fly downsampling may reduce the
-            volume of a chunk.  For example, 4x4x4 downsampling reduces the volume by 64.
-            
-            
-            data – Source data.
-            volume_type – either 'image' or 'segmentation'. If not specified, guessed from the data type.
-            mesh_options – A dict with the following keys specifying options for mesh simplification for 'segmentation' volumes:
-            downsampling – '3d' to use isotropic downsampling, '2d' to downsample separately in XY, XZ, and YZ, None to use no downsampling.
-            max_downsampling – Maximum amount by which on-the-fly downsampling may reduce the volume of a chunk. For example, 4x4x4 downsampling reduces the volume by 64"""
-
-
-        """
-        DEFAULT_MAX_DOWNSAMPLING = 64
-        DEFAULT_MAX_DOWNSAMPLED_SIZE = 128
-        DEFAULT_MAX_DOWNSAMPLING_SCALES = float('inf')        
-        """
-
-        if is_tacc():
-            cfg.LV = ng.LocalVolume(
-                volume_type='image',
-                data=self.tensor[:, :, :],
-                dimensions=self.coordinate_space,
-                # max_voxels_per_chunk_log2=1024
-                # downsampling=None, # '3d' to use isotropic downsampling, '2d' to downsample separately in XY, XZ, and YZ,
-                # None to use no downsampling.
-                max_downsampling=cfg.max_downsampling,
-                max_downsampled_size=cfg.max_downsampled_size,
-                # max_downsampling_scales=cfg.max_downsampling_scales #Goes a LOT slower when set to 1
-            )
-        else:
-            cfg.LV = ng.LocalVolume(
-                volume_type='image',
-                data=self.tensor[:, :, :],
-                dimensions=self.coordinate_space,
-                # max_voxels_per_chunk_log2=1024
-                # downsampling=None, # '3d' to use isotropic downsampling, '2d' to downsample separately in XY, XZ, and YZ,
-                # None to use no downsampling.
-                max_downsampling=cfg.max_downsampling,
-                max_downsampled_size=cfg.max_downsampled_size,
-                # max_downsampling_scales=cfg.max_downsampling_scales #Goes a LOT slower when set to 1
-            )
-
-
+        if os.path.exists(os.path.join(self.path, '.zarray')):
+            self.tensor = cfg.tensor = self.getTensor(self.path).result()
+            cfg.LV = self.getLocalVolume(self.tensor[:,:,:], self.getCoordinateSpace())
 
         with self.txn() as s:
-            s.layout.type = nglayout
-            # s.gpu_memory_limit = -1
-            s.system_memory_limit = -1
-            s.concurrent_downloads = 10000
-            # s.show_scale_bar = getOpt('neuroglancer,SHOW_SCALE_BAR')
-            # if self.dm.lvl() < 6:
-            #     s.show_scale_bar = True
-            s.show_scale_bar = True
+            s.layout.type = self._convert_layout(getData('state,neuroglancer,layout'))
+            s.show_scale_bar = getData('state,neuroglancer,show_scalebar')
             s.show_axis_lines = getData('state,neuroglancer,show_axes')
+            s.show_default_annotations = getData('state,neuroglancer,show_bounds')
             s.position=[self.dm.zpos + 0.5, self.tensor.shape[1]/2, self.tensor.shape[2]/2]
             s.layers['layer'] = ng.ImageLayer( source=cfg.LV, shader=self.dm['rendering']['shader'], )
-            s.show_default_annotations = getData('state,neuroglancer,show_bounds')
-            s.projectionScale = 1
-            if getOpt('neuroglancer,USE_CUSTOM_BACKGROUND'):
-                s.crossSectionBackgroundColor = getOpt('neuroglancer,CUSTOM_BACKGROUND_COLOR')
-            else:
-                if getOpt('neuroglancer,USE_DEFAULT_DARK_BACKGROUND'):
-                    # s.crossSectionBackgroundColor = '#222222'
-                    s.crossSectionBackgroundColor = '#000000'
-                else:
-                    s.crossSectionBackgroundColor = '#808080'
-
-        self.actions.add('keyLeft', self._onKeyLeft)
-        self.actions.add('keyRight', self._onKeyRight)
-        self.actions.add('keyUp', self._onKeyUp)
-        self.actions.add('keyDown', self._onKeyDown)
-
 
         with self.config_state.txn() as s:
-            s.input_event_bindings.slice_view['arrowleft'] = 'keyLeft'
-            s.input_event_bindings.slice_view['arrowright'] = 'keyRight'
-            s.input_event_bindings.slice_view['arrowup'] = 'keyUp'
-            s.input_event_bindings.slice_view['arrowdown'] = 'keyDown'
             s.show_ui_controls = getData('state,neuroglancer,show_controls')
-            s.show_panel_borders = False
-            s.show_layer_panel = False
-            # s.viewer_size = [100,100]
-            s.show_help_button = True
-            s.scale_bar_options.padding_in_pixels = 0 # default = 8
-            s.scale_bar_options.left_pixel_offset = 10  # default = 10
-            s.scale_bar_options.bottom_pixel_offset = 10  # default = 10
-            s.scale_bar_options.bar_top_margin_in_pixels = 4 # default = 5
-            # s.scale_bar_options.font_name = 'monospace'
-            # s.scale_bar_options.font_name = 'serif'
-
-
-
-        self._layer = math.floor(self.state.position[0])
 
         self.set_brightness()
         self.set_contrast()
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
-        if self.state.cross_section_scale:
-            val = (self.state.cross_section_scale, self.state.cross_section_scale * 250000000)[self.state.cross_section_scale < .001]
-            if round(val, 3) != round(getData('state,neuroglancer,zoom'), 3):
-                setData('state,neuroglancer,zoom', val)
-                self.signals.zoomChanged.emit(val)
-
-
-
-
-
-
-# class EMViewerStage(AbstractEMViewer):
-#
-#     def __init__(self, **kwags):
-#         super().__init__(**kwags)
-#         self.type = 'EMViewerStage'
-#         # self.shared_state.add_changed_callback(self.on_state_changed_any)
-#         self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
-#         self.initViewer()
-#
-#
-#     def initViewer(self):
-#         caller = inspect.stack()[1].function
-#         logger.info(f'\n\nInitializing {self.type} [{caller}]...\n')
-#
-#         self.coordinate_space = self.getCoordinateSpace()
-#
-#         self.get_tensors()
-#         sf = self.dm.lvl(level=self.dm.level_key)
-#         path = os.path.join(self.dm.dest(), 'img_aligned.zarr', 's' + str(sf))
-#
-#         self.index = self.dm.zpos
-#         # dir_staged = os.path.join(self.dm.dest(), self.level_key, 'zarr_staged', str(self.index), 'staged')
-#         # self.tensor = cfg.stageViewer = get_zarr_tensor(dir_staged).result()
-#
-#         tensor = get_zarr_tensor(path).result()
-#         self.LV = ng.LocalVolume(
-#             volume_type='image',
-#             # data=self.tensor,
-#             data=tensor[:,:,:],
-#             # data=self.tensor[self.index:self.index+1, :, :],
-#             # dimensions=self.coordinate_space,
-#             # dimensions=[1,1,1],
-#             # dimensions=self.getCoordinateSpacePlanar(),
-#             dimensions=self.coordinate_space,
-#             voxel_offset=[0, 0, 0]
-#         )
-#         # _, tensor_y, tensor_x = cfg.tensor.shape
-#         _, tensor_y, tensor_x = tensor.shape
-#
-#         logger.info(f'Tensor Shape: {tensor.shape}')
-#
-#         sf = self.dm.lvl(level=self.dm.level_key)
-#         self.ref_l, self.base_l, self.aligned_l = 'ref_%d' % sf, 'base_%d' % sf, 'aligned_%d' % sf
-#         with self.txn() as s:
-#             '''other preferences:
-#             s.displayDimensions = ["z", "y", "x"]
-#             s.perspective_orientation
-#             s.concurrent_downloads = 512'''
-#             s.gpu_memory_limit = -1
-#             s.system_memory_limit = -1
-#             s.layout = ng.row_layout([ng.LayerGroupViewer(layers=[self.aligned_l], layout='yz')])
-#             if getData('state,neutral_contrast'):
-#                 s.crossSectionBackgroundColor = '#808080'
-#             else:
-#                 s.crossSectionBackgroundColor = '#222222'
-#             # s.show_scale_bar = True
-#             s.show_scale_bar = False
-#             s.show_axis_lines = False
-#             s.show_default_annotations = getData('state,show_yellow_frame')
-#             s.layers[self.aligned_l] = ng.ImageLayer(source=self.LV, shader=self.dm['rendering']['shader'], )
-#             # s.showSlices=False
-#             # s.position = [0, tensor_y / 2, tensor_x / 2]
-#             # s.position = [0.5, tensor_y / 2, tensor_x / 2]
-#             # s.voxel_coordinates = [0, tensor_y / 2, tensor_x / 2] #Prev
-#             # s.relativeDisplayScales = {"z": 50, "y": 2, "x": 2}
-#
-#         with self.config_state.txn() as s:
-#             s.show_ui_controls = False
-#             # s.show_ui_controls = True
-#             s.show_panel_borders = False
-#
-#         self._crossSectionScale = self.state.cross_section_scale
-#         self.initial_cs_scale = self.state.cross_section_scale
-#
-#         self.set_brightness()
-#         self.set_contrast()
-#         # self.set_zmag()
-#         # self.set_zmag()
-#         self.webengine0.setUrl(QUrl(self.get_viewer_url()))
-#         w = cfg.project_tab.MA_webengine_stage.geometry().width()
-#         h = cfg.project_tab.MA_webengine_stage.geometry().height()
-#         self.initZoom(w=w, h=h, adjust=1.02)
-#
-#         # logger.info('\n\n' + self.url() + '\n')
-#
-#
 
 class PMViewer(AbstractEMViewer):
 
     def __init__(self, **kwags):
         super().__init__(**kwags)
-        # self.shared_state.add_changed_callback(self.on_state_changed)
-        # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed_any))
+        logger.info(f"\nCalling PMViewer __init__ ...\n")
         self.type = 'PMViewer'
+        self.coordspace = ng.CoordinateSpace(
+            names=['z', 'y', 'x'], units=['nm', 'nm', 'nm'], scales=[50, 2,2])  # DoThisRight TEMPORARY <---------
+        self.initViewer()
 
 
-    def initViewer(self, path_l=None, path_r=None):
-        caller = inspect.stack()[1].function
-        logger.info(f"[{caller}] [{self.type}]\n"
-                        f"path_l: {path_l}\n"
-                        f"path_r: {path_r}")
-        # if path_l:
-        self.path_l = path_l
-        self.path_r = path_r
-        self.tensor, self.tensor_r = None, None
-        self.LV_l, self.LV_r = None, None
-        # else:
-        #     self.path_l = self._example_path
-        # coordinate_space = ng.CoordinateSpace(names=['z', 'y', 'x'], units=['nm', 'nm', 'nm'], scales=scales, )
-        coordinate_space = ng.CoordinateSpace(names=['z', 'y', 'x'], units=['nm', 'nm', 'nm'], scales=[50,2,2])
-        # try:
-        #     self.tensor = get_zarr_tensor(path_l).result()
-        # except:
-        #     self.tensor = get_zarr_tensor(self._example_path).result()
-        #     with self.config_state.txn() as cs:
-        #         cs.status_messages['message'] = "No images have been imported yet. This is just an example."
-        #     print_exception()
+    def initViewer(self):
 
-        if self.path_l:
-            logger.info(f'Initializing Local Volume: {path_l}')
-            try:
-                self.tensor = get_zarr_tensor(path_l).result()
-                self.LV_l = ng.LocalVolume(
-                    volume_type='image',
-                    data=self.tensor[:, :, :],
-                    dimensions=coordinate_space,
-                    # max_voxels_per_chunk_log2=1024
-                    # downsampling=None, # '3d' to use isotropic downsampling, '2d' to downsample separately in XY, XZ, and YZ,
-                    # None to use no downsampling.
-                    max_downsampling=cfg.max_downsampling,
-                    max_downsampled_size=cfg.max_downsampled_size,
-                    # max_downsampling_scales=cfg.max_downsampling_scales #Goes a LOT slower when set to 1
-                )
-            except:
-                print_exception()
+        if os.path.exists(os.path.join(self.path[0], '.zarray')):
+            self.tensor = self.getTensor(self.path[0]).result()
+            self.LV_l = self.getLocalVolume(self.tensor[:, :, :], self.getCoordinateSpace())
 
-        if self.path_r:
-            logger.info(f'Initializing Local Volume: {path_r}')
-            try:
-                self.tensor_r = get_zarr_tensor(path_r).result()
-                self.LV_r = ng.LocalVolume(
-                    volume_type='image',
-                    data=self.tensor_r[:, :, :],
-                    dimensions=coordinate_space,
-                    # max_voxels_per_chunk_log2=1024
-                    # downsampling=None, # '3d' to use isotropic downsampling, '2d' to downsample separately in XY, XZ, and YZ,
-                    # None to use no downsampling.
-                    max_downsampling=cfg.max_downsampling,
-                    max_downsampled_size=cfg.max_downsampled_size,
-                    # max_downsampling_scales=cfg.max_downsampling_scales #Goes a LOT slower when set to 1
-                )
-            except:
-                # with self.config_state.txn() as s:
-                #     s.status_messages['message'] = f'No Data'
-                print_exception()
-
-        logger.info('Adding layers...')
+        if os.path.exists(os.path.join(self.path[1],'.zarray')):
+            self.tensor_r = self.getTensor(self.path[1]).result()
+            self.LV_r = self.getLocalVolume(self.tensor_r[:, :, :], self.getCoordinateSpace())
 
         with self.txn() as s:
             s.layout.type = 'yz'
-            if self.LV_l:
-                s.layers['layer0'] = ng.ImageLayer(source=self.LV_l)
-            else:
-                s.layers['layer0'] = ng.ImageLayer()
-            if self.LV_r:
-                s.layers['layer1'] = ng.ImageLayer(source=self.LV_r)
-            else:
-                s.layers['layer1'] = ng.ImageLayer()
-            s.crossSectionBackgroundColor = '#000000'
-            # s.gpu_memory_limit = -1
-            s.system_memory_limit = -1
-            # s.gpu_memory_limit = 2 * 1024 * 1024 * 1024 * 1024
-            # s.system_memory_limit = -1
             s.show_default_annotations = True
             s.show_axis_lines = True
             s.show_scale_bar = False
-            s.layout = ng.row_layout([
-                ng.LayerGroupViewer(layout='yz', layers=['layer0']),
-                ng.LayerGroupViewer(layout='yz', layers=['layer1'],),
-            ])
 
-        self.actions.add('keyLeft', self._left)
-        self.actions.add('keyRight', self._right)
-        self.actions.add('keyUp', self._onKeyUp)
-        self.actions.add('keyDown', self._onKeyDown)
+            if hasattr(self, 'LV_l'):
+                s.layers['source'] = ng.ImageLayer(source=self.LV_l)
+            else:
+                s.layers['source'] = ng.ImageLayer()
+
+            if hasattr(self,'LV_r'):
+                s.layers['transformed'] = ng.ImageLayer(source=self.LV_r)
+                s.layout = ng.row_layout([
+                    ng.LayerGroupViewer(layout='yz', layers=['source']),
+                    ng.LayerGroupViewer(layout='yz', layers=['transformed'],),
+                ])
+            else:
+                s.layout = ng.row_layout([
+                    ng.LayerGroupViewer(layout='yz', layers=['source']),
+                ])
 
         with self.config_state.txn() as s:
-            s.input_event_bindings.slice_view['arrowleft'] = 'keyLeft'
-            s.input_event_bindings.slice_view['arrowright'] = 'keyRight'
-            s.input_event_bindings.slice_view['arrowup'] = 'keyUp'
-            s.input_event_bindings.slice_view['arrowdown'] = 'keyDown'
-            # s.status_messages['message'] = ''
             s.show_ui_controls = False
-            # s.show_ui_controls = True
-            # s.status_messages = None
-            s.show_panel_borders = False
-            s.show_layer_panel = False
-            # if self.path_l:
-            #     if hasattr(self, 'LV_l'):
-            #         s.status_messages['msg0'] = f'images    : {path_l}'
-            # if self.path_r:
-            #     if hasattr(self, 'LV_r'):
-            #         s.status_messages['msg1'] = f'alignment : {path_r}'
 
-        logger.info('Setting URL...')
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
     def _left(self, s):
@@ -843,122 +523,264 @@ class PMViewer(AbstractEMViewer):
             vc = s.voxel_coordinates
             vc[0] = min(vc[0] + 1, self.tensor.shape[0])
 
+    def on_state_changed(self):
+        pass
 
 
-    # def set_row_layout(self, nglayout):
-    #
-    #     with self.txn() as s:
-    #         if self.dm.is_aligned_and_generated():
-    #             if getData('state,MANUAL_MODE'):
-    #                 s.layout = ng.row_layout([
-    #                     ng.column_layout([
-    #                         ng.LayerGroupViewer(layers=[self.aligned_l], layout=nglayout),
-    #                     ]),
-    #                 ])
-    #             else:
-    #                 s.layout = ng.row_layout([
-    #                     ng.column_layout([
-    #                         ng.LayerGroupViewer(layers=[self.ref_l], layout=nglayout),
-    #                         ng.LayerGroupViewer(layers=[self.base_l], layout=nglayout),
-    #                     ]),
-    #                     ng.column_layout([
-    #                         ng.LayerGroupViewer(layers=[self.aligned_l], layout=nglayout),
-    #                     ]),
-    #                 ])
-    #         else:
-    #             s.layout = ng.row_layout(self.grps)
+class MAViewer(AbstractEMViewer):
 
-    # def set_vertical_layout(self, nglayout):
-    #     with self.txn() as s:
-    #         if self.dm.is_aligned_and_generated():
-    #             if getData('state,MANUAL_MODE'):
-    #                 ng.column_layout([
-    #                     ng.LayerGroupViewer(layers=[self.ref_l], layout=nglayout),
-    #                     ng.LayerGroupViewer(layers=[self.base_l], layout=nglayout),
-    #                     ng.LayerGroupViewer(layers=[self.aligned_l], layout=nglayout),
-    #                 ]),
-    #             else:
-    #                 ng.column_layout([
-    #                     ng.LayerGroupViewer(layers=[self.ref_l], layout=nglayout),
-    #                     ng.LayerGroupViewer(layers=[self.base_l], layout=nglayout),
-    #                 ]),
-    #         else:
-    #             s.layout = ng.row_layout(self.grps)
+    def __init__(self, **kwags):
+        super().__init__(**kwags)
+        logger.info(f"\nCalling MAViewer __init__ ...\n")
+        self.type = 'MAViewer'
+        self.role = 'tra'
+        self.index = 0 #None -1026
+        self.cs_scale = None
+        self.marker_size = 1
+        self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
+        self.signals.ptsChanged.connect(self.drawSWIMwindow)
+        self.initViewer()
+
+    def z(self):
+        return int(self.state.voxel_coordinates[0]) # self.state.position[0]
+
+    def set_layer(self, z=None):
+        caller = inspect.stack()[1].function
+        self._blockStateChanged = True
+        if z:
+            self.index = z
+        elif self.role == 'ref':
+            self.index = self.dm.get_ref_index()
+        else:
+            self.index = self.dm.zpos
+        logger.info(f"[{caller}] Setting Z-position [{self.index}]")
+        try:
+            with self.txn() as s:
+                vc = s.voxel_coordinates
+                vc[0] = self.index + 0.5
+        except:
+            print_exception()
+        # self.drawSWIMwindow()
+        self._blockStateChanged = False
 
 
+    def initViewer(self):
+        logger.info('')
+        self._blockStateChanged = True  # Critical #Always
+
+        if self.role == 'ref':
+            self.index = self.dm.get_ref_index()
+        else:
+            self.index = self.dm.zpos
+
+        try:
+            self.store = self.tensor = self.getTensor(self.path).result()
+        except Exception as e:
+            logger.error('Unable to Load Data Store at %s' % self.path)
+            raise e
+
+        self.LV = self.getLocalVolume(self.tensor[:, :, :], self.getCoordinateSpace())
+
+        with self.txn() as s:
+            s.layout.type = 'yz'
+            s.show_scale_bar = True
+            s.show_axis_lines = True
+            s.show_default_annotations = False
+            _, y, x = self.store.shape
+            s.voxel_coordinates = [self.index + .5, y / 2, x / 2]
+            s.layers['layer'] = ng.ImageLayer(source=self.LV, shader=self.dm['rendering']['shader'], )
 
 
-    # def _set_zmag(self):
-    #     with self.txn() as s:
-    #         s.relativeDisplayScales = {"z": 10}
+        self.drawSWIMwindow()
+
+        w = self.parent.wNg1.width()
+        h = self.parent.wNg1.height()
+
+        self.initZoom(w=w, h=h)
+
+        self._blockStateChanged = False
+
+        self.webengine.setUrl(QUrl(self.get_viewer_url()))
+        self.webengine.setFocus()
+
+    def on_state_changed(self):
+        # logger.info(f'[{self.role}]')
+
+        if not self._blockStateChanged:
+
+            self._blockStateChanged = True
+
+            if self.state.cross_section_scale:
+                val = (self.state.cross_section_scale, self.state.cross_section_scale * 250000000)[
+                    self.state.cross_section_scale < .001]
+                if round(val, 2) != round(getData('state,neuroglancer,zoom'), 2):
+                    if getData('state,neuroglancer,zoom') != val:
+                        logger.debug(f'emitting zoomChanged! val = {val:.4f}')
+                        setData('state,neuroglancer,zoom', val)
+                        self.signals.zoomChanged.emit(val)
+
+            if self.role == 'ref':
+                if floor(self.state.position[0]) != self.index:
+                    logger.warning(f"[{self.role}] Illegal state change")
+                    self.signals.badStateChange.emit()  # New
+                    return
+
+            elif self.role == 'tra':
+                if floor(self.state.position[0]) != self.index:
+                    self.index = floor(self.state.position[0])
+                    self.drawSWIMwindow(z=self.index)  # NeedThis #0803
+                    # self.dm.zpos = self.index
+                    self.signals.zVoxelCoordChanged.emit(self.index)
+
+            self._blockStateChanged = False
+
+
+    def _key1(self, s):
+        logger.info('')
+        self.add_matchpoint(s, id=0, ignore_pointer=True)
+        self.webengine.setFocus()
+
+
+    def _key2(self, s):
+        logger.info('')
+        self.add_matchpoint(s, id=1, ignore_pointer=True)
+        self.webengine.setFocus()
+
+
+    def _key3(self, s):
+        logger.info('')
+        self.add_matchpoint(s, id=2, ignore_pointer=True)
+        self.webengine.setFocus()
+
+
+    def swim(self, s):
+        logger.info('[futures] Emitting SWIM signal...')
+        self.signals.swimAction.emit()
+
+
+    def add_matchpoint(self, s, id, ignore_pointer=False):
+        if self.dm.method() == 'manual':
+            print('\n\n--> adding region selection -->\n')
+            coords = np.array(s.mouse_voxel_coordinates)
+            if coords.ndim == 0:
+                logger.warning(f'Null coordinates! ({coords})')
+                return
+            _, y, x = s.mouse_voxel_coordinates
+            frac_y = y / self.store.shape[1]
+            frac_x = x / self.store.shape[2]
+            logger.critical(f"decimal x = {frac_x}, decimal y = {frac_y}")
+            self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings']['method_opts']['points']['coords'][
+                self.role][id] = (frac_x, frac_y)
+            self.signals.ptsChanged.emit()
+            self.drawSWIMwindow()
+
+
+    def drawSWIMwindow(self, z=None):
+        caller = inspect.stack()[1].function
+        logger.critical(f"\n\n[{caller}] Drawing SWIM windows...\n")
+        if z == None:
+            z = self.dm.zpos
+        # if z == self.dm.first_unskipped(): #1025-
+        #     return
+        self._blockStateChanged = True
+        # self.undrawSWIMwindows()
+        m = self.marker_size
+        level_val = self.dm.lvl()
+        method = self.dm.current_method
+        annotations = []
+        if method == 'grid':
+            ww1x1 = tuple(self.dm.size1x1())  # full window width
+            ww2x2 = tuple(self.dm.size2x2())  # 2x2 window width
+            w, h = self.dm.image_size(s=self.dm.level)
+            p = self.getCenterpoints(w, h, ww1x1, ww2x2)
+            colors = self.colors[0:sum(self.dm.quadrants)]
+            cps = [x for i, x in enumerate(p) if self.dm.quadrants[i]]
+            ww_x = ww2x2[0] - (24 // level_val)
+            ww_y = ww2x2[1] - (24 // level_val)
+            z = self.index + 0.5
+            for i, pt in enumerate(cps):
+                c = colors[i]
+                d1, d2, d3, d4 = self.getRect2(pt, ww_x, ww_y)
+                id = 'roi%d' % i
+                annotations.extend([
+                    ng.LineAnnotation(id=id + '%d0', pointA=(z,) + d1, pointB=(z,) + d2, props=[c, m]),
+                    ng.LineAnnotation(id=id + '%d1', pointA=(z,) + d2, pointB=(z,) + d3, props=[c, m]),
+                    ng.LineAnnotation(id=id + '%d2', pointA=(z,) + d3, pointB=(z,) + d4, props=[c, m]),
+                    ng.LineAnnotation(id=id + '%d3', pointA=(z,) + d4, pointB=(z,) + d1, props=[c, m])])
+
+        elif method == 'manual':
+            logger.critical("Restoring...")
+            ww_x = ww_y = self.dm.manual_swim_window_px()
+            pts = self.dm.ss['method_opts']['points']['coords'][self.role]
+            for i, pt in enumerate(pts):
+                logger.critical(f"{i}: {pt}")
+                if pt:
+                    x = self.store.shape[2] * pt[0]
+                    y = self.store.shape[1] * pt[1]
+                    d1, d2, d3, d4 = self.getRect2(coords=(x, y), ww_x=ww_x, ww_y=ww_y, )
+                    z = self.index + 0.5
+                    c = self.colors[i]
+                    id = 'roi%d' % i
+                    annotations.extend([
+                        ng.LineAnnotation(id=id + '%d0', pointA=(z,) + d1, pointB=(z,) + d2, props=[c, m]),
+                        ng.LineAnnotation(id=id + '%d1', pointA=(z,) + d2, pointB=(z,) + d3, props=[c, m]),
+                        ng.LineAnnotation(id=id + '%d2', pointA=(z,) + d3, pointB=(z,) + d4, props=[c, m]),
+                        ng.LineAnnotation(id=id + '%d3', pointA=(z,) + d4, pointB=(z,) + d1, props=[c, m])
+                    ])
+        with self.txn() as s:
+            s.layers['SWIM'] = ng.LocalAnnotationLayer(
+                annotations=annotations,
+                dimensions=self.getCoordinateSpace(),
+                annotationColor='blue',
+                annotation_properties=[
+                    ng.AnnotationPropertySpec(id='color', type='rgb', default='#ffff66', ),
+                    ng.AnnotationPropertySpec(id='size', type='float32', default=1, )
+                ],
+                shader='''
+                    void main() {
+                      setColor(prop_color());
+                      setPointMarkerSize(prop_size());
+                    }
+                ''',
+            )
+
+        self._blockStateChanged = False
+        self.webengine.setFocus()
+
+    def undrawSWIMwindows(self):
+        with self.txn() as s:
+            if s.layers['SWIM']:
+                if 'annotations' in s.layers['SWIM'].to_json().keys():
+                    s.layers['SWIM'].annotations = None
+
+    @cache
+    def getCenterpoints(self, w, h, ww1x1, ww2x2):
+        d_x1 = ((w - ww1x1[0]) / 2) + (ww2x2[0] / 2)
+        d_x2 = w - d_x1
+        d_y1 = ((h - ww1x1[1]) / 2) + (ww2x2[1] / 2)
+        d_y2 = h - d_y1
+        p1 = (d_x2, d_y1)
+        p2 = (d_x1, d_y1)
+        p3 = (d_x2, d_y2)
+        p4 = (d_x1, d_y2)
+        return p1, p2, p3, p4
+
+    @cache
+    def getRect2(self, coords, ww_x, ww_y):
+        x, y = coords[0], coords[1]
+        hw = int(ww_x / 2)  # Half-width
+        hh = int(ww_y / 2)  # Half-height
+        A = (y + hh, x - hw)
+        B = (y + hh, x + hw)
+        C = (y - hh, x + hw)
+        D = (y - hh, x - hw)
+        return A, B, C, D
 
 
 # # Not using TensorStore, so point Neuroglancer directly to local Zarr on disk.
 # cfg.refLV = cfg.baseLV = f'zarr://http://localhost:{self.port}/{unal_path}'
 # if is_aligned_and_generated:  cfg.alLV = f'zarr://http://localhost:{self.port}/{al_path}'
 
-
-'''
-ViewerState({
-    "dimensions": {
-        "z": [5e-08, "m"],
-        "y": [8e-09, "m"],
-        "x": [8e-09, "m"]
-    },
-    "position": [0.5167545080184937, 264, 679.9994506835938],
-    "crossSectionScale": 1,
-    "projectionScale": 1024,
-    "layers": [{
-        "cur_method": "annotation",
-        "source": {
-            "url": "local://annotations",
-            "transform": {
-                "outputDimensions": {
-                    "z": [5e-08, "m"],
-                    "y": [8e-09, "m"],
-                    "x": [8e-09, "m"]
-                }
-            }
-        },
-        "tab": "source",
-        "annotations": [{
-            "point": [0.5, 369, 597.4999389648438],
-            "cur_method": "point",
-            "id": "(0.5, 369.0, 597.49994)",
-            "props": ["#f3e375", 3, 8]
-        }, {
-            "point": [0.5, 449, 379.4999694824219],
-            "cur_method": "point",
-            "id": "(0.5, 449.0, 379.49997)",
-            "props": ["#5c4ccc", 3, 8]
-        }],
-        "annotationProperties": [{
-            "id": "ptColor",
-            "cur_method": "rgb",
-            "default": "#ffffff"
-        }, {
-            "id": "ptWidth",
-            "cur_method": "float32",
-            "default": 3
-        }, {
-            "id": "size",
-            "cur_method": "float32",
-            "default": 8
-        }],
-        "shader": "void main() { setPointMarkerBorderColor(prop_ptColor()); \nsetPointMarkerBorderWidth(prop_ptWidth()); \nsetPointMarkerSize(prop_size());}\n",
-        "name": "ann"
-    }, {
-        "cur_method": "image",
-        "source": "python://volume/cef5a1ec1ac2735310e4b0eac0f6c086399351cf.bc644314f0d66472a635e053ba4a78252a6a4262",
-        "tab": "source",
-        "shader": "\n        #uicontrol vec3 color color(default=\"white\")\n        #uicontrol float brightness wSlider(min=-1, max=1, step=0.01)\n        #uicontrol float contrast wSlider(min=-1, max=1, step=0.01)\n        void main() { emitRGB(color * (toNormalized(getDataValue()) + brightness) * exp(contrast));}\n        ",
-        "name": "layer"
-    }],
-    "crossSectionBackgroundColor": "#808080",
-    "layout": "yz"
-})
-
-'''
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()

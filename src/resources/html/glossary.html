@@ -28,7 +28,7 @@
     <b>Output Settings</b> – Regenerating the alignment--distinct from computing the alignment--refers to the process of generating a new aligned image stack at a particular scale from source images of the same scale using predetermined affine transformations. The resulting images depend on:
     <br/><ul>
         <li><b>Generate TIFFs</b> - Whether or not to generate TIFF and Zarr output for any alignment, regardless of the alignment method used.<br/></li>
-        <li><b>Bounding Box</b> - When Bounding Box is turned ON, the resulting images will grow an arbitrary amount to ensure that the entire alignment is within frame and no data is cropped out of frame. When Bounding Box is turned OFF (default=OFF) the aligned images will always have the same dimensions as the source images at a particular scale, regardless of drift and the data loss that may result from it.<br/></li>
+        <li><b>Bounding Box</b> - When Bounding Box is turned ON, the resulting images will grow an arbitrary amount to ensure that the entire alignment is within getFrameScale and no data is cropped out of getFrameScale. When Bounding Box is turned OFF (default=OFF) the aligned images will always have the same dimensions as the source images at a particular scale, regardless of drift and the data loss that may result from it.<br/></li>
         <li><b>Corrective (Polynomial) Bias</b> - An adjustment that can subtract systematic drift of various polynomial orders between 0° and 4° or None (default=None).<br/></li>
     </ul>
 
@@ -43,7 +43,7 @@
                 <li><b>Point Matching</b> - User forces an alignment based on 3 matching points (SWIM is not used). Note: An affine requires at least 3 corresponding points.<br/></li>
             </ul>
         </li>
-        <li><b>Include/Exclude</b> - Individual sections may be excluded by deselecting the "Include" toggle switch in the control panel. Sections flagged not to include will not serve as a SWIM reference for any other section (like a dropped frame).<br/></li>
+        <li><b>Include/Exclude</b> - Individual sections may be excluded by deselecting the "Include" toggle switch in the control panel. Sections flagged not to include will not serve as a SWIM reference for any other section (like a dropped getFrameScale).<br/></li>
     </ul>
 
 </body>

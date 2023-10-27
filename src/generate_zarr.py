@@ -151,7 +151,7 @@ class ZarrWorker(QObject):
             # Todo add flag to force regenerate
             try:
                 to_reduce.append((ofp, self.dm.path_aligned_cafm_thumb(s=scale, l=i)))
-                print(f"Appending tuple: {(ofp, self.dm.path_aligned_cafm_thumb(s=scale, l=i))}")
+                # print(f"Appending tuple: {(ofp, self.dm.path_aligned_cafm_thumb(s=scale, l=i))}")
             except:
                 print_exception()
 

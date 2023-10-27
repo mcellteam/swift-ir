@@ -651,8 +651,6 @@ class OpenProject(QWidget):
         self.parent.openAlignment(dm)
 
 
-
-
     def refresh(self):
         caller = inspect.stack()[1].function
         logger.info(f"[{caller}]")
@@ -664,15 +662,10 @@ class OpenProject(QWidget):
     def initPMviewer(self):
         caller = inspect.stack()[1].function
         logger.info(f'[{caller}]')
-        self.viewer = self.parent.viewer = PMViewer(webengine=self.webengine)
-        if self.cmbSelectImages.currentText():
-            self.path_l, self.path_r = self.get_pmviewer_paths()
-            self.viewer.initViewer(path_l=self.path_l, path_r=self.path_r)
-            # self.viewer.initZoom(w=w, h=h)
-        else:
-            self.viewer.initViewer(path_l=None, path_r=None)
-            # self.viewer.initZoom(w=w, h=h)
-
+        path_arg = self.get_pmviewer_paths()
+        # self.viewer = self.parent.viewer = PMViewer(self, self.webengine, path=path_arg)
+        res = [50, 8, 8]
+        self.viewer = self.parent.viewer = PMViewer(parent=self, webengine=self.webengine, path=path_arg, dm=None, res=res, )
         self.viewer.signals.arrowLeft.connect(self.parent.layer_left)
         self.viewer.signals.arrowRight.connect(self.parent.layer_right)
         self.viewer.signals.arrowUp.connect(self.parent.incrementZoomIn)
@@ -855,9 +848,9 @@ class OpenProject(QWidget):
 
                 w, h = int(self.webengine.width() / 2), self.webengine.height()
                 if self.cmbSelectImages.currentText():
-                    self.viewer = self.parent.viewer = PMViewer(webengine=self.webengine)
-                    self.path_l, self.path_r = self.get_pmviewer_paths()
-                    self.viewer.initViewer(path_l=self.path_l, path_r=self.path_r)
+                    path_arg = self.get_pmviewer_paths()
+                    res=[50,8,8]
+                    self.viewer = self.parent.viewer = PMViewer(parent=self, webengine=self.webengine, path=path_arg, dm=None, res=res, )
                     # self.viewer.initZoom(w=w, h=h)
                 #     self.wSelectAlignment.setVisible(True)
                 # else:
@@ -872,31 +865,25 @@ class OpenProject(QWidget):
     def onSelectAlignmentCombo(self):
         caller = inspect.stack()[1].function
         if caller == 'main':
-            logger.info(f"[{caller}]")
             cfg.preferences['alignment_combo_text'] = self.cmbSelectAlignment.currentText()
             self.gbCreateImages.hide()
-            # self.loadAlignmentCombo()
             self.webengine.setFocus()
 
     def get_pmviewer_paths(self):
-        self.path_l, self.path_r = None, None
-        try:
-            images = self.cmbSelectImages.currentText()
-            alignment = self.cmbSelectAlignment.currentText()
-            scale = self.cmbLevel.currentText()
-            keys = self.getScaleKeys(x=images)
-            if scale and keys:
-                scale = keys[-1]
-                if self.cmbSelectImages.count() > 0:
-                    self.path_l = os.path.join(images, 'zarr', scale)
-                    # self.path_l = os.path.join(images, 'zarr')
-                    # if self.cmbSelectAlignment.currentText() != 'None':
-                    if self.cmbSelectAlignment.currentText():
-                        # coarsest_aligned = self.getCoarsestAlignedScale(alignment_file)
-                        self.path_r = os.path.join(alignment, 'zarr', scale)
-        except:
-            print_exception()
-        return self.path_l, self.path_r
+        l, r = '', ''
+        images = self.cmbSelectImages.currentText()
+        alignment = self.cmbSelectAlignment.currentText()
+        scale = self.cmbLevel.currentText()
+        keys = self.getScaleKeys(x=images)
+        if scale and keys:
+            if self.cmbSelectImages.count() > 0:
+                path = os.path.join(images, 'zarr', keys[-1])
+                if os.path.exists(path):
+                    l = path
+                path = os.path.join(alignment, 'zarr', keys[-1])
+                if os.path.exists(path):
+                    r = path
+        return (l, r)
 
 
     # def onComboLevel(self):
@@ -998,7 +985,6 @@ class OpenProject(QWidget):
             self._buttonDelete.setEnabled(False)
             # self._buttonOpen.hide()
             # self._buttonDelete.hide()
-
 
 
     def showImportSeriesDialog(self):

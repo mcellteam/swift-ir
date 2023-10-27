@@ -1102,7 +1102,7 @@ def caller_name(skip=2):
 
     name = []
     module = inspect.getmodule(parentframe)
-    # `modname` can be None when frame is executed directly in console
+    # `modname` can be None when getFrameScale is executed directly in console
     # TODO(techtonik): consider using __main__
     if module:
         name.append(module.__name__)
@@ -1116,7 +1116,7 @@ def caller_name(skip=2):
     if codename != '<module>':  # top level usually
         name.append(codename)  # function or a method
 
-    ## Avoid circular refs and frame leaks
+    ## Avoid circular refs and getFrameScale leaks
     #  https://docs.python.org/2.7/library/inspect.html#the-interpreter-stack
     del parentframe, stack
 
