@@ -14,7 +14,7 @@ LOOP = None
 CONFIG = None
 
 '''Default Window Size'''
-WIDTH, HEIGHT = 1200, 720
+WIDTH, HEIGHT = 1200, 760
 
 # max_downsampling=1024  # default=64
 # max_downsampled_size=2056  # default=128

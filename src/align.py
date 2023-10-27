@@ -75,10 +75,6 @@ class AlignWorker(QObject):
 
         self._tasks = []
         self._tasks.append(self.align)
-        # if self._align:
-        #     self._tasks.append(self.align)
-        # if self._generate:
-        #     self._tasks.append(self.generate)
 
 
     def running(self):
@@ -206,16 +202,6 @@ class AlignWorker(QObject):
 
             logger.info(f'max # workers: {cpus}')
 
-            # with ThreadPoolExecutor(max_workers=cpus) as pool:
-            #     for i, result in enumerate(tqdm.tqdm(pool.map(run_recipe, tasks),
-            #                                          total=len(tasks),
-            #                                          desc=desc, position=0,
-            #                                          leave=True)):
-            #         all_results.append(result)
-            #         self.progress.emit(i)
-            #         if not self.running():
-            #             break
-
             all_results = []
             i = 0
             # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
@@ -311,14 +297,8 @@ class AlignWorker(QObject):
                 dm['stack'][index]['levels'][scale]['results'] = r
 
                 ss = dm.swim_settings(s=scale, l=index)
-                # key = HashableDict(ss)
-                # index = r['index']
-                # key = dm.swim_settings(s=scale, l=index)
-                # value = r
-                # value = r['affine_matrix']
                 print(f"afm {index}: {afm}")
                 if afm != ident:
-                    # self.ht.put(key, value)
                     self.dm.ht.put(ss, afm)
                 wd = dm.ssDir(s=scale, l=index)  # write directory
                 wp = os.path.join(wd, 'results.json')  # write path
@@ -410,8 +390,6 @@ def save2file(dm, name):
     # logger.info('Save Name: %level' % name)
     with open(name, 'w') as f:
         f.write(proj_json)
-
-
 
 # def update_pbar():
 #     logger.info('')

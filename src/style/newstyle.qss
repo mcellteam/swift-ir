@@ -34,6 +34,7 @@ QGroupBox::title {
     subcontrol-origin: margin;
     subcontrol-position: top left;
     /*margin-bottom: 16px;*/
+    border-radius: 2px;
 }
 
 QLabel {

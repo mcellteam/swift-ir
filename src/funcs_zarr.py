@@ -39,47 +39,35 @@ __all__ = ['preallocate_zarr', 'write_metadata_zarr_multiscale', 'write_zarr_mul
 logger = logging.getLogger(__name__)
 
 
-def get_zarr_tensor(zarr_path):
-# async def get_zarr_tensor(zarr_path):
+def get_zarr_tensor(path):
+# async def get_zarr_tensor(path):
     '''
-    Returns an asynchronous TensorStore future object which is a webengineview
-    into the Zarr image on disk. All TensorStore indexing operations
-    produce lazy views.
+    Returns an asynchronous TensorStore future object which is a view
+    into the Zarr on disk. **All TensorStore indexing operations
+    produce lazy views**
 
-    Ref: https://stackoverflow.com/questions/64924224/getting-a-view-of-a-zarr-array-slice
+    https://stackoverflow.com/questions/64924224/getting-a-view-of-a-zarr-array-slice
 
-    :param zarr_path:
-    :cur_method zarr_path:
-    :return: A webengineview into the dataset.
+    :param path: Fully qualified Zarr path
+    :return: A TensorStore future object
     :rtype: tensorstore.Future
     '''
-    # caller = inspect.stack()[1].function
-    logger.info(f'Requested: {zarr_path}')
-    # node = platform.node()
-    # total_bytes_limit = 250_000_000_000  # just under 256 GB
-    # if '.tacc.utexas.edu' in node:
-    #     # Lonestar6: 256 GB (3200 MT/level) DDR4
-    #     # total_bytes_limit = 200_000_000_000
-    #     total_bytes_limit = 250_000_000_000 # just under 256 GB
-    # else:
-    #     total_bytes_limit = 6_000_000_000
-    # total_bytes_limit = (20_000_000_000, 200_000_000_000_000)['.tacc.utexas.edu' in platform.node()]
-    total_bytes_limit = 1_000_000_000_000 #0726+
+    logger.info(f'Requested: {path}')
+    total_bytes_limit = 256_000_000_000 # Lonestar6: 256 GB (3200 MT/level) DDR4
     future = ts.open({
         'dtype': 'uint8',
         'driver': 'zarr',
         'kvstore': {
             'driver': 'file',
-            # 'driver': 'memory',
-            'path': zarr_path
+            'path': path
         },
         'context': {
             'cache_pool': {'total_bytes_limit': total_bytes_limit},
-            # 'data_copy_concurrency': {'limit': 512}, #0726+
-            # 'file_io_concurrency': {'limit': 512}, #0726+
+            'file_io_concurrency': {'limit': 1024}, #1027+
+            # 'data_copy_concurrency': {'limit': 512},
         },
         # 'recheck_cached_data': 'open',
-        'recheck_cached_data': True, #0726 revert to default (True)
+        'recheck_cached_data': True, # default=True
     })
     return future
 
@@ -246,9 +234,10 @@ def preallocate_zarr(dm, name, group, shape, dtype, overwrite, gui=True, attr=No
 def write_metadata_zarr_multiscale(path):
     root = zarr.group(store=path)
     datasets = []
-    for scale in get_scales_with_generated_alignments(cfg.mw.dm.scales):
+    scales = [1,2,4]
+    for scale in scales:
         scale_factor = get_scale_val(scale)
-        name = 'level' + str(scale_factor)
+        name = 's' + str(scale_factor)
         metadata = {
             "path": name,
             "coordinateTransformations": [{

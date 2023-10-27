@@ -41,7 +41,7 @@ class GifPlayer(QWidget):
         # self.label.setMovie(self.movie)
         # self.movie.setCacheMode(QMovie.CacheAll)
         # self.movie.loopCount()
-        # self.movie.frameChanged.connect(lambda: print(f"frame changed! {self.movie.currentFrameNumber()}"))
+        # self.movie.frameChanged.connect(lambda: print(f"getFrameScale changed! {self.movie.currentFrameNumber()}"))
         # self.movie.start()
 
         self.bPlay = QPushButton()
@@ -230,7 +230,7 @@ class GifPlayer(QWidget):
         self.movie.setCacheMode(QMovie.CacheAll)
         # self.movie.setSpeed(5)
         # self.movie.loopCount()
-        # self.movie.frameChanged.connect(lambda: print(f"frame changed! {self.movie.currentFrameNumber()}"))
+        # self.movie.frameChanged.connect(lambda: print(f"getFrameScale changed! {self.movie.currentFrameNumber()}"))
         self.movie.setFileName(self.path)
         self.label.setMovie(self.movie)
         speed = max(5, cfg.preferences['gif_speed'])

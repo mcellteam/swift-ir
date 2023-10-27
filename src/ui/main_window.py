@@ -970,8 +970,6 @@ class MainWindow(QMainWindow):
                 if self.pt.wTabs.currentIndex() == 2:
                     self.pt.snr_plot.initSnrPlot()
 
-                self.pt.updateZarrRadiobuttons()
-
         self.pt.initNeuroglancer()
 
         dt = time.time() - t0
@@ -1047,7 +1045,7 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             if self.dm.is_aligned():
                 logger.info('Regenerating Zarr...')
-                self.bRegenZarr.setEnabled(False)
+                self.pt.bZarrRegen.setEnabled(False)
                 self._zarrThread = QThread()
                 self._zarrworker = ZarrWorker(dm=self.dm, renew=renew, ignore_cache=_ignore_cache)
                 self._zarrThread.started.connect(self._zarrworker.run)  # Step 5: Connect signals and slots
@@ -1061,8 +1059,9 @@ class MainWindow(QMainWindow):
                 self._zarrworker.finished.connect(self._autosave)
                 self._zarrworker.finished.connect(lambda: self.wPbar.hide())
                 self._zarrworker.finished.connect(lambda: self.dm.setZarrMade(True))
-                self._zarrworker.finished.connect(lambda: self.bRegenZarr.setEnabled(True))
+                self._zarrworker.finished.connect(lambda: self.pt.bZarrRegen.setEnabled(True))
                 self._zarrworker.finished.connect(self.dataUpdateWidgets)
+                self._zarrworker.finished.connect(self.pt.updateZarrRadiobuttons)
                 self._zarrworker.finished.connect(lambda: self.pt.initNeuroglancer())
                 self._zarrworker.finished.connect(lambda: print('Finished'))
                 self._zarrThread.start()  # Step 6: Start the thread
@@ -1251,7 +1250,7 @@ class MainWindow(QMainWindow):
         self.wCpanel.hide()
 
         if self._isProjectTab():
-            self.bRegenZarr.setEnabled(self.dm.is_aligned())
+            self.pt.bZarrRegen.setEnabled(self.dm.is_aligned())
             self.wCpanel.show()
             try:
                 self.pt.bApplyOne.setEnabled(True)
@@ -2932,14 +2931,14 @@ class MainWindow(QMainWindow):
     #     self.lcdTimer.display(secs_to_hrsminsec(val))
     #     self.lcdTimer.update()
 
-    def updateOutputSettings(self):
-        if self.wOutputSettings.isVisible():
-            poly = self.dm['level_data'][self.dm.scale]['defaults']['polynomial_bias']
-            if (poly == None) or (poly == 'None'):
-                self.cbxBias.setCurrentIndex(0)
-            else:
-                self.cbxBias.setCurrentIndex(int(poly) + 1)
-            self.cbBB.setChecked(self.dm.has_bb())
+    # def updateOutputSettings(self):
+    #     if self.wOutputSettings.isVisible():
+    #         poly = self.dm['level_data'][self.dm.scale]['defaults']['polynomial_bias']
+    #         if (poly == None) or (poly == 'None'):
+    #             self.cbxBias.setCurrentIndex(0)
+    #         else:
+    #             self.cbxBias.setCurrentIndex(int(poly) + 1)
+    #         self.cbBB.setChecked(self.dm.has_bb())
 
 
     def resizeEvent(self, e):
@@ -3930,7 +3929,7 @@ class MainWindow(QMainWindow):
 
     def initControlPanel(self):
 
-        tip = """Sections marked for exclusion will not be aligned or used by SWIM in any way (like a dropped frame)."""
+        tip = """Sections marked for exclusion will not be aligned or used by SWIM in any way (like a dropped getFrameScale)."""
         tip = '\n'.join(textwrap.wrap(tip, width=35))
         self.cbSkip = ToggleSwitch()
         self.cbSkip.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -4071,16 +4070,17 @@ class MainWindow(QMainWindow):
         p.setColor(QPalette.Text, QColor("#141414"))
         self.bAlign.setPalette(p)
 
-        self.bRegenZarr = QPushButton('Transform 3D')
-        self.bRegenZarr.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.bRegenZarr.clicked.connect(self.regenZarr)
-        p = self.bRegenZarr.palette()
-        p.setColor(self.bRegenZarr.backgroundRole(), QColor('#f3f6fb'))
-        p.setColor(QPalette.Text, QColor("#141414"))
-        self.bRegenZarr.setPalette(p)
+        # self.bZarrRegen = QPushButton('Transform 3D')
+        # self.bZarrRegen.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # self.bZarrRegen.clicked.connect(self.regenZarr)
+        # p = self.bZarrRegen.palette()
+        # p.setColor(self.bZarrRegen.backgroundRole(), QColor('#f3f6fb'))
+        # p.setColor(QPalette.Text, QColor("#141414"))
+        # self.bZarrRegen.setPalette(p)
 
 
-        self.wAlign = HW(QVLine(), self.bAlign, self.bRegenZarr)
+        # self.wAlign = HW(QVLine(), self.bAlign, self.bZarrRegen)
+        self.wAlign = HW(QVLine(), self.bAlign)
         self.wAlign.layout.setSpacing(4)
 
 
@@ -4094,13 +4094,11 @@ class MainWindow(QMainWindow):
         self.cbBB = QCheckBox()
         self.cbBB.setToolTip(tip)
         self.cbBB.toggled.connect(lambda state: self.dm.set_use_bounding_rect(state))
-        # self.cbBB.toggled.connect(lambda: self.dm.set_use_bounding_rect(self.cbBB.isChecked()))
 
         tip = 'Polynomial bias correction (defaults to None), alters the generated images including their width and height.'
         self.cbxBias = QComboBox(self)
         self.cbxBias.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.cbxBias.addItems(['None', 'poly 0°', 'poly 1°', 'poly 2°', 'poly 3°', 'poly 4°'])
-        # self.cbxBias.setCurrentText(str(cfg.DEFAULT_CORRECTIVE_POLYNOMIAL))
         self.cbxBias.currentIndexChanged.connect(self._valueChangedPolyOrder)
         self.cbxBias.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.cbxBias.setFixedSize(QSize(74, 12))
@@ -4108,35 +4106,33 @@ class MainWindow(QMainWindow):
 
         self.bRegenerateAll = QPushButton('Regenerate All Output')
         self.bRegenerateAll.clicked.connect(lambda: self.regenerateAll())
-        # self.bRegenerateAll.setFixedSize(QSize(120, 16))
         self.bRegenerateAll.setFixedHeight(15)
 
         hw0 = HW(QLabel('Bounding Box: '), self.cbBB, ExpandingHWidget(self), QLabel('Corrective Bias: '),
                  self.cbxBias)
         hw0.layout.setAlignment(Qt.AlignBottom)
         hw1 = HW(self.bRegenerateAll)
-        # hw1.layout.setAlignment(Qt.AlignRight)
 
-        # vbl = VBL(hw0, hw1)
 
-        self.wPopoutOutputSettings = VW(hw0, hw1)
-        self.bOutputSettings = QToolButton()
-        self.bOutputSettings.setText('Output\nSettings')
-        self.bOutputSettings.setCheckable(True)
-        self.bOutputSettings.toggled.connect(self.updateOutputSettings)
-        self.bOutputSettings.toggled.connect(lambda state: self.wOutputSettings.setVisible(state))
-        self.wOutputSettings = HW(QVLine(), self.wPopoutOutputSettings)
-        self.wOutputSettings.setContentsMargins(2,0,2,0)
-        self.wOutputSettings.setFixedWidth(220)
-        self.wOutputSettings.hide()
+        # self.wPopoutOutputSettings = VW(hw0, hw1)
+        # self.wPopoutOutputSettings = VW()
+        # self.bOutputSettings = QToolButton()
+        # self.bOutputSettings.setText('Output\nSettings')
+        # self.bOutputSettings.setCheckable(True)
+        # self.bOutputSettings.toggled.connect(self.updateOutputSettings)
+        # self.bOutputSettings.toggled.connect(lambda state: self.wOutputSettings.setVisible(state))
+        # self.wOutputSettings = HW(QVLine(), self.wPopoutOutputSettings)
+        # self.wOutputSettings.setContentsMargins(2,0,2,0)
+        # self.wOutputSettings.setFixedWidth(220)
+        # self.wOutputSettings.hide()
 
         self.wCpanel = HW(self.wScaleLevel, QVLine(),
                           self.wwZpos, QVLine(),
                           self.wZpos,
                           self.wToggleExclude,
                           self.wAlign,
-                          self.bOutputSettings,
-                          self.wOutputSettings
+                          # self.bOutputSettings,
+                          # self.wOutputSettings
                           )
 
         self.setAutoFillBackground(True)

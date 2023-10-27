@@ -81,7 +81,7 @@ class PythonConsole(RichJupyterWidget):
         self._append_plain_text(text)
 
     def execute_command(self, command):
-        """Execute a command in the frame of the console widget"""
+        """Execute a command in the getFrameScale of the console widget"""
         self._execute(command, False)
 
     def set_color_none(self):
