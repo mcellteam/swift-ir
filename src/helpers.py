@@ -68,6 +68,8 @@ def get_core_count(dm, n_tasks):
         cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, n_tasks), 1)
         if dm.level == 's1':
             cpus = min(cfg.SCALE_1_CORES_LIMIT, cpus)
+        if dm.level == 's2':
+            cpus = min(cfg.SCALE_2_CORES_LIMIT, cpus)
     else:
         cpus = psutil.cpu_count(logical=False) - 2
     return cpus

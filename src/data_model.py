@@ -2080,7 +2080,7 @@ class DataModel:
                     init_afm[0][2] *= sf
                     init_afm[1][2] *= sf
                 except:
-                    print_exception()
+                    print_exception(f"Section #{i}, some data is missing for previous level {prev_level} {type(init_afm)}")
                 ss['init_afm'] = init_afm
 
                 #Critical #1015+
