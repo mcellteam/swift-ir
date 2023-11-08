@@ -138,17 +138,17 @@ class ScaleWorker(QObject):
 
                 logger.info(f"Elapsed Time: {dt:.3g}s")
 
-                # logger.critical("(monkey patch) Rewriting images to correct metadata...")
-                # _t0 = time.time()
-                # for task in tasks:
-                #     ofn = task[2][3:]
-                #     # ofn = task[2][2:]
-                #     im = iio.imread(ofn) #shear off 'of='
-                #     logger.critical(f"Writing {ofn}...")
-                #     iio.imwrite(ofn, im)
-                # _dt = time.time() - _t0
-                # logger.critical(f"\n\n// Rewriting of images took {_dt:.3g}s //")
-                #
+                logger.critical("(monkey patch) Rewriting images to correct metadata...")
+                _t0 = time.time()
+                for task in tasks:
+                    ofn = task[2][3:]
+                    # ofn = task[2][2:]
+                    im = iio.imread(ofn) #shear off 'of='
+                    logger.critical(f"Writing {ofn}...")
+                    iio.imwrite(ofn, im)
+                _dt = time.time() - _t0
+                logger.critical(f"\n\n// Rewriting of images took {_dt:.3g}s //")
+
                 # logger.critical("(monkey patch) Rewriting images to correct metadata...")
                 # _t0 = time.time()
                 # for task in tasks:
