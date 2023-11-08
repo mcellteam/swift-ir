@@ -8,6 +8,7 @@ import imagecodecs
 # import libtiff
 # import zarr
 import numpy as np
+import tifffile
 from src.helpers import print_exception
 
 try:
@@ -699,6 +700,108 @@ def format_cafm(cafm):
     return str(cafm)
 
 
+
+def get_tiff_tags(fn):
+    print('Reading TIFF tags...')
+    if os.path.exists(fn):
+        with tifffile.TiffFile(fn) as tf:
+            tif_tags = {}
+            for tag in tf.pages[0].tags.values():
+                name, value = tag.name, tag.value
+                tif_tags[name] = value
+            # image = tf.pages[0].asarray()
+    pprint.pprint(tif_tags)
+    return tif_tags
+
+
+# SEE:
+# https://forum.image.sc/t/tiff-file-that-can-be-opened-in-fiji-but-not-python-matlab-due-to-offset-related-error/59483/7
+
+# TIFF TAGS OF ISCALE2 OUTPUT IMAGES (SCALE 4)
+# Out[2]:
+# {'ImageWidth': 1024,
+#  'ImageLength': 1024,
+#  'BitsPerSample': 8,
+#  'PhotometricInterpretation': < PHOTOMETRIC.MINISBLACK: 1 >,
+# 'StripOffsets': (8,),
+# 'SamplesPerPixel': 1,
+# 'StripByteCounts': (1048576,)}
+
+# TIFF TAGS *AFTER* REOPENING with imageio.v3 (SCALE 4):
+# p = '/Users/joelyancey/alignem_data/images/r34.images/tiff/s4/R34CA1-BS12.105.tif'
+#
+# Out[6]:
+# {'ImageWidth': 1024,
+#  'ImageLength': 1024,
+#  'BitsPerSample': 8,
+#  'Compression': <COMPRESSION.NONE: 1>,
+#  'PhotometricInterpretation': <PHOTOMETRIC.MINISBLACK: 1>,
+#  'ImageDescription': '{"shape": [1024, 1024]}',
+#  'StripOffsets': (256,),
+#  'SamplesPerPixel': 1,
+#  'RowsPerStrip': 1024,
+#  'StripByteCounts': (1048576,),
+#  'XResolution': (1, 1),
+#  'YResolution': (1, 1),
+#  'ResolutionUnit': <RESUNIT.NONE: 1>,
+#  'Software': 'tifffile.py'}
+
+# TIFF TAGS *AFTER* REOPENING with imageio.v3 (SCALE 2):
+# Out[11]:
+# {'ImageWidth': 2048,
+#  'ImageLength': 2048,
+#  'BitsPerSample': 8,
+#  'Compression': <COMPRESSION.NONE: 1>,
+#  'PhotometricInterpretation': <PHOTOMETRIC.MINISBLACK: 1>,
+#  'ImageDescription': '{"shape": [2048, 2048]}',
+#  'StripOffsets': (256,),
+#  'SamplesPerPixel': 1,
+#  'RowsPerStrip': 2048,
+#  'StripByteCounts': (4194304,),
+#  'XResolution': (1, 1),
+#  'YResolution': (1, 1),
+#  'ResolutionUnit': <RESUNIT.NONE: 1>,
+#  'Software': 'tifffile.py'}
+
+
+# CHECKING TAGS OF ORIGINAL MICROSCOPE IMAGE...
+# /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.105.tif
+# Out[13]:
+# {'ImageWidth': 4096,
+#  'ImageLength': 4096,
+#  'BitsPerSample': 8,
+#  'PhotometricInterpretation': <PHOTOMETRIC.MINISBLACK: 1>,
+#  'StripOffsets': (8,),
+#  'SamplesPerPixel': 1,
+#  'StripByteCounts': (16777216,)}
+
+
+
+# AFTER MODIFYING swimio.h with Line 524 8->256 change
+# {'ImageWidth': 1024,
+#  'ImageLength': 1024,
+#  'BitsPerSample': 8,
+#  'PhotometricInterpretation': <PHOTOMETRIC.MINISBLACK: 1>,
+#  'StripOffsets': (256,),
+#  'SamplesPerPixel': 1,
+#  'StripByteCounts': (1048576,)}
+
+
+# ./swimio.h:583:63:
+# ./swimio.h:595:38:
+
+# 2 warnings generated.
+# gcc -O3 -m64 -msse3 -Wno-implicit -o ./bin_darwin/remod remod.c -I/opt/local/include -L/opt/local/lib -lfftw3f -ltiff -ljpeg -lpng -lwebp -lm
+# In file included from remod.c:6:
+# ./swimio.h:583:63: warning: format specifies type 'long' but the argument has type 'off_t' (aka 'long long') [-Wformat]
+# fprintf(stderr, "fd %d reopening %s at end %ld\n", fd, fname, spos);
+#                                            ~~~                ^~~~
+#                                            %lld
+# ./swimio.h:595:38: warning: format specifies type 'long' but the argument has type 'off_t' (aka 'long long') [-Wformat]
+# fprintf(stderr, "new seekpos %ld\n", seekpos);
+#                              ~~~     ^~~~~~~
+#                              %lld
+# 2 warnings generated.
 
 '''
 dataset = ts.open(

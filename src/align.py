@@ -18,6 +18,7 @@ import subprocess as sp
 import numpy as np
 import tqdm
 import zarr
+import imageio.v3 as iio
 # import imagecodecs
 import numcodecs
 numcodecs.blosc.use_threads = False
@@ -400,7 +401,8 @@ def convert_zarr(task):
         save_to = task[3]
         store = zarr.open(out)
         # store.attr['test_attribute'] = {'key': 'value'}
-        data = libtiff.TIFF.open(fn).read_image()[:, ::-1]  # store: <zarr.core.Array (19, 1244, 1130) uint8>
+        # data = libtiff.TIFF.open(fn).read_image()[:, ::-1]  # store: <zarr.core.Array (19, 1244, 1130) uint8>
+        data = iio.imread(fn)  # store: <zarr.core.Array (19, 1244, 1130) uint8>
         np.save(save_to, data)
         store[ID, :, :] = data
         return 0
