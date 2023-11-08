@@ -31,6 +31,9 @@ import psutil
 # tifffileLogger.setLevel(logging.CRITICAL)
 # tifffileLogger.propagate = False
 
+tifffileLogger = logging.getLogger('tifffile')
+tifffileLogger.setLevel(logging.DEBUG)
+
 # https://stackoverflow.com/questions/15585493/store-the-cache-to-a-file-functools-lru-cache-in-python-3-2
 
 

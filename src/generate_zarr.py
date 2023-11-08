@@ -361,7 +361,8 @@ def convert_zarr(task):
         _f = task[1]
         _path = task[2]
         store = zarr.open(_path)
-        data = libtiff.TIFF.open(_f).read_image()[:, ::-1]  # store: <zarr.core.Array (19, 1244, 1130) uint8>
+        # data = libtiff.TIFF.open(_f).read_image()[:, ::-1]  # store: <zarr.core.Array (19, 1244, 1130) uint8>
+        data = iio.imread(_f)  # store: <zarr.core.Array (19, 1244, 1130) uint8>
         # os.remove(_f)
         # shutil.rmtree(os.path.dirname(_f), ignore_errors=True) #1102-
         store[_id, :, :] = data
