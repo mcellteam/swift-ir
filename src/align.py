@@ -64,6 +64,7 @@ class AlignWorker(QObject):
         super().__init__()
         logger.info('Initializing...')
         self.scale = scale
+        self.sl = scale # scale level
         self.path = path
         self.indexes = indexes
         self.ignore_cache = ignore_cache
@@ -106,22 +107,21 @@ class AlignWorker(QObject):
         logger.critical(f'\n\nAligning (ignore cache? {self.ignore_cache})...\n')
 
         scale = self.scale
-        indexes = self.indexes
         dm = self.dm
 
-        if 5 in indexes:
-            logger.info(f"hash ss: {dm.ssHash(l=5)} // ss saved: {dm.ssSavedHash(l=5)} // cafm: {dm.cafmHash(l=5)}")
-
-        scratchpath = os.path.join(dm.images_location, 'logs', 'scratch.log')
-        if os.path.exists(scratchpath):
-            os.remove(scratchpath)
-
-        # checkForTiffs(path)
+        _glob_config = {
+            'dev_mode': cfg.DEV_MODE,
+            'verbose_swim': cfg.VERBOSE_SWIM,
+            'log_recipe_to_file': cfg.LOG_RECIPE_TO_FILE,
+            'target_thumb_size': cfg.TARGET_THUMBNAIL_SIZE,
+            'images_location': dm.images_location,
+            'data_location': dm.data_location,
+        }
 
         firstInd = dm.first_included(s=scale)
 
         tasks = []
-        for i, sec in [(i, dm()[i]) for i in indexes]:
+        for i, sec in [(i, dm()[i]) for i in self.indexes]:
             i = dm().index(sec)
             for key in ['swim_args', 'swim_out', 'swim_err', 'mir_toks', 'mir_script', 'mir_out', 'mir_err']:
                 sec['levels'][scale]['results'].pop(key, None)
@@ -139,7 +139,7 @@ class AlignWorker(QObject):
             ss['path_thumb_src_ref'] = dm.path_thumb_src_ref(s=scale, l=i)
             ss['path_gif'] = dm.path_gif(s=scale, l=i)
             ss['wd'] = dm.writeDir(s=scale, l=i)
-            ss['solo'] = len(indexes) == 1
+            ss['solo'] = len(self.indexes) == 1
             ss['img_size'] = dm.image_size(s=scale)
             ss['is_refinement'] = dm.isRefinement(level=scale)
             # print(f"path : {ss['path']}")
@@ -148,90 +148,49 @@ class AlignWorker(QObject):
             wd = dm.ssDir(s=scale, l=i)  # write directory
             os.makedirs(wd, exist_ok=True)
 
+            _write_to = os.path.join(wd, 'swim_settings.json')
+
             if self.ignore_cache:
-                wp = os.path.join(wd, 'swim_settings.json')  # write path
-                with open(wp, 'w') as f:
-                    jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
-                    f.write(jde.encode(dm.swim_settings(s=scale, l=i)))
                 tasks.append(copy.deepcopy(ss))
+                self.dict_to_file(i, 'swim_settings.json', ss)
             else:
                 if ss['include']:
                     if not self.dm.ht.haskey(self.dm.swim_settings(s=scale, l=i)):
-                        wp = os.path.join(wd, 'swim_settings.json')  # write path
-                        with open(wp, 'w') as f:
-                            jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
-                            f.write(jde.encode(dm.swim_settings(s=scale, l=i)))
                         tasks.append(copy.deepcopy(ss))
+                        self.dict_to_file(i, 'swim_settings.json', ss)
                     else:
                         logger.info(f"[{i}] Cache hit!")
-        self.hudMessage.emit(f'Batch multiprocessing {len(tasks)} alignment jobs...')
 
-        # delete_correlation_signals(dm=dm, scale=scale, indexes=indexes)
-        # delete_matches(dm=dm, scale=scale, indexes=indexes)
+        self.cpus = get_core_count(dm, len(tasks))
 
-        dest = dm.data_location
+        [t.update({'glob_cfg': _glob_config}) for t in tasks]
 
-        cpus = get_core_count(dm, len(tasks))
-
-        t0 = time.time()
+        self.hudMessage.emit(f'Computing {len(tasks)} alignments '
+                             f'using {self.cpus} CPUs...')
 
         # f_recipe_maker = f'{os.path.split(os.path.realpath(__file__))[0]}/src/recipe_maker.py'
 
+        # if cfg.USE_POOL_FOR_SWIM:
         if cfg.USE_POOL_FOR_SWIM:
-            ctx = mp.get_context('forkserver')
-            # ctx = mp.get_context('spawn')
-            desc = f"Aligning ({len(tasks)} tasks)"
-            self.initPbar.emit((len(tasks), desc))
-
-            cfg.CONFIG = {
-                'dev_mode': cfg.DEV_MODE,
-                'verbose_swim': cfg.VERBOSE_SWIM,
-                'log_recipe_to_file': cfg.LOG_RECIPE_TO_FILE,
-                'target_thumb_size': cfg.TARGET_THUMBNAIL_SIZE,
-                'images_location':dm.images_location,
-                'data_location': dm.data_location,
-            }
-
-            for i in range(len(tasks)):
-                tasks[i]['config'] = cfg.CONFIG
-
-            logger.info(f'max # workers: {cpus}')
-
-            all_results = []
-            i = 0
-            # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
-            with ctx.Pool(processes=cpus) as pool:
-                for result in tqdm.tqdm(
-                        pool.imap_unordered(run_recipe, tasks),
-                        total=len(tasks),
-                        desc=desc,
-                        position=0,
-                        leave=True):
-                    all_results.append(result)
-                    i += 1
-                    self.progress.emit(i)
-                    if not self.running():
-                        break
-
-            try:
-                assert len(all_results) > 0
-            except AssertionError:
-                logger.error('AssertionError: Alignment failed! No results.')
+            '''Use Multiprocessing Pool - Default'''
+            desc = f"Compute Alignment"
+            dt, succ, fail, results = self.run_multiprocessing(run_recipe, tasks, desc)
+            self.dm.t_align = dt
+            if not succ:
+                self.hudWarning('Something went wrong! Alignment failed.')
                 self.finished.emit()
                 return
-
-            logger.critical(f"# Completed Alignment Tasks: {len(all_results)}")
         else:
-
-            task_queue = TaskQueue(n_tasks=len(tasks), dest=dest)
+            '''Use Tom's multiprocessing Queue'''
+            task_queue = TaskQueue(n_tasks=len(tasks), dest=dm.data_location)
             task_queue.taskPrefix = 'Computing Alignment for '
             task_queue.taskNameList = [os.path.basename(layer['swim_settings']['path']) for
-                                       layer in [dm()[i] for i in indexes]]
-            task_queue.start(cpus)
+                                       layer in [dm()[i] for i in self.indexes]]
+            task_queue.start(self.cpus)
             align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'recipe_maker.py')
             logger.info('Adding tasks to the queue...')
 
-            for i, sec in [(i, dm()[i]) for i in indexes]:
+            for i, sec in [(i, dm()[i]) for i in self.indexes]:
                 # if sec['include'] and (i != first_included): #1107-
                 if sec ['include']:
                 # if i != first_included:
@@ -239,26 +198,23 @@ class AlignWorker(QObject):
                     encoded_data = json.dumps(sec['levels'][scale])
                     task_args = [sys.executable, align_job, encoded_data]
                     task_queue.add_task(task_args)
-            dt = task_queue.collect_results()
-            dm.t_align = dt
+            dm.t_align = task_queue.collect_results()
             tq_results = task_queue.task_dict
 
-            dm.t_align = time.time() - t0
 
             logger.info('Reading task results and updating data model...')
             # # For use with mp_queue.py ONLY
 
-            all_results = []
+            results = []
             for tnum in range(len(tq_results)):
                 # Get the updated datamodel previewmodel from stdout for the task
                 parts = tq_results[tnum]['stdout'].split('---JSON-DELIMITER---')
-                dm_text = None
                 for p in parts:
                     ps = p.strip()
                     if ps.startswith('{') and ps.endswith('}'):
-                        all_results.append(json.loads(p))
+                        results.append(json.loads(p))
 
-        logger.critical(f"# results returned: {len(all_results)}")
+        logger.critical(f"# results returned: {len(results)}")
 
         ident = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
         # fu = dm.first_included()
@@ -268,52 +224,98 @@ class AlignWorker(QObject):
         # self.dm.ht.put(fu_ss, ident)
 
         first_included = dm.first_included(s=scale)
-        for i,r in enumerate(all_results):
-            index = r['index']
-            initialized = dm['stack'][index]['levels'][scale]['initialized']
-            if not initialized:
-                p = dm.path_aligned(s=scale, l=index)
-                if os.path.exists(p):
-                    dm['stack'][index]['levels'][scale]['initialized'] = True
-                else:
-                    logger.warning(f"Failed to generate [{index}] '{p}'")
-                    try:
-                        logger.warning(f"  afm: {r['affine_matrix']}")
-                    except:
-                        logger.warning("No Affine")
-                    continue
+        for r in results:
             if r['complete']:
+                i = r['index']
+
+                if not dm['stack'][i]['levels'][scale]['initialized']:
+                    p = dm.path_aligned(s=scale, l=i)
+                    if os.path.exists(p):
+                        dm['stack'][i]['levels'][scale]['initialized'] = True
+                    else:
+                        self.hudWarning(f"[{i}] Failed to generate aligned image")
+                        continue
+
                 afm = r['affine_matrix']
-                # afm = r['_affine_matrix']
                 try:
                     assert np.array(afm).shape == (2, 3)
-                    # assert np.array(r['affine_matrix']).all() != np.array([[1., 0., 0.], [0., 1., 0.]]).all()
                 except:
-                    print_exception(extra=f"Alignment failed at index {index}")
+                    self.hudWarning(f'Alignment failed for section # {i}')
+                    print_exception(extra=f"Section # {i}")
                     continue
 
-                dm['stack'][index]['levels'][scale]['results'] = r
-
-                ss = dm.swim_settings(s=scale, l=index)
-                print(f"afm {index}: {afm}")
-                if i == first_included:
-                    self.dm.ht.put(ss, afm)
-                else:
-                    if afm != ident: #This is to protect against failed alignments storing incorrect identity matrices
-                        self.dm.ht.put(ss, afm)
-                wd = dm.ssDir(s=scale, l=index)  # write directory
-                wp = os.path.join(wd, 'results.json')  # write path
-                os.makedirs(wd, exist_ok=True)
-                with open(wp, 'w') as f:
-                    jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
-                    f.write(jde.encode(r))
+                dm['stack'][i]['levels'][scale]['results'] = r
+                ss = dm.swim_settings(s=scale, l=i)
+                logger.info(f"[{i}] Success! afm: {afm}")
+                self.dm.ht.put(ss, afm)
+                self.dict_to_file(i, 'results.json', r)
 
         # SetStackCafm(dm, scale=scale, poly_order=dm.poly_order)
         # dm.set_stack_cafm()
-        t_elapsed = time.time() - t0
-        dm.t_align = t_elapsed
-        logger.info(f"Elapsed Time, SWIM to compute affines: {t_elapsed:.3g}")
-        self.hudMessage.emit(f'<span style="color: #FFFF66;"><b>**** Alignment Complete ****</b></span>')
+
+        self.hudMessage.emit(f'<span style="color: #FFFF66;"><b>**** Process Complete ****</b></span>')
+        self.finished.emit()
+
+
+    def run_multiprocessing(self, func, tasks, desc):
+        # Returns 4 objects dt, succ, fail, results
+        print(f"----> {desc} ---->")
+        _break = 0
+        self.initPbar.emit((len(tasks), desc))
+        t0 = time.time()
+        ctx = mp.get_context('forkserver')
+        n = len(tasks)
+        i, results = 0, []
+        # with ctx.Pool(processes=self.cpus, maxtasksperchild=1) as pool:
+        with ctx.Pool(processes=self.cpus) as pool:
+            for result in tqdm.tqdm(
+                    pool.imap_unordered(func, tasks),
+                    total=n,
+                    desc=desc,
+                    position=0,
+                    leave=True):
+                results.append(result)
+                i += 1
+                self.progress.emit(i)
+                if not self.running():
+                    _break = 1
+                    print(f"<==== BREAKING ABRUPTLY <====")
+                    break
+        fail = sum(results)
+        succ = len(results) - fail
+        dt = time.time() - t0
+        self.print_summary(dt, succ, fail, desc)
+        print(f"<---- {desc} <----")
+        return (dt, succ, fail, results)
+
+
+    def dict_to_file(self, i, name, data):
+        directory = self.dm.ssDir(s=self.sl, l=i)
+        path = os.path.join(directory, name)
+        try:
+            with open(path, 'w') as f:
+                jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
+                f.write(jde.encode(data))
+        except:
+            print_exception()
+
+
+    def print_summary(self, dt, succ, fail, desc):
+
+        if fail:
+            self.hudWarning(f"\n"
+                            f"\n//  Summary  //  {desc}  //"
+                            f"\n//  RUNTIME   : {dt:.3g}s"
+                            f"\n//  SUCCESS   : {succ}"
+                            f"\n//  FAILED    : {fail}"
+                            f"\n")
+        else:
+            self.hudMessage(f"\n"
+                            f"\n//  Summary  //  {desc}  //"
+                            f"\n//  RUNTIME   : {dt:.3g}s"
+                            f"\n//  SUCCESS   : {succ}"
+                            f"\n//  FAILED    : {fail}"
+                            f"\n")
 
 
 def run_command(cmd, arg_list=None, cmd_input=None):
