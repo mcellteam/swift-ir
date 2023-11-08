@@ -194,7 +194,6 @@ def preallocate_zarr(dm, name, group, shape, dtype, overwrite, gui=True, attr=No
     if os.path.exists(path_out) and (overwrite == False):
         logger.warning('Overwrite is False - Returning')
         return
-    print('')
     output_text = f'\n  Zarr root : {os.path.join(os.path.basename(src), name)}' \
                   f'\n      group :   └ {group}({name}) {dtype} {cname}/{clevel}' \
                   f'\n      shape : {str(shape)} ' \
@@ -202,8 +201,8 @@ def preallocate_zarr(dm, name, group, shape, dtype, overwrite, gui=True, attr=No
 
     try:
         if overwrite and os.path.exists(path_out):
-            logger.info(f'Removing {path_out}...')
-            remove_zarr(path_out)
+            logger.info(f"Removing '{path_out}'")
+            shutil.rmtree(path_out, ignore_errors=True)
         # synchronizer = zarr.ThreadSynchronizer()
         # arr = zarr.group(store=path_zarr_transformed, synchronizer=synchronizer) # overwrite cannot be set to True here, will overwrite entire Zarr
         arr = zarr.group(store=path_zarr)

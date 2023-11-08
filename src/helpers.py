@@ -63,8 +63,14 @@ snapshot = None
 def hotkey(letter: str):
     return "(" + ('^', '⌘')[is_mac()] + "%s)" % letter
 
-def get_n_tacc_cores(n_tasks):
-    return max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, n_tasks),1)
+def get_core_count(dm, n_tasks):
+    if is_tacc():
+        cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, n_tasks), 1)
+        if dm.level == 's1':
+            cpus = min(cfg.SCALE_1_CORES_LIMIT, cpus)
+    else:
+        cpus = psutil.cpu_count(logical=False) - 2
+    return cpus
 
 
 @contextlib.contextmanager
@@ -756,7 +762,6 @@ def imgToNumpy(img):
 def time_limit(seconds):
     def signal_handler(signum, frame):
         raise TimeoutException("Timed out!")
-
     signal.signal(signal.SIGALRM, signal_handler)
     signal.alarm(seconds)
     try:

@@ -680,7 +680,7 @@ class MAViewer(AbstractEMViewer):
         logger.critical(f"\n\n[{caller}] Drawing SWIM windows...\n")
         if z == None:
             z = self.dm.zpos
-        # if z == self.dm.first_unskipped(): #1025-
+        # if z == self.dm.first_included(): #1025-
         #     return
         self._blockStateChanged = True
         # self.undrawSWIMwindows()

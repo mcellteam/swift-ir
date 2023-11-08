@@ -27,7 +27,7 @@ import warnings
 warnings.filterwarnings("ignore") #Works for supressing tiffile invalid offset warning
 from src.mp_queue import TaskQueue
 from src.recipe_maker import run_recipe
-from src.helpers import print_exception, pretty_elapsed, is_tacc, get_bindir, get_n_tacc_cores
+from src.helpers import print_exception, pretty_elapsed, is_tacc, get_bindir, get_core_count
 # from src.save_bias_analysis import save_bias_analysis
 from src.helpers import get_scale_val, renew_directory, file_hash, pretty_elapsed, is_tacc
 import src.config as cfg
@@ -94,11 +94,10 @@ class AlignWorker(QObject):
 
 
     def run(self):
-        logger.critical('Running...')
-        while self._tasks and self.running():
-            self._tasks.pop(0)()
-        logger.info(f"\n\n<---- End of Alignment <----\n")
-        self.finished.emit() #Important!
+        print(f"====> Running Background Thread ====>")
+        self.align()
+        print(f"<==== Terminating Background Thread <====")
+        self.finished.emit()  # Important!
 
 
     def align(self):
@@ -118,7 +117,7 @@ class AlignWorker(QObject):
 
         # checkForTiffs(path)
 
-        first_unskipped = dm.first_unskipped(s=scale)
+        firstInd = dm.first_included(s=scale)
 
         tasks = []
         for i, sec in [(i, dm()[i]) for i in indexes]:
@@ -127,6 +126,7 @@ class AlignWorker(QObject):
                 sec['levels'][scale]['results'].pop(key, None)
             # ss = sec['levels'][scale]['swim_settings']
             ss = copy.deepcopy(dm.swim_settings(s=scale, l=i))
+            ss['first_index'] = firstInd == i
             ss['path'] = dm.path(s=scale, l=i)
             ss['path_reference'] = dm.path_ref(s=scale, l=i)
             ss['dir_signals'] = dm.dir_signals(s=scale, l=i)
@@ -170,13 +170,7 @@ class AlignWorker(QObject):
 
         dest = dm.data_location
 
-        if is_tacc():
-            cpus = get_n_tacc_cores(n_tasks=len(tasks))
-            if is_tacc() and (scale == 's1'):
-                # cpus = 34
-                cpus = min(cfg.SCALE_1_CORES_LIMIT, cpus)
-        else:
-            cpus = psutil.cpu_count(logical=False) - 2
+        cpus = get_core_count(dm, len(tasks))
 
         t0 = time.time()
 
@@ -234,10 +228,12 @@ class AlignWorker(QObject):
                                        layer in [dm()[i] for i in indexes]]
             task_queue.start(cpus)
             align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'recipe_maker.py')
-            logger.info('adding tasks to the queue...')
+            logger.info('Adding tasks to the queue...')
+
             for i, sec in [(i, dm()[i]) for i in indexes]:
-                if sec['include'] and (i != first_unskipped):
-                # if i != first_unskipped:
+                # if sec['include'] and (i != first_included): #1107-
+                if sec ['include']:
+                # if i != first_included:
                     # encoded_data = json.dumps(copy.deepcopy(sec))
                     encoded_data = json.dumps(sec['levels'][scale])
                     task_args = [sys.executable, align_job, encoded_data]
@@ -264,12 +260,13 @@ class AlignWorker(QObject):
         logger.critical(f"# results returned: {len(all_results)}")
 
         ident = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
-        fu = dm.first_unskipped()
-        fu_ss = dm.swim_settings(s=scale, l=fu)
-        if self.dm.ht.haskey(fu_ss):
-            self.dm.ht.remove(fu_ss) #This depends on whether the section is first unskipped or not
-        self.dm.ht.put(fu_ss, ident)
+        # fu = dm.first_included()
+        # fu_ss = dm.swim_settings(s=scale, l=fu)
+        # if self.dm.ht.haskey(fu_ss):
+        #     self.dm.ht.remove(fu_ss) #This depends on whether the section is first unskipped or not
+        # self.dm.ht.put(fu_ss, ident)
 
+        first_included = dm.first_included(s=scale)
         for i,r in enumerate(all_results):
             index = r['index']
             initialized = dm['stack'][index]['levels'][scale]['initialized']
@@ -298,8 +295,11 @@ class AlignWorker(QObject):
 
                 ss = dm.swim_settings(s=scale, l=index)
                 print(f"afm {index}: {afm}")
-                if afm != ident:
+                if i == first_included:
                     self.dm.ht.put(ss, afm)
+                else:
+                    if afm != ident: #This is to protect against failed alignments storing incorrect identity matrices
+                        self.dm.ht.put(ss, afm)
                 wd = dm.ssDir(s=scale, l=index)  # write directory
                 wp = os.path.join(wd, 'results.json')  # write path
                 os.makedirs(wd, exist_ok=True)
@@ -391,9 +391,6 @@ def save2file(dm, name):
     with open(name, 'w') as f:
         f.write(proj_json)
 
-# def update_pbar():
-#     logger.info('')
-#     cfg.mw.pbar.setValue(cfg.mw.pbar.value()+1)
 
 def convert_zarr(task):
     try:
@@ -412,26 +409,14 @@ def convert_zarr(task):
         return 1
 
 
-def count_aligned_files(dest, s):
-    path = os.path.join(dest, 'tiff', s)
-    files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
-    # print(f"# {level} Files: {len(files)}")
-    print(f"# complete: {len(files)}", end="\r")
-    return len(files)
-
 def tryRemoveFile(directory):
     try:
         os.remove(directory)
     except:
         pass
 
-def tryRemoveDatFiles(dm, scale, path):
-    # bb_str = str(dm.has_bb())
+def tryRemoveDatFiles(path, scale):
     bias_data_path = os.path.join(path, scale, 'bias_data')
-    # tryRemoveFile(os.path.join(path, level,
-    #                            'swim_log_' + bb_str + '_' + null_cafm_str + '_' + poly_order_str + '.dat'))
-    # tryRemoveFile(os.path.join(path, level,
-    #                            'mir_commands_' + bb_str + '_' + null_cafm_str + '_' + poly_order_str + '.dat'))
     tryRemoveFile(os.path.join(path, scale, 'swim_log.dat'))
     tryRemoveFile(os.path.join(path, scale, 'mir_commands.dat'))
     tryRemoveFile(os.path.join(path, 'fdm_new.txt'))

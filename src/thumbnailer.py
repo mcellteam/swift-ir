@@ -17,6 +17,7 @@ import multiprocessing as mp
 from multiprocessing.pool import ThreadPool
 import subprocess as sp
 import tqdm
+import imageio.v3 as iio
 import src.config as cfg
 from src.funcs_image import ImageSize
 from src.helpers import print_exception, get_appdir, get_bindir, natural_sort, absFilePaths, is_tacc
@@ -296,6 +297,17 @@ class Thumbnailer:
             pool.map(run_subprocess, tqdm.tqdm(tasks, total=len(tasks), desc="Generating Thumbnails", position=0, leave=True))
             pool.close()
             pool.join()
+
+        logger.critical("(monkey patch) Rewriting images to correct metadata...")
+        _t0 = time.time()
+        for f in filenames:
+            ofn = os.path.join(od, os.path.basename(f))
+            logger.critical(f"Thumbnailer is rewriting {ofn}...")
+            im = iio.imread(ofn)
+            iio.imwrite(ofn, im)
+        _dt = time.time() - _t0
+        logger.critical(f"\n\n// Rewriting of images took {_dt:.3g}s //")
+
         # ctx = mp.get_context('forkserver')
         # with ctx.Pool(processes=cpus) as pool:
         #     pool.map(run, tasks)
@@ -340,6 +352,7 @@ class Thumbnailer:
             cpus = psutil.cpu_count(logical=False) - 2
 
         tasks = []
+
         for item in to_reduce:
             fn = item[0]
             ofn = item[1]
@@ -351,6 +364,16 @@ class Thumbnailer:
             pool.map(run_subprocess, tqdm.tqdm(tasks, total=len(tasks), desc="Generating Thumbnails", position=0, leave=True))
             pool.close()
             pool.join()
+
+
+        logger.critical("(monkey patch) Rewriting images to correct metadata...")
+        _t0 = time.time()
+        for item in to_reduce:
+            ofn = item[1]
+            im = iio.imread(ofn)
+            iio.imwrite(ofn, im)
+        _dt = time.time() - _t0
+        logger.critical(f"\n\n// Rewriting of images took {_dt:.3g}s //")
 
         dt = time.time() - t0
         logger.info(f'Thumbnailing complete. Time elapsed: {dt:.3f}')

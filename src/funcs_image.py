@@ -532,7 +532,7 @@ def hashstring(text:str):
 
 def composeAffine(afm, bfm):
     '''COMPOSEAFFINE - Compose two affine transforms
-    COMPOSEAFFINE(afm1, afm2) returns the affine transform AFM1 ∘ AFM2
+    COMPOSEAFFINE(afm1, afm2) returns the affine generate_thumbnail AFM1 ∘ AFM2
     that applies AFM1 after AFM2.
     Affine matrices must be 2x3 numpy arrays.'''
     afm = np.vstack((afm, [0,0,1]))
@@ -541,16 +541,16 @@ def composeAffine(afm, bfm):
     return fm[0:2,:]
 
 def identityAffine():
-    '''IDENTITYAFFINE - Return an idempotent affine transform
-    afm = IDENTITYAFFINE() returns an affine transform that is
-    an identity transform.'''
+    '''IDENTITYAFFINE - Return an idempotent affine generate_thumbnail
+    afm = IDENTITYAFFINE() returns an affine generate_thumbnail that is
+    an identity generate_thumbnail.'''
     return np.array([[1., 0., 0.],
                      [0., 1., 0.]])
 
 def invertAffine(afm):
-    '''INVERTAFFINE - Invert affine transform
+    '''INVERTAFFINE - Invert affine generate_thumbnail
     INVERTAFFINE(afm), where AFM is a 2x3 affine transformation matrix,
-    returns the inverse transform.'''
+    returns the inverse generate_thumbnail.'''
     afm = np.vstack((afm, [0,0,1]))
     ifm = np.linalg.inv(afm)
     return ifm[0:2,:]
@@ -574,7 +574,7 @@ def modelBounds2(afm, siz):
     '''MODELBOUNDS - Returns a bounding rectangle in previewmodel space
     (x0, y0, w, h) = MODELBOUNDS(afm, siz) returns the bounding rectangle
     of an input rectangle (siz) in previewmodel space if pixel lookup is through affine
-    transform AFM.'''
+    generate_thumbnail AFM.'''
     inv = invertAffine(afm)
     w, h = si_unpackSize(siz)
     c = [applyAffine(inv, [0, 0])]
@@ -586,7 +586,7 @@ def modelBounds2(afm, siz):
     return np.array([c_min, c_max])
 
 def applyAffine(afm, xy):
-    '''APPLYAFFINE - Apply affine transform to a point
+    '''APPLYAFFINE - Apply affine generate_thumbnail to a point
     xy_ = APPLYAFFINE(afm, xy) applies the affine matrix AFM to the point XY
     Affine matrix must be a 2x3 numpy array. XY may be a list or an array.'''
     if not type(xy)==np.ndarray:
@@ -741,7 +741,7 @@ TensorStore({
     'shape': [10, 1024, 1024],
     'zarr_format': 2,
   },
-  'transform': {
+  'generate_thumbnail': {
     'input_exclusive_max': [[10], [1024], [1024]],
     'input_inclusive_min': [0, 0, 0],
   },

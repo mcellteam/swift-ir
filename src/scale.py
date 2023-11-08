@@ -25,6 +25,7 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import numpy as np
 import zarr
 import imagecodecs
+import imageio.v3 as iio
 import libtiff
 libtiff.libtiff_ctypes.suppress_warnings()
 import tqdm
@@ -88,9 +89,7 @@ class ScaleWorker(QObject):
 
     def run(self):
 
-        print(f'\n######## Reducing Source Images ########\n')
-
-
+        print(f"====> Running Background Thread ====>")
 
         # Todo This should check for source files before doing anything
         if not self.running():
@@ -122,20 +121,8 @@ class ScaleWorker(QObject):
                 t = time.time()
 
                 cpus = min(psutil.cpu_count(logical=False) - 2, cfg.TACC_MAX_CPUS, len(tasks))
-                # cpus = 10
                 logger.info(f"# Threads: {cpus}")
-                # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
-                # with ctx.Pool(processes=cpus) as pool:
-                # with ctx.Pool(processes=cpus) as pool:
-                # with ctx.Pool(processes=20) as pool:
-
                 with ThreadPoolExecutor(max_workers=cpus) as pool:
-                # with ProcessPoolExecutor(max_workers=cpus) as pool:
-                # with ThreadPoolExecutor(max_workers=1) as pool:
-                #     for i, result in enumerate(tqdm.tqdm(pool.imap_unordered(run, tasks),
-                #                                          total=len(tasks),
-                #                                          desc=desc, position=0,
-                #                                          leave=True)):
                     for i, result in enumerate(tqdm.tqdm(pool.map(run, tasks),
                                                          total=len(tasks),
                                                          desc=desc, position=0,
@@ -143,12 +130,34 @@ class ScaleWorker(QObject):
                         self.progress.emit(i)
                         if not self.running():
                             break
-                # ThreadPoolExecutor.shutdown()
+
 
                 dt = time.time() - t
                 self._timing_results['t_scale_generate'][s] = dt
 
                 logger.info(f"Elapsed Time: {dt:.3g}s")
+
+                logger.critical("(monkey patch) Rewriting images to correct metadata...")
+                _t0 = time.time()
+                for task in tasks:
+                    ofn = task[2][3:]
+                    # ofn = task[2][2:]
+                    im = iio.imread(ofn) #shear off 'of='
+                    logger.critical(f"Writing {ofn}...")
+                    iio.imwrite(ofn, im)
+                _dt = time.time() - _t0
+                logger.critical(f"\n\n// Rewriting of images took {_dt:.3g}s //")
+
+                logger.critical("(monkey patch) Rewriting images to correct metadata...")
+                _t0 = time.time()
+                for task in tasks:
+                    ofn = task[2][3:]
+                    # ofn = task[2][2:]
+                    im = iio.imread(ofn)  # shear off 'of='
+                    logger.critical(f"Rewriting {ofn}...")
+                    iio.imwrite(ofn, im)
+                _dt = time.time() - _t0
+                logger.critical(f"\n\n// Rewriting of images took {_dt:.3g}s //")
 
             if not self.running():
                 self.hudWarning.emit('Canceling Tasks:  Convert TIFFs to NGFF Zarr')
@@ -263,7 +272,7 @@ class ScaleWorker(QObject):
 
         # self.hudMessage.emit('**** Autoscaling Complete ****')
         self.hudMessage.emit(f'<span style="color: #FFFF66;"><b>**** Autoscaling Complete ****</b></span>')
-        logger.info('**** Autoscaling Complete ****')
+        print(f"<==== Terminating Background Thread <====")
         self.finished.emit()
 
 def preallocate_zarr(zarr_od, name, shape, dtype, opts, scale):

@@ -160,17 +160,14 @@ class DataModel:
 
     @property
     def zattrs(self):
-        s = self.level
-        path = os.path.join(self.data_location, 'zarr', s)
+        path = os.path.join(self.data_location, 'zarr', self.level)
         z = zarr.open(path)
         return z.attrs
 
     @property
     def zarr(self):
-        s = self.level
-        path = os.path.join(self.data_location, 'zarr', s)
-        z = zarr.open(path)
-        return z
+        path = os.path.join(self.data_location, 'zarr', self.level)
+        return zarr.open(path)
 
 
     def to_file(self):
@@ -496,7 +493,7 @@ class DataModel:
     def path_ref(self, s=None, l=None):
         if s == None: s = self.level
         if l == None: l = self.zpos
-        if l == self.first_unskipped():
+        if l == self.first_included():
             return self.path(s=s, l=l)
         else:
             return os.path.join(self.images_location, 'tiff', s, self.name_ref(s=s, l=l))
@@ -504,6 +501,17 @@ class DataModel:
     def path_zarr_transformed(self, s=None):
         if s == None: s = self.level
         return os.path.join(self.data_location, 'zarr', s)
+
+
+    def get_zarr_transforming(self, s=None):
+        if s == None: s = self.level
+        path = self.path_zarr_transformed(s=s)
+        meta = os.path.join(path, '.zarray')
+        if os.path.exists(meta):
+            try:
+                return zarr.open(path)
+            except OSError:
+                print_exception(extra="Unable to open the transformed Zarr")
 
     def path_zarr_raw(self, s=None):
         if s == None: s = self.level
@@ -936,7 +944,7 @@ class DataModel:
         return self.transforming_bn_list().index(bn)
 
     def get_ref_index_offset(self, l=None):
-        if l == self.first_unskipped():  #1007+
+        if l == self.first_included():  #1007+
             return 0                     #1007+
         if l == None:
             l = self.zpos
@@ -1159,7 +1167,7 @@ class DataModel:
         return zip(idx[1:], val[1:])
 
 
-    def snr_average(self, scale=None) -> float:
+    def snr_mean(self, scale=None) -> float:
         # logger.info('caller: %level...' % inspect.stack()[1].function)
         if scale == None: scale = self.level
         # NOTE: skip the first layer which does not have an SNR value level may be equal to zero
@@ -1203,62 +1211,61 @@ class DataModel:
         convert = {'grid': 'Grid Align', 'manual': 'Manual Align'}
         return convert[self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']['method']]
 
-
-    def manpoints(self, s=None, l=None):
-        '''Returns manual correspondence points in Neuroglancer format'''
-        if s == None: s = self.level
-        if l == None: l = self.zpos
-        return self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']['points']['ng_coords']
-
-    def set_manpoints(self, role, matchpoints, s=None, l=None):
-        '''Sets manual correspondence points for a single section at the current level, and applies
-         scaling factor then sets the same points for all scale levels above the current level.'''
-        if s == None: s = self.scale
-        if l == None: l = self.zpos
-
-        BEFORE = self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']
-        logger.critical(f"Writing points to data: {matchpoints}")
-        # ex. [(397.7689208984375, 546.7693481445312), (nan, nan), (nan, nan)]
-        # lvls  = [x for x in self.lvls() if x <= self.lvl()]
-        # scales      = [get_scale_key(x) for x in lvls]
-        glob_coords = [None,None,None]
-        fac = self.lvl()
-        for i,p in enumerate(matchpoints):
-            # (774.73145, 667.3542)
-            # (None, None)
-            if p:
-                try:
-                    glob_coords[i] = (p[0] * fac, p[1] * fac)
-                except:
-                    print_exception(extra=f"p: {p}")
-
-        # set manual points in Neuroglancer coordinate system
-        # logger.critical(f"glob coords: {glob_coords}")
-        fac = self.lvl(s)
-        coords = [None,None,None]
-        for i,p in enumerate(glob_coords):
-            if p and p[0]:
-                    coords[i] = (p[0] / fac, p[1] / fac)
-        logger.info(f'Setting manual points for {s}: {coords}')
-        # self._data['stack'][z]['levels'][level]['swim_settings']['match_points'][role] = coords
-        self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']['points']['ng_coords'][role] = coords
-
-        # set manual points in MIR coordinate system
-        img_width = self.image_size(s=s)[0]
-        mir_coords = [None,None,None]
-        for i,p in enumerate(coords):
-            if p:
-                mir_coords[i] = [img_width - p[1], p[0]]
-        self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']['points']['mir_coords'][role] = mir_coords
-
-        self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']['points'].setdefault('coords', {'tra':[None]*3, 'ref':[None]*3})
-
-        AFTER = self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']
-
-        logger.critical(f"\n------------------"
-                        f"\nBefore : {BEFORE}"
-                        f"\n After : {AFTER}"
-                        f"\n------------------")
+    # def manpoints(self, s=None, l=None):
+    #     '''Returns manual correspondence points in Neuroglancer format'''
+    #     if s == None: s = self.level
+    #     if l == None: l = self.zpos
+    #     return self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']['points']['ng_coords']
+    #
+    # def set_manpoints(self, role, matchpoints, s=None, l=None):
+    #     '''Sets manual correspondence points for a single section at the current level, and applies
+    #      scaling factor then sets the same points for all scale levels above the current level.'''
+    #     if s == None: s = self.scale
+    #     if l == None: l = self.zpos
+    #
+    #     BEFORE = self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']
+    #     logger.critical(f"Writing points to data: {matchpoints}")
+    #     # ex. [(397.7689208984375, 546.7693481445312), (nan, nan), (nan, nan)]
+    #     # lvls  = [x for x in self.lvls() if x <= self.lvl()]
+    #     # scales      = [get_scale_key(x) for x in lvls]
+    #     glob_coords = [None,None,None]
+    #     fac = self.lvl()
+    #     for i,p in enumerate(matchpoints):
+    #         # (774.73145, 667.3542)
+    #         # (None, None)
+    #         if p:
+    #             try:
+    #                 glob_coords[i] = (p[0] * fac, p[1] * fac)
+    #             except:
+    #                 print_exception(extra=f"p: {p}")
+    #
+    #     # set manual points in Neuroglancer coordinate system
+    #     # logger.critical(f"glob coords: {glob_coords}")
+    #     fac = self.lvl(s)
+    #     coords = [None,None,None]
+    #     for i,p in enumerate(glob_coords):
+    #         if p and p[0]:
+    #                 coords[i] = (p[0] / fac, p[1] / fac)
+    #     logger.info(f'Setting manual points for {s}: {coords}')
+    #     # self._data['stack'][z]['levels'][level]['swim_settings']['match_points'][role] = coords
+    #     self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']['points']['ng_coords'][role] = coords
+    #
+    #     # set manual points in MIR coordinate system
+    #     img_width = self.image_size(s=s)[0]
+    #     mir_coords = [None,None,None]
+    #     for i,p in enumerate(coords):
+    #         if p:
+    #             mir_coords[i] = [img_width - p[1], p[0]]
+    #     self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']['points']['mir_coords'][role] = mir_coords
+    #
+    #     self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']['points'].setdefault('coords', {'tra':[None]*3, 'ref':[None]*3})
+    #
+    #     AFTER = self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']
+    #
+    #     logger.critical(f"\n------------------"
+    #                     f"\nBefore : {BEFORE}"
+    #                     f"\n After : {AFTER}"
+    #                     f"\n------------------")
 
     def manpoints_mir(self, role, s=None, l=None):
         '''Returns manual correspondence points in MIR format'''
@@ -1269,61 +1276,13 @@ class DataModel:
         except:
             print_exception(extra=f"role: {role}, s={s}, l={l}")
 
-    def manpoints_pretty(self, s=None, l=None):
-        if s == None: s = self.level
-        if l == None: l = self.zpos
-        ref = [x for x in self.manpoints()['ref'] if x is not None]
-        base = [x for x in self.manpoints()['tra'] if x is not None]
-        return (['(%d, %d)' % (round(x1), round(y1)) for x1, y1 in ref],
-                ['(%d, %d)' % (round(x1), round(y1)) for x1, y1 in base])
-
-
-    def print_all_manpoints(self):
-        logger.info('Match Points:')
-        for i, sec in enumerate(self.stack()):
-            r = sec['swim_settings']['method_opts']['points']['ng_coords']['ref']
-            b = sec['swim_settings']['method_opts']['points']['ng_coords']['tra']
-            if r != []:
-                logger.info(f'Index: {i}, Ref, Match Points: {str(r)}')
-            if b != []:
-                logger.info(f'Index: {i}, Base, Match Points: {str(b)}')
-
-
-    # def getmpFlat(self, s=None, l=None):
-    #     if s == None: s = self.level
-    #     if l == None: l = self.zpos
-    #     mps = self['stack'][l]['levels'][s]['swim_settings']['method_opts']['points']['ng_coords']
-    #     # ref = [(0.5, x[0], x[1]) for x in mps['ref']]
-    #     # base = [(0.5, x[0], x[1]) for x in mps['base']]
-    #
-    #     d = {'ref': [None,None,None], 'tra': [None,None,None]}
-    #     for i in range(0,3):
-    #         try:
-    #             if mps['ref'][i]:
-    #                 # d['ref'][i] = (l, mps['ref'][i][0], mps['ref'][i][1])
-    #                 d['ref'][i] = (l + 0.5, mps['ref'][i][0], mps['ref'][i][1])
-    #         except:
-    #             print_exception()
-    #         try:
-    #             if mps['tra'][i]:
-    #                 # d['tra'][i] = (l, mps['tra'][i][0], mps['tra'][i][1])
-    #                 d['tra'][i] = (l + 0.5, mps['tra'][i][0], mps['tra'][i][1])
-    #         except:
-    #             print_exception()
-    #
-    #     # ref = [(z, x[0], x[1]) for x in mps['ref']]
-    #     # base = [(z, x[0], x[1]) for x in mps['base']]
-    #     logger.info(f"Returning: {d}")
-    #     return d
-
 
     def afm(self, s=None, l=None) -> list:
         if s == None: s = self.level
         if l == None: l = self.zpos
         try:
-            # return self._data['stack'][z]['levels'][level]['alignment']['method_results']['affine_matrix']
-            method = self.method(s=s,l=l)
-            return self._data['stack'][l]['levels'][s]['results']['affine_matrix']
+            # return self._data['stack'][l]['levels'][s]['results']['affine_matrix'] #1107-
+            return self.ht.get(self.saved_swim_settings())
         except:
             print_exception()
             return [[[1, 0, 0], [0, 1, 0]]]
@@ -1380,57 +1339,6 @@ class DataModel:
     #     if s == None: s = self.level
     #     for i in indexes:
     #         self['stack'][i]['levels'][s]['cafm_hash'] = self.cafmHash(s=s, l=i)
-
-
-    # def isdefaults(self, level=None, z=None):
-    #     logger.info('')
-    #     # if level == None: level = self.level
-    #     # if z == None: z = self.zpos
-    #     # caller = inspect.stack()[1].function
-    #     # # logger.critical(f"caller: {caller}, level={level}, z={z}")
-    #     # reasons = []
-    #     # method = self.method(s=level, l=z)
-    #     #
-    #     # cur = self['stack'][z]['levels'][level]['swim_settings']  # current
-    #     # dflts = self['defaults'][level]  # memory
-    #     #
-    #     # if method in ('manual_hint', 'manual_strict'):
-    #     #     reasons.append((f"Uses manual alignment rather than default grid alignment", cur['method'], dflts['method']))
-    #     #     answer = len(reasons) == 0
-    #     #     return answer, reasons
-    #     #
-    #     # #Todo figure this out later
-    #     # # if cur['reference'] != dflts['reference']:
-    #     # #     reasons.append(('Reference images differ', cur['reference'], dflts['reference']))
-    #     #
-    #     # if cur['use_clobber'] != dflts['use_clobber']:
-    #     #     reasons.append(("Inconsistent data at clobber fixed pattern ON/OFF (key: use_clobber)",
-    #     #                      cur['use_clobber'],
-    #     #                      dflts['use_clobber']))
-    #     # elif (cur['use_clobber'] == True) and (dflts['use_clobber'] == True):
-    #     #     if cur['clobber_size'] != dflts['clobber_size']:
-    #     #         reasons.append(("Inconsistent data at clobber size in pixels (key: clobber_size)",
-    #     #                          cur['clobber_size'], dflts['clobber_size']))
-    #     #
-    #     # else:
-    #     #     if cur['whitening'] != dflts['whitening']:
-    #     #         reasons.append(("Inconsistent data at signal whitening magnitude (key: whitening)",
-    #     #                          cur['whitening'], dflts['whitening']))
-    #     #     if cur['iterations'] != dflts['iterations']:
-    #     #         reasons.append(("Inconsistent data at # SWIM iterations (key: swim_iters)",
-    #     #                          cur['iterations'], dflts['iterations']))
-    #     #
-    #     # if 'grid' in method:
-    #     #     keys = ['size_1x1', 'size_2x2', 'quadrants']
-    #     #     for key in keys:
-    #     #         if cur['grid'][key] != dflts['grid'][key]:
-    #     #             reasons.append((f"Inconsistent data (key: {key})", cur['grid'][key], dflts['grid'][key]))
-    #     #
-    #     #
-    #     # answer = len(reasons) == 0
-    #     # logger.info(f"Returning {answer}, Reasons:\n{reasons}")
-    #     # return answer, reasons
-    #     return (False, [])
 
     def isDefaults(self, s=None, l=None):
         if s == None: s = self.level
@@ -1502,11 +1410,9 @@ class DataModel:
         if not self.is_zarr_generated(s=s):
             return list(range(len(self)))
 
-
         for i in range(len(self)):
             if not self.zarrCafmHashComports(s=s, l=i):
                 answer.append(i)
-
 
             # if self.include(s=s, l=i):
             #     # if not os.path.exists(self.path_aligned(s=s, l=i)):
@@ -1570,12 +1476,9 @@ class DataModel:
         if s == None: s = self.level
         self['images']['resolution'][s] = (res_z, res_y, res_x)
 
-
     def get_user_zarr_settings(self):
         '''Returns user preferences for cname, clevel, chunkshape as tuple (in that order).'''
         return (self.cname, self.clevel, self.chunkshape())
-
-
 
     def downscales(self) -> list[str]:
         '''Get downscales list (similar to scales() but with scale_1 removed).
@@ -1760,29 +1663,22 @@ class DataModel:
         return indexes
 
 
-
-
-
     def zarrCafmHashComports(self, s=None, l=None):
         if s == None: s = self.level
         if l == None: l = self.zpos
-        fu = self.first_unskipped()
+        fu = self.first_included()
         if l == fu:
             return True
+
+        try:
+            zarr_cafm_hash = self.zattrs[str(l)][1]
+        except KeyError:
+            return False
+
         cur_cafm_hash = str(self.cafmHash(s=s, l=l))
-        zarr_cafm_hash = self.zattrs[str(l)][1]
         # if cur_cafm_hash == zarr_cafm_hash:
         #     logger.info(f"Cache hit {cur_cafm_hash}! Zarr is correct at index {l}.")
-        return cur_cafm_hash == zarr_cafm_hash
-
-
-
-    def set_whitening(self, f: float, s=None, l=None) -> None:
-        '''Sets the Whitening Factor for the Current Layer.'''
-        if s == None: s = self.level
-        if l == None: l = self.zpos
-        self._data['stack'][l]['levels'][s]['swim_settings']['whitening'] = f
-        self.signals.dataChanged.emit()
+        return zarr_cafm_hash == cur_cafm_hash
 
     def aa1x1(self, val):
         val = ensure_even(val)
@@ -1935,14 +1831,6 @@ class DataModel:
         if s == None: s = self.level
         return bool(self['level_data'][s]['output_settings']['bounding_box']['has'])
 
-
-    def set_has_bb(self, b:bool, s=None):
-        '''Returns the Has Bounding Rectangle On/Off State for the Current Scale.'''
-        # logger.info(f'Setting HAS bb to {b}')
-        if s == None: s = self.level
-        self['level_data'][s]['output_settings']['bounding_box']['has'] = b
-
-
     def use_bb(self, s=None) -> bool:
         '''Returns the Use Bounding Rectangle On/Off.'''
         if s == None: s = self.level
@@ -1978,13 +1866,14 @@ class DataModel:
             return [self.level_key(x) for x in self.lvls() if x < self.lvl(s=s)]
 
 
-    def first_unskipped(self, s=None):
+    def first_included(self, s=None):
         # logger.info(f"{caller_name()}")
         if s == None: s = self.level
         for section in self.get_iter(s=s):
             # print(section['levels'][s]['swim_settings'])
             if section['levels'][s]['swim_settings']['include']:
                 return section['levels'][s]['swim_settings']['index']
+
 
     def linkReference(self, level):
         caller = inspect.stack()[1].function
@@ -2001,13 +1890,11 @@ class DataModel:
                 self['stack'][layer_index]['levels'][level]['swim_settings']['reference_name'] = os.path.basename(ref)
                 self['stack'][layer_index]['levels'][level]['saved_swim_settings']['reference_index'] = j
                 self['stack'][layer_index]['levels'][level]['saved_swim_settings']['reference_name'] = os.path.basename(ref)
-        # self['stack'][self.first_unskipped(s=level)]['levels'][level]['swim_settings']['reference'] = ''  # 0804
-        self['stack'][self.first_unskipped(s=level)]['levels'][level]['swim_settings']['reference_index'] = None
-        self['stack'][self.first_unskipped(s=level)]['levels'][level]['swim_settings']['reference_name'] = None
-        self['stack'][self.first_unskipped(s=level)]['levels'][level]['saved_swim_settings']['reference_index'] = None
-        self['stack'][self.first_unskipped(s=level)]['levels'][level]['saved_swim_settings']['reference_name'] = None
-
-
+        # self['stack'][self.first_included(s=level)]['levels'][level]['swim_settings']['reference'] = ''  # 0804
+        self['stack'][self.first_included(s=level)]['levels'][level]['swim_settings']['reference_index'] = None
+        self['stack'][self.first_included(s=level)]['levels'][level]['swim_settings']['reference_name'] = None
+        self['stack'][self.first_included(s=level)]['levels'][level]['saved_swim_settings']['reference_index'] = None
+        self['stack'][self.first_included(s=level)]['levels'][level]['saved_swim_settings']['reference_name'] = None
 
 
     def getSWIMSettings(self, s=None, l=None):
@@ -2120,7 +2007,7 @@ class DataModel:
     def pullSettings(self, all=True):
         '''
         Saving pulls the scaling factor-adjusted 'saved_swim_settings' from previous scale.
-        'saved_swim_settings' is populated on the first 'Apply All' of each scale, so will always be available.
+        'saved_swim_settings' is populated on the first 'Align All' of each scale, so will always be available.
 
         '''
         logger.critical("\n\nPulling settings...\n")
@@ -2136,8 +2023,7 @@ class DataModel:
         levels = self.levels
         cur_level = self.level
         prev_level = levels[levels.index(cur_level) + 1]
-        logger.critical(f'Translating alignment configuration from resolution level {prev_level} to resolution level {cur_level}..')
-        cfg.mw.tell(f'Translating alignment configuration from resolution level {prev_level} to resolution level {cur_level}..')
+        cfg.mw.tell(f'Migrating SWIM settings from resolution level {prev_level} to {cur_level}..')
         sf = int(self.lvl(prev_level) / self.lvl(cur_level))
         logger.critical(f"sf = {sf}")
 
@@ -2196,32 +2082,7 @@ class DataModel:
                 except:
                     print_exception()
                 ss['init_afm'] = init_afm
-                # elif method == 'manual':
-                #     mo['size'] *= sf
-                    # p1 = mo['points']['ng_coords']['tra']
-                    # p2 = mo['points']['ng_coords']['ref']
-                    # p3 = mo['points']['mir_coords']['tra']
-                    # p4 = mo['points']['mir_coords']['ref']
-                    # for i, p in enumerate(p1):
-                    #     if p:
-                    #         if p[0]:
-                    #             p1[i][0] *= sf
-                    #             p1[i][1] *= sf
-                    # for i, p in enumerate(p2):
-                    #     if p:
-                    #         if p[0]:
-                    #             p2[i][0] *= sf
-                    #             p2[i][1] *= sf
-                    # for i, p in enumerate(p3):
-                    #     if p:
-                    #         if p[0]:
-                    #             p3[i][0] *= sf
-                    #             p3[i][1] *= sf
-                    # for i, p in enumerate(p4):
-                    #     if p:
-                    #         if p[0]:
-                    #             p4[i][0] *= sf
-                    #             p4[i][1] *= sf
+
                 #Critical #1015+
                 self['stack'][i]['levels'][cur_level]['saved_swim_settings'].update(copy.deepcopy(
                     self['stack'][i]['levels'][cur_level]['swim_settings']))
@@ -2347,7 +2208,6 @@ class DataModel:
         swim_presets = self.getSwimPresets()
         method_presets = self.getMethodPresets()
 
-
         for level in levels:
             self['level_data'][level].update(
                 defaults={},
@@ -2376,7 +2236,6 @@ class DataModel:
                 method_presets=method_presets[level],
             )
 
-
             for i in range(len(self)):
                 self['stack'][i]['levels'][level]['saved_swim_settings'].update(
                     copy.deepcopy(swim_presets),
@@ -2386,6 +2245,23 @@ class DataModel:
                     copy.deepcopy(swim_presets),
                     method_opts=copy.deepcopy(method_presets[level]['grid']),
                 )
+
+    def save(self, silently=False):
+        logger.info('')
+        try:
+            name, _ = os.path.splitext(os.path.basename(self.data_location))
+            p = os.path.join(self.data_location, name + '.swiftir')
+            if not silently:
+                logger.info(f'Saving >> {p}')
+            with open(p, 'w') as f:
+                jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
+                f.write(jde.encode(self._data))
+            if hasattr(self, 'ht'):
+                if self.ht:
+                    self.ht.pickle()
+        except Exception as e:
+            print_exception()
+            cfg.mw.err(f"Unable to save. Reason: {e.__class__.__name__}")
 
 
     def setZarrMade(self, b, s=None):
