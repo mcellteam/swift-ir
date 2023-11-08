@@ -177,7 +177,7 @@ class AlignWorker(QObject):
             dt, succ, fail, results = self.run_multiprocessing(run_recipe, tasks, desc)
             self.dm.t_align = dt
             if not succ:
-                self.hudWarning('Something went wrong! Alignment failed.')
+                self.hudWarning.emit(f'Something went wrong! Alignment failed. # Success: {succ} / # Failed: {fail}')
                 self.finished.emit()
                 return
         else:
@@ -233,14 +233,14 @@ class AlignWorker(QObject):
                     if os.path.exists(p):
                         dm['stack'][i]['levels'][scale]['initialized'] = True
                     else:
-                        self.hudWarning(f"[{i}] Failed to generate aligned image")
+                        self.hudWarning.emit(f"[{i}] Failed to generate aligned image")
                         continue
 
                 afm = r['affine_matrix']
                 try:
                     assert np.array(afm).shape == (2, 3)
                 except:
-                    self.hudWarning(f'Alignment failed for section # {i}')
+                    self.hudWarning.emit(f'Alignment failed for section # {i}')
                     print_exception(extra=f"Section # {i}")
                     continue
 
