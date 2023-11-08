@@ -118,7 +118,7 @@ def run_recipe(data):
         recipe.afm = np.array([[1., 0., 0.], [0., 1., 0.]])
     else:
         recipe.assemble_recipe()
-        recipe.execute_recipe()
+        rc = recipe.execute_recipe()
     recipe.generate_thumbnail()
     try:
         mr = recipe.set_results()
@@ -331,6 +331,13 @@ class align_recipe:
         os.makedirs(self.dir_tmp, exist_ok=True)
 
         self.afm = np.array(self.ss['init_afm'])
+        try:
+            assert np.array(self.afm).shape == (2, 3)
+        except:
+            print_exception(extra=f"Section # {self.index}, afm={self.afm}")
+            self.afm = np.array([[1., 0., 0.], [0., 1., 0.]])
+            return
+
 
         if (self.path_ref == self.path) or (self.path_ref == ''):
             logger.warning(f'Image #{self.index} Has No Reference!')
@@ -345,6 +352,7 @@ class align_recipe:
                     print_exception(extra=f'ERROR ing{i}/{len(self.ingredients)}')
 
         self.generate_thumbnail()
+        return 0
 
 
     def set_results(self):
