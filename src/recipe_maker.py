@@ -6,7 +6,9 @@ import sys
 import time
 import copy
 import glob
-import imageio
+import zarr
+# import imageio
+import imageio.v3 as iio
 import logging
 import platform
 import datetime
@@ -19,14 +21,15 @@ import hashlib
 import json
 import atexit
 import psutil
-import warnings
-warnings.filterwarnings("ignore")
-
-import libtiff
-libtiff.libtiff_ctypes.suppress_warnings()
-
-tifffileLogger = logging.getLogger('tifffile')
-tifffileLogger.propagate = False
+# import warnings
+# warnings.filterwarnings("ignore")
+#
+# import libtiff
+# libtiff.libtiff_ctypes.suppress_warnings()
+#
+# tifffileLogger = logging.getLogger('tifffile')
+# tifffileLogger.setLevel(logging.CRITICAL)
+# tifffileLogger.propagate = False
 
 # https://stackoverflow.com/questions/15585493/store-the-cache-to-a-file-functools-lru-cache-in-python-3-2
 
@@ -34,11 +37,13 @@ tifffileLogger.propagate = False
 __all__ = ['run_recipe']
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+# logger = logging.getLogger('alignEM')
 
 
 
 def applyAffine(afm, xy):
-    '''APPLYAFFINE - Apply affine transform to a point
+    '''APPLYAFFINE - Apply affine generate_thumbnail to a point
     xy_ = APPLYAFFINE(afm, xy) applies the affine matrix AFM to the point XY
     Affine matrix must be a 2x3 numpy array. XY may be a list or an array.'''
     if not type(xy) == np.ndarray:
@@ -108,8 +113,12 @@ def run_recipe(data):
     :param data: data for one pairwise alignment as Python dictionary.'''
 
     recipe = align_recipe(data)
-    recipe.assemble_recipe()
-    recipe.execute_recipe()
+    if data['first_index']:
+        recipe.afm = np.array([[1., 0., 0.], [0., 1., 0.]])
+    else:
+        recipe.assemble_recipe()
+        recipe.execute_recipe()
+    recipe.generate_thumbnail()
     try:
         mr = recipe.set_results()
     except:
@@ -126,6 +135,8 @@ class align_recipe:
 
     # def __init__(self, swim_settings, config):
     def __init__(self, swim_settings):
+        self.ingredients = []
+        self.snr = np.array([0.0])
         self.ss = swim_settings
         self.config = self.ss['config']
         self.index = self.ss['index']
@@ -135,6 +146,7 @@ class align_recipe:
         self.configure_logging()
         self.method = self.ss['method_opts']['method']
         self._return_afm = True
+
         if self.method == 'manual':
             self.mir_coords = self.ss['method_opts']['points']['mir_coords']
             self.mc_ref = self.mir_coords['ref']
@@ -144,8 +156,6 @@ class align_recipe:
             if (self.n_pts_ref != 3) or (self.n_pts_tra != 3):
                 self._return_afm = False
 
-
-        self.ingredients = []
         self.initial_rotation = float(self.ss['initial_rotation'])
         # self.afm = np.array([[1., 0., 0.], [0., 1., 0.]])
         # Configure platform-specific path to executables for C SWiFT-IR
@@ -162,7 +172,6 @@ class align_recipe:
 
 
     def configure_logging(self):
-        logger = logging.getLogger(__name__)
         MAlogger = logging.getLogger('MAlogger')
         RMlogger = logging.getLogger('recipemaker')
         Exceptlogger = logging.getLogger('exceptlogger')
@@ -180,7 +189,6 @@ class align_recipe:
         else:
             MAlogger.disabled = True
             RMlogger.disabled = True
-            logger.disabled = True
             tnLogger.disabled = True
 
 
@@ -226,12 +234,12 @@ class align_recipe:
                         mode='SWIM-Grid',
                         ww=ww_2x2,
                         psta=psta_2x2,
-                        ID='g2x2-a'),
+                        ID='ingredient-2x2-a'),
                     align_ingredient(
                         mode='SWIM-Grid',
                         ww=ww_2x2,
                         psta=psta_2x2,
-                        ID='g2x2-b',
+                        ID='ingredient-2x2-b',
                         last=True)])
             else:
                 '''Perform affine initialization'''
@@ -240,22 +248,22 @@ class align_recipe:
                         mode='SWIM-Grid',
                         ww=ww_1x1,
                         psta=psta_1,
-                        ID='g1x1'),
+                        ID='ingredient-1x1'),
                     align_ingredient(
                         mode='SWIM-Grid',
                         ww=ww_2x2,
                         psta=psta_2x2,
-                        ID='g2x2-a'),
+                        ID='ingredient-2x2-a'),
                     align_ingredient(
                         mode='SWIM-Grid',
                         ww=ww_2x2,
                         psta=psta_2x2,
-                        ID='g2x2-c'),
+                        ID='ingredient-2x2-c'),
                     align_ingredient(
                         mode='SWIM-Grid',
                         ww=ww_2x2,
                         psta=psta_2x2,
-                        ID='g2x2-d',
+                        ID='ingredient-2x2-d',
                         last=True)])
         else:
             # ww = self.ss['method_opts']['size'] #1025-
@@ -314,7 +322,9 @@ class align_recipe:
     def execute_recipe(self):
 
         if self.solo:
-            print(f"\nExecuting recipe (# ingredients: {len(self.ingredients)})...\n")
+            logger.critical(f"\nExecuting recipe (# Ingredients: {len(self.ingredients)})...\n")
+
+
         os.makedirs(self.signals_dir, exist_ok=True)
         os.makedirs(self.matches_dir, exist_ok=True)
         os.makedirs(self.dir_tmp, exist_ok=True)
@@ -325,12 +335,15 @@ class align_recipe:
             logger.warning(f'Image #{self.index} Has No Reference!')
             return
 
-        for i, ingredient in enumerate(self.ingredients):
-            try:
-                ingredient.afm = self.afm
-                self.afm = ingredient.execute_ingredient()
-            except:
-                print_exception(extra=f'ERROR ing{i}/{len(self.ingredients)}')
+        if not self.ss['first_index']:
+            for i, ingredient in enumerate(self.ingredients):
+                try:
+                    ingredient.afm = self.afm
+                    self.afm, self.snr = ingredient.execute_ingredient()
+                except:
+                    print_exception(extra=f'ERROR ing{i}/{len(self.ingredients)}')
+
+        self.generate_thumbnail()
 
 
     def set_results(self):
@@ -346,54 +359,29 @@ class align_recipe:
         # mr['memory_mb'] = self.megabytes()
         # mr['memory_gb'] = self.gigabytes()
 
-        # afm = self.ingredients[-1].afm
-        # snr = self.ingredients[-1].snr
-        # snr_report = self.ingredients[-1].snr_report
-        # snr_list = snr.tolist()
         mr['complete'] = self._return_afm
-        if self._return_afm:
-            try:
-                afm = self.ingredients[-1].afm
-                print(f"afm[{self.index}]: {afm.tolist()}")
-            except AttributeError:
-                logger.warning(f"[{self.index}] No afm found! {type(afm)}")
-                afm = np.array([[1., 0., 0.], [0., 1., 0.]])
-
-        mr['affine_matrix'] = afm.tolist()
-
-        try:    snr = self.ingredients[-1].snr
-        except: print_exception()
-        try:    snr_list = snr.tolist()
-        except: snr_list = list(snr)
-        mr['snr'] = snr_list
-        try:    mr['std_deviation'] = snr.std()
-        except: mr['std_deviation'] = 0.0
-        try:    mr['snr_std_deviation'] = snr.std()
-        except: mr['snr_std_deviation'] = 0.0
-        try:    mr['snr_mean'] = snr.mean()
-        except: mr['snr_mean'] = 0.0
-
-        mr['snr_average'] = sum(snr_list) / len(snr_list)
-
+        # if hasattr(self,'ingredients') and self.ingredients:
+        #     if self._return_afm: #NOTE: POSSIBLY CRITICAL
         # try:
-        #     mr['inverse_matrix'] = _afm.tolist()
+        # afm = self.ingredients[-1].afm
+        print(f"afm[{self.index}]: {self.afm.tolist()}")
         # except:
-        #     print_exception(extra=f"index: {self.index}, _afm = {_afm.tolist()}")
+        #     logger.warning(f"[{self.index}] No afm found! {type(self.afm)}")
+        #     self.afm = np.array([[1., 0., 0.], [0., 1., 0.]])
+
+        mr['affine_matrix'] = self.afm.tolist()
 
         mr['init_afm'] = self.ss['init_afm']
-
-        try:
-            mr['swim_pos'] = self.ingredients[-1].psta.tolist()
-        except:
-            pass
+        mr['snr'] = self.snr.tolist()
+        try:    mr['std_deviation'] = self.snr.std()
+        except: mr['std_deviation'] = 0.0
+        try:    mr['snr_std_deviation'] = self.snr.std()
+        except: mr['snr_std_deviation'] = 0.0
+        try:    mr['snr_mean'] = self.snr.mean()
+        except: mr['snr_mean'] = 0.0
 
         if self.method == 'grid':
             mr['quadrants'] = self.ss['method_opts']['quadrants']
-
-        mr['swim_args'] = {} #Temporary
-        for i,ing in enumerate(self.ingredients):
-            try: mr['swim_args']['ing%d' % i] = ing.multi_swim_arg_str()
-            except: mr['swim_args']['ing%d' % i] = 'null'
 
         for i, ing in enumerate(self.ingredients):
             mr['ing%d' % i] = {}
@@ -417,6 +405,8 @@ class align_recipe:
             except: mr['ing%d' % i]['afm'] = 'null'
             try: mr['ing%d' % i]['afm'] = ing._afm.tolist()
             except: mr['ing%d' % i]['afm'] = 'null'
+            try: mr['ing%d' % i]['pos'] = ing.psta.tolist()
+            except: mr['ing%d' % i]['pos'] = 'null'
 
         # if self.ss['dev_mode']:
         if self.config['dev_mode']:
@@ -447,12 +437,87 @@ class align_recipe:
                 except: mr['crop_str_mir']['ing%d' % i] = 'null'
 
         # return self.data
+        self.results = mr
         return mr
 
     def add_ingredients(self, ingredients):
         for ingredient in ingredients:
             ingredient.recipe = self
             self.ingredients.append(ingredient)
+
+    def generate_thumbnail(self):
+
+        ifp = self.ss['path_thumb_src']
+        ofd = self.ss['wd']
+        fn, ext = os.path.splitext(self.ss['name'])
+        ofp = os.path.join(ofd, fn + '.thumb' + ext)
+
+        if self.ss['first_index']:
+            logger.debug(f"\n"
+                            f"{ifp}\n"
+                            f"{ofp}")
+
+        if os.path.exists(ofp):
+            logger.info(f'Cache hit (transformed img, afm): {ofp}')
+            return
+        os.makedirs(os.path.dirname(ofd), exist_ok=True)
+
+        tn_scale = self.ss['thumbnail_scale_factor']
+        sf = int(self.ss['level'][1:]) / tn_scale #scale factor
+        w, h = self.ss['img_size']
+        rect = [0, 0, w * sf, h * sf]  # might need to swap w/h for Zarr
+
+        # Todo add flag to force regenerate
+        os.makedirs(os.path.dirname(ofp), exist_ok=True)
+        afm = copy.deepcopy(self.afm)
+        afm[0][2] *= sf
+        afm[1][2] *= sf
+
+        border = 128  # Todo get exact median greyscale value
+
+        bb_x, bb_y = rect[2], rect[3]
+        afm = np.array([afm[0][0], afm[0][1], afm[0][2], afm[1][0], afm[1][1],
+                        afm[1][2]], dtype='float64').reshape((-1, 3))
+        p1 = applyAffine(afm, (0, 0))  # Transform Origin To Output Space
+        p2 = applyAffine(afm, (rect[0], rect[1]))  # Transform BB Lower Left To Output Space
+        offset_x, offset_y = p2 - p1  # Offset Is Difference of 'p2' and 'p1'
+        a = afm[0][0]
+        c = afm[0][1]
+        e = afm[0][2] + offset_x
+        b = afm[1][0]
+        d = afm[1][1]
+        f = afm[1][2] + offset_y
+        mir_script = \
+            'B %d %d 1\n' \
+            'Z %g\n' \
+            'F %s\n' \
+            'A %g %g %g %g %g %g\n' \
+            'RW %s\n' \
+            'E' % (bb_x, bb_y, border, ifp, a, c, e, b, d, f, ofp)
+        # print(f"\n{mir_script}\n")
+        o = run_command(self.mir_c, arg_list=[], cmd_input=mir_script)
+
+        pA = self.ss['path_thumb_transformed']
+        pB = self.ss['path_thumb_src_ref']
+        out = self.ss['path_gif']
+        try:
+            assert os.path.exists(pA)
+        except AssertionError:
+            logger.error(f'Image not found: {pA}')
+            return
+        try:
+            assert os.path.exists(pB)
+        except AssertionError:
+            logger.error(f'Image not found: {pB}')
+            return
+
+
+
+        imA = iio.imread(pA)
+        imB = iio.imread(pB)
+        iio.imwrite(pA, imA) # monkey patch - fixes metadata
+        iio.imwrite(pB, imB)  # monkey patch - fixes metadata
+        iio.imwrite(out, [imA, imB], format='GIF', duration=1, loop=0)
 
 
 class align_ingredient:
@@ -482,7 +547,7 @@ class align_ingredient:
         self.pmov = pmov
         self.rota = rota
         # self.snr = 0.0
-        self.snr = [0.0]
+        self.snr = np.array([0.0])
         # self.snr_report = 'SNR: --'
         self.threshold = (3.5, 200, 200)
         self.mir_toks = {}
@@ -536,24 +601,25 @@ class align_ingredient:
                 logger.warning(f"[{self.recipe.index}] SWIM Out is empty "
                                  f"string! Err:\n{self.swim_err_lines}")
                 self.snr = np.zeros(len(self.psta[0]))
-                return self.afm
 
-            self.afm = self.ingest_swim_output(swim_output)
+            # self.afm = self.ingest_swim_output(swim_output)
+            self.ingest_swim_output(swim_output)
 
         if self.last:
+            # if not self.recipe.ss['first_index']:  # 1107+ #do this sooner
             self.crop_match_signals()
             self.reduce_matches()
-            if self.recipe.method == 'manual':
-                if (self.recipe.n_pts_ref == 3) and (self.recipe.n_pts_tra == 3):
-                    pass
-                else:
-                    return self.afm
-
-            try:
-                self.transform()
-            except:
-                print_exception()
-        return self.afm
+            # if self.recipe.method == 'manual':
+            #     if (self.recipe.n_pts_ref == 3) and (self.recipe.n_pts_tra == 3):
+            #         pass
+            #     else:
+            #         return self.afm
+            # try:
+            #     self.generate_thumbnail()
+            # except:
+            #     print_exception()
+        print(f"[{self.recipe.index}, {self.ID}] | SNR: {self.snr.tolist()}")
+        return copy.deepcopy(self.afm), copy.deepcopy(self.snr)
 
 
     def get_swim_args(self):
@@ -582,7 +648,7 @@ class align_ingredient:
         for i in range(len(self.psta[0])):
             # if m == 'grid_custom':
             if m == 'grid':
-                if self.ID != 'g1x1':
+                if self.ID != 'ingredient-1x1':
                     if not self.recipe.ss['method_opts']['quadrants'][i]:
                         continue
             if m == 'manual':
@@ -644,7 +710,7 @@ class align_ingredient:
         self.multi_swim_arg_str = self.get_swim_args()
         # if self.recipe.solo:
         #     print(f'\nSwimming...\n{self.multi_swim_arg_str()}\n')
-        logging.getLogger('recipemaker').critical(
+        logging.getLogger('recipemaker').debug(
             f'Multi-SWIM Argument String:\n{self.multi_swim_arg_str()}')
         arg = "%dx%d" % (self.ww[0], self.ww[1])
         t0 = time.time()
@@ -657,7 +723,6 @@ class align_ingredient:
         self.t_swim = time.time() - t0
         self.swim_output = out.strip().split('\n')
         self.swim_err_lines = err.strip().split('\n')
-        print(f"[{self.recipe.index}, {self.ID}] CPU %: {psutil.cpu_percent()}")
         return self.swim_output
 
 
@@ -686,7 +751,7 @@ class align_ingredient:
             ]
             self.crop_str_mir = ' '.join(self.crop_str_args)
             # print(self.crop_str_mir)
-            logger.critical(f'MIR crop string:\n{self.crop_str_mir}')
+            logger.debug(f'MIR crop string:\n{self.crop_str_mir}')
             _, _ = run_command(
                 self.recipe.mir_c,
                 cmd_input=self.crop_str_mir,
@@ -724,7 +789,8 @@ class align_ingredient:
             aim[0, 2] += float(toks[5]) - self.cx
             aim[1, 2] += float(toks[6]) - self.cy
             self.afm = aim
-            self.snr = np.array([])
+            # self.snr = np.array([0.0]) #1107-
+            self.snr = np.array([0.0])
             snr_list.append(float(toks[0][0:-1]))
             return self.afm
 
@@ -733,7 +799,7 @@ class align_ingredient:
 
             for i,l in enumerate(swim_output):
                 toks = l.replace('(', ' ').replace(')', ' ').strip().split()
-                logger.critical(f"SWIM output tokens, line {i}: {str(toks)}")
+                logger.debug(f"SWIM output tokens, line {i}: {str(toks)}")
                 self.mir_toks[i] = str(toks)
                 mir_toks = [toks[k] for k in [2, 3, 5, 6]]
                 self.mir_script += ' '.join(mir_toks) + '\n'
@@ -780,7 +846,7 @@ class align_ingredient:
         )
         mir_mp_out_lines = out.strip().split('\n')
         mir_mp_err_lines = err.strip().split('\n')
-        logging.getLogger('MAlogger').critical(
+        logging.getLogger('MAlogger').debug(
             f'\n==========\nManual MIR script:\n{mir_script_mp}\n'
             f'stdout >>\n{mir_mp_out_lines}\nstderr >>\n{mir_mp_err_lines}')
         afm = np.eye(2, 3, dtype=np.float32)
@@ -801,7 +867,6 @@ class align_ingredient:
 
     def reduce_matches(self):
         tnLogger = logging.getLogger('tnLogger')
-        tnLogger.critical("Reducing Matches...")
         src = self.recipe.dir_tmp
         od = self.recipe.matches_dir
         #Special handling since they are variable in # and never 1:1 with project files
@@ -810,7 +875,7 @@ class align_ingredient:
         od_pattern = os.path.join(od, '%s_%s_[tk]_%d%s'
                                       's' % (fn, method, self.recipe.index, ext))
 
-        tnLogger.critical(f"\nsrc         = {src}\n"
+        tnLogger.info(f"\nsrc         = {src}\n"
                           f"fn          = {fn}\n"
                           f"od          = {od}\n"
                           f"method      = {od}\n"
@@ -823,19 +888,14 @@ class align_ingredient:
             except:
                 logger.warning('An exception was triggered during removal of expired thumbnail: %s' % tn)
 
-        tnLogger.info('Reducing the following thumbnails:\n%s' %str(self.matches_filenames))
+        tnLogger.info('Reducing the following:\n%s' %str(self.matches_filenames))
         # logger.info(f'Reducing {len(self.matches_filenames)} total match images...')
 
-        try:
-            # siz_x, siz_y = ImageSize(next(absFilePaths(src)))
-            siz_x, siz_y = self.ww
-            scale_factor = int(max(siz_x, siz_y) / self.recipe.config['target_thumb_size'])
-            if scale_factor == 0:
-                scale_factor = 1
-        except Exception as e:
-            print_exception()
-            logger.error('Unable to generate thumbnail(level) - Do file(level) exist?')
-            raise e
+
+        siz_x, siz_y = self.ww
+        scale_factor = int(max(siz_x, siz_y) / self.recipe.config['target_thumb_size'])
+        if scale_factor < 1:
+            scale_factor = 1
 
         for i, fn in enumerate(self.matches_filenames):
             ofn = os.path.join(od, os.path.basename(fn))
@@ -848,77 +908,86 @@ class align_ingredient:
             except:
                 print_exception()
 
-    def transform(self):
-
-        ifp = self.recipe.ss['path_thumb_src']
-        ofd = self.recipe.ss['wd']
-        fn, ext = os.path.splitext(self.recipe.ss['name'])
-        ofp = os.path.join(ofd, fn + '.thumb' + ext)
-        if os.path.exists(ofp):
-            logger.info(f'Cache hit (transformed img, afm): {ofp}')
-            return
-        os.makedirs(os.path.dirname(ofd), exist_ok=True)
-
-        scale = self.recipe.ss['level']
-        tn_scale = self.recipe.ss['thumbnail_scale_factor']
-        sf = int(self.recipe.ss['level'][1:]) / tn_scale
-        w, h = self.recipe.ss['img_size']
-        rect = [0, 0, w * sf, h * sf]  # might need to swap w/h for Zarr
-
-        # Todo add flag to force regenerate
-        os.makedirs(os.path.dirname(ofp), exist_ok=True)
-        afm = copy.deepcopy(self.afm)
-        afm[0][2] *= sf
-        afm[1][2] *= sf
-
-        # cafm_ofp = os.path.join(ofd, fn + '.cafm.thumb' + ext)
-        # # if not os.path.exists(cafm_ofp):
-        # os.makedirs(os.path.dirname(cafm_ofp), exist_ok=True)
-        # cafm = copy.deepcopy(dm.cafm(s=scale, l=i))
-        # cafm[0][2] *= sf
-        # cafm[1][2] *= sf
-        # tasks_cafm.append([ifp, cafm_ofp, rect, cafm, 128])
-
-        border = 128  # Todo get exact median greyscale value
-
-        bb_x, bb_y = rect[2], rect[3]
-        afm = np.array([afm[0][0], afm[0][1], afm[0][2], afm[1][0], afm[1][1],
-                        afm[1][2]], dtype='float64').reshape((-1, 3))
-        p1 = applyAffine(afm, (0, 0))  # Transform Origin To Output Space
-        p2 = applyAffine(afm, (rect[0], rect[1]))  # Transform BB Lower Left To Output Space
-        offset_x, offset_y = p2 - p1  # Offset Is Difference of 'p2' and 'p1'
-        a = afm[0][0]
-        c = afm[0][1]
-        e = afm[0][2] + offset_x
-        b = afm[1][0]
-        d = afm[1][1]
-        f = afm[1][2] + offset_y
-        mir_script = \
-            'B %d %d 1\n' \
-            'Z %g\n' \
-            'F %s\n' \
-            'A %g %g %g %g %g %g\n' \
-            'RW %s\n' \
-            'E' % (bb_x, bb_y, border, ifp, a, c, e, b, d, f, ofp)
-        # print(f"\n{mir_script}\n")
-        o = run_command(self.recipe.mir_c, arg_list=[], cmd_input=mir_script)
-
-        im0 = self.recipe.ss['path_thumb_transformed']
-        im1 = self.recipe.ss['path_thumb_src_ref']
-        if not os.path.exists(im0):
-            logger.error(f'(gif) thumbnail not found: {im0}')
-            return
-        if not os.path.exists(im1):
-            logger.error(f'(gif) thumbnail not found: {im0}')
-            return
-        try:
-            images = [imageio.imread(im0), imageio.imread(im1)]
-            try:
-                imageio.mimsave(self.recipe.ss['path_gif'], images, format='GIF', duration=1, loop=0)
-            except:
-                print_exception(extra='imagio.mimsave warning')
-        except:
-            print_exception()
+    # def generate_thumbnail(self):
+    #     if self.recipe.index == 0:
+    #         logger.critical(f"Transforming image 0...")
+    #
+    #     ifp = self.recipe.ss['path_thumb_src']
+    #     ofd = self.recipe.ss['wd']
+    #     fn, ext = os.path.splitext(self.recipe.ss['name'])
+    #     ofp = os.path.join(ofd, fn + '.thumb' + ext)
+    #
+    #     if self.recipe.index == 0:
+    #         logger.critical(f"\n"
+    #                         f"{ifp}\n"
+    #                         f"{ofp}")
+    #
+    #     if os.path.exists(ofp):
+    #         logger.info(f'Cache hit (transformed img, afm): {ofp}')
+    #         return
+    #     os.makedirs(os.path.dirname(ofd), exist_ok=True)
+    #
+    #     scale = self.recipe.ss['level']
+    #     tn_scale = self.recipe.ss['thumbnail_scale_factor']
+    #     sf = int(self.recipe.ss['level'][1:]) / tn_scale
+    #     w, h = self.recipe.ss['img_size']
+    #     rect = [0, 0, w * sf, h * sf]  # might need to swap w/h for Zarr
+    #
+    #     # Todo add flag to force regenerate
+    #     os.makedirs(os.path.dirname(ofp), exist_ok=True)
+    #     afm = copy.deepcopy(self.afm)
+    #     afm[0][2] *= sf
+    #     afm[1][2] *= sf
+    #
+    #     # cafm_ofp = os.path.join(ofd, fn + '.cafm.thumb' + ext)
+    #     # # if not os.path.exists(cafm_ofp):
+    #     # os.makedirs(os.path.dirname(cafm_ofp), exist_ok=True)
+    #     # cafm = copy.deepcopy(dm.cafm(s=scale, l=i))
+    #     # cafm[0][2] *= sf
+    #     # cafm[1][2] *= sf
+    #     # tasks_cafm.append([ifp, cafm_ofp, rect, cafm, 128])
+    #
+    #     border = 128  # Todo get exact median greyscale value
+    #
+    #     bb_x, bb_y = rect[2], rect[3]
+    #     afm = np.array([afm[0][0], afm[0][1], afm[0][2], afm[1][0], afm[1][1],
+    #                     afm[1][2]], dtype='float64').reshape((-1, 3))
+    #     p1 = applyAffine(afm, (0, 0))  # Transform Origin To Output Space
+    #     p2 = applyAffine(afm, (rect[0], rect[1]))  # Transform BB Lower Left To Output Space
+    #     offset_x, offset_y = p2 - p1  # Offset Is Difference of 'p2' and 'p1'
+    #     a = afm[0][0]
+    #     c = afm[0][1]
+    #     e = afm[0][2] + offset_x
+    #     b = afm[1][0]
+    #     d = afm[1][1]
+    #     f = afm[1][2] + offset_y
+    #     mir_script = \
+    #         'B %d %d 1\n' \
+    #         'Z %g\n' \
+    #         'F %s\n' \
+    #         'A %g %g %g %g %g %g\n' \
+    #         'RW %s\n' \
+    #         'E' % (bb_x, bb_y, border, ifp, a, c, e, b, d, f, ofp)
+    #     # print(f"\n{mir_script}\n")
+    #     o = run_command(self.recipe.mir_c, arg_list=[], cmd_input=mir_script)
+    #
+    #     A = self.recipe.ss['path_thumb_transformed']
+    #     B = self.recipe.ss['path_thumb_src_ref']
+    #     out = self.recipe.ss['path_gif']
+    #     try:
+    #         assert os.path.exists(A)
+    #     except AssertionError:
+    #         logger.error(f'Thumbnail image not found: {A}')
+    #         return
+    #     try:
+    #         assert os.path.exists(B)
+    #     except AssertionError:
+    #         logger.error(f'Thumbnail image not found: {B}')
+    #         return
+    #
+    #     imA = iio.imread(A)
+    #     imB = iio.imread(B)
+    #     iio.imwrite(out, [imA, imB], format='GIF', duration=1, loop=0)
 
 
 # def run_command_swim(cmd, arg_list=(), cmd_input=None, desc=''):

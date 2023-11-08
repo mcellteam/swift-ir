@@ -109,22 +109,22 @@ def reptoshape(mat, pattern):
     return mat
 
 def invertAffine(afm):
-    '''INVERTAFFINE - Invert affine transform
+    '''INVERTAFFINE - Invert affine generate_thumbnail
     INVERTAFFINE(afm), where AFM is a 2x3 affine transformation matrix,
-    returns the inverse transform.'''
+    returns the inverse generate_thumbnail.'''
     afm = np.vstack((afm, [0,0,1]))
     ifm = np.linalg.inv(afm)
     return ifm[0:2,:]
 
 def invertLinear(tfm):
-    '''INVERTLINEAR - Invert linear transform
+    '''INVERTLINEAR - Invert linear generate_thumbnail
     INVERTLINEAR(tfm), where TFM is a 2x2 linear transformation matrix,
-    returns the inverse transform.'''
+    returns the inverse generate_thumbnail.'''
     return np.linalg.inv(tfm)
 
 def composeAffine(afm, bfm):
     '''COMPOSEAFFINE - Compose two affine transforms
-    COMPOSEAFFINE(afm1, afm2) returns the affine transform AFM1 ∘ AFM2
+    COMPOSEAFFINE(afm1, afm2) returns the affine generate_thumbnail AFM1 ∘ AFM2
     that applies AFM1 after AFM2.
     Affine matrices must be 2x3 numpy arrays.'''
     afm = np.vstack((afm, [0,0,1]))
@@ -133,22 +133,22 @@ def composeAffine(afm, bfm):
     return fm[0:2,:]
 
 def identityAffine():
-    '''IDENTITYAFFINE - Return an idempotent affine transform
-    afm = IDENTITYAFFINE() returns an affine transform that is
-    an identity transform.'''
+    '''IDENTITYAFFINE - Return an idempotent affine generate_thumbnail
+    afm = IDENTITYAFFINE() returns an affine generate_thumbnail that is
+    an identity generate_thumbnail.'''
     return np.array([[1., 0., 0.],
                      [0., 1., 0.]])
 
 def mirAffine(pa, pb):
-    '''MIRAFFINE - Calculate affine transform for matching points
-    (afm, rms, iworst) = MIRAFFINE(pa, pb) calculates the affine transform
+    '''MIRAFFINE - Calculate affine generate_thumbnail for matching points
+    (afm, rms, iworst) = MIRAFFINE(pa, pb) calculates the affine generate_thumbnail
     AFM that maps the points PA (2xN matrix) to the points PB
     (2xN matrix).
-    If there are three or fewer points, the resulting AFM is a transform
+    If there are three or fewer points, the resulting AFM is a generate_thumbnail
     such that AFM PA = PB. In particular, if there is only one pair of
     points, the result is a simple translation; if there are two, a
     translation combined with an isotropic scaling and rotation;
-    if there are three, a perfectly fitting affine transform.
+    if there are three, a perfectly fitting affine generate_thumbnail.
     If there are more than three pairs, the result is the least-
     squares solution: rms = sqrt(sum(||AFM PA - PB||^2)) is minimized.
     The index of the worst matching point is returned as well.'''
@@ -219,7 +219,7 @@ def mirIterate(pa, pb, ethresh=3.0, leastpts=4):
     Optional fourth argument LEASTPTS specifies that we won't drop points
     if that would cause the number of point pairs to fall below LEASTPTS.
     The default value is 4.
-    In addition to the resulting transform, MIRITERATE returns the final
+    In addition to the resulting generate_thumbnail, MIRITERATE returns the final
     RMS error and the number of points retained'''
 
     while True:
@@ -248,7 +248,7 @@ def stationaryToMoving(afm, psta):
     return pmov
 
 def toLocal(afm, topleft):
-    '''TOLOCAL - Modify affine transform for use with local coordinates
+    '''TOLOCAL - Modify affine generate_thumbnail for use with local coordinates
     lafm = TOLOCAL(afm, topleft) takes an affine that transforms global
     previewmodel coordinates to coordinates in a moving image and returns an
     affine that for use on a stationary image located at the given
@@ -258,7 +258,7 @@ def toLocal(afm, topleft):
     return shiftAffine(afm, dp)
 
 def toGlobal(afm, topleft):
-    '''TOGLOBAL - Modify affine transform for use with global coordinates
+    '''TOGLOBAL - Modify affine generate_thumbnail for use with global coordinates
     afm = TOGLOBAL(lafm, topleft) takes an affine that transforms
     coordinates in a stationary image to coordinates in a moving image
     and returns an affine that for use on global previewmodel coordinates, given
@@ -339,7 +339,7 @@ def extractROI(img, rect):
     return img[y0:y1, x0:x1]
 
 def extractTransformedWindow(img, xy=None, tfm=None, siz=512):
-    '''EXTRACTTRANSFORMEDWINDOW - Extract a window from an image with transform
+    '''EXTRACTTRANSFORMEDWINDOW - Extract a window from an image with generate_thumbnail
     win = EXTRACTTRANSFORMEDWINDOW(img, xy, tfm, siz) extracts a window of
     size SIZ, centered on XY, from the given image.
     TFM must be a 2x2 transformation matrix. It is internally modified with
@@ -371,7 +371,7 @@ def shiftAffine(afm, dx):
 
 
 def applyAffine(afm, xy):
-    '''APPLYAFFINE - Apply affine transform to a point
+    '''APPLYAFFINE - Apply affine generate_thumbnail to a point
     xy_ = APPLYAFFINE(afm, xy) applies the affine matrix AFM to the point XY
     Affine matrix must be a 2x3 numpy array. XY may be a list or an array.'''
     if not type(xy)==np.ndarray:
@@ -420,7 +420,7 @@ def modelBounds(afm, img):
     '''MODELBOUNDS - Returns image bounding rectangle in previewmodel space
     (x0, y0, w, h) = MODELBOUNDS(afm, img) returns the bounding rectangle
     of the image IMG in previewmodel space if pixel lookup is through affine
-    transform AFM.'''
+    generate_thumbnail AFM.'''
     inv = invertAffine(afm)
     p0 = np.floor(applyAffine(inv, [0,0])).astype('int32')
     p1 = np.ceil(applyAffine(inv, img.shape)).astype('int32')
@@ -430,7 +430,7 @@ def modelBounds2(afm, siz):
     '''MODELBOUNDS - Returns a bounding rectangle in previewmodel space
     (x0, y0, w, h) = MODELBOUNDS(afm, siz) returns the bounding rectangle
     of an input rectangle (siz) in previewmodel space if pixel lookup is through affine
-    transform AFM.'''
+    generate_thumbnail AFM.'''
     inv = invertAffine(afm)
     w, h = si_unpackSize(siz)
     c = [applyAffine(inv, [0, 0])]
@@ -518,8 +518,8 @@ def alignmentImage(sta, mov, wht=-.65):
     them should be apodized first.
     This function will apply Fourier transforms to both of the images.
     If you are going to use it on the same image more than once, you can
-    precompute the transform using SWIFTIR'level FFT function. This function
-    automatically recognizes that the Fourier transform has already
+    precompute the generate_thumbnail using SWIFTIR'level FFT function. This function
+    automatically recognizes that the Fourier generate_thumbnail has already
     been applied.
     Optional third argument WHT can specify whitening exponent. It
     defaults to -0.65.'''
@@ -597,8 +597,8 @@ def swim(sta, mov, wht=-.65):
     EXTRACTTRANSFORMEDWINDOW and one of them should be apodized first.
     SWIM will apply Fourier transforms to both of the images. If you
     are going to run SWIM on the same image more than once, you can
-    precompute the transform using SWIFTIR'level FFT function. SWIM
-    automatically recognizes that the Fourier transform has already
+    precompute the generate_thumbnail using SWIFTIR'level FFT function. SWIM
+    automatically recognizes that the Fourier generate_thumbnail has already
     been applied.
     Optional third argument WHT can specify whitening exponent. It
     defaults to -0.65.
@@ -642,7 +642,7 @@ def movingPatches(img, pp, afm, siz=512):
     and specify the centers of the patches in image coordinates. That is,
     AFM is _not_ applied to PP.
     Patch size SIZ is given as (W,H) or simply W and defaults to 512.
-    AFM is an affine transform that is applied to the points PP.
+    AFM is an affine generate_thumbnail that is applied to the points PP.
     The result is a list of arrays that are Fourier transformed so
     they can be fed directly to MULTISWIM. Note that moving patches
     are _not_ apodized.
@@ -853,12 +853,12 @@ def remod(ifns, ofns, halfwidth=10, halfexclwidth=0, topbot=False,
             abovesum += stack[idx(k - halfwidth - halfexclwidth)]
 
 def copyTriangle(dst, src, tria, afm):
-    '''COPYTRIANGLE - Copy a triangular area with affine transform
+    '''COPYTRIANGLE - Copy a triangular area with affine generate_thumbnail
     dst = COPYTRIANGLE(dst, src, tria, afm) fills the area defined by
     TRIA in the DST image with pixels from the SRC image. Pixel lookup
-    in the SRC image is through affine transform AFM: p_src = AFM(p_dst).
+    in the SRC image is through affine generate_thumbnail AFM: p_src = AFM(p_dst).
     TRIA must be a 2x3 array of integer pixel coordinates in the DST
-    image. AFM must be a 2x3 array defining an affine transform.'''
+    image. AFM must be a 2x3 array defining an affine generate_thumbnail.'''
 
     p_topleft = np.min(tria, 1)
     p_bottomright = np.max(tria, 1) + 1

@@ -1,44 +1,31 @@
 #!/usr/bin/env python3
 import copy
+import logging
+import multiprocessing as mp
 import os
 import shutil
-import time
-import psutil
-import logging
-import platform
-import imageio
-import imageio.v3 as iio
-from pathlib import Path
-from multiprocessing import Pool
-from multiprocessing.pool import ThreadPool
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-from datetime import datetime
-import multiprocessing as mp
 import subprocess as sp
+import time
+from datetime import datetime
+from pprint import pformat
+
+import imageio.v3 as iio
+import neuroglancer as ng
 import numpy as np
 import tqdm
 import zarr
-import neuroglancer as ng
+
+import libtiff
 import numcodecs
 numcodecs.blosc.use_threads = False
-import libtiff
 
 from qtpy.QtCore import Signal, QObject, QMutex
-from qtpy.QtWidgets import QApplication
 
-from src.helpers import get_bindir, print_exception
-from src.funcs_zarr import preallocate_zarr
-from src.thumbnailer import Thumbnailer
 import src.config as cfg
-
-try:
-    from src.swiftir import applyAffine, reptoshape
-except Exception as e:
-    print(e)
-    try:
-        from swiftir import applyAffine, reptoshape
-    except Exception as e:
-        print(e)
+from src.helpers import get_bindir, print_exception, get_core_count
+from src.funcs_image import ImageSize
+from src.thumbnailer import Thumbnailer
+from src.swiftir import applyAffine
 
 __all__ = ['ZarrWorker']
 
@@ -68,295 +55,266 @@ class ZarrWorker(QObject):
         finally:
             self._mutex.unlock()
 
-
     def stop(self):
         logger.critical('Stopping!')
         self._mutex.lock()
         self._running = False
         self._mutex.unlock()
 
-
     def run(self):
-        logger.critical('Running...')
+        print(f"====> Running Background Thread ====>")
         self.generate()
+        print(f"<==== Terminating Background Thread <====")
         self.finished.emit() #Important!
 
     def generate(self):
 
-        print(f"\n######## Generating/re-sync'ing Zarr ########\n")
-
+        logger.critical(f"\n\nPerforming apply cumulative "
+                        f"transformation as Zarr protocol...\n")
         dm = self.dm
-        dest = self.dm.data_location
-        scale = self.dm.scale
-
-        dm.set_stack_cafm(s=scale)
-
-        # print_example_cafms(dm)
-
-        zarr_group = os.path.join(dm.data_location, 'zarr', 's%d' % self.dm.lvl(s=scale))
-        z = zarr.open(zarr_group)
-
-        make_all = len(list(self.dm.zattrs.keys())) == 0
+        dm.set_stack_cafm()
+        grp = os.path.join(dm.data_location, 'zarr', 's%d' % dm.lvl())
+        zarrExist = os.path.exists(os.path.join(grp, '.zattrs'))
+        z = zarr.open(grp)
+        make_all = len(list(dm.zattrs.keys())) == 0
 
         '''If it is an align all, then we want to set and store bounding box / poly bias'''
-        outputHash = hash(HashableDict(self.dm['level_data'][scale]['output_settings']))
+        outputHash = hash(HashableDict(dm['level_data'][dm.level]['output_settings']))
         z.attrs['output_settings_hash'] = outputHash
-        z.attrs['output_settings'] = copy.deepcopy(self.dm['level_data'][scale]['output_settings'])
+        z.attrs['output_settings'] = copy.deepcopy(dm['level_data'][dm.level]['output_settings'])
 
-        indexes = []
-        for i in range(len(self.dm)):
-            # cur_ss_hash = str(self.dm.ssSavedHash(s=scale,l=i))
-            cur_cafm_hash = str(self.dm.cafmHash(s=scale,l=i))
-            # meta = z.attrs[str(i)]
-            # zarr_ss_hash = meta[0]
-            # zarr_cafm_hash = meta[1]
-
-            if make_all:
-                indexes.append(i)
-                continue
-
-            if self.ignore_cache:
-                indexes.append(i)
-                continue
-            else:
-                if self.dm.zarrCafmHashComports(s=scale, l=i):
-                    logger.info(f"Cache hit {cur_cafm_hash}! Zarr is correct at index {i}.")
+        if not zarrExist:
+            self.indexes = list(range(len(dm)))
+        else:
+            self.indexes = []
+            for i in range(len(dm)):
+                comports = dm.zarrCafmHashComports(l=i)
+                if make_all or self.ignore_cache:
+                    self.indexes.append(i)
                 else:
-                    indexes.append(i)
+                    if comports:
+                        logger.info(f"Cache hit {dm.cafmHash(l=i)}! "
+                                    f"Zarr data correct at index {i}.")
+                    else:
+                        self.indexes.append(i)
 
-        if not len(indexes):
+
+        if not len(self.indexes):
             logger.info("\n\nZarr is in sync.\n")
-            self.finished.emit()
-            return
+            self.finished.emit(); return
 
 
         if dm.has_bb():
             # Note: now have got new cafm'level -> recalculate bounding box
-            rect = dm.set_calculate_bounding_rect(s=scale)  # Only after SetStackCafm
+            rect = dm.set_calculate_bounding_rect()  # Only after SetStackCafm
         else:
-            w, h = dm.image_size(s=scale)
+            w, h = dm.image_size()
             rect = [0, 0, w, h]  # might need to swap w/h for Zarr
-        logger.info(f'\n'
-                    f'Bounding Box       : {dm.has_bb()}\n'
-                    f'Polynomial Bias    : {dm.poly_order}\n'
-                    f'Aligned Size       : {rect[2]} x {rect[3]}\n'
-                    f'Offsets            : {rect[0]}, {rect[1]}')
+        logger.info(f'Bounding Box : {dm.has_bb()}, Bias: {dm.poly_order}\n')
 
         tasks = []
-        # for i, sec in enumerate(dm()):
         to_reduce = []
-        for i in indexes:
-            ifp = dm.path(s=scale, l=i)  # input file path
-            ofp = dm.path_aligned_cafm(s=scale, l=i)  # output file path
-            # Todo add flag to force regenerate
-            try:
-                to_reduce.append((ofp, self.dm.path_aligned_cafm_thumb(s=scale, l=i)))
-                # print(f"Appending tuple: {(ofp, self.dm.path_aligned_cafm_thumb(s=scale, l=i))}")
-            except:
-                print_exception()
-
+        for i in self.indexes:
+            ifp = dm.path(l=i)  # input file path
+            ofp = dm.path_aligned_cafm(l=i)  # output file path
+            to_reduce.append((ofp, dm.path_aligned_cafm_thumb(l=i)))
             if not os.path.exists(ofp):
                 os.makedirs(os.path.dirname(ofp), exist_ok=True)
-                # cafm = sec['levels'][scale]['cafm']
-                # cafm = sec['levels'][scale]['cafm']
-                cafm = self.dm['stack'][i]['levels'][scale]['cafm']
+                cafm = dm['stack'][i]['levels'][dm.level]['cafm']
                 tasks.append([ifp, ofp, rect, cafm, 128])
             else:
                 logger.info(f'Cache hit (transformed image): {ofp}')
 
-        n_tasks = len(tasks)
-        logger.info(f"# of tasks: {n_tasks}")
+        self.cpus = get_core_count(dm, len(tasks))
 
-        t0 = time.time()
+        desc = f"Generate Cumulative Transformation Images"
+        t, *_ = self.run_multiprocessing(run_mir, tasks, desc)
 
-        """Blocking"""
-        ctx = mp.get_context('forkserver')
-        # initPbar
-        desc = f"Applying cumulative affine ({len(tasks)} tasks)"
-        self.initPbar.emit((len(tasks), desc))
-        all_results = []
-        i = 0
-        # cpus = (psutil.cpu_count(logical=False) - 2, 104)[is_tacc()]
-        cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks))
-        logger.info(f'# Processes: {cpus}')
-        with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
-            for result in tqdm.tqdm(
-                    pool.imap_unordered(run_mir, tasks),
-                    total=len(tasks),
-                    desc=desc,
-                    position=0,
-                    leave=True):
-                all_results.append(result)
-                i += 1
-                self.progress.emit(i)
-                if not self.running():
-                    break
-
-
-
-
-        logger.info('\n######## Reducing tuples ########\n')
-        Thumbnailer(self.dm).reduce_tuples(to_reduce, scale_factor=self.dm.images['thumbnail_scale_factor'] // self.dm.lvl(scale))
+        scale_factor = dm.images['thumbnail_scale_factor'] // dm.lvl()
+        Thumbnailer(dm).reduce_tuples(to_reduce, scale_factor=scale_factor)
 
         if not self.running():
-            self.finished.emit()
-            return
+            self.finished.emit(); return
 
-        print('\n######## Generating gif animations ########\n')
-        generateAnimations(dm=self.dm, indexes=indexes, level=scale)
+        # path_mini_zarr = os.path.join(dm.data_location, 'zarr_reduced', level)
+        # if len(self.indexes) == len(dm):
+        #     if os.path.exists(path_mini_zarr):
+        #         try:
+        #             shutil.rmtree(path_mini_zarr)
+        #         except:
+        #             print_exception()
+
+        siz = ImageSize(dm.path_aligned_cafm_thumb(l=1)) #Todo #Ugly
+
+        # if not os.path.exists(path_mini_zarr):
+        tstamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        shape = (len(dm), siz[1], siz[0])
+        cname, clevel, chunkshape = dm.get_user_zarr_settings()
+        chunkshape = (1,32,32)
+        preallocate_zarr(dm=dm, name='zarr_reduced', group=dm.level, shape=shape,
+                         cname=cname, clevel=clevel, chunkshape=chunkshape,
+                         dtype='|u1', overwrite=True, attr=str(tstamp))
+
+        if self.generateAnimations():
+            logger.error(f"Something went wrong during generation GIF animations")
+            print_exception()
 
         if not self.running():
-            self.finished.emit()
-            return
+            self.finished.emit(); return
 
+        if self.generateMiniZarr():
+            logger.error(f"Something went wrong during generation of reduced Zarr")
+            print_exception()
 
-        print(f'\n######## Copy-converting Images to Zarr ########\n')
-
-        dm = self.dm
-        scale = dm.scale
-
-        # zarr_group = os.path.join(dm.data_location, 'zarr', 's%d' % dm.lvl())
-        # z = zarr.open(zarr_group)
-
-        # sshash_list = [str(dm.ssSavedHash(s=scale, l=i)) for i in range(len(dm))]
-        # cafmhash_list = [str(dm.cafmHash(s=scale, l=i)) for i in range(len(dm))]
-        # z.attrs.setdefault('ss_hash', sshash_list)
-        # z.attrs.setdefault('cafm_hash', cafmhash_list)
-        #
-        # z.attrs.setdefault('ss_hash', {})
-        # z.attrs.setdefault('cafm_hash', {})
-        # z.attrs.setdefault('index', {})
-
-        zp = dm.path_zarr_transformed(s=scale)
-        # if not os.path.exists(zp):
+        if not self.running():
+            self.finished.emit(); return
 
         if self.renew:
-            logger.info(f'Renewing Zarr directory: {zp}...')
-            # os.makedirs(zp, exist_ok=True)
             tstamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            preallocate_zarr(dm=dm,
-                             name='zarr',
-                             group=scale,
-                             shape=(len(dm), rect[3], rect[2]),
-                             dtype='|u1',
-                             overwrite=True,
-                             attr=str(tstamp))
+            shape = (len(dm), rect[3], rect[2])
+            cname, clevel, chunkshape = dm.get_user_zarr_settings()
+            preallocate_zarr(dm=dm, name='zarr', group=dm.level, shape=shape,
+                             cname=cname, clevel=clevel, chunkshape=chunkshape,
+                             dtype='|u1', overwrite=True, attr=str(tstamp))
 
-        z = zarr.open(zp)
-
-        fu = dm.first_unskipped()
-
+        z = dm.get_zarr_transforming()
         tasks = []
-        # for i in range(len(dm)):
-        for i in indexes:
-            ssHash = str(dm.ssSavedHash(s=scale, l=i))
-            cafmHash = str(dm.cafmHash(s=scale, l=i))
-            # src = dm.path_aligned(s=scale, l=i)
-            src = dm.path_aligned_cafm(s=scale, l=i)
+        for i in self.indexes:
+            src = dm.path_aligned_cafm(l=i)
             if os.path.exists(src):
-                # if not self.renew:
-                #     try:
-                #         zarrHashes = z.attrs
-                #         print(f'--------')
-                #         print(f'Zarr SS hash [{i}]      : {zarrHashes[i][0]}')
-                #         print(f'Zarr cafm hash [{i}]    : {zarrHashes[i][1]}')
-                #         ssHash = dm.ssSavedHash(s=scale,l=i)
-                #         ssCafmHash = dm.cafmHash(s=scale,l=i)
-                #         print(f'Current SS hash [{i}]   : {ssHash}')
-                #         print(f'Current cafm hash [{i}] : {ssCafmHash}')
-                #     except:
-                #         print_exception()
-                # save_to = os.path.join(dm.writeDir(s=scale, l=i), cafmHash)
-                save_to = os.path.join(dm.writeDirCafm(s=scale, l=i), cafmHash)
-                # z.attrs['index'][i] = {'index': i, 'source': src, 'copypath': save_to,
-                #                             'ss_hash': ssHash, 'cafm_hash': cafmHash}
-                # z.attrs['ss_hash'].update({i: ssHash})
-                # z.attrs['cafm_hash'].update({i: cafmHash})
-                z.attrs[i] = (ssHash, cafmHash)
-                task = [i, src, zarr_group, save_to]
+                z.attrs[i] = (str(dm.ssSavedHash(l=i)), dm.cafmHash(l=i))
+                task = [i, src, grp]
                 tasks.append(task)
             else:
-                logger.warning(f'TIFF Not Found: {src}')
-        # shuffle(tasks)
+                logger.warning(f'TIFF Does Not Exist: {src}')
 
-        if len(tasks) == 0:
-            logger.info('Zarr is already in sync. Complete.')
-            self.finished.emit()
-            return
+        if tasks:
+            if ng.is_server_running():
+                logger.info('Stopping Neuroglancer...')
+                ng.server.stop()
+            desc = f"Copy-convert to Zarr"
+            t, *_ = self.run_multiprocessing(convert_zarr, tasks, desc)
+            self.dm.t_convert_zarr = t
+        else:
+            self.dm.t_convert_zarr = 0.
 
-        t0 = time.time()
 
-        if ng.is_server_running():
-            logger.info('Stopping Neuroglancer...')
-            ng.server.stop()
+    def generate_single_animation(self, paths, of):
+        try:
+            ims = list(map(lambda f: iio.imread(f), paths))
+            iio.imwrite(of, ims, format='GIF', duration=1, loop=0)
+            return 0
+        except:
+            print_exception()
+            logger.error(f'Th e following GIF Frame(s) Could Not Be Read as Image:\n{paths}')
+            return 1
 
-        desc = f"Copy-converting to Zarr ({len(tasks)} tasks)"
-        ctx = mp.get_context('forkserver')
+    def generateAnimations(self):
+        err = 0
+        for i in self.indexes:
+            # if i == self.dm.first_included(): #1107-
+            #     continue
+            of = self.dm.path_cafm_gif(l=i)
+            # os.makedirs(os.path.dirname(of), exist_ok=True)
+            p1 = self.dm.path_aligned_cafm_thumb(l=i)
+            p2 = self.dm.path_aligned_cafm_thumb_ref(l=i)
+            try:
+                o = self.generate_single_animation([p1, p2], of)
+            except:
+                err += 1
+                print_exception(extra=f"# errors: {err}")
+        return err > 0
+
+
+    def generateMiniZarr(self):
+        logger.info('')
+        z_path = os.path.join(self.dm.data_location, 'zarr_reduced', self.dm.level)
+        tasks = []
+        for i in self.indexes:
+            # if i == self.dm.first_included(): #1107-
+            #     continue
+            p = self.dm.path_aligned_cafm_thumb_ref(l=i)
+            tasks.append([i, p, z_path])
+        desc = f"Generate Reduced-Size Zarr"
+        t, n, failed = self.run_multiprocessing(convert_zarr, tasks, desc)
+        return failed > 0
+
+
+    def run_multiprocessing(self, func, tasks, desc):
+        print(f"----> {desc} ---->")
+        _break = 0
         self.initPbar.emit((len(tasks), desc))
-        # QApplication.processEvents()
-        all_results = []
-        # cpus = (psutil.cpu_count(logical=False) - 2, 80)[is_tacc()]
-        cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks))
-        logger.info(f"# Processes: {cpus}")
-        i = 0
-        with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
+        t0 = time.time()
+        ctx = mp.get_context('forkserver')
+        n = len(tasks)
+        i, results = 0, []
+        # with ctx.Pool(processes=self.cpus, maxtasksperchild=1) as pool:
+        with ctx.Pool(processes=self.cpus) as pool:
             for result in tqdm.tqdm(
-                    pool.imap_unordered(convert_zarr, tasks),
-                    total=len(tasks),
+                    pool.imap_unordered(func, tasks),
+                    total=n,
                     desc=desc,
                     position=0,
                     leave=True):
-                all_results.append(result)
+                results.append(result)
                 i += 1
                 self.progress.emit(i)
-                # QApplication.processEvents()
                 if not self.running():
+                    _break = 1
+                    print(f"<==== BREAKING ABRUPTLY <====")
                     break
+        fail = sum(results)
+        succ = len(results) - fail
+        dt = time.time() - t0
+        self.print_summary(dt, succ, fail, desc)
+        print(f"<---- {desc} <----")
+        return (dt, succ, fail)
 
-        t_elapsed = time.time() - t0
-        dm.t_convert_zarr = t_elapsed
+    def print_summary(self, t, succ, fail, desc):
 
-        logger.info("Zarr conversion complete.")
-        logger.info(f"Elapsed Time: {t_elapsed:.3g}s")
-
-def convert_zarr(task):
-    try:
-        ID = task[0]
-        fn = task[1]
-        out = task[2]
-        save_to = task[3]
-        store = zarr.open(out)
-        # store.attr['test_attribute'] = {'key': 'value'}
-        data = libtiff.TIFF.open(fn).read_image()[:, ::-1]  # store: <zarr.core.Array (19, 1244, 1130) uint8>
-
-        # os.remove(fn)
-        shutil.rmtree(os.path.dirname(fn), ignore_errors=True)
-
-        # np.save(save_to, data)
-        store[ID, :, :] = data
-        return 0
-    except Exception as e:
-        print(e)
-        return 1
+        if fail:
+            logger.error(f"\n"
+                         f"\n//  Summary  //  {desc}  //"
+                         f"\n//  RUNTIME   : {t:.3g}s"
+                         f"\n//  SUCCESS   : {succ}"
+                         f"\n//  FAILED    : {fail}"
+                         f"\n")
+        else:
+            logger.info(f"\n"
+                        f"\n//  Summary  //  {desc}  //"
+                        f"\n//  RUNTIME   : {t:.3g}s"
+                        f"\n//  SUCCESS   : {succ}"
+                        f"\n//  FAILED    : {fail}"
+                        f"\n")
 
 
-def print_example_cafms(dm):
-    try:
-        print('First Three CAFMs:')
-        print(str(dm.cafm(l=0)))
-        if len(dm) > 1:
-            print(str(dm.cafm(l=1)))
-        if len(dm) > 2:
-            print(str(dm.cafm(l=2)))
-    except:
-        pass
+
+def set_zarr_attribute(z, key, value):
+    z.attrs[key] = value
+
+
+
+def run_command(cmd, arg_list=None, cmd_input=None):
+    # logger.info("\n================== Run Command ==================")
+    cmd_arg_list = [cmd]
+    if arg_list != None:
+        cmd_arg_list = [a for a in arg_list]
+        cmd_arg_list.insert(0, cmd)
+    # Note: decode bytes if universal_newlines=False in Popen (cmd_stdout.decode('utf-8'))
+    cmd_proc = sp.Popen(cmd_arg_list, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
+    cmd_stdout, cmd_stderr = cmd_proc.communicate(cmd_input)
+    # logger.info(f"\nSTDOUT:\n{cmd_stdout}\n\nSTDERR:\n{cmd_stderr}\n")
+    # exit_code = cmd_proc.wait() #1031+
+    # type(cmd_proc.returncode) = int
+    # type(cmd_proc.wait()) = int
+    return ({'out': cmd_stdout, 'err': cmd_stderr, 'rc': cmd_proc.returncode})
 
 
 def run_mir(task):
     in_fn = task[0]
     out_fn = task[1]
     rect = task[2]
-    cafm = task[3]
+    cafm = task[3] # type <class 'list'>
     border = task[4]
 
     # Todo get exact median greyscale value for each image in list, for now just use 128
@@ -365,11 +323,8 @@ def run_mir(task):
     mir_c = os.path.join(app_path, 'lib', get_bindir(), 'mir')
 
     bb_x, bb_y = rect[2], rect[3]
-    # afm = np.array(cafm)
-    # logger.info(f"cafm: {str(cafm)}")
-    afm = np.array([cafm[0][0], cafm[0][1], cafm[0][2], cafm[1][0], cafm[1][1], cafm[1][2]], dtype='float64').reshape((
-        -1,
-        3))
+    afm = np.array([cafm[0][0], cafm[0][1], cafm[0][2], cafm[1][0], cafm[1][1], cafm[1][2]],
+                   dtype='float64').reshape((-1, 3))
     # logger.info(f'afm: {str(afm.tolist())}')
     p1 = applyAffine(afm, (0, 0))  # Transform Origin To Output Space
     p2 = applyAffine(afm, (rect[0], rect[1]))  # Transform BB Lower Left To Output Space
@@ -389,45 +344,79 @@ def run_mir(task):
         'RW %s\n' \
         'E' % (bb_x, bb_y, border, in_fn, a, c, e, b, d, f, out_fn)
     o = run_command(mir_c, arg_list=[], cmd_input=mir_script)
+    rc = o['rc']
+    # logger.critical(pformat(o))
+    # return 0
+    return rc
 
 
-
-def generateAnimations(dm, indexes, level):
-    # https://stackoverflow.com/questions/753190/programmatically-generate-video-or-animated-gif-in-python
-
-    first_unskipped = dm.first_unskipped(s=level)
-    for i in indexes:
-        if i == first_unskipped:
-            continue
-        ofn = dm.path_cafm_gif(s=level, l=i)
-        os.makedirs(os.path.dirname(ofn), exist_ok=True)
-        im0 = dm.path_aligned_cafm_thumb(s=level, l=i)
-        im1 = dm.path_aligned_cafm_thumb_ref(s=level, l=i)
-        if not os.path.exists(im0):
-            logger.error(f'Not found: {im0}')
-            return
-        if not os.path.exists(im1):
-            logger.error(f'Not found: {im0}')
-            return
-        try:
-            images = [imageio.imread(im0), imageio.imread(im1)]
-            imageio.mimsave(ofn, images, format='GIF', duration=1, loop=0)
-        except:
-            print_exception()
+def convert_zarr(task):
+    '''
+    @param 1: ID int
+    @param 2: file path str
+    @param 3: zarr path str
+    '''
+    try:
+        _id = task[0]
+        _f = task[1]
+        _path = task[2]
+        store = zarr.open(_path)
+        data = libtiff.TIFF.open(_f).read_image()[:, ::-1]  # store: <zarr.core.Array (19, 1244, 1130) uint8>
+        # os.remove(_f)
+        # shutil.rmtree(os.path.dirname(_f), ignore_errors=True) #1102-
+        store[_id, :, :] = data
+        return 0
+    except Exception as e:
+        print(e)
+        return 1
 
 
-def run_command(cmd, arg_list=None, cmd_input=None):
-    # logger.info("\n================== Run Command ==================")
-    cmd_arg_list = [cmd]
-    if arg_list != None:
-        cmd_arg_list = [a for a in arg_list]
-        cmd_arg_list.insert(0, cmd)
-    # Note: decode bytes if universal_newlines=False in Popen (cmd_stdout.decode('utf-8'))
-    cmd_proc = sp.Popen(cmd_arg_list, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
-    cmd_stdout, cmd_stderr = cmd_proc.communicate(cmd_input)
-    # logger.info(f"\nSTDOUT:\n{cmd_stdout}\n\nSTDERR:\n{cmd_stderr}\n")
-    return ({'out': cmd_stdout, 'err': cmd_stderr, 'rc': cmd_proc.returncode})
+def preallocate_zarr(dm, name, group, shape, cname, clevel, chunkshape, dtype, overwrite, attr=None):
+    '''zarr.blosc.list_compressors() -> ['blosclz', 'lz4', 'lz4hc', 'zlib', 'zstd']'''
+    logger.info("\n\n--> preallocate -->\n")
+    cname, clevel, chunkshape = dm.get_user_zarr_settings()
+    src = os.path.abspath(dm.data_location)
+    path_zarr = os.path.join(src, name)
+    path_out = os.path.join(path_zarr, group)
+    logger.info(f'allocating {name}/{group}...')
 
+    if os.path.exists(path_out) and (overwrite == False):
+        logger.warning('Overwrite is False - Returning')
+        return
+    output_text = f'\n  Zarr root : {os.path.join(os.path.basename(src), name)}' \
+                  f'\n      group :   └ {group}({name}) {dtype} {cname}/{clevel}' \
+                  f'\n      shape : {str(shape)} ' \
+                  f'\n      chunk : {chunkshape}'
+
+    try:
+        if overwrite and os.path.exists(path_out):
+            logger.info(f'Removing {path_out}...')
+            shutil.rmtree(path_out, ignore_errors=True)
+        # synchronizer = zarr.ThreadSynchronizer()
+        # arr = zarr.group(store=path_zarr_transformed, synchronizer=synchronizer) # overwrite cannot be set to True here, will overwrite entire Zarr
+        arr = zarr.group(store=path_zarr)
+        compressor = numcodecs.Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
+
+        logger.info(f"\n"
+                    f"  group      : {group}\n"
+                    f"  shape      : {shape}\n"
+                    f"  chunkshape : {chunkshape}\n"
+                    f"  dtype      : {dtype}\n"
+                    f"  compressor : {compressor}\n"
+                    f"  overwrite  : {overwrite}")
+
+        # arr.zeros(name=group, shape=shape, chunks=chunkshape, dtype=dtype, compressor=compressor, overwrite=overwrite, synchronizer=synchronizer)
+        arr.zeros(name=group, shape=shape, chunks=chunkshape, dtype=dtype, compressor=compressor, overwrite=overwrite)
+        # write_metadata_zarr_multiscale()
+        if attr:
+            arr.attrs['attribute'] = attr
+    except:
+        print_exception()
+        logger.warning('Zarr Preallocation Encountered A Problem')
+    else:
+        # cfg.main_window.hud.done()
+        logger.info(output_text)
+    logger.info(f"\n\n<-- preallocate <--\n")
 
 
 class HashableDict(dict):

@@ -55,12 +55,7 @@ class ThumbnailFast(QLabel):
              'match2': cfg.glob_colors[2],
              'match3': cfg.glob_colors[3]
         }
-        self.setStyleSheet("background-color: #dadada;")
-
-        #0826-
-        # self.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-
+        # self.setStyleSheet("background-color: #dadada;")
 
     # def mousePressEvent(self, e):
     #     x, y, = (
@@ -159,13 +154,11 @@ class ThumbnailFast(QLabel):
                 self.r.moveCenter(self.rect().center())
                 qp.drawPixmap(self.r, pm)
 
-
                 coords = self.r.getCoords()
                 p1 = QPoint(coords[0], coords[1])
                 p2 = QPoint(coords[2], coords[1])
                 p3 = QPoint(coords[0], coords[3])
                 p4 = QPoint(coords[2], coords[3])
-
 
                 if self.name in self.map_border_color:
                     if cfg.mw.dm['state']['annotate_match_signals']:
@@ -298,18 +291,10 @@ def get_default_grid_rects(sf, img_size, ww, cp_x, cp_y, coords):
     # rx2 = int(b[0] * sf) # ratio x2 (long)
     # ry2 = int(b[1] * sf)  # ratio y3 (long)
 
-
     rx1 = int(a[0] * sf)           # ratio x1 (short)
     ry1 = int(a[1] * sf)                        # ratio y1 (short)
     rx2 = int((a[0] + ww[0]) * sf)              # ratio x2 (long)
     ry2 = int((a[1] + ww[1]) * sf)            # ratio y3 (long)
-
-
-    #orig
-    # rx1 = int(a[0] * sf)  # ratio x1 (short)
-    # ry1 = int(a[1] * sf)  # ratio y1 (short)
-    # rx2 = int((a[0] + ww[0]) * sf)  # ratio x2 (long)
-    # ry2 = int((a[1] + ww[1]) * sf)  # ratio y3 (long)
 
     cp = QPoint(cp_x, cp_y)
     # logger.critical('self.r: ' + str(self.r))
@@ -378,16 +363,9 @@ class CorrSignalThumbnail(QLabel):
              'ms2': cfg.glob_colors[2],
              'ms3': cfg.glob_colors[3]
         }
-        # self.setStyleSheet("background-color: #dadada;")
-        # self.setStyleSheet("background-color: #3d1f05;")
-        # self.setStyleSheet("background-color: #f3e9df; font-size: 10px; font-family: 'Andale Mono','Ubuntu Mono',  monospace;")
-        self.setStyleSheet("background-color: #f3e9df; font-size: 10px; font-family: 'Tahoma';")
+        # self.setStyleSheet("background-color: #f3e9df; font-size: 10px; font-family: 'Tahoma';") #1030-
 
         self.setAutoFillBackground(True)
-
-        #0826-
-        # self.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
 
     def paintEvent(self, event):

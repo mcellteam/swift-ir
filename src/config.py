@@ -104,7 +104,6 @@ CLEVEL = 5
 DEFAULT_PLAYBACK_SPEED = 4.0 # playback speed (fps)
 PROFILING_MODE = False
 PRINT_EXAMPLE_ARGS = True
-AUTOSAVE = True
 DAEMON_THREADS = True
 PROFILER = False
 DUMMY = False
@@ -150,4 +149,6 @@ void main() {
           exp(contrast));
 }
 '''
+
+vw = None
 

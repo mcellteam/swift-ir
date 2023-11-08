@@ -127,7 +127,7 @@ Information in parentheses is somewhat redundant. Δ__x__ and Δ__y__ are the pi
 
 Usage note
 ----------
-Note that *mir* uses output and input coordinates to place a source image in a target space and returns a ``forward'' transform that maps source to target as well as an ``inverse'' transform that maps target back to source. It is this inverse transform that can be fed to *swim* as the __**M**__ transformation matrix on a refinement pass.
+Note that *mir* uses output and input coordinates to place a source image in a target space and returns a ``forward'' generate_thumbnail that maps source to target as well as an ``inverse'' generate_thumbnail that maps target back to source. It is this inverse generate_thumbnail that can be fed to *swim* as the __**M**__ transformation matrix on a refinement pass.
 
 Reference
 ---------

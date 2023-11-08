@@ -11,8 +11,6 @@ from qtconsole.inprocess import QtInProcessKernelManager
 from qtpy.QtWidgets import QApplication, QSizePolicy, QWidget, QVBoxLayout
 from qtpy.QtCore import Qt, QSize
 from qtpy.QtGui import QFont
-# from src.helpers import is_tacc
-# import src.config as cfg
 
 class PythonConsole(RichJupyterWidget):
 
@@ -31,16 +29,6 @@ class PythonConsole(RichJupyterWidget):
         self.kernel_client.start_channels()
         self.setFocusPolicy(Qt.NoFocus)
 
-        # f = QFont()
-        # f.setFamily('Ubuntu')
-        # f.setPointSize(13)
-        # self.setFont(f)
-
-        # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-        # self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
-
-        # if not is_tacc():
         if 1:
             self.execute_command('import src.config as cfg')
             self.execute_command('from src.config import main_window')
@@ -49,8 +37,6 @@ class PythonConsole(RichJupyterWidget):
             self.execute_command('import os, sys, copy, json, stat, time, glob')
             self.execute_command('import zarr')
             self.execute_command('import neuroglancer as ng')
-            self.execute_command('from qtpy.QtCore import QUrl, Qt')
-            self.execute_command('from qtpy import QtCore, QtGui, QtWidgets')
             self.execute_command('from qtpy.QtWidgets import *')
             self.execute_command('from qtpy.QtCore import *')
             self.execute_command('from qtpy.QtGui import *')
@@ -92,6 +78,7 @@ class PythonConsole(RichJupyterWidget):
         """Set linux color scheme"""
         self.set_default_style(colors='linux')
 
+
 class PythonConsoleWidget(QWidget):
 
     def __init__(self):
@@ -106,14 +93,7 @@ class PythonConsoleWidget(QWidget):
         self.layout.addWidget(self.pyconsole)
         # self.setFont(QFont('Ubuntu', 10))
         self.setLayout(self.layout)
-        self.setStyleSheet("font-family: 'Ubuntu Mono', 'Andale Mono', monospace;"
-                           "font-size: 9px;")
-
-    # def sizeHint(self):
-    #     # return self.minimumSizeHint()
-    #     width = int(cfg.main_window.width() / 2) - 10
-    #     return QSize(width, 90)
-
+        self.setStyleSheet("font-family: 'Andale Mono', monospace; font-size: 9px;")
 
 
 if __name__ == '__main__':

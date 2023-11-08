@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os, sys, logging, inspect, copy, time, warnings
-from datetime import datetime
 import textwrap, pprint
 import neuroglancer as ng
 import numpy as np
@@ -21,9 +20,6 @@ from src.ui.sliders import DoubleSlider
 from src.ui.thumbnail import CorrSignalThumbnail, ThumbnailFast
 from src.ui.gif_player import GifPlayer
 from src.ui.layouts import HBL, VBL, GL, HW, VW, HSplitter, VSplitter, QHLine, QVLine
-from src.ui.joystick import Joystick
-from src.funcs_image import SetStackCafm
-# from src import DataModel
 from src.data_model import DataModel
 from src.hash_table import HashTable
 
@@ -96,14 +92,6 @@ class ProjectTab(QWidget):
         self.parent.addGlobTab(self, self.dm.title, switch_to=True)
         
 
-
-
-    # def keyPressEvent(self, event):
-    #     super(ProjectTab, self).keyPressEvent(event)
-    #     key = event.key()
-    #     print(f'Project Tab:\n{key} ({event.text()} / {event.nativeVirtualKey()} / modifiers: {event.nativeModifiers()}) was pressed!')
-
-
     def updateAaButtons(self):
         logger.info('')
         # if self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings']['method_opts']['method'] == 'grid':
@@ -134,9 +122,8 @@ class ProjectTab(QWidget):
         self.dm = DataModel(self.mdlTreeview.to_json())
 
     def updateTab0(self):
-        logger.critical('\n\nUpdating Tab 0...\n')
+        logger.critical('Updating 3D Zarr tab...')
         self.bZarrRegen.setEnabled(self.dm.is_aligned())
-
 
 
     def _onTabChange(self):
@@ -222,6 +209,7 @@ class ProjectTab(QWidget):
         if cfg.USE_DELAY:
             time.sleep(cfg.DELAY_AFTER)
 
+
     def initNeuroglancer(self, init_all=False):
         caller = inspect.stack()[1].function
 
@@ -288,7 +276,6 @@ class ProjectTab(QWidget):
             # logger.info(f"Local Volume:\n{self.viewer1.LV.info()}")
 
         self.parent.hud.done()
-        # self.setZmag(10)
         # QApplication.processEvents() #1009-
         logger.info(f"<<<< initNeuroglancer")
 
@@ -303,14 +290,9 @@ class ProjectTab(QWidget):
         # self.parent.tell(f'Neuroglancer Layout (set from native NG controls): {requested}')
 
     def slot_zoom_changed(self, val):
-        caller = inspect.stack()[1].function
-        logger.info(f'[{caller}]')
         if val > 1000:
             val *= 250000000
-        logger.info(f"Zoom changed! passed value: {val:.3f}")
         self.leZoom.setText("%.2f" % val)
-        # setData('state,ng_zoom', self.viewer.state.cross_section_scale)
-        # self.leZoom.setText(str(self.viewer.state.cross_section_scale))
 
 
     def initUI_Neuroglancer(self):
@@ -328,8 +310,6 @@ class ProjectTab(QWidget):
         # self.hud_overlay = HeadupDisplay(self.parent.app, overlay=True)
         # self.hud_overlay.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
         # self.hud_overlay.set_theme_overlay()
-
-        # self.joystick = Joystick()
 
         self.ngVertLab = VerticalLabel('Neuroglancer 3DEM View')
         self.detailsSNR = QLabel()
@@ -380,14 +360,14 @@ class ProjectTab(QWidget):
 
         tip = "Save settings for current section"
         tip = '\n'.join(textwrap.wrap(tip, width=35))
-        self.bSaveSettings = QPushButton('Save')
+        self.bSaveSettings = QPushButton('Save Result')
         self.bSaveSettings.setToolTip(tip)
         self.bSaveSettings.setFocusPolicy(Qt.NoFocus)
         self.bSaveSettings.setFixedHeight(16)
         def _save():
             logger.info('')
             self.dm.saveSettings()
-            self.parent._autosave(silently=True)  # Critical, as the key will be assumed to exist
+            self.dm.save(silently=True)  # Critical, as the key will be assumed to exist
             # self.dataUpdateMA()
             if self.parent.dwSnr.isVisible():
                 self.dSnr_plot.initSnrPlot()
@@ -396,7 +376,7 @@ class ProjectTab(QWidget):
 
         tip = "Save settings for all sections"
         tip = '\n'.join(textwrap.wrap(tip, width=35))
-        self.bSaveAllSettings = QPushButton('Save All')
+        self.bSaveAllSettings = QPushButton('Save All Results')
         self.bSaveAllSettings.setToolTip(tip)
         self.bSaveAllSettings.setFocusPolicy(Qt.NoFocus)
         self.bSaveAllSettings.setFixedHeight(16)
@@ -404,7 +384,7 @@ class ProjectTab(QWidget):
         def _saveAll():
             logger.info('')
             self.dm.saveAllSettings()
-            self.parent._autosave(silently=True)  # Critical, as the key will be assumed to exist
+            self.dm.save(silently=True)  # Critical, as the key will be assumed to exist
             # self.dataUpdateMA()
             if self.parent.dwSnr.isVisible():
                 self.dSnr_plot.initSnrPlot()
@@ -796,8 +776,8 @@ class ProjectTab(QWidget):
         self.aaWidgets = []
         self.aaButtons = []
         for w in range(6):
-            b = QPushButton('Apply All')
-            b.setFixedSize(42, 15)
+            b = QPushButton('Apply To All')
+            b.setFixedSize(62, 15)
             # b.clicked.connect(lambda: print('Applying all!'))
             self.aaButtons.append(b)
             hw = HW(b)
@@ -964,7 +944,6 @@ class ProjectTab(QWidget):
         self.bClearL.setToolTip('Clear Selections')
         self.bClearL.setFixedHeight(14)
         self.bClearL.clicked.connect(self.deleteAllMpBase)
-
 
         self.gbGrid = QGroupBox("Grid Alignment Settings")
         self.gbGrid.setMaximumHeight(258)
@@ -1168,7 +1147,7 @@ class ProjectTab(QWidget):
         # self.sa_runtimes.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         # self.sa_runtimes.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
-        self.labPlaceholder = QLabel("This resolution level must be aligned first ('Apply All').")
+        self.labPlaceholder = QLabel("This resolution level must be aligned first ('Align All').")
         self.labPlaceholder.setAlignment(Qt.AlignCenter)
         self.labPlaceholder.setStyleSheet("font-size: 12px;")
         self.wPlaceholder = VW(self.labPlaceholder)
@@ -1800,13 +1779,13 @@ class ProjectTab(QWidget):
         self.dataUpdateMA()
 
 
-    def fixAll(self):
-        logger.info('')
-        to_align = self.dm.needsAlignIndexes()
-        # to_regenerate = self.dm.needsGenerateIndexes()
-        logger.info(f'\nAlign indexes: {pprint.pformat(to_align)}')
-        self.parent.align(dm=self.dm, indexes=to_align)
-        self.parent.regenZarr()
+    # def fixAll(self):
+    #     logger.info('')
+    #     to_align = self.dm.needsAlignIndexes()
+    #     # to_regenerate = self.dm.needsGenerateIndexes()
+    #     logger.info(f'\nAlign indexes: {pprint.pformat(to_align)}')
+    #     self.parent.align(dm=self.dm, indexes=to_align)
+    #     self.parent.regenZarr()
 
     @Slot()
     def onDefaultsCheckbox(self):
@@ -1916,88 +1895,87 @@ class ProjectTab(QWidget):
             self.dm.quadrants = [self.Q1.isClicked, self.Q2.isClicked, self.Q3.isClicked, self.Q4.isClicked]
         self.viewer1.drawSWIMwindow()
 
-
-    def onTranslate(self):
-        if (self.lwL.selectedIndexes() == []) and (self.lwR.selectedIndexes() == []):
-            self.parent.warn('No points are selected in the list')
-            return
-
-        selections = []
-        if len(self.lwR.selectedIndexes()) > 0:
-            role = 'ref'
-            for sel in self.lwR.selectedIndexes():
-                selections.append(int(sel.data()[0]))
-        else:
-            role = 'tra'
-            for sel in self.lwL.selectedIndexes():
-                selections.append(int(sel.data()[0]))
-
-        pts_old = self.dm.manpoints()[role]
-        pts_new = pts_old
-
-        for sel in selections:
-            new_x = pts_old[sel][1] - int(self.leMoveRight.text())
-            new_y = pts_old[sel][0] - int(self.leMoveUp.text())
-            pts_new[sel] = (new_y, new_x)
-
-        self.dm.set_manpoints(role=role, matchpoints=pts_new)
-        # self.viewer1.restoreManAlignPts()
-        self.viewer1.drawSWIMwindow()
-
-    def onTranslate_x(self):
-        if (self.lwL.selectedIndexes() == []) and (self.lwR.selectedIndexes() == []):
-            self.parent.warn('No points are selected in the list')
-            return
-
-        selections = []
-        if len(self.lwR.selectedIndexes()) > 0:
-            role = 'ref'
-            for sel in self.lwR.selectedIndexes():
-                selections.append(int(sel.data()[0]))
-        else:
-            role = 'tra'
-            for sel in self.lwL.selectedIndexes():
-                selections.append(int(sel.data()[0]))
-
-        pts_old = self.dm.manpoints()[role]
-        pts_new = pts_old
-
-
-        for sel in selections:
-            new_x = pts_old[sel][1] - int(self.leMoveRight.text())
-            new_y = pts_old[sel][0]
-            pts_new[sel] = (new_y, new_x)
-
-        self.dm.set_manpoints(role=role, matchpoints=pts_new)
-        # self.viewer1.restoreManAlignPts()
-        self.viewer1.drawSWIMwindow()
-
-    def onTranslate_y(self):
-        if (self.lwL.selectedIndexes() == []) and (self.lwR.selectedIndexes() == []):
-            self.parent.warn('No points are selected in the list')
-            return
-
-        selections = []
-        if len(self.lwR.selectedIndexes()) > 0:
-            role = 'ref'
-            for sel in self.lwR.selectedIndexes():
-                selections.append(int(sel.data()[0]))
-        else:
-            role = 'tra'
-            for sel in self.lwL.selectedIndexes():
-                selections.append(int(sel.data()[0]))
-
-        pts_old = self.dm.manpoints()[role]
-        pts_new = pts_old
-
-        for sel in selections:
-            new_x = pts_old[sel][1]
-            new_y = pts_old[sel][0] - int(self.leMoveUp.text())
-            pts_new[sel] = (new_y, new_x)
-
-        self.dm.set_manpoints(role=role, matchpoints=pts_new)
-        # self.viewer1.restoreManAlignPts()
-        self.viewer1.drawSWIMwindow()
+    #
+    # def onTranslate(self):
+    #     if (self.lwL.selectedIndexes() == []) and (self.lwR.selectedIndexes() == []):
+    #         self.parent.warn('No points are selected in the list')
+    #         return
+    #
+    #     selections = []
+    #     if len(self.lwR.selectedIndexes()) > 0:
+    #         role = 'ref'
+    #         for sel in self.lwR.selectedIndexes():
+    #             selections.append(int(sel.data()[0]))
+    #     else:
+    #         role = 'tra'
+    #         for sel in self.lwL.selectedIndexes():
+    #             selections.append(int(sel.data()[0]))
+    #
+    #     pts_old = self.dm.manpoints()[role]
+    #     pts_new = pts_old
+    #
+    #     for sel in selections:
+    #         new_x = pts_old[sel][1] - int(self.leMoveRight.text())
+    #         new_y = pts_old[sel][0] - int(self.leMoveUp.text())
+    #         pts_new[sel] = (new_y, new_x)
+    #
+    #     self.dm.set_manpoints(role=role, matchpoints=pts_new)
+    #     # self.viewer1.restoreManAlignPts()
+    #     self.viewer1.drawSWIMwindow()
+    #
+    # def onTranslate_x(self):
+    #     if (self.lwL.selectedIndexes() == []) and (self.lwR.selectedIndexes() == []):
+    #         self.parent.warn('No points are selected in the list')
+    #         return
+    #
+    #     selections = []
+    #     if len(self.lwR.selectedIndexes()) > 0:
+    #         role = 'ref'
+    #         for sel in self.lwR.selectedIndexes():
+    #             selections.append(int(sel.data()[0]))
+    #     else:
+    #         role = 'tra'
+    #         for sel in self.lwL.selectedIndexes():
+    #             selections.append(int(sel.data()[0]))
+    #
+    #     pts_old = self.dm.manpoints()[role]
+    #     pts_new = pts_old
+    #
+    #     for sel in selections:
+    #         new_x = pts_old[sel][1] - int(self.leMoveRight.text())
+    #         new_y = pts_old[sel][0]
+    #         pts_new[sel] = (new_y, new_x)
+    #
+    #     self.dm.set_manpoints(role=role, matchpoints=pts_new)
+    #     # self.viewer1.restoreManAlignPts()
+    #     self.viewer1.drawSWIMwindow()
+    #
+    # def onTranslate_y(self):
+    #     if (self.lwL.selectedIndexes() == []) and (self.lwR.selectedIndexes() == []):
+    #         self.parent.warn('No points are selected in the list')
+    #         return
+    #
+    #     selections = []
+    #     if len(self.lwR.selectedIndexes()) > 0:
+    #         role = 'ref'
+    #         for sel in self.lwR.selectedIndexes():
+    #             selections.append(int(sel.data()[0]))
+    #     else:
+    #         role = 'tra'
+    #         for sel in self.lwL.selectedIndexes():
+    #             selections.append(int(sel.data()[0]))
+    #
+    #     pts_old = self.dm.manpoints()[role]
+    #     pts_new = pts_old
+    #
+    #     for sel in selections:
+    #         new_x = pts_old[sel][1]
+    #         new_y = pts_old[sel][0] - int(self.leMoveUp.text())
+    #         pts_new[sel] = (new_y, new_x)
+    #
+    #     self.dm.set_manpoints(role=role, matchpoints=pts_new)
+    #     # self.viewer1.restoreManAlignPts()
+    #     self.viewer1.drawSWIMwindow()
 
     @Slot()
     def onNgLayoutCombobox(self) -> None:
@@ -2119,22 +2097,6 @@ class ProjectTab(QWidget):
             self.bTransform.setEnabled(self.dm.is_aligned())
             # self.bApplyOne.setEnabled(self.dm.is_aligned() and not os.path.exists(self.dm.path_aligned()))
 
-
-            # _current_saved = self.dm.ssSavedComports()
-            # _has_alignment_result = self.dm.ht.haskey(self.dm.swim_settings())
-            # self.bSaveSettings.setEnabled(not _current_saved and _has_alignment_result) #Critical
-
-            # _known_unsaved_indexes = self.dm.knownAnswerUnsavedIndexes()
-            # _n_known_unsaved = len(_known_unsaved_indexes)
-            # _all_consistent = _n_known_unsaved == 0
-            #
-            # if _all_consistent:
-            #     self.bSaveAllSettings.setText("Save All")
-            # else:
-            #     self.bSaveAllSettings.setText(f"Save All ({_n_known_unsaved})")
-            #
-            # self.bSaveAllSettings.setEnabled(not _all_consistent)
-
             self.clTra.setText(f'[{self.dm.zpos}] {self.dm.name()} (Transforming)')
             if self.dm.skipped():
                 self.clTra.setText(f'[{self.dm.zpos}] {self.dm.name()} (Transforming)')
@@ -2231,15 +2193,12 @@ class ProjectTab(QWidget):
         if event.type() == QEvent.ContextMenu and source is self.lwR:
             menu = QMenu()
             # self.deleteMpRefAction = QAction('Delete')
-            # # self.deleteMpRefAction.setStatusTip('Delete this manual correspondence point')
             # self.deleteMpRefAction.triggered.connect(self.deleteMpRef)
             # menu.addAction(self.deleteMpRefAction)
             self.deleteAllMpRefAction = QAction('Clear All Reference Regions')
-            # self.deleteAllMpRefAction.setStatusTip('Delete all fn_reference manual correspondence points')
             self.deleteAllMpRefAction.triggered.connect(self.deleteAllMpRef)
             menu.addAction(self.deleteAllMpRefAction)
             self.deleteAllPtsAction0 = QAction('Clear All Regions')
-            # self.deleteAllPtsAction0.setStatusTip('Delete all manual correspondence points')
             self.deleteAllPtsAction0.triggered.connect(self.deleteAllMp)
             menu.addAction(self.deleteAllPtsAction0)
             if menu.exec_(event.globalPos()):
@@ -2248,15 +2207,12 @@ class ProjectTab(QWidget):
         elif event.type() == QEvent.ContextMenu and source is self.lwL:
             menu = QMenu()
             # self.deleteMpBaseAction = QAction('Delete')
-            # # self.deleteMpBaseAction.setStatusTip('Delete this manual correspondence point')
             # self.deleteMpBaseAction.triggered.connect(self.deleteMpBase)
             # menu.addAction(self.deleteMpBaseAction)
             self.deleteAllMpBaseAction = QAction('Clear All Transforming Regions')
-            # self.deleteAllMpBaseAction.setStatusTip('Delete all base manual correspondence points')
             self.deleteAllMpBaseAction.triggered.connect(self.deleteAllMpBase)
             menu.addAction(self.deleteAllMpBaseAction)
             self.deleteAllPtsAction1 = QAction('Clear All Regions')
-            # self.deleteAllPtsAction1.setStatusTip('Delete all manual correspondence points')
             self.deleteAllPtsAction1.triggered.connect(self.deleteAllMp)
             menu.addAction(self.deleteAllPtsAction1)
             if menu.exec_(event.globalPos()):
@@ -2383,7 +2339,6 @@ class ProjectTab(QWidget):
         self.mdlTreeview.load(self.dm.to_dict())
         # self.treeview.setModel(self.mdlTreeview)
         self.treeview.header().resizeSection(0, 340)
-
 
 
     #0731
@@ -2602,11 +2557,11 @@ class ProjectTab(QWidget):
         self.leMaxDownsampledSize.textEdited.connect(update_le_max_downsampled_size)
         self.leMaxDownsampledSize.returnPressed.connect(update_le_max_downsampled_size)
 
-
         self.bZarrRegen = QPushButton('Generate 3D Zarr With\n'
                                       'Cumulative Affine Applied')
         self.bZarrRegen.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.bZarrRegen.clicked.connect(self.parent.regenZarr)
+        self.bZarrRegen.clicked.connect(lambda: self.bZarrRegen.setEnabled(False))
+        self.bZarrRegen.clicked.connect(lambda: self.parent.regenZarr(self.dm))
 
         self.bZarrRefresh = QPushButton('Refresh')
         self.bZarrRefresh.setIcon(qta.icon("fa.refresh"))
@@ -2624,7 +2579,7 @@ class ProjectTab(QWidget):
         self.cbxBias = QComboBox(self)
         self.cbxBias.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.cbxBias.addItems(['None', 'poly 0°', 'poly 1°', 'poly 2°', 'poly 3°', 'poly 4°'])
-        self.cbxBias.currentIndexChanged.connect(self.parent._valueChangedPolyOrder)
+        self.cbxBias.currentIndexChanged.connect(self.onBiasChanged)
         self.cbxBias.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.cbxBias.setFixedSize(QSize(74, 12))
         self.cbxBias.lineEdit()
@@ -2641,7 +2596,6 @@ class ProjectTab(QWidget):
         self.flOverlaycontrols.setLabelAlignment(Qt.AlignRight)
         self.flOverlaycontrols.setFormAlignment(Qt.AlignCenter)
 
-
         self.HL1 = QHLine()
         self.HL1.setStyleSheet("background-color: #FFFF66;")
         self.flOverlaycontrols.addWidget(QLabel('3D Alignment Options'))
@@ -2657,7 +2611,6 @@ class ProjectTab(QWidget):
         self.flOverlaycontrols.addRow("Max Downsampling\n(NG default=64):", self.leMaxDownsampling)
         self.flOverlaycontrols.addRow("Max Downsampled Size\n(NG default=128):", self.leMaxDownsampledSize)
 
-
         self.glWebengine0 = GL()
         self.glWebengine0.addWidget(self.webengine0, 0, 0, 3, 3)
         # self.glWebengine0.addWidget(self.wOverlayControls, 2, 0, 1, 1, Qt.AlignBottom | Qt.AlignLeft)
@@ -2667,7 +2620,7 @@ class ProjectTab(QWidget):
 
         self.wNG = VW(self.toolbarNg0, self.wWebengine0)
 
-        tabs = [(self.wNG, 'View Alignment'),
+        tabs = [(self.wNG, '3D Alignment'),
                 (self.wEditAlignment, 'Edit Alignment'),
                 (self.wSNR, ' All SNR Plots '),
                 (self.wTable, ' Table '),
@@ -2677,6 +2630,19 @@ class ProjectTab(QWidget):
             self.wTabs.addTab(tab[0], tab[1])
 
         self.setLayout(VBL(self.wTabs))
+
+    def onBiasChanged(self):
+        logger.info('')
+        caller = inspect.stack()[1].function
+        if caller == 'main':
+            if self.cbxBias.currentText() == 'None':
+                val = None
+            else:
+                val = self.cbxBias.currentIndex() - 1
+            self.parent.tell(f'Corrective bias is set to {val}')
+            self.dm.poly_order = val
+            if self.parent.dwSnr.isVisible():
+                self.dSnr_plot.initSnrPlot()
 
     def initShader(self):
 
@@ -2771,15 +2737,6 @@ class ProjectTab(QWidget):
             elif self.wTabs.currentIndex() == 1:
                 self.viewer1.set_contrast()
 
-    # def fn_shader_control(self):
-    #     logger.info('')
-    #     logger.info(f'range: {self.normalizedSlider.getRange()}')
-    #     self.dm.set_normalize(self.normalizedSlider.getRange())
-    #     state = copy.deepcopy(self.viewer.state)
-    #     for layer in state.layers:
-    #         layer.shaderControls['normalized'].range = np.array(self.dm.normalize())
-    #     # state.layers[0].shader_controls['normalized'] = {'range': np.array([20,50])}
-    #     self.viewer.set_state(state)
 
     def fn_volume_rendering(self):
         logger.info('')

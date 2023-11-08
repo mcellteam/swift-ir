@@ -210,6 +210,8 @@ class MainWindow(QMainWindow):
 
 
     def openAlignment(self, dm):
+        self.dm = dm
+        cfg.preferences['last_alignment_opened'] = dm.data_location
         ProjectTab(self, dm)
 
 
@@ -527,7 +529,7 @@ class MainWindow(QMainWindow):
                 #     self.secAlignedImageSize.setText('%dx%d pixels' % self.dm.image_size_aligned())
                 # except:
                 #     print_exception()
-                if self.dm.zpos <= self.dm.first_unskipped():
+                if self.dm.zpos <= self.dm.first_included():
                     self.secSNR.setText('--')
                 else:
                     try:
@@ -930,7 +932,7 @@ class MainWindow(QMainWindow):
             self.tell('  # Better     (SNR ↑) : %s' % ' '.join(map(str, pos)))
             self.tell('  # Worse      (SNR ↓) : %s' % ' '.join(map(str, neg)))
             self.tell('  # No Change  (SNR =) : %s' % ' '.join(map(str, no_chg)))
-            self.tell('  Total Avg. SNR       : %.3f' % (self.dm.snr_average()))
+            self.tell('  Total Avg. SNR       : %.3f' % (self.dm.snr_mean()))
             if abs(diff_avg) < .001:
                 self.tell('  Δ AVG. SNR           : <span style="color: #66FF00;"><b>%.4g (NO CHANGE)</b></span>' %
                           diff_avg)
@@ -1025,13 +1027,14 @@ class MainWindow(QMainWindow):
                 logger.warning("This scale is not alignable!")
 
     @Slot()
-    def regenZarr(self):
+    def regenZarr(self, dm):
         logger.info("")
 
         #Todo build out pre-generate checks
-        _err_indexes = self.dm.unknownSavedAnswerIndexes()
+        _err_indexes = dm.unknownSavedAnswerIndexes()
         if len(_err_indexes) > 0:
             self.err(f"Unknown alignment result at the following indexes: {', '.join(map(str, _err_indexes))}")
+            self._refresh()
             return
         else:
             self.tell("All checks passed...")
@@ -1040,14 +1043,13 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             _ignore_cache = self.pt.cbIgnoreCache.isChecked()
 
-        renew = not self.dm['level_data'][self.dm.level]['zarr_made']
+        renew = not dm['level_data'][dm.level]['zarr_made']
 
         if self._isProjectTab():
-            if self.dm.is_aligned():
+            if dm.is_aligned():
                 logger.info('Regenerating Zarr...')
-                self.pt.bZarrRegen.setEnabled(False)
                 self._zarrThread = QThread()
-                self._zarrworker = ZarrWorker(dm=self.dm, renew=renew, ignore_cache=_ignore_cache)
+                self._zarrworker = ZarrWorker(dm=dm, renew=renew, ignore_cache=_ignore_cache)
                 self._zarrThread.started.connect(self._zarrworker.run)  # Step 5: Connect signals and slots
                 self._zarrThread.finished.connect(self._zarrThread.deleteLater)
                 self._zarrworker.moveToThread(self._zarrThread)  # Step 4: Move worker to the thread
@@ -1056,13 +1058,13 @@ class MainWindow(QMainWindow):
                 self._zarrworker.hudMessage.connect(self.tell)
                 self._zarrworker.hudWarning.connect(self.warn)
                 self._zarrworker.finished.connect(self._zarrThread.quit)
-                self._zarrworker.finished.connect(self._autosave)
-                self._zarrworker.finished.connect(lambda: self.wPbar.hide())
-                self._zarrworker.finished.connect(lambda: self.dm.setZarrMade(True))
+                self._zarrworker.finished.connect(dm.save)
+                self._zarrworker.finished.connect(self.wPbar.hide)
+                self._zarrworker.finished.connect(lambda: dm.setZarrMade(True))
                 self._zarrworker.finished.connect(lambda: self.pt.bZarrRegen.setEnabled(True))
                 self._zarrworker.finished.connect(self.dataUpdateWidgets)
                 self._zarrworker.finished.connect(self.pt.updateZarrRadiobuttons)
-                self._zarrworker.finished.connect(lambda: self.pt.initNeuroglancer())
+                self._zarrworker.finished.connect(self.pt.initNeuroglancer)
                 self._zarrworker.finished.connect(lambda: print('Finished'))
                 self._zarrThread.start()  # Step 6: Start the thread
 
@@ -1084,7 +1086,7 @@ class MainWindow(QMainWindow):
                 self.tell("Pulling settings from reduced scale level automatically...")
                 self.dm.pullSettings()
 
-        self._saveProjectToFile(silently=True)
+        dm.save(silently=True)
         # logger.critical('')
         scale = dm.scale
         self.shutdownNeuroglancer()
@@ -1111,7 +1113,6 @@ class MainWindow(QMainWindow):
             del self._alignworker
 
         self.tell("%s Affines (%s)..." % (('Initializing', 'Refining')[dm.isRefinement()], dm.level_pretty(s=scale)))
-        # logger.info(f'Aligning indexes:{indexes}, {self.dm.level_pretty(scale)}...')
         self._snr_before = self.dm.snr_list()
 
         logger.info("Setting mp debugging...")
@@ -1143,7 +1144,7 @@ class MainWindow(QMainWindow):
 
         self._alignworker.finished.connect(lambda: print("Complete"))
         self._alignworker.finished.connect(self._alignThread.quit)
-        self._alignworker.finished.connect(self._autosave)
+        self._alignworker.finished.connect(dm.save)
         self._alignworker.finished.connect(lambda: self.wPbar.hide())
         self._alignworker.finished.connect(self.onAlignmentEnd)
         self._alignworker.finished.connect(self.updateEnabledButtons)
@@ -1220,11 +1221,10 @@ class MainWindow(QMainWindow):
             _enable = _is_alignable and _count_unknown_answer_indexes > 0
             # logger.info(f'_enable: {_enable} // _is_alignable: {_is_alignable} // _count_unknown_answer_indexes: {_count_unknown_answer_indexes}')
             if _enable:
-                self.bAlign.setText(f"Apply All ({_count_unknown_answer_indexes})")
+                self.bAlign.setText(f"Align All ({_count_unknown_answer_indexes})")
             else:
-                self.bAlign.setText(f"Apply All")
+                self.bAlign.setText(f"Align All")
             self.bAlign.setEnabled(_enable)
-
 
             _current_saved = self.dm.ssSavedComports()
             _has_alignment_result = self.dm.ht.haskey(self.dm.swim_settings())
@@ -1235,9 +1235,9 @@ class MainWindow(QMainWindow):
             _all_consistent = _n_known_unsaved == 0
 
             if _all_consistent:
-                self.pt.bSaveAllSettings.setText("Save All")
+                self.pt.bSaveAllSettings.setText("Save All Results")
             else:
-                self.pt.bSaveAllSettings.setText(f"Save All ({_n_known_unsaved})")
+                self.pt.bSaveAllSettings.setText(f"Save All Results ({_n_known_unsaved})")
 
             self.pt.bSaveAllSettings.setEnabled(not _all_consistent)
 
@@ -1408,6 +1408,7 @@ class MainWindow(QMainWindow):
             return
 
         if self._isProjectTab():
+            dm = self.pt.dm
             #CriticalMechanism
             if 'src.data_model.Signals' in str(self.sender()):
                 # timerActive = self.uiUpdateTimer.isActive()
@@ -1422,10 +1423,10 @@ class MainWindow(QMainWindow):
             # logger.critical(f"[call # {self._uiUpdateCalls}, {caller}] Updating UI...")
 
             if self.dwThumbs.isVisible():
-                self.pt.tn_tra.set_data(path=self.dm.path_thumb())
+                self.pt.tn_tra.set_data(path=dm.path_thumb())
                 self.pt.tn_tra_lab.setText(f'Transforming Section (Thumbnail)\n'
-                                          f'[{self.dm.zpos}] {self.dm.name()}')
-                if self.dm.skipped():
+                                          f'[{dm.zpos}] {dm.name()}')
+                if dm.skipped():
                     self.pt.tn_ref_lab.setText(f'--')
                     if not self.pt.tn_tra_overlay.isVisible():
                         self.pt.tn_tra_overlay.show()
@@ -1433,10 +1434,10 @@ class MainWindow(QMainWindow):
                     self.pt.tn_ref_lab.hide()
                 else:
                     self.pt.tn_ref_lab.setText(f'Reference Section (Thumbnail)\n'
-                          f'[{self.dm.zpos}] {self.dm.name_ref()}')
+                          f'[{dm.zpos}] {dm.name_ref()}')
                     if self.pt.tn_tra_overlay.isVisible():
                         self.pt.tn_tra_overlay.hide()
-                    self.pt.tn_ref.set_data(path=self.dm.path_thumb_ref())
+                    self.pt.tn_ref.set_data(path=dm.path_thumb_ref())
                     self.pt.tn_ref.show()
                     self.pt.tn_ref_lab.show()
 
@@ -1447,38 +1448,22 @@ class MainWindow(QMainWindow):
 
             # self.setStatusInfo()
 
-            if floor(self.viewer.state.position[0]) != self.dm.zpos:
+            if floor(self.viewer.state.position[0]) != dm.zpos:
                 self.viewer.set_layer()
 
-            if self.pt.wTabs.currentIndex() == 0:
-                self.pt._overlayLab.setVisible(self.dm.skipped()) #Todo find/fix
-                # if hasattr(cfg, 'viewer'):
-                #     try:
-                #         if floor(cfg.viewer.state.position[0]) != self.dm.zpos:
-                #             cfg.viewer.set_layer(self.dm.zpos)
-                #     except:
-                #         print_exception()
-                # else:
-                #     logger.warning("no attribute: 'viewer'!")
 
-            elif self.pt.wTabs.currentIndex() == 1:
+            _tab = self.pt.wTabs.currentIndex()
+            if _tab == 0:
+                self.pt._overlayLab.setVisible(dm.skipped()) #Todo find/fix
+
+            elif _tab == 1:
                 # self.pt.viewer1.set_layer()
                 self.pt.dataUpdateMA()
-                # self.pt.lab_filename.setText(f"[{self.dm.zpos}] Name: {self.dm.name()} - {self.dm.level_pretty()}")
-                # self.pt.clTra.setText(f'[{self.dm.zpos}] {self.dm.name()} (Transforming)')
-                # if self.dm.skipped():
-                #     self.pt.clTra.setText(f'[{self.dm.zpos}] {self.dm.name()} (Transforming)')
-                #     self.pt.clRef.setText(f'--')
-                # else:
-                #     try:
-                #         self.pt.clRef.setText(f'[{self.dm.get_ref_index()}] {self.dm.name_ref()} (Reference)')
-                #     except:
-                #         self.pt.clRef.setText(f'Null (Reference)')
 
-            elif self.pt.wTabs.currentIndex() == 2:
+            elif _tab == 2:
                 self.pt.snr_plot.updateLayerLinePos()
 
-            elif self.pt.wTabs.currentIndex() == 4:
+            elif _tab == 4:
                 self.pt.mdlTreeview.jumpToLayer()
             self.setFocus()
 
@@ -1490,9 +1475,9 @@ class MainWindow(QMainWindow):
             self.notes.clear()
             if self._isProjectTab():
                 self.notes.setPlaceholderText('Enter notes about %s here...'
-                                              % self.dm.base_image_name(s=self.dm.level, l=self.dm.zpos))
-                if self.dm.notes(s=self.dm.level, l=self.dm.zpos):
-                    self.notes.setPlainText(self.dm.notes(s=self.dm.level, l=self.dm.zpos))
+                                              % self.pt.dm.base_image_name(s=self.pt.dm.level, l=self.pt.dm.zpos))
+                if self.pt.dm.notes(s=self.dm.level, l=self.dm.zpos):
+                    self.notes.setPlainText(self.pt.dm.notes(s=self.pt.dm.level, l=self.pt.dm.zpos))
             else:
                 self.notes.clear()
                 self.notes.setPlaceholderText('Notes are stored automatically...')
@@ -1775,90 +1760,19 @@ class MainWindow(QMainWindow):
             # if not new_dest.endswith('.json'):  # 0818-
             #     new_dest += ".json"
             # logger.info('new_dest = %level' % new_dest)
-            self._autosave()
+            self.dm.save()
 
     def save(self):
-        #Todo move this to DataModel or project_tab
-        caller = inspect.stack()[1].function
-        logger.info(f'/*======== Saving Automatically [{caller}] ========*/')
         if self._isProjectTab():
-            try:
-                self._saveProjectToFile()
-                # self.tell('Project Saved!')
-                self._unsaved_changes = False
-            except:
-                self.warn('Failed To Save')
-                print_exception()
+            if hasattr(self,'dm'):
+                self.dm.save()
 
-            else:
-                self.hud.done()
-
-    def _autosave(self, silently=False):
-
-        if self._isProjectTab():
-            if cfg.AUTOSAVE:
-                caller = inspect.stack()[1].function
-                logger.info(f'/*---- Autosaving [{caller}] ----*/')
-                try:
-                    self._saveProjectToFile(silently=silently)
-                except:
-                    self._unsaved_changes = True
-                    print_exception()
-
-    def _saveProjectToFile(self, saveas=None, silently=False):
-        #Todo move this to DataModel or project_tab
-        if self._isProjectTab():
-            caller = inspect.stack()[1].function
-            try:
-
-                cfg.preferences['last_alignment_opened'] = self.dm.data_location
-                if saveas is not None:
-                    self.dm.data_location = saveas
-                # data_cp = copy.deepcopy(self.dm._data) #0828-
-
-                # data_cp.make_paths_relative(start=self.dm.images_location)
-                # data_cp_json = data_cp.to_dict()
-                name,_ = os.path.splitext(os.path.basename(self.dm.data_location))
-                path = os.path.join(self.dm.data_location, name + '.swiftir')
-                if not silently:
-                    logger.info(f'Saving:\n{path}')
-
-                logger.critical(f"[{caller}] Writing {path} to file...")
-                with open(path, 'w') as f:
-                    jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
-                    # f.write(jde.encode(data_cp)) #0828-
-                    f.write(jde.encode(self.dm._data))
-
-                # if is_tacc():
-                #     node = platform.node()
-                #     user = getpass.getuser()
-                #     tstamp = datetime.datetime.now().strftime('%Y%m%d')
-                #     fn = f"pf_{tstamp}_{node}_{user}_" + os.path.basename(name)
-                #     images_location = "/work/08507/joely/ls6/log_db"
-                #     of = os.path.join(images_location, fn)
-                #     with open(of, 'w') as f:
-                #         f.write(jde.encode(data_cp))
-
-                self.saveUserPreferences()
-                logger.info('Pickling alignment data...')
-                self.dm.ht.pickle()
-                if not silently:
-                    self.tell('Alignment Saved!')
-
-            except:
-                print_exception()
-            else:
-                self._unsaved_changes = False
-            finally:
-                logger.info("<<<<")
 
     def _callbk_unsavedChanges(self):
         if self._isProjectTab():
             # logger.info('')
             caller = inspect.stack()[1].function
             if caller == 'main':
-                # self.tell('You have unsaved changes.')
-                # logger.critical("caller: " + inspect.stack()[1].function)
                 self._unsaved_changes = True
                 name = os.path.basename(self.dm.data_location)
                 self.globTabs.setTabText(self.globTabs.currentIndex(), name + '.swiftir' + ' *')
@@ -1928,7 +1842,8 @@ class MainWindow(QMainWindow):
     def shutdownInstructions(self):
         logger.info('Performing Shutdown Instructions...')
 
-        self._autosave(silently=True)
+        if self._isProjectTab():
+            self.dm.save()
         # self._timerWorker._running = False
 
         self.settings.setValue("geometry", self.saveGeometry())
@@ -2259,26 +2174,6 @@ class MainWindow(QMainWindow):
         if self.dm:
             self.cbSkip.setChecked(not self.cbSkip.isChecked())
 
-
-    def print_all_matchpoints(self):
-        if self.pt:
-            self.dm.print_all_manpoints()
-
-    def show_all_matchpoints(self):
-        if self.pt:
-            no_mps = True
-            for i, l in enumerate(self.dm.stack()):
-                r = l['images']['ref']['metadata']['man_points']
-                b = l['images']['base']['metadata']['man_points']
-                if r != []:
-                    no_mps = False
-                    self.tell(f'Layer: {i}, Ref, Match Points: {str(r)}')
-                if b != []:
-                    no_mps = False
-                    self.tell(f'Layer: {i}, Base, Match Points: {str(b)}')
-            if no_mps:
-                self.tell('This project has no match points.')
-
     def show_run_path(self) -> None:
         '''Prints the current working directory (os.getcwd), the 'running in' path, and sys.path.'''
         self.tell('\n\nWorking Directory     : %s\n'
@@ -2294,20 +2189,6 @@ class MainWindow(QMainWindow):
             lst = ' | '.join(map(str, self.dm.snr_list()))
             self.tell('\n\nSNR List for Scale %d:\n%s\n' % (s, lst.split(' | ')))
 
-    # def show_zarr_info(self) -> None:
-    #     if self.pt:
-    #         z = zarr.open(os.path.join(self.dm.images_location, 'img_aligned.zarr'))
-    #         self.tell('\n' + str(z.tree()) + '\n' + str(z.info))
-    #
-    # def show_zarr_info_aligned(self) -> None:
-    #     if self.pt:
-    #         z = zarr.open(os.path.join(self.dm.images_location, 'img_aligned.zarr'))
-    #         self.tell('\n' + str(z.info) + '\n' + str(z.tree()))
-    #
-    # def show_zarr_info_source(self) -> None:
-    #     if self.pt:
-    #         z = zarr.open(os.path.join(self.dm.images_location, 'img_src.zarr'))
-    #         self.tell('\n' + str(z.info) + '\n' + str(z.tree()))
 
     def show_hide_developer_console(self):
         if self.dwPython.isHidden():
@@ -2320,12 +2201,6 @@ class MainWindow(QMainWindow):
         op.setOpacity(val)  # 0 to 1 -> fade effect
         obj.setGraphicsEffect(op)
         obj.setAutoFillBackground(True)
-
-    # def set_shader_none(self):
-    #     cfg.SHADER = '''void main () {
-    #       emitGrayscale(toNormalized(getDataValue()));
-    #     }'''
-    #     self.pt.initNeuroglancer()
 
     def set_shader_default(self):
         self.dm['rendering']['shader'] = src.shaders.shader_default_
@@ -4061,7 +3936,7 @@ class MainWindow(QMainWindow):
         tip = '\n'.join(textwrap.wrap(tip, width=35))
         # self.bAlign = QPushButton(f"Apply")
         # self.bAlign = QPushButton('Align All')
-        self.bAlign = QPushButton('Apply All')
+        self.bAlign = QPushButton('Align Stack')
         self.bAlign.setToolTip(tip)
         self.bAlign.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.bAlign.clicked.connect(self.alignAll)
@@ -4244,25 +4119,6 @@ class MainWindow(QMainWindow):
 
         self.user = getpass.getuser()
         self.tell(f'Hello {self.user}. Please report any issues or bugs to joel@salk.edu.')
-
-        '''
-        keyboard_commands = [
-            QLabel('Keyboard Commands:'),
-            QLabel('^N - New Project'),
-            QLabel('^O - Open Project'),
-            QLabel('^Z - Open Zarr'),
-            QLabel('^S - Save'),
-            QLabel('^Q - Quit'),
-            QLabel('^↕ - Zoom'),
-            QLabel(' , - Prev (comma)'),
-            QLabel(' . - Next (period)'),
-            QLabel(' ← - Scale Down'),
-            QLabel(' → - Scale Up'),
-            QLabel('^A - Align All'),
-            QLabel('^K - Skip')
-        ]
-
-        '''
 
         baseline = Qt.AlignmentFlag.AlignBaseline
         vcenter = Qt.AlignmentFlag.AlignVCenter
@@ -4787,6 +4643,7 @@ class MainWindow(QMainWindow):
         self.pbar.setFormat('  (%p%) ' + data[1])
         # logger.info(f"Progress bar reset with maximum {data[0]}, descript: {data[1]}")
         # QApplication.processEvents() #1007-
+        self.pbar.update()
 
 
     def updatePbar(self, x=None):

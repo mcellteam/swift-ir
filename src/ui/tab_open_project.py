@@ -149,8 +149,8 @@ class OpenProject(QWidget):
         # self.cmbSelectAlignment.addItems(["None"])
 
         self.cmbSelectImages = QComboBox()
-        self.cmbSelectImages.setToolTip("Select Images (.images)")
-        self.cmbSelectImages.setPlaceholderText("Select Images (.images)...")
+        self.cmbSelectImages.setToolTip("Select Image Stack (.images)")
+        self.cmbSelectImages.setPlaceholderText("Select Image Stack (.images)...")
         self.cmbSelectImages.setFocusPolicy(Qt.NoFocus)
         self.cmbSelectImages.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # self.cmbSelectImages.setEditable(True)
@@ -646,7 +646,7 @@ class OpenProject(QWidget):
             for k in info['levels']:
                 os.makedirs(os.path.join(out, 'data', str(i), k), exist_ok=True)
 
-        cfg.mw._saveProjectToFile()
+        dm.save()
         self.bPlusAlignment.setEnabled(True)
         self.parent.openAlignment(dm)
 
@@ -936,7 +936,7 @@ class OpenProject(QWidget):
                 with open(path, 'r') as f:
                     dm = DataModel(data=json.load(f), data_location=data_location, images_location=images_location)
                 # dm.set_defaults()
-                cfg.mw._autosave()
+                dm.save()
             except:
                 cfg.mw.warn(f'No Such File Found: {path}')
                 print_exception()

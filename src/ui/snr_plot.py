@@ -331,9 +331,9 @@ class SnrPlot(QWidget):
         x_axis, y_axis = [], []
         # for layer, snr in enumerate(self.dm.snr_list(level=level)):
         # for layer, snr in enumerate(self.dm.snr_list(level=level)[1:]): #0601+ #Todo
-        first_unskipped = self.dm.first_unskipped(s=s)
+        firstInd = self.dm.first_included(s=s)
         for i, snr in enumerate(self.dm.snr_list(s=s)): #0601+
-            if i != first_unskipped:
+            if i != firstInd:
                 if self.dm.skipped(s=s, l=i):
                     x_axis.append(i)
                     y_axis.append(0)
@@ -350,9 +350,9 @@ class SnrPlot(QWidget):
         x_axis, y_axis = [], []
         # for layer, snr in enumerate(self.dm.snr_list(level=level)):
         # for layer, snr in enumerate(self.dm.snr_list(level=level)[1:]): #0601+ #Todo
-        first_unskipped = self.dm.first_unskipped(s=s)
+        firstInd = self.dm.first_included(s=s)
         for i in self.dm.all_comports_indexes(s=s): #0601+
-            if i != first_unskipped:
+            if i != firstInd:
                 if self.dm.skipped(s=s, l=i):
                     x_axis.append(i)
                     y_axis.append(0)
@@ -370,9 +370,9 @@ class SnrPlot(QWidget):
         x_axis, y_axis = [], []
         # for layer, snr in enumerate(self.dm.snr_list(level=level)):
         # for layer, snr in enumerate(self.dm.snr_list(level=level)[1:]): #0601+ #Todo
-        first_unskipped = self.dm.first_unskipped(s=s)
+        firstInd = self.dm.first_included(s=s)
         for i in self.dm.needsGenerateIndexes(s=s): #0601+
-            if i != first_unskipped:
+            if i != firstInd:
                 if self.dm.skipped(s=s, l=i):
                     x_axis.append(i)
                     y_axis.append(0)
@@ -390,10 +390,10 @@ class SnrPlot(QWidget):
         x_axis, y_axis = [], []
         # for layer, snr in enumerate(self.dm.snr_list(level=level)):
         # for layer, snr in enumerate(self.dm.snr_list(level=level)[1:]): #0601+ #Todo
-        first_unskipped = self.dm.first_unskipped(s=s)
+        firstInd = self.dm.first_included(s=s)
         # for i in self.dm.data_dn_comport_indexes(s=s): #0601+
         for i in self.dm.needsAlignIndexes(s=s): #0601+
-            if i != first_unskipped:
+            if i != firstInd:
                 if self.dm.skipped(s=s, l=i):
                     x_axis.append(i)
                     y_axis.append(0)
@@ -457,6 +457,8 @@ class SnrPlot(QWidget):
         elif n < 751:  ax0.setTickSpacing(25, 1)
         else:          ax0.setTickSpacing(30, 1)
 
+
+
         # logger.info(f"plotData dt={time() - t0:.3g}")
 
 
@@ -474,10 +476,10 @@ class SnrPlot(QWidget):
         x_axis, y_axis = [], []
         # for layer, snr in enumerate(self.dm.snr_list(level=level)):
         # for layer, snr in enumerate(self.dm.snr_list(level=level)[1:]): #0601+ #Todo
-        first_unskipped = self.dm.first_unskipped(s=s)
+        firstInd = self.dm.first_included(s=s)
         data = self.dm['level_data'][s]['initial_snr']
         for i in range(0, len(self.dm)): #0601+
-            if i != first_unskipped:
+            if i != firstInd:
                 x_axis.append(i)
                 y_axis.append(data[i])
 
@@ -493,7 +495,7 @@ class SnrPlot(QWidget):
             hoverSize=(13,10)[self.dock],
             # hoverPen=pg.mkPen('#f3f6fb', width=1),
             # hoverBrush=None,
-            # pxMode=False # points transform with zoom
+            # pxMode=False # points generate_thumbnail with zoom
         )
         self.ghost_points[s].addPoints(x_axis, y_axis)
         self.ghost_points[s].setZValue(0)
@@ -503,7 +505,7 @@ class SnrPlot(QWidget):
 
     def plotSingleScale(self, s=None):
         if s == None: s = self.dm.scale
-        logger.info(f'Plotting scale level {s}...')
+        logger.critical(f'Plotting SNR data for resolution level {s}...')
         # logger.info(f'[{self.dock}] plotSingleScale (level_key: {level}):')
         # x_axis, y_axis = self.get_axis_data(level=level)
         # x_axis, y_axis = self.get_everything_comport_axis_data(s=s)
@@ -524,7 +526,7 @@ class SnrPlot(QWidget):
             hoverSize=(13,10)[self.dock],
             # hoverPen=pg.mkPen('#f3f6fb', width=1),
             # hoverBrush=None,
-            # pxMode=False # points transform with zoom
+            # pxMode=False # points generate_thumbnail with zoom
         )
         #         *tip*                  A string-valued function of a spot'level (x, y, data) values. Set to None to prevent a tool tip
         #                                from being shown.
@@ -583,7 +585,7 @@ class SnrPlot(QWidget):
                 hoverSize=10,
                 # hoverPen=pg.mkPen('#ff0000', width=3),
                 # hoverBrush=None,
-                # pxMode=False # points transform with zoom
+                # pxMode=False # points generate_thumbnail with zoom
             )
             x_axis, y_axis = self.get_cafm_no_comport_axis_data(s=s)
             self.no_comport_cafm_points[s].addPoints(x_axis, y_axis)
@@ -616,7 +618,7 @@ class SnrPlot(QWidget):
                 hoverSize=11,
                 # hoverPen=pg.mkPen('#ff0000', width=3),
                 # hoverBrush=None,
-                # pxMode=False # points transform with zoom
+                # pxMode=False # points generate_thumbnail with zoom
             )
             x_axis, y_axis = self.get_data_no_comport_axis_data(s=s)
             self.no_comport_data_points[s].addPoints(x_axis, y_axis)
