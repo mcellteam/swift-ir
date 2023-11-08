@@ -116,7 +116,7 @@ class ScaleWorker(QObject):
                     ofn = os.path.join(self.out, 'tiff', 's%d' % sv, os.path.split(if_arg)[1])
                     of_arg = 'of=%s' % ofn
                     # tasks.append([iscale2_c, scale_arg, of_arg, if_arg])
-                    tasks.append([iscale2_c, scale_arg, of_arg, if_arg, '-v'])
+                    tasks.append([iscale2_c, scale_arg, of_arg, if_arg])
 
                 self.initPbar.emit((len(tasks), desc))
                 t = time.time()
@@ -138,16 +138,16 @@ class ScaleWorker(QObject):
 
                 logger.info(f"Elapsed Time: {dt:.3g}s")
 
-                logger.critical("(monkey patch) Rewriting images to correct metadata...")
-                _t0 = time.time()
-                for task in tasks:
-                    ofn = task[2][3:]
-                    # ofn = task[2][2:]
-                    im = iio.imread(ofn) #shear off 'of='
-                    logger.critical(f"Writing {ofn}...")
-                    iio.imwrite(ofn, im)
-                _dt = time.time() - _t0
-                logger.critical(f"\n\n// Rewriting of images took {_dt:.3g}s //")
+                # logger.critical("(monkey patch) Rewriting images to correct metadata...")
+                # _t0 = time.time()
+                # for task in tasks:
+                #     ofn = task[2][3:]
+                #     # ofn = task[2][2:]
+                #     im = iio.imread(ofn) #shear off 'of='
+                #     logger.critical(f"Writing {ofn}...")
+                #     iio.imwrite(ofn, im)
+                # _dt = time.time() - _t0
+                # logger.critical(f"\n\n// Rewriting of images took {_dt:.3g}s //")
 
                 # logger.critical("(monkey patch) Rewriting images to correct metadata...")
                 # _t0 = time.time()
@@ -349,9 +349,12 @@ def run(task):
     """Call run(), catch exceptions."""
     try:
         #Critical bufsize=-1... allows blocking for reduction tasks
-        cmd_proc = sp.Popen(task, bufsize=-1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
-        result = cmd_proc.communicate() #1107+
-        print(result)
+        cmd_proc = sp.Popen(task, bufsize=-1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
+        out, err = cmd_proc.communicate() #1107+
+        if out:
+            print(f"STDOUT: {out}")
+        if err:
+            print(f"STDERR: {err}")
         cmd_proc.wait()
 
         # sp.Popen(task, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)

@@ -714,8 +714,21 @@ def get_tiff_tags(fn):
     return tif_tags
 
 
+# from src.funcs_image import get_tiff_tags
+
 # SEE:
 # https://forum.image.sc/t/tiff-file-that-can-be-opened-in-fiji-but-not-python-matlab-due-to-offset-related-error/59483/7
+
+# WITH MY MODS
+#
+# {'ImageWidth': 1024,
+#  'ImageLength': 1024,
+#  'BitsPerSample': 8,
+#  'PhotometricInterpretation': <PHOTOMETRIC.MINISBLACK: 1>,
+#  'StripOffsets': (256,),
+#  'SamplesPerPixel': 1,
+#  'StripByteCounts': (1048576,),
+#  'RowsPerStrip': 1024}
 
 # TIFF TAGS OF ISCALE2 OUTPUT IMAGES (SCALE 4)
 # Out[2]:
@@ -739,7 +752,7 @@ def get_tiff_tags(fn):
 #  'ImageDescription': '{"shape": [1024, 1024]}',
 #  'StripOffsets': (256,),
 #  'SamplesPerPixel': 1,
-#  'RowsPerStrip': 1024,
+#  'RowsPerStrip': 1024,                       <-- ***
 #  'StripByteCounts': (1048576,),
 #  'XResolution': (1, 1),
 #  'YResolution': (1, 1),
@@ -764,7 +777,7 @@ def get_tiff_tags(fn):
 #  'Software': 'tifffile.py'}
 
 
-# CHECKING TAGS OF ORIGINAL MICROSCOPE IMAGE...
+# TIFF TAGS OF THE ORIGINAL MICROSCOPE IMAGES...
 # /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.105.tif
 # Out[13]:
 # {'ImageWidth': 4096,
@@ -785,6 +798,10 @@ def get_tiff_tags(fn):
 #  'StripOffsets': (256,),
 #  'SamplesPerPixel': 1,
 #  'StripByteCounts': (1048576,)}
+
+
+
+
 
 
 # ./swimio.h:583:63:
