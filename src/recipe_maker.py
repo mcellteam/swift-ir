@@ -109,8 +109,6 @@ def cached(func):
 #     return decorator
 
 
-
-# @persist_to_file(fn=os.path.join(cfg.CONFIG.images_location, 'cache.data'))
 def run_recipe(data):
     '''Assemble and execute an alignment recipe
     :param data: data for one pairwise alignment as Python dictionary.'''
@@ -141,7 +139,7 @@ class align_recipe:
         self.ingredients = []
         self.snr = np.array([0.0])
         self.ss = swim_settings
-        self.config = self.ss['config']
+        self.config = self.ss['glob_cfg']
         self.index = self.ss['index']
         self.path = self.ss['path']
         self.solo = self.ss['solo']

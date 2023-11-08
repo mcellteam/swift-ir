@@ -583,6 +583,7 @@ class OpenProject(QWidget):
         cfg.mw.autoscaleImages(src, out, opts)
         cfg.preferences['images_combo_text'] = out
         logger.info('done')
+        self.initPMviewer()
 
 
     # importalignment

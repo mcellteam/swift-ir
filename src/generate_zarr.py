@@ -198,6 +198,9 @@ class ZarrWorker(QObject):
         else:
             self.dm.t_convert_zarr = 0.
 
+        self.hudMessage.emit(f'<span style="color: #FFFF66;"><b>**** Process Complete ****</b></span>')
+        self.finished.emit()
+
 
     def generate_single_animation(self, paths, of):
         try:
@@ -236,11 +239,12 @@ class ZarrWorker(QObject):
             p = self.dm.path_aligned_cafm_thumb_ref(l=i)
             tasks.append([i, p, z_path])
         desc = f"Generate Reduced-Size Zarr"
-        t, n, failed = self.run_multiprocessing(convert_zarr, tasks, desc)
+        t, n, failed, _ = self.run_multiprocessing(convert_zarr, tasks, desc)
         return failed > 0
 
 
     def run_multiprocessing(self, func, tasks, desc):
+        # Returns 4 objects dt, succ, fail, results
         print(f"----> {desc} ---->")
         _break = 0
         self.initPbar.emit((len(tasks), desc))
@@ -268,21 +272,21 @@ class ZarrWorker(QObject):
         dt = time.time() - t0
         self.print_summary(dt, succ, fail, desc)
         print(f"<---- {desc} <----")
-        return (dt, succ, fail)
+        return (dt, succ, fail, results)
 
-    def print_summary(self, t, succ, fail, desc):
+    def print_summary(self, dt, succ, fail, desc):
 
         if fail:
-            logger.error(f"\n"
+            self.hudWarning(f"\n"
                          f"\n//  Summary  //  {desc}  //"
-                         f"\n//  RUNTIME   : {t:.3g}s"
+                         f"\n//  RUNTIME   : {dt:.3g}s"
                          f"\n//  SUCCESS   : {succ}"
                          f"\n//  FAILED    : {fail}"
                          f"\n")
         else:
-            logger.info(f"\n"
+            self.hudMessage(f"\n"
                         f"\n//  Summary  //  {desc}  //"
-                        f"\n//  RUNTIME   : {t:.3g}s"
+                        f"\n//  RUNTIME   : {dt:.3g}s"
                         f"\n//  SUCCESS   : {succ}"
                         f"\n//  FAILED    : {fail}"
                         f"\n")
