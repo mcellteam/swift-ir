@@ -93,8 +93,7 @@ class ZarrWorker(QObject):
                     self.indexes.append(i)
                 else:
                     if comports:
-                        logger.info(f"Cache hit {dm.cafmHash(l=i)}! "
-                                    f"Zarr data correct at index {i}.")
+                        logger.info(f"[{i}] Cache hit! {dm.cafmHash(l=i)}!")
                     else:
                         self.indexes.append(i)
 
