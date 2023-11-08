@@ -21,18 +21,18 @@ import hashlib
 import json
 import atexit
 import psutil
-# import warnings
-# warnings.filterwarnings("ignore")
-#
-# import libtiff
-# libtiff.libtiff_ctypes.suppress_warnings()
+import warnings
+warnings.filterwarnings("ignore")
+
+import libtiff
+libtiff.libtiff_ctypes.suppress_warnings()
+
+tl = logging.getLogger('tifffile')
+tl.setLevel(logging.CRITICAL)
+tl.propagate = False
 #
 # tifffileLogger = logging.getLogger('tifffile')
-# tifffileLogger.setLevel(logging.CRITICAL)
-# tifffileLogger.propagate = False
-
-tifffileLogger = logging.getLogger('tifffile')
-tifffileLogger.setLevel(logging.DEBUG)
+# tifffileLogger.setLevel(logging.DEBUG)
 
 # https://stackoverflow.com/questions/15585493/store-the-cache-to-a-file-functools-lru-cache-in-python-3-2
 

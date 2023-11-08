@@ -445,6 +445,7 @@ ushort tiff_mfd[] = { 7,			// ntags
 0x111, 4, 1, 0, 0, 0, // strip offsets
 0x115, 4, 1, 0, 1, 0, // samples per pixel  1=gray 3=RGB
 0x117, 4, 1, 0, 0, 0, // strip byte count; qiv+display warn but don't need
+//0x116, 4, 1, 0, 0, 0, // RowsPerStrip
 };
 
 unsigned char palette[256][3];

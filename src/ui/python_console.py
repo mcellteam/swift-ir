@@ -30,16 +30,17 @@ class PythonConsole(RichJupyterWidget):
         self.setFocusPolicy(Qt.NoFocus)
 
         if 1:
-            self.execute_command('import src.config as cfg')
-            self.execute_command('from src.config import main_window')
-            self.execute_command('import src.helpers')
-            self.execute_command('from src.helpers import dt, find_allocated_widgets, count_widgets, obj_to_string, getData, setData, getOpt, setOpt')
             self.execute_command('import os, sys, copy, json, stat, time, glob')
             self.execute_command('import zarr')
             self.execute_command('import neuroglancer as ng')
             self.execute_command('from qtpy.QtWidgets import *')
             self.execute_command('from qtpy.QtCore import *')
             self.execute_command('from qtpy.QtGui import *')
+            self.execute_command('import src.config as cfg')
+            self.execute_command('from src.config import main_window')
+            self.execute_command('import src.helpers')
+            self.execute_command('from src.helpers import dt, find_allocated_widgets, count_widgets, obj_to_string, getData, setData, getOpt, setOpt')
+            self.execute_command('from src.funcs_image import get_tiff_tags')
             self.execute('clear')
             # self.out_prompt = 'AlignEM [<span class="out-prompt-number">%i</span>]: '
 
