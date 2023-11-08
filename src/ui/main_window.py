@@ -1196,7 +1196,6 @@ class MainWindow(QMainWindow):
         self._scaleworker.initPbar.connect(self.resetPbar)
         self._scaleworker.hudMessage.connect(self.tell)
         self._scaleworker.hudWarning.connect(self.warn)
-
         self._scaleThread.start()  # Step 6: Start the thread
 
 
