@@ -303,14 +303,14 @@ class AlignWorker(QObject):
     def print_summary(self, dt, succ, fail, desc):
 
         if fail:
-            self.hudWarning(f"\n"
+            self.hudWarning.emit(f"\n"
                             f"\n//  Summary  //  {desc}  //"
                             f"\n//  RUNTIME   : {dt:.3g}s"
                             f"\n//  SUCCESS   : {succ}"
                             f"\n//  FAILED    : {fail}"
                             f"\n")
         else:
-            self.hudMessage(f"\n"
+            self.hudMessage.emit(f"\n"
                             f"\n//  Summary  //  {desc}  //"
                             f"\n//  RUNTIME   : {dt:.3g}s"
                             f"\n//  SUCCESS   : {succ}"
