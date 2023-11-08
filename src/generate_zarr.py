@@ -267,7 +267,7 @@ class ZarrWorker(QObject):
                     _break = 1
                     print(f"<==== BREAKING ABRUPTLY <====")
                     break
-        fail = sum(results)
+        fail = len(tasks) - len(results)
         succ = len(results) - fail
         dt = time.time() - t0
         self.print_summary(dt, succ, fail, desc)
