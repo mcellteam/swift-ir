@@ -102,7 +102,6 @@ class ZarrWorker(QObject):
             logger.info("\n\nZarr is in sync.\n")
             self.finished.emit(); return
 
-
         if dm.has_bb():
             # Note: now have got new cafm'level -> recalculate bounding box
             rect = dm.set_calculate_bounding_rect()  # Only after SetStackCafm

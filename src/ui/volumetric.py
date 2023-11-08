@@ -53,9 +53,7 @@ app = pg.mkQApp("pyqtgraph volume viewer")
 # pg.setConfigOptions(antialias=True)
 
 # path = '/Users/joelyancey/glanceem_swift/img_aligned.zarr/s4'
-path = '/Users/joelyancey/alignem_data/alignments/t7.alignment/zarr_reduced/s4'
-
-
+path = '/Users/joelyancey/alignem_data/alignments/test3.alignment/zarr_reduced/s4'
 
 class PythonConsole(RichJupyterWidget):
 
