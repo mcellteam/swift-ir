@@ -2080,6 +2080,7 @@ class DataModel:
                     init_afm[0][2] *= sf
                     init_afm[1][2] *= sf
                 except:
+                    cfg.mw.warn(f"Section #{i}, some data is missing for previous level {prev_level} {type(init_afm)}")
                     print_exception(f"Section #{i}, some data is missing for previous level {prev_level} {type(init_afm)}")
                 ss['init_afm'] = init_afm
 
