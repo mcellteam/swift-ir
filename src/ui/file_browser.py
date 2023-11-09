@@ -302,10 +302,6 @@ class FileBrowser(QWidget):
                 self.teAlignmentsSearchPaths.setText('\n'.join(cfg.preferences['alignments_search_paths']))
         self.bSetContentSources.clicked.connect(fn)
 
-        if is_joel():
-            if os.path.exists(self.path_special):
-                self.btns0.addWidget(self.bSetRootSpecial)
-
         self.combobox = QComboBox()
         # self.combobox.setPlaceholderText("Select images_location...")
         self.combobox.setToolTip("Saved Locations")
@@ -382,7 +378,7 @@ class FileBrowser(QWidget):
         # self.teAlignmentsSearchPaths.setMaximumHeight(80)
         self.teAlignmentsSearchPaths.setReadOnly(False)
         # lab = BoldLabel('Alignments Search Paths (Recursive):')
-        lab = BoldLabel('Alignments Search Paths:')
+        lab = BoldLabel('Alignments (.alignment) Search Paths:')
         lab.setAlignment(Qt.AlignBottom)
         self.wAlignmentsSearchPaths = VW(lab, self.teAlignmentsSearchPaths)
         self.wAlignmentsSearchPaths.setToolTip(tip)
@@ -471,9 +467,9 @@ class FileBrowser(QWidget):
         try:
             if cur == 'Saved locations...':
                 return
-            elif cur == 'Images Root':
+            elif cur == 'New Images Root':
                 self.setRootSeries()
-            elif cur == 'Alignments Root':
+            elif cur == 'New Alignments Root':
                 self.setRootAlignments()
             elif cur == '$SCRATCH':
                 self.setRootScratch()
