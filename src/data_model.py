@@ -281,7 +281,6 @@ class DataModel:
         if int(index) in range(0, len(self)):
             if int(index) != self.zpos:
                 self['state']['z_position'] = int(index)
-                logger.info(f"[{index}] z changed!")
                 self.signals.zposChanged.emit()
         else:
             logger.warning(f'\nINDEX OUT OF RANGE: {index} [caller: {inspect.stack()[1].function}]\n')

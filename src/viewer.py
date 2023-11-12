@@ -604,8 +604,9 @@ class MAViewer(AbstractEMViewer):
                 vc[0] = self.index + 0.5
         except:
             print_exception()
-        # self.drawSWIMwindow()
+        self.drawSWIMwindow() #1111+
         self._blockStateChanged = False
+        print(f"<< set_layer", flush=True)
 
 
     def initViewer(self):
@@ -648,9 +649,10 @@ class MAViewer(AbstractEMViewer):
         self.webengine.setFocus()
 
     def on_state_changed(self):
-        # logger.info(f'[{self.role}]')
+        logger.info(f'[{self.role}]')
 
         if not self._blockStateChanged:
+            logger.info('proceeding...')
 
             self._blockStateChanged = True
 
@@ -670,7 +672,11 @@ class MAViewer(AbstractEMViewer):
                     return
 
             elif self.role == 'tra':
+                logger.info('deciding...')
+                logger.info(f"floor(self.state.position[0]) = {floor(self.state.position[0])}")
+                logger.info(f"self.index = {self.index}")
                 if floor(self.state.position[0]) != self.index:
+                    logger.info(f"continuing...")
                     self.index = floor(self.state.position[0])
                     self.drawSWIMwindow(z=self.index)  # NeedThis #0803
                     # self.dm.zpos = self.index
@@ -733,7 +739,6 @@ class MAViewer(AbstractEMViewer):
         method = self.dm.current_method
         annotations = []
         if method == 'grid':
-            logger.info('grid...')
             ww1x1 = tuple(self.dm.size1x1())  # full window width
             ww2x2 = tuple(self.dm.size2x2())  # 2x2 window width
             w, h = self.dm.image_size(s=self.dm.level)
@@ -774,6 +779,7 @@ class MAViewer(AbstractEMViewer):
                     ])
 
         logger.info('updating txn()...')
+        print('updating txn()...')
         with self.txn() as s:
             s.layers['SWIM'] = ng.LocalAnnotationLayer(
                 annotations=annotations,
@@ -792,8 +798,9 @@ class MAViewer(AbstractEMViewer):
             )
 
         self._blockStateChanged = False
-        self.webengine.setFocus()
-        logger.info('<<')
+        # self.webengine.setFocus() #1111-
+        # logger.info('<<')
+        print('<<')
 
     def undrawSWIMwindows(self):
         with self.txn() as s:
