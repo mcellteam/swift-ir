@@ -560,7 +560,7 @@ class MainWindow(QMainWindow):
     def setSignalsPixmaps(self, z=None):
 
         if self.dwMatches.isVisible():
-            if not hasattr(cfg, 'data'):
+            if not hasattr(cfg, 'dm'):
                 return
 
             if z == None: z = self.dm.zpos
@@ -653,7 +653,7 @@ class MainWindow(QMainWindow):
 
         if self.dwMatches.isVisible():
 
-            if not hasattr(cfg, 'data'):
+            if not hasattr(cfg, 'dm'):
                 return
 
             if z == None:
@@ -775,9 +775,8 @@ class MainWindow(QMainWindow):
         self.setUpdatesEnabled(False)
         self.dw_hud.setVisible(state)
         tip1 = '\n'.join(f"Show Head-up-display/process monitor {hotkey('H')}")
-        tip2 = '\n'.join(f"Show Head-up-display/process monitor {hotkey('H')}")
+        tip2 = '\n'.join(f"Hide Head-up-display/process monitor {hotkey('H')}")
         tip = (tip1, tip2)[state]
-        tip = '\n'.join(textwrap.wrap(tip, width=35))
         self.aHud.setText(tip)
         self.tbbHud.setToolTip(tip)
         self.setUpdatesEnabled(True)
@@ -1610,10 +1609,10 @@ class MainWindow(QMainWindow):
     @Slot()
     def reloadComboScale(self) -> None:
         caller = inspect.stack()[1].function
-        # logger.info(f'[{caller}]')
+        logger.info(f'[{caller}]')
         self.boxScale.clear()
         if self._isProjectTab():
-            if hasattr(cfg, 'data'):
+            if hasattr(cfg, 'dm'):
                 # logger.info('Reloading Scale Combobox (caller: %level)' % caller)
                 self._allowScaleChange = 0
                 # lvl = self.dm.lvl(s=self.dm.level)
@@ -3185,13 +3184,27 @@ class MainWindow(QMainWindow):
         self.fullScreenAction.setIcon(qta.icon('mdi.fullscreen', color='#ede9e8'))
         self.fullScreenAction.triggered.connect(fullscreen_callback)
 
-        self.menu.addAction(self.exitAction)
-        self.menu.addAction(self.minimizeAction)
-        self.menu.addAction(self.fullScreenAction)
+        # self.menu.addAction(self.exitAction)
+        # self.menu.addAction(self.minimizeAction)
+        # self.menu.addAction(self.fullScreenAction)
 
         fileMenu = self.menu.addMenu('File')
 
-        self.openAction = QAction('&Open...', self)
+        self.saveAction = QAction(f"&Save Project {hotkey('S')}", self)
+        self.saveAction.triggered.connect(self.save)
+        self.saveAction.setShortcut('Ctrl+S')
+        # self.saveAction.setShortcutContext(Qt.ApplicationShortcut)
+        # self.addAction(self.saveAction)
+        fileMenu.addAction(self.saveAction)
+
+        self.refreshAction = QAction(f"&Refresh {hotkey('R')}", self)
+        self.refreshAction.triggered.connect(self._refresh)
+        self.refreshAction.setShortcut('Ctrl+R')
+        self.refreshAction.setShortcutContext(Qt.ApplicationShortcut)
+        # self.addAction(self.refreshAction)
+        fileMenu.addAction(self.refreshAction)
+
+        self.openAction = QAction('&Open Alignment Manager...', self)
         # self.openAction.triggered.connect(self.open_project)
         self.openAction.triggered.connect(self.open_project_new)
         # self.openAction.setShortcut('Ctrl+O')
@@ -3213,13 +3226,6 @@ class MainWindow(QMainWindow):
         self.exportCafmAction.triggered.connect(self.export_cafms)
         exportMenu.addAction(self.exportCafmAction)
 
-        self.saveAction = QAction('&Save Project', self)
-        self.saveAction.triggered.connect(self.save)
-        self.saveAction.setShortcut('Ctrl+S')
-        # self.saveAction.setShortcutContext(Qt.ApplicationShortcut)
-        # self.addAction(self.saveAction)
-        fileMenu.addAction(self.saveAction)
-
         self.savePreferencesAction = QAction('Save User Preferences', self)
         self.savePreferencesAction.triggered.connect(self.saveUserPreferences)
         fileMenu.addAction(self.savePreferencesAction)
@@ -3227,13 +3233,6 @@ class MainWindow(QMainWindow):
         self.resetPreferencesAction = QAction('Set Default Preferences', self)
         self.resetPreferencesAction.triggered.connect(self.resetUserPreferences)
         fileMenu.addAction(self.resetPreferencesAction)
-
-        self.refreshAction = QAction('&Refresh', self)
-        self.refreshAction.triggered.connect(self._refresh)
-        self.refreshAction.setShortcut('Ctrl+R')
-        self.refreshAction.setShortcutContext(Qt.ApplicationShortcut)
-        # self.addAction(self.refreshAction)
-        fileMenu.addAction(self.refreshAction)
 
 
         action = QAction('3DEM Community Data', self)
@@ -3900,7 +3899,7 @@ class MainWindow(QMainWindow):
         def onTimer():
             logger.info('')
             self.timerPlayback.setInterval(int(1000 / self.sbFPS.value()))
-            if hasattr(cfg,'data'):
+            if hasattr(cfg,'dm'):
                 if self.pt:
                     if self.sldrZpos.value() < len(self.dm) - 1:
                         self.dm.zpos += 1
@@ -4163,7 +4162,7 @@ class MainWindow(QMainWindow):
             caller = inspect.stack()[1].function
             if caller != 'updateNotes':
                 if self._isProjectTab():
-                    if hasattr(cfg,'data'):
+                    if hasattr(cfg,'dm'):
                         self.dm.save_notes(text=self.notes.toPlainText())
                         self.statusBar.showMessage('Note Saved!', 3000)
                 else:

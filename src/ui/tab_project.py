@@ -259,22 +259,15 @@ class ProjectTab(QWidget):
             # self.viewer1.signals.swimAction.connect(self.parent.alignOne)
             # self.viewer1.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314
             # self.viewer1.signals.zoomChanged.connect(lambda: logger.critical(f"Zoom Slider: {self.zoomSlider.value()} / CS Scale: {self.viewer1.state.cross_section_scale}"))  # 0314
-            def zoom_fn(x):
-                # logger.critical('')
-                self.zoomSlider.setValue(x)
-            self.viewer1.signals.zoomChanged.connect(zoom_fn)
-            try:
-                self.dataUpdateMA()
-            except:
-                print_exception()
+            self.viewer1.signals.zoomChanged.connect(self.zoomSlider.setValue)
 
-            try:
-                cur_zoom = self.viewer1.state.cross_section_scale
-                # logger.info(f"current zoom: {cur_zoom}")
-                self.zoomSlider.setValue(cur_zoom)
-            except:
-                print_exception()
-            # logger.info(f"Local Volume:\n{self.viewer1.LV.info()}")
+            #1111-
+            # try:
+            #     self.dataUpdateMA()
+            # except:
+            #     print_exception()
+
+            self.zoomSlider.setValue(self.viewer1.state.cross_section_scale)
 
         self.parent.hud.done()
         # QApplication.processEvents() #1009-
@@ -2117,8 +2110,8 @@ class ProjectTab(QWidget):
             if self.teLogs.isVisible():
                 self.refreshLogs()
 
-            if self.wTabs.currentIndex() == 1:
-                self.viewer1.drawSWIMwindow()
+            # if self.wTabs.currentIndex() == 1:
+            #     self.viewer1.drawSWIMwindow()
 
         else:
             self.swMethod.setCurrentIndex(1)

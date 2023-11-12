@@ -721,7 +721,7 @@ class MAViewer(AbstractEMViewer):
 
     def drawSWIMwindow(self, z=None):
         caller = inspect.stack()[1].function
-        logger.critical(f"\n\n[{caller}] Drawing SWIM windows...\n")
+        logger.critical(f"\n\n[{caller}] XXX Drawing SWIM windows...\n")
         if z == None:
             z = self.dm.zpos
         # if z == self.dm.first_included(): #1025-
@@ -733,6 +733,7 @@ class MAViewer(AbstractEMViewer):
         method = self.dm.current_method
         annotations = []
         if method == 'grid':
+            logger.info('grid...')
             ww1x1 = tuple(self.dm.size1x1())  # full window width
             ww2x2 = tuple(self.dm.size2x2())  # 2x2 window width
             w, h = self.dm.image_size(s=self.dm.level)
@@ -743,6 +744,7 @@ class MAViewer(AbstractEMViewer):
             ww_y = ww2x2[1] - (24 // level_val)
             z = self.index + 0.5
             for i, pt in enumerate(cps):
+                logger.info(f'i = {i}, pt = {pt}')
                 c = colors[i]
                 d1, d2, d3, d4 = self.getRect2(pt, ww_x, ww_y)
                 id = 'roi%d' % i
@@ -753,7 +755,6 @@ class MAViewer(AbstractEMViewer):
                     ng.LineAnnotation(id=id + '%d3', pointA=(z,) + d4, pointB=(z,) + d1, props=[c, m])])
 
         elif method == 'manual':
-            logger.critical("Restoring...")
             ww_x = ww_y = self.dm.manual_swim_window_px()
             pts = self.dm.ss['method_opts']['points']['coords'][self.role]
             for i, pt in enumerate(pts):
@@ -771,6 +772,8 @@ class MAViewer(AbstractEMViewer):
                         ng.LineAnnotation(id=id + '%d2', pointA=(z,) + d3, pointB=(z,) + d4, props=[c, m]),
                         ng.LineAnnotation(id=id + '%d3', pointA=(z,) + d4, pointB=(z,) + d1, props=[c, m])
                     ])
+
+        logger.info('updating txn()...')
         with self.txn() as s:
             s.layers['SWIM'] = ng.LocalAnnotationLayer(
                 annotations=annotations,
@@ -790,6 +793,7 @@ class MAViewer(AbstractEMViewer):
 
         self._blockStateChanged = False
         self.webengine.setFocus()
+        logger.info('<<')
 
     def undrawSWIMwindows(self):
         with self.txn() as s:
