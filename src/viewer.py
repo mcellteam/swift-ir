@@ -81,7 +81,8 @@ numcodecs.blosc.use_threads = False
 __all__ = ['EMViewer', 'PMViewer', 'MAViewer']
 
 logger = logging.getLogger(__name__)
-logger.propagate = False
+if not is_joel():
+    logger.propagate = False
 # handler = logging.StreamHandler(stream=sys.stdout)
 # logger.addHandler(handler)
 
@@ -778,8 +779,6 @@ class MAViewer(AbstractEMViewer):
                         ng.LineAnnotation(id=id + '%d3', pointA=(z,) + d4, pointB=(z,) + d1, props=[c, m])
                     ])
 
-        logger.info('updating txn()...')
-        print('updating txn()...')
         with self.txn() as s:
             s.layers['SWIM'] = ng.LocalAnnotationLayer(
                 annotations=annotations,

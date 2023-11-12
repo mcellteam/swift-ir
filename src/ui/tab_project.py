@@ -1142,11 +1142,13 @@ class ProjectTab(QWidget):
         self.logs_widget.layout.setSpacing(2)
 
         self.saGrid = QScrollArea()
+        self.saGrid.setFocusPolicy(Qt.NoFocus)
         self.saGrid.setWidgetResizable(True)
         self.saGrid.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.saGrid.setWidget(self.gbGrid)
 
         self.saManual = QScrollArea()
+        self.saManual.setFocusPolicy(Qt.NoFocus)
         self.saManual.setWidgetResizable(True)
         self.saManual.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.saManual.setWidget(self.wMethodMatch)
