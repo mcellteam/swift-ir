@@ -673,11 +673,9 @@ class MAViewer(AbstractEMViewer):
                     return
 
             elif self.role == 'tra':
-                logger.info('deciding...')
-                logger.info(f"floor(self.state.position[0]) = {floor(self.state.position[0])}")
-                logger.info(f"self.index = {self.index}")
+                logger.info(f"checking {floor(self.state.position[0])} == {self.index}...")
                 if floor(self.state.position[0]) != self.index:
-                    logger.info(f"continuing...")
+                    logger.info(f"Calling Back...")
                     self.index = floor(self.state.position[0])
                     self.drawSWIMwindow(z=self.index)  # NeedThis #0803
                     # self.dm.zpos = self.index
@@ -728,9 +726,10 @@ class MAViewer(AbstractEMViewer):
 
     def drawSWIMwindow(self, z=None):
         caller = inspect.stack()[1].function
-        logger.critical(f"\n\n[{caller}] XXX Drawing SWIM windows...\n")
+        logger.critical(f"\n\n[{caller}] XXX Drawing SWIM windows [{self.index}]...\n")
         if z == None:
             z = self.dm.zpos
+        z += 0.5
         # if z == self.dm.first_included(): #1025-
         #     return
         self._blockStateChanged = True
@@ -739,6 +738,7 @@ class MAViewer(AbstractEMViewer):
         level_val = self.dm.lvl()
         method = self.dm.current_method
         annotations = []
+
         if method == 'grid':
             ww1x1 = tuple(self.dm.size1x1())  # full window width
             ww2x2 = tuple(self.dm.size2x2())  # 2x2 window width
@@ -748,9 +748,7 @@ class MAViewer(AbstractEMViewer):
             cps = [x for i, x in enumerate(p) if self.dm.quadrants[i]]
             ww_x = ww2x2[0] - (24 // level_val)
             ww_y = ww2x2[1] - (24 // level_val)
-            z = self.index + 0.5
             for i, pt in enumerate(cps):
-                logger.info(f'i = {i}, pt = {pt}')
                 c = colors[i]
                 d1, d2, d3, d4 = self.getRect2(pt, ww_x, ww_y)
                 id = 'roi%d' % i
@@ -760,16 +758,16 @@ class MAViewer(AbstractEMViewer):
                     ng.LineAnnotation(id=id + '%d2', pointA=(z,) + d3, pointB=(z,) + d4, props=[c, m]),
                     ng.LineAnnotation(id=id + '%d3', pointA=(z,) + d4, pointB=(z,) + d1, props=[c, m])])
 
+            cfg.mw.setFocus()
+
         elif method == 'manual':
             ww_x = ww_y = self.dm.manual_swim_window_px()
             pts = self.dm.ss['method_opts']['points']['coords'][self.role]
             for i, pt in enumerate(pts):
-                logger.critical(f"{i}: {pt}")
                 if pt:
                     x = self.store.shape[2] * pt[0]
                     y = self.store.shape[1] * pt[1]
                     d1, d2, d3, d4 = self.getRect2(coords=(x, y), ww_x=ww_x, ww_y=ww_y, )
-                    z = self.index + 0.5
                     c = self.colors[i]
                     id = 'roi%d' % i
                     annotations.extend([
@@ -778,6 +776,7 @@ class MAViewer(AbstractEMViewer):
                         ng.LineAnnotation(id=id + '%d2', pointA=(z,) + d3, pointB=(z,) + d4, props=[c, m]),
                         ng.LineAnnotation(id=id + '%d3', pointA=(z,) + d4, pointB=(z,) + d1, props=[c, m])
                     ])
+            self.webengine.setFocus()
 
         with self.txn() as s:
             s.layers['SWIM'] = ng.LocalAnnotationLayer(
@@ -798,8 +797,9 @@ class MAViewer(AbstractEMViewer):
 
         self._blockStateChanged = False
         # self.webengine.setFocus() #1111-
+        # cfg.mw.setFocus()
         # logger.info('<<')
-        print('<<')
+        # print('<<')
 
     def undrawSWIMwindows(self):
         with self.txn() as s:

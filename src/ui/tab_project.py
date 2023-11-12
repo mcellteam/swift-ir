@@ -70,6 +70,15 @@ class ProjectTab(QWidget):
         self.dm.signals.zposChanged.connect(self.parent.setTargKargPixmaps)
         self.dm.signals.zposChanged.connect(self.dataUpdateMA) #1111+
         self.dm.signals.zposChanged.connect(self.forceFocus) #1111+
+        def fn_updatelayer():
+            logger.info('')
+            if hasattr(self,'viewer'):
+                if self.viewer:
+                    if self.wTabs.currentIndex() in (0,1):
+                        logger.info('actionable...')
+                        self.viewer.set_layer()
+        self.dm.signals.zposChanged.connect(fn_updatelayer) #1111+
+        self.dm.signals.zposChanged.connect(self.forceFocus) #1111+
 
 
         self.dm.signals.savedChanged.connect(self.parent.setStatusInfo)
