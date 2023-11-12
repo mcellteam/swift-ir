@@ -927,10 +927,10 @@ class OpenProject(QWidget):
             logger.info(f'Opening {path}...')
 
             if not os.path.exists(path):
-                logger.warning("File not found!");
+                logger.warning("File not found!")
                 return
             if os.path.getsize(path) == 0:
-                logger.warning("File is empty!");
+                logger.warning("File is empty!")
                 return
 
             try:
