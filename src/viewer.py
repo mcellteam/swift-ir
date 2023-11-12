@@ -2,7 +2,44 @@
 
 '''WARNING: Because this web server permits cross-origin requests, it exposes any
 data in the directory that is served to any web page running on a machine that
-can connect to the web server'''
+can connect to the web server
+
+https://github.com/seung-lab/NeuroglancerAnnotationUI/blob/master/examples/statebuilder_examples.ipynb
+
+Position, layout, and zoom options
+
+View options that do not affect individual layers can be set with a dict passed to the view_kws argument in StateBuilder, which are passed to viewer.set_view_options.
+
+    show_slices : Boolean, sets if slices are shown in the 3d view. Defaults to False.
+    layout : xy-3d/xz-3d/yz-3d (sections plus 3d pane), xy/yz/xz/3d (only one pane), or 4panel (all panes). Default is xy-3d.
+    show_axis_lines : Boolean, determines if the axis lines are shown in the middle of each view.
+    show_scale_bar : Boolean, toggles showing the scale bar.
+    orthographic : Boolean, toggles orthographic view in the 3d pane.
+    position : 3-element vector, determines the centered location.
+    zoom_image : Zoom level for the imagery in units of nm per voxel. Defaults to 8.
+    zoom_3d : Zoom level for the 3d pane. Defaults to 2000. Smaller numbers are more zoomed in.
+    background_color : Sets the background color of the 3d mode. Defaults to black.
+
+
+https://github.com/google/neuroglancer/issues/365
+
+control+mousedown0
+control+mousedown1
+control+mousedown2
+
+control+mousedown0 is being treated as control+mousedown1, bringing up the selection pane instead of adding an
+annotation. I suspect Firefox is doing some "helpful" remapping of the mouse event when control is held.
+
+
+Try: control+mousedown1
+
+with viewer.config_state.txn() as s:
+    s.input_event_bindings.data_view["shift+mousedown0"] = "start-fill"
+    s.input_event_bindings.data_view["keyt"] = "stop-fill"
+
+https://github.com/shwetagopaul92/neuroglancer/tree/master/examples/dependent-project
+
+'''
 
 import os
 import abc
@@ -33,7 +70,6 @@ import shutil
 import tempfile
 import threading
 import neuroglancer.write_annotations
-import numpy as np
 
 import tensorstore as ts
 context = ts.Context({'cache_pool': {'total_bytes_limit': 1000000000}})
@@ -101,7 +137,9 @@ class AbstractEMViewer(neuroglancer.Viewer):
                    ('key1', self._key1),  #abstract
                    ('key2', self._key2),  #abstract
                    ('key3', self._key3),  #abstract
-                   ('keySpace', self._keySpace)]
+                   ('keySpace', self._keySpace),
+                   ('ctlMousedown', self._ctlMousedown)
+                   ]
         for a in actions:
             self.actions.add(*a)
 
@@ -116,6 +154,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
             s.input_event_bindings.viewer['digit2'] = 'key2'
             s.input_event_bindings.viewer['digit3'] = 'key3'
             s.input_event_bindings.viewer['space'] = 'keySpace'
+            s.input_event_bindings.viewer['space'] = 'ctlMousedown'
             # s.input_event_bindings.slice_view['space'] = 'keySpace'
             s.show_ui_controls = False
             s.show_ui_controls = False
@@ -303,6 +342,11 @@ class AbstractEMViewer(neuroglancer.Viewer):
         logger.info("Native spacebar keybinding intercepted!")
         # if self.dm.method() == 'manual':
         self.signals.toggleView.emit()
+        self.webengine.setFocus()
+
+    def _ctlMousedown(self, s):
+        logger.info("Native control+mousedown keybinding intercepted!")
+        # if self.dm.method() == 'manual':
         self.webengine.setFocus()
 
     def _ctlClick(self, s):

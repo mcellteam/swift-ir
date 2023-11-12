@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
-import inspect
-from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QSplitter, QLabel, QPushButton, QFrame
 from qtpy.QtCore import Qt, Signal
+from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QSplitter, QLabel, QPushButton, QFrame
 
 __all__ = ['HBL', 'VBL', 'GL', 'HW', 'VW', 'HSplitter', 'VSplitter', 'YellowTextLabel', 'QVLine', 'QHLine']
 

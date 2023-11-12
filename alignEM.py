@@ -32,6 +32,8 @@ For more information, please refer to [http://unlicense.org]
 
 print('alignEM:')
 import os, sys, getpass
+import profile, pstats
+from pstats import SortKey
 
 # if not getpass.getuser() in ('joelyancey', 'joely', 'jyancey', 'tmbartol', 'tbartol', 'bartol', 'ama8447', 'aalario'):
 # if not getpass.getuser() in ('joelyancey', 'joely', 'jyancey', 'tmbartol', 'tbartol', 'bartol'):
@@ -294,9 +296,6 @@ def main():
 
     QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseDesktopOpenGL) #0226-
 
-    # report the number of worker threads chosen by default
-    logger.info(f"ThreadPoolExecutor _max_workers: {ThreadPoolExecutor()._max_workers}")
-
     initialize_user_preferences() # calls update_preferences_model()
     convert_projects_model()
     # configure_project_paths()
@@ -304,23 +303,13 @@ def main():
     # app = QApplication([])
     # app = QApplication(sys.argv)
     #
-    # app.setStyle('Fusion')
-    # app.setStyle('Breeze')
-    # app.setStyle('Oxygen')
-    # app.setStyle('Windows')
-    cfg.main_window = cfg.mw = MainWindow()
+    # app.setStyle('Fusion') | Fusion/Breeze/Oxygen/Windows
+    cfg.mw = cfg.main_window = MainWindow()
 
     logger.info('Showing application window')
-    cfg.main_window.show()
+    cfg.mw.show()
 
     sys.exit(app.exec())
-
-    # sys.exit(app.exec())
-
-    # stats = pstats.Stats(profiler).sort_stats('ncalls')
-    # stats.print_stats()
-
-    # sys.exit(app.exec())
 
 
 if __name__ == "__main__":
@@ -375,9 +364,9 @@ if __name__ == "__main__":
             print('macOS is in DARK mode')
         else:
             print('macOS is in LIGHT mode')
-    print('Entering main...')
+
+    print('Entering main()...')
     main()
-    # sys.exit(app.exec())
 
 
 

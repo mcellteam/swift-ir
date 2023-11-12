@@ -53,6 +53,13 @@ fi
 echo "Initializing conda..."
 $WORK/miniconda3/bin/conda init bash
 
+echo "Checking if AlignEM exists in $WORK..."
+if [ ! -d "$WORK/swift-ir" ] | [ "$FORCE" = "1" ]; then
+  echo "Reinstalling AlignEM..."
+  cd $WORK
+  git clone https://github.com/mcellteam/swift-ir.git
+fi
+
 echo "Loading intel/19.1.1 module..."
 ml intel/19.1.1
 echo "Loading swr/21.2.5 module..."

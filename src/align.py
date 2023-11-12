@@ -1,26 +1,23 @@
 #!/usr/bin/env python3
 
+import copy
+import glob
+import json
+import logging
+import multiprocessing as mp
 import os
 import re
-import sys
-import copy
-import json
-import glob
-import time
-import psutil
-import logging
-from multiprocessing import Pool
-from multiprocessing.pool import ThreadPool
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-from datetime import datetime
-import multiprocessing as mp
 import subprocess as sp
-import numpy as np
-import tqdm
-import zarr
+import sys
+import time
+
 import imageio.v3 as iio
 # import imagecodecs
 import numcodecs
+import numpy as np
+import tqdm
+import zarr
+
 numcodecs.blosc.use_threads = False
 import libtiff
 libtiff.libtiff_ctypes.suppress_warnings()
@@ -28,22 +25,10 @@ import warnings
 warnings.filterwarnings("ignore") #Works for supressing tiffile invalid offset warning
 from src.mp_queue import TaskQueue
 from src.recipe_maker import run_recipe
-from src.helpers import print_exception, pretty_elapsed, is_tacc, get_bindir, get_core_count
-# from src.save_bias_analysis import save_bias_analysis
-from src.helpers import get_scale_val, renew_directory, file_hash, pretty_elapsed, is_tacc
+from src.helpers import print_exception, get_core_count
 import src.config as cfg
 
 from qtpy.QtCore import Signal, QObject, QMutex
-from qtpy.QtWidgets import QApplication
-
-try:
-    from src.swiftir import applyAffine, reptoshape
-except Exception as e:
-    print(e)
-    try:
-        from swiftir import applyAffine, reptoshape
-    except Exception as e:
-        print(e)
 
 __all__ = ['AlignWorker']
 
