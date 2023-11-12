@@ -4,6 +4,7 @@ GlanceEM-SWiFT - A software tool for image alignment that is under active develo
 """
 import os
 import sys
+import csv
 import copy
 import json
 import time
@@ -1701,12 +1702,18 @@ class MainWindow(QMainWindow):
             logger.warning('No Filename - Canceling Export')
             return
         logger.info('Export Filename: %s' % file)
-        cafm_lst = self.dm.cafm_list()
-        with open(file, 'w') as f:
-            for sublist in cafm_lst:
-                for item in sublist:
-                    f.write(str(item) + ',')
-                f.write('\n')
+        # cafm_lst = self.dm.cafm_list()
+        # with open(file, 'w') as f:
+        #     for sublist in cafm_lst:
+        #         for item in sublist:
+        #             f.write(str(item) + ',')
+        #         f.write('\n')
+        with open(file, 'w', newline='') as f:
+            # writer = csv.writer(f, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+            writer = csv.writer(f)
+            writer.writerows(self.dm.cafm_list())
+            # for c in self.dm.cafm_list():
+            #     writer.writerow(c)
         self.tell('Exported: %s' % file)
         self.tell('Cumulative AFMs exported successfully.')
 
