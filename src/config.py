@@ -47,9 +47,7 @@ USE_POOL_FOR_SWIM = True
 SCALE_1_CORES_LIMIT = 30
 SCALE_2_CORES_LIMIT = 70
 
-'''Main Objects'''
-# datamodel = None
-data = None
+dm = None
 # dataById = {}
 tabsById = {}
 main_window = None

@@ -68,7 +68,7 @@ class Thumbnailer:
     #     if len(to_reduce):
     #         pbar_text = f'Reducing {self.dm.level_pretty()} aligned images (count={len(to_reduce)})...'
     #         if cfg.CancelProcesses:
-    #             cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
+    #             cfg.mw.warn('Canceling Tasks: %s' % pbar_text)
     #         else:
     #             # dt = self.reduce(src=src, od=od, rmdir=False, prefix='', filenames=files, pbar_text=pbar_text, dest=dest)
     #             dt = self.reduce_tuples(to_reduce=to_reduce)
@@ -84,7 +84,7 @@ class Thumbnailer:
 
         pbar_text = 'Generating %s Signal Spot Thumbnails...' % self.dm.level_pretty()
         if cfg.CancelProcesses:
-            cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
+            cfg.mw.warn('Canceling Tasks: %s' % pbar_text)
         else:
             # src = os.path.join(dest, scale, 'signals_raw')
             src = os.path.join(dest, 'signals', scale)
@@ -135,7 +135,7 @@ class Thumbnailer:
                              full_size=full_size
                              )
             self.dm.t_thumbs_spot = dt
-            cfg.main_window.hud.done()
+            cfg.mw.hud.done()
 
 
     def reduce_matches(self, indexes, dest, scale):
@@ -144,7 +144,7 @@ class Thumbnailer:
 
         pbar_text = 'Reducing %s Matches...' % self.dm.level_pretty()
         if cfg.CancelProcesses:
-            cfg.main_window.warn('Canceling Tasks: %s' % pbar_text)
+            cfg.mw.warn('Canceling Tasks: %s' % pbar_text)
         else:
             # src = os.path.join(dest, scale, 'matches_raw')
             src = os.path.join(dest, 'matches', scale)
@@ -190,14 +190,14 @@ class Thumbnailer:
                              )
             self.dm.t_thumbs_matches = dt
 
-            cfg.main_window.tell('Discarding Raw (Full Size) Matches...')
+            cfg.mw.tell('Discarding Raw (Full Size) Matches...')
             try:
                 shutil.rmtree(os.path.join(self.dm.dest(), self.dm.level, 'matches_raw'), ignore_errors=True)
                 shutil.rmtree(os.path.join(self.dm.dest(), self.dm.level, 'matches_raw'), ignore_errors=True)
             except:
                 print_exception()
 
-            cfg.main_window.hud.done()
+            cfg.mw.hud.done()
 
 
     def reduce(self,

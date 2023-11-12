@@ -49,16 +49,11 @@ from src.ui.webpage import QuickWebPage
 
 __all__ = ['MainWindow']
 
-# logger = logging.getLogger(__name__)
-# logger = logging.getLogger()
 logger = logging.getLogger('root')
-# addLoggingLevel('TRACE', logging.INFO)
 
 if is_joel():
-    # logger.setLevel(logging.DEBUG)
     logging.root.setLevel(logging.DEBUG)
 else:
-    # logger.setLevel(logging.INFO)
     logging.root.setLevel(logging.INFO)
 
 DEV = is_joel()
@@ -299,7 +294,7 @@ class MainWindow(QMainWindow):
 
 
     def _refresh(self, silently=False):
-        logger.critical(f'[{inspect.stack()[1].function}]')
+        logger.critical(f"\n\n[{inspect.stack()[1].function}] Refreshing via MainWindow...\n")
         self.setUpdatesEnabled(True)
         if not self._working:
             if not silently:
@@ -1089,7 +1084,7 @@ class MainWindow(QMainWindow):
         dm.save(silently=True)
         # logger.critical('')
         scale = dm.scale
-        self.shutdownNeuroglancer()
+        # self.shutdownNeuroglancer() #1111-
 
         if self._working == True:
             self.warn('Another Process is Already Running')
@@ -1177,7 +1172,7 @@ class MainWindow(QMainWindow):
             logger.info('\n\nSleeping for 2 seconds...\n')
             time.sleep(2)
 
-        self.shutdownNeuroglancer()
+        # self.shutdownNeuroglancer() #1111-
 
         self._scaleworker = ScaleWorker(src=src, out=out, scales=scales, opts=opts)
         self._scaleThread.started.connect(self._scaleworker.run)  # Step 5: Connect signals and slots
@@ -1662,6 +1657,21 @@ class MainWindow(QMainWindow):
                 # self.pt.dataUpdateMA() #1019-
                 # self.pt.refreshTab() #1019-
                 self.scaleChanged.emit()
+
+
+    '''
+    WRITE CAFMS LIST TO CSV:
+    cafms = cfg.dm.cafm_list()
+    with open('/tmp/cafm.csv', 'w', newline='') as f:
+        writer = csv.writer(f, delimiter=' ',quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        for c in a:
+            writer.writerow(c)
+            
+    READ CAFMS CSV TO PYTHON LIST:
+    
+    
+    
+    '''
 
 
 
@@ -3004,8 +3014,7 @@ class MainWindow(QMainWindow):
             self.bExport.setVisible(False)
 
         elif self._isProjectTab():
-            self.dm = self.globTabs.currentWidget().dm
-            # self.dm.signals.zposChanged.connect(self.updateSlidrZpos)
+            self.dm = cfg.dm = self.globTabs.currentWidget().dm
             self.pt = cfg.pt = self.globTabs.currentWidget()
             self.viewer = self.pt.viewer
 

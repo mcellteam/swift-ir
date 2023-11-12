@@ -5,6 +5,10 @@ Solid implementation of a thread-safe background GUI logger.
 
 Adapted from:
 https://www.oulub.com/en-US/Python/howto.logging-cookbook-a-qt-gui-for-logging
+
+self.textedit
+
+a = cfg.mw.hud.te.toPlainText()
 '''
 import time
 import random
@@ -82,15 +86,15 @@ class HeadupDisplay(QWidget):
         self._overlay = overlay
         self.setFocusPolicy(Qt.NoFocus)
         # self.setMinimumHeight(64)
-        self.textedit = te = QPlainTextEdit(self)
+        self.te = te = QPlainTextEdit(self)
         # f = QFont()
         # f.setStyleHint(QFont.Monospace)
         # te.setFont(f)
         if overlay:
-            self.textedit.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.textedit.setReadOnly(True)
+            self.te.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.te.setReadOnly(True)
         # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # self.textedit.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+        # self.te.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
         # self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         # self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self.handler = h = QtHandler(self.update_status)
@@ -116,7 +120,7 @@ class HeadupDisplay(QWidget):
 
     def __call__(self, message, level=logging.INFO):
         logger.log(level, message)
-        self.textedit.moveCursor(QTextCursor.End)
+        self.te.moveCursor(QTextCursor.End)
 
     def start_thread(self):
         self.hud_worker = HudWorker()
@@ -147,8 +151,8 @@ class HeadupDisplay(QWidget):
         else:
             color = self.COLORS.get(record.levelno, 'black')
         s = '<pre><font color="%s">%s</font></pre>' % (color, status)
-        self.textedit.appendHtml(s)
-        self.textedit.moveCursor(QTextCursor.End)
+        self.te.appendHtml(s)
+        self.te.moveCursor(QTextCursor.End)
         self.update()
 
     @Slot()
@@ -156,7 +160,7 @@ class HeadupDisplay(QWidget):
         level = logging.INFO
         extra = {'qThreadName': ctname()}
         logger.log(level, 'Manually logged!', extra=extra)
-        self.textedit.moveCursor(QTextCursor.End)
+        self.te.moveCursor(QTextCursor.End)
         self.update()
 
     @Slot()
@@ -164,13 +168,13 @@ class HeadupDisplay(QWidget):
         # extra = {'qThreadName': ctname()}
         # logger.log(level, message, extra=extra)
         logger.log(level, message)
-        self.textedit.moveCursor(QTextCursor.End)
+        self.te.moveCursor(QTextCursor.End)
         self.update()
 
     @Slot()
     def warn(self, message):
         logger.log(logging.WARNING, message)
-        self.textedit.moveCursor(QTextCursor.End)
+        self.te.moveCursor(QTextCursor.End)
         self.update()
 
 
@@ -180,7 +184,7 @@ class HeadupDisplay(QWidget):
 
     def done(self):
         caller = inspect.stack()[1].function
-        txt = self.textedit.toPlainText()
+        txt = self.te.toPlainText()
         last_line = txt.split('[INFO]')[-1].lstrip()
         # print(f"\nlast_line: {last_line}\nany? {any(x in last_line for x in ['[WARNING]', '[ERROR]'])}\nlast 3: {last_line[-3:]}\n")
 
@@ -195,34 +199,34 @@ class HeadupDisplay(QWidget):
         #     cfg.project_tab.hud_overlay.post(last_line + 'done.')
         #     cfg.project_tab.hud_overlay.textedit.moveCursor(QTextCursor.End)
 
-        self.textedit.undo()
+        self.te.undo()
         self.post(last_line + f'done ({caller})')
         # self.post(last_line + 'done(%level).' % caller)
-        self.textedit.moveCursor(QTextCursor.End)
+        self.te.moveCursor(QTextCursor.End)
         self.update()
         # pass
 
 
     # def cycle_text(self):
-    #     txt = self.textedit.toPlainText()
-    #     self.textedit.undo()
+    #     txt = self.te.toPlainText()
+    #     self.te.undo()
     #     last_line = txt.split('[INFO]')[-1].lstrip()
     #     self.post(last_line + 'done.')
-    #     self.textedit.moveCursor(QTextCursor.End)
+    #     self.te.moveCursor(QTextCursor.End)
     #     QApplication.processEvents()
 
     @Slot()
     def clear_display(self):
-        self.textedit.clear()
+        self.te.clear()
 
     @Slot()
     def rmline(self):
-        self.textedit.undo()
+        self.te.undo()
 
     def set_theme_default(self):
         self.theme = 'default'
 
-        self.textedit.setStyleSheet("""
+        self.te.setStyleSheet("""
             background-color:  #141414;
             border-style: inset;
             border-color: #d3dae3; /* light off-white */
@@ -235,8 +239,7 @@ class HeadupDisplay(QWidget):
 
     def set_theme_dark(self):
         self.theme = 'dark'
-
-        self.textedit.setStyleSheet("""
+        self.te.setStyleSheet("""
             background-color:  #141414;
             color: #f3f6fb;
             /*border-style: inset;*/
@@ -252,7 +255,7 @@ class HeadupDisplay(QWidget):
     def set_theme_overlay(self):
         self.theme = 'overlay'
 
-        self.textedit.setStyleSheet("""
+        self.te.setStyleSheet("""
             color: #ffa213;
             background-color: rgba(255,255,255,0.65);
             /*border-style: solid;*/

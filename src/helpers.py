@@ -1164,15 +1164,15 @@ from typing import Dict, Any
 import hashlib
 import json
 
-def dict_hash(dictionary: Dict[str, Any]) -> str:
-    """
-    MD5 hash of a dictionary.
-    source: https://www.doc.ic.ac.uk/~nuric/coding/how-to-hash-a-dictionary-in-python.html
-    """
-    dhash = hashlib.md5()
-    encoded = json.dumps(dictionary, sort_keys=True).encode()
-    dhash.update(encoded)
-    return dhash.hexdigest()
+# def dict_hash(dictionary: Dict[str, Any]) -> str:
+#     """
+#     MD5 hash of a dictionary.
+#     source: https://www.doc.ic.ac.uk/~nuric/coding/how-to-hash-a-dictionary-in-python.html
+#     """
+#     dhash = hashlib.md5()
+#     encoded = json.dumps(dictionary, sort_keys=True).encode()
+#     dhash.update(encoded)
+#     return dhash.hexdigest()
 
 
 # General-purpose solution that can process large files

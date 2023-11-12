@@ -33,7 +33,7 @@ from src.ui.dialogs import ImportImagesDialog
 from src.ui.layouts import HBL, VBL, GL, HW, VW, HSplitter, VSplitter
 from src.ui.tab_project import VerticalLabel
 from src.ui.tab_project import ProjectTab
-from src.viewer_em import PMViewer
+from src.viewer import PMViewer
 from src.thumbnailer import Thumbnailer
 
 import src.config as cfg

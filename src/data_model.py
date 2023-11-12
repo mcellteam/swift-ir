@@ -2170,7 +2170,7 @@ class DataModel:
             self['stack'][i].update(
                 index=i,
                 name=basename,
-                path=paths[i],
+                # path=paths[i], #1111-
                 levels={s: {} for s in levels},
                 # levels={bottom_level: {}},
                 notes=''
@@ -2248,12 +2248,13 @@ class DataModel:
                 )
 
     def save(self, silently=False):
-        logger.info('')
+        caller = inspect.stack()[1].function
+        # logger.info('')
         try:
             name, _ = os.path.splitext(os.path.basename(self.data_location))
             p = os.path.join(self.data_location, name + '.swiftir')
             if not silently:
-                logger.info(f'Saving >> {p}')
+                logger.info(f'[{caller}] Saving >> {p}')
             with open(p, 'w') as f:
                 jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
                 f.write(jde.encode(self._data))
@@ -2263,7 +2264,7 @@ class DataModel:
         except Exception as e:
             print_exception()
             cfg.mw.err(f"Unable to save. Reason: {e.__class__.__name__}")
-
+        logger.info('<<')
 
     def setZarrMade(self, b, s=None):
         if s == None: s = self.level
@@ -2301,13 +2302,13 @@ def hashstring(text:str):
         hash = ( hash*281  ^ ord(ch)*997) & 0xFFFFFFFF
     return hash
 
-def dict_hash(dictionary: Dict[str, Any]) -> str:
-    """Returns an MD5 hash of a Python dictionary. source:
-    www.doc.ic.ac.uk/~nuric/coding/how-to-hash-a-dictionary-in-python.html"""
-    dhash = hashlib.md5()
-    encoded = json.dumps(dictionary, sort_keys=True).encode()
-    dhash.update(encoded)
-    return dhash.hexdigest()
+# def dict_hash(dictionary: Dict[str, Any]) -> str:
+#     """Returns an MD5 hash of a Python dictionary. source:
+#     www.doc.ic.ac.uk/~nuric/coding/how-to-hash-a-dictionary-in-python.html"""
+#     dhash = hashlib.md5()
+#     encoded = json.dumps(dictionary, sort_keys=True).encode()
+#     dhash.update(encoded)
+#     return dhash.hexdigest()
 
 
 def to_even(n):

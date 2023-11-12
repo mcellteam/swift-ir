@@ -12,7 +12,7 @@ from qtpy.QtWebEngineWidgets import *
 import src.config as cfg
 from src.helpers import print_exception, getOpt, setOpt, getData, setData, caller_name, is_tacc, is_joel, \
     ensure_even
-from src.viewer_em import EMViewer, PMViewer, MAViewer
+from src.viewer import EMViewer, MAViewer
 from src.ui.snr_plot import SnrPlot
 from src.ui.project_table import ProjectTable
 from src.ui.models.json_tree import JsonModel
@@ -39,7 +39,7 @@ class ProjectTab(QWidget):
         self.parent = parent
         self.viewer= None
         # self.viewer0 = None
-        self.dm = self.parent.dm = dm
+        self.dm = self.parent.dm = cfg.dm = dm
         self.parent.pt = cfg.pt = self
         self.path = self.dm.data_location
         self.setUpdatesEnabled(True)
@@ -165,6 +165,7 @@ class ProjectTab(QWidget):
     # def _refresh(self, index=None):
     def refreshTab(self):
         logger.info(f'[{inspect.stack()[1].function}]')
+        logger.critical(f"\n\n[{inspect.stack()[1].function}] Refreshing Tab...\n")
         index = self.wTabs.currentIndex()
         self.dm['state']['blink'] = False
         # self.matchPlayTimer.stop()
