@@ -64,9 +64,13 @@ class ProjectTab(QWidget):
         self.wTabs.currentChanged.connect(self._onTabChange)
         self.mp_colors = cfg.glob_colors
         self._allow_zoom_change = True
+        self.dm.signals.zposChanged.connect(lambda: print(f'Z-position changed...'))
         self.dm.signals.zposChanged.connect(self.parent.updateSlidrZpos)
         self.dm.signals.zposChanged.connect(self.parent.setSignalsPixmaps)
         self.dm.signals.zposChanged.connect(self.parent.setTargKargPixmaps)
+        self.dm.signals.zposChanged.connect(self.dataUpdateMA) #1111+
+        self.dm.signals.zposChanged.connect(self.forceFocus) #1111+
+
 
         self.dm.signals.savedChanged.connect(self.parent.setStatusInfo)
         self.dm.signals.dataChanged.connect(self.parent.setStatusInfo)
@@ -90,6 +94,19 @@ class ProjectTab(QWidget):
 
         # self.installEventFilter(self)
         self.parent.addGlobTab(self, self.dm.title, switch_to=True)
+
+
+    #1111+
+    def forceFocus(self):
+        logger.info('')
+        logger.debug('Forcing focus...')
+        if self.wTabs.currentIndex() == 1:
+            # self.webengine1.setFocus()
+            self.parent.setFocus()
+            self.viewer.set_layer()
+
+
+
         
 
     def updateAaButtons(self):
@@ -117,6 +134,7 @@ class ProjectTab(QWidget):
 
                 except:
                     print_exception()
+        print('<<', flush=True)
 
     def load_data_from_treeview(self):
         self.dm = DataModel(self.mdlTreeview.to_json())
@@ -158,7 +176,6 @@ class ProjectTab(QWidget):
         elif index == 4:
             self.updateTreeWidget()
             self.mdlTreeview.jumpToLayer()
-        # self.parent.dataUpdateWidgets() #0805-
         logger.info(f"<<<< _onTabChange")
 
 
@@ -196,8 +213,6 @@ class ProjectTab(QWidget):
             self.treeview.collapseAll()
             self.updateTreeWidget()
             self.mdlTreeview.jumpToLayer()
-        self.parent.dataUpdateWidgets() #Todo might be redundant thumbail redraws
-        # QApplication.processEvents() #1015-
 
 
     def shutdownNeuroglancer(self):
@@ -365,7 +380,7 @@ class ProjectTab(QWidget):
             # self.dataUpdateMA()
             if self.parent.dwSnr.isVisible():
                 self.dSnr_plot.initSnrPlot()
-            self.parent.dataUpdateWidgets()
+            self.refreshTab()
         self.bSaveSettings.clicked.connect(_save)
 
         tip = "Save settings for all sections"
@@ -382,7 +397,7 @@ class ProjectTab(QWidget):
             # self.dataUpdateMA()
             if self.parent.dwSnr.isVisible():
                 self.dSnr_plot.initSnrPlot()
-            self.parent.dataUpdateWidgets()
+            self.refreshTab()
         self.bSaveAllSettings.clicked.connect(_saveAll)
         self.bSaveAllSettings.setEnabled(False)
 
@@ -844,7 +859,6 @@ class ProjectTab(QWidget):
                 elif self.twMethod.currentIndex() == 1:
                     mo = self.dm['level_data'][s]['method_presets']['manual']  # Todo ...not similar to this
                     self.dm['stack'][l]['levels'][s]['swim_settings']['method_opts'] = copy.deepcopy(mo)
-                # self.parent.dataUpdateWidgets() #1019-
                 self.dataUpdateMA() #1019+ #Critical
                 self.viewer1.drawSWIMwindow()  # 1019+
                 self.webengine1.setFocus()
@@ -2037,92 +2051,102 @@ class ProjectTab(QWidget):
         self.gifPlayer.radiobuttons.setVisible(os.path.exists(self.dm.path_cafm_gif()))
 
         ready = self.dm['level_data'][self.dm.scale]['alignment_ready']
-        if self.dm.is_alignable() and ready:
-            self.swMethod.setCurrentIndex(0)
-            # self.btnsSWIM.show()
-            # self.bPull.setVisible((self.dm.scale != self.dm.coarsest_scale_key()) and self.dm.is_alignable())
-            self.bApplyOne.show()
-            self.bSaveSettings.show()
-            self.bSaveAllSettings.show()
-            self.checkboxes.show()
-            ss = self.dm['stack'][self.dm.zpos]['levels'][self.dm.scale]['swim_settings']
-            if self.dm.current_method == 'grid':
-                # self.swMethod.setCurrentIndex(0)
-                self.twMethod.setCurrentIndex(0)
 
-                siz1x1 = ss['method_opts']['size_1x1']
-                min_dim = self.dm.image_size()[0]
-                self.le1x1.setValidator(QIntValidator(128, min_dim))
-                self.le1x1.setText(str(siz1x1[0]))
-                self.slider1x1.setMaximum(int(min_dim))
-                self.slider1x1.setValue(int(siz1x1[0]))
 
-                siz2x2 = ss['method_opts']['size_2x2']
-                self.le2x2.setValidator(QIntValidator(64, int(min_dim / 2)))
-                self.le2x2.setText(str(siz2x2[0]))
-                self.slider2x2.setMaximum(int(min_dim / 2))
-                self.slider2x2.setValue(siz2x2[0])
-
-                use = ss['method_opts']['quadrants']
-                self.Q1.setActivated(use[0])
-                self.Q2.setActivated(use[1])
-                self.Q3.setActivated(use[2])
-                self.Q4.setActivated(use[3])
-
-            elif self.dm.current_method == 'manual':
-                # self.swMethod.setCurrentIndex(1)
-                self.twMethod.setCurrentIndex(1)
+        if self.wTabs.currentIndex() == 1: #1111 This should make a huge difference
+            if self.dm.is_alignable() and ready:
                 self.swMethod.setCurrentIndex(0)
-                # Todo update with either 'point' or 'region' selection mode
-                # self.rbHint.setChecked(self.dm.current_method == 'manual_hint')
-                self._updatePointLists()
-                img_w, _ = self.dm.image_size()
-                val = self.dm.manual_swim_window_px()
-                self.leMatch.setValidator(QIntValidator(64, img_w))
-                self.leMatch.setText(str(val))  # Todo
-                self.sliderMatch.setMaximum(img_w)
-                self.sliderMatch.setValue(val)  # Todo
 
-            self.updateAaButtons()
+                if hasattr(self, 'viewer'): #1111+
+                    try:
+                        self.viewer.drawSWIMwindow()
+                    except:
+                        print_exception()
 
-            self.cbDefaults.setChecked(self.dm.isDefaults())
-            self.cbSaved.setChecked(self.dm.ssSavedComports())
+                # self.btnsSWIM.show()
+                # self.bPull.setVisible((self.dm.scale != self.dm.coarsest_scale_key()) and self.dm.is_alignable())
+                self.bApplyOne.show()
+                self.bSaveSettings.show()
+                self.bSaveAllSettings.show()
+                self.checkboxes.show()
+                ss = self.dm['stack'][self.dm.zpos]['levels'][self.dm.scale]['swim_settings']
+                if self.dm.current_method == 'grid':
+                    # self.swMethod.setCurrentIndex(0)
+                    self.twMethod.setCurrentIndex(0)
 
-            self.bTransform.setEnabled(self.dm.is_aligned())
-            # self.bApplyOne.setEnabled(self.dm.is_aligned() and not os.path.exists(self.dm.path_aligned()))
+                    siz1x1 = ss['method_opts']['size_1x1']
+                    min_dim = self.dm.image_size()[0]
+                    self.le1x1.setValidator(QIntValidator(128, min_dim))
+                    self.le1x1.setText(str(siz1x1[0]))
+                    self.slider1x1.setMaximum(int(min_dim))
+                    self.slider1x1.setValue(int(siz1x1[0]))
 
-            self.clTra.setText(f'[{self.dm.zpos}] {self.dm.name()} (Transforming)')
-            if self.dm.skipped():
+                    siz2x2 = ss['method_opts']['size_2x2']
+                    self.le2x2.setValidator(QIntValidator(64, int(min_dim / 2)))
+                    self.le2x2.setText(str(siz2x2[0]))
+                    self.slider2x2.setMaximum(int(min_dim / 2))
+                    self.slider2x2.setValue(siz2x2[0])
+
+                    use = ss['method_opts']['quadrants']
+                    self.Q1.setActivated(use[0])
+                    self.Q2.setActivated(use[1])
+                    self.Q3.setActivated(use[2])
+                    self.Q4.setActivated(use[3])
+
+                elif self.dm.current_method == 'manual':
+                    # self.swMethod.setCurrentIndex(1)
+                    self.twMethod.setCurrentIndex(1)
+                    self.swMethod.setCurrentIndex(0)
+                    # Todo update with either 'point' or 'region' selection mode
+                    # self.rbHint.setChecked(self.dm.current_method == 'manual_hint')
+                    self._updatePointLists()
+                    img_w, _ = self.dm.image_size()
+                    val = self.dm.manual_swim_window_px()
+                    self.leMatch.setValidator(QIntValidator(64, img_w))
+                    self.leMatch.setText(str(val))  # Todo
+                    self.sliderMatch.setMaximum(img_w)
+                    self.sliderMatch.setValue(val)  # Todo
+
+                self.updateAaButtons()
+
+                self.cbDefaults.setChecked(self.dm.isDefaults())
+                self.cbSaved.setChecked(self.dm.ssSavedComports())
+
+                self.bTransform.setEnabled(self.dm.is_aligned())
+                # self.bApplyOne.setEnabled(self.dm.is_aligned() and not os.path.exists(self.dm.path_aligned()))
+
                 self.clTra.setText(f'[{self.dm.zpos}] {self.dm.name()} (Transforming)')
-                self.clRef.setText(f'--')
+                if self.dm.skipped():
+                    self.clTra.setText(f'[{self.dm.zpos}] {self.dm.name()} (Transforming)')
+                    self.clRef.setText(f'--')
+                else:
+                    try:
+                        self.clRef.setText(f'[{self.dm.get_ref_index()}] {self.dm.name_ref()} (Reference)')
+                    except:
+                        self.clRef.setText(f'Null (Reference)')
+
+                self.leWhitening.setText(str(ss['whitening']))
+                self.leIterations.setText(str(ss['iterations']))
+                self.cbClobber.setChecked(bool(ss['clobber']))
+                self.leClobber.setText(str(ss['clobber_size']))
+                self.leClobber.setEnabled(self.cbClobber.isChecked())
+
+                if self.teLogs.isVisible():
+                    self.refreshLogs()
+
+                # if self.wTabs.currentIndex() == 1:
+                #     self.viewer1.drawSWIMwindow()
+
             else:
-                try:
-                    self.clRef.setText(f'[{self.dm.get_ref_index()}] {self.dm.name_ref()} (Reference)')
-                except:
-                    self.clRef.setText(f'Null (Reference)')
+                self.swMethod.setCurrentIndex(1)
+                self.bApplyOne.hide()
+                self.bSaveSettings.hide()
+                self.bSaveAllSettings.hide()
+                self.checkboxes.hide()
+            # if hasattr(self, 'viewer1'):
+            #     self.viewer1.drawSWIMwindow() #1009+
 
-            self.leWhitening.setText(str(ss['whitening']))
-            self.leIterations.setText(str(ss['iterations']))
-            self.cbClobber.setChecked(bool(ss['clobber']))
-            self.leClobber.setText(str(ss['clobber_size']))
-            self.leClobber.setEnabled(self.cbClobber.isChecked())
-
-            if self.teLogs.isVisible():
-                self.refreshLogs()
-
-            # if self.wTabs.currentIndex() == 1:
-            #     self.viewer1.drawSWIMwindow()
-
-        else:
-            self.swMethod.setCurrentIndex(1)
-            self.bApplyOne.hide()
-            self.bSaveSettings.hide()
-            self.bSaveAllSettings.hide()
-            self.checkboxes.hide()
-        # if hasattr(self, 'viewer1'):
-        #     self.viewer1.drawSWIMwindow() #1009+
-
-        self.parent.updateMS()
+        self.parent.updateMS() #Todo
 
 
     def _updatePointLists(self):

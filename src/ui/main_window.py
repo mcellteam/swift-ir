@@ -558,171 +558,160 @@ class MainWindow(QMainWindow):
             self.setTargKargPixmaps()
 
     def setSignalsPixmaps(self, z=None):
-
         if self.dwMatches.isVisible():
-            if not hasattr(cfg, 'dm'):
-                return
+            if self._isProjectTab():
+                if z == None: z = self.dm.zpos
+                if not self._isProjectTab():
+                    logger.warning('Not a project tab')
+                    return
 
-            if z == None: z = self.dm.zpos
-            if not self._isProjectTab():
-                logger.warning('Not a project tab')
-                return
+                caller = inspect.stack()[1].function
+                # logger.info(f'[{caller}]')
 
-            caller = inspect.stack()[1].function
-            # logger.info(f'[{caller}]')
-
-            thumbs = self.dm.get_signals_filenames(l=z)
-            snr_vals = copy.deepcopy(self.dm.snr_components(l=z))
-            # logger.info(f'snr_vals = {snr_vals}')
-            count = 0
-            for i in range(4):
-                if not self.pt.sigList[i]._noImage:
-                    self.pt.sigList[i].set_no_image()
-
-            method = self.dm.method(l=z)
-            # if method == 'grid_custom':
-            if method == 'grid':
-                regions = self.dm.quadrants
-                names = self.dm.get_grid_filenames(l=z)
-                # logger.critical(f'# names: {len(names)}')
-                # logger.critical(f'snr vals: {snr_vals}')
-                # logger.critical(f'name:\n{names}')
-                for i in range(4):
-                    if regions[i]:
-                        try:
-                            try:
-                                snr = snr_vals[count]
-                                assert snr > 0.0
-                            except:
-                                self.pt.sigList[i].set_no_image()
-                                continue
-                            # logger.info(f'Setting data for {names[i]}, snr={float(snr)}')
-                            self.pt.sigList[i].set_data(path=names[i], snr=float(snr))
-                            self.pt.sigList[i].update()
-                            count += 1
-                        except:
-                            print_exception()
-                            logger.warning('There was a problem with index %d...' % i)
-                            logger.warning('%s' % (names[i]))
-                    else:
-                        self.pt.sigList[i].set_no_image()
-                        # self.pt.sigList[i].update()
-
-            # elif self.dm.current_method == 'manual-hint':
-            #     self.dm.snr_components()
-            elif method == 'manual_strict':
+                thumbs = self.dm.get_signals_filenames(l=z)
+                snr_vals = copy.deepcopy(self.dm.snr_components(l=z))
+                # logger.info(f'snr_vals = {snr_vals}')
+                count = 0
                 for i in range(4):
                     if not self.pt.sigList[i]._noImage:
                         self.pt.sigList[i].set_no_image()
-                        # self.pt.sigList[i].update()
 
-            elif method == 'manual':
-                #Todo #mode check mode for hint vs strict
-                indexes = []
-                for n in thumbs:
-                    fn, _ = os.path.splitext(n)
-                    indexes.append(int(fn[-1]))
-
-                for i in range(0,4):
-                    if i in indexes:
-                        try:
+                method = self.dm.method(l=z)
+                # if method == 'grid_custom':
+                if method == 'grid':
+                    regions = self.dm.quadrants
+                    names = self.dm.get_grid_filenames(l=z)
+                    # logger.critical(f'# names: {len(names)}')
+                    # logger.critical(f'snr vals: {snr_vals}')
+                    # logger.critical(f'name:\n{names}')
+                    for i in range(4):
+                        if regions[i]:
                             try:
-                                snr = snr_vals.pop(0)
-                                assert snr > 0.0
+                                try:
+                                    snr = snr_vals[count]
+                                    assert snr > 0.0
+                                except:
+                                    self.pt.sigList[i].set_no_image()
+                                    continue
+                                # logger.info(f'Setting data for {names[i]}, snr={float(snr)}')
+                                self.pt.sigList[i].set_data(path=names[i], snr=float(snr))
+                                self.pt.sigList[i].update()
+                                count += 1
                             except:
-                                # logger.info(f'no SNR data for corr signal index {i}')
-                                self.pt.sigList[i].set_no_image()
                                 print_exception()
-                                continue
-
-                            # self.pt.sigList[i].set_data(path=thumbs[i], snr=float(snr))
-                            self.pt.sigList[i].set_data(path=thumbs.pop(0), snr=float(snr))
-                        except:
-                            print_exception()
+                                logger.warning('There was a problem with index %d...' % i)
+                                logger.warning('%s' % (names[i]))
+                        else:
                             self.pt.sigList[i].set_no_image()
-                            logger.warning(f'There was a problem with index {i}, {thumbs[i]}')
-                        # finally:
-                        #     self.pt.sigList[i].update()
-                    else:
-                        self.pt.sigList[i].set_no_image()
-                        # self.pt.sigList[i].update()
-            self.dwMatches.update()
+                            # self.pt.sigList[i].update()
+
+                # elif self.dm.current_method == 'manual-hint':
+                #     self.dm.snr_components()
+                elif method == 'manual_strict':
+                    for i in range(4):
+                        if not self.pt.sigList[i]._noImage:
+                            self.pt.sigList[i].set_no_image()
+                            # self.pt.sigList[i].update()
+
+                elif method == 'manual':
+                    #Todo #mode check mode for hint vs strict
+                    indexes = []
+                    for n in thumbs:
+                        fn, _ = os.path.splitext(n)
+                        indexes.append(int(fn[-1]))
+
+                    for i in range(0,4):
+                        if i in indexes:
+                            try:
+                                try:
+                                    snr = snr_vals.pop(0)
+                                    assert snr > 0.0
+                                except:
+                                    # logger.info(f'no SNR data for corr signal index {i}')
+                                    self.pt.sigList[i].set_no_image()
+                                    print_exception()
+                                    continue
+
+                                # self.pt.sigList[i].set_data(path=thumbs[i], snr=float(snr))
+                                self.pt.sigList[i].set_data(path=thumbs.pop(0), snr=float(snr))
+                            except:
+                                print_exception()
+                                self.pt.sigList[i].set_no_image()
+                                logger.warning(f'There was a problem with index {i}, {thumbs[i]}')
+                            # finally:
+                            #     self.pt.sigList[i].update()
+                        else:
+                            self.pt.sigList[i].set_no_image()
+                            # self.pt.sigList[i].update()
+                self.dwMatches.update()
 
 
     def setTargKargPixmaps(self, z=None):
-
         if self.dwMatches.isVisible():
+            if self._isProjectTab():
+                if z == None:
+                    z = self.dm.zpos
 
-            if not hasattr(cfg, 'dm'):
-                return
+                # caller = inspect.stack()[1].function
+                # logger.info(f'[{caller}]')
 
-            if z == None:
-                z = self.dm.zpos
+                # basename = self.dm.name()
+                # path, extension = os.path.splitext(basename)
+                basename = self.dm.name(l=z)
+                filename, extension = os.path.splitext(basename)
 
-            caller = inspect.stack()[1].function
-            # logger.info(f'[{caller}]')
+                for i in range(4):
+                    self.pt.matchesList[i].set_no_image()
 
-            # logger.info('')
-            # caller = inspect.stack()[1].function
-            # logger.critical(f'setTargKargPixmaps [{caller}] >>>>')
+                if self.dm.skipped(l=z):
+                    return
 
-            # basename = self.dm.name()
-            # path, extension = os.path.splitext(basename)
-            basename = self.dm.name(l=z)
-            filename, extension = os.path.splitext(basename)
+                # for i in range(4):
+                #     if not self.pt.matchesList[i]._noImage:
+                #         self.pt.matchesList[i].set_no_image()
 
-            for i in range(4):
-                self.pt.matchesList[i].set_no_image()
+                if getData('state,targ_karg_toggle'):
+                    tkarg = 'k'
+                else:
+                    tkarg = 't'
 
-            if self.dm.skipped(l=z):
-                return
-
-            # for i in range(4):
-            #     if not self.pt.matchesList[i]._noImage:
-            #         self.pt.matchesList[i].set_no_image()
-
-            if getData('state,targ_karg_toggle'):
-                tkarg = 'k'
-            else:
-                tkarg = 't'
-
-            method = self.dm.current_method
-            files = []
-            dir_matches = self.dm.dir_matches()
-            for i in range(0, 4):
-                name = '%s_%s_%s_%d%s' % (filename, method, tkarg, i, extension)
-                files.append((i, os.path.join(dir_matches, name)))
-
-            # logger.info(f'Files:\n{files}')
-
-            if method == 'grid':
-                # for i in range(n_cutouts):
+                method = self.dm.current_method
+                files = []
+                dir_matches = self.dm.dir_matches()
                 for i in range(0, 4):
-                    use = self.dm.quadrants[i]
+                    name = '%s_%s_%s_%d%s' % (filename, method, tkarg, i, extension)
+                    files.append((i, os.path.join(dir_matches, name)))
 
-                    # logger.info(f'file  : {files[i]}  exists? : {os.path.exists(files[i])}  use? : {use}')
-                    path = os.path.join(self.dm.data_location, 'matches', self.dm.scale, files[i][1])
-                    if use and os.path.exists(path):
-                        self.pt.matchesList[i].path = path
-                        try:
-                            # self.pt.matchesList[i].showPixmap()
-                            self.pt.matchesList[i].set_data(path)
-                        except:
+                # logger.info(f'Files:\n{files}')
+
+                if method == 'grid':
+                    # for i in range(n_cutouts):
+                    for i in range(0, 4):
+                        use = self.dm.quadrants[i]
+
+                        # logger.info(f'file  : {files[i]}  exists? : {os.path.exists(files[i])}  use? : {use}')
+                        path = os.path.join(self.dm.data_location, 'matches', self.dm.scale, files[i][1])
+                        if use and os.path.exists(path):
+                            self.pt.matchesList[i].path = path
+                            try:
+                                # self.pt.matchesList[i].showPixmap()
+                                self.pt.matchesList[i].set_data(path)
+                            except:
+                                self.pt.matchesList[i].set_no_image()
+                        else:
                             self.pt.matchesList[i].set_no_image()
-                    else:
-                        self.pt.matchesList[i].set_no_image()
-                    self.pt.matchesList[i].show()
+                        self.pt.matchesList[i].show()
 
-            if self.dm.current_method == 'manual':
-                # self.pt.matchesList[3].hide()
-                for i in range(0, 3):
-                    path = os.path.join(self.dm.data_location, 'matches', self.dm.scale, files[i][1])
-                    if os.path.exists(path):
-                        self.pt.matchesList[i].path = path
-                        self.pt.matchesList[i].set_data(path)
-                    else:
-                        self.pt.matchesList[i].set_no_image()
-            self.dwMatches.update()
+                if self.dm.current_method == 'manual':
+                    # self.pt.matchesList[3].hide()
+                    for i in range(0, 3):
+                        path = os.path.join(self.dm.data_location, 'matches', self.dm.scale, files[i][1])
+                        if os.path.exists(path):
+                            self.pt.matchesList[i].path = path
+                            self.pt.matchesList[i].set_data(path)
+                        else:
+                            self.pt.matchesList[i].set_no_image()
+                self.dwMatches.update()
 
     def callbackDwVisibilityChanged(self):
         logger.debug('')
@@ -1386,80 +1375,61 @@ class MainWindow(QMainWindow):
         self.statusBar.showMessage(status_msg)
 
 
+    def ifDwThumbsIsVisible(self, dm):
+        if self.dwThumbs.isVisible():
+            self.pt.tn_tra.set_data(path=dm.path_thumb())
+            self.pt.tn_tra_lab.setText(f'Transforming Section (Thumbnail)\n'
+                                       f'[{dm.zpos}] {dm.name()}')
+            if dm.skipped():
+                self.pt.tn_ref_lab.setText(f'--')
+                if not self.pt.tn_tra_overlay.isVisible():
+                    self.pt.tn_tra_overlay.show()
+                self.pt.tn_ref.hide()
+                self.pt.tn_ref_lab.hide()
+            else:
+                self.pt.tn_ref_lab.setText(f'Reference Section (Thumbnail)\n'
+                                           f'[{dm.zpos}] {dm.name_ref()}')
+                if self.pt.tn_tra_overlay.isVisible():
+                    self.pt.tn_tra_overlay.hide()
+                self.pt.tn_ref.set_data(path=dm.path_thumb_ref())
+                self.pt.tn_ref.show()
+                self.pt.tn_ref_lab.show()
+
+
+
 
     # def dataUpdateWidgets(self, ng_layer=None, silently=False) -> None:
-    @Slot(name='dataUpdateWidgets-slot-name')
+    # @Slot(name='dataUpdateWidgets-slot-name')
     def dataUpdateWidgets(self) -> None:
-        '''Reads Project Data to Update MainWindow.'''
         logger.info('')
-        caller = inspect.stack()[1].function
-        # if DEV:
-        #     caller = inspect.stack()[1].function
-        #     logger.info(f'caller: {caller} sender: {self.sender()}')
-
-        if self._working:
-            logger.warning("Busy working! Not going to update the entire interface rn.")
-            return
-
-        if self._isProjectTab():
-            dm = self.pt.dm
-            #CriticalMechanism
-            if 'src.data_model.Signals' in str(self.sender()):
-                # timerActive = self.uiUpdateTimer.isActive()
-                if self.uiUpdateTimer.isActive():
-                    # logger.warning('Delaying UI Update [viewer_em.WorkerSignals]...')
-                    return
-                else:
-                    self.uiUpdateTimer.start()
-                    logger.info('Updating UI on timeout...')
-
-            # self._uiUpdateCalls += 1
-            # logger.critical(f"[call # {self._uiUpdateCalls}, {caller}] Updating UI...")
-
-            if self.dwThumbs.isVisible():
-                self.pt.tn_tra.set_data(path=dm.path_thumb())
-                self.pt.tn_tra_lab.setText(f'Transforming Section (Thumbnail)\n'
-                                          f'[{dm.zpos}] {dm.name()}')
-                if dm.skipped():
-                    self.pt.tn_ref_lab.setText(f'--')
-                    if not self.pt.tn_tra_overlay.isVisible():
-                        self.pt.tn_tra_overlay.show()
-                    self.pt.tn_ref.hide()
-                    self.pt.tn_ref_lab.hide()
-                else:
-                    self.pt.tn_ref_lab.setText(f'Reference Section (Thumbnail)\n'
-                          f'[{dm.zpos}] {dm.name_ref()}')
-                    if self.pt.tn_tra_overlay.isVisible():
-                        self.pt.tn_tra_overlay.hide()
-                    self.pt.tn_ref.set_data(path=dm.path_thumb_ref())
-                    self.pt.tn_ref.show()
-                    self.pt.tn_ref_lab.show()
-
-            if self.dwNotes.isVisible():
-                self.updateNotes()
-
-            self.updateMS()
-
-            # self.setStatusInfo()
-
-            if floor(self.viewer.state.position[0]) != dm.zpos:
-                self.viewer.set_layer()
-
-
-            _tab = self.pt.wTabs.currentIndex()
-            if _tab == 0:
-                self.pt._overlayLab.setVisible(dm.skipped()) #Todo find/fix
-
-            elif _tab == 1:
-                # self.pt.viewer1.set_layer()
-                self.pt.dataUpdateMA()
-
-            elif _tab == 2:
-                self.pt.snr_plot.updateLayerLinePos()
-
-            elif _tab == 4:
-                self.pt.mdlTreeview.jumpToLayer()
-            self.setFocus()
+        pass
+    #     '''Reads Project Data to Update MainWindow.
+    #
+    #     Must deprecate. Move to Refresh where necessary...
+    #
+    #     '''
+    #
+    #     if self._isProjectTab():
+    #         dm = self.pt.dm
+    #
+    #         self.ifDwThumbsIsVisible(dm)
+    #         if self.dwNotes.isVisible():
+    #             self.updateNotes()
+    #         self.updateMS()
+    #         # self.setStatusInfo()
+    #         if floor(self.viewer.state.position[0]) != dm.zpos:
+    #             self.viewer.set_layer()
+    #         _tab = self.pt.wTabs.currentIndex()
+    #         if _tab == 0:
+    #             self.pt._overlayLab.setVisible(dm.skipped()) #Todo find/fix
+    #         elif _tab == 1:
+    #             # self.pt.viewer1.set_layer()
+    #             self.pt.dataUpdateMA()
+    #         elif _tab == 2:
+    #             self.pt.snr_plot.updateLayerLinePos()
+    #         elif _tab == 4:
+    #             self.pt.mdlTreeview.jumpToLayer()
+    #         self.setFocus()
 
 
     def updateNotes(self):
@@ -1650,8 +1620,8 @@ class MainWindow(QMainWindow):
                     self.pt.project_table.initTableData()
 
                 self.updateEnabledButtons()
-                self.dataUpdateWidgets()
                 self.pt.updateZarrRadiobuttons()
+                self.dataUpdateWidgets()
                 # self.pt.project_table.veil()
 
                 # self.pt.dataUpdateMA() #1019-
@@ -1672,8 +1642,6 @@ class MainWindow(QMainWindow):
     
     
     '''
-
-
 
     def export_afms(self):
         if self.pt:
@@ -1933,11 +1901,6 @@ class MainWindow(QMainWindow):
         self.browser_web.setUrl(QUrl(text))
         self.main_stack_widget.setCurrentIndex(1)
 
-    # def view_swiftir_examples(self):
-    #     self.browser_web.setUrl(
-    #         QUrl('https://github.com/mcellteam/swift-ir/blob/development_ng/docs/user/command_line/examples/README.md'))
-    #     self.main_stack_widget.setCurrentIndex(1)
-
     def view_zarr_drawing(self):
         path = 'https://github.com/zarr-developers/zarr-specs/blob/main/docs/v3/core/terminology-read.excalidraw.png'
 
@@ -2115,31 +2078,12 @@ class MainWindow(QMainWindow):
                 return f"N/A"
                 print_exception()
 
-    def get_ng_state_raw(self):
-        if self.pt:
-            try:
-                if ng.is_server_running():
-                    return f"Raw Viewer State:\n{cfg.viewer0.config_state.raw_state}"
-                else:
-                    return f"Neuroglancer Is Not Running."
-            except:
-                return f"N/A"
-                print_exception()
 
     def browser_reload(self):
         try:
             self.ng_browser.reload()
         except:
             print_exception()
-
-    def dump_ng_details(self):
-        if self.pt:
-            if not ng.is_server_running():
-                logger.warning('Neuroglancer is not running')
-                return
-            v = cfg.viewer0
-            self.tell("v.position: %s\n" % str(v.state.position))
-            self.tell("v.config_state: %s\n" % str(v.config_state))
 
 
     def _callbk_skipChanged(self, state: int):  # 'state' is connected to skipped toggle
