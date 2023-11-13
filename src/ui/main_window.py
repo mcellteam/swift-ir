@@ -1354,7 +1354,7 @@ class MainWindow(QMainWindow):
             if self.dwSnr.isVisible():
                 self.pt.dSnr_plot.updateLayerLinePos()
             if cfg.viewer0:
-                cfg.viewer0.set_layer(self.dm.zpos)
+                cfg.viewer0.set_layer()
             self.dataUpdateWidgets()
             if self.pt.wTabs.currentIndex() == 1:
                 self.pt.gifPlayer.set()

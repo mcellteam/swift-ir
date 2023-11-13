@@ -841,6 +841,9 @@ class align_ingredient:
 
     def run_manual_mir(self):
         mir_script_mp = ''
+        print(f"----\n"
+              f"len(self.psta): {len(self.psta)}\n"
+              f"self.psta: {self.psta}")
         for i in range(len(self.psta[0])):
             if self.psta[0][i] and self.psta[1][i]:
                 mir_script_mp += f'{self.psta[0][i]} {self.psta[1][i]} ' \

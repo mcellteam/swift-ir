@@ -199,7 +199,10 @@ class AbstractEMViewer(neuroglancer.Viewer):
             z = self.dm.zpos
         with self.txn() as s:
             vc = s.voxel_coordinates
-            vc[0] = z + 0.5
+            try:
+                vc[0] = z + 0.5
+            except TypeError:
+                pass
         self._blockStateChanged = False
 
     @abc.abstractmethod
@@ -585,33 +588,35 @@ class MAViewer(AbstractEMViewer):
     def z(self):
         return int(self.state.voxel_coordinates[0]) # self.state.position[0]
 
-    def set_layer(self, z=None):
+    def set_layer(self):
         caller = inspect.stack()[1].function
         self._blockStateChanged = True
-        if z:
-            self.index = z
-        elif self.role == 'ref':
+
+        if self.role == 'ref':
             self.index = self.dm.get_ref_index()
         else:
             self.index = self.dm.zpos
         logger.info(f"[{caller}] Setting Z-position [{self.index}]")
         with self.txn() as s:
             vc = s.voxel_coordinates
-            vc[0] = self.index + 0.5
-        self._blockStateChanged = False
-        print(f"<< set_layer --> drawSWIMwindow...", flush=True)
+            try:
+                vc[0] = self.index + 0.5
+            except TypeError:
+                pass
+
         self.drawSWIMwindow() #1111+
+        print(f"<< set_layer")
+        # self.signals.zVoxelCoordChanged.emit(self.index)
+        self._blockStateChanged = False
+
 
 
 
     def initViewer(self):
         logger.info('')
-        self._blockStateChanged = True  # Critical #Always
-
-        if self.role == 'ref':
-            self.index = self.dm.get_ref_index()
-        else:
-            self.index = self.dm.zpos
+        self._blockStateChanged = True
+        ref = self.dm.get_ref_index()
+        self.index = ref if self.role == 'ref' else self.dm.zpos
 
         try:
             self.store = self.tensor = self.getTensor(self.path).result()
@@ -624,24 +629,19 @@ class MAViewer(AbstractEMViewer):
         with self.txn() as s:
             s.layout.type = 'yz'
             s.show_scale_bar = True
-            s.show_axis_lines = True
+            s.show_axis_lines = False
             s.show_default_annotations = False
-            _, y, x = self.store.shape
+            _, y, x = self.tensor.shape
             s.voxel_coordinates = [self.index + .5, y / 2, x / 2]
             s.layers['layer'] = ng.ImageLayer(source=self.LV, shader=self.dm['rendering']['shader'], )
 
-
-        self.drawSWIMwindow()
-
         w = self.parent.wNg1.width()
         h = self.parent.wNg1.height()
-
         self.initZoom(w=w, h=h)
-
-        self._blockStateChanged = False
-
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
+        self.drawSWIMwindow()
         self.webengine.setFocus()
+        self._blockStateChanged = False
 
     def on_state_changed(self):
         print(f'[{self.role}]')
@@ -728,7 +728,7 @@ class MAViewer(AbstractEMViewer):
         # if z == self.dm.first_included(): #1025-
         #     return
         self._blockStateChanged = True
-        # self.undrawSWIMwindows()
+        self.undrawSWIMwindows()
         m = self.marker_size
         level_val = self.dm.lvl()
         method = self.dm.current_method
@@ -791,10 +791,9 @@ class MAViewer(AbstractEMViewer):
             )
 
         self._blockStateChanged = False
-        # self.webengine.setFocus() #1111-
+        self.webengine.setFocus() #1111-
         # cfg.mw.setFocus()
-        # logger.info('<<')
-        # print('<<')
+        print('<< drawSWIMwindows')
 
     def undrawSWIMwindows(self):
         with self.txn() as s:
