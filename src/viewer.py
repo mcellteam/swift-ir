@@ -274,7 +274,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
         if not os.path.exists(path):
             logger.warning(f"Path Not Found: {path}")
             return None
-        logger.info(f'Requested: {path}')
+        logger.debug(f'Requested: {path}')
         total_bytes_limit = 256_000_000_000  # Lonestar6: 256 GB (3200 MT/level) DDR4
         future = ts.open({
             'dtype': 'uint8',
@@ -328,24 +328,24 @@ class AbstractEMViewer(neuroglancer.Viewer):
             s.position = pos
 
     def setHelpMenu(self, b):
-        logger.info(f"b = {b}")
+        logger.debug(f"b = {b}")
         state = copy.deepcopy(self.state)
         state.help_panel.visible = bool(b)
         self.set_state(state)
 
     def _keySpace(self, s):
-        logger.info("Native spacebar keybinding intercepted!")
+        logger.debug("Native spacebar keybinding intercepted!")
         # if self.dm.method() == 'manual':
         self.signals.toggleView.emit()
         self.webengine.setFocus()
 
     def _ctlMousedown(self, s):
-        logger.info("Native control+mousedown keybinding intercepted!")
+        logger.debug("Native control+mousedown keybinding intercepted!")
         # if self.dm.method() == 'manual':
         self.webengine.setFocus()
 
     def _ctlClick(self, s):
-        logger.info("Native control+click keybinding intercepted!")
+        logger.debug("Native control+click keybinding intercepted!")
         self.webengine.setFocus()
 
     def zoom(self):
@@ -353,7 +353,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
     def set_zoom(self, val):
         caller = inspect.stack()[1].function
-        logger.info(f'Setting zoom to {caller}')
+        logger.debug(f'Setting zoom to {caller}')
         self._blockStateChanged = True
         with self.txn() as s:
             s.crossSectionScale = val
@@ -420,10 +420,10 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
 
     def initZoom(self, w, h, adjust=1.10):
-        logger.info('')
+        logger.debug('')
         if self.tensor:
             if self._cs_scale:
-                logger.info(f'w={w}, h={h}, cs_scale={self._cs_scale}')
+                logger.debug(f'w={w}, h={h}, cs_scale={self._cs_scale}')
                 with self.txn() as s:
                     s.cross_section_scale = self._cs_scale
             else:
@@ -454,14 +454,14 @@ class EMViewer(AbstractEMViewer):
     def on_state_changed(self):
 
         if not self._blockStateChanged:
-            logger.info('')
+            logger.debug('')
 
             _css = self.state.cross_section_scale
             if not isinstance(_css, type(None)):
                 val = (_css, _css * 250000000)[_css < .001]
                 if round(val, 2) != round(getData('state,neuroglancer,zoom'), 2):
                     if getData('state,neuroglancer,zoom') != val:
-                        logger.info(f'emitting zoomChanged! [{val:.4f}]')
+                        logger.debug(f'emitting zoomChanged! [{val:.4f}]')
                         setData('state,neuroglancer,zoom', val)
                         self.signals.zoomChanged.emit(val)
 
@@ -550,13 +550,13 @@ class PMViewer(AbstractEMViewer):
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
     def _left(self, s):
-        logger.info('')
+        logger.debug('')
         with self.txn() as s:
             vc = s.voxel_coordinates
             vc[0] = max(vc[0] - 1, 0)
 
     def _right(self, s):
-        logger.info('')
+        logger.debug('')
         with self.txn() as s:
             vc = s.voxel_coordinates
             vc[0] = min(vc[0] + 1, self.tensor.shape[0])
@@ -592,7 +592,7 @@ class MAViewer(AbstractEMViewer):
             self.index = self.dm.get_ref_index()
         else:
             self.index = self.dm.zpos
-        logger.info(f"[{caller}] Setting Z-position [{self.index}]")
+        logger.debug(f"[{caller}] Setting Z-position [{self.index}]")
         with self.txn() as s:
             vc = s.voxel_coordinates
             try:
@@ -609,7 +609,7 @@ class MAViewer(AbstractEMViewer):
 
 
     def initViewer(self):
-        logger.info('')
+        logger.debug('')
         self._blockStateChanged = True
         ref = self.dm.get_ref_index()
         self.index = ref if self.role == 'ref' else self.dm.zpos
@@ -641,7 +641,7 @@ class MAViewer(AbstractEMViewer):
 
     def on_state_changed(self):
         if not self._blockStateChanged:
-            # logger.info(f'[{self.role}]')
+            # logger.debug(f'[{self.role}]')
             self._blockStateChanged = True
 
             if self.state.cross_section_scale:
@@ -661,7 +661,7 @@ class MAViewer(AbstractEMViewer):
 
             elif self.role == 'tra':
                 if floor(self.state.position[0]) != self.index:
-                    logger.info(f"Signaling Z-position change...")
+                    logger.debug(f"Signaling Z-position change...")
                     self.index = floor(self.state.position[0])
                     self.dm.zpos = self.index
                     self.drawSWIMwindow()  # NeedThis #0803
@@ -669,35 +669,35 @@ class MAViewer(AbstractEMViewer):
                     # self.signals.zVoxelCoordChanged.emit(self.index)
 
             self._blockStateChanged = False
-            # logger.info('<< on_state_changed')
+            # logger.debug('<< on_state_changed')
 
 
     def _key1(self, s):
-        logger.info('')
+        logger.debug('')
         self.add_matchpoint(s, id=0, ignore_pointer=True)
         self.webengine.setFocus()
 
 
     def _key2(self, s):
-        logger.info('')
+        logger.debug('')
         self.add_matchpoint(s, id=1, ignore_pointer=True)
         self.webengine.setFocus()
 
 
     def _key3(self, s):
-        logger.info('')
+        logger.debug('')
         self.add_matchpoint(s, id=2, ignore_pointer=True)
         self.webengine.setFocus()
 
 
     def swim(self, s):
-        logger.info('[futures] Emitting SWIM signal...')
+        logger.debug('[futures] Emitting SWIM signal...')
         self.signals.swimAction.emit()
 
 
     def add_matchpoint(self, s, id, ignore_pointer=False):
         if self.dm.method() == 'manual':
-            logger.info('')
+            logger.debug('')
             # print('\n\n--> adding region selection -->\n')
             coords = np.array(s.mouse_voxel_coordinates)
             if coords.ndim == 0:
@@ -706,7 +706,7 @@ class MAViewer(AbstractEMViewer):
             _, y, x = s.mouse_voxel_coordinates
             frac_y = y / self.store.shape[1]
             frac_x = x / self.store.shape[2]
-            logger.info(f"decimal x = {frac_x}, decimal y = {frac_y}")
+            logger.debug(f"decimal x = {frac_x}, decimal y = {frac_y}")
             self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings']['method_opts']['points']['coords'][
                 self.role][id] = (frac_x, frac_y)
             self.signals.ptsChanged.emit()
@@ -715,7 +715,7 @@ class MAViewer(AbstractEMViewer):
 
     def drawSWIMwindow(self):
         caller = inspect.stack()[1].function
-        logger.info(f"[{caller}][{self.index}] Drawing SWIM windows...")
+        logger.debug(f"[{caller}][{self.index}] Drawing SWIM windows...")
         z = self.dm.zpos + 0.5
         self._blockStateChanged = True
         self.undrawSWIMwindows()
@@ -779,6 +779,7 @@ class MAViewer(AbstractEMViewer):
                 ''',
             )
         self._blockStateChanged = False
+        print("<< drawSWIMwindow", flush=True)
 
     def undrawSWIMwindows(self):
         with self.txn() as s:

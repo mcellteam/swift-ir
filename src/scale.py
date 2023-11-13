@@ -268,7 +268,7 @@ class ScaleWorker(QObject):
             logger.info(f"Elapsed Time: {dt:.3g}s")
 
         # self.hudMessage.emit('**** Autoscaling Complete ****')
-        self.hudMessage.emit(f'<span style="color: #FFFF66;"><b>**** Process Complete ****</b></span>')
+        self.hudMessage.emit(f'<span style="color: #FFFF66;"><b>**** All Processes Complete ****</b></span>')
         print(f"<==== Terminating Background Thread <====")
 
 def preallocate_zarr(zarr_od, name, shape, dtype, opts, scale):
