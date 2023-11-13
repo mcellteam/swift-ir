@@ -1074,8 +1074,8 @@ class DataModel:
             return [0] * len(self)
 
 
-    def delta_snr_list(self, before, after):
-        return [a_i - b_i for a_i, b_i in zip(before, after)]
+    def delta_snr_list(self, after, before):
+        return [a_i - b_i for a_i, b_i in zip(after, before)]
 
 
     def snr_components(self, s=None, l=None, method=None) -> list[float]:
