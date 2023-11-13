@@ -1401,20 +1401,26 @@ class MainWindow(QMainWindow):
     # def dataUpdateWidgets(self, ng_layer=None, silently=False) -> None:
     # @Slot(name='dataUpdateWidgets-slot-name')
     def dataUpdateWidgets(self) -> None:
+        '''Reads Project Data to Update MainWindow.
+        Must deprecate. Move to Refresh where necessary...
+        '''
         logger.info('')
-        pass
-    #     '''Reads Project Data to Update MainWindow.
-    #
-    #     Must deprecate. Move to Refresh where necessary...
-    #
-    #     '''
+        if self._isProjectTab():
+            self.updateMS()
+            self.ifDwThumbsIsVisible(cfg.dm)
+            self.updateNotes()
+            _tab = self.pt.wTabs.currentIndex()
+            # if _tab == 0:
+            #     self.pt._overlayLab.setVisible(cfg.dm.skipped()) #Todo find/fix
+            if _tab == 1:
+                self.pt.dataUpdateMA()
+
     #
     #     if self._isProjectTab():
     #         dm = self.pt.dm
     #
     #         self.ifDwThumbsIsVisible(dm)
-    #         if self.dwNotes.isVisible():
-    #             self.updateNotes()
+    #         self.updateNotes()
     #         self.updateMS()
     #         # self.setStatusInfo()
     #         if floor(self.viewer.state.position[0]) != dm.zpos:
