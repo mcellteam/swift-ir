@@ -42,6 +42,7 @@ https://github.com/shwetagopaul92/neuroglancer/tree/master/examples/dependent-pr
 '''
 
 import os
+import sys
 import abc
 import copy
 import math
@@ -83,10 +84,8 @@ __all__ = ['EMViewer', 'PMViewer', 'MAViewer']
 logger = logging.getLogger(__name__)
 if not is_joel():
     logger.propagate = False
-# handler = logging.StreamHandler(stream=sys.stdout)
-# logger.addHandler(handler)
-
-DEV = is_joel()
+handler = logging.StreamHandler(stream=sys.stdout)
+logger.addHandler(handler)
 
 class WorkerSignals(QObject):
     arrowLeft = Signal()
@@ -198,12 +197,9 @@ class AbstractEMViewer(neuroglancer.Viewer):
         self._blockStateChanged = True
         if z == None:
             z = self.dm.zpos
-        try:
-            with self.txn() as s:
-                vc = s.voxel_coordinates
-                vc[0] = z + 0.5
-        except:
-            print_exception()
+        with self.txn() as s:
+            vc = s.voxel_coordinates
+            vc[0] = z + 0.5
         self._blockStateChanged = False
 
     @abc.abstractmethod
@@ -599,15 +595,13 @@ class MAViewer(AbstractEMViewer):
         else:
             self.index = self.dm.zpos
         logger.info(f"[{caller}] Setting Z-position [{self.index}]")
-        try:
-            with self.txn() as s:
-                vc = s.voxel_coordinates
-                vc[0] = self.index + 0.5
-        except:
-            print_exception()
-        self.drawSWIMwindow() #1111+
+        with self.txn() as s:
+            vc = s.voxel_coordinates
+            vc[0] = self.index + 0.5
         self._blockStateChanged = False
-        print(f"<< set_layer", flush=True)
+        print(f"<< set_layer --> drawSWIMwindow...", flush=True)
+        self.drawSWIMwindow() #1111+
+
 
 
     def initViewer(self):
@@ -650,6 +644,7 @@ class MAViewer(AbstractEMViewer):
         self.webengine.setFocus()
 
     def on_state_changed(self):
+        print(f'[{self.role}]')
         logger.info(f'[{self.role}]')
 
         if not self._blockStateChanged:
