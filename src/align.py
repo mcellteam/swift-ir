@@ -127,12 +127,9 @@ class AlignWorker(QObject):
             ss['solo'] = len(self.indexes) == 1
             ss['img_size'] = dm.image_size(s=scale)
             ss['is_refinement'] = dm.isRefinement(level=scale)
-            # print(f"path : {ss['path']}")
-            # print(f" ref : {ss['path_reference']}")
 
             wd = dm.ssDir(s=scale, l=i)  # write directory
             os.makedirs(wd, exist_ok=True)
-
             _write_to = os.path.join(wd, 'swim_settings.json')
 
             if self.ignore_cache:
@@ -150,12 +147,8 @@ class AlignWorker(QObject):
 
         [t.update({'glob_cfg': _glob_config}) for t in tasks]
 
-        self.hudMessage.emit(f'Computing {len(tasks)} alignments '
-                             f'using {self.cpus} CPUs...')
+        self.hudMessage.emit(f'Computing {len(tasks)} tasks, {self.cpus} CPUs')
 
-        # f_recipe_maker = f'{os.path.split(os.path.realpath(__file__))[0]}/src/recipe_maker.py'
-
-        # if cfg.USE_POOL_FOR_SWIM:
         if cfg.USE_POOL_FOR_SWIM:
             '''Use Multiprocessing Pool - Default'''
             desc = f"Compute Alignment"
@@ -176,7 +169,6 @@ class AlignWorker(QObject):
             logger.info('Adding tasks to the queue...')
 
             for i, sec in [(i, dm()[i]) for i in self.indexes]:
-                # if sec['include'] and (i != first_included): #1107-
                 if sec ['include']:
                 # if i != first_included:
                     # encoded_data = json.dumps(copy.deepcopy(sec))
@@ -185,11 +177,6 @@ class AlignWorker(QObject):
                     task_queue.add_task(task_args)
             dm.t_align = task_queue.collect_results()
             tq_results = task_queue.task_dict
-
-
-            logger.info('Reading task results and updating data model...')
-            # # For use with mp_queue.py ONLY
-
             results = []
             for tnum in range(len(tq_results)):
                 # Get the updated datamodel previewmodel from stdout for the task
@@ -218,8 +205,8 @@ class AlignWorker(QObject):
                     if os.path.exists(p):
                         dm['stack'][i]['levels'][scale]['initialized'] = True
                     else:
-                        self.hudWarning.emit(f"[{i}] Failed to generate aligned image")
-                        continue
+                        self.hudWarning.emit(f"Failed to generate aligned image at index {i}")
+                        # continue #1111- This does not mean the alignment failed necessarily
 
                 afm = r['affine_matrix']
                 try:
@@ -238,8 +225,11 @@ class AlignWorker(QObject):
         # SetStackCafm(dm, scale=scale, poly_order=dm.poly_order)
         # dm.set_stack_cafm()
 
+        if not self.dm['level_data'][self.dm.level]['aligned']:
+            self.dm['level_data'][self.dm.level]['initial_snr'] = self.dm.snr_list()
+            self.dm['level_data'][self.dm.level]['aligned'] = True
+
         self.hudMessage.emit(f'<span style="color: #FFFF66;"><b>**** Process Complete ****</b></span>')
-        self.finished.emit()
 
 
     def run_multiprocessing(self, func, tasks, desc):

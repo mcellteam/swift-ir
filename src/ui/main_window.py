@@ -915,10 +915,10 @@ class MainWindow(QMainWindow):
             s1 = (no_chg[:50] + '..') if len(str(no_chg)) > 50 else str(no_chg)
             s2 = (pos[:50] + '..') if len(str(pos)) > 50 else str(pos)
             s3 = (neg[:50] + '..') if len(str(neg)) > 50 else str(neg)
-            self.tell(f"Re-alignment Results:\n"
-                      f"  # No Change  (SNR =) : {len(no_chg)}, {' '.join(map(str, pos))}\n"
-                      f"  Better       (SNR ↑) : {len(pos)}, {' '.join(map(str, pos))}\n"
-                      f"  Worse        (SNR ↓) : {len(neg)}, {' '.join(map(str, neg))}")
+            self.tell(f"Alignment Results:\n"
+                      f"  # No Change  (SNR =) : {len(no_chg)}, {s1}\n"
+                      f"  Better       (SNR ↑) : {len(pos)}, {s2}\n"
+                      f"  Worse        (SNR ↓) : {len(neg)}, {s3}")
 
             self.tell('  Total Avg. SNR       : %.3f' % (self.dm.snr_mean()))
             if abs(diff_avg) < .001:
@@ -937,34 +937,23 @@ class MainWindow(QMainWindow):
 
     def onAlignmentEnd(self):
         #Todo make this atomic for scale that was just aligned. Cant be current scale.
-        caller = inspect.stack()[1].function
+        # caller = inspect.stack()[1].function
         self.tell(f'Running post-alignment tasks...')
-        t0 = time.time()
         self._working = False
-        self.updateMS()
-        logger.info(f"SNR: {self.dm.snr()}")
-
-        # self.updateLowest8widget()
         self.dataUpdateWidgets() #1015+
-
-        if self._isProjectTab():
+        # if self._isProjectTab():
             # self._showSNRcheck()
-            if self.dm.is_aligned():
-                if not self.dm['level_data'][self.dm.level]['aligned']:
-                    self.dm['level_data'][self.dm.level]['initial_snr'] = self.dm.snr_list()
-                    self.dm['level_data'][self.dm.level]['aligned'] = True
-                if self.pt.wTabs.currentIndex() == 1:
-                    self.pt.gifPlayer.set()
-                self.setdw_snr(True)  # Also initializes
-                # self.setdw_matches(True) #1019-
-                if self.pt.wTabs.currentIndex() == 2:
-                    self.pt.snr_plot.initSnrPlot()
+            # if self.dm.is_aligned():
+                # if not self.dm['level_data'][self.dm.level]['aligned']:
+                #     self.dm['level_data'][self.dm.level]['initial_snr'] = self.dm.snr_list()
+                #     self.dm['level_data'][self.dm.level]['aligned'] = True
+                # if self.pt.wTabs.currentIndex() == 1:
+                #     self.pt.gifPlayer.set()
+                # self.setdw_snr(True)  # Also initializes
+                # if self.pt.wTabs.currentIndex() == 2:
+                #     self.pt.snr_plot.initSnrPlot()
+        # self.pt.initNeuroglancer()
 
-        self.pt.initNeuroglancer()
-
-        dt = time.time() - t0
-        logger.info(f'  Elapsed Time         : {dt:.2f}s')
-        logger.info(f"Alignment Complete")
 
 
     def onFixAll(self):
@@ -1063,21 +1052,21 @@ class MainWindow(QMainWindow):
     #           align=True, regenerate=True, ignore_bb=False):
         if (not _ignore_cache) and self._isProjectTab():
             _ignore_cache = self.pt.cbIgnoreCache.isChecked()
-        ready = self.dm['level_data'][self.dm.scale]['alignment_ready']
+        ready = dm['level_data'][dm.scale]['alignment_ready']
         if not ready:
             logger.warning("Not ready to align yet!")
             self.warn("Please pull settings before aligning (Edit Alignment > Pull Settings)")
             return
 
-        if self.dm.level != self.dm.coarsest_scale_key():
-            if not self.dm.is_aligned():
+        if dm.level != dm.coarsest_scale_key():
+            if not dm.is_aligned():
                 self.tell("Pulling settings from reduced scale level automatically...")
-                self.dm.pullSettings()
+                dm.pullSettings()
 
         dm.save(silently=True)
         # logger.critical('')
         scale = dm.scale
-        # self.shutdownNeuroglancer() #1111-
+        self.shutdownNeuroglancer() #1111-
 
         if self._working == True:
             self.warn('Another Process is Already Running')
@@ -1101,7 +1090,7 @@ class MainWindow(QMainWindow):
             del self._alignworker
 
         self.tell("%s Affines (%s)..." % (('Initializing', 'Refining')[dm.isRefinement()], dm.level_pretty(s=scale)))
-        self._snr_before = self.dm.snr_list()
+        self._snr_before = dm.snr_list()
 
         logger.info("Setting mp debugging...")
         if cfg.DEBUG_MP:
@@ -1134,9 +1123,17 @@ class MainWindow(QMainWindow):
         self._alignworker.finished.connect(self._alignThread.quit)
         self._alignworker.finished.connect(dm.save)
         self._alignworker.finished.connect(lambda: self.wPbar.hide())
-        self._alignworker.finished.connect(self.onAlignmentEnd)
+        self._alignworker.finished.connect(dm.save)
+        self._alignworker.finished.connect(self.dataUpdateWidgets)
+        # self._alignworker.finished.connect(self.onAlignmentEnd)
+        self._alignworker.finished.connect(self.pt.gifPlayer.set)
+        if self.pt.wTabs.currentIndex() == 2:
+            self._alignworker.finished.connect(self.pt.snr_plot.initSnrPlot)
         self._alignworker.finished.connect(self.updateEnabledButtons)
+        
         self._alignworker.finished.connect(lambda: self.present_snr_results(indexes))
+        self._alignworker.finished.connect(self.pt.initNeuroglancer)
+        self._alignworker.finished.connect(lambda: setattr(self, '_working', False))
         self._alignThread.start()  # Step 6: Start the thread
 
 
@@ -1368,7 +1365,9 @@ class MainWindow(QMainWindow):
         status_msg = ""
         us = self.dm.ssSavedComportsIndexes()  # unsaved indexes
         if len(us) == 0:
-            status_msg += f"All Saved!"
+            # status_msg += f"--"
+            status_msg += f"<b><p style='font-size:14px;'>☺</p></b>"
+            # status_msg += f"None Unsaved"
         elif len(us) < 7:
             status_msg += f"Unsaved ({len(us)}/{len(self.dm)}): "
             status_msg += ', '.join(map(str, us))

@@ -41,38 +41,28 @@ https://github.com/shwetagopaul92/neuroglancer/tree/master/examples/dependent-pr
 
 '''
 
-import os
-import sys
 import abc
+import argparse
 import copy
-import math
+import datetime
 import inspect
 import logging
-import datetime
-import argparse
-import time
-from math import floor
-import numpy as np
-import numcodecs
-import zarr
-import neuroglancer as ng
+import os
+import sys
 from functools import cache
-# from neuroglancer import ScreenshotSaver
-from qtpy.QtCore import QObject, Signal, Slot, QUrl, QTimer
-from src.helpers import getOpt, getData, setData, print_exception, is_joel
-import src.config as cfg
+from math import floor
 
-
-import argparse
-import asyncio
-import atexit
-import concurrent
-import shutil
-import tempfile
-import threading
-import neuroglancer.write_annotations
-
+import numcodecs
+import numpy as np
 import tensorstore as ts
+# from neuroglancer import ScreenshotSaver
+from qtpy.QtCore import QObject, Signal, QUrl
+
+import neuroglancer as ng
+import neuroglancer.write_annotations
+import src.config as cfg
+from src.helpers import getOpt, getData, setData, is_joel
+
 context = ts.Context({'cache_pool': {'total_bytes_limit': 1000000000}})
 
 
@@ -117,7 +107,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
     def __init__(self, parent, webengine, path, dm, res, **kwargs):
         super().__init__(**kwargs)
         clr = inspect.stack()[1].function
-        logger.info(f'[{clr}]')
+        tstamp = datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S")
+        logger.critical(f'[{clr}] {tstamp}')
         self.type = 'AbstractEMViewer'
         self.created = datetime.datetime.now()
         self.parent = parent
@@ -173,11 +164,16 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
 
     def __del__(self):
+        print('\n')
         try:
             clr = inspect.stack()[1].function
-            logger.warning(f'{self.type} deleted by {clr} ({self.created})')
+            logger.critical(f"{self.type} deleted by {clr} ({self.created})")
+            print(f"{self.type} deleted by {clr} ({self.created})", flush=True)
         except:
-            logger.warning(f"{self.type} deleted, caller unknown ({self.created})")
+
+            logger.critical(f"{self.type} deleted, caller unknown ({self.created})")
+            print(f"{self.type} deleted, caller unknown ({self.created})", flush=True)
+        print('\n')
 
     @staticmethod
     @cache
@@ -194,14 +190,12 @@ class AbstractEMViewer(neuroglancer.Viewer):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def set_layer(self, z=None):
+    def set_layer(self):
         self._blockStateChanged = True
-        if z == None:
-            z = self.dm.zpos
         with self.txn() as s:
             vc = s.voxel_coordinates
             try:
-                vc[0] = z + 0.5
+                vc[0] = self.dm.zpos + 0.5
             except TypeError:
                 pass
         self._blockStateChanged = False
@@ -580,7 +574,10 @@ class MAViewer(AbstractEMViewer):
         self.index = 0 #None -1026
         self.cs_scale = None
         self.marker_size = 1
+        #might be an issue with print statementsi n deferred callback!
         self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
+        # self.shared_state.add_changed_callback(lambda: self.defer_callback(print("Callback called !")))
+        # self.shared_state.add_changed_callback(self.on_state_changed)
         self.signals.ptsChanged.connect(self.drawSWIMwindow)
         self.initViewer()
 
@@ -645,7 +642,6 @@ class MAViewer(AbstractEMViewer):
     def on_state_changed(self):
         if not self._blockStateChanged:
             # logger.info(f'[{self.role}]')
-            logger.info(f'')
             self._blockStateChanged = True
 
             if self.state.cross_section_scale:
@@ -667,11 +663,13 @@ class MAViewer(AbstractEMViewer):
                 if floor(self.state.position[0]) != self.index:
                     logger.info(f"Signaling Z-position change...")
                     self.index = floor(self.state.position[0])
-                    self.drawSWIMwindow(z=self.index)  # NeedThis #0803
+                    self.dm.zpos = self.index
+                    self.drawSWIMwindow()  # NeedThis #0803
                     # self.dm.zpos = self.index
-                    self.signals.zVoxelCoordChanged.emit(self.index)
+                    # self.signals.zVoxelCoordChanged.emit(self.index)
 
             self._blockStateChanged = False
+            # logger.info('<< on_state_changed')
 
 
     def _key1(self, s):
@@ -715,14 +713,10 @@ class MAViewer(AbstractEMViewer):
             self.drawSWIMwindow()
 
 
-    def drawSWIMwindow(self, z=None):
+    def drawSWIMwindow(self):
         caller = inspect.stack()[1].function
         logger.info(f"[{caller}][{self.index}] Drawing SWIM windows...")
-        if z == None:
-            z = self.dm.zpos
-        z += 0.5
-        # if z == self.dm.first_included(): #1025-
-        #     return
+        z = self.dm.zpos + 0.5
         self._blockStateChanged = True
         self.undrawSWIMwindows()
         m = self.marker_size
@@ -748,7 +742,6 @@ class MAViewer(AbstractEMViewer):
                     ng.LineAnnotation(id=id + '%d1', pointA=(z,) + d2, pointB=(z,) + d3, props=[c, m]),
                     ng.LineAnnotation(id=id + '%d2', pointA=(z,) + d3, pointB=(z,) + d4, props=[c, m]),
                     ng.LineAnnotation(id=id + '%d3', pointA=(z,) + d4, pointB=(z,) + d1, props=[c, m])])
-
             cfg.mw.setFocus()
 
         elif method == 'manual':
@@ -785,11 +778,7 @@ class MAViewer(AbstractEMViewer):
                     }
                 ''',
             )
-
         self._blockStateChanged = False
-        self.webengine.setFocus() #1111-
-        # cfg.mw.setFocus()
-        print('<< drawSWIMwindows')
 
     def undrawSWIMwindows(self):
         with self.txn() as s:

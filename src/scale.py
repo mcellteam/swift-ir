@@ -181,12 +181,8 @@ class ScaleWorker(QObject):
 
         thumbnailer = Thumbnailer()
         self._timing_results['t_thumbs'] = thumbnailer.reduce_main(self.src, self.paths, out)
-
         # count_files(self.out, scales_list)
-
-
         n_imgs = len(self.paths)
-
         for s, siz in deepcopy(self.scales):
             sv = get_scale_val(s)
 
@@ -274,7 +270,6 @@ class ScaleWorker(QObject):
         # self.hudMessage.emit('**** Autoscaling Complete ****')
         self.hudMessage.emit(f'<span style="color: #FFFF66;"><b>**** Process Complete ****</b></span>')
         print(f"<==== Terminating Background Thread <====")
-        self.finished.emit()
 
 def preallocate_zarr(zarr_od, name, shape, dtype, opts, scale):
     '''zarr.blosc.list_compressors() -> ['blosclz', 'lz4', 'lz4hc', 'zlib', 'zstd']'''

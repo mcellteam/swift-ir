@@ -69,7 +69,7 @@ class ProjectTab(QWidget):
         self.dm.signals.zposChanged.connect(self.parent.setSignalsPixmaps)
         self.dm.signals.zposChanged.connect(self.parent.setTargKargPixmaps)
         self.dm.signals.zposChanged.connect(self.dataUpdateMA) #1111+
-        self.dm.signals.zposChanged.connect(self.forceFocus) #1111+
+        # self.dm.signals.zposChanged.connect(self.forceFocus) #1111+
         def fn_updatelayer():
             logger.info('')
             if hasattr(self,'viewer'):
@@ -78,7 +78,6 @@ class ProjectTab(QWidget):
                         logger.info('actionable...')
                         self.viewer.set_layer()
         self.dm.signals.zposChanged.connect(fn_updatelayer) #1111+
-        self.dm.signals.zposChanged.connect(self.forceFocus) #1111+
 
 
         self.dm.signals.savedChanged.connect(self.parent.setStatusInfo)
@@ -106,13 +105,13 @@ class ProjectTab(QWidget):
 
 
     #1111+
-    def forceFocus(self):
-        logger.info('')
-        logger.debug('Forcing focus...')
-        if self.wTabs.currentIndex() == 1:
-            # self.webengine1.setFocus()
-            self.parent.setFocus()
-            self.viewer.set_layer()
+    # def forceFocus(self):
+    #     logger.info('')
+    #     logger.debug('Forcing focus...')
+    #     if self.wTabs.currentIndex() == 1:
+    #         # self.webengine1.setFocus()
+    #         self.parent.setFocus()
+    #         self.viewer.set_layer()
 
 
 
@@ -251,7 +250,7 @@ class ProjectTab(QWidget):
 
             path = (self.dm.path_zarr_transformed(), self.dm.path_zarr_raw())[self.rbZarrRaw.isChecked()]
             res = self.dm.resolution(s=self.dm.level)
-            self.viewer0 = self.viewer = self.parent.viewer = EMViewer(parent=self, webengine=self.webengine0, path=path, dm=self.dm, res=res, )
+            self.viewer0 = self.viewer = self.parent.viewer = cfg.viewer = EMViewer(parent=self, webengine=self.webengine0, path=path, dm=self.dm, res=res, )
             self.viewer0.initZoom(self.webengine0.width(), self.webengine0.height())
             # self.viewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
             self.viewer0.signals.layoutChanged.connect(self.slot_layout_changed)
@@ -270,12 +269,12 @@ class ProjectTab(QWidget):
             # self.viewer1 = cfg.viewer1 = MAViewer(parent=self, dm=self.dm, role='tra', quality=level, webengine0=self.webengine1)
             path = os.path.join(self.dm['info']['images_location'], 'zarr', self.dm.level)
             res = self.dm.resolution(s=self.dm.level)
-            self.viewer1 = self.viewer = self.parent.viewer = MAViewer(parent=self, webengine=self.webengine1, path=path, dm=self.dm, res=res, )
+            self.viewer1 = self.viewer = self.parent.viewer = cfg.viewer = MAViewer(parent=self, webengine=self.webengine1, path=path, dm=self.dm, res=res, )
             self.viewer1.signals.badStateChange.connect(self.set_transforming)
             self.viewer1.signals.ptsChanged.connect(self._updatePointLists)
             self.viewer1.signals.toggleView.connect(self.toggle_ref_tra)
             # self.viewer1.signals.ptsChanged.connect(self.updateWarnings)
-            self.viewer1.signals.zVoxelCoordChanged.connect(lambda zpos: setattr(self.dm, 'zpos', zpos))
+            # self.viewer1.signals.zVoxelCoordChanged.connect(lambda zpos: setattr(self.dm, 'zpos', zpos))
             self.viewer1.signals.arrowLeft.connect(self.parent.layer_left)
             self.viewer1.signals.arrowRight.connect(self.parent.layer_right)
             self.viewer1.signals.arrowUp.connect(self.parent.incrementZoomIn)
@@ -2068,10 +2067,10 @@ class ProjectTab(QWidget):
             if self.dm.is_alignable() and ready:
                 self.swMethod.setCurrentIndex(0)
 
-                if hasattr(self, 'viewer'): #1111+
+                if hasattr(self.viewer, 'drawSWIMwindow'): #1111+
                     try:
                         self.viewer.drawSWIMwindow()
-                    except:
+                    except AttributeError:
                         print_exception()
 
                 # self.btnsSWIM.show()
