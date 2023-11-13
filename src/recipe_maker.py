@@ -351,35 +351,30 @@ class align_recipe:
                 except:
                     print_exception(extra=f'ERROR ing{i}/{len(self.ingredients)}')
 
-        self.generate_thumbnail()
+        # self.generate_thumbnail()
         return 0
 
 
     def set_results(self):
-
-        time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        afm = np.array([[1., 0., 0.], [0., 1., 0.]])
-        snr = np.array([0.0])
-
+        # afm = np.array([[1., 0., 0.], [0., 1., 0.]])
+        # snr = np.array([0.0])
         mr = {}
         mr['index'] = self.index
-        mr['datetime'] = time
+        mr['datetime'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         mr['method'] = self.method
         # mr['memory_mb'] = self.megabytes()
         # mr['memory_gb'] = self.gigabytes()
-
         mr['complete'] = self._return_afm
         # if hasattr(self,'ingredients') and self.ingredients:
         #     if self._return_afm: #NOTE: POSSIBLY CRITICAL
         # try:
         # afm = self.ingredients[-1].afm
-        print(f"afm[{self.index}]: {self.afm.tolist()}")
+        # print(f"afm[{self.index}]: {self.afm.tolist()}")
         # except:
         #     logger.warning(f"[{self.index}] No afm found! {type(self.afm)}")
         #     self.afm = np.array([[1., 0., 0.], [0., 1., 0.]])
 
         mr['affine_matrix'] = self.afm.tolist()
-
         mr['init_afm'] = self.ss['init_afm']
         mr['snr'] = self.snr.tolist()
         try:    mr['std_deviation'] = self.snr.std()
@@ -627,7 +622,13 @@ class align_ingredient:
             #     self.generate_thumbnail()
             # except:
             #     print_exception()
-        print(f"[{self.recipe.index}, {self.ID}] | SNR: {self.snr.tolist()}")
+        try:
+            np.set_printoptions(linewidth=np.inf)
+            np.set_printoptions(formatter={'float': lambda x: "{0:.3g}".format(x)})
+            ing_str = f"[{self.recipe.index}, {self.ID}] | SNR: {self.snr} | AFM: {self.afm}"
+            print(ing_str)
+        except:
+            print_exception()
         return copy.deepcopy(self.afm), copy.deepcopy(self.snr)
 
 

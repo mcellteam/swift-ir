@@ -907,15 +907,19 @@ class MainWindow(QMainWindow):
             mean_before = statistics.fmean(snr_before)
             mean_after = statistics.fmean(snr_after)
             diff_avg = mean_after - mean_before
-            delta_snr_list = self.dm.delta_snr_list(snr_before, snr_after)
+            delta_snr_list = self.dm.delta_snr_list(snr_after, snr_before)
             delta_list = [delta_snr_list[i] for i in indexes]
             no_chg = [i for i, x in enumerate(delta_list) if x == 0]
             pos = [i for i, x in enumerate(delta_list) if x > 0]
             neg = [i for i, x in enumerate(delta_list) if x < 0]
-            self.tell('Re-alignment Results:')
-            self.tell('  # Better     (SNR ↑) : %s' % ' '.join(map(str, pos)))
-            self.tell('  # Worse      (SNR ↓) : %s' % ' '.join(map(str, neg)))
-            self.tell('  # No Change  (SNR =) : %s' % ' '.join(map(str, no_chg)))
+            s1 = (no_chg[:50] + '..') if len(str(no_chg)) > 50 else str(no_chg)
+            s2 = (pos[:50] + '..') if len(str(pos)) > 50 else str(pos)
+            s3 = (neg[:50] + '..') if len(str(neg)) > 50 else str(neg)
+            self.tell(f"Re-alignment Results:\n"
+                      f"  # No Change  (SNR =) : {len(no_chg)}, {' '.join(map(str, pos))}\n"
+                      f"  Better       (SNR ↑) : {len(pos)}, {' '.join(map(str, pos))}\n"
+                      f"  Worse        (SNR ↓) : {len(neg)}, {' '.join(map(str, neg))}")
+
             self.tell('  Total Avg. SNR       : %.3f' % (self.dm.snr_mean()))
             if abs(diff_avg) < .001:
                 self.tell('  Δ AVG. SNR           : <span style="color: #66FF00;"><b>%.4g (NO CHANGE)</b></span>' %

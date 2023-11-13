@@ -116,7 +116,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
     # @abc.abstractmethod
     def __init__(self, parent, webengine, path, dm, res, **kwargs):
         super().__init__(**kwargs)
-        logger.critical(f"\nCalling AbstractEMViewer __init__ ...\n")
+        clr = inspect.stack()[1].function
+        logger.info(f'[{clr}]')
         self.type = 'AbstractEMViewer'
         self.created = datetime.datetime.now()
         self.parent = parent
@@ -154,7 +155,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
             s.input_event_bindings.viewer['digit2'] = 'key2'
             s.input_event_bindings.viewer['digit3'] = 'key3'
             s.input_event_bindings.viewer['space'] = 'keySpace'
-            s.input_event_bindings.viewer['space'] = 'ctlMousedown'
+            s.input_event_bindings.viewer['control+mousedown1'] = 'ctlMousedown'
             # s.input_event_bindings.slice_view['space'] = 'keySpace'
             s.show_ui_controls = False
             s.show_ui_controls = False
@@ -450,7 +451,6 @@ class EMViewer(AbstractEMViewer):
 
     def __init__(self, **kwags):
         super().__init__(**kwags)
-        logger.info(f"\nCalling EMViewer __init__ ...\n")
         self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
         self.type = 'EMViewer'
         self.initViewer()
@@ -511,7 +511,6 @@ class PMViewer(AbstractEMViewer):
 
     def __init__(self, **kwags):
         super().__init__(**kwags)
-        logger.info(f"\nCalling PMViewer __init__ ...\n")
         self.type = 'PMViewer'
         self.coordspace = ng.CoordinateSpace(
             names=['z', 'y', 'x'], units=['nm', 'nm', 'nm'], scales=[50, 2,2])  # DoThisRight TEMPORARY <---------
@@ -575,7 +574,6 @@ class MAViewer(AbstractEMViewer):
 
     def __init__(self, **kwags):
         super().__init__(**kwags)
-        logger.info(f"\nCalling MAViewer __init__ ...\n")
         self.type = 'MAViewer'
         self.role = 'tra'
         self.index = 0 #None -1026
@@ -644,12 +642,8 @@ class MAViewer(AbstractEMViewer):
         self._blockStateChanged = False
 
     def on_state_changed(self):
-        print(f'[{self.role}]')
-        logger.info(f'[{self.role}]')
-
         if not self._blockStateChanged:
-            logger.info('proceeding...')
-
+            logger.info(f'[{self.role}]')
             self._blockStateChanged = True
 
             if self.state.cross_section_scale:
@@ -668,9 +662,8 @@ class MAViewer(AbstractEMViewer):
                     return
 
             elif self.role == 'tra':
-                logger.info(f"checking {floor(self.state.position[0])} == {self.index}...")
                 if floor(self.state.position[0]) != self.index:
-                    logger.info(f"Calling Back...")
+                    logger.info(f"Signaling Z-position change...")
                     self.index = floor(self.state.position[0])
                     self.drawSWIMwindow(z=self.index)  # NeedThis #0803
                     # self.dm.zpos = self.index
@@ -704,7 +697,8 @@ class MAViewer(AbstractEMViewer):
 
     def add_matchpoint(self, s, id, ignore_pointer=False):
         if self.dm.method() == 'manual':
-            print('\n\n--> adding region selection -->\n')
+            logger.info('')
+            # print('\n\n--> adding region selection -->\n')
             coords = np.array(s.mouse_voxel_coordinates)
             if coords.ndim == 0:
                 logger.warning(f'Null coordinates! ({coords})')
@@ -712,7 +706,7 @@ class MAViewer(AbstractEMViewer):
             _, y, x = s.mouse_voxel_coordinates
             frac_y = y / self.store.shape[1]
             frac_x = x / self.store.shape[2]
-            logger.critical(f"decimal x = {frac_x}, decimal y = {frac_y}")
+            logger.info(f"decimal x = {frac_x}, decimal y = {frac_y}")
             self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings']['method_opts']['points']['coords'][
                 self.role][id] = (frac_x, frac_y)
             self.signals.ptsChanged.emit()
@@ -721,7 +715,7 @@ class MAViewer(AbstractEMViewer):
 
     def drawSWIMwindow(self, z=None):
         caller = inspect.stack()[1].function
-        logger.critical(f"\n\n[{caller}] XXX Drawing SWIM windows [{self.index}]...\n")
+        logger.info(f"\n{caller}] XXX Drawing SWIM windows [{self.index}]...\n")
         if z == None:
             z = self.dm.zpos
         z += 0.5
