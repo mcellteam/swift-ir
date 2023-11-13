@@ -456,10 +456,10 @@ class align_recipe:
         fn, ext = os.path.splitext(self.ss['name'])
         ofp = os.path.join(ofd, fn + '.thumb' + ext)
 
-        if self.ss['first_index']:
-            logger.debug(f"\n"
-                            f"{ifp}\n"
-                            f"{ofp}")
+        # if self.ss['first_index']:
+        #     logger.debug(f"\n"
+        #                     f"{ifp}\n"
+        #                     f"{ofp}")
 
         if os.path.exists(ofp):
             logger.info(f'Cache hit (transformed img, afm): {ofp}')
