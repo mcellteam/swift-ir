@@ -196,7 +196,7 @@ class ZarrWorker(QObject):
         else:
             self.dm.t_convert_zarr = 0.
 
-        self.hudMessage.emit(f'<span style="color: #FFFF66;"><b>**** Process Complete ****</b></span>')
+        self.hudMessage.emit(f'<span style="color: #FFFF66;"><b>**** All Processes Complete ****</b></span>')
         self.finished.emit()
 
 
@@ -274,20 +274,42 @@ class ZarrWorker(QObject):
 
     def print_summary(self, dt, succ, fail, desc):
 
+        # if fail:
+        #     self.hudWarning.emit(f"\n"
+        #                  f"\n//  Summary  //  {desc}  //"
+        #                  f"\n//  RUNTIME   : {dt:.3g}s"
+        #                  f"\n//  SUCCESS   : {succ}"
+        #                  f"\n//  FAILED    : {fail}"
+        #                  f"\n")
+        # else:
+        #     self.hudMessage.emit(f"\n"
+        #                 f"\n//  Summary  //  {desc}  //"
+        #                 f"\n//  RUNTIME   : {dt:.3g}s"
+        #                 f"\n//  SUCCESS   : {succ}"
+        #                 f"\n//  FAILED    : {fail}"
+        #                 f"\n")
+        x = 30
+        s0 = desc.ljust(x)[0:x]
+        s1 = f"{dt:.3g}s".ljust(x)[0:x]
+        s2 = str(succ).ljust(x)[0:x]
+        s3 = str(fail).ljust(x)[0:x]
+
         if fail:
-            self.hudWarning.emit(f"\n"
-                         f"\n//  Summary  //  {desc}  //"
-                         f"\n//  RUNTIME   : {dt:.3g}s"
-                         f"\n//  SUCCESS   : {succ}"
-                         f"\n//  FAILED    : {fail}"
-                         f"\n")
+            self.hudWarning.emit(f"\n┌───────────{'─' * x}───┐"
+                                 f"\n│  Summary    {s0} │"
+                                 f"\n├───────────┬{'─' * x}──┤"
+                                 f"\n│  RUNTIME  │ {s1} │"
+                                 f"\n│  SUCCESS  │ {s2} │"
+                                 f"\n│  FAILED   │ {s3} │"
+                                 f"\n└───────────┴{'─' * x}──┘")
         else:
-            self.hudMessage.emit(f"\n"
-                        f"\n//  Summary  //  {desc}  //"
-                        f"\n//  RUNTIME   : {dt:.3g}s"
-                        f"\n//  SUCCESS   : {succ}"
-                        f"\n//  FAILED    : {fail}"
-                        f"\n")
+            self.hudMessage.emit(f"\n┌───────────{'─' * x}───┐"
+                                 f"\n│  Summary    {s0} │"
+                                 f"\n├───────────┬{'─' * x}──┤"
+                                 f"\n│  RUNTIME  │ {s1} │"
+                                 f"\n│  SUCCESS  │ {s2} │"
+                                 f"\n│  FAILED   │ {s3} │"
+                                 f"\n└───────────┴{'─' * x}──┘")
 
 
 

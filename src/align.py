@@ -229,7 +229,7 @@ class AlignWorker(QObject):
             self.dm['level_data'][self.dm.level]['initial_snr'] = self.dm.snr_list()
             self.dm['level_data'][self.dm.level]['aligned'] = True
 
-        self.hudMessage.emit(f'<span style="color: #FFFF66;"><b>**** Process Complete ****</b></span>')
+        self.hudMessage.emit(f'<span style="color: #FFFF66;"><b>**** All Processes Complete ****</b></span>')
 
 
     def run_multiprocessing(self, func, tasks, desc):
@@ -275,22 +275,46 @@ class AlignWorker(QObject):
             print_exception()
 
 
+    # def print_summary(self, dt, succ, fail, desc):
+    #
+    #     if fail:
+    #         self.hudWarning.emit(f"\n"
+    #                         f"\n//  Summary  //  {desc}  //"
+    #                         f"\n//  RUNTIME   : {dt:.3g}s"
+    #                         f"\n//  SUCCESS   : {succ}"
+    #                         f"\n//  FAILED    : {fail}"
+    #                         f"\n")
+    #     else:
+    #         self.hudMessage.emit(f"\n"
+    #                         f"\n//  Summary  //  {desc}  //"
+    #                         f"\n//  RUNTIME   : {dt:.3g}s"
+    #                         f"\n//  SUCCESS   : {succ}"
+    #                         f"\n//  FAILED    : {fail}"
+    #                         f"\n")
+
     def print_summary(self, dt, succ, fail, desc):
+        x = 30
+        s0 = desc.ljust(x)[0:x]
+        s1 = f"{dt:.3g}s".ljust(x)[0:x]
+        s2 = str(succ).ljust(x)[0:x]
+        s3 = str(fail).ljust(x)[0:x]
 
         if fail:
-            self.hudWarning.emit(f"\n"
-                            f"\n//  Summary  //  {desc}  //"
-                            f"\n//  RUNTIME   : {dt:.3g}s"
-                            f"\n//  SUCCESS   : {succ}"
-                            f"\n//  FAILED    : {fail}"
-                            f"\n")
+            self.hudWarning.emit(f"\n┌───────────{'─' * x}───┐"
+                                 f"\n│  Summary    {s0} │"
+                                 f"\n├───────────┬{'─' * x}──┤"
+                                 f"\n│  RUNTIME  │ {s1} │"
+                                 f"\n│  SUCCESS  │ {s2} │"
+                                 f"\n│  FAILED   │ {s3} │"
+                                 f"\n└───────────┴{'─' * x}──┘")
         else:
-            self.hudMessage.emit(f"\n"
-                            f"\n//  Summary  //  {desc}  //"
-                            f"\n//  RUNTIME   : {dt:.3g}s"
-                            f"\n//  SUCCESS   : {succ}"
-                            f"\n//  FAILED    : {fail}"
-                            f"\n")
+            self.hudMessage.emit(f"\n┌───────────{'─' * x}───┐"
+                                 f"\n│  Summary    {s0} │"
+                                 f"\n├───────────┬{'─' * x}──┤"
+                                 f"\n│  RUNTIME  │ {s1} │"
+                                 f"\n│  SUCCESS  │ {s2} │"
+                                 f"\n│  FAILED   │ {s3} │"
+                                 f"\n└───────────┴{'─' * x}──┘")
 
 
 def run_command(cmd, arg_list=None, cmd_input=None):

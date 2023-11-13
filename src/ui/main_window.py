@@ -1366,13 +1366,13 @@ class MainWindow(QMainWindow):
         us = self.dm.ssSavedComportsIndexes()  # unsaved indexes
         if len(us) == 0:
             # status_msg += f"--"
-            status_msg += f"<b><p style='font-size:14px;'>☺</p></b>"
+            status_msg += f"--"
             # status_msg += f"None Unsaved"
         elif len(us) < 7:
-            status_msg += f"Unsaved ({len(us)}/{len(self.dm)}): "
+            status_msg += f"{len(us)}/{len(self.dm)} Unsaved: "
             status_msg += ', '.join(map(str, us))
         else:
-            status_msg += f"Unsaved ({len(us)}/{len(self.dm)}): "
+            status_msg += f"{len(us)}/{len(self.dm)} Unsaved: "
             status_msg += f'{str(us[0])}, {str(us[1])}, {str(us[2])},...{str(us[-3])}, {str(us[-2])}, {str(us[-1])}'
 
         self.statusBar.showMessage(status_msg)
