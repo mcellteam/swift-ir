@@ -460,6 +460,7 @@ class EMViewer(AbstractEMViewer):
     def on_state_changed(self):
 
         if not self._blockStateChanged:
+            logger.info('')
 
             _css = self.state.cross_section_scale
             if not isinstance(_css, type(None)):
@@ -643,7 +644,8 @@ class MAViewer(AbstractEMViewer):
 
     def on_state_changed(self):
         if not self._blockStateChanged:
-            logger.info(f'[{self.role}]')
+            # logger.info(f'[{self.role}]')
+            logger.info(f'')
             self._blockStateChanged = True
 
             if self.state.cross_section_scale:
@@ -715,7 +717,7 @@ class MAViewer(AbstractEMViewer):
 
     def drawSWIMwindow(self, z=None):
         caller = inspect.stack()[1].function
-        logger.info(f"\n{caller}] XXX Drawing SWIM windows [{self.index}]...\n")
+        logger.info(f"[{caller}][{self.index}] Drawing SWIM windows...")
         if z == None:
             z = self.dm.zpos
         z += 0.5
