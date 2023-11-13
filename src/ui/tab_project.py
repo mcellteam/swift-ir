@@ -162,7 +162,8 @@ class ProjectTab(QWidget):
         # self.gifPlayer.stop()
         if index == 0:
 
-            self.parent.viewer = self.viewer0
+            self.viewer = self.parent.viewer = cfg.viewer = self.viewer0
+            self.viewer.set_layer()
             # self.parent.setdw_thumbs(True)
             # self.parent.setdw_matches(False)
             self.updateTab0()
@@ -175,7 +176,8 @@ class ProjectTab(QWidget):
             self.set_transforming() #0802+
             self._updatePointLists() #0726+
             self.gifPlayer.set()
-            self.parent.viewer = self.viewer1
+            # self.parent.viewer = self.viewer1
+            self.viewer = self.parent.viewer = cfg.viewer = self.viewer1
         elif index == 2:
             self.snr_plot.initSnrPlot()
         elif index == 3:
