@@ -7,21 +7,19 @@ import shutil
 import subprocess as sp
 import time
 from datetime import datetime
-from pprint import pformat
 
 import imageio.v3 as iio
-import neuroglancer as ng
+import numcodecs
 import numpy as np
 import tqdm
 import zarr
 
-import libtiff
-import numcodecs
+import neuroglancer as ng
+
 numcodecs.blosc.use_threads = False
 
 from qtpy.QtCore import Signal, QObject, QMutex
 
-import src.config as cfg
 from src.helpers import get_bindir, print_exception, get_core_count
 from src.funcs_image import ImageSize
 from src.thumbnailer import Thumbnailer

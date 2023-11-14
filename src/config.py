@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
 
 '''This file is for initializing global config and 'data' the dictionary datamodel state in memory.'''
-import os
-import platform
-import getpass
 
-__all__ = ['data']
+__all__ = ['dm']
 
 VERSION = '0.5.50'
 

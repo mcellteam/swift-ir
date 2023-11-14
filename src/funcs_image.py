@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
-import copy, time
-import os, struct, logging, inspect
-from dataclasses import dataclass
+import inspect
+import logging
+import os
 import pprint
+import struct
+from dataclasses import dataclass
+
 # import imageio.v3 as iio
 import imagecodecs
-# import libtiff
-# import zarr
 import numpy as np
 import tifffile
+
 from src.helpers import print_exception
 
 try:
