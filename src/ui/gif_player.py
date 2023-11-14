@@ -137,6 +137,8 @@ class GifPlayer(QWidget):
         # self.leSlr.setStyleSheet("border: 1px solid #f3f6fb;")
         # self.leW = HW(self.leSlr, self.labMs)
         self.wSlrGif = HW(self.labSlr, self.slrGif, self.leSlr)
+        self.wSlrGif.layout.setContentsMargins(4,4,4,4)
+        self.wSlrGif.setMaximumWidth(150)
 
         # self.controls = HW(self.bBlink, self.bPlay)
         self.controls = HW(self.bBlink, self.bPlay)
@@ -153,6 +155,7 @@ class GifPlayer(QWidget):
         self.gl.addWidget(self.label, 0, 0, 3, 3)
         self.gl.addWidget(self.controls, 0, 0, 0, 0)
         self.gl.addWidget(self.radiobuttons, 2, 1, 1, 1)
+        self.gl.addWidget(self.wSlrGif, 2, 2, 1, 1)
         self.gl.setRowStretch(0, 0)
         self.gl.setRowStretch(1, 9)
         self.gl.setColumnStretch(0, 0)
@@ -168,7 +171,7 @@ class GifPlayer(QWidget):
         # self.timerGif.timeout.connect(self.on_click)
 
         self.vl.addWidget(self.w)
-        self.vl.addWidget(self.wSlrGif)
+        # self.vl.addWidget(self.wSlrGif)
 
         self.setLayout(self.vl)
         # self.setStyleSheet(f"background-color: #000000;")
