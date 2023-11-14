@@ -4,23 +4,23 @@
 data in the directory that is served to any web page running on a machine that
 can connect to the web server'''
 
-import os
+import argparse
 import copy
-import math
-import json
+import datetime
 import inspect
 import logging
-import datetime
-import argparse
+import math
+import os
+
 import numcodecs
 import zarr
+from qtpy.QtCore import QObject, Signal
+
 import neuroglancer
 import neuroglancer as ng
-from qtpy.QtCore import QObject, Signal
+import src.config as cfg
 from src.funcs_zarr import get_zarr_tensor
 from src.helpers import getOpt
-from src.shaders import ann_shader
-import src.config as cfg
 
 __all__ = ['ZarrViewer']
 

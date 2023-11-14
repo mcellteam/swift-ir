@@ -1,25 +1,22 @@
 #!/usr/bin/env python3
 
-import os
-import json
 import copy
-import time
-import pprint
 import inspect
 import logging
-import textwrap
+import os
+import time
 
-from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QAbstractItemView, QApplication, \
-    QTableWidget, QTableWidgetItem, QSlider, QLabel, QPushButton, QSizePolicy, QFrame, QHeaderView, QAction, QMenu, \
-    QTextEdit
-from qtpy.QtCore import Qt, QRect, QAbstractTableModel, Signal, QEvent, QRunnable
-from qtpy.QtGui import QPainter, QPixmap, QImage
-from src.ui.thumbnail import ThumbnailFast, CorrSignalThumbnail
-from src.ui.layouts import VBL, HBL, VW, HW
-from src.helpers import print_exception
 import qtawesome as qta
+from qtpy.QtCore import Qt, QRect, Signal, QEvent
+from qtpy.QtGui import QPainter, QPixmap, QImage
+from qtpy.QtWidgets import QWidget, QHBoxLayout, QAbstractItemView, QApplication, \
+    QTableWidget, QTableWidgetItem, QSlider, QLabel, QPushButton, QFrame, QAction, QMenu, \
+    QTextEdit
 
 import src.config as cfg
+from src.helpers import print_exception
+from src.ui.layouts import VBL, VW, HW
+from src.ui.thumbnail import ThumbnailFast, CorrSignalThumbnail
 
 logger = logging.getLogger(__name__)
 

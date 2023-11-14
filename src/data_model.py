@@ -5,37 +5,33 @@
 AlignEm is intended to provide a tool for supporting image alignment
 using any number of technologies.
 """
-import os
-import re
-import sys
 import copy
-import json
-import uuid
 import inspect
+import json
 import logging
-import hashlib
-import time
-import pprint
+import os
 import platform
+import re
 import statistics
-from typing import Dict, Any
-from glob import glob
+import sys
+import time
+import uuid
 from copy import deepcopy
+from dataclasses import dataclass
+from datetime import datetime
+from glob import glob
 from heapq import nsmallest
 from operator import itemgetter
-from datetime import datetime
-from dataclasses import dataclass
-from functools import cache, cached_property
-from functools import reduce
+
 import numpy as np
 import zarr
-from qtpy.QtCore import QObject, Signal, Slot, QMutex
-from qtpy.QtWidgets import QApplication
+from qtpy.QtCore import QObject, Signal
 
+from src.funcs_image import ComputeBoundingRect
 from src.funcs_image import SetStackCafm
 from src.hash_table import HashTable
-from src.helpers import print_exception, caller_name
-from src.funcs_image import ComputeBoundingRect, ImageSize
+from src.helpers import print_exception
+
 # from src.hash_table import HashTable
 try:
     import src.config as cfg

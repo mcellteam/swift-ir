@@ -3,14 +3,11 @@
 # import imagecodecs
 import numcodecs
 numcodecs.blosc.use_threads = False
-import libtiff
 #!/usr/bin/env python3
 
 import os
-import sys
 import time
 import psutil
-import shutil
 import logging
 from copy import deepcopy
 from pathlib import Path
@@ -20,9 +17,7 @@ from signal import alarm, signal, SIGALRM, SIGKILL
 from subprocess import PIPE, Popen
 import multiprocessing as mp
 import subprocess as sp
-from multiprocessing.pool import ThreadPool
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-import numpy as np
+from concurrent.futures import ThreadPoolExecutor
 import zarr
 import imagecodecs
 import imageio.v3 as iio
@@ -32,11 +27,9 @@ import tqdm
 import numcodecs
 from numcodecs import Blosc
 numcodecs.blosc.use_threads = False
-from src.funcs_image import ImageSize
 
 from src.thumbnailer import Thumbnailer
-from src.helpers import print_exception, get_bindir, get_scale_val, \
-    renew_directory, renew_directory, get_img_filenames
+from src.helpers import print_exception, get_bindir, get_scale_val
 # from src.funcs_zarr import preallocate_zarr
 from src.funcs_zarr import remove_zarr
 import src.config as cfg

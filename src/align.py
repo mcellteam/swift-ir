@@ -155,7 +155,7 @@ class AlignWorker(QObject):
             dt, succ, fail, results = self.run_multiprocessing(run_recipe, tasks, desc)
             self.dm.t_align = dt
             if not succ:
-                self.hudWarning.emit(f'Something went wrong! Alignment failed. # Success: {succ} / # Failed: {fail}')
+                self.hudWarning.emit(f'Something went wrong! # Success: {succ} / # Failed: {fail}')
                 self.finished.emit()
                 return
         else:
@@ -212,7 +212,7 @@ class AlignWorker(QObject):
                 try:
                     assert np.array(afm).shape == (2, 3)
                 except:
-                    self.hudWarning.emit(f'Alignment failed for section # {i}')
+                    self.hudWarning.emit(f'Something went wrong for section # {i}')
                     print_exception(extra=f"Section # {i}")
                     continue
 

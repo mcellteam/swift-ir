@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
 
-import os, sys, http, logging, inspect, shutil, atexit, tempfile
-import concurrent.futures
-import threading
 import asyncio
-import http.server
-from pathlib import Path
-import neuroglancer as ng
-# import neuroglancer.write_annotations
-import neuroglancer.random_token
-import tornado.web
+import concurrent.futures
+import logging
+import threading
+
 import tornado.httpserver
 import tornado.netutil
 import tornado.platform
 import tornado.platform.asyncio
+import tornado.web
+
+# import neuroglancer.write_annotations
+import neuroglancer.random_token
 
 __all__ = []
 
