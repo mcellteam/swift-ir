@@ -3,7 +3,7 @@
 import sys
 import os
 import glob
-import src.swiftir
+import src.utils.swiftir
 
 if ( __name__ == '__main__'):
 
@@ -27,6 +27,6 @@ if ( __name__ == '__main__'):
     ofns = ['%s/%s_MDL%s' % (out_dir, os.path.splitext(os.path.basename(ofn))[0],
                              os.path.splitext(os.path.basename(ofn))[1]) for ofn in ifns]
 
-    swiftir.remod(ifns, ofns, halfwidth=halfwidth, topbot=True)
+    src.utils.swiftir.remod(ifns, ofns, halfwidth=halfwidth, topbot=True)
 
     #  python3 src/generate_remod.py  10 "/Users/joelyancey/glanceem_swift/test_images/r34_tifs/*.tif" ~/scratch/remod_out

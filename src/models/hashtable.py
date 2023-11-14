@@ -1,6 +1,8 @@
+#!/usr/bin/env python3
+'''
+A hash table class.
 
-# hashtable.
-
+'''
 import os
 import json
 import pickle

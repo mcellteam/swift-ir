@@ -30,14 +30,15 @@ from qtpy.QtWidgets import *
 import neuroglancer as ng
 import src.config as cfg
 import src.resources.icons_rc
-import src.shaders
-from src.align import AlignWorker
-from src.generate_zarr import ZarrWorker
-from src.helpers import getData, setData, print_exception, get_scale_val, \
+import src.shaders.shaders
+from src.models.data import DataModel
+from src.workers.scale import ScaleWorker
+from src.workers.align import AlignWorker
+from src.workers.generate import ZarrWorker
+from src.utils.helpers import getData, setData, print_exception, get_scale_val, \
     tracemalloc_start, tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, \
-    isNeuroglancerRunning, update_preferences_model, is_mac, hotkey, make_affine_widget_HTML, \
+    update_preferences_model, is_mac, hotkey, make_affine_widget_HTML, \
     is_joel, is_tacc, run_command, check_macos_isdark_theme
-from src.scale import ScaleWorker
 from src.ui.dialogs import export_affines_dialog, ExitAppDialog
 from src.ui.layouts import HBL, VBL, HW, VW, QVLine
 from src.ui.process_monitor import HeadupDisplay
@@ -1145,21 +1146,18 @@ class MainWindow(QMainWindow):
             indexes=indexes,
             ignore_cache=_ignore_cache,
         )  # Step 3: Create a worker object
+        self._alignworker.progress.connect(self.setPbar)
+        self._alignworker.initPbar.connect(self.resetPbar)
+        self._alignworker.hudMessage.connect(self.tell)
+        self._alignworker.hudWarning.connect(self.warn)
         logger.info("Connecting worker signals...")
         self._alignThread.started.connect(self._alignworker.run)  # Step 5: Connect signals and slots
         self._alignThread.finished.connect(self._alignThread.deleteLater)
         self._alignworker.moveToThread(self._alignThread)  # Step 4: Move worker to the thread
 
-        self._alignworker.progress.connect(self.setPbar)
-        self._alignworker.initPbar.connect(self.resetPbar)
-        self._alignworker.hudMessage.connect(self.tell)
-        self._alignworker.hudWarning.connect(self.warn)
-
-        self._alignworker.finished.connect(lambda: print("Complete"))
         self._alignworker.finished.connect(self._alignThread.quit)
         self._alignworker.finished.connect(dm.save)
         self._alignworker.finished.connect(lambda: self.wPbar.hide())
-        self._alignworker.finished.connect(dm.save)
         self._alignworker.finished.connect(self.dataUpdateWidgets)
         # self._alignworker.finished.connect(self.onAlignmentEnd)
         self._alignworker.finished.connect(self.pt.gifPlayer.set)
@@ -2210,19 +2208,19 @@ class MainWindow(QMainWindow):
         obj.setAutoFillBackground(True)
 
     def set_shader_default(self):
-        self.dm['rendering']['shader'] = src.shaders.shader_default_
+        self.dm['rendering']['shader'] = src.shaders.shaders.shader_default_
         self.pt.initNeuroglancer()
 
     def set_shader_colormapJet(self):
-        self.dm['rendering']['shader'] = src.shaders.colormapJet
+        self.dm['rendering']['shader'] = src.shaders.shaders.colormapJet
         self.pt.initNeuroglancer()
 
     def set_shader_test1(self):
-        self.dm['rendering']['shader'] = src.shaders.shader_test1
+        self.dm['rendering']['shader'] = src.shaders.shaders.shader_test1
         self.pt.initNeuroglancer()
 
     def set_shader_test2(self):
-        self.dm['rendering']['shader'] = src.shaders.shader_test2
+        self.dm['rendering']['shader'] = src.shaders.shaders.shader_test2
         self.pt.initNeuroglancer()
 
     def onProfilingTimer(self):
@@ -2233,7 +2231,6 @@ class MainWindow(QMainWindow):
         # memory_mb = psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2
         # memory_peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
         print('CPU Usage: %.3f%% | RAM Usage: %.3f%%' % (cpu_percent, percent_ram))
-        print('Neuoglancer Running? %r' % isNeuroglancerRunning())
         print('# Allocated Widgets: %d' % num_widgets)
         # print(f'CPU Usage    : {cpu_percent:.3f}%')
         # print(f'RAM Usage    : {percent_ram:.3f}%')

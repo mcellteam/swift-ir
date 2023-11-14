@@ -61,7 +61,7 @@ from qtpy.QtCore import QObject, Signal, QUrl
 import neuroglancer as ng
 import neuroglancer.write_annotations
 import src.config as cfg
-from src.helpers import getOpt, getData, setData, is_joel
+from src.utils.helpers import getOpt, getData, setData, is_joel
 
 context = ts.Context({'cache_pool': {'total_bytes_limit': 1000000000}})
 
@@ -162,6 +162,14 @@ class AbstractEMViewer(neuroglancer.Viewer):
         self.setBackground()
         self.webengine.setFocus()
 
+    def defer_callback(self, callback, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        return self.get_viewer_url()
+
+    def _repr_html_(self):
+        return '<a href="%s" target="_blank">Viewer</a>' % self.get_viewer_url()
 
     def __del__(self):
         print('\n')

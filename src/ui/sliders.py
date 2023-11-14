@@ -11,7 +11,7 @@ import sys
 from qtpy import QtCore, QtGui, QtWidgets
 from qtpy.QtWidgets import QSlider
 
-from src.helpers import print_exception
+from src.utils.helpers import print_exception
 
 logger = logging.getLogger(__name__)
 

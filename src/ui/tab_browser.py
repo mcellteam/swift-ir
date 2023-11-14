@@ -7,7 +7,7 @@ from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout,QLabel, QPushButton
 from qtpy.QtCore import Qt, QSize, QUrl
 from qtpy.QtGui import QPixmap
 from qtpy.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
-from src.helpers import print_exception
+from src.utils.helpers import print_exception
 import src.config as cfg
 
 logger = logging.getLogger(__name__)

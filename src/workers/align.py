@@ -8,7 +8,6 @@ import multiprocessing as mp
 import os
 import re
 import subprocess as sp
-import sys
 import time
 
 import imageio.v3 as iio
@@ -23,9 +22,9 @@ import libtiff
 libtiff.libtiff_ctypes.suppress_warnings()
 import warnings
 warnings.filterwarnings("ignore") #Works for supressing tiffile invalid offset warning
-from src.mp_queue import TaskQueue
-from src.recipe_maker import run_recipe
-from src.helpers import print_exception, get_core_count
+# from src.mp_queue import TaskQueue
+from src.workers.recipe_maker import run_recipe
+from src.utils.helpers import print_exception, get_core_count
 import src.config as cfg
 
 from qtpy.QtCore import Signal, QObject, QMutex
@@ -149,42 +148,42 @@ class AlignWorker(QObject):
 
         self.hudMessage.emit(f'Computing {len(tasks)} tasks, {self.cpus} CPUs')
 
-        if cfg.USE_POOL_FOR_SWIM:
-            '''Use Multiprocessing Pool - Default'''
-            desc = f"Compute Alignment"
-            dt, succ, fail, results = self.run_multiprocessing(run_recipe, tasks, desc)
-            self.dm.t_align = dt
-            if fail:
-                self.hudWarning.emit(f'Something went wrong! # Success: {succ} / # Failed: {fail}')
-                # self.finished.emit()
-                # return
-        else:
-            '''Use Tom's multiprocessing Queue'''
-            task_queue = TaskQueue(n_tasks=len(tasks), dest=dm.data_location)
-            task_queue.taskPrefix = 'Computing Alignment for '
-            task_queue.taskNameList = [os.path.basename(layer['swim_settings']['path']) for
-                                       layer in [dm()[i] for i in self.indexes]]
-            task_queue.start(self.cpus)
-            align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'recipe_maker.py')
-            logger.info('Adding tasks to the queue...')
-
-            for i, sec in [(i, dm()[i]) for i in self.indexes]:
-                if sec ['include']:
-                # if i != first_included:
-                    # encoded_data = json.dumps(copy.deepcopy(sec))
-                    encoded_data = json.dumps(sec['levels'][scale])
-                    task_args = [sys.executable, align_job, encoded_data]
-                    task_queue.add_task(task_args)
-            dm.t_align = task_queue.collect_results()
-            tq_results = task_queue.task_dict
-            results = []
-            for tnum in range(len(tq_results)):
-                # Get the updated datamodel previewmodel from stdout for the task
-                parts = tq_results[tnum]['stdout'].split('---JSON-DELIMITER---')
-                for p in parts:
-                    ps = p.strip()
-                    if ps.startswith('{') and ps.endswith('}'):
-                        results.append(json.loads(p))
+        # if cfg.USE_POOL_FOR_SWIM:
+        '''Use Multiprocessing Pool - Default'''
+        desc = f"Compute Alignment"
+        dt, succ, fail, results = self.run_multiprocessing(run_recipe, tasks, desc)
+        self.dm.t_align = dt
+        if fail:
+            self.hudWarning.emit(f'Something went wrong! # Success: {succ} / # Failed: {fail}')
+            # self.finished.emit()
+            # return
+        # else:
+        #     '''Use Tom's multiprocessing Queue'''
+        #     task_queue = TaskQueue(n_tasks=len(tasks), dest=dm.data_location)
+        #     task_queue.taskPrefix = 'Computing Alignment for '
+        #     task_queue.taskNameList = [os.path.basename(layer['swim_settings']['path']) for
+        #                                layer in [dm()[i] for i in self.indexes]]
+        #     task_queue.start(self.cpus)
+        #     align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'recipe_maker.py')
+        #     logger.info('Adding tasks to the queue...')
+        #
+        #     for i, sec in [(i, dm()[i]) for i in self.indexes]:
+        #         if sec ['include']:
+        #         # if i != first_included:
+        #             # encoded_data = json.dumps(copy.deepcopy(sec))
+        #             encoded_data = json.dumps(sec['levels'][scale])
+        #             task_args = [sys.executable, align_job, encoded_data]
+        #             task_queue.add_task(task_args)
+        #     dm.t_align = task_queue.collect_results()
+        #     tq_results = task_queue.task_dict
+        #     results = []
+        #     for tnum in range(len(tq_results)):
+        #         # Get the updated datamodel previewmodel from stdout for the task
+        #         parts = tq_results[tnum]['stdout'].split('---JSON-DELIMITER---')
+        #         for p in parts:
+        #             ps = p.strip()
+        #             if ps.startswith('{') and ps.endswith('}'):
+        #                 results.append(json.loads(p))
 
         logger.critical(f"# results returned: {len(results)}")
 

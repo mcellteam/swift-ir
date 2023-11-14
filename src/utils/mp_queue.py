@@ -13,8 +13,7 @@ import tqdm
 
 import psutil
 from qtpy.QtCore import QObject
-from qtpy.QtWidgets import QApplication
-from src.helpers import print_exception, is_tacc
+from src.utils.helpers import print_exception
 
 import numcodecs
 

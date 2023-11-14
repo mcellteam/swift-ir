@@ -11,7 +11,7 @@ import imagecodecs
 import numpy as np
 import tifffile
 
-from src.helpers import print_exception
+from src.utils.helpers import print_exception
 
 try:
     import src.config as cfg

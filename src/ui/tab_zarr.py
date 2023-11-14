@@ -6,7 +6,7 @@ import logging
 from qtpy.QtWidgets import QWidget, QVBoxLayout
 from qtpy.QtCore import QUrl
 from qtpy.QtWebEngineWidgets import *
-from src.viewer_zarr import ZarrViewer
+from src.servers.zarrviewer import ZarrViewer
 import src.config as cfg
 
 __all__ = ['ZarrTab']

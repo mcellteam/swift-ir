@@ -19,8 +19,8 @@ from qtpy.QtCore import QObject, Signal
 import neuroglancer
 import neuroglancer as ng
 import src.config as cfg
-from src.funcs_zarr import get_zarr_tensor
-from src.helpers import getOpt
+from src.utils.funcs_zarr import get_zarr_tensor
+from src.utils.helpers import getOpt
 
 __all__ = ['ZarrViewer']
 

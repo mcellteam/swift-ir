@@ -13,8 +13,8 @@ from qtpy.QtWidgets import *
 
 import neuroglancer as ng
 import src.config as cfg
-from src.funcs_image import ImageSize
-from src.helpers import hotkey
+from src.utils.funcs_image import ImageSize
+from src.utils.helpers import hotkey
 from src.ui.layouts import HBL
 
 logger = logging.getLogger(__name__)

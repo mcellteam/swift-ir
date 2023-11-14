@@ -16,7 +16,7 @@ from numcodecs import Blosc
 
 numcodecs.blosc.use_threads = False
 import src.config as cfg
-from src.helpers import get_scale_val, print_exception
+from src.utils.helpers import get_scale_val, print_exception
 
 '''
 TensorStore has already been used to solve key engineering challenges in scientific computing (e.g., management and 

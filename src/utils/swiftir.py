@@ -943,7 +943,7 @@ if __name__=='__main__':
 
 
     # f = os.path.join('../..', '..', 'tests', 'vj_097_1k1k_exact', 'as_tif', 'vj_097_shift_rot_skew_crop_1k1k_1.tif')
-    f = os.path.join('../../..', '..', 'tests', 'vj_097_1k1k_exact', 'as_tif', 'vj_097_shift_rot_skew_crop_1k1k_1.tif')
+    f = os.path.join('../../../..', '..', 'tests', 'vj_097_1k1k_exact', 'as_tif', 'vj_097_shift_rot_skew_crop_1k1k_1.tif')
     print('Loading ' + f)
     t = time.time()
     img = loadImage(f,.1)

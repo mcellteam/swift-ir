@@ -17,8 +17,8 @@ import psutil
 import tqdm
 
 import src.config as cfg
-from src.funcs_image import ImageSize
-from src.helpers import print_exception, get_appdir, get_bindir, natural_sort, is_tacc
+from src.utils.funcs_image import ImageSize
+from src.utils.helpers import print_exception, get_appdir, get_bindir, natural_sort, is_tacc
 
 __all__ = ['Thumbnailer']
 
@@ -32,7 +32,7 @@ class Thumbnailer:
 
     def __init__(self, dm=None):
         self.dm = dm
-        self.iscale2_c = os.path.join(get_appdir(), 'lib', get_bindir(), 'iscale2')
+        self.iscale2_c = os.path.join(get_appdir(), '../lib', get_bindir(), 'iscale2')
 
 
     def reduce_main(self, src, filenames, od):

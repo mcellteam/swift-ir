@@ -27,16 +27,11 @@ import numpy as np
 import zarr
 from qtpy.QtCore import QObject, Signal
 
-from src.funcs_image import ComputeBoundingRect
-from src.funcs_image import SetStackCafm
-from src.hash_table import HashTable
-from src.helpers import print_exception
-
-# from src.hash_table import HashTable
-try:
-    import src.config as cfg
-except:
-    pass
+from src.utils.funcs_image import ComputeBoundingRect
+from src.utils.funcs_image import SetStackCafm
+from src.models.hashtable import HashTable
+from src.utils.helpers import print_exception
+import src.config as cfg
 
 __all__ = ['DataModel']
 

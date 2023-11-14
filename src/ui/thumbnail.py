@@ -1,21 +1,16 @@
 #!/usr/bin/env python3
 
 import os
-import json
-import inspect
 import logging
-import textwrap
 import numpy as np
 from math import sqrt
 from functools import cache
 
-from qtpy.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QCheckBox, QLabel, QAbstractItemView, \
-    QTableWidget, QTableWidgetItem, QSlider, QSizePolicy
-from qtpy.QtCore import Qt, QRect, QRectF, QSize, QPoint, QEvent, QPointF, QSizeF, Signal
+from qtpy.QtWidgets import QLabel
+from qtpy.QtCore import Qt, QRect, QRectF, QSize, QPoint, QPointF, Signal
 from qtpy.QtGui import QPixmap, QPainter, QColor, QBrush, QFont, QPen, QMouseEvent, QImage
-from src.helpers import absFilePaths
-from src.helpers import print_exception, get_appdir, caller_name
-from src.funcs_image import ImageSize
+from src.utils.helpers import print_exception
+from src.utils.funcs_image import ImageSize
 
 import src.config as cfg
 

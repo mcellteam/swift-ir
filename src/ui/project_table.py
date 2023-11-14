@@ -14,7 +14,7 @@ from qtpy.QtWidgets import QWidget, QHBoxLayout, QAbstractItemView, QApplication
     QTextEdit
 
 import src.config as cfg
-from src.helpers import print_exception
+from src.utils.helpers import print_exception
 from src.ui.layouts import VBL, VW, HW
 from src.ui.thumbnail import ThumbnailFast, CorrSignalThumbnail
 

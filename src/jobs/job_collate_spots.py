@@ -6,9 +6,9 @@ import logging
 import subprocess as sp
 
 try:
-    from src.helpers import get_bindir
+    from src.utils.helpers import get_bindir
 except ImportError:
-    from src.helpers import get_bindir
+    from src.utils.helpers import get_bindir
 
 
 
@@ -31,7 +31,7 @@ if __name__ == '__main__':
     fn           = sys.argv[1]
     out          = sys.argv[2]
 
-    mir_c = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'lib', get_bindir(), 'mir')
+    mir_c = os.path.join(os.path.split(os.path.realpath(__file__))[0], '../lib', get_bindir(), 'mir')
 
     name0 = 'corr_spot_0_' + fn
     name1 = 'corr_spot_1_' + fn

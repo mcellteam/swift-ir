@@ -7,8 +7,8 @@ import psutil
 import logging
 import argparse
 import src.config as cfg
-from src.mp_queue import TaskQueue
-from src.helpers import get_scale_val, get_img_filenames, print_exception
+# from src.mp_queue import TaskQueue
+from src.utils.helpers import get_scale_val, get_img_filenames
 
 # __all__ = ['generate_multiscale_zarr']
 

@@ -7,4 +7,4 @@ src_path = os.path.dirname(os.path.split(os.path.realpath(__file__))[0]) + '/src
 print('adding ' + src_path + ' to context...')
 sys.path.insert(1, src_path)
 
-import data_model
+from src.models.data import DataModel

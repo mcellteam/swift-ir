@@ -2,9 +2,9 @@
 
 import os, sys, logging
 from qtpy.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTreeView, QFileSystemModel, \
-    QPushButton, QSizePolicy, QAbstractItemView
-from qtpy.QtCore import Slot, Qt, QSize, QDir
-from src.helpers import is_joel, is_tacc
+    QPushButton, QAbstractItemView
+from qtpy.QtCore import Qt, QSize, QDir
+from src.utils.helpers import is_joel, is_tacc
 import src.config as cfg
 
 __all__ = ['FileBrowserTacc']

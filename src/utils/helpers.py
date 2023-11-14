@@ -7,44 +7,46 @@ https://gist.github.com/jbms/1ec1192c34ec816c2c517a3b51a8ed6c
 https://programtalk.com/vs4/python/janelia-cosem/fibsem-tools/src/fibsem_tools/io/zarr.py/
 '''
 
-import os, re, sys, stat, copy, json, time, signal, logging, inspect
-import platform, traceback, shutil, statistics, tracemalloc
 import contextlib
-from os.path import expanduser
 import getpass
-from time import time
+import html
+import imghdr
+import inspect
+import logging
+import operator
+import os
+import platform
+import re
+import shutil
+import signal
+import stat
+import subprocess
+import subprocess as sp
+import sys
+import tempfile
+import time
+import traceback
+import tracemalloc
+from contextlib import contextmanager
+from collections import namedtuple
 from datetime import datetime
-from typing import Dict, List, Tuple, Any, Union, Sequence
+from functools import reduce
 from glob import glob
 from pathlib import Path
-from contextlib import contextmanager
-import zarr
-import imghdr
-import tifffile
-import numpy as np
-from shutil import rmtree
-import psutil
-from functools import reduce
-import operator
-import neuroglancer as ng
-import subprocess as sp
+from time import time
 
+import numpy as np
+import psutil
+import tifffile
+import zarr
 from qtpy.QtWidgets import QApplication
 
-try:
-    import src.config as cfg
-except:
-    import config as cfg
+import neuroglancer as ng
 
-try:
-    import builtins
-except:
-    pass
+import builtins
+from src.utils.texttree import Treeview
 
-try:
-    from src.utils.text_treeview import Treeview
-except:
-    from utils.text_treeview import Treeview
+import src.config as cfg
 
 __all__ = ['dt', 'is_tacc', 'is_linux', 'is_mac', 'create_paged_tiff', 'check_for_binaries', 'delete_recursive',
            'make_relative', 'make_absolute', 'get_img_filenames', 'print_exception',
@@ -416,9 +418,9 @@ def check_for_binaries():
     print("Checking for platform-specific SWiFT-IR executables...")
     path = os.path.split(os.path.realpath(__file__))[0]
     if platform.system() == 'Darwin':
-        bindir = os.path.join(path, 'lib', 'bin_darwin')
+        bindir = os.path.join(path, '../lib', 'bin_darwin')
     elif platform.system() == 'Linux':
-        bindir = os.path.join(path, 'lib', 'bin_tacc') if '.tacc.utexas.edu' in platform.node() else 'bin_linux'
+        bindir = os.path.join(path, '../lib', 'bin_tacc') if '.tacc.utexas.edu' in platform.node() else 'bin_linux'
     else:
         logger.warning("System Could Not Be Resolved. C Binaries Not Found.")
         return
@@ -495,7 +497,7 @@ def get_appdir() -> str:
 
 
 def example_zarr() -> str:
-    return os.path.join(get_appdir(), 'resources','example.zarr')
+    return os.path.join(get_appdir(), '../resources', 'example.zarr')
 
 
 def absFilePaths(d):
@@ -1159,8 +1161,6 @@ def dict_from_two_lists(keys: list, values: list) -> dict:
     return dict(zip(keys, values))
 
 
-
-from typing import Dict, Any
 import hashlib
 import json
 
@@ -1236,6 +1236,48 @@ def ensure_even(vals, extra=None):
                 logger.info(f"Modified: {vals[i]}")
     return vals
 
+
+def pprinttable(rows):
+    '''https://stackoverflow.com/questions/5909873/how-can-i-pretty-print-ascii-tables-with-python'''
+    esc = lambda x: html.escape(str(x))
+    sour = "<table border=1>"
+    if len(rows) == 1:
+        for i in range(len(rows[0]._fields)):
+            sour += "<tr><th>%s<td>%s" % (esc(rows[0]._fields[i]), esc(rows[0][i]))
+    else:
+        sour += "<tr>" + "".join(["<th>%s" % esc(x) for x in rows[0]._fields])
+        sour += "".join(["<tr>%s" % "".join(["<td>%s" % esc(y) for y in x]) for x in rows])
+    with tempfile.NamedTemporaryFile(suffix=".html") as f:
+        f.write(sour.encode("utf-8"))
+        f.flush()
+        print(
+            subprocess
+            .Popen(["w3m", "-dump", f.name], stdout=subprocess.PIPE)
+            .communicate()[0].decode("utf-8").strip()
+        )
+    '''
+    EXAMPLES
+    from collections import namedtuple
+    Row = namedtuple('Row',['first','second','third'])
+    data1 = Row(1,2,3)
+    data2 = Row(4,5,6)
+    pprinttable([data1])
+    pprinttable([data1,data2])
+    ┌───────┬─┐
+    │ first │1│
+    ├───────┼─┤
+    │second │2│
+    ├───────┼─┤
+    │ third │3│
+    └───────┴─┘
+    ┌─────┬───────┬─────┐
+    │first│second │third│
+    ├─────┼───────┼─────┤
+    │1    │2      │3    │
+    ├─────┼───────┼─────┤
+    │4    │5      │6    │
+    └─────┴───────┴─────┘
+    '''
 
 # def load():
 #     try:
