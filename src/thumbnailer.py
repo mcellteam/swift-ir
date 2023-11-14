@@ -2,25 +2,23 @@
 
 '''Generates thumbnails for use with an alignEM project.'''
 
-import os
-import time
-import errno
-import shutil
-import psutil
-import inspect
-import logging
 import datetime
-from pprint import pprint
-from math import floor, ceil
-from glob import glob
+import logging
 import multiprocessing as mp
-from multiprocessing.pool import ThreadPool
+import os
+import shutil
 import subprocess as sp
-import tqdm
+import time
+from glob import glob
+from multiprocessing.pool import ThreadPool
+
 import imageio.v3 as iio
+import psutil
+import tqdm
+
 import src.config as cfg
 from src.funcs_image import ImageSize
-from src.helpers import print_exception, get_appdir, get_bindir, natural_sort, absFilePaths, is_tacc
+from src.helpers import print_exception, get_appdir, get_bindir, natural_sort, is_tacc
 
 __all__ = ['Thumbnailer']
 

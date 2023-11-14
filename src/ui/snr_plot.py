@@ -19,21 +19,20 @@ https://pyqtgraph.readthedocs.io/en/latest/_modules/pyqtgraph/graphicsItems/Scat
 15:19:13 [snr_plot.initSnrPlot:303] initSnrPlot dt=0.511
 
 '''
-import os
-import sys
-import copy
-from math import ceil
-from time import time
 import inspect
 import logging
-from functools import partial
+import sys
+from math import ceil
+from time import time
+
 import numpy as np
 import pyqtgraph as pg
-from qtpy.QtWidgets import QMainWindow, QApplication, QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QCheckBox, QLabel
-from qtpy.QtGui import QFont
 from qtpy.QtCore import Qt, QSize
-from src.helpers import print_exception, caller_name
+from qtpy.QtGui import QFont
+from qtpy.QtWidgets import QMainWindow, QApplication, QWidget, QHBoxLayout, QGridLayout, QCheckBox
+
 import src.config as cfg
+from src.helpers import print_exception
 
 logger = logging.getLogger(__name__)
 

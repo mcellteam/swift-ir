@@ -1,27 +1,33 @@
 #!/usr/bin/env python3
-import os, sys, logging, inspect, copy, time, warnings
-import textwrap, pprint
-import neuroglancer as ng
-import numpy as np
+import copy
+import inspect
+import logging
+import os
 import shutil
+import sys
+import textwrap
+import time
+import warnings
+
 import qtawesome as qta
-from qtpy.QtWidgets import *
 from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWebEngineWidgets import *
+from qtpy.QtWidgets import *
+
+import neuroglancer as ng
 import src.config as cfg
-from src.helpers import print_exception, getOpt, setOpt, getData, setData, caller_name, is_tacc, is_joel, \
-    ensure_even
-from src.viewer import EMViewer, MAViewer
-from src.ui.snr_plot import SnrPlot
-from src.ui.project_table import ProjectTable
-from src.ui.models.json_tree import JsonModel
-from src.ui.sliders import DoubleSlider
-from src.ui.thumbnail import CorrSignalThumbnail, ThumbnailFast
-from src.ui.gif_player import GifPlayer
-from src.ui.layouts import HBL, VBL, GL, HW, VW, HSplitter, VSplitter, QHLine, QVLine
 from src.data_model import DataModel
-from src.hash_table import HashTable
+from src.helpers import print_exception, getOpt, setOpt, getData, setData, is_joel, \
+    ensure_even
+from src.ui.gif_player import GifPlayer
+from src.ui.layouts import HBL, VBL, GL, HW, VW, QHLine
+from src.ui.models.json_tree import JsonModel
+from src.ui.project_table import ProjectTable
+from src.ui.sliders import DoubleSlider
+from src.ui.snr_plot import SnrPlot
+from src.ui.thumbnail import CorrSignalThumbnail, ThumbnailFast
+from src.viewer import EMViewer, MAViewer
 
 __all__ = ['ProjectTab']
 

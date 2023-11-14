@@ -4,13 +4,11 @@ Performance:
 Function 'initPythonConsole' executed in 0.5900s
 '''
 
-import qtconsole
-# from IPython.lib import guisupport
-from qtconsole.rich_jupyter_widget import RichJupyterWidget
 from qtconsole.inprocess import QtInProcessKernelManager
-from qtpy.QtWidgets import QApplication, QSizePolicy, QWidget, QVBoxLayout
-from qtpy.QtCore import Qt, QSize
-from qtpy.QtGui import QFont
+from qtconsole.rich_jupyter_widget import RichJupyterWidget
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QApplication, QWidget, QVBoxLayout
+
 
 class PythonConsole(RichJupyterWidget):
 

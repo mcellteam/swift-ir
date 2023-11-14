@@ -3,13 +3,13 @@
 
 import logging
 
-from qtpy.QtWidgets import QMainWindow, QApplication, QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QCheckBox, QLabel
-
 import numpy as np
 import pyqtgraph as pg
-# import pyqtgraph.opengl as gl
+from qtpy.QtWidgets import QWidget, QGridLayout
 
 from src.funcs_zarr import get_zarr_tensor
+
+# import pyqtgraph.opengl as gl
 
 logger = logging.getLogger(__name__)
 

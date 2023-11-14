@@ -2,50 +2,49 @@
 """
 GlanceEM-SWiFT - A software tool for image alignment that is under active development.
 """
-import os
-import sys
-import csv
 import copy
-import json
-import time
+import csv
 import datetime
-import threading
-import inspect
-import logging
-import textwrap
 import getpass
-from pathlib import Path
-import psutil
-from math import floor
+import inspect
+import json
+import logging
 import multiprocessing
+import os
 import subprocess
+import sys
+import textwrap
+import threading
+import time
 from collections import OrderedDict
-import neuroglancer as ng
-import qtawesome as qta
-# from rechunker import rechunk
-from qtpy.QtWebEngineWidgets import *
+from pathlib import Path
 
+import psutil
+import qtawesome as qta
 from qtpy.QtCore import *
 from qtpy.QtGui import *
+# from rechunker import rechunk
+from qtpy.QtWebEngineWidgets import *
 from qtpy.QtWidgets import *
+
+import neuroglancer as ng
 import src.config as cfg
 import src.resources.icons_rc
 import src.shaders
+from src.align import AlignWorker
+from src.generate_zarr import ZarrWorker
 from src.helpers import getData, setData, print_exception, get_scale_val, \
     tracemalloc_start, tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, \
     isNeuroglancerRunning, update_preferences_model, is_mac, hotkey, make_affine_widget_HTML, \
-    is_joel, is_tacc, run_command, check_macos_isdark_theme, countcalls
-from src.ui.dialogs import export_affines_dialog, ExitAppDialog
-from src.ui.process_monitor import HeadupDisplay
-from src.align import AlignWorker
+    is_joel, is_tacc, run_command, check_macos_isdark_theme
 from src.scale import ScaleWorker
-from src.generate_zarr import ZarrWorker
-from src.ui.models.json_tree import JsonModel
-from src.ui.toggle_switch import ToggleSwitch
-from src.ui.tab_browser import WebBrowser
-from src.ui.tab_project import ProjectTab
-from src.ui.tab_open_project import OpenProject
+from src.ui.dialogs import export_affines_dialog, ExitAppDialog
 from src.ui.layouts import HBL, VBL, HW, VW, QVLine
+from src.ui.process_monitor import HeadupDisplay
+from src.ui.tab_browser import WebBrowser
+from src.ui.tab_open_project import OpenProject
+from src.ui.tab_project import ProjectTab
+from src.ui.toggle_switch import ToggleSwitch
 from src.ui.webpage import QuickWebPage
 
 __all__ = ['MainWindow']
@@ -1170,7 +1169,8 @@ class MainWindow(QMainWindow):
         self._scaleworker.finished.connect(self._scaleThread.quit)
         self._scaleworker.moveToThread(self._scaleThread)  # Step 4: Move worker to the thread
         self._scaleworker.finished.connect(self._scaleworker.deleteLater)
-        self._scaleworker.finished.connect(lambda: self.wPbar.hide())
+        self._scaleworker.finished.connect(lambda: logger.critical(f"\n\n\nHiding pbar...\n\n"))
+        self._scaleworker.finished.connect(self.wPbar.hide)
         self._scaleworker.finished.connect(self._refresh)
         self._scaleworker.finished.connect(lambda: self.pm.bCreateImages.setEnabled(True))
         def fn():
