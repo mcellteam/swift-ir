@@ -200,13 +200,13 @@ class AlignWorker(QObject):
             if r['complete']:
                 i = r['index']
 
-                if not dm['stack'][i]['levels'][scale]['initialized']:
-                    p = dm.path_aligned(s=scale, l=i)
-                    if os.path.exists(p):
-                        dm['stack'][i]['levels'][scale]['initialized'] = True
-                    else:
-                        self.hudWarning.emit(f"Failed to generate aligned image at index {i}")
-                        # continue #1111- This does not mean the alignment failed necessarily
+                # if not dm['stack'][i]['levels'][scale]['initialized']:
+                #     p = dm.path_aligned(s=scale, l=i)
+                #     if os.path.exists(p):
+                #         dm['stack'][i]['levels'][scale]['initialized'] = True
+                #     else:
+                #         self.hudWarning.emit(f"Failed to generate aligned image at index {i}")
+                #         # continue #1111- This does not mean the alignment failed necessarily
 
                 afm = r['affine_matrix']
                 try:
