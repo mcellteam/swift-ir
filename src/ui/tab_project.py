@@ -17,17 +17,17 @@ from qtpy.QtWidgets import *
 
 import neuroglancer as ng
 import src.config as cfg
-from src.data_model import DataModel
-from src.helpers import print_exception, getOpt, setOpt, getData, setData, is_joel, \
+from src.models.data import DataModel
+from src.utils.helpers import print_exception, getOpt, setOpt, getData, setData, is_joel, \
     ensure_even
 from src.ui.gif_player import GifPlayer
 from src.ui.layouts import HBL, VBL, GL, HW, VW, QHLine
-from src.ui.models.json_tree import JsonModel
+from src.models.jsontree import JsonModel
 from src.ui.project_table import ProjectTable
 from src.ui.sliders import DoubleSlider
 from src.ui.snr_plot import SnrPlot
 from src.ui.thumbnail import CorrSignalThumbnail, ThumbnailFast
-from src.viewer import EMViewer, MAViewer
+from src.servers.viewerfactory import EMViewer, MAViewer
 
 __all__ = ['ProjectTab']
 

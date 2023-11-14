@@ -31,9 +31,7 @@ For more information, please refer to [http://unlicense.org]
 """
 
 print('alignEM:')
-import os, sys, getpass
-import profile, pstats
-from pstats import SortKey
+import os, sys
 
 # if not getpass.getuser() in ('joelyancey', 'joely', 'jyancey', 'tmbartol', 'tbartol', 'bartol', 'ama8447', 'aalario'):
 # if not getpass.getuser() in ('joelyancey', 'joely', 'jyancey', 'tmbartol', 'tbartol', 'bartol'):
@@ -58,13 +56,10 @@ print(f'Qt plugin path: {plugin_path}')
 os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = plugin_path
 
 import subprocess as sp
-import qtpy
-import signal, logging, argparse
+import logging, argparse
 import faulthandler
-from concurrent.futures import ThreadPoolExecutor
 
 print('Importing QtWebEngineWidgets...')
-from qtpy.QtWebEngineWidgets import *
 
 print('Importing QtCore, QtGui, QtWidgets...')
 from qtpy import QtCore
@@ -77,13 +72,13 @@ print('Importing main window...')
 from src.ui.main_window import MainWindow
 
 print('Importing helpers...')
-from src.helpers import check_for_binaries, configure_project_paths, initialize_user_preferences, \
+from src.utils.helpers import check_for_binaries, initialize_user_preferences, \
     is_tacc, is_joel, is_mac, print_exception, register_login, convert_projects_model, addLoggingLevel, \
     check_macos_isdark_theme
 
 print('Importing configuration...')
 import src.config as cfg
-import src.resources.icons_rc
+
 # from qtconsole import __version__ as qcv
 
 print('Setting global application...')

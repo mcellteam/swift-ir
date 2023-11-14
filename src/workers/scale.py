@@ -28,10 +28,10 @@ import numcodecs
 from numcodecs import Blosc
 numcodecs.blosc.use_threads = False
 
-from src.thumbnailer import Thumbnailer
-from src.helpers import print_exception, get_bindir, get_scale_val
+from src.workers.thumbnailer import Thumbnailer
+from src.utils.helpers import print_exception, get_bindir, get_scale_val
 # from src.funcs_zarr import preallocate_zarr
-from src.funcs_zarr import remove_zarr
+from src.utils.funcs_zarr import remove_zarr
 import src.config as cfg
 
 from qtpy.QtCore import Signal, QObject, QMutex
@@ -91,7 +91,7 @@ class ScaleWorker(QObject):
 
         cur_path = os.path.split(os.path.realpath(__file__))[0] + '/'
         # iscale2_c = os.path.join(Path(cur_path).parent.absolute(), 'lib', get_bindir(), 'iscale2')
-        iscale2_c = os.path.join(Path(cur_path).absolute(), 'lib', get_bindir(), 'iscale2')
+        iscale2_c = os.path.join(Path(cur_path).absolute(), '../lib', get_bindir(), 'iscale2')
 
         self.hudMessage.emit(f'Batch multiprocessing {len(self.paths)} images...')
 

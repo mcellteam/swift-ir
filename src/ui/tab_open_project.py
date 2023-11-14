@@ -23,15 +23,15 @@ from qtpy.QtWebEngineWidgets import *
 from qtpy.QtWidgets import *
 
 import src.config as cfg
-from src.data_model import DataModel
-from src.funcs_image import ImageSize
-from src.helpers import print_exception, natural_sort, is_tacc, is_joel, hotkey, initLogFiles
+from src.models.data import DataModel
+from src.utils.funcs_image import ImageSize
+from src.utils.helpers import print_exception, natural_sort, is_tacc, is_joel, hotkey, initLogFiles
 from src.ui.dialogs import ImportImagesDialog
 from src.ui.file_browser import FileBrowser
 from src.ui.layouts import HBL, VBL, HW, VW, HSplitter
 from src.ui.tab_project import VerticalLabel
 from src.ui.tab_zarr import ZarrTab
-from src.viewer import PMViewer
+from src.servers.viewerfactory import PMViewer
 
 __all__ = ['OpenProject']
 

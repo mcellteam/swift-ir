@@ -20,10 +20,10 @@ numcodecs.blosc.use_threads = False
 
 from qtpy.QtCore import Signal, QObject, QMutex
 
-from src.helpers import get_bindir, print_exception, get_core_count
-from src.funcs_image import ImageSize
-from src.thumbnailer import Thumbnailer
-from src.swiftir import applyAffine
+from src.utils.helpers import get_bindir, print_exception, get_core_count
+from src.utils.funcs_image import ImageSize
+from src.workers.thumbnailer import Thumbnailer
+from src.utils.swiftir import applyAffine
 
 __all__ = ['ZarrWorker']
 
@@ -98,7 +98,7 @@ class ZarrWorker(QObject):
 
         if not len(self.indexes):
             logger.info("\n\nZarr is in sync.\n")
-            self.finished.emit(); return
+            return
 
         if dm.has_bb():
             # Note: now have got new cafm'level -> recalculate bounding box
@@ -130,7 +130,7 @@ class ZarrWorker(QObject):
         Thumbnailer(dm).reduce_tuples(to_reduce, scale_factor=scale_factor)
 
         if not self.running():
-            self.finished.emit(); return
+            return
 
         # path_mini_zarr = os.path.join(dm.data_location, 'zarr_reduced', level)
         # if len(self.indexes) == len(dm):
@@ -156,14 +156,14 @@ class ZarrWorker(QObject):
             print_exception()
 
         if not self.running():
-            self.finished.emit(); return
+            return
 
         if self.generateMiniZarr():
             logger.error(f"Something went wrong during generation of reduced Zarr")
             print_exception()
 
         if not self.running():
-            self.finished.emit(); return
+            return
 
         if self.renew:
             tstamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -195,8 +195,6 @@ class ZarrWorker(QObject):
             self.dm.t_convert_zarr = 0.
 
         # self.hudMessage.emit(f'<span style="color: #FFFF66;"><b>**** All Processes Complete ****</b></span>')
-        self.finished.emit()
-
 
     def generate_single_animation(self, paths, of):
         try:
@@ -342,7 +340,7 @@ def run_mir(task):
     # Todo get exact median greyscale value for each image in list, for now just use 128
 
     app_path = os.path.split(os.path.realpath(__file__))[0]
-    mir_c = os.path.join(app_path, 'lib', get_bindir(), 'mir')
+    mir_c = os.path.join(app_path, '../lib', get_bindir(), 'mir')
 
     bb_x, bb_y = rect[2], rect[3]
     afm = np.array([cafm[0][0], cafm[0][1], cafm[0][2], cafm[1][0], cafm[1][1], cafm[1][2]],

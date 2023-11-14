@@ -32,7 +32,7 @@ from qtpy.QtGui import QFont
 from qtpy.QtWidgets import QMainWindow, QApplication, QWidget, QHBoxLayout, QGridLayout, QCheckBox
 
 import src.config as cfg
-from src.helpers import print_exception
+from src.utils.helpers import print_exception
 
 logger = logging.getLogger(__name__)
 

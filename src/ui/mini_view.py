@@ -7,7 +7,7 @@ import numpy as np
 import pyqtgraph as pg
 from qtpy.QtWidgets import QWidget, QGridLayout
 
-from src.funcs_zarr import get_zarr_tensor
+from src.utils.funcs_zarr import get_zarr_tensor
 
 # import pyqtgraph.opengl as gl
 

@@ -159,7 +159,7 @@ class align_recipe:
         # Configure platform-specific path to executables for C SWiFT-IR
         slug = (('linux', 'darwin')[platform.system() == 'Darwin'], 'tacc')[
             'tacc.utexas' in platform.node()]
-        p = os.path.split(os.path.realpath(__file__))[0]
+        p = os.path.dirname(os.path.split(os.path.realpath(__file__))[0])
         self.swim_c = '%s/lib/bin_%s/swim' % (p, slug)
         self.mir_c = '%s/lib/bin_%s/mir' % (p, slug)
         self.iscale2_c = '%s/lib/bin_%s/iscale2' % (p, slug)

@@ -3,7 +3,7 @@
 import os
 import logging
 import numpy as np
-from src.helpers import print_exception
+from src.utils.helpers import print_exception
 
 __all__ = ['save_bias_analysis']
 

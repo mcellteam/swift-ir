@@ -13,7 +13,7 @@ import sys
 import numpy as np
 
 try:
-    from src.swiftir import applyAffine, reptoshape
+    from src.utils.swiftir import applyAffine, reptoshape
 except Exception as e:
     print(e)
     try:
@@ -80,7 +80,7 @@ def run_mir(task):
     border = task[4]
 
     # Todo get exact median greyscale value for each image in list, for now just use 128
-    mir_c = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'lib', get_bindir(), 'mir')
+    mir_c = os.path.join(os.path.split(os.path.realpath(__file__))[0], '../lib', get_bindir(), 'mir')
 
     bb_x, bb_y = rect[2], rect[3]
     # afm = np.array(cafm)
