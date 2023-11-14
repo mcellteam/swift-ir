@@ -194,7 +194,7 @@ class ZarrWorker(QObject):
         else:
             self.dm.t_convert_zarr = 0.
 
-        self.hudMessage.emit(f'<span style="color: #FFFF66;"><b>**** All Processes Complete ****</b></span>')
+        # self.hudMessage.emit(f'<span style="color: #FFFF66;"><b>**** All Processes Complete ****</b></span>')
         self.finished.emit()
 
 

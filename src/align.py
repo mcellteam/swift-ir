@@ -229,7 +229,7 @@ class AlignWorker(QObject):
             self.dm['level_data'][self.dm.level]['initial_snr'] = self.dm.snr_list()
             self.dm['level_data'][self.dm.level]['aligned'] = True
 
-        self.hudMessage.emit(f'<span style="color: #FFFF66;"><b>**** All Processes Complete ****</b></span>')
+        # self.hudMessage.emit(f'<span style="color: #FFFF66;"><b>**** All Processes Complete ****</b></span>')
 
 
     def run_multiprocessing(self, func, tasks, desc):

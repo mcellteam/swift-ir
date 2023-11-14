@@ -892,7 +892,8 @@ class MainWindow(QMainWindow):
         # logger.info(f'Returning: {ans}')
         return ans
 
-    def present_snr_results(self, indexes):
+    def present_snr_results(self, dm, indexes):
+        # indexes = list(range(len(dm)))
         snr_before = self._snr_before
         snr_after = self.dm.snr_list()
         try:
@@ -911,27 +912,45 @@ class MainWindow(QMainWindow):
             no_chg = [i for i, x in enumerate(delta_list) if x == 0]
             pos = [i for i, x in enumerate(delta_list) if x > 0]
             neg = [i for i, x in enumerate(delta_list) if x < 0]
-            s1 = (no_chg[:50] + '..') if len(str(no_chg)) > 50 else str(no_chg)
-            s2 = (pos[:50] + '..') if len(str(pos)) > 50 else str(pos)
-            s3 = (neg[:50] + '..') if len(str(neg)) > 50 else str(neg)
-            self.tell(f"Alignment Results:\n"
-                      f"  # No Change  (SNR =) : {len(no_chg)}, {s1}\n"
-                      f"  Better       (SNR ↑) : {len(pos)}, {s2}\n"
-                      f"  Worse        (SNR ↓) : {len(neg)}, {s3}")
+            n1 = len(no_chg)
+            n2 = len(pos)
+            n3 = len(neg)
 
-            self.tell('  Total Avg. SNR       : %.3f' % (self.dm.snr_mean()))
-            if abs(diff_avg) < .001:
-                self.tell('  Δ AVG. SNR           : <span style="color: #66FF00;"><b>%.4g (NO CHANGE)</b></span>' %
-                          diff_avg)
+            lines = []
+
+            s1 = ' '.join(map(str, no_chg)) if n1 < 11 \
+                else ' '.join(map(str, no_chg[:5])) + ' ... ' + ' '.join(map(str, no_chg[n1-5:]))
+            s2 = ' '.join(map(str, pos)) if n2 < 11 \
+                else ' '.join(map(str, pos[:5])) + ' ... ' + ' '.join(map(str, pos[n2 - 5:]))
+            s3 = ' '.join(map(str, neg)) if n3 < 11 \
+                else ' '.join(map(str, neg[:5])) + ' ... ' + ' '.join(map(str, neg[n3 - 5:]))
+
+            if abs(diff_avg) < .01:
+                lines.append(f'  Δ AVG. SNR       : <span style="color: #66FF00;"><b>{0:6.2g} --</b></span>')
             elif diff_avg < 0:
-                self.tell('  Δ AVG. SNR           : <span style="color: #a30000;"><b>%.4g (WORSE)</b></span>' %
-                          diff_avg)
+                lines.append(f'  Δ AVG. SNR       : <span style="color: #a30000;"><b>{diff_avg:6.2gf} (-)</b></span>')
             else:
-                self.tell('  Δ AVG. SNR           : <span style="color: #66FF00;"><b>%.4g (BETTER)</b></span>' %
-                          diff_avg)
+                lines.append(f'  Δ AVG. SNR       : <span style="color: #66FF00;"><b>{diff_avg:6.2g} (+)</b></span>')
+
+            lines.append(f"  Total Avg. SNR   : {str(f'{self.dm.snr_mean():6.2g}').ljust(6)}")
+            lines.append(f"             SNR = : {str(n1).ljust(6)}{('', 'i = ')[n1 > 0]}{s1}")
+            lines.append(f"             SNR ↑ : {str(n2).ljust(6)}{('', 'i = ')[n2 > 0]}{s2}")
+            lines.append(f"             SNR ↓ : {str(n3).ljust(6)}{('', 'i = ')[n3 > 0]}{s3}")
+            self.tell(f"Alignment Results:\n" + '\n'.join(lines))
+
+
+            # self.tell(f"Alignment Results:\n"
+            #           f"{final_str}\n"
+            #           f"  Total Avg. SNR       : {self.dm.snr_mean():.3g}\n"
+            #           f"  # No Change  (SNR =) : {str(n1).center(6)}{('', '; ')[n1 > 0]}{s1}\n"
+            #           f"  Better       (SNR ↑) : {str(n2).center(6)}{('', '; ')[n2 > 0]}{s2}\n"
+            #           f"  Worse        (SNR ↓) : {str(n3).center(6)}{('', '; ')[n3 > 0]}{s3}\n"
+            #           )
+
 
         except:
             logger.warning('Unable To Present SNR Results')
+            print_exception()
 
 
     def onAlignmentEnd(self):
@@ -1042,6 +1061,7 @@ class MainWindow(QMainWindow):
                 self._zarrworker.finished.connect(self.pt.updateZarrRadiobuttons)
                 self._zarrworker.finished.connect(self.pt.initNeuroglancer)
                 self._zarrworker.finished.connect(lambda: print('Finished'))
+                self._zarrworker.finished.connect(lambda: self.tell(f'<span style="color: #FFFF66;"><b>**** All Processes Complete ****</b></span>'))
                 self._zarrThread.start()  # Step 6: Start the thread
 
 
@@ -1130,9 +1150,10 @@ class MainWindow(QMainWindow):
             self._alignworker.finished.connect(self.pt.snr_plot.initSnrPlot)
         self._alignworker.finished.connect(self.updateEnabledButtons)
         
-        self._alignworker.finished.connect(lambda: self.present_snr_results(indexes))
+        self._alignworker.finished.connect(lambda: self.present_snr_results(dm, indexes))
         self._alignworker.finished.connect(self.pt.initNeuroglancer)
         self._alignworker.finished.connect(lambda: setattr(self, '_working', False))
+        self._alignworker.finished.connect(lambda: self.tell(f'<span style="color: #FFFF66;"><b>**** All Processes Complete ****</b></span>'))
         self._alignThread.start()  # Step 6: Start the thread
 
 
@@ -1177,6 +1198,7 @@ class MainWindow(QMainWindow):
             self.saveUserPreferences()
             self.pm.refresh()
         self._scaleworker.finished.connect(fn)
+        self._scaleworker.finished.connect(lambda: self.tell(f'<span style="color: #FFFF66;"><b>**** All Processes Complete ****</b></span>'))
         self._scaleworker.progress.connect(self.setPbar)
         self._scaleworker.initPbar.connect(self.resetPbar)
         self._scaleworker.hudMessage.connect(self.tell)
@@ -3992,6 +4014,7 @@ class MainWindow(QMainWindow):
 
         '''Headup Display'''
         self.hud = HeadupDisplay(self.app)
+        self.hud.te.setReadOnly(True)
         self.hud.set_theme_dark()
 
         self.dwThumbs = DockWidget('Tra./Ref. Thumbnails', self)
