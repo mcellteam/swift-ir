@@ -894,8 +894,12 @@ class MainWindow(QMainWindow):
 
     def present_snr_results(self, dm, indexes):
         # indexes = list(range(len(dm)))
+        # if dm.first_included() in indexes:
+        #     indexes.remove(dm.first_included())
         snr_before = self._snr_before
-        snr_after = self.dm.snr_list()
+        snr_after = [dm.snr(l=i) for i in indexes]
+        # logger.critical(f"[{len(snr_before)}] snr_before = {snr_before}")
+        # logger.critical(f"[{len(snr_after)}] snr_after  = {snr_after}")
         try:
             import statistics
             if self.dm.is_aligned():
@@ -925,19 +929,32 @@ class MainWindow(QMainWindow):
             s3 = ' '.join(map(str, neg)) if n3 < 11 \
                 else ' '.join(map(str, neg[:5])) + ' ... ' + ' '.join(map(str, neg[n3 - 5:]))
 
-            if abs(diff_avg) < .01:
-                lines.append(f'  Δ AVG. SNR       : <span style="color: #66FF00;"><b>{0:6.2g} --</b></span>')
-            elif diff_avg < 0:
-                lines.append(f'  Δ AVG. SNR       : <span style="color: #a30000;"><b>{diff_avg:6.2gf} (-)</b></span>')
-            else:
-                lines.append(f'  Δ AVG. SNR       : <span style="color: #66FF00;"><b>{diff_avg:6.2g} (+)</b></span>')
+            lines.append(f"    Avg. SNR   : {str(f'{self.dm.snr_mean():7.2f}').ljust(6)}")
 
-            lines.append(f"  Total Avg. SNR   : {str(f'{self.dm.snr_mean():6.2g}').ljust(6)}")
-            lines.append(f"             SNR = : {str(n1).ljust(6)}{('', 'i = ')[n1 > 0]}{s1}")
-            lines.append(f"             SNR ↑ : {str(n2).ljust(6)}{('', 'i = ')[n2 > 0]}{s2}")
-            lines.append(f"             SNR ↓ : {str(n3).ljust(6)}{('', 'i = ')[n3 > 0]}{s3}")
+            if abs(diff_avg) < .01:
+                lines.append(f'  Δ Avg. SNR   : <span style="color: #66FF00;"><b>{0:7.2f} --</b></span>')
+            elif diff_avg < 0:
+                lines.append(f'  Δ Avg. SNR   : <span style="color: #a30000;"><b>{diff_avg:7.2f} (-)</b></span>')
+            else:
+                lines.append(f'  Δ Avg. SNR   : <span style="color: #66FF00;"><b>{diff_avg:7.2f} (+)</b></span>')
+
+            if n2:
+                lines.append(f"<span style='color: #66FF00;'><b>         SNR ↑ : {n2:7g}{('', '  i = ')[n2 > 0]}{s2}</b></span>")
+            if n3:
+                lines.append(f"<span style='color: #a30000;'>         SNR ↓ : {n3:7g}{('', '  i = ')[n3 > 0]}{s3}</b></span>")
+            if n1:
+                lines.append(f"         SNR = : {n1:7g}{('', '  i = ')[n1 > 0]}{s1}")
             self.tell(f"Alignment Results:\n" + '\n'.join(lines))
 
+            fi = dm.first_included()
+            # for i in range(len(self)):
+            for i in indexes:
+                # if i != fi:
+                if not dm['stack'][i]['levels'][dm.level]['initialized']:
+                    p = dm.path_aligned(s=dm.level, l=i)
+                    if not os.path.exists(p):
+                        self.warn(f"Aligned image not found at index {i}")
+                        # continue #1111- This does not mean the alignment failed necessarily
 
             # self.tell(f"Alignment Results:\n"
             #           f"{final_str}\n"
@@ -1109,7 +1126,7 @@ class MainWindow(QMainWindow):
             del self._alignworker
 
         self.tell("%s Affines (%s)..." % (('Initializing', 'Refining')[dm.isRefinement()], dm.level_pretty(s=scale)))
-        self._snr_before = dm.snr_list()
+        self._snr_before = [dm.snr(l=i) for i in indexes]
 
         logger.info("Setting mp debugging...")
         if cfg.DEBUG_MP:
@@ -1230,7 +1247,7 @@ class MainWindow(QMainWindow):
                 self.bAlign.setText(f"Align All ({_count_unknown_answer_indexes})")
             else:
                 self.bAlign.setText(f"Align All")
-            self.bAlign.setEnabled(_enable)
+            # self.bAlign.setEnabled(_enable)
 
             _current_saved = self.dm.ssSavedComports()
             _has_alignment_result = self.dm.ht.haskey(self.dm.swim_settings())
