@@ -156,8 +156,8 @@ class AlignWorker(QObject):
             self.dm.t_align = dt
             if fail:
                 self.hudWarning.emit(f'Something went wrong! # Success: {succ} / # Failed: {fail}')
-                self.finished.emit()
-                return
+                # self.finished.emit()
+                # return
         else:
             '''Use Tom's multiprocessing Queue'''
             task_queue = TaskQueue(n_tasks=len(tasks), dest=dm.data_location)
