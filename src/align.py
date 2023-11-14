@@ -154,7 +154,7 @@ class AlignWorker(QObject):
             desc = f"Compute Alignment"
             dt, succ, fail, results = self.run_multiprocessing(run_recipe, tasks, desc)
             self.dm.t_align = dt
-            if not succ:
+            if fail:
                 self.hudWarning.emit(f'Something went wrong! # Success: {succ} / # Failed: {fail}')
                 self.finished.emit()
                 return
