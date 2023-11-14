@@ -1,24 +1,21 @@
 #!/usr/bin/env python3
 
-import os, sys, logging, textwrap, platform
-from os.path import expanduser
-from pathlib import Path
 import faulthandler
-import neuroglancer as ng
-import qtawesome as qta
+import logging
+import os
+import platform
+import sys
+from os.path import expanduser
 
-from qtpy.QtWidgets import QWidget, QComboBox, QDialog, QDialogButtonBox, QGridLayout, QHBoxLayout, QLabel, \
-    QLineEdit, QVBoxLayout, QCheckBox, QTabWidget, QMessageBox, QFileDialog, QInputDialog, QPushButton, QToolButton, \
-    QColorDialog, QWidgetAction, QMenu, QToolButton, QSizePolicy, QDial, QFormLayout, QGroupBox, QButtonGroup, \
-    QStyle, QSpinBox, QListView, QStyledItemDelegate
-from qtpy.QtCore import Qt, Slot, QAbstractListModel, QModelIndex, QUrl, QDir, QFileInfo, Signal, QSize, QObject, \
-    QUrl
-from qtpy.QtGui import QDoubleValidator, QFont, QIntValidator, QPixmap, QColor, QIcon
+from qtpy.QtCore import *
+from qtpy.QtGui import *
+from qtpy.QtWidgets import *
+
+import neuroglancer as ng
 import src.config as cfg
-from src.helpers import get_scale_val, is_joel, is_tacc, hotkey
 from src.funcs_image import ImageSize
-from src.ui.layouts import VBL, HBL, VW, HW
-from src.ui.thumbnail import ThumbnailFast
+from src.helpers import hotkey
+from src.ui.layouts import HBL
 
 logger = logging.getLogger(__name__)
 

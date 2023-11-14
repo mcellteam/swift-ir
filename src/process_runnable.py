@@ -1,13 +1,8 @@
 #!/usr/bin/env python3
 
 import logging
-import sys
-import traceback
 
-import src.config as cfg
-from src.helpers import print_exception
-
-from qtpy.QtCore import Slot, Signal, QObject, QRunnable, QThreadPool
+from qtpy.QtCore import QRunnable, QThreadPool
 
 # https://stackoverflow.com/questions/47560399/run-function-in-the-background-and-update-ui
 # a class that behaves the same as Process:

@@ -5,11 +5,12 @@ __all__ = ['DoubleSlider', 'RangeSlider']
 Source: https://gist.github.com/dennis-tra/994a65d6165a328d4eabaadbaedac2cc
 '''
 
-import sys
 import logging
+import sys
+
 from qtpy import QtCore, QtGui, QtWidgets
 from qtpy.QtWidgets import QSlider
-from qtpy.QtCore import Signal
+
 from src.helpers import print_exception
 
 logger = logging.getLogger(__name__)

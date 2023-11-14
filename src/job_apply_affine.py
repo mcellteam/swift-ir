@@ -4,13 +4,12 @@
 Job script to apply affine transformations to a source image, producing an aligned+transformed result.
 '''
 
-import os
-import sys
 import logging
+import os
 import platform
-import traceback
-from datetime import datetime
 import subprocess as sp
+import sys
+
 import numpy as np
 
 try:

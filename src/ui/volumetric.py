@@ -14,21 +14,17 @@ glview.grabFrameBuffer().save('fileName.png')
 
 """
 import sys
-from qtpy.QtWidgets import *
+
+import numpy as np
+import pyqtgraph as pg
+import pyqtgraph.opengl as gl
 from qtpy.QtCore import *
-from qtpy.QtGui import *
+from qtpy.QtWidgets import *
+
 # from pyqtgraph.Qt.QtCore import *
 # from pyqtgraph.Qt.QtGui import *
 # from pyqtgraph.Qt import QtGui
-
 # QtGui.QApplication.setGraphicsSystem("raster") # raster/native/opengl
-
-import numpy as np
-
-import pyqtgraph as pg
-import pyqtgraph.opengl as gl
-import pyqtgraph.console
-from pyqtgraph import functions as fn
 
 # Performance issues:
 # https://stackoverflow.com/questions/63855707/realtime-visualisation-bottleneck-with-pyqtgraph-plotcurveitem

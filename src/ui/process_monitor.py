@@ -10,14 +10,14 @@ self.textedit
 
 a = cfg.mw.hud.te.toPlainText()
 '''
-import time
-import random
-import logging
 import inspect
-from qtpy.QtGui import QFont, QTextCursor
+import logging
+import random
+import time
+
 from qtpy.QtCore import QObject, QThread, Qt, Signal, Slot, QSize
-from qtpy.QtWidgets import QApplication, QWidget, QPlainTextEdit, QVBoxLayout, QSizePolicy
-import src.config as cfg
+from qtpy.QtGui import QTextCursor
+from qtpy.QtWidgets import QWidget, QPlainTextEdit, QVBoxLayout
 
 logger = logging.getLogger("hud")
 logger.propagate = False # attempt to disable propogation to the root handler

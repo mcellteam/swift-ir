@@ -259,10 +259,10 @@ class ScaleWorker(QObject):
             dt = time.time() - t
             self._timing_results['t_scale_convert'][s] = dt
             logger.info(f"Elapsed Time: {dt:.3g}s")
-
         # self.hudMessage.emit('**** Autoscaling Complete ****')
         self.hudMessage.emit(f'<span style="color: #FFFF66;"><b>**** All Processes Complete ****</b></span>')
         print(f"<==== Terminating Background Thread <====")
+        self.finished.emit() #Critical
 
 def preallocate_zarr(zarr_od, name, shape, dtype, opts, scale):
     '''zarr.blosc.list_compressors() -> ['blosclz', 'lz4', 'lz4hc', 'zlib', 'zstd']'''

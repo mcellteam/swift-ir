@@ -1,42 +1,37 @@
 #!/usr/bin/env python3
 
-import os
-import sys
+import copy
+import inspect
 import json
+import logging
+import os
+import shutil
+import subprocess as sp
+import textwrap
 import time
 import uuid
-import shutil
-import inspect
-import logging
-from pathlib import Path
-import platform
-import textwrap
 from datetime import datetime
-import copy
-from pprint import pformat
 from glob import glob
 from pathlib import Path
-import subprocess as sp
+from pprint import pformat
+
 import numpy as np
-from qtpy.QtWidgets import *
+import qtawesome as qta
 from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWebEngineWidgets import *
-import qtawesome as qta
-from src.ui.file_browser import FileBrowser
-from src.funcs_image import ImageSize
-from src.helpers import list_paths_absolute, get_bytes, absFilePaths, getOpt, setOpt, \
-    print_exception, natural_sort, is_tacc, is_joel, hotkey, initLogFiles, sanitizeSavedPaths
-from src.data_model import DataModel
-from src.ui.tab_zarr import ZarrTab
-from src.ui.dialogs import ImportImagesDialog
-from src.ui.layouts import HBL, VBL, GL, HW, VW, HSplitter, VSplitter
-from src.ui.tab_project import VerticalLabel
-from src.ui.tab_project import ProjectTab
-from src.viewer import PMViewer
-from src.thumbnailer import Thumbnailer
+from qtpy.QtWidgets import *
 
 import src.config as cfg
+from src.data_model import DataModel
+from src.funcs_image import ImageSize
+from src.helpers import print_exception, natural_sort, is_tacc, is_joel, hotkey, initLogFiles
+from src.ui.dialogs import ImportImagesDialog
+from src.ui.file_browser import FileBrowser
+from src.ui.layouts import HBL, VBL, HW, VW, HSplitter
+from src.ui.tab_project import VerticalLabel
+from src.ui.tab_zarr import ZarrTab
+from src.viewer import PMViewer
 
 __all__ = ['OpenProject']
 

@@ -1,16 +1,21 @@
 # !/usr/bin/env python3
 
-import os, sys, logging, pprint, textwrap
+import logging
+import os
+import pprint
 import subprocess as sp
-from qtpy.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTreeView, QFileSystemModel, \
-    QPushButton, QSizePolicy, QAbstractItemView, QLineEdit, QAction, QMenu, QComboBox, QTextEdit, QFormLayout, \
-    QButtonGroup, QLabel, QCompleter, QMessageBox
-from qtpy.QtCore import Slot, Qt, QSize, QDir
-from qtpy.QtGui import QCursor, QFont
+import sys
+import textwrap
+
 import qtawesome as qta
-from src.helpers import is_joel, is_tacc, sanitizeSavedPaths, print_exception
-from src.ui.layouts import HW, VW, VBL, HBL, HSplitter, VSplitter
+from qtpy.QtCore import Qt, QSize, QDir
+from qtpy.QtWidgets import QApplication, QWidget, QTreeView, QFileSystemModel, \
+    QPushButton, QSizePolicy, QAbstractItemView, QLineEdit, QAction, QMenu, QComboBox, QTextEdit, QButtonGroup, QLabel, \
+    QMessageBox
+
 import src.config as cfg
+from src.helpers import is_tacc, print_exception
+from src.ui.layouts import HW, VW, VBL
 
 __all__ = ['FileBrowser']
 
