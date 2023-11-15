@@ -5198,7 +5198,5 @@ Q: Where can I learn more about the principles of Signal Whitening Fourier Trans
 A: https://mmbios.pitt.edu/images/ScientificMeetings/MMBIOS-Aug2014.pdf
 
 
-
-
 """
 

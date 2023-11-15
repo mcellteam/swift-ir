@@ -5,7 +5,7 @@ libtiff.libtiff_ctypes.suppress_warnings()
 from qtpy.QtWidgets import *
 from qtpy.QtGui import *
 from qtpy.QtCore import *
-from src.ui.layouts.layouts import GL, HW
+from src.ui.layouts.layouts import GL, HW, VW
 import src.config as cfg
 
 
@@ -63,18 +63,25 @@ class GifPlayer(QWidget):
         self.bBlink.clicked.connect(self.on_click)
         self.bBlink.setEnabled(False)
 
+        self.labSlr = QLabel('Blink Speed: ')
 
-        self.rb0 = QRadioButton('Pairwise Alignment')
-        self.rb0.setStyleSheet("font-size: 10px; color: #ffe135; font-weight: 600; "
-                               "padding: 2px; background-color: rgba(0, 0, 0, 0.5);"
-                               "border-radius: 4px;")
+        self.slrGif = QSlider(Qt.Horizontal, self)
+        # self.slrGif.setStyleSheet("font-size: 10px; color: #ffe135; "
+        #                           "padding: 2px; background-color: rgba(0, 0, 0, 0.5);"
+        #                           "border-radius: 2px;")
+
+
+        self.rb0 = QRadioButton('Pairwise')
+        # self.rb0.setStyleSheet("font-size: 10px; color: #ffe135; "
+        #                        "padding: 2px; background-color: rgba(0, 0, 0, 0.5);"
+        #                        "border-radius: 2px;")
         self.rb0.clicked.connect(self.set)
         # self.rbZarrRaw.setStyleSheet(style)
 
-        self.rb1 = QRadioButton('Cumulative Alignment')
-        self.rb1.setStyleSheet("font-size: 10px; color: #ffe135; font-weight: 600; "
-                               "padding: 2px; background-color: rgba(0, 0, 0, 0.5);"
-                               "border-radius: 4px;")
+        self.rb1 = QRadioButton('Cumulative')
+        # self.rb1.setStyleSheet("font-size: 10px; color: #ffe135; "
+        #                        "padding: 2px; background-color: rgba(0, 0, 0, 0.5);"
+        #                        "border-radius: 2px;")
         self.rb1.clicked.connect(self.set)
         # self.rbZarrTransformed.setStyleSheet(style)
 
@@ -84,17 +91,11 @@ class GifPlayer(QWidget):
         self.bg.setExclusive(True)
         self.rb0.setChecked(True)
 
-        self.radiobuttons = HW(self.rb0, self.rb1)
-        self.radiobuttons.layout.setAlignment(Qt.AlignBottom)
-        # self.radiobuttons.setStyleSheet("font-size: 10px; color: #339933; font-weight: 600;")
-
 
         self.labNull = QLabel('No Data.')
         self.labNull.setAlignment(Qt.AlignCenter)
 
-        self.labSlr = QLabel('Blink Speed: ')
 
-        self.slrGif = QSlider(Qt.Horizontal, self)
         # self.slrGif.setStyleSheet("""
         # QSlider::handle:horizontal {
         # background-color: #ede9e8;
@@ -124,6 +125,7 @@ class GifPlayer(QWidget):
         self.labMs.setStyleSheet("color: #f3f6fb;")
 
         self.leSlr = QLineEdit()
+        self.leSlr.setAlignment(Qt.AlignCenter)
         def fn():
             val = int(self.leSlr.text())
             logger.info(f'[{val}]')
@@ -132,17 +134,22 @@ class GifPlayer(QWidget):
         self.leSlr.textEdited[str].connect(fn)
         self.leSlr.setAlignment(Qt.AlignCenter)
         self.leSlr.setValidator(QIntValidator(self.min, self.max))
-        self.leSlr.setMaximumWidth(34)
-        # self.leSlr.setStyleSheet("color: #f3f6fb; border: 1px solid #f3f6fb;")
-        # self.leSlr.setStyleSheet("border: 1px solid #f3f6fb;")
-        # self.leW = HW(self.leSlr, self.labMs)
+        self.leSlr.setFixedWidth(40)
         self.wSlrGif = HW(self.labSlr, self.slrGif, self.leSlr)
         self.wSlrGif.layout.setContentsMargins(4,4,4,4)
         self.wSlrGif.setMaximumWidth(150)
 
+        self.controls2 = VW(self.rb0, self.rb1, self.wSlrGif)
+        self.controls2.setStyleSheet("font-size: 10px; color: #ffe135; "
+                                        "padding: 2px; background-color: rgba(0, 0, 0, 0.5);"
+                                        "border-radius: 2px;")
+        self.controls2.layout.setAlignment(Qt.AlignTop | Qt.AlignRight)
+        # self.controls2.setStyleSheet("font-size: 10px; color: #339933; font-weight: 600;")
+
+
         # self.controls = HW(self.bBlink, self.bPlay)
         self.controls = HW(self.bBlink, self.bPlay)
-        # self.controls = HW(self.bBlink, self.bPlay, self.radiobuttons)
+        # self.controls = HW(self.bBlink, self.bPlay, self.controls2)
         self.controls.layout.setContentsMargins(4,4,4,4)
         self.controls.layout.setAlignment(Qt.AlignLeft | Qt.AlignTop)
         # self.controls.move(2, 2)
@@ -153,9 +160,9 @@ class GifPlayer(QWidget):
         self.gl.setContentsMargins(0,0,0,0)
         self.gl.addWidget(self.labNull, 0, 0, 3, 3)
         self.gl.addWidget(self.label, 0, 0, 3, 3)
-        self.gl.addWidget(self.controls, 0, 0, 0, 0)
-        self.gl.addWidget(self.radiobuttons, 2, 1, 1, 1)
-        self.gl.addWidget(self.wSlrGif, 2, 2, 1, 1)
+        self.gl.addWidget(self.controls, 0, 0, 1, 1)
+        self.gl.addWidget(self.controls2, 0, 2, 1, 1)
+        # self.gl.addWidget(self.wSlrGif, 2, 2, 1, 1)
         self.gl.setRowStretch(0, 0)
         self.gl.setRowStretch(1, 9)
         self.gl.setColumnStretch(0, 0)
@@ -224,7 +231,7 @@ class GifPlayer(QWidget):
         # self.movie = QMovie(self.path, QByteArray(), self)
         path_cafm_gif = self.dm.path_cafm_gif()
         self.path = path_gif = self.dm.path_gif()
-        if self.radiobuttons.isVisible():
+        if self.controls2.isVisible():
             if self.rb1.isChecked():
                 self.path = path_cafm_gif
             else:

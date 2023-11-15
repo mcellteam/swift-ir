@@ -784,6 +784,7 @@ class AlignmentTab(QWidget):
                     self.dm.restoreSavedSettings()
                     self.parent.tell(f'Saved settings restored at index {self.dm.zpos}')
                 self.dataUpdateMA()
+                self.refreshTab() #1115+
         self.cbSaved.toggled.connect(fn_cbSaved)
 
         self.cbIgnoreCache = QCheckBox('Ignore cache')
@@ -2066,7 +2067,7 @@ class AlignmentTab(QWidget):
         # self.parent.bZarrRegen.setEnabled(self.dm.is_aligned())
         self.bZarrRegen.setEnabled(self.dm.is_aligned())
         # self.bPull.setVisible((self.dm.scale != self.dm.coarsest_scale_key()) and self.dm.is_alignable())
-        self.gifPlayer.radiobuttons.setVisible(os.path.exists(self.dm.path_cafm_gif()))
+        self.gifPlayer.controls2.setVisible(os.path.exists(self.dm.path_cafm_gif()))
 
         ready = self.dm['level_data'][self.dm.scale]['alignment_ready']
 
