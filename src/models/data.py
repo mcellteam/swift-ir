@@ -2082,6 +2082,8 @@ class DataModel:
         else:
             self['level_data'][cur_level]['alignment_ready'] = True
 
+        cfg.mw.hud.done()
+
 
     def initializeStack(self, images_info, images_location, data_location):
         logger.critical(f"\n\nInitializing data model ({data_location})...\n")

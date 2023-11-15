@@ -438,15 +438,15 @@ class ProjectTab(QWidget):
         # tip = '\n'.join(textwrap.wrap(tip, width=35))
         # self.bPush.setToolTip(tip)
 
-        self.bPull = QPushButton('Pull All Settings From Coarser Resolution')
-        self.bPull.setFocusPolicy(Qt.NoFocus)
-        self.bPull.setFixedHeight(16)
-        self.bPull.clicked.connect(self.dm.pullSettings)
-        self.bPull.clicked.connect(self.refreshTab)
-        # msg = "Re-pull (propagate) preferences from previous scale level."
-        tip = "Pull (re-propagate) all SWIM preferences from the next coarsest resolution level."
-        tip = '\n'.join(textwrap.wrap(tip, width=35))
-        self.bPull.setToolTip(tip)
+        # self.bPull = QPushButton('Pull All Settings From Coarser Resolution')
+        # self.bPull.setFocusPolicy(Qt.NoFocus)
+        # self.bPull.setFixedHeight(16)
+        # self.bPull.clicked.connect(self.dm.pullSettings)
+        # self.bPull.clicked.connect(self.refreshTab)
+        # # msg = "Re-pull (propagate) preferences from previous scale level."
+        # tip = "Propagate all saved SWIM settings from next lowest level."
+        # tip = '\n'.join(textwrap.wrap(tip, width=35))
+        # self.bPull.setToolTip(tip)
 
         # tip = "Perform a quick SWIM alignment to show match signals and SNR values, " \
         #       "but do not generate any new images"
@@ -1776,7 +1776,8 @@ class ProjectTab(QWidget):
         self.checkboxes.layout.setSpacing(4)
 
         # self.cpanelEditor = HW(self.bTransform, self.bApplyOne, self.bSaveSettings)
-        self.btnsSWIM = VW(HW(self.bApplyOne, self.bSaveSettings, self.bSaveAllSettings), self.bPull)
+        # self.btnsSWIM = VW(HW(self.bApplyOne, self.bSaveSettings, self.bSaveAllSettings), self.bPull)
+        self.btnsSWIM = VW(HW(self.bApplyOne, self.bSaveSettings, self.bSaveAllSettings))
         self.btnsSWIM.layout.setContentsMargins(2,2,2,2)
         self.btnsSWIM.layout.setSpacing(2)
 
@@ -2065,7 +2066,6 @@ class ProjectTab(QWidget):
         # self.parent.bZarrRegen.setEnabled(self.dm.is_aligned())
         self.bZarrRegen.setEnabled(self.dm.is_aligned())
         # self.bPull.setVisible((self.dm.scale != self.dm.coarsest_scale_key()) and self.dm.is_alignable())
-        self.bPull.setVisible(self.dm.scale != self.dm.coarsest_scale_key())
         self.gifPlayer.radiobuttons.setVisible(os.path.exists(self.dm.path_cafm_gif()))
 
         ready = self.dm['level_data'][self.dm.scale]['alignment_ready']

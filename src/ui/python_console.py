@@ -35,8 +35,9 @@ class PythonConsole(RichJupyterWidget):
             self.execute_command('from qtpy.QtCore import *')
             self.execute_command('from qtpy.QtGui import *')
             self.execute_command('import src.config as cfg')
-            self.execute_command('from src.helpers import dt, find_allocated_widgets, count_widgets, obj_to_string, getData, setData, getOpt, setOpt')
-            self.execute_command('from src.funcs_image import get_tiff_tags')
+            self.execute_command('from src.utils.helpers import dt, find_allocated_widgets, count_widgets, '
+                                 'obj_to_string, getData, setData, getOpt, setOpt')
+            self.execute_command('from src.utils.funcs_image import get_tiff_tags')
             self.execute('clear')
             # self.out_prompt = 'AlignEM [<span class="out-prompt-number">%i</span>]: '
 
