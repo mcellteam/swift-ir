@@ -1092,7 +1092,7 @@ class MainWindow(QMainWindow):
         ready = dm['level_data'][dm.scale]['alignment_ready']
         if not ready:
             logger.warning("Not ready to align yet!")
-            self.warn("Please pull settings before aligning (Edit Alignment > Pull Settings)")
+            self.warn("Please propagate settings before aligning (Edit Alignment > Pull Settings)")
             return
 
         if dm.level != dm.coarsest_scale_key():
@@ -1271,6 +1271,7 @@ class MainWindow(QMainWindow):
         self.wCpanel.hide()
 
         if self._isProjectTab():
+            self.bPropagate.setEnabled(self.dm.scale != self.dm.coarsest_scale_key())
             self.pt.bZarrRegen.setEnabled(self.dm.is_aligned())
             self.wCpanel.show()
             try:
@@ -3940,13 +3941,26 @@ class MainWindow(QMainWindow):
         # self.bAlign = QPushButton(f"Apply")
         # self.bAlign = QPushButton('Align All')
         self.bAlign = QPushButton('Align Stack')
+        self.bAlign.setFixedHeight(22)
         self.bAlign.setToolTip(tip)
         self.bAlign.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.bAlign.clicked.connect(self.alignAll)
-        p = self.bAlign.palette()
-        p.setColor(self.bAlign.backgroundRole(), QColor('#f3f6fb'))
-        p.setColor(QPalette.Text, QColor("#141414"))
-        self.bAlign.setPalette(p)
+        # p = self.bAlign.palette()
+        # p.setColor(self.bAlign.backgroundRole(), QColor('#f3f6fb'))
+        # p.setColor(QPalette.Text, QColor("#141414"))
+        # self.bAlign.setPalette(p)
+
+        tip = "Propagate all saved SWIM settings from next lowest level."
+        tip = '\n'.join(textwrap.wrap(tip, width=35))
+        self.bPropagate = QPushButton('Propagate')
+        self.bPropagate.setFixedHeight(22)
+        # self.bPropagate.setIcon(qta.icon('fa.level-up'))
+        self.bPropagate.setIcon(qta.icon('fa.level-up', color='#380282'))
+        self.bPropagate.setLayoutDirection(Qt.RightToLeft)
+        self.bPropagate.setToolTip(tip)
+        self.bPropagate.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.bPropagate.clicked.connect(lambda: self.dm.pullSettings())
+        self.bPropagate.clicked.connect(lambda: self.pt.refreshTab())
 
         # self.bZarrRegen = QPushButton('Transform 3D')
         # self.bZarrRegen.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -3958,7 +3972,7 @@ class MainWindow(QMainWindow):
 
 
         # self.wAlign = HW(QVLine(), self.bAlign, self.bZarrRegen)
-        self.wAlign = HW(QVLine(), self.bAlign)
+        self.wAlign = HW(QVLine(), self.bAlign, self.bPropagate)
         self.wAlign.layout.setSpacing(4)
 
 
