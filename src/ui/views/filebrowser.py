@@ -15,7 +15,7 @@ from qtpy.QtWidgets import QApplication, QWidget, QTreeView, QFileSystemModel, \
 
 import src.config as cfg
 from src.utils.helpers import is_tacc, print_exception
-from src.ui.layouts import HW, VW, VBL
+from src.ui.layouts.layouts import HW, VW, VBL
 
 __all__ = ['FileBrowser']
 

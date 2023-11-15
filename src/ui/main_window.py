@@ -31,7 +31,6 @@ import neuroglancer as ng
 import src.config as cfg
 import src.resources.icons_rc
 import src.shaders.shaders
-from src.models.data import DataModel
 from src.workers.scale import ScaleWorker
 from src.workers.align import AlignWorker
 from src.workers.generate import ZarrWorker
@@ -39,14 +38,14 @@ from src.utils.helpers import getData, setData, print_exception, get_scale_val, 
     tracemalloc_start, tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, \
     update_preferences_model, is_mac, hotkey, make_affine_widget_HTML, \
     is_joel, is_tacc, run_command, check_macos_isdark_theme
-from src.ui.dialogs import export_affines_dialog, ExitAppDialog
-from src.ui.layouts import HBL, VBL, HW, VW, QVLine
-from src.ui.process_monitor import HeadupDisplay
-from src.ui.tab_browser import WebBrowser
-from src.ui.tab_open_project import OpenProject
-from src.ui.tab_project import ProjectTab
-from src.ui.toggle_switch import ToggleSwitch
-from src.ui.webpage import QuickWebPage
+from src.ui.dialogs.dialogs import export_affines_dialog, ExitAppDialog
+from src.ui.layouts.layouts import HBL, VBL, HW, VW, QVLine
+from src.ui.tools.hud import HeadupDisplay
+from src.ui.tabs.webbrowser import WebBrowser
+from src.ui.tabs.manager import ManagerTab
+from src.ui.tabs.alignment import AlignmentTab
+from src.ui.widgets.toggle_switch import ToggleSwitch
+from src.ui.views.webpage import QuickWebPage
 
 __all__ = ['MainWindow']
 
@@ -208,7 +207,7 @@ class MainWindow(QMainWindow):
     def openAlignment(self, dm):
         self.dm = dm
         cfg.preferences['last_alignment_opened'] = dm.data_location
-        ProjectTab(self, dm)
+        AlignmentTab(self, dm)
 
 
     def runUiChecks(self):
@@ -1046,7 +1045,7 @@ class MainWindow(QMainWindow):
         #Todo build out pre-generate checks
         _err_indexes = dm.unknownSavedAnswerIndexes()
         if len(_err_indexes) > 0:
-            self.err(f"Unknown alignment result at the following indexes: {', '.join(map(str, _err_indexes))}")
+            self.err(f"No alignments for indexes: {', '.join(map(str, _err_indexes))}")
             self._refresh()
             return
         else:
@@ -1056,7 +1055,26 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             _ignore_cache = self.pt.cbIgnoreCache.isChecked()
 
+        if hasattr(self, '_scaleworker'):
+            try:
+                self._scaleworker.stop()
+            except:
+                print_exception()
+        if hasattr(self, '_alignworker'):
+            try:
+                self._alignworker.stop()
+            except:
+                print_exception()
+        if hasattr(self, '_zarrworker'):
+            try:
+                self._zarrworker.stop()
+            except:
+                print_exception()
+
+        self.resetPbar((-1, "Preparing worker thread..."))
+
         renew = not dm['level_data'][dm.level]['zarr_made']
+
 
         if self._isProjectTab():
             if dm.is_aligned():
@@ -1072,7 +1090,7 @@ class MainWindow(QMainWindow):
                 self._zarrworker.hudWarning.connect(self.warn)
                 self._zarrworker.finished.connect(self._zarrThread.quit)
                 self._zarrworker.finished.connect(dm.save)
-                self._zarrworker.finished.connect(self.wPbar.hide)
+                self._zarrworker.finished.connect(self.hidePbar)
                 self._zarrworker.finished.connect(lambda: dm.setZarrMade(True))
                 self._zarrworker.finished.connect(lambda: self.pt.bZarrRegen.setEnabled(True))
                 self._zarrworker.finished.connect(self.dataUpdateWidgets)
@@ -1114,17 +1132,21 @@ class MainWindow(QMainWindow):
                 self._scaleworker.stop()
             except:
                 print_exception()
-            # logger.warning('\n\nSleeping for 2 seconds (hasattr: _scaleworker)...\n')
-            # time.sleep(2)
-            del self._scaleworker
+            # del self._scaleworker
         if hasattr(self, '_alignworker'):
             try:
                 self._alignworker.stop()
             except:
                 print_exception()
-            # logger.warning('\n\nSleeping for 2 seconds (hasattr: _alignworker)...\n')
-            # time.sleep(2)
-            del self._alignworker
+            # del self._alignworker
+        if hasattr(self, '_zarrworker'):
+            try:
+                self._zarrworker.stop()
+            except:
+                print_exception()
+            # del self._zarrworker
+
+        self.resetPbar((-1, "Preparing worker thread..."))
 
         self.tell("%s Affines (%s)..." % (('Initializing', 'Refining')[dm.isRefinement()], dm.level_pretty(s=scale)))
         self._snr_before = [dm.snr(l=i) for i in indexes]
@@ -1157,16 +1179,16 @@ class MainWindow(QMainWindow):
 
         self._alignworker.finished.connect(self._alignThread.quit)
         self._alignworker.finished.connect(dm.save)
-        self._alignworker.finished.connect(lambda: self.wPbar.hide())
+        self._alignworker.finished.connect(self.hidePbar)
         self._alignworker.finished.connect(self.dataUpdateWidgets)
         # self._alignworker.finished.connect(self.onAlignmentEnd)
-        self._alignworker.finished.connect(self.pt.gifPlayer.set)
+        self._alignworker.finished.connect(lambda: self.pt.gifPlayer.set())
         if self.pt.wTabs.currentIndex() == 2:
-            self._alignworker.finished.connect(self.pt.snr_plot.initSnrPlot)
+            self._alignworker.finished.connect(lambda: self.pt.snr_plot.initSnrPlot())
         self._alignworker.finished.connect(self.updateEnabledButtons)
         
         self._alignworker.finished.connect(lambda: self.present_snr_results(dm, indexes))
-        self._alignworker.finished.connect(self.pt.initNeuroglancer)
+        self._alignworker.finished.connect(lambda: self.pt.initNeuroglancer())
         self._alignworker.finished.connect(lambda: setattr(self, '_working', False))
         self._alignworker.finished.connect(lambda: self.tell(f'<span style="color: #FFFF66;"><b>**** All Processes Complete ****</b></span>'))
         self._alignThread.start()  # Step 6: Start the thread
@@ -1187,17 +1209,19 @@ class MainWindow(QMainWindow):
                 self._scaleworker.stop()
             except:
                 print_exception()
-            logger.info('\n\nSleeping for 2 seconds...\n')
-            time.sleep(2)
         if hasattr(self, '_alignworker'):
             try:
                 self._alignworker.stop()
             except:
                 print_exception()
-            logger.info('\n\nSleeping for 2 seconds...\n')
-            time.sleep(2)
+        if hasattr(self, '_zarrworker'):
+            try:
+                self._zarrworker.stop()
+            except:
+                print_exception()
 
         # self.shutdownNeuroglancer() #1111-
+        self.resetPbar((-1, "Preparing worker thread..."))
 
         self._scaleworker = ScaleWorker(src=src, out=out, scales=scales, opts=opts)
         self._scaleThread.started.connect(self._scaleworker.run)  # Step 5: Connect signals and slots
@@ -1206,7 +1230,7 @@ class MainWindow(QMainWindow):
         self._scaleworker.moveToThread(self._scaleThread)  # Step 4: Move worker to the thread
         self._scaleworker.finished.connect(self._scaleworker.deleteLater)
         self._scaleworker.finished.connect(lambda: logger.critical(f"\n\n\nHiding pbar...\n\n"))
-        self._scaleworker.finished.connect(self.wPbar.hide)
+        self._scaleworker.finished.connect(self.hidePbar)
         self._scaleworker.finished.connect(self._refresh)
         self._scaleworker.finished.connect(lambda: self.pm.bCreateImages.setEnabled(True))
         def fn():
@@ -1737,7 +1761,7 @@ class MainWindow(QMainWindow):
     def open_project_new(self):
 
         for i in range(self.globTabs.count()):
-            if self.globTabs.widget(i).__class__.__name__ == 'OpenProject':
+            if self.globTabs.widget(i).__class__.__name__ == 'ManagerTab':
                 self.globTabs.setCurrentIndex(i)
                 return
         self.globTabs.addTab(self.pm, 'Alignment Manager')
@@ -2596,7 +2620,7 @@ class MainWindow(QMainWindow):
         def fn_projectmanager():
             logger.info('')
             for i in range(self.globTabs.count()):
-                if self.globTabs.widget(i).__class__.__name__ == 'OpenProject':
+                if self.globTabs.widget(i).__class__.__name__ == 'ManagerTab':
                     self.globTabs.setCurrentIndex(i)
                     return
 
@@ -2606,7 +2630,7 @@ class MainWindow(QMainWindow):
             self.setdw_thumbs(False)
             self.setdw_matches(False)
             self.setdw_snr(False)
-            # self.globTabs.addTab(OpenProject(), 'Project Manager')
+            # self.globTabs.addTab(ManagerTab(), 'Project Manager')
             self.globTabs.insertTab(0, self.pm, 'Alignment Manager')
             self._switchtoOpenProjectTab()
 
@@ -2796,6 +2820,8 @@ class MainWindow(QMainWindow):
         self.toolbar.addWidget(self.tbbGlossary)
         self.toolbar.addWidget(self.tbbReportBug)
         self.toolbar.addWidget(self.tbb3demdata)
+        self.aPbar = self.toolbar.addWidget(self.wPbar)
+        self.aPbar.setVisible(False)
         # self.toolbar.addWidget(self.wLcdTimer)
 
         # self.toolbar.addWidget(self.tbbTestThread)
@@ -2898,7 +2924,7 @@ class MainWindow(QMainWindow):
         return None
 
     def _isProjectTab(self):
-        if self._getTabType() == 'ProjectTab':
+        if self._getTabType() == 'AlignmentTab':
             return True
         else:
             return False
@@ -2910,7 +2936,7 @@ class MainWindow(QMainWindow):
             return False
 
     def _isOpenProjTab(self):
-        if self._getTabType() == 'OpenProject':
+        if self._getTabType() == 'ManagerTab':
             return True
         else:
             return False
@@ -2918,7 +2944,7 @@ class MainWindow(QMainWindow):
 
     def _switchtoOpenProjectTab(self):
         for i in range(self.globTabs.count()):
-            if self.globTabs.widget(i).__class__.__name__ == 'OpenProject':
+            if self.globTabs.widget(i).__class__.__name__ == 'ManagerTab':
                 self.globTabs.setCurrentIndex(i)
                 return
 
@@ -2932,7 +2958,7 @@ class MainWindow(QMainWindow):
         '''Returns a list of currently open projects.'''
         projects = []
         for i in range(self.globTabs.count()):
-            if 'ProjectTab' in str(self.globTabs.widget(i)):
+            if 'AlignmentTab' in str(self.globTabs.widget(i)):
                 projects.append(self.globTabs.widget(i).dm.data_location)
         return projects
 
@@ -2947,7 +2973,7 @@ class MainWindow(QMainWindow):
 
     def getProjectIndex(self, search):
         for i in range(self.globTabs.count()):
-            if 'ProjectTab' in str(self.globTabs.widget(i)):
+            if 'AlignmentTab' in str(self.globTabs.widget(i)):
                 if self.globTabs.widget(i).datamodel.data_location == os.path.splitext(search)[0]:
                     return i
 
@@ -3032,7 +3058,7 @@ class MainWindow(QMainWindow):
             self.viewer = cfg.viewer = cfg.zarr_tab.viewer
             cfg.zarr_tab.viewer.bootstrap()
 
-        # elif self._getTabType() == 'OpenProject':
+        # elif self._getTabType() == 'ManagerTab':
         #     self.pm.refresh()
         #     self.viewer = self.pm.viewer
         
@@ -3234,7 +3260,7 @@ class MainWindow(QMainWindow):
         def fn():
             logger.info('')
             if self.globTabs.count() > 0:
-                # if self._getTabType() != 'OpenProject':
+                # if self._getTabType() != 'ManagerTab':
                 self.globTabs.removeTab(self.globTabs.currentIndex())
             else:
                 self.exit_app()
@@ -3717,7 +3743,7 @@ class MainWindow(QMainWindow):
 
 
     def _valueChangedPolyOrder(self):
-        #Todo move to ProjectTab
+        #Todo move to AlignmentTab
         logger.info('')
         caller = inspect.stack()[1].function
         if caller == 'main':
@@ -4265,7 +4291,7 @@ class MainWindow(QMainWindow):
         self.globTabs.currentChanged.connect(self._onGlobTabChange)
 
         if is_mac():
-            from src.ui.python_console import PythonConsoleWidget
+            from src.ui.tools.pythonconsole import PythonConsoleWidget
             # self.pythonConsole = PythonConsole()
             self.pythonConsole = PythonConsoleWidget()
             self.pythonConsole.pyconsole.set_color_none()
@@ -4579,7 +4605,7 @@ class MainWindow(QMainWindow):
 
 
     def _initProjectManager(self):
-        self.pm = cfg.pm = OpenProject(parent=self)
+        self.pm = cfg.pm = ManagerTab(parent=self)
         self.globTabs.addTab(self.pm, 'Alignment Manager')
         # self.globTabs.tabBar().setTabButton(0, QTabBar.RightSide,None)
         # self._setLastTab()
@@ -4596,28 +4622,34 @@ class MainWindow(QMainWindow):
 
     def initPbar(self):
         self.pbar = QProgressBar()
-        self.pbar.setFixedWidth(320)
-        self.pbar.setFixedHeight(13)
+        self.pbar.setStyleSheet("font-size: 10px;")
+        # self.pbar.setFixedWidth(320)
+        # self.pbar.setFixedHeight(13)
+        # self.bStopPbar.setFixedSize(36, 12)
+        # self.bStopPbar.setIconSize(QSize(11, 11))
         self.pbar.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.pbar.setTextVisible(True)
+        # self.bStopPbar.setStyleSheet("font-size: 8px;")
+        self.pbar.setMaximumWidth(320)
+        self.pbar.setMinimumWidth(180)
+        self.pbar.setFixedHeight(16)
         self.bStopPbar = QPushButton('Stop')
-        self.bStopPbar.setStyleSheet("font-size: 8px;")
-        self.bStopPbar.setFixedSize(36, 12)
-        self.bStopPbar.setIconSize(QSize(11, 11))
+        self.bStopPbar.setFixedSize(36, 14)
+        self.bStopPbar.setIconSize(QSize(12, 12))
         self.bStopPbar.setToolTip('Cancel running tasks')
         self.bStopPbar.setIcon(qta.icon('mdi.cancel'))
         self.bStopPbar.clicked.connect(self.cancelTasks)
         # self.wPbar = HW(ExpandingHWidget(self), self.pbar, self.bStopPbar)
-        self.wPbar = HW(self.pbar, self.bStopPbar)
+        self.statusLabel = QLabel()
+        self.wPbar = HW(ExpandingHWidget(self), self.statusLabel, self.pbar, self.bStopPbar)
         self.wPbar.layout.setAlignment(Qt.AlignRight)
         # self.wPbar.layout.setAlignment(Qt.AlignCenter)
         self.wPbar.layout.setContentsMargins(4, 0, 4, 0)
         self.wPbar.layout.setSpacing(1)
-        self.statusLabel = QLabel()
-        self.statusBar.addPermanentWidget(ExpandingHWidget(self))
-        self.statusBar.addPermanentWidget(self.statusLabel)
-        self.statusBar.addPermanentWidget(self.wPbar)
-        self.wPbar.hide()
+        # self.hidePbar()
+
+        # self.statusBar.addPermanentWidget(self.wPbar)
+        # self.wPbar.hide()
 
     def cancelTasks(self):
         logger.critical("STOP TASKS requested!")
@@ -4636,7 +4668,7 @@ class MainWindow(QMainWindow):
 
 
         # self.pt.snr_plot.initSnrPlot()
-        self.wPbar.hide()
+        self.hidePbar()
         # self.pt.updateTreeWidget()
         self.dataUpdateWidgets()
         self.updateEnabledButtons()
@@ -4653,9 +4685,11 @@ class MainWindow(QMainWindow):
         self.pbar.update()
 
     def resetPbar(self, data:tuple):
-        '''New method to replace historical pbar functionality 2023-08-09'''
+        '''@param tuple (maximum, 'msg')
+        New method to replace historical pbar functionality 2023-08-09'''
         # self.sw_pbar.show()
-        self.wPbar.show()
+        # self.wPbar.show()
+        self.aPbar.setVisible(True)
         self.pbar.setMaximum(data[0])
         self.pbar.setValue(0)
         self.pbar.setFormat('  (%p%) ' + data[1])
@@ -4672,7 +4706,8 @@ class MainWindow(QMainWindow):
 
     def hidePbar(self):
         logger.info('')
-        self.wPbar.hide()
+        # self.wPbar.hide()
+        self.aPbar.setVisible(False)
 
 
     # def eventFilter(self, source, event):
