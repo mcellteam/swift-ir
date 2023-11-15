@@ -6,6 +6,7 @@ import os
 import shutil
 import subprocess as sp
 import time
+from math import floor
 from datetime import datetime
 
 import imageio.v3 as iio
@@ -62,8 +63,8 @@ class ZarrWorker(QObject):
     def run(self):
         print(f"====> Running Background Thread ====>")
         self.generate()
+        self.finished.emit()
         print(f"<==== Terminating Background Thread <====")
-        self.finished.emit() #Important!
 
     def generate(self):
 
@@ -146,7 +147,10 @@ class ZarrWorker(QObject):
         tstamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         shape = (len(dm), siz[1], siz[0])
         cname, clevel, chunkshape = dm.get_user_zarr_settings()
-        chunkshape = (1,32,32)
+        z = 1
+        y = floor(siz[1] / 24)
+        x = floor(siz[1] / 24)
+        chunkshape = (z, y, x)
         preallocate_zarr(dm=dm, name='zarr_reduced', group=dm.level, shape=shape,
                          cname=cname, clevel=clevel, chunkshape=chunkshape,
                          dtype='|u1', overwrite=True, attr=str(tstamp))

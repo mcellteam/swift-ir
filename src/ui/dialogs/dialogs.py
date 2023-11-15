@@ -15,7 +15,7 @@ import neuroglancer as ng
 import src.config as cfg
 from src.utils.funcs_image import ImageSize
 from src.utils.helpers import hotkey
-from src.ui.layouts import HBL
+from src.ui.layouts.layouts import HBL
 
 logger = logging.getLogger(__name__)
 
@@ -386,7 +386,7 @@ class AskContinueDialog(QDialog):
 #         self.le.move(130, 22)
 #
 #         self.setGeometry(300, 150, 450, 350)
-#         self.setWindowTitle('Rename ProjectTab')
+#         self.setWindowTitle('Rename AlignmentTab')
 #         self.show()
 
 

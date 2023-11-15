@@ -1,11 +1,11 @@
-import os, sys, logging, inspect
+import sys, logging, inspect
 import qtawesome as qta
 import libtiff
 libtiff.libtiff_ctypes.suppress_warnings()
 from qtpy.QtWidgets import *
 from qtpy.QtGui import *
 from qtpy.QtCore import *
-from src.ui.layouts import HBL, VBL, GL, HW, VW, HSplitter, VSplitter
+from src.ui.layouts.layouts import GL, HW
 import src.config as cfg
 
 

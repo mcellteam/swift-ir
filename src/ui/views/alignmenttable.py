@@ -15,8 +15,8 @@ from qtpy.QtWidgets import QWidget, QHBoxLayout, QAbstractItemView, QApplication
 
 import src.config as cfg
 from src.utils.helpers import print_exception
-from src.ui.layouts import VBL, VW, HW
-from src.ui.thumbnail import ThumbnailFast, CorrSignalThumbnail
+from src.ui.layouts.layouts import VBL, VW, HW
+from src.ui.views.thumbnail import ThumbnailFast, CorrSignalThumbnail
 
 logger = logging.getLogger(__name__)
 

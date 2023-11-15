@@ -20,26 +20,26 @@ import src.config as cfg
 from src.models.data import DataModel
 from src.utils.helpers import print_exception, getOpt, setOpt, getData, setData, is_joel, \
     ensure_even
-from src.ui.gif_player import GifPlayer
-from src.ui.layouts import HBL, VBL, GL, HW, VW, QHLine
+from src.ui.views.gif import GifPlayer
+from src.ui.layouts.layouts import HBL, VBL, GL, HW, VW, QHLine
 from src.models.jsontree import JsonModel
-from src.ui.project_table import ProjectTable
-from src.ui.sliders import DoubleSlider
-from src.ui.snr_plot import SnrPlot
-from src.ui.thumbnail import CorrSignalThumbnail, ThumbnailFast
+from src.ui.views.alignmenttable import ProjectTable
+from src.ui.widgets.sliders import DoubleSlider
+from src.ui.tools.snrplot import SnrPlot
+from src.ui.views.thumbnail import CorrSignalThumbnail, ThumbnailFast
 from src.servers.viewerfactory import EMViewer, MAViewer
 
-__all__ = ['ProjectTab']
+__all__ = ['AlignmentTab']
 
 logger = logging.getLogger(__name__)
 
 DEV = is_joel()
 
-class ProjectTab(QWidget):
+class AlignmentTab(QWidget):
 
     def __init__(self, parent, dm=None):
         super().__init__(parent)
-        logger.info('Initializing ProjectTab...')
+        logger.info('Initializing AlignmentTab...')
         # self.signals = Signals()
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.parent = parent
@@ -3143,7 +3143,7 @@ def delete_matches(dm):
 if __name__ == '__main__':
     app = QApplication([])
     main_window = QMainWindow()
-    pt = ProjectTab()
+    pt = AlignmentTab()
     main_window.setCentralWidget(pt)
     main_window.show()
     sys.exit(app.exec_())

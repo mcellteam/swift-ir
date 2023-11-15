@@ -57,7 +57,6 @@ class AlignWorker(QObject):
         self.result = None
         self._running = True
         self._mutex = QMutex()
-        self.finished.connect(lambda: logger.critical('Finished!'))
 
         self._tasks = []
         self._tasks.append(self.align)
@@ -82,8 +81,8 @@ class AlignWorker(QObject):
     def run(self):
         print(f"====> Running Background Thread ====>")
         self.align()
+        self.finished.emit()
         print(f"<==== Terminating Background Thread <====")
-        self.finished.emit()  # Important!
 
 
     def align(self):

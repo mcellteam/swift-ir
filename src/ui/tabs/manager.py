@@ -26,20 +26,20 @@ import src.config as cfg
 from src.models.data import DataModel
 from src.utils.funcs_image import ImageSize
 from src.utils.helpers import print_exception, natural_sort, is_tacc, is_joel, hotkey, initLogFiles
-from src.ui.dialogs import ImportImagesDialog
-from src.ui.file_browser import FileBrowser
-from src.ui.layouts import HBL, VBL, HW, VW, HSplitter
-from src.ui.tab_project import VerticalLabel
-from src.ui.tab_zarr import ZarrTab
+from src.ui.dialogs.dialogs import ImportImagesDialog
+from src.ui.views.filebrowser import FileBrowser
+from src.ui.layouts.layouts import HBL, VBL, HW, VW, HSplitter
+from src.ui.tabs.alignment import VerticalLabel
+from src.ui.tabs.zarr import ZarrTab
 from src.servers.viewerfactory import PMViewer
 
-__all__ = ['OpenProject']
+__all__ = ['ManagerTab']
 
 logger = logging.getLogger(__name__)
 
 DEV = is_joel()
 
-class OpenProject(QWidget):
+class ManagerTab(QWidget):
 
     def __init__(self, parent, **kwargs):
         super().__init__(**kwargs)
@@ -1161,7 +1161,7 @@ class OpenProject(QWidget):
 
                     # cfg.mw.tell('Wrapping up...')
                     # configure_project_paths()
-                    # if cfg.mw.globTabs.currentWidget().__class__.__name__ == 'OpenProject':
+                    # if cfg.mw.globTabs.currentWidget().__class__.__name__ == 'ManagerTab':
                     #     try:
                     #         self.user_projects.set_data()
                     #     except:
