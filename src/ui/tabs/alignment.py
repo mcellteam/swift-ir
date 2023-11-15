@@ -2618,7 +2618,7 @@ class AlignmentTab(QWidget):
         self.cbxBias.addItems(['None', 'poly 0°', 'poly 1°', 'poly 2°', 'poly 3°', 'poly 4°'])
         self.cbxBias.currentIndexChanged.connect(self.onBiasChanged)
         self.cbxBias.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.cbxBias.setFixedSize(QSize(74, 12))
+        self.cbxBias.setFixedSize(QSize(74, 14))
         self.cbxBias.lineEdit()
 
         self.bRegenerateAll = QPushButton('Regenerate All Output')
@@ -2627,6 +2627,9 @@ class AlignmentTab(QWidget):
 
         self.wOverlayControls = QWidget()
         self.wOverlayControls.setStyleSheet("QLabel{color: #FFFF66;}")
+        # self.wOverlayControls.setStyleSheet("font-size: 10px; color: #ffe135; "
+        #                                     "padding: 2px; background-color: rgba(0, 0, 0, 0.5);"
+        #                                     "border-radius: 2px;")
         self.flOverlaycontrols = QFormLayout()
         self.wOverlayControls.setLayout(self.flOverlaycontrols)
         self.flOverlaycontrols.setHorizontalSpacing(4)
