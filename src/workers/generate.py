@@ -23,7 +23,7 @@ from qtpy.QtCore import Signal, QObject, QMutex
 
 from src.utils.helpers import get_bindir, print_exception, get_core_count
 from src.utils.funcs_image import ImageSize
-from src.workers.thumbnailer import Thumbnailer
+from src.core.thumbnailer import Thumbnailer
 from src.utils.swiftir import applyAffine
 
 __all__ = ['ZarrWorker']
@@ -40,8 +40,9 @@ class ZarrWorker(QObject):
 
     def __init__(self, dm, renew=False, ignore_cache=False):
         super().__init__()
-        logger.info('Initializing...')
+        logger.info(f'Initializing [renew={renew}] [ignore_cache={ignore_cache}]...')
         self.dm = dm
+        self.level = dm.level
         self.renew = renew
         self.ignore_cache = ignore_cache
         self._running = True
@@ -76,11 +77,6 @@ class ZarrWorker(QObject):
         zarrExist = os.path.exists(os.path.join(grp, '.zattrs'))
         z = zarr.open(grp)
         make_all = len(list(dm.zattrs.keys())) == 0
-
-        '''If it is an align all, then we want to set and store bounding box / poly bias'''
-        outputHash = hash(HashableDict(dm['level_data'][dm.level]['output_settings']))
-        z.attrs['output_settings_hash'] = outputHash
-        z.attrs['output_settings'] = copy.deepcopy(dm['level_data'][dm.level]['output_settings'])
 
         if not zarrExist:
             self.indexes = list(range(len(dm)))
@@ -117,7 +113,7 @@ class ZarrWorker(QObject):
             to_reduce.append((ofp, dm.path_aligned_cafm_thumb(l=i)))
             if not os.path.exists(ofp):
                 os.makedirs(os.path.dirname(ofp), exist_ok=True)
-                cafm = dm['stack'][i]['levels'][dm.level]['cafm']
+                cafm = dm['stack'][i]['levels'][self.level]['cafm']
                 tasks.append([ifp, ofp, rect, cafm, 128])
             else:
                 logger.info(f'Cache hit (transformed image): {ofp}')
@@ -130,70 +126,89 @@ class ZarrWorker(QObject):
         scale_factor = dm.images['thumbnail_scale_factor'] // dm.lvl()
         Thumbnailer(dm).reduce_tuples(to_reduce, scale_factor=scale_factor)
 
-        if not self.running():
-            return
-
-        # path_mini_zarr = os.path.join(dm.data_location, 'zarr_reduced', level)
-        # if len(self.indexes) == len(dm):
-        #     if os.path.exists(path_mini_zarr):
-        #         try:
-        #             shutil.rmtree(path_mini_zarr)
-        #         except:
-        #             print_exception()
-
-        siz = ImageSize(dm.path_aligned_cafm_thumb(l=1)) #Todo #Ugly
-
-        # if not os.path.exists(path_mini_zarr):
-        tstamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        shape = (len(dm), siz[1], siz[0])
-        cname, clevel, chunkshape = dm.get_user_zarr_settings()
-        z = 1
-        y = floor(siz[1] / 24)
-        x = floor(siz[1] / 24)
-        chunkshape = (z, y, x)
-        preallocate_zarr(dm=dm, name='zarr_reduced', group=dm.level, shape=shape,
-                         cname=cname, clevel=clevel, chunkshape=chunkshape,
-                         dtype='|u1', overwrite=True, attr=str(tstamp))
+        if not self.running(): return
 
         if self.generateAnimations():
             logger.error(f"Something went wrong during generation GIF animations")
             print_exception()
 
-        if not self.running():
-            return
+        if not self.running(): return
 
-        if self.generateMiniZarr():
+        if self.generateMiniZarr(dm):
             logger.error(f"Something went wrong during generation of reduced Zarr")
             print_exception()
 
-        if not self.running():
-            return
+        if not self.running(): return
+
+
+        '''GENERATE CUMULATIVE ZARR'''
+        logger.critical("Generating cumulative Zarr...")
+
+        shape = (len(dm), rect[3], rect[2])
+        cname, clevel, chunkshape = dm.get_transforming_zarr_settings(self.level)
 
         if self.renew:
+            # Preallocate PRIMARY Zarr
             tstamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            shape = (len(dm), rect[3], rect[2])
-            cname, clevel, chunkshape = dm.get_user_zarr_settings()
-            preallocate_zarr(dm=dm, name='zarr', group=dm.level, shape=shape,
+            preallocate_zarr(dm=dm, name='zarr', group=self.level, shape=shape,
                              cname=cname, clevel=clevel, chunkshape=chunkshape,
                              dtype='|u1', overwrite=True, attr=str(tstamp))
+        blocksize = chunkshape[0]
+        nblocks = floor(len(dm) / blocksize)
 
-        z = dm.get_zarr_transforming()
+        '''If it is an align all, then we want to set and store bounding box / poly bias'''
+        outputHash = hash(HashableDict(dm['level_data'][self.level]['output_settings']))
+        z.attrs['output_settings_hash'] = outputHash
+        z.attrs['output_settings'] = copy.deepcopy(dm['level_data'][self.level]['output_settings'])
+
+        # z = dm.get_zarr_transforming()
+        # z = dm.zarr
+
+
+        # tasks = []
+        # for i in self.indexes:
+        #     src = dm.path_aligned_cafm(l=i)
+        #     if os.path.exists(src):
+        #         z.attrs[i] = (str(dm.ssSavedHash(l=i)), dm.cafmHash(l=i))
+        #         task = [i, src, grp]
+        #         tasks.append(task)
+        #     else:
+        #         logger.warning(f'TIFF Does Not Exist: {src}')
+
+
+        logger.critical(f"# BLOCKS: {nblocks}")
+
         tasks = []
-        for i in self.indexes:
-            src = dm.path_aligned_cafm(l=i)
-            if os.path.exists(src):
-                z.attrs[i] = (str(dm.ssSavedHash(l=i)), dm.cafmHash(l=i))
-                task = [i, src, grp]
+
+        for b in range(nblocks):
+            print(f'Block {b}...')
+            task = [grp, b, []]
+            for i in range(blocksize):
+                j = b * blocksize + i
+                if j in self.indexes:
+                    src = dm.path_aligned_cafm(l=j)
+                    if os.path.exists(src):
+                        z.attrs[j] = {
+                            'image': os.path.basename(src),
+                            'swim_settings_hash': str(dm.ssSavedHash(l=j)),
+                            'cafm_hash': dm.cafmHash(l=j),
+                        }
+                        index = j
+                        block_index = j % blocksize
+                        subtask = (index, block_index, src)
+                        task[2].append(subtask)
+            if len(task[2]):
+                logger.info(f'Appending task {task}')
                 tasks.append(task)
-            else:
-                logger.warning(f'TIFF Does Not Exist: {src}')
+
 
         if tasks:
             if ng.is_server_running():
                 logger.info('Stopping Neuroglancer...')
                 ng.server.stop()
             desc = f"Copy-convert to Zarr"
-            t, *_ = self.run_multiprocessing(convert_zarr, tasks, desc)
+            # t, *_ = self.run_multiprocessing(convert_zarr, tasks, desc)
+            t, *_ = self.run_multiprocessing(convert_zarr_block, tasks, desc)
             self.dm.t_convert_zarr = t
         else:
             self.dm.t_convert_zarr = 0.
@@ -227,9 +242,18 @@ class ZarrWorker(QObject):
         return err > 0
 
 
-    def generateMiniZarr(self):
+    def generateMiniZarr(self, dm):
         logger.info('')
-        z_path = os.path.join(self.dm.data_location, 'zarr_reduced', self.dm.level)
+        # path_mini_zarr = os.path.join(dm.data_location, 'zarr_reduced', dm.level)
+        siz = ImageSize(dm.path_aligned_cafm_thumb(l=1))  # Todo #Ugly
+        tstamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        shape = (len(dm), siz[1], siz[0])
+        cname, clevel, chunkshape = dm.get_images_zarr_settings()
+        chunkshape = (1, 32, 32)
+        preallocate_zarr(dm=dm, name='zarr_reduced', group=self.level, shape=shape,
+                         cname=cname, clevel=clevel, chunkshape=chunkshape,
+                         dtype='|u1', overwrite=True, attr=str(tstamp))
+        z_path = os.path.join(self.dm.data_location, 'zarr_reduced', self.level)
         tasks = []
         for i in self.indexes:
             # if i == self.dm.first_included(): #1107-
@@ -383,10 +407,10 @@ def convert_zarr(task):
     try:
         _id = task[0]
         _f = task[1]
-        _path = task[2]
-        store = zarr.open(_path)
+        _grp = task[2]
+        store = zarr.open(_grp)  # store: <zarr.core.Array (19, 1244, 1130) uint8>
         # data = libtiff.TIFF.open(_f).read_image()[:, ::-1]  # store: <zarr.core.Array (19, 1244, 1130) uint8>
-        data = iio.imread(_f)  # store: <zarr.core.Array (19, 1244, 1130) uint8>
+        data = iio.imread(_f)
         # os.remove(_f)
         # shutil.rmtree(os.path.dirname(_f), ignore_errors=True) #1102-
         store[_id, :, :] = data
@@ -396,10 +420,35 @@ def convert_zarr(task):
         return 1
 
 
+def convert_zarr_block(task):
+    '''
+    @param 1: ID int
+    @param 2: file path str
+    @param 3: zarr path str
+    '''
+    _grp = task[0]
+    _b = task[1]  # block number
+    z = zarr.open(_grp)  # store: <zarr.core.Array (19, 1244, 1130) uint8>
+    # block = store[_b]
+    try:
+        # block = z.get_block_selection(_b)
+        for subtask in task[2]:
+            _index = subtask[0]
+            _f = subtask[2]
+            im = iio.imread(_f)
+            z[_index, :, :] = im
+            # os.remove(_f)
+            shutil.rmtree(os.path.dirname(_f), ignore_errors=True) #1102- #1116+
+
+        return 0
+    except Exception:
+        print_exception(extra=f"Error Block #: {_b}")
+        return 1
+
+
 def preallocate_zarr(dm, name, group, shape, cname, clevel, chunkshape, dtype, overwrite, attr=None):
     '''zarr.blosc.list_compressors() -> ['blosclz', 'lz4', 'lz4hc', 'zlib', 'zstd']'''
     logger.info("\n\n--> preallocate -->\n")
-    cname, clevel, chunkshape = dm.get_user_zarr_settings()
     src = os.path.abspath(dm.data_location)
     path_zarr = os.path.join(src, name)
     path_out = os.path.join(path_zarr, group)
@@ -430,8 +479,8 @@ def preallocate_zarr(dm, name, group, shape, cname, clevel, chunkshape, dtype, o
                     f"  compressor : {compressor}\n"
                     f"  overwrite  : {overwrite}")
 
-        # arr.zeros(name=group, shape=shape, chunks=chunkshape, dtype=dtype, compressor=compressor, overwrite=overwrite, synchronizer=synchronizer)
         arr.zeros(name=group, shape=shape, chunks=chunkshape, dtype=dtype, compressor=compressor, overwrite=overwrite)
+        # arr.zeros(name=group, shape=(shape[0], shape), chunks=chunkshape, dtype=(np.uint8, dtype), compressor=compressor, overwrite=overwrite)
         # write_metadata_zarr_multiscale()
         if attr:
             arr.attrs['attribute'] = attr

@@ -21,7 +21,7 @@ max_downsampling = 512  # default=64
 max_downsampled_size = 1024  # default=128
 # max_downsampling_scales=1
 
-DEV_MODE = 0
+DEV_MODE = 1
 DEBUG_MP = 0
 DEBUG_NEUROGLANCER = 0
 VERBOSE_SWIM = 0
@@ -66,6 +66,7 @@ webdriver = None
 py_console = None
 is_mendenhall = False
 
+
 '''Default SWIM parameters'''
 # DEFAULT_POLY_ORDER             = int(0)
 DEFAULT_USE_BOUNDING_BOX         = bool(False)
@@ -85,6 +86,8 @@ DEFAULT_RESX, DEFAULT_RESY, DEFAULT_RESZ = 2, 2, 50
 
 '''Default Zarr Chunk Shape'''
 CHUNK_X, CHUNK_Y, CHUNK_Z = 1024, 1024, 1
+CHUNK_FACTOR = 16
+BLOCKSIZE = 4
 
 '''Default Compression Parameters'''
 # CNAME = 'zstd'
@@ -142,4 +145,5 @@ void main() {
 '''
 
 vw = None
+temp = None
 

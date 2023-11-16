@@ -38,14 +38,16 @@ from src.utils.helpers import getData, setData, print_exception, get_scale_val, 
     tracemalloc_start, tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, \
     update_preferences_model, is_mac, hotkey, make_affine_widget_HTML, \
     is_joel, is_tacc, run_command, check_macos_isdark_theme
-from src.ui.dialogs.dialogs import export_affines_dialog, ExitAppDialog
+from src.ui.dialogs.exitapp import ExitAppDialog
+from src.ui.dialogs.exportaffines import export_affines_dialog
 from src.ui.layouts.layouts import HBL, VBL, HW, VW, QVLine
 from src.ui.tools.hud import HeadupDisplay
 from src.ui.tabs.webbrowser import WebBrowser
 from src.ui.tabs.manager import ManagerTab
-from src.ui.tabs.alignment import AlignmentTab
-from src.ui.widgets.toggle_switch import ToggleSwitch
+from src.ui.tabs.project import AlignmentTab
+from src.ui.widgets.toggleswitch import ToggleSwitch
 from src.ui.views.webpage import QuickWebPage
+
 
 __all__ = ['MainWindow']
 
@@ -1073,6 +1075,7 @@ class MainWindow(QMainWindow):
 
         self.resetPbar((-1, "Preparing worker thread..."))
 
+
         renew = not dm['level_data'][dm.level]['zarr_made']
 
 
@@ -1109,13 +1112,12 @@ class MainWindow(QMainWindow):
             _ignore_cache = self.pt.cbIgnoreCache.isChecked()
         ready = dm['level_data'][dm.scale]['alignment_ready']
         if not ready:
-            logger.warning("Not ready to align yet!")
-            self.warn("Please propagate settings before aligning (Edit Alignment > Pull Settings)")
+            self.warn("Propagate settings before aligning")
             return
 
         if dm.level != dm.coarsest_scale_key():
             if not dm.is_aligned():
-                self.tell("Pulling settings from reduced scale level automatically...")
+                self.tell("Propagating settings from reduced scale level automatically...")
                 dm.pullSettings()
 
         dm.save(silently=True)
@@ -1721,6 +1723,7 @@ class MainWindow(QMainWindow):
                 if file == None:
                     self.warn('No Filename - Canceling Export')
                     return
+                self.tell('Exported: %s' % file)
                 afm_lst = self.dm.afm_list()
                 with open(file, 'w') as f:
                     for sublist in afm_lst:
@@ -1739,7 +1742,7 @@ class MainWindow(QMainWindow):
         if file == None:
             logger.warning('No Filename - Canceling Export')
             return
-        logger.info('Export Filename: %s' % file)
+        self.tell('Exported: %s' % file)
         # cafm_lst = self.dm.cafm_list()
         # with open(file, 'w') as f:
         #     for sublist in cafm_lst:

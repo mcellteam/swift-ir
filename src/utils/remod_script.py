@@ -6,9 +6,9 @@ import glob
 import numpy as np
 # from swiftir import remod
 import os
-os.environ["OPENCV_IO_MAX_IMAGE_PIXELS"] = (pow(2,32)-1).__str__()
+# os.environ["OPENCV_IO_MAX_IMAGE_PIXELS"] = (pow(2,32)-1).__str__()
 import numpy as np
-import cv2
+# import cv2
 
 print('Running remod.py...')
 

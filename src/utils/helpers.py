@@ -7,6 +7,7 @@ https://gist.github.com/jbms/1ec1192c34ec816c2c517a3b51a8ed6c
 https://programtalk.com/vs4/python/janelia-cosem/fibsem-tools/src/fibsem_tools/io/zarr.py/
 '''
 
+import builtins
 import contextlib
 import getpass
 import html
@@ -28,7 +29,6 @@ import time
 import traceback
 import tracemalloc
 from contextlib import contextmanager
-from collections import namedtuple
 from datetime import datetime
 from functools import reduce
 from glob import glob
@@ -42,11 +42,8 @@ import zarr
 from qtpy.QtWidgets import QApplication
 
 import neuroglancer as ng
-
-import builtins
-from src.utils.texttree import Treeview
-
 import src.config as cfg
+from src.utils.texttree import Treeview
 
 __all__ = ['dt', 'is_tacc', 'is_linux', 'is_mac', 'create_paged_tiff', 'check_for_binaries', 'delete_recursive',
            'make_relative', 'make_absolute', 'get_img_filenames', 'print_exception',
