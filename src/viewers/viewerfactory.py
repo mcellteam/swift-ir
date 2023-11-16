@@ -183,6 +183,13 @@ class AbstractEMViewer(neuroglancer.Viewer):
             print(f"{self.type} deleted, caller unknown ({self.created})", flush=True)
         print('\n')
 
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        clr = inspect.stack()[1].function
+        logger.warning(f"\n{self.type} exiting | caller: {clr}"
+                       f"\nexc_type      : {exc_type}"
+                       f"\nexc_value     : {exc_value}"
+                       f"\nexc_traceback : {exc_traceback}")
+
     @staticmethod
     @cache
     def _convert_layout(type):
@@ -582,10 +589,7 @@ class MAViewer(AbstractEMViewer):
         self.index = 0 #None -1026
         self.cs_scale = None
         self.marker_size = 1
-        #might be an issue with print statementsi n deferred callback!
         self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
-        # self.shared_state.add_changed_callback(lambda: self.defer_callback(print("Callback called !")))
-        # self.shared_state.add_changed_callback(self.on_state_changed)
         self.signals.ptsChanged.connect(self.drawSWIMwindow)
         self.initViewer()
 

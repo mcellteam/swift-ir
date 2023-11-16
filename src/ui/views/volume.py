@@ -42,8 +42,6 @@ from qtconsole.inprocess import QtInProcessKernelManager
 
 import tensorstore as ts
 
-import variables
-
 app = pg.mkQApp("pyqtgraph volume viewer")
 # app = pg.mkQApp()
 # pg.setConfigOptions(antialias=True)

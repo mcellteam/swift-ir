@@ -175,7 +175,7 @@ def remove_zarr(path) -> None:
 def preallocate_zarr(dm, name, group, shape, dtype, overwrite, gui=True, attr=None):
     '''zarr.blosc.list_compressors() -> ['blosclz', 'lz4', 'lz4hc', 'zlib', 'zstd']'''
     logger.info("\n\n--> preallocate -->\n")
-    cname, clevel, chunkshape = dm.get_user_zarr_settings()
+    cname, clevel, chunkshape = dm.get_images_zarr_settings()
     src = os.path.abspath(dm.data_location)
     path_zarr = os.path.join(src, name)
     path_out = os.path.join(path_zarr, group)

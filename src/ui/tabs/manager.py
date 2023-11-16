@@ -10,6 +10,7 @@ import subprocess as sp
 import textwrap
 import time
 import uuid
+from math import floor
 from datetime import datetime
 from glob import glob
 from pathlib import Path
@@ -26,12 +27,14 @@ import src.config as cfg
 from src.models.data import DataModel
 from src.utils.funcs_image import ImageSize
 from src.utils.helpers import print_exception, natural_sort, is_tacc, is_joel, hotkey, initLogFiles
-from src.ui.dialogs.dialogs import ImportImagesDialog
+from src.ui.dialogs.importimages import ImportImagesDialog
 from src.ui.views.filebrowser import FileBrowser
 from src.ui.layouts.layouts import HBL, VBL, HW, VW, HSplitter
-from src.ui.tabs.alignment import VerticalLabel
+from src.ui.widgets.vertlabel import VerticalLabel
 from src.ui.tabs.zarr import ZarrTab
-from src.servers.viewerfactory import PMViewer
+from src.viewers.viewerfactory import PMViewer
+from src.utils.parsers import parse
+from src.utils.writers import write
 
 __all__ = ['ManagerTab']
 
@@ -328,7 +331,7 @@ class ManagerTab(QWidget):
 
         self.bCreateImages = QPushButton("Create")
         self.bCreateImages.setCursor(QCursor(Qt.PointingHandCursor))
-        self.bCreateImages.clicked.connect(self.createImages)
+        self.bCreateImages.clicked.connect(self.confirmCreateImages)
         self.bCreateImages.setEnabled(False)
         self.wNameImages = HW(QLabel('Images Name:'), self.leNameImages, self.bSelect, self.bCreateImages, self.bCancel)
         # self.wNameImages.setStyleSheet("QLabel {color: #f3f6fb;} ")
@@ -464,7 +467,7 @@ class ManagerTab(QWidget):
 
 
     #importseries
-    def createImages(self):
+    def confirmCreateImages(self):
         logger.info("")
         self.resetView()
         self.bCreateImages.setEnabled(False)
@@ -478,10 +481,12 @@ class ManagerTab(QWidget):
 
         out = os.path.join(cfg.preferences['images_root'], name)
 
-        glog_settings = self.wImagesConfig.getSettings()
-        # logger.info(f"Scale levels & Zarr preferences:\n{glog_settings}")
+        im_siz = ImageSize(self._NEW_IMAGES_PATHS[0])
+
+        im_config_opts = self.wImagesConfig.getSettings(im_siz=im_siz)
+        # logger.info(f"Scale levels & Zarr preferences:\n{im_config_opts}")
         try:
-            logger.info(f"Scale levels & Zarr preferences:\n{json.dumps(glog_settings, indent=4)}")
+            logger.info(f"Scale levels & Zarr preferences:\n{json.dumps(im_config_opts, indent=4)}")
         except:
             print_exception()
 
@@ -490,12 +495,13 @@ class ManagerTab(QWidget):
         # open(os.path.join(logpath, 'exceptions.log'), 'a').close()
 
         cal_grid_path = None
-        if glog_settings['has_cal_grid']:
+        if im_config_opts['has_cal_grid']:
             cal_grid_path = self._NEW_IMAGES_PATHS[0]
             cal_grid_name = os.path.basename(cal_grid_path)
             self._NEW_IMAGES_PATHS = self._NEW_IMAGES_PATHS[1:]
             cfg.mw.tell(f"Copying calibration grid image '{cal_grid_name}'")
             shutil.copyfile(cal_grid_path, os.path.join(out, cal_grid_name))
+            #Todo create multiscale Zarr
 
         src = os.path.dirname(self._NEW_IMAGES_PATHS[0])
         cfg.mw.tell(f'Importing {len(self._NEW_IMAGES_PATHS)} Images...')
@@ -513,55 +519,63 @@ class ManagerTab(QWidget):
 
         logger.info(f"# Imported: {len(self._NEW_IMAGES_PATHS)}")
 
-        t0 = time.time()
-        logger.info('Symbolically linking full scale images...')
-        self.parent.tell('Symbolically linking full scale images...')
-        for img in self._NEW_IMAGES_PATHS:
-            fn = img
-            ofn = os.path.join(out, 'tiff', 's1', os.path.split(fn)[1])
-            # normalize path for different OSs
-            if os.path.abspath(os.path.normpath(fn)) != os.path.abspath(os.path.normpath(ofn)):
-                try:
-                    os.unlink(ofn)
-                except:
-                    pass
-                try:
-                    os.symlink(fn, ofn)
-                except FileNotFoundError:
-                    # print_exception()
-                    logger.warning(f"File not found: {fn}. Unable to link, copying instead." )
-                    try:
-                        shutil.copy(fn, ofn)
-                    except:
-                        logger.warning("Unable to link or copy from " + fn + " to " + ofn)
-        dt = time.time() - t0
-        logger.info(f'Elapsed Time (linking): {dt:.3g} seconds')
+        # t0 = time.time()
+        # logger.info('Symbolically linking full scale images...')
+        # self.parent.tell('Symbolically linking full scale images...')
+        # for img in self._NEW_IMAGES_PATHS:
+        #     fn = img
+        #     ofn = os.path.join(out, 'tiff', 's1', os.path.split(fn)[1])
+        #     # normalize path for different OSs
+        #     if os.path.abspath(os.path.normpath(fn)) != os.path.abspath(os.path.normpath(ofn)):
+        #         try:
+        #             os.unlink(ofn)
+        #         except:
+        #             pass
+        #         try:
+        #             os.symlink(fn, ofn)
+        #         except FileNotFoundError:
+        #             # print_exception()
+        #             logger.warning(f"File not found: {fn}. Unable to link, copying instead." )
+        #             try:
+        #                 shutil.copy(fn, ofn)
+        #             except:
+        #                 logger.warning("Unable to link or copy from " + fn + " to " + ofn)
+        # dt = time.time() - t0
+        # logger.info(f'Elapsed Time (linking): {dt:.3g} seconds')
 
         count = len(self._NEW_IMAGES_PATHS)
-        # level_keys = natural_sort(['s%d' % v for v in scale_vals])[::-1]
         level_keys = natural_sort(['s%d' % v for v in scale_vals])
         series_name = os.path.basename(out)
         logger.critical(f"Resolution levels: {level_keys}")
 
-        opts = {
-            'name': series_name,
-            'uuid': str(uuid.uuid4()),
-            'created': datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
-            'scale_factors': scale_vals,
-            'levels': level_keys,
-            'count': count,
-            'cal_grid': {
-                'has': glog_settings['has_cal_grid'],
+        im_sample = self._NEW_IMAGES_PATHS[0]
+        tiffinfo = parse('tiffinfo')(im_sample)
+        tifftags = parse('tifftags')(im_sample)
+        wp = os.path.join(out, 'tiffinfo.txt')
+        write('txt')(wp, tiffinfo)
+
+        opts = {}
+        opts.update(
+            name=series_name,
+            uuid=str(uuid.uuid4()),
+            created=datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
+            scale_factors=scale_vals,
+            levels=level_keys,
+            count=count,
+            cal_grid={
+                'has': im_config_opts['has_cal_grid'],
                 'path': cal_grid_path,
             },
-            'paths': self._NEW_IMAGES_PATHS,
-        }
-        opts.update(self.wImagesConfig.getSettings())
+            paths=self._NEW_IMAGES_PATHS,
+            tiffinfo=tiffinfo,
+            tifftags=tifftags,
+            size_zyx={},
+            size_xy={},
+        )
+        opts.update(im_config_opts)
         logger.info(pformat(opts))
 
         full_scale_size = ImageSize(self._NEW_IMAGES_PATHS[0])
-        opts['size_zyx'] = {}
-        opts['size_xy'] = {}
         for sv in scale_vals:
             key = 's%d' % sv
             siz = tuple((np.array(full_scale_size) / sv).astype(int).tolist())
@@ -572,9 +586,11 @@ class ManagerTab(QWidget):
         # siz_x, siz_y = ImageIOSize(next(absFilePaths(src)))
         sf = int(max(siz_x, siz_y) / cfg.TARGET_THUMBNAIL_SIZE)
         opts['thumbnail_scale_factor'] = sf
-        jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
-        with open(os.path.join(out, 'info.json'), 'w') as f:
-            f.write(jde.encode(copy.deepcopy(opts)))
+        # jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
+        # with open(os.path.join(out, 'info.json'), 'w') as f:
+        #     f.write(jde.encode(copy.deepcopy(opts)))
+        p = os.path.join(out, 'info.json')
+        write('json')(p, opts)
         cfg.mw.autoscaleImages(src, out, opts)
         cfg.preferences['images_combo_text'] = out
         logger.info('done')
@@ -675,7 +691,7 @@ class ManagerTab(QWidget):
             self.wNameAlignment.hide()
             return
         if not os.path.isdir(self.cmbSelectImages.currentText()):
-            cfg.mw.warn(f"'{self.cmbSelectImages.currentText()}' is not a valid .images series.")
+            cfg.mw.warn(f"'{self.cmbSelectImages.currentText()}' is not valid.")
             return
         self.wNameAlignment.show()
         self.leNameAlignment.setFocus()
@@ -995,9 +1011,10 @@ class ManagerTab(QWidget):
             self.wImagesConfig.leResX.setText(str(cfg.DEFAULT_RESX))
             self.wImagesConfig.leResY.setText(str(cfg.DEFAULT_RESY))
             self.wImagesConfig.leResZ.setText(str(cfg.DEFAULT_RESZ))
-            self.wImagesConfig.leChunkX.setText(str(cfg.CHUNK_X))
-            self.wImagesConfig.leChunkY.setText(str(cfg.CHUNK_Y))
-            self.wImagesConfig.leChunkZ.setText(str(cfg.CHUNK_Z))
+            self.wImagesConfig.leNewChunk.setText(str(cfg.CHUNK_FACTOR))
+            # self.wImagesConfig.leChunkX.setText(str(cfg.CHUNK_X))
+            # self.wImagesConfig.leChunkY.setText(str(cfg.CHUNK_Y))
+            # self.wImagesConfig.leChunkZ.setText(str(cfg.CHUNK_Z))
             self.wImagesConfig.cname_combobox.setCurrentText(str(cfg.CNAME))
         self.leNameImages.setFocus()
         self.setUpdatesEnabled(True)
@@ -1378,7 +1395,7 @@ class ImagesConfig(QWidget):
         self._settings = {}
         self.initUI()
 
-    def getSettings(self):
+    def getSettings(self, im_siz):
 
         cfg.main_window.hud('Setting images configuration...')
         logger.info('Setting images configuration...')
@@ -1386,17 +1403,21 @@ class ImagesConfig(QWidget):
         self._settings['clevel'] = int(self.leClevel.text())
         self._settings['cname'] = self.cname_combobox.currentText()
         self._settings['has_cal_grid'] = self.cbCalGrid.isChecked()
-        chunkshape = (int(self.leChunkZ.text()),
-                      int(self.leChunkY.text()),
-                      int(self.leChunkX.text()))
+        # chunkshape = (int(self.leChunkZ.text()),
+        #               int(self.leChunkY.text()),
+        #               int(self.leChunkX.text()))
         self._settings['chunkshape'] = {}
         self._settings['resolution'] = {}
         for sv in self._settings['scale_factors']:
-            res_x = int(self.leResX.text()) * sv
-            res_y = int(self.leResY.text()) * sv
             res_z = int(self.leResZ.text())
+            res_y = int(self.leResY.text()) * sv
+            res_x = int(self.leResX.text()) * sv
+            chunk_fac = int(self.leNewChunk.text())
+            chunk_z = 1
+            chunk_y = floor(im_siz[1] / (sv * chunk_fac))
+            chunk_x = floor(im_siz[0] / (sv * chunk_fac))
             self._settings['resolution']['s%d' % sv] = (res_z, res_y, res_x)
-            self._settings['chunkshape']['s%d' % sv] = chunkshape
+            self._settings['chunkshape']['s%d' % sv] = (chunk_z, chunk_y, chunk_x)
 
         return self._settings
 
@@ -1430,12 +1451,12 @@ class ImagesConfig(QWidget):
         self.leResX.setValidator(QIntValidator())
         self.leResY.setValidator(QIntValidator())
         self.leResZ.setValidator(QIntValidator())
-        l1 = QLabel("x:")
-        l1.setAlignment(Qt.AlignRight)
-        l2 = QLabel("y:")
-        l2.setAlignment(Qt.AlignRight)
-        l3 = QLabel("z:")
-        l3.setAlignment(Qt.AlignRight)
+        l1 = QLabel("x:").setAlignment(Qt.AlignRight)
+        # l1.setAlignment(Qt.AlignRight)
+        l2 = QLabel("y:").setAlignment(Qt.AlignRight)
+        # l2.setAlignment(Qt.AlignRight)
+        l3 = QLabel("z:").setAlignment(Qt.AlignRight)
+        # l3.setAlignment(Qt.AlignRight)
         few = [HW(l1, self.leResX), HW(l2, self.leResY), HW(l3, self.leResZ)]
         for one in few:
             one.layout.setAlignment(Qt.AlignHCenter)
@@ -1463,44 +1484,52 @@ class ImagesConfig(QWidget):
         self.cname_combobox.addItems(["none", "zstd", "zlib"])
         self.cname_combobox.setFixedSize(QSize(58,18))
 
-        labType = QLabel('Compress: ')
-        labLevel = QLabel('Level (1-9): ')
+        labType = QLabel('Compression Type: ')
+        labLevel = QLabel('Compression Level (1-9): ')
         wCompression = HW(labType, self.cname_combobox, QLabel(' '), labLevel, self.leClevel)
         wCompression.layout.setSpacing(4)
         # wCompression.layout.setAlignment(Qt.AlignCenter)
 
         '''Chunk Shape'''
-        self.leChunkX = QLineEdit(self)
-        self.leChunkY = QLineEdit(self)
-        self.leChunkZ = QLineEdit(self)
+        self.leNewChunk = QLineEdit(self)
+        self.leNewChunk.setFixedSize(QSize(24, 18))
+        self.leNewChunk.setValidator(QIntValidator())
 
-        self.leChunkX.setFixedSize(QSize(40, 18))
-        self.leChunkY.setFixedSize(QSize(40, 18))
-        self.leChunkZ.setFixedSize(QSize(40, 18))
-        self.leChunkX.setValidator(QIntValidator())
-        self.leChunkY.setValidator(QIntValidator())
-        self.leChunkZ.setValidator(QIntValidator())
 
-        l1 = QLabel("x:")
-        l1.setAlignment(Qt.AlignRight)
-        l2 = QLabel("y:")
-        l2.setAlignment(Qt.AlignRight)
-        l3 = QLabel("z:")
-        l3.setAlignment(Qt.AlignRight)
-        few = [HW(l1, self.leChunkX), HW(l2, self.leChunkY), HW(l3, self.leChunkZ)]
-        for one in few:
-            one.layout.setAlignment(Qt.AlignHCenter)
-            one.setStyleSheet("font-size: 9px;")
-        self.wChunk = HW(*few)
-        self.wChunk.layout.setSpacing(4)
+        # self.leChunkX = QLineEdit(self)
+        # self.leChunkY = QLineEdit(self)
+        # self.leChunkZ = QLineEdit(self)
+        #
+        # self.leChunkX.setFixedSize(QSize(40, 18))
+        # self.leChunkY.setFixedSize(QSize(40, 18))
+        # self.leChunkZ.setFixedSize(QSize(40, 18))
+        #
+        # self.leChunkX.setValidator(QIntValidator())
+        # self.leChunkY.setValidator(QIntValidator())
+        # self.leChunkZ.setValidator(QIntValidator())
+        # l1 = QLabel("x:")
+        # l1.setAlignment(Qt.AlignRight)
+        # l2 = QLabel("y:")
+        # l2.setAlignment(Qt.AlignRight)
+        # l3 = QLabel("z:")
+        # l3.setAlignment(Qt.AlignRight)
+
+
+        # few = [HW(l1, self.leChunkX), HW(l2, self.leChunkY), HW(l3, self.leChunkZ)]
+        # for one in few:
+        #     one.layout.setAlignment(Qt.AlignHCenter)
+        #     one.setStyleSheet("font-size: 9px;")
+        # self.wChunk = HW(*few)
         # self.wChunk.layout.setSpacing(4)
         txt = "The way volumetric data will be stored. Zarr is an open-source " \
               "format for the storage of chunked, compressed, N-dimensional " \
               "arrays with an interface similar to NumPy."
         txt = '\n'.join(textwrap.wrap(txt, width=60))
-        wChunk = HW(QLabel('Chunk: '), self.wChunk)
+        # wChunk = HW(QLabel('Chunk: '), self.wChunk)
+        wChunk = HW(QLabel('Chunk Factor: '), self.leNewChunk)
+        wChunk.setMaximumWidth(90)
         wChunk.setToolTip(txt)
-        wChunk.layout.setAlignment(Qt.AlignCenter)
+        # wChunk.layout.setAlignment(Qt.AlignCenter)
 
         self.cbCalGrid = QCheckBox('Image 0 is calibration grid')
         self.cbCalGrid.setChecked(False)

@@ -23,7 +23,7 @@ libtiff.libtiff_ctypes.suppress_warnings()
 import warnings
 warnings.filterwarnings("ignore") #Works for supressing tiffile invalid offset warning
 # from src.mp_queue import TaskQueue
-from src.workers.recipe_maker import run_recipe
+from src.core.recipemaker import run_recipe
 from src.utils.helpers import print_exception, get_core_count
 import src.config as cfg
 
@@ -163,7 +163,7 @@ class AlignWorker(QObject):
         #     task_queue.taskNameList = [os.path.basename(layer['swim_settings']['path']) for
         #                                layer in [dm()[i] for i in self.indexes]]
         #     task_queue.start(self.cpus)
-        #     align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'recipe_maker.py')
+        #     align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'recipemaker.py')
         #     logger.info('Adding tasks to the queue...')
         #
         #     for i, sec in [(i, dm()[i]) for i in self.indexes]:

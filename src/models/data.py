@@ -27,10 +27,10 @@ import numpy as np
 import zarr
 from qtpy.QtCore import QObject, Signal
 
-from src.utils.funcs_image import ComputeBoundingRect
-from src.utils.funcs_image import SetStackCafm
+from src.utils.funcs_image import ComputeBoundingRect, SetStackCafm
 from src.models.hashtable import HashTable
 from src.utils.helpers import print_exception
+from src.utils.writers import write
 import src.config as cfg
 
 __all__ = ['DataModel']
@@ -101,9 +101,16 @@ class DataModel:
     def _upgradeDatamodel(self):
         logger.info('Upgrading data model...')
         self._data['modified'] = date_time()
+        self['info'].setdefault('force_reallocate_zarr_flag', False)
         for i in range(len(self)):
             for level in self.levels:
                 pass
+
+        for level in self.levels:
+            if not 'chunkshape' in self['level_data'][level]:
+                chunkshape = self.get_transforming_chunkshape(level)
+                self['level_data'][level]['chunkshape'] = chunkshape
+                self['info']['force_reallocate_zarr_flag'] = True
 
 
     def __iter__(self):
@@ -298,14 +305,17 @@ class DataModel:
 
 
     def chunkshape(self, level=None) -> tuple:
-        '''Get chunk shape.'''
+        '''Get chunk shape for IMAGE STACK at RESOLUTION LEVEL 'level'.'''
         if level == None: level = self.level
         return tuple(self['images']['chunkshape'][level])
 
-    def set_chunkshape(self, x, level:str=None):
-        '''Set chunk shape.'''
-        if level == None: level = self.level
-        self['images']['chunkshape'][level] = x
+
+    def transforming_chunkshape(self, level):
+        return self['level_data'][level]['chunkshape']
+
+    def get_transforming_chunkshape(self, level):
+        _, cy, cx = self.images['chunkshape'][level]
+        return (cfg.BLOCKSIZE, cy, cx)
 
     @property
     def brightness(self):
@@ -491,7 +501,6 @@ class DataModel:
     def path_zarr_transformed(self, s=None):
         if s == None: s = self.level
         return os.path.join(self.data_location, 'zarr', s)
-
 
     def get_zarr_transforming(self, s=None):
         if s == None: s = self.level
@@ -786,7 +795,6 @@ class DataModel:
         return self._data['stack'][l]['levels'][s]['swim_settings']['name']
 
     '''NEW METHODS USING NEW DATA SCHEMA 2023'''
-
 
     def name(self, s=None, l=None):
         if s == None: s = self.level
@@ -1466,9 +1474,13 @@ class DataModel:
         if s == None: s = self.level
         self['images']['resolution'][s] = (res_z, res_y, res_x)
 
-    def get_user_zarr_settings(self):
+    def get_images_zarr_settings(self):
         '''Returns user preferences for cname, clevel, chunkshape as tuple (in that order).'''
         return (self.cname, self.clevel, self.chunkshape())
+
+    def get_transforming_zarr_settings(self, level):
+        '''Returns user preferences for cname, clevel, chunkshape as tuple (in that order).'''
+        return (self.cname, self.clevel, self.transforming_chunkshape(level))
 
     def downscales(self) -> list[str]:
         '''Get downscales list (similar to scales() but with scale_1 removed).
@@ -2205,6 +2217,7 @@ class DataModel:
             self['level_data'][level].update(
                 defaults={},
                 zarr_made=False,
+                chunkshape=self.get_transforming_chunkshape(level),
                 initial_snr=None,
                 aligned=False,
                 alignment_ready=(level == self.coarsest_scale_key()),
@@ -2247,9 +2260,12 @@ class DataModel:
             p = os.path.join(self.data_location, name + '.swiftir')
             if not silently:
                 logger.info(f'[{caller}] Saving >> {p}')
-            with open(p, 'w') as f:
-                jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
-                f.write(jde.encode(self._data))
+            # with open(p, 'w') as f:
+            #     jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
+            #     f.write(jde.encode(self._data))
+
+            write('json')(p, self._data)
+
             if hasattr(self, 'ht'):
                 if self.ht:
                     self.ht.pickle()

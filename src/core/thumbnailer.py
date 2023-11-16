@@ -300,7 +300,7 @@ class Thumbnailer:
         _t0 = time.time()
         for f in filenames:
             ofn = os.path.join(od, os.path.basename(f))
-            logger.critical(f"Thumbnailer is rewriting {ofn}...")
+            logger.info(f"Re-writing {ofn}")
             im = iio.imread(ofn)
             iio.imwrite(ofn, im)
         _dt = time.time() - _t0

@@ -28,7 +28,7 @@ import numcodecs
 from numcodecs import Blosc
 numcodecs.blosc.use_threads = False
 
-from src.workers.thumbnailer import Thumbnailer
+from src.core.thumbnailer import Thumbnailer
 from src.utils.helpers import print_exception, get_bindir, get_scale_val
 # from src.funcs_zarr import preallocate_zarr
 from src.utils.funcs_zarr import remove_zarr
@@ -98,7 +98,8 @@ class ScaleWorker(QObject):
         ctx = mp.get_context('forkserver')
         for s, siz in deepcopy(self.scales):
             sv = get_scale_val(s)
-            if s != 's1':
+            # if s != 's1':
+            if 1:
                 self.hudMessage.emit(f'Reducing {s}...')
                 desc = f'Reducing {s}...'
                 logger.info(desc)
