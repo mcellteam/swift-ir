@@ -300,11 +300,10 @@ class Thumbnailer:
         _t0 = time.time()
         for f in filenames:
             ofn = os.path.join(od, os.path.basename(f))
-            logger.info(f"Re-writing {ofn}")
             im = iio.imread(ofn)
             iio.imwrite(ofn, im)
         _dt = time.time() - _t0
-        logger.critical(f"\n\n// Rewriting of images took {_dt:.3g}s //")
+        logger.critical(f"Rewriting images took {_dt:.3g}s")
 
         # ctx = mp.get_context('forkserver')
         # with ctx.Pool(processes=cpus) as pool:

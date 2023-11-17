@@ -29,15 +29,18 @@ class PythonConsole(RichJupyterWidget):
 
         if 1:
             self.execute_command('import os, sys, copy, json, stat, time, glob')
+            self.execute_command('from pprint import pformat')
             self.execute_command('import zarr')
-            self.execute_command('import neuroglancer as ng')
-            self.execute_command('from qtpy.QtWidgets import *')
-            self.execute_command('from qtpy.QtCore import *')
-            self.execute_command('from qtpy.QtGui import *')
+            self.execute_command('from pathlib import Path')
+            # self.execute_command('import neuroglancer as ng')
+            # self.execute_command('from qtpy.QtWidgets import *')
+            # self.execute_command('from qtpy.QtCore import *')
+            # self.execute_command('from qtpy.QtGui import *')
             self.execute_command('import src.config as cfg')
-            self.execute_command('from src.utils.helpers import dt, find_allocated_widgets, count_widgets, '
-                                 'obj_to_string, getData, setData, getOpt, setOpt')
-            self.execute_command('from src.utils.funcs_image import get_tiff_tags')
+            self.execute_command('from src.utils.readers import read')
+            self.execute_command('from src.utils.writers import write')
+            # self.execute_command('from src.utils.helpers import dt, find_allocated_widgets, count_widgets, '
+            #                      'obj_to_string, getData, setData, getOpt, setOpt')
             self.execute('clear')
             # self.out_prompt = 'AlignEM [<span class="out-prompt-number">%i</span>]: '
 

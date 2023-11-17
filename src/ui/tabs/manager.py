@@ -26,15 +26,18 @@ from qtpy.QtWidgets import *
 import src.config as cfg
 from src.models.data import DataModel
 from src.utils.funcs_image import ImageSize
-from src.utils.helpers import print_exception, natural_sort, is_tacc, is_joel, hotkey, initLogFiles
+from src.utils.helpers import print_exception, natural_sort, is_tacc, is_joel, hotkey
 from src.ui.dialogs.importimages import ImportImagesDialog
 from src.ui.views.filebrowser import FileBrowser
 from src.ui.layouts.layouts import HBL, VBL, HW, VW, HSplitter
 from src.ui.widgets.vertlabel import VerticalLabel
 from src.ui.tabs.zarr import ZarrTab
+from src.ui.tabs.project import AlignmentTab
 from src.viewers.viewerfactory import PMViewer
-from src.utils.parsers import parse
+from src.utils.readers import read
 from src.utils.writers import write
+from src.core.files import DirectoryStructure, DirectoryWatcher
+
 
 __all__ = ['ManagerTab']
 
@@ -50,31 +53,19 @@ class ManagerTab(QWidget):
         self.setMinimumHeight(100)
         self.filebrowser = FileBrowser(parent=self)
         self.filebrowser.setContentsMargins(2,2,2,2)
-        self._watchImages = FileWatcher(extension='.images', preferences=cfg.preferences, key='images_search_paths')
+        self._watchImages = DirectoryWatcher(suffixes=['.images'], preferences=cfg.preferences, key='images_search_paths')
         self._watchImages.fsChanged.connect(self.updateCombos)
-        self._watchAlignments = FileWatcher(extension='.alignment', preferences=cfg.preferences, key='alignments_search_paths')
+        self._watchAlignments = DirectoryWatcher(suffixes=['.alignment', '.align'], preferences=cfg.preferences, key='alignments_search_paths')
         self._watchAlignments.fsChanged.connect(self.loadAlignmentCombo)
         # self._fsWatcher = FsWatcher(extension='.alignment')
         self.filebrowser.navigateTo(os.path.expanduser('~'))
+        self._images_info = None
+        # self._selected_series = None #Todo
+        # self._selected_alignment = None #Todo
+
         self._updateWatchPaths()
         self.initUI()
-        self.selected_file = ''
         self._NEW_IMAGES_PATHS = []
-
-        logger.debug("\n\n\nTESTTTTTT\n\n")
-
-        # clipboard = QGuiApplication.clipboard()
-        # clipboard = QApplication.clipboard()
-        # clipboard.dataChanged.connect(self.onClipboardChanged)
-        #Note: when clipboard changes during app out-of-focus, clipboard changed signal gets emitted
-        #once focus is returned. This is the ideal behavior.
-
-        # self.setStyleSheet("font-size: 10px; color: #161c20;") #0919-
-
-        # sanitizeSavedPaths()
-
-        # configure_project_paths()
-
         # self.installEventFilter(self)
 
         self.filebrowser.setRootLastKnownRoot()
@@ -132,9 +123,9 @@ class ManagerTab(QWidget):
 
         self.cmbSelectAlignment = QComboBox()
         self.cmbSelectAlignment.setStyleSheet("""QComboBox QAbstractItemView {
-    border: 2px solid darkgray;
-    selection-background-color: lightgray;
-}""")
+            border: 2px solid darkgray;
+            selection-background-color: lightgray;
+        }""")
         self.cmbSelectAlignment.setToolTip("Select Alignment (.alignment)")
         # self.cmbSelectAlignment.setPlaceholderText("Select Alignment...")
         self.cmbSelectAlignment.setPlaceholderText("")
@@ -182,19 +173,18 @@ class ManagerTab(QWidget):
         self.bMinusAlignment.setIcon(qta.icon('fa.minus'))
         self.bMinusAlignment.clicked.connect(self.onMinusAlignment)
 
-        # self.bOpenAlignment = HoverButton('Open')
-        self.bOpenAlignment = QPushButton()
-        self.bOpenAlignment.setFixedSize(QSize(18, 18))
-        self.bOpenAlignment.setIconSize(QSize(13, 13))
-        self.bOpenAlignment.setCursor(QCursor(Qt.PointingHandCursor))
-        self.bOpenAlignment.setToolTip("Open alignment")
-        self.bOpenAlignment.setToolTipDuration(-1)
-        # self.bOpenAlignment.setIcon(qta.icon('fa.folder-open', color='#ede9e8'))
-        self.bOpenAlignment.setIcon(qta.icon('fa.folder-open'))
-        self.bOpenAlignment.clicked.connect(self.onOpenAlignment)
+        # self.bOpen = HoverButton('Open')
+        self.bOpen = QPushButton()
+        self.bOpen.setFixedSize(QSize(18, 18))
+        self.bOpen.setIconSize(QSize(13, 13))
+        self.bOpen.setCursor(QCursor(Qt.PointingHandCursor))
+        self.bOpen.setToolTip("Open alignment")
+        self.bOpen.setToolTipDuration(-1)
+        self.bOpen.setIcon(qta.icon('fa.folder-open'))
+        self.bOpen.clicked.connect(self.onOpenAlignment)
 
         self.wSelectImageSeries = HW(self.cmbSelectImages, self.cmbLevel, self.bPlusImages, self.bMinusImages)
-        self.wSelectAlignment = HW(self.cmbSelectAlignment, self.bOpenAlignment, self.bPlusAlignment, self.bMinusAlignment)
+        self.wSelectAlignment = HW(self.cmbSelectAlignment, self.bOpen, self.bPlusAlignment, self.bMinusAlignment)
 
         self.toolbar = QToolBar()
         self.toolbar.addWidget(VW(self.wSelectImageSeries, self.wSelectAlignment))
@@ -214,10 +204,6 @@ class ManagerTab(QWidget):
         self.leNameAlignment.setFont(f)
         def onTextChanged():
             self.bConfirmNewAlignment.setEnabled(bool(self.leNameAlignment.text()))
-            # self.leNameAlignment.setStyleSheet(("border-color: #339933; border-width: 2px;", "border-color: #f3f6fb;")[
-            #                                        bool(self.leNameAlignment.text())])
-            # self.bConfirmNewAlignment.setStyleSheet(("background-color: #222222;", "background-color: #339933; border-color: #f3f6fb;")[
-            #                                             bool(self.leNameAlignment.text())])
             f = QFont()
             f.setItalic(not len(self.leNameAlignment.text()))
             self.leNameAlignment.setFont(f)
@@ -226,14 +212,12 @@ class ManagerTab(QWidget):
         self.bConfirmNewAlignment = QPushButton('Create')
         self.bConfirmNewAlignment.setFixedSize(QSize(44, 18))
         self.bConfirmNewAlignment.setAutoFillBackground(False)
-        # self.bConfirmNewAlignment.setStyleSheet("font-size: 10px; background-color: rgba(0,0,0,.5); color: #f3f6fb; border-color: #f3f6fb;")
         self.bConfirmNewAlignment.setFocusPolicy(Qt.NoFocus)
         self.bConfirmNewAlignment.setCursor(QCursor(Qt.PointingHandCursor))
         self.bConfirmNewAlignment.clicked.connect(self.createAlignment)
 
         self.bCancelNewAligment = QPushButton()
         self.bCancelNewAligment.setAutoFillBackground(False)
-        # self.bCancelNewAligment.setStyleSheet("font-size: 10px; background-color: rgba(0,0,0,.5); color: #f3f6fb; border-color: #f3f6fb;")
         self.bCancelNewAligment.setIcon(qta.icon('fa.close'))
         self.bCancelNewAligment.setFixedSize(QSize(18, 18))
         self.bCancelNewAligment.setIconSize(QSize(12,12))
@@ -243,12 +227,10 @@ class ManagerTab(QWidget):
         self.bCancelNewAligment.clicked.connect(lambda: self.webengine.setFocus())
 
         newAlignmentLab = QLabel("Alignment Name:")
-        # newAlignmentLab.setStyleSheet("font-size: 10px; background-color: rgba(0,0,0,.5); color: #f3f6fb; border-color: #f3f6fb;")
         self.wNameAlignment = HW(self.leNameAlignment, self.bConfirmNewAlignment, self.bCancelNewAligment)
         self.wNameAlignment.setFixedHeight(18)
         self.wNameAlignment.layout.setSpacing(0)
         newAlignmentLab.setAutoFillBackground(True)
-        # self.wNameAlignment.setStyleSheet("font-size: 10px; background-color: rgba(0,0,0,.5); color: #f3f6fb; border-color: #f3f6fb;")
         self.wNameAlignment.hide()
 
         '''Step 1/3'''
@@ -399,12 +381,9 @@ class ManagerTab(QWidget):
 
     def resetView(self):
         logger.info('')
-        # self.leNameImages.setText('')
-        # self.leNameAlignment.setText('')
         self.leNameImages.setStyleSheet("border-color: #339933; border-width: 2px;")
         self.bSelect.setStyleSheet("background-color: #339933; color: #f3f6fb; border-color: #f3f6fb;")
         self.bCreateImages.setStyleSheet("")
-        # self.leNameAlignment.setStyleSheet("border-color: #339933; color: #f3f6fb; border-width: 2px;")
         self.gbCreateImages.hide()
         self.labImgCount.hide()
         self.iid_dialog.hide()
@@ -412,43 +391,22 @@ class ManagerTab(QWidget):
         self.bPlusAlignment.setEnabled(True)
 
 
-    def getDict(self, path):
-        if os.path.isfile(path):
-            try:
-                with open(path, 'r') as f:
-                    data=json.load(f)
-                return data
-            except json.decoder.JSONDecodeError:
-                logger.warning(f'JSON decoder error: {path}')
-        return None
+    def _getUUID(self, path):
 
 
-    def getScaleKeys(self, x):
-        basename,_ = os.path.splitext(os.path.basename(x))
-        info_path = os.path.join(x, 'info.json')
-        if os.path.isfile(info_path):
-            info = self.getDict(info_path)
-            return natural_sort(info['levels'])
-        else:
-            return []
-
-
-    def _getUUID(self, p):
-        name,_ = os.path.splitext(os.path.basename(p))
-        path = os.path.join(p, name + '.swiftir')
-        uuid = None
+        # uuid = ''
         if os.path.exists(path):
-            try:
-                data = self.getDict(path)
-                assert isinstance(data,dict)
-            except AssertionError:
-                logger.warning(f'Unable to access project data model at {p}')
-                return None
-            try:
-                uuid = data['info']['series_uuid']
-            except json.decoder.JSONDecodeError:
-                logger.warning('JSON decoder error!')
-        return uuid
+            data = read('json')(path) # returns None if not valid JSON
+            if isinstance(data, dict):
+                try:
+                    uuid = data['info']['images_uuid']
+                except KeyError:
+                    uuid = data['info']['series_uuid']
+                except json.decoder.JSONDecodeError:
+                    self.parent.warn('JSON decoder error')
+                else:
+                    return uuid
+            # return uuid
 
 
     def _getImagesName(self):
@@ -456,14 +414,9 @@ class ManagerTab(QWidget):
 
 
     def _getImagesUUID(self, p):
-        # logger.info('')
-        path = os.path.join(p, 'info.json')
-        if os.path.exists(path):
-            try:
-                uuid = self.getDict(path)['uuid']
-                return uuid
-            except json.decoder.JSONDecodeError:
-                logger.warning('JSON decoder error!')
+        path = Path(p) / 'info.json'
+        if path.exists():
+            return read('json')(path)['uuid']
 
 
     #importseries
@@ -519,38 +472,14 @@ class ManagerTab(QWidget):
 
         logger.info(f"# Imported: {len(self._NEW_IMAGES_PATHS)}")
 
-        # t0 = time.time()
-        # logger.info('Symbolically linking full scale images...')
-        # self.parent.tell('Symbolically linking full scale images...')
-        # for img in self._NEW_IMAGES_PATHS:
-        #     fn = img
-        #     ofn = os.path.join(out, 'tiff', 's1', os.path.split(fn)[1])
-        #     # normalize path for different OSs
-        #     if os.path.abspath(os.path.normpath(fn)) != os.path.abspath(os.path.normpath(ofn)):
-        #         try:
-        #             os.unlink(ofn)
-        #         except:
-        #             pass
-        #         try:
-        #             os.symlink(fn, ofn)
-        #         except FileNotFoundError:
-        #             # print_exception()
-        #             logger.warning(f"File not found: {fn}. Unable to link, copying instead." )
-        #             try:
-        #                 shutil.copy(fn, ofn)
-        #             except:
-        #                 logger.warning("Unable to link or copy from " + fn + " to " + ofn)
-        # dt = time.time() - t0
-        # logger.info(f'Elapsed Time (linking): {dt:.3g} seconds')
-
         count = len(self._NEW_IMAGES_PATHS)
         level_keys = natural_sort(['s%d' % v for v in scale_vals])
         series_name = os.path.basename(out)
         logger.critical(f"Resolution levels: {level_keys}")
 
         im_sample = self._NEW_IMAGES_PATHS[0]
-        tiffinfo = parse('tiffinfo')(im_sample)
-        tifftags = parse('tifftags')(im_sample)
+        tiffinfo = read('tiffinfo')(im_sample)
+        tifftags = read('tifftags')(im_sample)
         wp = os.path.join(out, 'tiffinfo.txt')
         write('txt')(wp, tiffinfo)
 
@@ -583,106 +512,77 @@ class ManagerTab(QWidget):
             opts['size_xy'][key] = siz
 
         siz_x, siz_y = ImageSize(opts['paths'][1])
-        # siz_x, siz_y = ImageIOSize(next(absFilePaths(src)))
         sf = int(max(siz_x, siz_y) / cfg.TARGET_THUMBNAIL_SIZE)
         opts['thumbnail_scale_factor'] = sf
-        # jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
-        # with open(os.path.join(out, 'info.json'), 'w') as f:
-        #     f.write(jde.encode(copy.deepcopy(opts)))
         p = os.path.join(out, 'info.json')
         write('json')(p, opts)
         cfg.mw.autoscaleImages(src, out, opts)
         cfg.preferences['images_combo_text'] = out
-        logger.info('done')
         self.initPMviewer()
 
 
-    # importalignment
     def createAlignment(self):
         logger.info('')
         self.bPlusAlignment.setEnabled(False)
         self.resetView()
-        # name         = self.leNameAlignment.text()
-        name         = self.leNameAlignment.text()
-        if not name.endswith('.alignment'):
-            name += '.alignment'
-
-        out = os.path.join(cfg.preferences['alignments_root'], name)
-
-        images_path = self.cmbSelectImages.currentText()
-        series_name,_ = os.path.splitext(os.path.basename(images_path))
-        series_info_path = os.path.join(images_path, 'info.json')
-
-        if not os.path.isfile(series_info_path):
-            cfg.mw.warn(f"Series data file not found: {series_info_path}. Was it moved?")
-            print(series_info_path)
+        root = Path(cfg.preferences['alignments_root'])
+        seriespath = Path(self.cmbSelectImages.currentText())
+        usertext = self.leNameAlignment.text()
+        newproject = (root / usertext).with_suffix('.alignment')
+        info = seriespath / 'info.json'
+        _err = 0
+        _msg = None
+        if not os.path.isdir(seriespath):
+            _err = 1
+            _msg = f"Image Series Not Found: {seriespath}.\nWere the images moved?"
+        elif not info.exists():
+            _err = 1
+            _msg = f"Image Stack 'info.json' File Is Missing:\n{info}\nWas it moved?"
+        elif os.path.exists(newproject):
+            _err = 1
+            _msg = f"A file with this name already exists:\n{newproject}"
+        if _err:
+            cfg.mw.warn(_msg)
             self.resetView()
-            return
-        if not os.path.isdir(images_path):
-            cfg.mw.warn(f"Series not found: {images_path}. Was this images moved?")
-            self.resetView()
-            return
-        if os.path.exists(out):
-            cfg.mw.warn(f"An alignment data file with this name already exists in the content root!")
-            self.resetView()
-            return
-
-        with open(series_info_path) as f:
-            info = json.load(f)
-
-        logger.info(f"Initializing Data Model...\n"
-                        f"  alignment name : {name}\n"
-                        f"       of images : {series_name}\n"
-                        f"           count : {info['count']}")
-
-        t0 = time.time()
-        #Todo also need to pass in the images location, which may have moved
-        dm = DataModel(data_location=out, images_location=images_path, initialize=True, images_info=info)
-        cfg.preferences['last_alignment_opened'] = dm.data_location
-        dt = time.time() - t0
-        logger.info(f'Time Elapsed (initialize data model): {dt:.3g}s')
-
-        initLogFiles(out)
-        # makedirs_exist_ok(out, exist_ok=True)
-        # os.makedirs(out, exist_ok=True)
-        os.makedirs(os.path.join(out, 'data'), exist_ok=True)
-        logger.info(f"Out:\n{out}")
-        logger.info(f"Levels: {info['levels']}")
-        n = info['count']
-
-        cfg.mw.hud('Making directory structure for data...')
-        for k in info['levels']:
-            os.makedirs(os.path.join(out, 'zarr',        k), exist_ok=True)
-        for i in range(n):
-            # logger.info(f"creating {os.path.join(out, 'zarr', k)}")
-            for k in info['levels']:
-                os.makedirs(os.path.join(out, 'data', str(i), k), exist_ok=True)
-
-        dm.save()
+        else:
+            info = read('json')(info)
+            dm = DataModel(path=newproject, im_path=seriespath, init=True, images_info=info)
+            DirectoryStructure(dm).initDirectory()
+            AlignmentTab(self.parent, dm)
         self.bPlusAlignment.setEnabled(True)
-        self.parent.openAlignment(dm)
+        logger.info(f"<-- createAlignment")
 
 
     def refresh(self):
         caller = inspect.stack()[1].function
         logger.info(f"[{caller}]")
-        self.resetView() #0830+
+        self.resetView()
         self.updateCombos()
         self.initPMviewer()
 
 
     def initPMviewer(self):
-        caller = inspect.stack()[1].function
-        logger.info(f'[{caller}]')
-        path_arg = self.get_pmviewer_paths()
-        # self.viewer = self.parent.viewer = PMViewer(self, self.webengine, path=path_arg)
-        res = [50, 8, 8]
-        self.viewer = self.parent.viewer = PMViewer(parent=self, webengine=self.webengine, path=path_arg, dm=None, res=res, )
-        self.viewer.signals.arrowLeft.connect(self.parent.layer_left)
-        self.viewer.signals.arrowRight.connect(self.parent.layer_right)
-        self.viewer.signals.arrowUp.connect(self.parent.incrementZoomIn)
-        self.viewer.signals.arrowDown.connect(self.parent.incrementZoomOut)
-        self.webengine.setFocus()
+        logger.info('')
+        if self.cmbSelectImages.count() > 0:
+            level = self.cmbLevel.currentText()
+            images = Path(self.cmbSelectImages.currentText())
+            alignment = Path(self.cmbSelectAlignment.currentText())
+            l = images / 'zarr' / level
+            r = alignment / 'zarr' / level
+            paths = []
+            if l.exists():
+                paths.append(l)
+            if r.exists():
+                paths.append(r)
+            res = [50, 8, 8] #Todo why is this hardcoded
+            self.viewer = self.parent.viewer = PMViewer(parent=self, webengine=self.webengine, path=paths, dm=None, res=res, )
+            self.viewer.signals.arrowLeft.connect(self.parent.layer_left)
+            self.viewer.signals.arrowRight.connect(self.parent.layer_right)
+            self.viewer.signals.arrowUp.connect(self.parent.incrementZoomIn)
+            self.viewer.signals.arrowDown.connect(self.parent.incrementZoomOut)
+            # self.webengine.setFocus()
+        else:
+            self.webengine.setHtml("")
 
 
     def onPlusAlignment(self):
@@ -715,10 +615,6 @@ class ManagerTab(QWidget):
                     except:
                         print_exception()
                     self.updateCombos()
-                    # if cfg.preferences['images_combo_text']:
-                    #     logger.critical(f"cfg.preferences['images_combo_text'] = {cfg.preferences['images_combo_text']}")
-                    #     if os.path.exists(cfg.preferences['images_combo_text']):
-                    #         self.cmbSelectImages.setCurrentText(cfg.preferences['images_combo_text'])
                     self.resetView()
                     self.initPMviewer()
             else:
@@ -729,23 +625,11 @@ class ManagerTab(QWidget):
 
     def onOpenAlignment(self):
         logger.info('')
-        alignment_dir = self.cmbSelectAlignment.currentText()
-        images_location = self.cmbSelectImages.currentText()
-        if alignment_dir:
-            name,_ = os.path.splitext(os.path.basename(alignment_dir))
-            swiftir_file = os.path.join(alignment_dir, name + '.swiftir')
-            if not os.path.exists(swiftir_file):
-                cfg.mw.warn(f"Alignment data file not found: {swiftir_file}")
-                self.resetView()
-                return
-            if not os.path.exists(alignment_dir):
-                cfg.mw.warn(f"Alignment data not found: {alignment_dir}")
-                self.resetView()
-                return
-            cfg.mw.tell(f"Opening: {swiftir_file}...")
-            self.openAlignment(path=swiftir_file, data_location=alignment_dir, images_location=images_location)
-        else:
-            cfg.mw.warn("No alignment selected.")
+        p = Path(self.cmbSelectAlignment.currentText())
+        if p.suffix == '.align':
+            impath = Path(self.cmbSelectImages.currentText())
+            self.openAlignment(path=p, images_location=impath)
+
 
     def onMinusImages(self):
         path = self.cmbSelectImages.currentText()
@@ -791,6 +675,8 @@ class ManagerTab(QWidget):
         mem = cfg.preferences['images_combo_text']
         if mem in known:
             self.cmbSelectImages.setCurrentText(mem)
+            info_path = os.path.join(mem,'info.json')
+            self._images_info = read('json')(info_path)
         _im_path = self.cmbSelectImages.currentText()
         _im_name = os.path.basename(_im_path)
         al_known = self._watchAlignments.known
@@ -809,40 +695,39 @@ class ManagerTab(QWidget):
     def loadAlignmentCombo(self):
         # logger.info('')
         cur_items = [self.cmbSelectAlignment.itemText(i) for i in range(self.cmbSelectAlignment.count())]
-        if sorted(cur_items) == sorted(self._watchAlignments.known):
-            logger.info("null return"); return
-        _im_path = self.cmbSelectImages.currentText()
-        _im_name = os.path.basename(_im_path)
-        _uuid = self._getImagesUUID(_im_path)
-        known = self._watchAlignments.known
-        valid = [p for p in known if self._getUUID(p) == _uuid]
-        self.cmbSelectAlignment.clear()
-        self.cmbSelectAlignment.addItems(valid)
-        mem = cfg.preferences['alignment_combo_text']
-        if mem in valid:
-            self.cmbSelectAlignment.setCurrentText(mem)
-        if os.path.exists(str(_im_path)):
-            if len(valid):
-                self.cmbSelectAlignment.setPlaceholderText(f"{len(valid)} Alignments (.alignment) of '{_im_name}' Found")
+        if sorted(cur_items) != sorted(self._watchAlignments.known):
+            _im_path = self.cmbSelectImages.currentText()
+            _im_name = os.path.basename(_im_path)
+            _uuid = self._getImagesUUID(_im_path)
+            known = self._watchAlignments.known
+
+            # valid = [p for p in known if self._getUUID(p) == _uuid]
+            valid = []
+            for p in known:
+                if self._getUUID(p) == _uuid:
+                    valid.append(p)
+
+
+            self.cmbSelectAlignment.clear()
+            self.cmbSelectAlignment.addItems(valid)
+            mem = cfg.preferences['alignment_combo_text']
+            if mem in valid:
+                self.cmbSelectAlignment.setCurrentText(mem)
+            if os.path.exists(str(_im_path)):
+                if len(valid):
+                    self.cmbSelectAlignment.setPlaceholderText(f"{len(valid)} Alignments (.alignment) of '{_im_name}' Found")
+                else:
+                    self.cmbSelectAlignment.setPlaceholderText(f"No Alignments (.alignment) of '{_im_name}' Found")
             else:
-                self.cmbSelectAlignment.setPlaceholderText(f"No Alignments (.alignment) of '{_im_name}' Found")
-        else:
-            self.cmbSelectAlignment.setPlaceholderText("")
+                self.cmbSelectAlignment.setPlaceholderText("")
 
 
     def loadLevelsCombo(self):
         # logger.info('')
         self.cmbLevel.clear()
         cur_series = self.cmbSelectImages.currentText()
-        if cur_series:
-            scales = self.getScaleKeys(x=cur_series)
-            if scales:
-                self.cmbLevel.addItems(scales)
-                self.cmbLevel.setCurrentIndex(self.cmbLevel.count() - 1)
-
-    # def setCurrentImages(self):
-    #     logger.info('')
-    #     self._fsWatcher = FsWatcher(extension='.alignments')
+        self.cmbLevel.addItems(self._images_info['levels'])
+        self.cmbLevel.setCurrentIndex(self.cmbLevel.count() - 1)
 
 
     def onSelectImagesCombo(self):
@@ -850,62 +735,33 @@ class ManagerTab(QWidget):
         caller = inspect.stack()[1].function
         if caller == 'main':
             if self.cmbSelectImages.currentText():
+                path = self.cmbSelectImages.currentText()
+                info_path = os.path.join(path, 'info.json')
+                self._images_info = read('json')(info_path)
                 self.resetView()
-                cfg.preferences['images_combo_text'] = self.cmbSelectImages.currentText()
+                cfg.preferences['images_combo_text'] = path
                 try:
                     self.loadLevelsCombo() #Important load the scale levels combo before initializing viewers
                 except:
                     print_exception()
                 self.loadAlignmentCombo()
-
-                w, h = int(self.webengine.width() / 2), self.webengine.height()
-                if self.cmbSelectImages.currentText():
-                    path_arg = self.get_pmviewer_paths()
-                    res=[50,8,8]
-                    self.viewer = self.parent.viewer = PMViewer(parent=self, webengine=self.webengine, path=path_arg, dm=None, res=res, )
-                    # self.viewer.initZoom(w=w, h=h)
-                #     self.wSelectAlignment.setVisible(True)
-                # else:
-                #     self.wSelectAlignment.setVisible(False)
-                self.webengine.setFocus()
+                self.initPMviewer()
 
     def onComboLevel(self):
         caller = inspect.stack()[1].function
         if caller == 'main':
             self.initPMviewer()
 
-    def onSelectAlignmentCombo(self):
-        caller = inspect.stack()[1].function
-        if caller == 'main':
-            cfg.preferences['alignment_combo_text'] = self.cmbSelectAlignment.currentText()
-            self.gbCreateImages.hide()
-            self.webengine.setFocus()
+    # def onSelectAlignmentCombo(self):
+    #     caller = inspect.stack()[1].function
+    #     if caller == 'main':
+    #         cfg.preferences['alignment_combo_text'] = self.cmbSelectAlignment.currentText()
+    #         self.gbCreateImages.hide()
+    #         self.webengine.setFocus()
 
-    def get_pmviewer_paths(self):
-        l, r = '', ''
-        images = self.cmbSelectImages.currentText()
-        alignment = self.cmbSelectAlignment.currentText()
-        scale = self.cmbLevel.currentText()
-        keys = self.getScaleKeys(x=images)
-        if scale and keys:
-            if self.cmbSelectImages.count() > 0:
-                path = os.path.join(images, 'zarr', keys[-1])
-                if os.path.exists(path):
-                    l = path
-                path = os.path.join(alignment, 'zarr', keys[-1])
-                if os.path.exists(path):
-                    r = path
-        return (l, r)
-
-
-    # def onComboLevel(self):
-    #     pass
 
     def openAlignment(self, path=None, data_location=None, images_location=None):
-        # caller = inspect.stack()[1].function
-        # logger.info(f'caller: {caller}')
-        logger.info(f"Loading: {path}")
-        if path == None:
+        if not path:
             path = self.selectionReadout.text()
         if validate_zarr_selection(path):
             logger.info('Opening Zarr...')
@@ -913,42 +769,20 @@ class ManagerTab(QWidget):
             return
         elif validate_project_selection(path):
 
-            if cfg.mw.isProjectOpen(path):
-                cfg.mw.globTabs.setCurrentIndex(cfg.mw.getProjectIndex(path))
-                cfg.mw.warn(f'Project {os.path.basename(path)} is already open.')
+            if self.parent.isProjectOpen(path):
+                self.parent.globTabs.setCurrentIndex(cfg.mw.getProjectIndex(path))
+                self.parent.warn(f'Project {os.path.basename(path)} is already open.')
                 return
 
-            fn, ext = os.path.splitext(path)
-            if ext == '.json':
-                logger.info('Opening OLD alignEM project')
-                new_name = fn + '.swiftir'
-                print(f"new name: {new_name}")
-                with open(path, 'r') as f:
-                    data = json.load(f)
-                    al_stack = data['data']['scales']['scale_1']['alignment_stack']
-                    imgs = []
-                    for l in al_stack:
-                        imgs.append(os.path.dirname(new_name) + '/' + l['images']['base']['path'])
-                    print(imgs)
-                    self.NEW_PROJECT_IMAGES = imgs
-                    self.NEW_PROJECT_PATH = new_name
-                    self.new_project(skip_to_config=True)
-                    # print(json.dumps(data, indent=4))
-                return
-            logger.info(f'Opening {path}...')
-
-            if not os.path.exists(path):
-                logger.warning("File not found!")
-                return
-            if os.path.getsize(path) == 0:
-                logger.warning("File is empty!")
-                return
+            cfg.mw.tell(f"Opening: {path}...")
 
             try:
-                with open(path, 'r') as f:
-                    dm = DataModel(data=json.load(f), data_location=data_location, images_location=images_location)
-                # dm.set_defaults()
-                dm.save()
+                data = read('json')(path)
+                dm = DataModel(
+                    data=data,
+                    path=str(data_location),
+                    im_path=str(images_location),
+                )
             except:
                 cfg.mw.warn(f'No Such File Found: {path}')
                 print_exception()
@@ -956,10 +790,10 @@ class ManagerTab(QWidget):
             else:
                 logger.info(f'Project Opened!')
 
-            initLogFiles(dm.data_location)  # 0805+
+            cfg.preferences['last_alignment_opened'] = dm.data_location
             cfg.mw.saveUserPreferences(silent=True)
-            self.parent.openAlignment(dm)
-
+            dm.save(silently=True)
+            AlignmentTab(self.parent, dm)
         else:
             cfg.mw.warn("Invalid Path")
 
@@ -968,36 +802,6 @@ class ManagerTab(QWidget):
         logger.info('')
         self.gbCreateImages.hide()
         self.update()
-
-    def validate_path(self):
-        # logger.info(f'caller:{inspect.stack()[1].function}')
-        path = self.selectionReadout.text()
-        # logger.info(f'Validating path : {path}')
-        if validate_project_selection(path):
-            self._buttonOpen.setText(f"Open Project {hotkey('O')}")
-            logger.info(f'path is a valid AlignEM project')
-            self.validity_label.hide()
-            self._buttonOpen.setEnabled(True)
-
-        elif validate_zarr_selection(path):
-            self._buttonOpen.setText(f"Open Zarr {hotkey('O')}")
-            self.validity_label.hide()
-
-        elif validate_tiff_folder(path):
-            self._buttonProjectFromTiffFolder1.setEnabled(True)
-            self.validity_label.hide()
-
-        elif path == '':
-            self.validity_label.hide()
-
-        else:
-            self.validity_label.show()
-            self._buttonProjectFromTiffFolder1.setEnabled(False)
-            self._buttonOpen.setEnabled(False)
-            self._buttonDelete.setEnabled(False)
-            # self._buttonOpen.hide()
-            # self._buttonDelete.hide()
-
 
     def showImportSeriesDialog(self):
         self.setUpdatesEnabled(False)
@@ -1081,23 +885,8 @@ class ManagerTab(QWidget):
         logger.info(f"<<<< selectImages <<<<")
 
 
-    def setSelectionPathText(self, path):
-        # logger.info('')
-        self.selectionReadout.setText(path)
-        self._buttonProjectFromTiffFolder1.setEnabled(validate_tiff_folder(path))
-
-        if validate_project_selection(path) | validate_zarr_selection(path):
-            self.validity_label.hide()
-            self._buttonOpen.setEnabled(True)
-            self._buttonDelete.setEnabled(True)
-        else:
-            self.validity_label.show()
-            self._buttonOpen.setEnabled(False)
-            self._buttonDelete.setEnabled(False)
-
 
     def open_zarr_selected(self):
-        # path = self.selected_file
         path = self.selectionReadout.text()
         logger.info("Opening Zarr '%s'..." % path)
         try:
@@ -1127,11 +916,9 @@ class ManagerTab(QWidget):
             project_files = [self.selectionReadout.text()]
 
         for project_file in project_files:
-            if project_file != '':
+            if project_file:
                 if validate_project_selection(project_file):
-
-                    project = os.path.splitext(project_file)[0]
-
+                    project = Path(project_file).with_suffix('')
                     cfg.mw.tell("Delete this project? %s" % project_file)
                     txt = "Are you sure you want to PERMANENTLY DELETE " \
                           "the following project?\n\n" \
@@ -1164,12 +951,9 @@ class ManagerTab(QWidget):
                     # configure_project_paths()
                     # self.user_projects.set_data()
 
-                    cfg.mw.tell(f'Deleting alignment at {project}...')
+                    cfg.mw.tell(f'Deleting: {project}...')
                     try:
                         run_subprocess(["rm","-rf", project])
-                        # delete_recursive(dir=project)
-                        # shutil.rmtree(project, ignore_errors=True, onerror=handleError)
-                        # shutil.rmtree(project, ignore_errors=True, onerror=handleError)
                     except:
                         cfg.mw.warn('An Error Was Encountered During Deletion of the Project Directory')
                         print_exception()
@@ -1328,54 +1112,23 @@ def validate_tiff_folder(path) -> bool:
 
 
 def validate_project_selection(path) -> bool:
-    logger.info(f'caller:{inspect.stack()[1].function}')
-    logger.info('Validating selection %s...' % path)
-    # called by setSelectionPathText
-    path, extension = os.path.splitext(path)
-    # if extension != '.swiftir':
-    if extension not in ('.swiftir','.json'):
-        logger.info('Returning False')
-        return False
-    else:
-        logger.info('Returning True')
+    clr = inspect.stack()[1].function
+    logger.info(f'[{clr}] Validating selection %s...' % path)
+    if Path(path).suffix in ('.align'):
         return True
+    return False
+
 
 
 def validate_zarr_selection(path) -> bool:
     # logger.info(f'caller:{inspect.stack()[1].function}')
     # logger.info('Validating selection %level...' % cfg.selected_file)
     # called by setSelectionPathText
-    if os.path.isdir(path):
-        if '.zarray' in os.listdir(path):
-            # logger.info('Directory contains .zarray -> selection is a valid Zarr')
+    if Path(path).is_dir():
+        if '.zarray' in Path(path).glob('**/*'):
             return True
     return False
 
-
-def makedirs_exist_ok(path_to_build, exist_ok=False):
-    # Needed for old python which doesn't have the exist_ok option!!!
-    logger.info("Making directories for path %s" % path_to_build)
-    parts = path_to_build.split(
-        os.sep)  # Variable "parts" should be a list of subpath sections. The first will be empty ('') if it was absolute.
-    full = ""
-    if len(parts[0]) == 0:
-        # This happens with an absolute PosixPath
-        full = os.sep
-    else:
-        # This may be a Windows drive or the start of a non-absolute path
-        if ":" in parts[0]:
-            # Assume a Windows drive
-            full = parts[0] + os.sep
-        else:
-            # This is a non-absolute path which will be handled naturally with full=""
-            pass
-    for p in parts:
-        full = os.path.join(full, p)
-        if not os.path.exists(full):
-            os.makedirs(full)
-        elif not exist_ok:
-            pass
-            # logger.info("Warning: Attempt to create existing directory: " + full)
 
 def set_image_sizes(dm):
     for s in dm.scales:
@@ -1607,125 +1360,6 @@ class WebEngine(QWebEngineView):
         QWebEngineView.__init__(self)
         self.ID = ID
         self.grabGesture(Qt.PinchGesture, Qt.DontStartGestureOnChildren)
-
-
-class FileWatcher(QObject):
-    fsChanged = Signal(str)
-
-    def __init__(self, extension, preferences, key):
-        super().__init__()
-        self._extension = extension
-        self._preferences = preferences
-        self._key = key
-        self._searchPaths = preferences[key]
-        self._watcher = QFileSystemWatcher(self)
-        self._watcher.directoryChanged.connect(self.onDirChanged)
-        # self._watcher.directoryChanged.connect(lambda path: print(f"Directory '{path}' changed!"))
-        self._watcher.fileChanged.connect(self.onFileChanged)
-        # self._watcher.fileChanged.connect(lambda path: print(f"File '{path}' changed!"))
-
-        self._known = []
-
-        self._events = {}
-        self._updateKnown()
-
-    def _loadSearchPaths(self):
-        for path in self._searchPaths:
-            self.watch(path)
-
-
-    def _updateKnown(self):
-        # logger.info(f"_updateKnown:")
-        self._loadSearchPaths()
-        self._known = []
-        for path in self.watched:
-            found = list(Path(path).glob('*%s' % self._extension))
-            self._known.extend(map(str,found))
-
-
-    @property
-    def watched(self):
-        return self._watcher.directories() + self._watcher.files()
-
-    @property
-    def known(self):
-        self._updateKnown()
-        return self._known
-
-    def watch(self, path):
-        self._watcher.addPath(path)
-
-    def clearWatches(self):
-        # print('Clearing watch paths...')
-        self._watcher.removePaths(self.watched)
-
-
-    def onDirChanged(self, path):
-        self._updateKnown()
-        # print(f'onDirChanged: {path}')
-        self.fsChanged.emit(path)
-
-    def onFileChanged(self, path):
-        # print(f'onFileChanged: {path}')
-        self.fsChanged.emit(path)
-
-
-class FsWatcher(QObject):
-    fsChanged = Signal(str)
-
-    def __init__(self, extension):
-        super().__init__()
-        self._extension = extension
-
-        self._watcher = QFileSystemWatcher(self)
-        self._watcher.directoryChanged.connect(self.onDirChanged)
-        # self._watcher.directoryChanged.connect(lambda path: print(f"Directory '{path}' changed!"))
-        self._watcher.fileChanged.connect(self.onFileChanged)
-        # self._watcher.fileChanged.connect(lambda path: print(f"File '{path}' changed!"))
-
-        self._known = []
-
-        self._events = {}
-        self._updateKnown()
-
-    def _loadSearchPaths(self):
-        logger.info('')
-        for path in self._searchPaths:
-            self.watch(path)
-
-    def _updateKnown(self):
-        # logger.critical(f"_updateKnown:")
-        self._loadSearchPaths()
-        self._known = []
-        for path in self.watched:
-            # print(f"Searching path {path}...")
-            found = list(Path(path).glob('*%s' % self._extension))
-            # print(f"Found: {found}")
-            self._known.extend(map(str, found))
-
-    @property
-    def watched(self):
-        return self._watcher.directories() + self._watcher.files()
-
-    @property
-    def known(self):
-        return self._known
-
-    def watch(self, path):
-        self._watcher.addPath(path)
-
-    def clearWatches(self):
-        # print('Clearing watch paths...')
-        self._watcher.removePaths(self.watched)
-
-    def onDirChanged(self, path):
-        self._updateKnown()
-        # print(f'onDirChanged: {path}')
-        self.fsChanged.emit(path)
-
-    def onFileChanged(self, path):
-        # print(f'onFileChanged: {path}')
-        self.fsChanged.emit(path)
 
 
 def setWebengineProperties(webengine):

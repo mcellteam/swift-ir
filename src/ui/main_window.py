@@ -115,7 +115,7 @@ class MainWindow(QMainWindow):
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.setObjectName('mainwindow')
         try:
-            self.branch = run_command('git', arg_list=['rev-parse', '--abbrev-ref', 'HEAD'])['out'].rstrip()
+            self.branch = run_command('git', arg_list=['rev-read', '--abbrev-ref', 'HEAD'])['out'].rstrip()
         except:
             print_exception()
             self.branch = ''
@@ -206,10 +206,9 @@ class MainWindow(QMainWindow):
         self.move(qr.topLeft())
 
 
-    def openAlignment(self, dm):
-        self.dm = dm
-        cfg.preferences['last_alignment_opened'] = dm.data_location
-        AlignmentTab(self, dm)
+    # def openAlignment(self, dm):
+    #     cfg.preferences['last_alignment_opened'] = dm.path
+    #     AlignmentTab(self, dm)
 
 
     def runUiChecks(self):
@@ -3729,17 +3728,17 @@ class MainWindow(QMainWindow):
     # def printExportInstructionsTIFF(self):
     #     work = os.getenv('WORK')
     #     user = os.getenv('USER')
-    #     tiffs = os.path.join(self.dm.images_location, 'scale_1', 'img_src')
-    #     self.hud.post(f'Use the follow command to copy-export full resolution TIFFs to another images_location on the filesystem:\n\n'
+    #     tiffs = os.path.join(self.dm.im_path, 'scale_1', 'img_src')
+    #     self.hud.post(f'Use the follow command to copy-export full resolution TIFFs to another im_path on the filesystem:\n\n'
     #                   f'    rsync -atvr {tiffs} {user}@ls6.tacc.utexas.edu:{work}/data')
     #
     #
     # def printExportInstructionsZarr(self):
     #     work = os.getenv('WORK')
     #     user = os.getenv('USER')
-    #     zarr = os.path.join(self.dm.images_location, 'img_aligned.zarr', 's1')
+    #     zarr = os.path.join(self.dm.im_path, 'img_aligned.zarr', 's1')
     #     self.hud.post(
-    #         f'Use the follow command to copy-export full resolution Zarr to another images_location on the filesystem:\n\n'
+    #         f'Use the follow command to copy-export full resolution Zarr to another im_path on the filesystem:\n\n'
     #         f'    rsync -atvr {zarr} {user}@ls6.tacc.utexas.edu:{work}/data\n\n'
     #         f'Note: AlignEM supports the opening and re-opening of arbitrary Zarr files in Neuroglancer')
 
@@ -3770,11 +3769,11 @@ class MainWindow(QMainWindow):
     def rechunk(self):
         # if self._isProjectTab():
         #     if self.dm.is_aligned_and_generated():
-        #         target = os.path.join(self.dm.images_location, 'img_aligned.zarr', 's%d' % self.dm.lvl())
-        #         _src = os.path.join(self.dm.images_location, 'img_aligned.zarr', '_s%d' % self.dm.lvl())
+        #         target = os.path.join(self.dm.im_path, 'img_aligned.zarr', 's%d' % self.dm.lvl())
+        #         _src = os.path.join(self.dm.im_path, 'img_aligned.zarr', '_s%d' % self.dm.lvl())
         #     else:
-        #         target = os.path.join(self.dm.images_location, 'img_src.zarr', 's%d' % self.dm.lvl())
-        #         _src = os.path.join(self.dm.images_location, 'img_src.zarr', '_s%d' % self.dm.lvl())
+        #         target = os.path.join(self.dm.im_path, 'img_src.zarr', 's%d' % self.dm.lvl())
+        #         _src = os.path.join(self.dm.im_path, 'img_src.zarr', '_s%d' % self.dm.lvl())
         #
         #     dlg = RechunkDialog(self, target=target)
         #     if dlg.exec():
@@ -4123,7 +4122,7 @@ class MainWindow(QMainWindow):
             if self.dw_hud.isVisible():
                 self.setUpdatesEnabled(False)
                 loc_hud = self.dockWidgetArea(self.dw_hud)
-                # logger.info(f'dw_monitor images_location: {loc_hud}')
+                # logger.info(f'dw_monitor im_path: {loc_hud}')
                 if loc_hud in (1,2):
                     self.dw_hud.setFeatures(
                         QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetClosable)

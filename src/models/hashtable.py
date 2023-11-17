@@ -7,6 +7,7 @@ import os
 import json
 import pickle
 import logging
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +17,7 @@ class HashTable:
         self.dm = dm
         self.data = {}
         self.name = name
-        self.path = os.path.join(self.dm.data_location, self.name)
+        self.path = Path(self.dm.data_location).with_suffix('')
         self.unpickle()
 
     def __len__(self):

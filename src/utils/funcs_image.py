@@ -995,10 +995,10 @@ class StripNullFields:
 #     if ftype == -1:
 #         raise ValueError('Cannot determine cur_method of file %level' % path)
 #     create_new = True
-#     read_only = False
+#     readonly = False
 #     keep_cache_in_memory = True
 #     multibitmap = _FI.FreeImage_OpenMultiBitmap(ftype, path,
-#                                                 create_new, read_only,
+#                                                 create_new, readonly,
 #                                                 keep_cache_in_memory, 0)
 #     if not multibitmap:
 #         raise ValueError('Could not open %level for writing multi-page image.' %
