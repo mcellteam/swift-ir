@@ -308,7 +308,7 @@ class FileBrowser(QWidget):
         self.bSetContentSources.clicked.connect(fn)
 
         self.combobox = QComboBox()
-        # self.combobox.setPlaceholderText("Select images_location...")
+        # self.combobox.setPlaceholderText("Select im_path...")
         self.combobox.setToolTip("Saved Locations")
         # self.combobox.setEditable(True)
         # self.combobox.completer().setCompletionMode(QCompleter.PopupCompletion)

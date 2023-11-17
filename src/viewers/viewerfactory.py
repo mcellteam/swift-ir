@@ -51,6 +51,7 @@ import os
 import sys
 from functools import cache
 from math import floor
+from pathlib import Path
 
 import numcodecs
 import numpy as np
@@ -528,14 +529,18 @@ class PMViewer(AbstractEMViewer):
 
 
     def initViewer(self):
-
-        if os.path.exists(os.path.join(self.path[0], '.zarray')):
-            self.tensor = self.getTensor(self.path[0]).result()
+        if not len(self.path):
+            logger.info('No paths passed to viewer.')
+            return
+        p = Path(self.path[0])
+        if (p / '.zarray').exists():
+            self.tensor = self.getTensor(str(p)).result()
             self.LV_l = self.getLocalVolume(self.tensor[:, :, :], self.getCoordinateSpace())
-
-        if os.path.exists(os.path.join(self.path[1],'.zarray')):
-            self.tensor_r = self.getTensor(self.path[1]).result()
-            self.LV_r = self.getLocalVolume(self.tensor_r[:, :, :], self.getCoordinateSpace())
+        if len(self.path) == 2:
+            p = Path(self.path[1])
+            if (p / '.zarray').exists():
+                self.tensor_r = self.getTensor(str(p)).result()
+                self.LV_r = self.getLocalVolume(self.tensor_r[:, :, :], self.getCoordinateSpace())
 
         with self.txn() as s:
             s.layout.type = 'yz'

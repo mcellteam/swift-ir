@@ -51,13 +51,18 @@ __all__ = ['dt', 'is_tacc', 'is_linux', 'is_mac', 'create_paged_tiff', 'check_fo
            'verify_image_file', 'exist_aligned_zarr', 'handleError',
            'count_widgets', 'find_allocated_widgets', 'absFilePaths', 'validate_file', 'hotkey',
            'caller_name','addLoggingLevel', 'sanitizeSavedPaths', 'recursive_key_values', 'check_macos_isdark_theme',
-           'countcalls', 'ensure_even'
+           'countcalls', 'ensure_even', 'tree', 'path_to_str'
            ]
 
 logger = logging.getLogger(__name__)
 
 snapshot = None
 
+
+def path_to_str(p):
+    if isinstance(p, Path):
+        return str(p)
+    return p
 
 def hotkey(letter: str):
     return "(" + ('^', '⌘')[is_mac()] + "%s)" % letter
@@ -937,18 +942,18 @@ def make_absolute(file_path, proj_path):
     return abs_path
 
 
-def initLogFiles(location):
-    try:
-        logpath = os.path.join(location, 'logs')
-        os.makedirs(logpath, exist_ok=True)
-        open(os.path.join(logpath, 'exceptions.log'), 'a').close()
-        open(os.path.join(logpath, 'thumbnails.log'), 'a').close()
-        open(os.path.join(logpath, 'recipemaker.log'), 'a').close()
-        open(os.path.join(logpath, 'swim.log'), 'a').close()
-        open(os.path.join(logpath, 'multiprocessing.log'), 'a').close()
-    except:
-        exi = sys.exc_info()
-        logger.warning(f"[{exi[0]} / {exi[1]}] Initializing log files triggered an exception")
+# def initLogFiles(location):
+#     try:
+#         logpath = os.path.join(location, 'logs')
+#         os.makedirs(logpath, exist_ok=True)
+#         open(os.path.join(logpath, 'exceptions.log'), 'a').close()
+#         open(os.path.join(logpath, 'thumbnails.log'), 'a').close()
+#         open(os.path.join(logpath, 'recipemaker.log'), 'a').close()
+#         open(os.path.join(logpath, 'swim.log'), 'a').close()
+#         open(os.path.join(logpath, 'multiprocessing.log'), 'a').close()
+#     except:
+#         exi = sys.exc_info()
+#         logger.warning(f"[{exi[0]} / {exi[1]}] Initializing log files triggered an exception")
 
 
 def create_project_directories(destination, scales, gui=True) -> None:
@@ -1276,6 +1281,14 @@ def pprinttable(rows):
     └─────┴───────┴─────┘
     '''
 
+
+def tree(directory):
+    print(f"+ {directory}")
+    for path in sorted(Path(directory).rglob("*")):
+        depth = len(path.relative_to(directory).parts)
+        spacer = "    " * depth
+        print(f"{spacer}+ {path.name}")
+
 # def load():
 #     try:
 #         with open('datamodel.json', 'r') as f:
@@ -1387,3 +1400,28 @@ def pprinttable(rows):
 #         except:
 #             logger.info('Is this level aligned? No .dat files were found at this level.')
 #             pass
+
+
+# t0 = time.time()
+# logger.info('Symbolically linking full scale images...')
+# self.parent.tell('Symbolically linking full scale images...')
+# for img in self._NEW_IMAGES_PATHS:
+#     fn = img
+#     ofn = os.path.join(out, 'tiff', 's1', os.path.split(fn)[1])
+#     # normalize path for different OSs
+#     if os.path.abspath(os.path.normpath(fn)) != os.path.abspath(os.path.normpath(ofn)):
+#         try:
+#             os.unlink(ofn)
+#         except:
+#             pass
+#         try:
+#             os.symlink(fn, ofn)
+#         except FileNotFoundError:
+#             # print_exception()
+#             logger.warning(f"File not found: {fn}. Unable to link, copying instead." )
+#             try:
+#                 shutil.copy(fn, ofn)
+#             except:
+#                 logger.warning("Unable to link or copy from " + fn + " to " + ofn)
+# dt = time.time() - t0
+# logger.info(f'Elapsed Time (linking): {dt:.3g} seconds')

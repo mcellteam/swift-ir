@@ -27,20 +27,16 @@ libtiff.libtiff_ctypes.suppress_warnings()
 tl = logging.getLogger('tifffile')
 tl.setLevel(logging.CRITICAL)
 tl.propagate = False
-#
 # tifffileLogger = logging.getLogger('tifffile')
 # tifffileLogger.setLevel(logging.DEBUG)
 
 # https://stackoverflow.com/questions/15585493/store-the-cache-to-a-file-functools-lru-cache-in-python-3-2
-
 
 __all__ = ['run_recipe']
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 # logger = logging.getLogger('alignEM')
-
-
 
 def applyAffine(afm, xy):
     '''APPLYAFFINE - Apply affine generate_thumbnail to a point
@@ -176,14 +172,14 @@ class align_recipe:
         tnLogger = logging.getLogger('tnLogger')
 
         if self.config['log_recipe_to_file']:
-            Exceptlogger.addHandler(logging.FileHandler(os.path.join(self.config['data_location'],
+            Exceptlogger.addHandler(logging.FileHandler(os.path.join(self.config['path'],
                                              'logs', 'exceptions.log')))
             MAlogger.addHandler(logging.FileHandler(os.path.join(
-                self.config['data_location'], 'logs', 'manual_align.log')))
+                self.config['path'], 'logs', 'manual_align.log')))
             RMlogger.addHandler(logging.FileHandler(os.path.join(
-                self.config['data_location'], 'logs', 'recipemaker.log')))
+                self.config['path'], 'logs', 'recipemaker.log')))
             tnLogger.addHandler(logging.FileHandler(os.path.join(
-                self.config['data_location'], 'logs', 'thumbnails.log')))
+                self.config['path'], 'logs', 'thumbnails.log')))
         else:
             MAlogger.disabled = True
             RMlogger.disabled = True
@@ -529,7 +525,7 @@ class align_ingredient:
     2)  If ingredient mode is 'SWIM-Manual', then this is a SWIM to refine the
         alignment of a 'Manual-Hint' using manually specified windows.
     3)  If mode is 'SWIM' then perform a SWIM region matching ingredient using
-        ww and psta specify the size and images_location of windows in im_sta.
+        ww and psta specify the size and im_path of windows in im_sta.
         Corresponding windows (pmov) are contructed from psta and projected
         onto im_mov. Then perform matching to initializeStack or refine the afm.
         If psta contains only one point then return a translation matrix.
@@ -640,7 +636,7 @@ class align_ingredient:
         basename = os.path.basename(self.recipe.ss['path'])
         fn, ext = os.path.splitext(basename)
         multi_arg_str = ArgString(sep='\n')
-        # dir_scale = os.path.join(self.recipe.config['images_location'], self.recipe.ss['level']) #1008-
+        # dir_scale = os.path.join(self.recipe.config['im_path'], self.recipe.ss['level']) #1008-
         self.ms_paths = []
         m = self.recipe.method
         iters = str(self.recipe.ss['iterations'])

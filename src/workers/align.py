@@ -97,8 +97,8 @@ class AlignWorker(QObject):
             'verbose_swim': cfg.VERBOSE_SWIM,
             'log_recipe_to_file': cfg.LOG_RECIPE_TO_FILE,
             'target_thumb_size': cfg.TARGET_THUMBNAIL_SIZE,
-            'images_location': dm.images_location,
-            'data_location': dm.data_location,
+            'im_path': dm.images_location,
+            'path': dm.data_location,
         }
 
         firstInd = dm.first_included(s=scale)
@@ -158,7 +158,7 @@ class AlignWorker(QObject):
             # return
         # else:
         #     '''Use Tom's multiprocessing Queue'''
-        #     task_queue = TaskQueue(n_tasks=len(tasks), dest=dm.data_location)
+        #     task_queue = TaskQueue(n_tasks=len(tasks), dest=dm.path)
         #     task_queue.taskPrefix = 'Computing Alignment for '
         #     task_queue.taskNameList = [os.path.basename(layer['swim_settings']['path']) for
         #                                layer in [dm()[i] for i in self.indexes]]
@@ -381,7 +381,7 @@ def checkForTiffs(path) -> bool:
 
 def save2file(dm, name):
     data_cp = copy.deepcopy(dm)
-    name = data_cp['data_location']
+    name = data_cp['path']
     jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
     proj_json = jde.encode(data_cp)
     logger.info(f'---- SAVING  ----\n{name}')

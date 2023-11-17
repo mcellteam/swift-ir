@@ -244,7 +244,7 @@ class ZarrWorker(QObject):
 
     def generateMiniZarr(self, dm):
         logger.info('')
-        # path_mini_zarr = os.path.join(dm.data_location, 'zarr_reduced', dm.level)
+        # path_mini_zarr = os.path.join(dm.path, 'zarr_reduced', dm.level)
         siz = ImageSize(dm.path_aligned_cafm_thumb(l=1))  # Todo #Ugly
         tstamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         shape = (len(dm), siz[1], siz[0])

@@ -1,4 +1,4 @@
-all: test_libs swim iavg iscale mir remod remod_old sxox json_parser.jar ImageAlign.jar run_swift.jar swift_gui.jar swim_lab.jar sha1sum.txt
+all: test_libs swim iavg iscale mir remod remod_old sxox json_reader.jar ImageAlign.jar run_swift.jar swift_gui.jar swim_lab.jar sha1sum.txt
 
 test_libs: test_libs.c swimio.h debug.h makefile
 	gcc -Wno-implicit -o test_libs -O3 -m64 -msse3 test_libs.c -ltiff -ljpeg -lpng -lfftw3f -lm
@@ -80,25 +80,25 @@ run_swift.jar: run_swift.java revision.java makefile
 #	zip -X run_swift.jar META-INF/MANIFEST.MF *.class
 
 # "Normal" rule for swim_lab.jar
-swim_lab.jar: swim_lab.java ZoomPanLib.java run_swift.java json_parser.java revision.java makefile
+swim_lab.jar: swim_lab.java ZoomPanLib.java run_swift.java json_reader.java revision.java makefile
 	rm -f *.class
 	javac -nowarn -source 1.6 -target 1.6 swim_lab.java
 	jar -cfe swim_lab.jar swim_lab *.class
 
 # "Normal" rule for swift_gui.jar
-swift_gui.jar: swift_gui.java ZoomPanLib.java run_swift.java json_parser.java revision.java makefile
+swift_gui.jar: swift_gui.java ZoomPanLib.java run_swift.java json_reader.java revision.java makefile
 	rm -f *.class
 	javac -nowarn -source 1.6 -target 1.6 swift_gui.java
 	jar -cfe swift_gui.jar swift_gui *.class
 
 # "Normal" rule for ImageAlign.jar
-ImageAlign.jar: ImageAlign.java ZoomPanLib.java run_swift.java json_parser.java revision.java makefile
+ImageAlign.jar: ImageAlign.java ZoomPanLib.java run_swift.java json_reader.java revision.java makefile
 	rm -f *.class
 	javac -nowarn -source 1.6 -target 1.6 ImageAlign.java
 	jar -cfe ImageAlign.jar ImageAlign *.class
 
 # "Fixed Date" rule for swift_gui.jar that produces a consistent jar file the same for each compilation
-#swift_gui.jar: swift_gui.java ZoomPanLib.java run_swift.java json_parser.java makefile
+#swift_gui.jar: swift_gui.java ZoomPanLib.java run_swift.java json_reader.java makefile
 #	rm -f *.class
 #	mkdir -p META-INF
 #	cp -f swift_gui.MF META-INF/MANIFEST.MF
@@ -107,9 +107,9 @@ ImageAlign.jar: ImageAlign.java ZoomPanLib.java run_swift.java json_parser.java 
 #	touch -t 201901181818 META-INF/MANIFEST.MF
 #	zip -X swift_gui.jar META-INF/MANIFEST.MF *.class
 
-json_parser.jar: json_parser.java makefile
-	javac -nowarn -source 1.6 -target 1.6 json_parser.java
-	jar -cfe json_parser.jar json_parser *.class
+json_reader.jar: json_reader.java makefile
+	javac -nowarn -source 1.6 -target 1.6 json_reader.java
+	jar -cfe json_reader.jar json_reader *.class
 
 swift_lin.jar: swift_gui.jar makefile swim iavg iscale mir remod
 	javac -nowarn -source 1.6 run_swift.java

@@ -8,6 +8,7 @@ import sys
 import textwrap
 import time
 import warnings
+from pprint import pformat
 
 import qtawesome as qta
 from qtpy.QtCore import *
@@ -41,6 +42,7 @@ class AlignmentTab(QWidget):
     def __init__(self, parent, dm=None):
         super().__init__(parent)
         logger.info('Initializing AlignmentTab...')
+        cfg.preferences['last_alignment_opened'] = dm.data_location
         # self.signals = Signals()
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.parent = parent
@@ -109,6 +111,10 @@ class AlignmentTab(QWidget):
 
         # self.installEventFilter(self)
         self.parent.addGlobTab(self, self.dm.title, switch_to=True)
+        msg =      f"\n  {'Project'.rjust(15)}: {self.dm.title}"
+        for k,v in self.dm['info'].items():
+            msg += f"\n  {k.rjust(15)}: {v}"
+        self.parent.tell(msg)
 
 
     #1111+
@@ -155,7 +161,7 @@ class AlignmentTab(QWidget):
         self.dm = DataModel(self.mdlTreeview.to_json())
 
     def updateTab0(self):
-        logger.critical('Updating 3D Zarr tab...')
+        logger.info('')
         self.bZarrRegen.setEnabled(self.dm.is_aligned())
 
 
@@ -254,7 +260,6 @@ class AlignmentTab(QWidget):
             return
 
         if self.wTabs.currentIndex() == 0 or init_all:
-            logger.critical("viewer0...")
             self.cbxNgLayout.setCurrentText(getData('state,neuroglancer,layout'))
 
             path = (self.dm.path_zarr_transformed(), self.dm.path_zarr_raw())[self.rbZarrRaw.isChecked()]
@@ -271,12 +276,11 @@ class AlignmentTab(QWidget):
             # logger.info(f"Local Volume:\n{cfg.LV.info()}")
 
         if self.wTabs.currentIndex() == 1 or init_all:
-            logger.critical("viewer1...")
             # self.webengine1.setUrl(QUrl("http://localhost:8888/"))
             # level = self.dm.levels[self.cbxViewerScale.currentIndex()]
             # level = self.dm['state']['viewer_quality']
             # self.viewer1 = cfg.viewer1 = MAViewer(parent=self, dm=self.dm, role='tra', quality=level, webengine0=self.webengine1)
-            path = os.path.join(self.dm['info']['images_location'], 'zarr', self.dm.level)
+            path = os.path.join(self.dm['info']['im_path'], 'zarr', self.dm.level)
             res = self.dm.resolution(s=self.dm.level)
             self.viewer1 = self.viewer = self.parent.viewer = cfg.viewer = MAViewer(parent=self, webengine=self.webengine1, path=path, dm=self.dm, res=res, )
             self.viewer1.signals.badStateChange.connect(self.set_transforming)
@@ -2171,7 +2175,7 @@ class AlignmentTab(QWidget):
 
     def _updatePointLists(self):
         caller = inspect.stack()[1].function
-        logger.critical(f"[{caller}] Updating points list...")
+        logger.critical(f'[{caller}]')
         if self.wTabs.currentIndex() == 1:
             if self.twMethod.currentIndex() == 1:
                 siz = self.dm.image_size()

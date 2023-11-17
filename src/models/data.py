@@ -22,6 +22,7 @@ from datetime import datetime
 from glob import glob
 from heapq import nsmallest
 from operator import itemgetter
+from pathlib import Path
 
 import numpy as np
 import zarr
@@ -29,8 +30,9 @@ from qtpy.QtCore import QObject, Signal
 
 from src.utils.funcs_image import ComputeBoundingRect, SetStackCafm
 from src.models.hashtable import HashTable
-from src.utils.helpers import print_exception
+from src.utils.helpers import print_exception, path_to_str
 from src.utils.writers import write
+from src.core.files import DirectoryStructure
 import src.config as cfg
 
 __all__ = ['DataModel']
@@ -71,28 +73,29 @@ class Signals(QObject):
 class DataModel:
 
     """ Encapsulate datamodel dictionary and wrap with methods for convenience """
-    def __init__(self, data=None, data_location=None, images_location=None, read_only=False, initialize=False, images_info=None):
+    def __init__(self, data=None, path=None, im_path=None, readonly=False, init=False, images_info=None):
         self._current_version = cfg.VERSION
         if data:
             self._data = data  # Load project data from file
-        elif initialize:
+        elif init:
             try:
                 images_info
             except NameError:
                 logger.warning(f"'series_info' argument is needed to initialize data model."); return
             try:
-                data_location
+                path
             except NameError:
-                logger.warning(f"'data_location' argument is needed to initialize data model."); return
+                logger.warning(f"'path' argument is needed to initialize data model."); return
             self._data = {}
-            self.initializeStack(images_info=images_info, images_location=images_location, data_location=data_location)
-        if not read_only:
-            if images_location:
-                self.images_location = images_location
+            self.initializeStack(images_info=images_info, images_location=im_path, data_location=path)
+        if not readonly:
+            if im_path:
+                self.images_location = im_path
             self.ht = None
             self._upgradeDatamodel()
             self.signals = Signals()
             self.signals.dataChanged.connect(lambda: logger.info('emission!'))
+            self.ds = DirectoryStructure(self)
 
     def loadHashTable(self):
         logger.info('')
@@ -100,8 +103,14 @@ class DataModel:
 
     def _upgradeDatamodel(self):
         logger.info('Upgrading data model...')
+        if 'series_uuid' in self['info']:
+            self['info']['images_uuid'] = self['info'].pop('series_uuid')
+        if 'series_location' in self['info']:
+            self['info']['im_path'] = self['info'].pop('series_location')
+
+
         self._data['modified'] = date_time()
-        self['info'].setdefault('force_reallocate_zarr_flag', False)
+        self['protected'].setdefault('force_reallocate_zarr_flag', False)
         for i in range(len(self)):
             for level in self.levels:
                 pass
@@ -110,7 +119,7 @@ class DataModel:
             if not 'chunkshape' in self['level_data'][level]:
                 chunkshape = self.get_transforming_chunkshape(level)
                 self['level_data'][level]['chunkshape'] = chunkshape
-                self['info']['force_reallocate_zarr_flag'] = True
+                self['protected']['force_reallocate_zarr_flag'] = True
 
 
     def __iter__(self):
@@ -175,7 +184,7 @@ class DataModel:
 
     @property
     def title(self):
-        basename = os.path.basename(self['info']['data_location'])
+        basename = os.path.basename(self['info']['path'])
         name, _ = os.path.splitext(basename)
         return name
 
@@ -215,26 +224,26 @@ class DataModel:
 
     @property
     def images_location(self):
-        '''Set alignment data images_location.'''
-        return self['info']['images_location']
+        '''Set alignment data im_path.'''
+        return self['info']['im_path']
 
     @images_location.setter
     def images_location(self, p):
-        '''Get alignment data images_location.'''
-        self['info']['images_location'] = p
+        '''Get alignment data im_path.'''
+        self['info']['im_path'] = path_to_str(p)
 
     @property
     def data_location(self):
-        '''Set alignment data images_location.'''
-        return self['info']['data_location']
+        '''Set alignment data im_path.'''
+        return self['info']['path']
 
     @data_location.setter
     def data_location(self, p):
-        '''Get alignment data images_location.'''
-        self['info']['data_location'] = p
+        '''Get alignment data im_path.'''
+        self['info']['path'] = path_to_str(p)
 
     def dest(self) -> str:
-        return self['info']['data_location']
+        return self['info']['path']
 
     @property
     def scales(self) -> list[str]:
@@ -254,7 +263,7 @@ class DataModel:
     @source_path.setter
     def source_path(self, p):
         '''Set source path.'''
-        self['source_path'] = p
+        self['source_path'] = path_to_str(p)
 
     @property
     def last_opened(self):
@@ -448,7 +457,7 @@ class DataModel:
         if l == None: l = self.zpos
         ss_hash = str(self.ssHash(s=s, l=l))
         # cafm_hash = str(self.cafmHash(s=s, l=l))
-        # path = os.path.join(self.data_location, 'data', str(l), s, ss_hash, cafm_hash)
+        # path = os.path.join(self.path, 'data', str(l), s, ss_hash, cafm_hash)
         path = os.path.join(self.data_location, 'data', str(l), s, ss_hash)
         return path
 
@@ -554,14 +563,14 @@ class DataModel:
     def path_thumb_src(self, s=None, l=None) -> str:
         if s == None: s = self.level
         if l == None: l = self.zpos
-        path = os.path.join(self['info']['images_location'], 'thumbs', self.name(s=s, l=l))
+        path = os.path.join(self['info']['im_path'], 'thumbs', self.name(s=s, l=l))
         return path
 
     def path_thumb_src_ref(self, s=None, l=None) -> str:
         if s == None: s = self.level
         if l == None: l = self.zpos
         i = self.get_ref_index(l=l)
-        path = os.path.join(self['info']['images_location'], 'thumbs', self.name(s=s, l=i))
+        path = os.path.join(self['info']['im_path'], 'thumbs', self.name(s=s, l=i))
         return path
 
     def path_thumb(self, s=None, l=None) -> str:
@@ -1878,8 +1887,7 @@ class DataModel:
 
 
     def linkReference(self, level):
-        caller = inspect.stack()[1].function
-        logger.critical(f'[{caller}] Linking reference sections...')
+        logger.info(f'[{level}]')
         skip_list = self.exclude_indices(s=level)
         for layer_index in range(len(self)):
             j = layer_index - 1  # Find nearest previous non-skipped z
@@ -2097,8 +2105,8 @@ class DataModel:
         cfg.mw.hud.done()
 
 
-    def initializeStack(self, images_info, images_location, data_location):
-        logger.critical(f"\n\nInitializing data model ({data_location})...\n")
+    def initializeStack(self, data_location, images_location, images_info):
+        logger.critical(f"Initializing data model...")
 
         levels = natural_sort(images_info['levels'])
         paths = natural_sort(images_info['paths'])
@@ -2108,11 +2116,12 @@ class DataModel:
 
         self._data.update(
             info={
-                'images_location': images_location,
-                'data_location': data_location,
+                'im_path': path_to_str(images_location),
+                'path': path_to_str(data_location),
                 'version': cfg.VERSION,
                 'created': date_time(),
-                'system': {'node': platform.node()},
+                'system': platform.system(),
+                'node': platform.node(),
                 'alignment_uuid': str(uuid.uuid4()),
                 'series_uuid': images_info['uuid']
             },
@@ -2252,27 +2261,25 @@ class DataModel:
                     method_opts=copy.deepcopy(method_presets[level]['grid']),
                 )
 
+
     def save(self, silently=False):
         caller = inspect.stack()[1].function
-        # logger.info('')
+        if hasattr(self, 'ht'):
+            try:
+                self.ht.pickle()
+            except Exception as e:
+                cfg.mw.warn(f"[{caller}] Cache failed to save; this is not fatal. Reason: {e.__class__.__name__}")
         try:
-            name, _ = os.path.splitext(os.path.basename(self.data_location))
-            p = os.path.join(self.data_location, name + '.swiftir')
+            op = self.data_location
+            p = Path(op) / (Path(op).stem + '.swiftir')
+            new_p = Path(op).parent / (Path(op).stem + '.align')
             if not silently:
-                logger.info(f'[{caller}] Saving >> {p}')
-            # with open(p, 'w') as f:
-            #     jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
-            #     f.write(jde.encode(self._data))
-
+                logger.critical(f"[{caller}]\nSaving >> '{p}'")
             write('json')(p, self._data)
-
-            if hasattr(self, 'ht'):
-                if self.ht:
-                    self.ht.pickle()
+            write('json')(new_p, self._data)
         except Exception as e:
-            print_exception()
-            cfg.mw.err(f"Unable to save. Reason: {e.__class__.__name__}")
-        logger.info('<<')
+            cfg.mw.err(f"[{caller}] Unable to save to file. Reason: {e.__class__.__name__}")
+        logger.info('<< save')
 
     def setZarrMade(self, b, s=None):
         if s == None: s = self.level

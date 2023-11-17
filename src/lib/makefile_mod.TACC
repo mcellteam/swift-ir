@@ -7,7 +7,7 @@ BINDIR = ./bin_tacc/
 
 all: $(BINDIR)swim $(BINDIR)iavg $(BINDIR)iscale $(BINDIR)iscale2 $(BINDIR)mir $(BINDIR)remod
 
-#all: test_libs swim iavg iscale mir remod remod_old sxox json_parser.jar ImageAlign.jar run_swift.jar swift_gui.jar swim_lab.jar sha1sum.txt
+#all: test_libs swim iavg iscale mir remod remod_old sxox json_reader.jar ImageAlign.jar run_swift.jar swift_gui.jar swim_lab.jar sha1sum.txt
 
 $(BINDIR)swim: swim.c swimio.h debug.h makefile
 	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)swim swim.c -I$(TACC_FFTW3_INC) -L$(TACC_FFTW3_LIB) $(INCFLAGS) $(LDFLAGS) -ltiff -ljpeg -lpng -lfftw3f -lwebp -lm
