@@ -50,7 +50,6 @@ class AlignmentTab(QWidget):
         # self.viewer0 = None
         self.dm = self.parent.dm = cfg.dm = dm
         self.parent.pt = cfg.pt = self
-        self.path = self.dm.data_location
         self.setUpdatesEnabled(True)
         self.webengine0 = WebEngine(ID='viewer')
         self.webengine0.setStyleSheet("background-color: #000000;")

@@ -8,6 +8,7 @@ import json
 import pickle
 import logging
 from pathlib import Path
+from src.utils.helpers import path_to_str
 
 logger = logging.getLogger(__name__)
 
@@ -17,11 +18,15 @@ class HashTable:
         self.dm = dm
         self.data = {}
         self.name = name
-        self.path = Path(self.dm.data_location).with_suffix('')
+        self.path = path_to_str(Path(self.dm.files_location).with_suffix('') / self.name)
         self.unpickle()
 
     def __len__(self):
         return self.count
+
+    def clear(self):
+        logger.warn('Clearing cached data!')
+        self.data = {}
 
     @property
     def count(self):

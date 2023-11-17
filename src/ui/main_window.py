@@ -47,6 +47,7 @@ from src.ui.tabs.manager import ManagerTab
 from src.ui.tabs.project import AlignmentTab
 from src.ui.widgets.toggleswitch import ToggleSwitch
 from src.ui.views.webpage import QuickWebPage
+from src.core.files import DirectoryStructure
 
 
 __all__ = ['MainWindow']
@@ -690,7 +691,7 @@ class MainWindow(QMainWindow):
                         use = self.dm.quadrants[i]
 
                         # logger.info(f'file  : {files[i]}  exists? : {os.path.exists(files[i])}  use? : {use}')
-                        path = os.path.join(self.dm.data_location, 'matches', self.dm.scale, files[i][1])
+                        path = os.path.join(self.dm.files_location, 'matches', self.dm.scale, files[i][1])
                         if use and os.path.exists(path):
                             self.pt.matchesList[i].path = path
                             try:
@@ -705,7 +706,7 @@ class MainWindow(QMainWindow):
                 if self.dm.current_method == 'manual':
                     # self.pt.matchesList[3].hide()
                     for i in range(0, 3):
-                        path = os.path.join(self.dm.data_location, 'matches', self.dm.scale, files[i][1])
+                        path = os.path.join(self.dm.files_location, 'matches', self.dm.scale, files[i][1])
                         if os.path.exists(path):
                             self.pt.matchesList[i].path = path
                             self.pt.matchesList[i].set_data(path)
@@ -1118,6 +1119,9 @@ class MainWindow(QMainWindow):
             if not dm.is_aligned():
                 self.tell("Propagating settings from reduced scale level automatically...")
                 dm.pullSettings()
+
+        # DirectoryStructure(dm).initDirectory()
+
 
         dm.save(silently=True)
         # logger.critical('')
@@ -1536,7 +1540,7 @@ class MainWindow(QMainWindow):
         if s == None: s = self.dm.level
         self.history_label = QLabel('<b>Saved Alignments (Scale %d)</b>' % get_scale_val(s))
         self._hstry_listWidget.clear()
-        dir = os.path.join(self.dm.data_location, s, 'history')
+        dir = os.path.join(self.dm.files_location, s, 'history')
         try:
             self._hstry_listWidget.addItems(os.listdir(dir))
         except:
@@ -1547,7 +1551,7 @@ class MainWindow(QMainWindow):
         name = self._hstry_listWidget.currentItem().text()
         if self.pt:
             if name:
-                path = os.path.join(self.dm.data_location, self.dm.level, 'history', name)
+                path = os.path.join(self.dm.files_location, self.dm.level, 'history', name)
                 with open(path, 'r') as f:
                     project = json.load(f)
                 self.projecthistory_model.load(project)
@@ -1558,7 +1562,7 @@ class MainWindow(QMainWindow):
         new_name, ok = QInputDialog.getText(self, 'Rename', 'New Name:')
         if not ok: return
         old_name = self._hstry_listWidget.currentItem().text()
-        dir = os.path.join(self.dm.data_location, self.dm.level, 'history')
+        dir = os.path.join(self.dm.files_location, self.dm.level, 'history')
         old_path = os.path.join(dir, old_name)
         new_path = os.path.join(dir, new_name)
         try:
@@ -1571,7 +1575,7 @@ class MainWindow(QMainWindow):
         logger.info('Loading History File...')
         name = self._hstry_listWidget.currentItem().text()
         if name is None: return
-        path = os.path.join(self.dm.data_location, self.dm.level, 'history', name)
+        path = os.path.join(self.dm.files_location, self.dm.level, 'history', name)
         logger.info('Removing archival alignment %s...' % path)
         try:
             os.remove(path)
@@ -1583,7 +1587,7 @@ class MainWindow(QMainWindow):
     def historyItemClicked(self, qmodelindex):
         item = self._hstry_listWidget.currentItem()
         logger.info(f"Selected {item.text()}")
-        path = os.path.join(self.dm.data_location, self.dm.level, 'history', item.text())
+        path = os.path.join(self.dm.files_location, self.dm.level, 'history', item.text())
         with open(path, 'r') as f:
             scale = json.load(f)
 
@@ -2976,7 +2980,7 @@ class MainWindow(QMainWindow):
     def getProjectIndex(self, search):
         for i in range(self.globTabs.count()):
             if 'AlignmentTab' in str(self.globTabs.widget(i)):
-                if self.globTabs.widget(i).datamodel.data_location == os.path.splitext(search)[0]:
+                if self.globTabs.widget(i).dm.data_location == os.path.splitext(search)[0]:
                     return i
 
     def closeAlignment(self, dest):

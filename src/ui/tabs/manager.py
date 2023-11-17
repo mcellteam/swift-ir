@@ -57,7 +57,7 @@ class ManagerTab(QWidget):
         self._watchImages.fsChanged.connect(self.updateCombos)
         self._watchAlignments = DirectoryWatcher(suffixes=['.alignment', '.align'], preferences=cfg.preferences, key='alignments_search_paths')
         self._watchAlignments.fsChanged.connect(self.loadAlignmentCombo)
-        # self._fsWatcher = FsWatcher(extension='.alignment')
+        # self._fsWatcher = FsWatcher(extension='.align')
         self.filebrowser.navigateTo(os.path.expanduser('~'))
         self._images_info = None
         # self._selected_series = None #Todo
@@ -126,7 +126,7 @@ class ManagerTab(QWidget):
             border: 2px solid darkgray;
             selection-background-color: lightgray;
         }""")
-        self.cmbSelectAlignment.setToolTip("Select Alignment (.alignment)")
+        self.cmbSelectAlignment.setToolTip("Select Alignment (.align)")
         # self.cmbSelectAlignment.setPlaceholderText("Select Alignment...")
         self.cmbSelectAlignment.setPlaceholderText("")
         self.cmbSelectAlignment.setFocusPolicy(Qt.NoFocus)
@@ -148,7 +148,7 @@ class ManagerTab(QWidget):
         self.updateCombos()
         self.cmbSelectImages.textActivated.connect(self.onSelectImagesCombo)
 
-        tip = f"Create Alignment (.alignment)"
+        tip = f"Create Alignment (.align)"
         tip = '\n'.join(textwrap.wrap(tip, width=35))
         # self.bPlusAlignment = HoverButton('New')
         self.bPlusAlignment = QPushButton()
@@ -528,7 +528,7 @@ class ManagerTab(QWidget):
         root = Path(cfg.preferences['alignments_root'])
         seriespath = Path(self.cmbSelectImages.currentText())
         usertext = self.leNameAlignment.text()
-        newproject = (root / usertext).with_suffix('.alignment')
+        newproject = (root / usertext).with_suffix('.align')
         info = seriespath / 'info.json'
         _err = 0
         _msg = None
@@ -608,7 +608,7 @@ class ManagerTab(QWidget):
                 if reply == QMessageBox.Yes:
                     cfg.mw.tell(f'Starting subprocess: removing {path}...')
                     try:
-                        if path.endswith('.alignment'):
+                        if path.endswith('.align'):
                             run_subprocess(["rm", "-rf", path])
                         else:
                             logger.warning(f"\n\nCANNOT REMOVE THIS PATH: {path}\n")
@@ -682,9 +682,9 @@ class ManagerTab(QWidget):
         al_known = self._watchAlignments.known
         if os.path.exists(str(_im_path)):
             if len(al_known) == 0:
-                self.cmbSelectAlignment.setPlaceholderText(f"No Alignments (.alignment) Found for '{_im_name}'")
+                self.cmbSelectAlignment.setPlaceholderText(f"No Alignments (.align) Found for '{_im_name}'")
             else:
-                self.cmbSelectAlignment.setPlaceholderText(f"{len(al_known)} Alignments (.alignment) of '{_im_name}' Found")
+                self.cmbSelectAlignment.setPlaceholderText(f"{len(al_known)} Alignments (.align) of '{_im_name}' Found")
         else:
             self.cmbSelectAlignment.setPlaceholderText("")
 
@@ -715,9 +715,10 @@ class ManagerTab(QWidget):
                 self.cmbSelectAlignment.setCurrentText(mem)
             if os.path.exists(str(_im_path)):
                 if len(valid):
-                    self.cmbSelectAlignment.setPlaceholderText(f"{len(valid)} Alignments (.alignment) of '{_im_name}' Found")
+                    self.cmbSelectAlignment.setPlaceholderText(f"{len(valid)} Alignments (.align) of '{_im_name}' "
+                                                               f"Found")
                 else:
-                    self.cmbSelectAlignment.setPlaceholderText(f"No Alignments (.alignment) of '{_im_name}' Found")
+                    self.cmbSelectAlignment.setPlaceholderText(f"No Alignments (.align) of '{_im_name}' Found")
             else:
                 self.cmbSelectAlignment.setPlaceholderText("")
 

@@ -176,7 +176,7 @@ def preallocate_zarr(dm, name, group, shape, dtype, overwrite, gui=True, attr=No
     '''zarr.blosc.list_compressors() -> ['blosclz', 'lz4', 'lz4hc', 'zlib', 'zstd']'''
     logger.info("\n\n--> preallocate -->\n")
     cname, clevel, chunkshape = dm.get_images_zarr_settings()
-    src = os.path.abspath(dm.data_location)
+    src = os.path.abspath(dm.files_location)
     path_zarr = os.path.join(src, name)
     path_out = os.path.join(path_zarr, group)
     logger.info(f'allocating {name}/{group}...')

@@ -126,13 +126,13 @@ class FileBrowser(QWidget):
         menu.addAction(action)
 
         fn,ext = os.path.splitext(selected)
-        if ext == '.alignment':
+        if ext == '.align':
             action = QAction()
             action.setText(f"Open Alignment {selected}")
             action.triggered.connect(lambda: cfg.pm.openAlignment(selected))
             menu.addAction(action)
 
-        if ext in ('.alignment', '.images'):
+        if ext in ('.align', '.images'):
             action = QAction()
             action.setText(f"Delete {selected}")
             action.triggered.connect(self.onDelete)
@@ -383,7 +383,7 @@ class FileBrowser(QWidget):
         # self.teAlignmentsSearchPaths.setMaximumHeight(80)
         self.teAlignmentsSearchPaths.setReadOnly(False)
         # lab = BoldLabel('Alignments Search Paths (Recursive):')
-        lab = BoldLabel('Alignments (.alignment) Search Paths:')
+        lab = BoldLabel('Alignments (.align) Search Paths:')
         lab.setAlignment(Qt.AlignBottom)
         self.wAlignmentsSearchPaths = VW(lab, self.teAlignmentsSearchPaths)
         self.wAlignmentsSearchPaths.setToolTip(tip)
