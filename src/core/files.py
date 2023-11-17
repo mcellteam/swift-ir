@@ -10,6 +10,7 @@ FileExistsError
 import logging
 import os
 import pathlib
+import inspect
 import shutil
 from pprint import pformat
 from pathlib import Path
@@ -34,7 +35,7 @@ class DirectoryStructure:
         self.dm = dm
         self.levels = self.dm.levels
         self.count = self.dm.count
-        self.p = Path(self.dm.data_location)
+        self.p = Path(self.dm.files_location)
         self.data = dict.fromkeys(range(self.count), dict.fromkeys(self.levels, {}))
         self.updateData()
 
@@ -96,7 +97,8 @@ class DirectoryWatcher(QObject):
         self._updateVersions()
 
     def _updateVersions(self):
-        logger.critical("Updating versions...")
+        caller = inspect.stack()[1].function
+        logger.critical(f"[{caller}] Updating versions...")
         to_update = []
         if '.alignment' in self._suffixes:
             for p in self._known:
@@ -105,21 +107,22 @@ class DirectoryWatcher(QObject):
                     _check_for = Path(p) / Path(_stem).with_suffix('.swiftir')
                     if _check_for.exists():
                         to_update.append(_check_for)
-        msg = f"Automatically UPDATING compatibility for: {pformat(to_update)}"
-        logger.warning(msg)
-        for p in to_update:
-            # p is a '.swiftir' file inside of the data directory
-            shutil.copy(p, p.with_suffix('.OLD'))  # Copy To Backup File
-            newpath = p.parent.parent / Path(p.stem).with_suffix('.align')
-            shutil.move(p, newpath) # Move To New File
-            try:
-                os.remove(p)  # Remove Old File
-            except OSError:
-                pass
-            data = read('json')(newpath)
-            data['info']['path'] = str(newpath)
-            write('json')(newpath, data) # Modify New File
-            shutil.move(p.parent, newpath.with_suffix('')) # Rename Data Dir
+        if to_update:
+            msg = f"Automatically UPDATING compatibility for: {pformat(to_update)}"
+            logger.warning(msg)
+            for p in to_update:
+                # p is a '.swiftir' file inside of the data directory
+                shutil.copy(p, p.with_suffix('.OLD'))  # Copy To Backup File
+                newpath = p.parent.parent / Path(p.stem).with_suffix('.align')
+                shutil.move(p, newpath) # Move To New File
+                try:
+                    os.remove(p)  # Remove Old File
+                except OSError:
+                    pass
+                data = read('json')(newpath)
+                data['info']['path'] = str(newpath)
+                write('json')(newpath, data) # Modify New File
+                shutil.move(p.parent, newpath.with_suffix('')) # Rename Data Dir
 
 
     def _loadSearchPaths(self):

@@ -167,13 +167,13 @@ class DataModel:
 
     @property
     def zattrs(self):
-        path = os.path.join(self.data_location, 'zarr', self.level)
+        path = os.path.join(self.files_location, 'zarr', self.level)
         z = zarr.open(path)
         return z.attrs
 
     @property
     def zarr(self):
-        path = os.path.join(self.data_location, 'zarr', self.level)
+        path = os.path.join(self.files_location, 'zarr', self.level)
         return zarr.open(path)
 
 
@@ -236,6 +236,11 @@ class DataModel:
     def data_location(self):
         '''Set alignment data im_path.'''
         return self['info']['path']
+
+    @property
+    def files_location(self):
+        '''Set alignment data im_path.'''
+        return Path(self['info']['path']).with_suffix('')
 
     @data_location.setter
     def data_location(self, p):
@@ -450,7 +455,7 @@ class DataModel:
     @property
     def gif(self):
         name, _ = os.path.splitext(self.basename)
-        return os.path.join(self.data_location, 'gif', self.level, name + '.gif')
+        return os.path.join(self.files_location, 'gif', self.level, name + '.gif')
 
     def writeDir(self, s=None, l=None) -> str:
         if s == None: s = self.level
@@ -458,7 +463,7 @@ class DataModel:
         ss_hash = str(self.ssHash(s=s, l=l))
         # cafm_hash = str(self.cafmHash(s=s, l=l))
         # path = os.path.join(self.path, 'data', str(l), s, ss_hash, cafm_hash)
-        path = os.path.join(self.data_location, 'data', str(l), s, ss_hash)
+        path = os.path.join(self.files_location, 'data', str(l), s, ss_hash)
         return path
 
     def writeDirCafm(self, s=None, l=None) -> str:
@@ -466,7 +471,7 @@ class DataModel:
         if l == None: l = self.zpos
         ss_hash = str(self.ssSavedHash(s=s, l=l))
         cafm_hash = str(self.cafmHash(s=s, l=l))
-        path = os.path.join(self.data_location, 'data', str(l), s, ss_hash, cafm_hash)
+        path = os.path.join(self.files_location, 'data', str(l), s, ss_hash, cafm_hash)
         return path
 
     @property
@@ -478,14 +483,14 @@ class DataModel:
         if s == None: s = self.level
         if l == None: l = self.zpos
         ss_hash = str(self.ssHash(s=s, l=l))
-        path = os.path.join(self.data_location, 'data', str(l), s, ss_hash)
+        path = os.path.join(self.files_location, 'data', str(l), s, ss_hash)
         return path
 
     def ssSavedDir(self, s=None, l=None) -> str:
         if s == None: s = self.level
         if l == None: l = self.zpos
         ss_hash = str(self.ssSavedHash(s=s, l=l))
-        path = os.path.join(self.data_location, 'data', str(l), s, ss_hash)
+        path = os.path.join(self.files_location, 'data', str(l), s, ss_hash)
         return path
 
     def isAligned(self, s=None, l=None) -> bool:
@@ -509,7 +514,7 @@ class DataModel:
 
     def path_zarr_transformed(self, s=None):
         if s == None: s = self.level
-        return os.path.join(self.data_location, 'zarr', s)
+        return os.path.join(self.files_location, 'zarr', s)
 
     def get_zarr_transforming(self, s=None):
         if s == None: s = self.level
@@ -606,21 +611,21 @@ class DataModel:
         if s == None: s = self.level
         if l == None: l = self.zpos
         ss_hash = str(self.ssHash(s=s, l=l))
-        path = os.path.join(self.data_location, 'data', str(l), s, ss_hash, 'signals')
+        path = os.path.join(self.files_location, 'data', str(l), s, ss_hash, 'signals')
         return path
 
     def dir_matches(self, s=None, l=None) -> str:
         if s == None: s = self.level
         if l == None: l = self.zpos
         ss_hash = str(self.ssHash(s=s, l=l))
-        path = os.path.join(self.data_location, 'data', str(l), s, ss_hash, 'matches')
+        path = os.path.join(self.files_location, 'data', str(l), s, ss_hash, 'matches')
         return path
 
     def dir_tmp(self, s=None, l=None) -> str:
         if s == None: s = self.level
         if l == None: l = self.zpos
         ss_hash = str(self.ssHash(s=s, l=l))
-        path = os.path.join(self.data_location, 'data', str(l), s, ss_hash, 'tmp')
+        path = os.path.join(self.files_location, 'data', str(l), s, ss_hash, 'tmp')
         return path
 
     def section(self, s=None, l=None):
@@ -2264,22 +2269,23 @@ class DataModel:
 
     def save(self, silently=False):
         caller = inspect.stack()[1].function
+        p = self.data_location
         if hasattr(self, 'ht'):
             try:
                 self.ht.pickle()
             except Exception as e:
+                print_exception()
                 cfg.mw.warn(f"[{caller}] Cache failed to save; this is not fatal. Reason: {e.__class__.__name__}")
         try:
-            op = self.data_location
-            p = Path(op) / (Path(op).stem + '.swiftir')
-            new_p = Path(op).parent / (Path(op).stem + '.align')
             if not silently:
                 logger.critical(f"[{caller}]\nSaving >> '{p}'")
             write('json')(p, self._data)
-            write('json')(new_p, self._data)
         except Exception as e:
+            print_exception()
+            logger.critical(f"Error Saving: {p} !!")
             cfg.mw.err(f"[{caller}] Unable to save to file. Reason: {e.__class__.__name__}")
-        logger.info('<< save')
+        else:
+            logger.info(f"Save successful!")
 
     def setZarrMade(self, b, s=None):
         if s == None: s = self.level

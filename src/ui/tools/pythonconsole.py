@@ -39,6 +39,7 @@ class PythonConsole(RichJupyterWidget):
             self.execute_command('import src.config as cfg')
             self.execute_command('from src.utils.readers import read')
             self.execute_command('from src.utils.writers import write')
+            self.execute_command('from src.core.files import DirectoryStructure')
             # self.execute_command('from src.utils.helpers import dt, find_allocated_widgets, count_widgets, '
             #                      'obj_to_string, getData, setData, getOpt, setOpt')
             self.execute('clear')

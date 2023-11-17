@@ -73,7 +73,7 @@ class ZarrWorker(QObject):
                         f"transformation as Zarr protocol...\n")
         dm = self.dm
         dm.set_stack_cafm()
-        grp = os.path.join(dm.data_location, 'zarr', 's%d' % dm.lvl())
+        grp = os.path.join(dm.files_location, 'zarr', 's%d' % dm.lvl())
         zarrExist = os.path.exists(os.path.join(grp, '.zattrs'))
         z = zarr.open(grp)
         make_all = len(list(dm.zattrs.keys())) == 0
@@ -253,7 +253,7 @@ class ZarrWorker(QObject):
         preallocate_zarr(dm=dm, name='zarr_reduced', group=self.level, shape=shape,
                          cname=cname, clevel=clevel, chunkshape=chunkshape,
                          dtype='|u1', overwrite=True, attr=str(tstamp))
-        z_path = os.path.join(self.dm.data_location, 'zarr_reduced', self.level)
+        z_path = os.path.join(self.dm.files_location, 'zarr_reduced', self.level)
         tasks = []
         for i in self.indexes:
             # if i == self.dm.first_included(): #1107-
@@ -449,7 +449,7 @@ def convert_zarr_block(task):
 def preallocate_zarr(dm, name, group, shape, cname, clevel, chunkshape, dtype, overwrite, attr=None):
     '''zarr.blosc.list_compressors() -> ['blosclz', 'lz4', 'lz4hc', 'zlib', 'zstd']'''
     logger.info("\n\n--> preallocate -->\n")
-    src = os.path.abspath(dm.data_location)
+    src = os.path.abspath(dm.files_location)
     path_zarr = os.path.join(src, name)
     path_out = os.path.join(path_zarr, group)
     logger.info(f'allocating {name}/{group}...')
