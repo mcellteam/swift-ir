@@ -90,7 +90,7 @@ def get_zarr_tensor(path, bytes_limit, dtype, driver):
         'driver': driver,
         'kvstore': {
             'driver': 'file',
-            'path': path
+            'file_path': path
         },
         'context': {
             'cache_pool': {'total_bytes_limit': bytes_limit},
@@ -134,7 +134,7 @@ class NgBootstrap():
         try:
             assert os.path.exists(searchpath)
         except:
-            log.error(f"Required metadata file .zarray not found at images_location {searchpath}.")
+            log.error(f"Required metadata file .zarray not found at images_path {searchpath}.")
             return
 
         with self.viewer.txn() as s:
@@ -206,7 +206,7 @@ if __name__ == '__main__':
 
     ap.add_argument(
         '-p',
-        '--path',
+        '--file_path',
         nargs='*',  # 0 or more values expected => creates a list
         type=str,
         required=True,

@@ -17,9 +17,9 @@ import os
 #import sphinx_rtd_theme
 
 # If suffixes (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-#sys.path.insert(0, os.path.abspath('.'))
+# add these directories to sys.file_path here. If the directory is relative to the
+# documentation root, use os.file_path.abspath to make it absolute, like shown here.
+#sys.file_path.insert(0, os.file_path.abspath('.'))
 
 # -- General configuration -----------------------------------------------------
 
@@ -126,7 +126,7 @@ html_title = 'AlignEM Tutorias'
 # of the sidebar.
 #html_logo = None
 
-# The name of an image file (within the static path) to use as favicon of the
+# The name of an image file (within the static file_path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
 #html_favicon = None

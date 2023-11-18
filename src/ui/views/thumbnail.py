@@ -30,7 +30,7 @@ class ThumbnailFast(QLabel):
         self.setPixmap(QPixmap(32, 32))
         if self.path:
             try:
-                # self.setPixmap(QPixmap.fromImage(QImage(path)))
+                # self.setPixmap(QPixmap.fromImage(QImage(file_path)))
                 self.setPixmap(QPixmap(path))
             except:
                 logger.warning(f"Failed to load: {path}")
@@ -72,7 +72,7 @@ class ThumbnailFast(QLabel):
 
     def showPixmap(self):
         self._noImage = 0
-        # self.setPixmap(QPixmap(self.path))
+        # self.setPixmap(QPixmap(self.file_path))
         self.setPixmap(QPixmap.fromImage(QImage(self.path)))
         # self.update()
 
@@ -96,7 +96,7 @@ class ThumbnailFast(QLabel):
     #         self.setPixmap(QPixmap(self.no_image_path))
     #     except:
     #         print_exception()
-    #         logger.warning(f'WARNING path={self.no_image_path}, label={self.snr}')
+    #         logger.warning(f'WARNING file_path={self.no_image_path}, label={self.snr}')
     #     finally:
     #         self.update()
 
@@ -324,7 +324,7 @@ def get_default_grid_rects(sf, img_size, ww, cp_x, cp_y, coords):
 
 
 class CorrSignalThumbnail(QLabel):
-    # def __init__(self, parent, path='', snr='', extra='', name=''):
+    # def __init__(self, parent, file_path='', snr='', extra='', name=''):
     def __init__(self, parent, path='', snr='', extra='', name='', annotations=True):
         super().__init__(parent)
         self.setScaledContents(True)
@@ -338,9 +338,9 @@ class CorrSignalThumbnail(QLabel):
         self.extra = extra
         self.name = name
         if self.path:
-            # logger.info(f'name = {name} / path = {self.path}')
+            # logger.info(f'name = {name} / file_path = {self.file_path}')
             try:
-                # self.setPixmap(QPixmap(path))
+                # self.setPixmap(QPixmap(file_path))
                 self.setPixmap(QPixmap.fromImage(QImage(path)))
                 self.siz = ImageSize(path)
             except:
@@ -481,8 +481,8 @@ class CorrSignalThumbnail(QLabel):
         self.path = path
         self.snr = snr
         try:
-            # self.setPixmap(QPixmap(self.path))
-            # self.setPixmap(QPixmap(self.path))
+            # self.setPixmap(QPixmap(self.file_path))
+            # self.setPixmap(QPixmap(self.file_path))
             # self.label.setText('%.3f' % self.snr)
             if os.path.exists(path):
                 self.setPixmap(QPixmap.fromImage(QImage(path)))

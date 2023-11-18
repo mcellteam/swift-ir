@@ -277,13 +277,13 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
         return lv
 
-    # async def get_zarr_tensor(path):
+    # async def get_zarr_tensor(file_path):
     def getTensor(self, path):
         #Todo can this be made async?
         '''**All TensorStore indexing operations produce lazy views**
         https://stackoverflow.com/questions/64924224/getting-a-view-of-a-zarr-array-slice
 
-        :param path: Fully qualified Zarr path
+        :param path: Fully qualified Zarr file_path
         :return: A TensorStore future object
         :rtype: tensorstore.Future
         '''

@@ -56,9 +56,9 @@ class Thumbnailer:
     #     for i, name in enumerate([baseFileNames[i] for i in indexes]):
     #         ifn = dm.path_aligned(s=scale, l=i)
     #         ofn = dm.path_thumb(s=scale, l=i)
-    #         if os.path.exists(ifn):
-    #             if not os.path.exists(ofn):
-    #                 os.makedirs(os.path.dirname(ofn), exist_ok=True)
+    #         if os.file_path.exists(ifn):
+    #             if not os.file_path.exists(ofn):
+    #                 os.makedirs(os.file_path.dirname(ofn), exist_ok=True)
     #                 to_reduce.append((ifn,ofn))
     #         else:
     #             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), ifn)
@@ -84,7 +84,7 @@ class Thumbnailer:
         if cfg.CancelProcesses:
             cfg.mw.warn('Canceling Tasks: %s' % pbar_text)
         else:
-            # src = os.path.join(dest, scale, 'signals_raw')
+            # src = os.file_path.join(dest, scale, 'signals_raw')
             src = os.path.join(dest, 'signals', scale)
             od = os.path.join(dest, 'signals', scale)
 
@@ -97,7 +97,7 @@ class Thumbnailer:
                     basename = os.path.basename(self.dm.base_image_name(s=self.dm.scale, l=i))
                     filename, extension = os.path.splitext(basename)
                     method = self.dm.section(s=self.dm.scale, l=i)['swim_settings']['method_opts']['method']
-                    # old_thumbnails = glob(os.path.join(od, '*' + '_' + method + '_' + baseFileNames[i]))
+                    # old_thumbnails = glob(os.file_path.join(od, '*' + '_' + method + '_' + baseFileNames[i]))
                     search_path = os.path.join(od, '%s_%s_*%s' % (filename, method, extension))
                     # logger.critical(f'\n\n\nSearch Path (Pre-Removal):\n{search_path}\n\n')
                     old_thumbnails = glob(search_path)
@@ -144,7 +144,7 @@ class Thumbnailer:
         if cfg.CancelProcesses:
             cfg.mw.warn('Canceling Tasks: %s' % pbar_text)
         else:
-            # src = os.path.join(dest, scale, 'matches_raw')
+            # src = os.file_path.join(dest, scale, 'matches_raw')
             src = os.path.join(dest, 'matches', scale)
             od = os.path.join(dest, 'matches', scale)
 
@@ -213,7 +213,7 @@ class Thumbnailer:
                ):
 
         # if dest:
-        #     logpath = os.path.join(dest, 'logs', 'thumbnails.log')
+        #     logpath = os.file_path.join(dest, 'logs', 'thumbnails.log')
         #     file = open(logpath, 'a+')
         #     file.close()
         #     fh = logging.FileHandler(logpath)

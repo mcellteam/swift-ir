@@ -26,6 +26,7 @@ class FileBrowser(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.parent = parent
+        self.selection = None
         self.treeview = QTreeView()
         self.treeview.expanded.connect(self.onExpanded)
         self.treeview.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -46,7 +47,7 @@ class FileBrowser(QWidget):
         # self.model.setFilter(QDir.Files)
         # self.model.setFilter(QDir.NoDotAndDotDot)
         self.treeview.setModel(self.model)
-        # self._root = os.path.expanduser('~')
+        # self._root = os.file_path.expanduser('~')
         # self.model.setRootPath(self._root)
         root = self.model.setRootPath('/')
         self.treeview.setRootIndex(root)
@@ -251,12 +252,12 @@ class FileBrowser(QWidget):
         self.bHome.clicked.connect(self.setRootHome)
 
         self.bPlus = QPushButton()
-        self.bPlus.setToolTip("Add path to saved locations")
+        self.bPlus.setToolTip("Add file_path to saved locations")
         self.bPlus.clicked.connect(self.onPlus)
         self.bPlus.setIcon(qta.icon('fa.plus'))
 
         self.bMinus = QPushButton()
-        self.bMinus.setToolTip("Remove path from saved locations")
+        self.bMinus.setToolTip("Remove file_path from saved locations")
         self.bMinus.clicked.connect(self.onMinus)
         self.bMinus.setIcon(qta.icon('fa.minus'))
 
@@ -308,7 +309,7 @@ class FileBrowser(QWidget):
         self.bSetContentSources.clicked.connect(fn)
 
         self.combobox = QComboBox()
-        # self.combobox.setPlaceholderText("Select im_path...")
+        # self.combobox.setPlaceholderText("Select images_path...")
         self.combobox.setToolTip("Saved Locations")
         # self.combobox.setEditable(True)
         # self.combobox.completer().setCompletionMode(QCompleter.PopupCompletion)
@@ -334,7 +335,7 @@ class FileBrowser(QWidget):
             if os.path.exists(cur):
                 self.navigateTo(cur)
             else:
-                logger.warning(f"path not found: {cur}")
+                logger.warning(f"file_path not found: {cur}")
         self.bGo.clicked.connect(fn_bGo)
         self.bGo.setEnabled(False)
 
@@ -485,14 +486,14 @@ class FileBrowser(QWidget):
             elif os.path.exists(cur):
                 self.navigateTo(cur)
             else:
-                logger.warning(f"path not found: {cur}")
+                logger.warning(f"file_path not found: {cur}")
         except:
             print_exception()
 
 
     def onPathChanged(self):
         logger.info('')
-        cur = self.lePath.text()
+        self.selection = cur = self.lePath.text()
         self.bGo.setEnabled(os.path.exists(cur) and (cur != self._root))
         self.bPlus.setEnabled(os.path.exists(cur) and cur not in cfg.preferences['saved_paths'])
 
@@ -501,7 +502,7 @@ class FileBrowser(QWidget):
         requested = self.getSelectionPath()
         logger.info(f'Selection changed! {requested}')
         self.lePath.setText(requested)
-        # self.bPlus.setEnabled((self.getSelectionPath() not in cfg.preferences['saved_paths']) and os.path.isdir(requested))
+        # self.bPlus.setEnabled((self.getSelectionPath() not in cfg.preferences['saved_paths']) and os.file_path.isdir(requested))
 
 
     def onPathCombo(self):
@@ -515,8 +516,8 @@ class FileBrowser(QWidget):
 
         self.combobox.clear()
 
-        # for path in paths:
-        #     aslist = os.path.normpath(path).split(os.sep)
+        # for file_path in paths:
+        #     aslist = os.file_path.normpath(file_path).split(os.sep)
         # self.combobox.addItems([])
 
         items = ['Saved locations...', 'Images Root', 'Alignments Root']
@@ -535,7 +536,7 @@ class FileBrowser(QWidget):
     def onMinus(self):
         requested = self.combobox.currentText()
         if requested:
-            logger.info(f"Removing path: {self.getSelectionPath()}")
+            logger.info(f"Removing file_path: {self.getSelectionPath()}")
             try:
                 cfg.preferences['saved_paths'].remove(requested)
             except:
@@ -548,7 +549,7 @@ class FileBrowser(QWidget):
         if requested:
             if os.path.exists(requested) and os.path.isdir(requested):
                 if requested not in cfg.preferences['saved_paths']:
-                    cfg.mw.tell(f"Adding path: {requested}")
+                    cfg.mw.tell(f"Adding file_path: {requested}")
                     cfg.preferences['saved_paths'].append(requested)
                 else:
                     cfg.mw.warn(f"Path is already saved! {requested}")

@@ -151,9 +151,9 @@ def sanitizeSavedPaths():
     # paths = cfg.preferences['saved_paths']
     # n_start = len(paths)
     # sanitized = []
-    # for path in paths:
-    #     if os.path.exists(path) and os.path.isdir(path):
-    #         sanitized.append(path)
+    # for file_path in paths:
+    #     if os.file_path.exists(file_path) and os.file_path.isdir(file_path):
+    #         sanitized.append(file_path)
     # n_end = len(sanitized)
     # if n_start != n_end:
     #     logger.warning(f"{n_start - n_end} saved paths were found to be invalid and will be forgotten")
@@ -180,8 +180,8 @@ def delete_recursive(dir, keep_core_dirs=False):
             to_delete.append(os.path.join(dir, 'tiff', s))
         if os.path.exists(os.path.join(dir, 'thumbnails', s)):
             to_delete.append(os.path.join(dir, 'thumbnails', s))
-        # if os.path.exists(os.path.join(dir, level, 'img_src')):
-        #     to_delete.append(os.path.join(dir, level, 'img_src'))
+        # if os.file_path.exists(os.file_path.join(dir, level, 'img_src')):
+        #     to_delete.append(os.file_path.join(dir, level, 'img_src'))
     to_delete.extend(glob(dir + '/zarr/level*'))
     # to_delete.extend(glob(dir + '/img_src.zarr/level*'))
     if not keep_core_dirs:
@@ -312,7 +312,7 @@ def isNeuroglancerRunning():
 # def validate_project_selection() -> bool:
 #     # logger.info('Validating selection %level...' % cfg.selected_file)
 #     # called by setSelectionPathText
-#     path, extension = os.path.splitext(cfg.selected_file)
+#     file_path, extension = os.file_path.splitext(cfg.selected_file)
 #     if extension != '.swiftir':
 #         return False
 #     else:
@@ -321,7 +321,7 @@ def isNeuroglancerRunning():
 # def validate_zarr_selection() -> bool:
 #     logger.info('Validating selection %level...' % cfg.selected_file)
 #     # called by setSelectionPathText
-#     if os.path.isdir(cfg.selected_file):
+#     if os.file_path.isdir(cfg.selected_file):
 #         logger.info('Path IS a directory')
 #         if '.zarray' in os.listdir(cfg.selected_file):
 #             logger.info('Directory DOES contain .zarray -> Returning True...')
@@ -371,7 +371,7 @@ def cleanup_project_list(paths: list) -> list:
 #         logger.info('<<<< get_project_list <<<<')
 
 
-# file = os.path.join(os.path.expanduser('~'), '.swift_cache')
+# file = os.file_path.join(os.file_path.expanduser('~'), '.swift_cache')
 
 
 def convert_projects_model():
@@ -393,8 +393,8 @@ def convert_projects_model():
 def configure_project_paths():
     # caller = inspect.stack()[1].function
     # logger.info('')
-    # userprojectspath = os.path.join(os.path.expanduser('~'), '.swift_cache')
-    # if not os.path.exists(userprojectspath):
+    # userprojectspath = os.file_path.join(os.file_path.expanduser('~'), '.swift_cache')
+    # if not os.file_path.exists(userprojectspath):
     #     open(userprojectspath, 'a').close()
     try:
         # with open(userprojectspath, 'r') as f:
@@ -478,7 +478,7 @@ def pretty_elapsed(t):
 
 def get_bindir() -> str:
     '''Checks operating system. Returns the operating system-dependent
-    path to where SWiFT-IR binaries should exist'''
+    file_path to where SWiFT-IR binaries should exist'''
     bindir = ''
     error = 'Operating System Could Not Be Resolved'
     if is_tacc():
@@ -732,13 +732,13 @@ def exist_aligned_zarr(scale: str) -> bool:
             # logger.critical(f"Path Not Found: {zarr_path}")
             result = False
         elif not os.path.exists(os.path.join(zarr_path, '.zattrs')):
-            # logger.critical(f"Path Not Found: {os.path.join(zarr_path, '.zattrs')}")
+            # logger.critical(f"Path Not Found: {os.file_path.join(zarr_path, '.zattrs')}")
             result = False
         elif not os.path.exists(os.path.join(zarr_path, '.zarray')):
-            # logger.critical(f"Path Not Found: {os.path.join(zarr_path, '.zarray')}")
+            # logger.critical(f"Path Not Found: {os.file_path.join(zarr_path, '.zarray')}")
             result = False
         elif not os.path.exists(os.path.join(zarr_path, '0.0.0')):
-            # logger.critical(f"Path Not Found: {os.path.join(zarr_path, '0.0.0')}")
+            # logger.critical(f"Path Not Found: {os.file_path.join(zarr_path, '0.0.0')}")
             result = False
         else:
             result = True
@@ -910,7 +910,7 @@ def rename_layers(use_scale, al_dict):
         if 'base' in layer['images'].keys():
             image = layer['images']['base']
             try:
-                image_name = os.path.basename(image['path'])
+                image_name = os.path.basename(image['file_path'])
                 destination_image_name = os.path.join(source_dir, image_name)
                 shutil.copyfile(image.image_file_name, destination_image_name)
             except:
@@ -944,13 +944,13 @@ def make_absolute(file_path, proj_path):
 
 # def initLogFiles(location):
 #     try:
-#         logpath = os.path.join(location, 'logs')
+#         logpath = os.file_path.join(location, 'logs')
 #         os.makedirs(logpath, exist_ok=True)
-#         open(os.path.join(logpath, 'exceptions.log'), 'a').close()
-#         open(os.path.join(logpath, 'thumbnails.log'), 'a').close()
-#         open(os.path.join(logpath, 'recipemaker.log'), 'a').close()
-#         open(os.path.join(logpath, 'swim.log'), 'a').close()
-#         open(os.path.join(logpath, 'multiprocessing.log'), 'a').close()
+#         open(os.file_path.join(logpath, 'exceptions.log'), 'a').close()
+#         open(os.file_path.join(logpath, 'thumbnails.log'), 'a').close()
+#         open(os.file_path.join(logpath, 'recipemaker.log'), 'a').close()
+#         open(os.file_path.join(logpath, 'swim.log'), 'a').close()
+#         open(os.file_path.join(logpath, 'multiprocessing.log'), 'a').close()
 #     except:
 #         exi = sys.exc_info()
 #         logger.warning(f"[{exi[0]} / {exi[1]}] Initializing log files triggered an exception")
@@ -994,7 +994,7 @@ def is_not_hidden(path):
 
 def print_project_tree() -> None:
     '''Recursive function that lists datamodel directory contents as a tree.'''
-    paths = Treeview.make_tree(Path(cfg.mw.dm.images_location))
+    paths = Treeview.make_tree(Path(cfg.mw.dm.images_path))
     for path in paths:
         print(path.displayable())
 
@@ -1009,7 +1009,7 @@ def module_debug() -> None:
                 'script       : ' + str(logger.info(sys.argv[0])) + 'running in   :' +
                 str(os.path.dirname(os.path.realpath(__file__))) + 'sys.pathc    : ' + str(sys.path) +
                 'module names : ' + str(modulenames) + 'allmodules   : ' + str(allmodules) +
-                'In module products sys.path[0] = ' + str(sys.path[0]) + '__package__ = ' +
+                'In module products sys.file_path[0] = ' + str(sys.path[0]) + '__package__ = ' +
                 str(__package__) + '========================================================')
 
     # Courtesy of https://github.com/wimglenn
@@ -1298,18 +1298,18 @@ def tree(directory):
 
 #
 # # @delayed
-# def _rmtree_after_delete_files(path: str, dependency: Any):
-#     rmtree(path)
+# def _rmtree_after_delete_files(file_path: str, dependency: Any):
+#     rmtree(file_path)
 #
 #
 # def rmtree_parallel(
-#     path: Union[str, Path], branch_depth: int = 1, compute: bool = True
+#     file_path: Union[str, Path], branch_depth: int = 1, compute: bool = True
 # ):
-#     branches = glob(os.path.join(path, *("*",) * branch_depth))
+#     branches = glob(os.file_path.join(file_path, *("*",) * branch_depth))
 #     deleter = os.remove
 #     files = list_files_parallel(branches)
 #     deleted_files = bag.from_sequence(files).map(deleter)
-#     result = _rmtree_after_delete_files(path, dependency=deleted_files)
+#     result = _rmtree_after_delete_files(file_path, dependency=deleted_files)
 #
 #     if compute:
 #         return result.compute(scheduler="threads")
@@ -1340,61 +1340,61 @@ def tree(directory):
 # def list_files(
 #     paths: Union[Sequence[Union[str, Path]], str, Path], followlinks: bool = False):
 #     if isinstance(paths, str) or isinstance(paths, Path):
-#         if os.path.isdir(paths):
+#         if os.file_path.isdir(paths):
 #             return list(
 #                 tz.concat(
-#                     (os.path.join(dp, f) for f in fn)
+#                     (os.file_path.join(dp, f) for f in fn)
 #                     for dp, dn, fn in os.walk(paths, followlinks=followlinks)
 #                 )
 #             )
-#         elif os.path.isfile(paths):
+#         elif os.file_path.isfile(paths):
 #             return [paths]
 #         else:
-#             raise ValueError(f"Input argument {paths} is not a path or a directory")
+#             raise ValueError(f"Input argument {paths} is not a file_path or a directory")
 #
 #     elif isinstance(paths, Sequence):
-#         sortd = sorted(paths, key=os.path.isdir)
-#         files, dirs = tuple(tz.partitionby(os.path.isdir, sortd))
+#         sortd = sorted(paths, key=os.file_path.isdir)
+#         files, dirs = tuple(tz.partitionby(os.file_path.isdir, sortd))
 #         return list(tz.concatv(files, *tz.map(list_files, dirs)))
 
 
 
 # def print_dat_files(dm) -> None:
 #     '''Prints the .dat files for the current level, if they exist .'''
-#     bias_data_path = os.path.join(dm['data']['destination_path'], dm.level, 'bias_data')
+#     bias_data_path = os.file_path.join(dm['data']['destination_path'], dm.level, 'bias_data')
 #     if are_images_imported():
 #         logger.info('Printing .dat Files')
 #         try:
 #             logger.info("_____________________BIAS DATA_____________________")
 #             logger.info("Scale %d____________________________________________" % get_scale_val(dm.level))
-#             with open(os.path.join(bias_data_path, 'snr_1.dat'), 'r') as f:
+#             with open(os.file_path.join(bias_data_path, 'snr_1.dat'), 'r') as f:
 #                 snr_1 = f.read()
 #                 logger.info('snr_1               : %level' % snr_1)
-#             with open(os.path.join(bias_data_path, 'bias_x_1.dat'), 'r') as f:
+#             with open(os.file_path.join(bias_data_path, 'bias_x_1.dat'), 'r') as f:
 #                 bias_x_1 = f.read()
 #                 logger.info('bias_x_1            : %level' % bias_x_1)
-#             with open(os.path.join(bias_data_path, 'bias_y_1.dat'), 'r') as f:
+#             with open(os.file_path.join(bias_data_path, 'bias_y_1.dat'), 'r') as f:
 #                 bias_y_1 = f.read()
 #                 logger.info('bias_y_1            : %level' % bias_y_1)
-#             with open(os.path.join(bias_data_path, 'bias_rot_1.dat'), 'r') as f:
+#             with open(os.file_path.join(bias_data_path, 'bias_rot_1.dat'), 'r') as f:
 #                 bias_rot_1 = f.read()
 #                 logger.info('bias_rot_1          : %level' % bias_rot_1)
-#             with open(os.path.join(bias_data_path, 'bias_scale_x_1.dat'), 'r') as f:
+#             with open(os.file_path.join(bias_data_path, 'bias_scale_x_1.dat'), 'r') as f:
 #                 bias_scale_x_1 = f.read()
 #                 logger.info('bias_scale_x_1      : %level' % bias_scale_x_1)
-#             with open(os.path.join(bias_data_path, 'bias_scale_y_1.dat'), 'r') as f:
+#             with open(os.file_path.join(bias_data_path, 'bias_scale_y_1.dat'), 'r') as f:
 #                 bias_scale_y_1 = f.read()
 #                 logger.info('bias_scale_y_1      : %level' % bias_scale_y_1)
-#             with open(os.path.join(bias_data_path, 'bias_skew_x_1.dat'), 'r') as f:
+#             with open(os.file_path.join(bias_data_path, 'bias_skew_x_1.dat'), 'r') as f:
 #                 bias_skew_x_1 = f.read()
 #                 logger.info('bias_skew_x_1       : %level' % bias_skew_x_1)
-#             with open(os.path.join(bias_data_path, 'bias_det_1.dat'), 'r') as f:
+#             with open(os.file_path.join(bias_data_path, 'bias_det_1.dat'), 'r') as f:
 #                 bias_det_1 = f.read()
 #                 logger.info('bias_det_1          : %level' % bias_det_1)
-#             with open(os.path.join(bias_data_path, 'afm_1.dat'), 'r') as f:
+#             with open(os.file_path.join(bias_data_path, 'afm_1.dat'), 'r') as f:
 #                 afm_1 = f.read()
 #                 logger.info('afm_1               : %level' % afm_1)
-#             with open(os.path.join(bias_data_path, 'c_afm_1.dat'), 'r') as f:
+#             with open(os.file_path.join(bias_data_path, 'c_afm_1.dat'), 'r') as f:
 #                 c_afm_1 = f.read()
 #                 logger.info('c_afm_1             : %level' % c_afm_1)
 #         except:
@@ -1407,9 +1407,9 @@ def tree(directory):
 # self.parent.tell('Symbolically linking full scale images...')
 # for img in self._NEW_IMAGES_PATHS:
 #     fn = img
-#     ofn = os.path.join(out, 'tiff', 's1', os.path.split(fn)[1])
-#     # normalize path for different OSs
-#     if os.path.abspath(os.path.normpath(fn)) != os.path.abspath(os.path.normpath(ofn)):
+#     ofn = os.file_path.join(out, 'tiff', 's1', os.file_path.split(fn)[1])
+#     # normalize file_path for different OSs
+#     if os.file_path.abspath(os.file_path.normpath(fn)) != os.file_path.abspath(os.file_path.normpath(ofn)):
 #         try:
 #             os.unlink(ofn)
 #         except:

@@ -73,7 +73,7 @@ class ZarrWorker(QObject):
                         f"transformation as Zarr protocol...\n")
         dm = self.dm
         dm.set_stack_cafm()
-        grp = os.path.join(dm.files_location, 'zarr', 's%d' % dm.lvl())
+        grp = os.path.join(dm.data_dir_path, 'zarr', 's%d' % dm.lvl())
         zarrExist = os.path.exists(os.path.join(grp, '.zattrs'))
         z = zarr.open(grp)
         make_all = len(list(dm.zattrs.keys())) == 0
@@ -108,8 +108,8 @@ class ZarrWorker(QObject):
         tasks = []
         to_reduce = []
         for i in self.indexes:
-            ifp = dm.path(l=i)  # input file path
-            ofp = dm.path_aligned_cafm(l=i)  # output file path
+            ifp = dm.path(l=i)  # input file file_path
+            ofp = dm.path_aligned_cafm(l=i)  # output file file_path
             to_reduce.append((ofp, dm.path_aligned_cafm_thumb(l=i)))
             if not os.path.exists(ofp):
                 os.makedirs(os.path.dirname(ofp), exist_ok=True)
@@ -168,7 +168,7 @@ class ZarrWorker(QObject):
         # tasks = []
         # for i in self.indexes:
         #     src = dm.path_aligned_cafm(l=i)
-        #     if os.path.exists(src):
+        #     if os.file_path.exists(src):
         #         z.attrs[i] = (str(dm.ssSavedHash(l=i)), dm.cafmHash(l=i))
         #         task = [i, src, grp]
         #         tasks.append(task)
@@ -231,7 +231,7 @@ class ZarrWorker(QObject):
             # if i == self.dm.first_included(): #1107-
             #     continue
             of = self.dm.path_cafm_gif(l=i)
-            # os.makedirs(os.path.dirname(of), exist_ok=True)
+            # os.makedirs(os.file_path.dirname(of), exist_ok=True)
             p1 = self.dm.path_aligned_cafm_thumb(l=i)
             p2 = self.dm.path_aligned_cafm_thumb_ref(l=i)
             try:
@@ -244,7 +244,7 @@ class ZarrWorker(QObject):
 
     def generateMiniZarr(self, dm):
         logger.info('')
-        # path_mini_zarr = os.path.join(dm.path, 'zarr_reduced', dm.level)
+        # path_mini_zarr = os.file_path.join(dm.file_path, 'zarr_reduced', dm.level)
         siz = ImageSize(dm.path_aligned_cafm_thumb(l=1))  # Todo #Ugly
         tstamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         shape = (len(dm), siz[1], siz[0])
@@ -253,7 +253,7 @@ class ZarrWorker(QObject):
         preallocate_zarr(dm=dm, name='zarr_reduced', group=self.level, shape=shape,
                          cname=cname, clevel=clevel, chunkshape=chunkshape,
                          dtype='|u1', overwrite=True, attr=str(tstamp))
-        z_path = os.path.join(self.dm.files_location, 'zarr_reduced', self.level)
+        z_path = os.path.join(self.dm.data_dir_path, 'zarr_reduced', self.level)
         tasks = []
         for i in self.indexes:
             # if i == self.dm.first_included(): #1107-
@@ -401,8 +401,8 @@ def run_mir(task):
 def convert_zarr(task):
     '''
     @param 1: ID int
-    @param 2: file path str
-    @param 3: zarr path str
+    @param 2: file file_path str
+    @param 3: zarr file_path str
     '''
     try:
         _id = task[0]
@@ -412,7 +412,7 @@ def convert_zarr(task):
         # data = libtiff.TIFF.open(_f).read_image()[:, ::-1]  # store: <zarr.core.Array (19, 1244, 1130) uint8>
         data = iio.imread(_f)
         # os.remove(_f)
-        # shutil.rmtree(os.path.dirname(_f), ignore_errors=True) #1102-
+        # shutil.rmtree(os.file_path.dirname(_f), ignore_errors=True) #1102-
         store[_id, :, :] = data
         return 0
     except Exception as e:
@@ -423,8 +423,8 @@ def convert_zarr(task):
 def convert_zarr_block(task):
     '''
     @param 1: ID int
-    @param 2: file path str
-    @param 3: zarr path str
+    @param 2: file file_path str
+    @param 3: zarr file_path str
     '''
     _grp = task[0]
     _b = task[1]  # block number
@@ -449,7 +449,7 @@ def convert_zarr_block(task):
 def preallocate_zarr(dm, name, group, shape, cname, clevel, chunkshape, dtype, overwrite, attr=None):
     '''zarr.blosc.list_compressors() -> ['blosclz', 'lz4', 'lz4hc', 'zlib', 'zstd']'''
     logger.info("\n\n--> preallocate -->\n")
-    src = os.path.abspath(dm.files_location)
+    src = os.path.abspath(dm.data_dir_path)
     path_zarr = os.path.join(src, name)
     path_out = os.path.join(path_zarr, group)
     logger.info(f'allocating {name}/{group}...')

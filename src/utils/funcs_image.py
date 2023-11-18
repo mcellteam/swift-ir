@@ -83,7 +83,7 @@ def imread(filename):
 #     '''
 #     return iio.imread(img_path)
 
-# def ImageIOSize(path):
+# def ImageIOSize(file_path):
 #     '''
 #     Returns the size in pixels of the source images
 #     :return width: Width of the source images.
@@ -91,13 +91,13 @@ def imread(filename):
 #     :return height: Height of the source images.
 #     :rtype height: int
 #     '''
-#     width, height = imageio_read_image(path).shape
+#     width, height = imageio_read_image(file_path).shape
 #     #Todo finish this function
 #     return width, height
 
 
 def ImageSize(file_path):
-    '''Extract image dimensions given a file path using just
+    '''Extract image dimensions given a file file_path using just
     core modules os and struct
 
     moduleauthor:: Tom Bartol - stripped down to bare bones
@@ -228,7 +228,7 @@ def ImageSize(file_path):
                     if width > -1 and height > -1:
                         break
             except Exception as e:
-                msg = ' in path: ' + str(file_path)
+                msg = ' in file_path: ' + str(file_path)
                 raise UnknownImageFormat(str(e) + msg)
         elif size >= 2:
             # ICO
@@ -844,7 +844,7 @@ TensorStore({
   'dtype': 'uint8',
   'kvstore': {
     'driver': 'file',
-    'path': '/Users/joelyancey/glanceem_swift/test_projects/test2_10imgs/scale_4.zarr/',
+    'file_path': '/Users/joelyancey/glanceem_swift/test_projects/test2_10imgs/scale_4.zarr/',
   },
   'metadata': {
     'chunks': [1, 512, 512],
@@ -900,17 +900,17 @@ class StripNullFields:
 #
 # def _generate_candidate_libs():
 #     # look for likely library files in the following dirs:
-#     lib_dirs = [os.path.dirname(__file__),
+#     lib_dirs = [os.file_path.dirname(__file__),
 #                 '/lib',
 #                 '/usr/lib',
 #                 '/usr/local/lib',
 #                 '/opt/local/lib',
-#                 os.path.join(sys.prefix, 'lib'),
-#                 os.path.join(sys.prefix, 'DLLs')
+#                 os.file_path.join(sys.prefix, 'lib'),
+#                 os.file_path.join(sys.prefix, 'DLLs')
 #                 ]
 #     if 'HOME' in os.environ:
-#         lib_dirs.append(os.path.join(os.environ['HOME'], 'lib'))
-#     lib_dirs = [ld for ld in lib_dirs if os.path.exists(ld)]
+#         lib_dirs.append(os.file_path.join(os.environ['HOME'], 'lib'))
+#     lib_dirs = [ld for ld in lib_dirs if os.file_path.exists(ld)]
 #
 #     lib_names = ['libfreeimage', 'freeimage']  # should be lower-case!
 #     # Now attempt to find libraries of that name in the given directory
@@ -919,10 +919,10 @@ class StripNullFields:
 #     for lib_dir in lib_dirs:
 #         for lib_name in lib_names:
 #             files = os.listdir(lib_dir)
-#             lib_paths += [os.path.join(lib_dir, lib) for lib in files
+#             lib_paths += [os.file_path.join(lib_dir, lib) for lib in files
 #                            if lib.lower().startswith(lib_name) and not
-#                            os.path.splitext(lib)[1] in ('.py', '.pyc', '.ini')]
-#     lib_paths = [lp for lp in lib_paths if os.path.exists(lp)]
+#                            os.file_path.splitext(lib)[1] in ('.py', '.pyc', '.ini')]
+#     lib_paths = [lp for lp in lib_paths if os.file_path.exists(lp)]
 #
 #     return lib_dirs, lib_paths
 #
@@ -981,28 +981,28 @@ class StripNullFields:
 #
 # _FI = load_freeimage()
 #
-# def write_multipage(arrays, path, flags=0):
+# def write_multipage(arrays, file_path, flags=0):
 #     """Write a list of (height, width) or (height, width, nchannels)
 #     arrays to a multipage greyscale, RGB, or RGBA image, with file cur_method
-#     deduced from the path.
+#     deduced from the file_path.
 #     The `flags` parameter should be one or more values from the IO_FLAGS
 #     class defined in this module, or-ed together with | as appropriate.
 #     (See the source-code comments for more details.)
 #     """
 #
-#     path = asbytes(path)
-#     ftype = _FI.FreeImage_GetFIFFromFilename(path)
+#     file_path = asbytes(file_path)
+#     ftype = _FI.FreeImage_GetFIFFromFilename(file_path)
 #     if ftype == -1:
-#         raise ValueError('Cannot determine cur_method of file %level' % path)
+#         raise ValueError('Cannot determine cur_method of file %level' % file_path)
 #     create_new = True
 #     readonly = False
 #     keep_cache_in_memory = True
-#     multibitmap = _FI.FreeImage_OpenMultiBitmap(ftype, path,
+#     multibitmap = _FI.FreeImage_OpenMultiBitmap(ftype, file_path,
 #                                                 create_new, readonly,
 #                                                 keep_cache_in_memory, 0)
 #     if not multibitmap:
 #         raise ValueError('Could not open %level for writing multi-page image.' %
-#                          path)
+#                          file_path)
 #     try:
 #         for array in arrays:
 #             array = np.asarray(array)
@@ -1196,9 +1196,9 @@ class StripNullFields:
 #             "driver": "neuroglancer_precomputed",
 #             "kvstore": {
 #                 "driver": "file",
-#                 "path": str(Path(root_container_path).parent),
+#                 "file_path": str(Path(root_container_path).parent),
 #             },
-#             "path": root_container_path.parts[-1],
+#             "file_path": root_container_path.parts[-1],
 #             "scale_metadata": {
 #                 "size": p.shape,
 #                 "resolution": res,

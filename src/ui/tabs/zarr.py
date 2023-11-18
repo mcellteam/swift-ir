@@ -7,6 +7,7 @@ from qtpy.QtWidgets import QWidget, QVBoxLayout
 from qtpy.QtCore import QUrl
 from qtpy.QtWebEngineWidgets import *
 from src.viewers.zarrviewer import ZarrViewer
+from src.utils.helpers import path_to_str
 import src.config as cfg
 
 __all__ = ['ZarrTab']
@@ -19,8 +20,8 @@ class ZarrTab(QWidget):
         super().__init__(parent)
         log.info('')
         self.parent = parent
-        self.path = path
-        self.viewer = cfg.viewer0 = ZarrViewer(path=path)
+        self.path = path_to_str(path)
+        self.viewer = cfg.viewer0 = ZarrViewer(path=self.path)
         self.webengine = QWebEngineView()
         self.load()
 

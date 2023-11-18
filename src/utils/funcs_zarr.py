@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_zarr_tensor(path):
-# async def get_zarr_tensor(path):
+# async def get_zarr_tensor(file_path):
     '''
     Returns an asynchronous TensorStore future object which is a view
     into the Zarr on disk. **All TensorStore indexing operations
@@ -40,7 +40,7 @@ def get_zarr_tensor(path):
 
     https://stackoverflow.com/questions/64924224/getting-a-view-of-a-zarr-array-slice
 
-    :param path: Fully qualified Zarr path
+    :param path: Fully qualified Zarr file_path
     :return: A TensorStore future object
     :rtype: tensorstore.Future
     '''
@@ -51,7 +51,7 @@ def get_zarr_tensor(path):
         'driver': 'zarr',
         'kvstore': {
             'driver': 'file',
-            'path': path
+            'file_path': path
         },
         'context': {
             'cache_pool': {'total_bytes_limit': total_bytes_limit},
@@ -70,9 +70,9 @@ def get_zarr_array_layer_view(dm, zarr_path:str, l=None):
         'driver': 'zarr',
         'kvstore': {
             'driver': 'file',
-            'path': zarr_path,
+            'file_path': zarr_path,
         },
-        'path': 'temp.zarr',
+        'file_path': 'temp.zarr',
         'metadata': {
             'dtype': '<f4',
             'shape': list(dm.resolution()),
@@ -98,7 +98,7 @@ def get_tensor_from_tiff(dm, dir=None, s=None, l=None):
         'driver': 'tiff',
         'kvstore': {
             'driver': 'file',
-            'path': path,
+            'file_path': path,
         },
     }, create=True).result()
     return arr
@@ -127,7 +127,7 @@ def get_zarr_tensor_layer(zarr_path:str, layer:int):
     # total_bytes_limit = (6_000_000_000, 200_000_000_000_000)['.tacc.utexas.edu' in platform.node()]
     arr = ts.open({
         'driver': 'zarr',
-        'kvstore': { 'driver': 'file', 'path': zarr_path },
+        'kvstore': { 'driver': 'file', 'file_path': zarr_path },
         'context': { 'cache_pool': { 'total_bytes_limit': total_bytes_limit} },
         'recheck_cached_data': 'open',
     }, dtype=ts.uint32,)
@@ -143,7 +143,7 @@ def get_zarr_tensor_layer(zarr_path:str, layer:int):
 #     :return: image_arrays
 #     :rtype: list[numpy.ndarray]
 #     '''
-#     tifs = glob(os.path.join(directory, '*.tif'))
+#     tifs = glob(os.file_path.join(directory, '*.tif'))
 #     cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2,1)
 #     pool = mp.Pool(processes=cpus)
 #     start = time.time()
@@ -161,7 +161,7 @@ def remove_zarr(path) -> None:
         logger.info('Removing extant Zarr at %s...' % path)
         # try:
         #     with time_limit(20):
-        #         shutil.rmtree(path, ignore_errors=True)
+        #         shutil.rmtree(file_path, ignore_errors=True)
         # except TimeoutError as e:
         #     logger.warning("Timed out!")
         try:
@@ -176,7 +176,7 @@ def preallocate_zarr(dm, name, group, shape, dtype, overwrite, gui=True, attr=No
     '''zarr.blosc.list_compressors() -> ['blosclz', 'lz4', 'lz4hc', 'zlib', 'zstd']'''
     logger.info("\n\n--> preallocate -->\n")
     cname, clevel, chunkshape = dm.get_images_zarr_settings()
-    src = os.path.abspath(dm.files_location)
+    src = os.path.abspath(dm.data_dir_path)
     path_zarr = os.path.join(src, name)
     path_out = os.path.join(path_zarr, group)
     logger.info(f'allocating {name}/{group}...')
@@ -230,7 +230,7 @@ def write_metadata_zarr_multiscale(path):
         scale_factor = get_scale_val(scale)
         name = 's' + str(scale_factor)
         metadata = {
-            "path": name,
+            "file_path": name,
             "coordinateTransformations": [{
                 "cur_method": "level",
                 "level": [float(50.0), 2 * float(scale_factor), 2 * float(scale_factor)]}]
@@ -260,7 +260,7 @@ def write_zarr_multiscale_metadata(path, scales, resolution):
         scale_factor = get_scale_val(scale)
         name = 'level' + str(scale_factor)
         metadata = {
-            "path": name,
+            "file_path": name,
             "coordinateTransformations": [{
                 "type": "level",
                 "level": [float(resolution[0]), scale_factor * float(resolution[1]), scale_factor * float(resolution[2])]}]
@@ -290,7 +290,7 @@ def write_metadata_zarr_aligned(name='img_aligned.zarr'):
     scale_factor = cfg.mw.dm.lvl()
     name = 'level' + str(scale_factor)
     metadata = {
-        "path": name,
+        "file_path": name,
         "coordinateTransformations": [{
             "cur_method": "level",
             "level": [float(50.0), 2 * float(scale_factor), 2 * float(scale_factor)]}]
@@ -321,16 +321,16 @@ def write_metadata_zarr_aligned(name='img_aligned.zarr'):
 #
 #     for level in dm.scales:
 #         logger.info('Working On %level' % level)
-#         tif_files = sorted(glob(os.path.join(dest, level, 'img_src', '*.tif')))
-#         # zarrurl = os.path.join(dest, level + '.zarr')
-#         zarrurl = os.path.join(dest, 'img_src.zarr', 'level' + str(get_scale_val(level)))
+#         tif_files = sorted(glob(os.file_path.join(dest, level, 'img_src', '*.tif')))
+#         # zarrurl = os.file_path.join(dest, level + '.zarr')
+#         zarrurl = os.file_path.join(dest, 'img_src.zarr', 'level' + str(get_scale_val(level)))
 #         tiffs2zarr(tif_files=tif_files, zarrurl=zarrurl, chunkshape=(1, 512, 512))
 #         z = zarr.open(zarrurl)
 #         z.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
 #         # z.attrs['offset'] = ["0", "0", "0"]
 #
-#     # zarr_path = os.path.join(dest, 'img_src.zarr')
-#     # write_metadata_zarr_multiscale(path=zarr_path)
+#     # zarr_path = os.file_path.join(dest, 'img_src.zarr')
+#     # write_metadata_zarr_multiscale(file_path=zarr_path)
 #     write_metadata_zarr_aligned(name='img_src.zarr')
 #
 #     # scale_factor = dm.lvl()
@@ -352,15 +352,15 @@ def write_metadata_zarr_aligned(name='img_aligned.zarr'):
     #     logger.info('Converting Tiff To Zarr...')
     #     logger.info(str(tif_files))
     #
-    #     def imread(path):
-    #         with open(path, 'rb') as fh:
+    #     def imread(file_path):
+    #         with open(file_path, 'rb') as fh:
     #             datamodel = fh.read()
     #         return imagecodecs.tiff_decode(datamodel) # return first image in TIFF file as numpy array
     #     try:
     #         with tifffile.FileSequence(imread, tif_files) as tifs:
     #             with tifs.aszarr() as store:
     #                 array = da.from_zarr(store)
-    #                 #array.visualize(path='_dask_visualize.png') # print dask task graph to file
+    #                 #array.visualize(file_path='_dask_visualize.png') # print dask task graph to file
     #                 array.rechunk(chunkshape).to_zarr(zarrurl, overwrite=True, **kwargs)
     #                 # NOTE **kwargs is passed to Passed to the zarr.creation.create() function, e.g., compression options.
     #                 # https://zarr.readthedocs.io/en/latest/api/creation.html#zarr.creation.create
@@ -385,13 +385,13 @@ def write_metadata_zarr_aligned(name='img_aligned.zarr'):
         files_4096 = sorted(list(Path('test_data').glob(r'*4096.tif')))
         # print(filenames)
         # print('tiffs2zarr is scaling size 1024...')
-        # tiffs2zarr(files_1024, os.path.join(of, 'img_aligned_zarr', 's2'), chunk_shape_tuple, compression='zstd',
+        # tiffs2zarr(files_1024, os.file_path.join(of, 'img_aligned_zarr', 's2'), chunk_shape_tuple, compression='zstd',
         #            overwrite=True)
         # print('tiffs2zarr is scaling size 2048...')
-        # tiffs2zarr(files_2048, os.path.join(of, 'img_aligned_zarr', 's1'), chunk_shape_tuple, compression='zstd',
+        # tiffs2zarr(files_2048, os.file_path.join(of, 'img_aligned_zarr', 's1'), chunk_shape_tuple, compression='zstd',
         #            overwrite=True)
         # print('tiffs2zarr is scaling size 4096...')
-        # tiffs2zarr(files_4096, os.path.join(of, 'img_aligned_zarr', 's0'), chunk_shape_tuple, compression='zstd',
+        # tiffs2zarr(files_4096, os.file_path.join(of, 'img_aligned_zarr', 's0'), chunk_shape_tuple, compression='zstd',
         #            overwrite=True)
 
         print('writing .zarray...')

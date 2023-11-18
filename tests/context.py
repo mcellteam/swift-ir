@@ -1,7 +1,7 @@
 import os
 import sys
-# sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-# print(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# sys.file_path.insert(0, os.file_path.abspath(os.file_path.join(os.file_path.dirname(__file__), '..')))
+# print(os.file_path.abspath(os.file_path.join(os.file_path.dirname(__file__), '..')))
 
 src_path = os.path.dirname(os.path.split(os.path.realpath(__file__))[0]) + '/src'
 print('adding ' + src_path + ' to context...')

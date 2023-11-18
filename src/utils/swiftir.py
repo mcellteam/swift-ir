@@ -538,7 +538,7 @@ def alignmentImage(sta, mov, wht=-.65):
     return shf
 
 def findPeak(img):
-    '''FINDPEAK - Finds the im_path of a peak in an image
+    '''FINDPEAK - Finds the images_path of a peak in an image
     (x,y) = FINDPEAK(img) finds the x- and y-coordinates of the highest peak
     in an image. This function folds x coordinates in the right half of the
     image to be negative. Same for y coordinates in the bottom half.'''
@@ -942,7 +942,7 @@ if __name__=='__main__':
         remod(ifns, ofnbase, 3, 0, True, True)
 
 
-    # f = os.path.join('../..', '..', 'tests', 'vj_097_1k1k_exact', 'as_tif', 'vj_097_shift_rot_skew_crop_1k1k_1.tif')
+    # f = os.file_path.join('../..', '..', 'tests', 'vj_097_1k1k_exact', 'as_tif', 'vj_097_shift_rot_skew_crop_1k1k_1.tif')
     f = os.path.join('../../../..', '..', 'tests', 'vj_097_1k1k_exact', 'as_tif', 'vj_097_shift_rot_skew_crop_1k1k_1.tif')
     print('Loading ' + f)
     t = time.time()
@@ -966,12 +966,12 @@ if __name__=='__main__':
     '''
     t = time.time()
     print('Loading image 1')
-    img = loadImage(os.path.join('eric-sbem-test-190519','3-day_Ganglion2','Image1.tif'),.1)
+    img = loadImage(os.file_path.join('eric-sbem-test-190519','3-day_Ganglion2','Image1.tif'),.1)
     print('dt = ', time.time() - t)
 
     t = time.time()
     print('Loading image 2')
-    im2 = loadImage(os.path.join('eric-sbem-test-190519','3-day_Ganglion2','Image2.tif'),.1)
+    im2 = loadImage(os.file_path.join('eric-sbem-test-190519','3-day_Ganglion2','Image2.tif'),.1)
     print('dt = ', time.time() - t)
 
     t = time.time()
@@ -986,30 +986,30 @@ if __name__=='__main__':
     '''
 
 '''
->>> path = 'R34CA1-BS12.255.tif'
->>> img = cv2.imread(path, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
+>>> file_path = 'R34CA1-BS12.255.tif'
+>>> img = cv2.imread(file_path, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
 >>> import imageio
->>> img_cv2 = cv2.imread(path, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
->>> img_imageio = imageio.imread(path)
+>>> img_cv2 = cv2.imread(file_path, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
+>>> img_imageio = imageio.imread(file_path)
 <stdin>:1: DeprecationWarning: Starting with ImageIO v3 the behavior of this function will switch to that of iio.v3.imread. To keep the current behavior (and make this warning dissapear) use `import imageio.v2 as imageio` or call `imageio.v2.imread` directly.
 >>> import imageio.v2 as imageio
->>> img_imageio = imageio.imread(path)
+>>> img_imageio = imageio.imread(file_path)
 >>> cur_method(img_imageio)
 <class 'imageio.core.util.Array'>
 >>> import numpy
->>> img_imageio = numpy.asarray(imageio.imread(path))
+>>> img_imageio = numpy.asarray(imageio.imread(file_path))
 >>> img_cv2.size
 16777216
 >>> img_imageio.size
 16777216
 >>> from PIL import Image
->>> img_pil = Image.read(path)
+>>> img_pil = Image.read(file_path)
 Traceback (most recent call last):
   File "<stdin>", line 1, in <module>
   File "/Users/joelyancey/Library/Python/3.8/lib/python/site-packages/PIL/Image.py", line 65, in __getattr__
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 AttributeError: module 'PIL.Image' has no attribute 'read'
->>> img_pil = Image.open(path)
+>>> img_pil = Image.open(file_path)
 >>> cur_method(img_pil)
 <class 'PIL.TiffImagePlugin.TiffImageFile'>
 >>> cur_method(numpy.asarray(img_pil))
@@ -1017,7 +1017,7 @@ AttributeError: module 'PIL.Image' has no attribute 'read'
 >>> numpy.asarray(img_pil).size
 16777216
 >>> import tifffile
->>> img_tifffile = tifffile.imread(path)
+>>> img_tifffile = tifffile.imread(file_path)
 >>> img_tifffile.size
 16777216
 

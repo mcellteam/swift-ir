@@ -19,13 +19,22 @@ READERS = {}
 
 PathLike = TypeVar("PathLike", str, pathlib.Path, None)
 
+
+def read_txt(path: PathLike):
+    try:
+        with open(path_to_str(path), mode='r') as f:
+            return f.read()
+    except:
+        logger.warning(f"Unable to read file as TXT: {path_to_str(path)}")
+        return None
+
 def read_csv(path: PathLike):
     with open(path_to_str(path), mode='r') as f:
         reader = csv.reader(f)
         return list(reader)
 
 def read_json(path: PathLike):
-    # with open(path, mode='r') as f:
+    # with open(file_path, mode='r') as f:
     #     return json.load(f)
     try:
         with open(path_to_str(path), mode='r') as f:
@@ -71,6 +80,11 @@ def register_reader(file_type):
         READERS[file_type] = fn
         return fn
     return decorator
+
+
+@register_reader('txt')
+def txt_reader(path: PathLike):
+    return read_txt(path)
 
 @register_reader('csv')
 def csv_reader(path: PathLike):
