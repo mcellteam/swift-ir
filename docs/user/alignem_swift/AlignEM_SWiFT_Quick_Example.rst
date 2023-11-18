@@ -73,7 +73,7 @@ each image (when using SWiFT-IR) will be the previous image in the stack.
 Set a Destination for Generated Images
 ======
 
-An Alignem SWiFT project should define a images_location for all of its
+An Alignem SWiFT project should define a images_path for all of its
 project images (base images, scaled images, aligned images). This
 must be set before any images can be generated (including both
 scaled images and aligned images). Set the dest path with
@@ -114,7 +114,7 @@ Generate Scaled Images
 ======
 
 Even if only a single scale is used (defaults to 1), the images
-must be copied (or linked) from their original images_location to the
+must be copied (or linked) from their original images_path to the
 dest directory structure. This is accomplished with the
 "Gen Scales" button next to the "Link Stack" button. Click it
 one time to copy/link/generate the images needed for the project.

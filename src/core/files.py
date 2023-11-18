@@ -35,7 +35,7 @@ class DirectoryStructure:
         self.dm = dm
         self.levels = self.dm.levels
         self.count = self.dm.count
-        self.p = Path(self.dm.files_location)
+        self.p = Path(self.dm.data_dir_path)
         self.data = dict.fromkeys(range(self.count), dict.fromkeys(self.levels, {}))
         self.updateData()
 
@@ -85,9 +85,9 @@ class DirectoryWatcher(QObject):
         self._searchPaths = preferences[key]
         self._watcher = QFileSystemWatcher(self)
         self._watcher.directoryChanged.connect(self.onDirChanged)
-        # self._watcher.directoryChanged.connect(lambda path: print(f"Directory '{path}' changed!"))
+        # self._watcher.directoryChanged.connect(lambda file_path: print(f"Directory '{file_path}' changed!"))
         self._watcher.fileChanged.connect(self.onFileChanged)
-        # self._watcher.fileChanged.connect(lambda path: print(f"File '{path}' changed!"))
+        # self._watcher.fileChanged.connect(lambda file_path: print(f"File '{file_path}' changed!"))
 
         self._known = []
 
@@ -112,6 +112,10 @@ class DirectoryWatcher(QObject):
             logger.warning(msg)
             for p in to_update:
                 # p is a '.swiftir' file inside of the data directory
+                old_cache = p.parent / 'data.pickle'
+                new_cache= p.parent / 'cache.pickle'
+                if old_cache.exists():
+                    shutil.move(old_cache, new_cache)  # Move To New File
                 shutil.copy(p, p.with_suffix('.OLD'))  # Copy To Backup File
                 newpath = p.parent.parent / Path(p.stem).with_suffix('.align')
                 shutil.move(p, newpath) # Move To New File
@@ -120,7 +124,7 @@ class DirectoryWatcher(QObject):
                 except OSError:
                     pass
                 data = read('json')(newpath)
-                data['info']['path'] = str(newpath)
+                data['info']['file_path'] = str(newpath)
                 write('json')(newpath, data) # Modify New File
                 shutil.move(p.parent, newpath.with_suffix('')) # Rename Data Dir
 
@@ -199,7 +203,7 @@ else:
 # Count files
 >>> from pathlib import Path
 >>> from collections import Counter
->>> Counter(path.suffix for path in Path.cwd().iterdir())
+>>> Counter(file_path.suffix for file_path in Path.cwd().iterdir())
 Counter({'.md': 2, '.txt': 4, '.pdf': 2, '.py': 1})
 
 
@@ -229,11 +233,11 @@ symlink_path = Path('my_symlink.txt')                        # Shortcut
 symlink_path.symlink_to(destination_path)                    # creating the symlink
 
 # Check if file exists
-path.exists():
+file_path.exists():
 
 
 # Read text file
-path = Path('my_folder/my_file.txt')  # creating a path object
-content = path.read_text()            # reading the file
+file_path = Path('my_folder/my_file.txt')  # creating a file_path object
+content = file_path.read_text()            # reading the file
 
 '''

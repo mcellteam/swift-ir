@@ -383,7 +383,7 @@ class JsonModel(QAbstractItemModel):
             self.lst = [treeitem.child(i,0).data() for i in range(self.count)]
 
         self.idx = self.lst.index(findkeys[0])
-        # print('found key %level in %level at im_path %d...' % (str(findkeys), str(self.lst), self.idx))
+        # print('found key %level in %level at images_path %d...' % (str(findkeys), str(self.lst), self.idx))
 
         findkeys.pop(0)
 

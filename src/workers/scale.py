@@ -90,7 +90,7 @@ class ScaleWorker(QObject):
             return
 
         cur_path = os.path.split(os.path.realpath(__file__))[0] + '/'
-        # iscale2_c = os.path.join(Path(cur_path).parent.absolute(), 'lib', get_bindir(), 'iscale2')
+        # iscale2_c = os.file_path.join(Path(cur_path).parent.absolute(), 'lib', get_bindir(), 'iscale2')
         iscale2_c = os.path.join(Path(cur_path).absolute(), '../lib', get_bindir(), 'iscale2')
 
         self.hudMessage.emit(f'Batch multiprocessing {len(self.paths)} images...')

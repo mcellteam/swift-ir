@@ -40,7 +40,7 @@ from src.utils.helpers import getData, setData, print_exception, get_scale_val, 
     is_joel, is_tacc, run_command, check_macos_isdark_theme
 from src.ui.dialogs.exitapp import ExitAppDialog
 from src.ui.dialogs.exportaffines import export_affines_dialog
-from src.ui.layouts.layouts import HBL, VBL, HW, VW, QVLine
+from src.ui.layouts.layouts import HBL, VBL, HW, VW, GL, QVLine
 from src.ui.tools.hud import HeadupDisplay
 from src.ui.tabs.webbrowser import WebBrowser
 from src.ui.tabs.manager import ManagerTab
@@ -61,7 +61,7 @@ else:
 
 DEV = is_joel()
 
-# logger.critical('_Directory of this script: %level' % os.path.dirname(__file__))
+# logger.critical('_Directory of this script: %level' % os.file_path.dirname(__file__))
 
 class HudOutputFormat(logging.Formatter):
     # ANSI color codess
@@ -208,7 +208,7 @@ class MainWindow(QMainWindow):
 
 
     # def openAlignment(self, dm):
-    #     cfg.preferences['last_alignment_opened'] = dm.path
+    #     cfg.preferences['last_alignment_opened'] = dm.file_path
     #     AlignmentTab(self, dm)
 
 
@@ -362,6 +362,13 @@ class MainWindow(QMainWindow):
 
     def initPrivateMembers(self):
         logger.info('')
+
+        self._html_view = WebEngine(ID='_html_view')
+        self._html_view.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
+        self._html_view.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
+        self._html_view.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
+        self._html_view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
+        self._html_view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
         self.pm = None
         self.pt = None
@@ -633,7 +640,7 @@ class MainWindow(QMainWindow):
                                     print_exception()
                                     continue
 
-                                # self.pt.sigList[i].set_data(path=thumbs[i], snr=float(snr))
+                                # self.pt.sigList[i].set_data(file_path=thumbs[i], snr=float(snr))
                                 self.pt.sigList[i].set_data(path=thumbs.pop(0), snr=float(snr))
                             except:
                                 print_exception()
@@ -657,7 +664,7 @@ class MainWindow(QMainWindow):
                 # logger.info(f'[{caller}]')
 
                 # basename = self.dm.name()
-                # path, extension = os.path.splitext(basename)
+                # file_path, extension = os.file_path.splitext(basename)
                 basename = self.dm.name(l=z)
                 filename, extension = os.path.splitext(basename)
 
@@ -690,8 +697,8 @@ class MainWindow(QMainWindow):
                     for i in range(0, 4):
                         use = self.dm.quadrants[i]
 
-                        # logger.info(f'file  : {files[i]}  exists? : {os.path.exists(files[i])}  use? : {use}')
-                        path = os.path.join(self.dm.files_location, 'matches', self.dm.scale, files[i][1])
+                        # logger.info(f'file  : {files[i]}  exists? : {os.file_path.exists(files[i])}  use? : {use}')
+                        path = os.path.join(self.dm.data_dir_path, 'matches', self.dm.scale, files[i][1])
                         if use and os.path.exists(path):
                             self.pt.matchesList[i].path = path
                             try:
@@ -706,7 +713,7 @@ class MainWindow(QMainWindow):
                 if self.dm.current_method == 'manual':
                     # self.pt.matchesList[3].hide()
                     for i in range(0, 3):
-                        path = os.path.join(self.dm.files_location, 'matches', self.dm.scale, files[i][1])
+                        path = os.path.join(self.dm.data_dir_path, 'matches', self.dm.scale, files[i][1])
                         if os.path.exists(path):
                             self.pt.matchesList[i].path = path
                             self.pt.matchesList[i].set_data(path)
@@ -941,11 +948,14 @@ class MainWindow(QMainWindow):
                 lines.append(f'  Δ Avg. SNR   : <span style="color: #66FF00;"><b>{diff_avg:7.2f} (+)</b></span>')
 
             if n2:
-                lines.append(f"<span style='color: #66FF00;'><b>         SNR ↑ : {n2:7g}{('', '  i = ')[n2 > 0]}{s2}</b></span>")
+                lines.append(f"<span style='color: #66FF00;'><b>"
+                             f"         SNR ↑ : {n2:7g}{('', '  i = ')[n2 > 0]}{s2}</b></span>")
             if n3:
-                lines.append(f"<span style='color: #a30000;'>         SNR ↓ : {n3:7g}{('', '  i = ')[n3 > 0]}{s3}</b></span>")
+                lines.append(f"<span style='color: #a30000;'>"
+                             f"         SNR ↓ : {n3:7g}{('', '  i = ')[n3 > 0]}{s3}</b></span>")
             if n1:
-                lines.append(f"         SNR = : {n1:7g}{('', '  i = ')[n1 > 0]}{s1}")
+                # lines.append(f"         SNR = : {n1:7g}{('', '  i = ')[n1 > 0]}{s1}")
+                lines.append(f"   No Change   : {n1:7g}{('', '  i = ')[n1 > 0]}{s1}")
             self.tell(f"Alignment Results:\n" + '\n'.join(lines))
 
             fi = dm.first_included()
@@ -970,32 +980,6 @@ class MainWindow(QMainWindow):
         except:
             logger.warning('Unable To Present SNR Results')
             print_exception()
-
-
-    def onAlignmentEnd(self):
-        #Todo make this atomic for scale that was just aligned. Cant be current scale.
-        # caller = inspect.stack()[1].function
-        self.tell(f'Running post-alignment tasks...')
-        self._working = False
-        self.dataUpdateWidgets() #1015+
-        # if self._isProjectTab():
-            # self._showSNRcheck()
-            # if self.dm.is_aligned():
-                # if not self.dm['level_data'][self.dm.level]['aligned']:
-                #     self.dm['level_data'][self.dm.level]['initial_snr'] = self.dm.snr_list()
-                #     self.dm['level_data'][self.dm.level]['aligned'] = True
-                # if self.pt.wTabs.currentIndex() == 1:
-                #     self.pt.gifPlayer.set()
-                # self.setdw_snr(True)  # Also initializes
-                # if self.pt.wTabs.currentIndex() == 2:
-                #     self.pt.snr_plot.initSnrPlot()
-        # self.pt.initNeuroglancer()
-
-
-
-    def onFixAll(self):
-        pass
-
 
     def alignAllScales(self):
         if self._isProjectTab():
@@ -1040,6 +1024,7 @@ class MainWindow(QMainWindow):
             else:
                 logger.warning("This scale is not alignable!")
 
+
     @Slot()
     def regenZarr(self, dm):
         logger.info("")
@@ -1057,27 +1042,11 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             _ignore_cache = self.pt.cbIgnoreCache.isChecked()
 
-        if hasattr(self, '_scaleworker'):
-            try:
-                self._scaleworker.stop()
-            except:
-                print_exception()
-        if hasattr(self, '_alignworker'):
-            try:
-                self._alignworker.stop()
-            except:
-                print_exception()
-        if hasattr(self, '_zarrworker'):
-            try:
-                self._zarrworker.stop()
-            except:
-                print_exception()
+        self.ensureWorkersKilled()
 
         self.resetPbar((-1, "Preparing worker thread..."))
 
-
         renew = not dm['level_data'][dm.level]['zarr_made']
-
 
         if self._isProjectTab():
             if dm.is_aligned():
@@ -1132,24 +1101,7 @@ class MainWindow(QMainWindow):
             self.warn('Another Process is Already Running')
             return
 
-        if hasattr(self, '_scaleworker'):
-            try:
-                self._scaleworker.stop()
-            except:
-                print_exception()
-            # del self._scaleworker
-        if hasattr(self, '_alignworker'):
-            try:
-                self._alignworker.stop()
-            except:
-                print_exception()
-            # del self._alignworker
-        if hasattr(self, '_zarrworker'):
-            try:
-                self._zarrworker.stop()
-            except:
-                print_exception()
-            # del self._zarrworker
+        self.ensureWorkersKilled()
 
         self.resetPbar((-1, "Preparing worker thread..."))
 
@@ -1209,21 +1161,7 @@ class MainWindow(QMainWindow):
         self._scaleThread = QThread()  # Step 2: Create a QThread object
         scale_keys = opts['levels']
         scales = zip(scale_keys[::-1], [opts['size_xy'][s] for s in scale_keys[::-1]])
-        if hasattr(self, '_scaleworker'):
-            try:
-                self._scaleworker.stop()
-            except:
-                print_exception()
-        if hasattr(self, '_alignworker'):
-            try:
-                self._alignworker.stop()
-            except:
-                print_exception()
-        if hasattr(self, '_zarrworker'):
-            try:
-                self._zarrworker.stop()
-            except:
-                print_exception()
+        self.ensureWorkersKilled()
 
         # self.shutdownNeuroglancer() #1111-
         self.resetPbar((-1, "Preparing worker thread..."))
@@ -1248,6 +1186,24 @@ class MainWindow(QMainWindow):
         self._scaleworker.hudMessage.connect(self.tell)
         self._scaleworker.hudWarning.connect(self.warn)
         self._scaleThread.start()  # Step 6: Start the thread
+
+
+    def ensureWorkersKilled(self):
+        if hasattr(self, '_scaleworker'):
+            try:
+                self._scaleworker.stop()
+            except:
+                print_exception()
+        if hasattr(self, '_alignworker'):
+            try:
+                self._alignworker.stop()
+            except:
+                print_exception()
+        if hasattr(self, '_zarrworker'):
+            try:
+                self._zarrworker.stop()
+            except:
+                print_exception()
 
 
     def enableAllButtons(self):
@@ -1540,7 +1496,7 @@ class MainWindow(QMainWindow):
         if s == None: s = self.dm.level
         self.history_label = QLabel('<b>Saved Alignments (Scale %d)</b>' % get_scale_val(s))
         self._hstry_listWidget.clear()
-        dir = os.path.join(self.dm.files_location, s, 'history')
+        dir = os.path.join(self.dm.data_dir_path, s, 'history')
         try:
             self._hstry_listWidget.addItems(os.listdir(dir))
         except:
@@ -1551,7 +1507,7 @@ class MainWindow(QMainWindow):
         name = self._hstry_listWidget.currentItem().text()
         if self.pt:
             if name:
-                path = os.path.join(self.dm.files_location, self.dm.level, 'history', name)
+                path = os.path.join(self.dm.data_dir_path, self.dm.level, 'history', name)
                 with open(path, 'r') as f:
                     project = json.load(f)
                 self.projecthistory_model.load(project)
@@ -1562,7 +1518,7 @@ class MainWindow(QMainWindow):
         new_name, ok = QInputDialog.getText(self, 'Rename', 'New Name:')
         if not ok: return
         old_name = self._hstry_listWidget.currentItem().text()
-        dir = os.path.join(self.dm.files_location, self.dm.level, 'history')
+        dir = os.path.join(self.dm.data_dir_path, self.dm.level, 'history')
         old_path = os.path.join(dir, old_name)
         new_path = os.path.join(dir, new_name)
         try:
@@ -1575,7 +1531,7 @@ class MainWindow(QMainWindow):
         logger.info('Loading History File...')
         name = self._hstry_listWidget.currentItem().text()
         if name is None: return
-        path = os.path.join(self.dm.files_location, self.dm.level, 'history', name)
+        path = os.path.join(self.dm.data_dir_path, self.dm.level, 'history', name)
         logger.info('Removing archival alignment %s...' % path)
         try:
             os.remove(path)
@@ -1587,7 +1543,7 @@ class MainWindow(QMainWindow):
     def historyItemClicked(self, qmodelindex):
         item = self._hstry_listWidget.currentItem()
         logger.info(f"Selected {item.text()}")
-        path = os.path.join(self.dm.files_location, self.dm.level, 'history', item.text())
+        path = os.path.join(self.dm.data_dir_path, self.dm.level, 'history', item.text())
         with open(path, 'r') as f:
             scale = json.load(f)
 
@@ -1810,13 +1766,13 @@ class MainWindow(QMainWindow):
     def rename_project(self):
         new_name, ok = QInputDialog.getText(self, 'Input Dialog', 'Project Name:')
         if ok:
-            dest_orig = Path(self.dm.data_location)
+            dest_orig = Path(self.dm.data_file_path)
             print(dest_orig)
             parent = dest_orig.parents[0]
             new_dest = os.path.join(parent, new_name)
             new_dest_no_ext = os.path.splitext(new_dest)[0]
             os.rename(dest_orig, new_dest_no_ext)
-            self.dm.data_location = new_dest
+            self.dm.data_file_path = new_dest
             # if not new_dest.endswith('.json'):  # 0818-
             #     new_dest += ".json"
             # logger.info('new_dest = %level' % new_dest)
@@ -1834,7 +1790,7 @@ class MainWindow(QMainWindow):
             caller = inspect.stack()[1].function
             if caller == 'main':
                 self._unsaved_changes = True
-                name = os.path.basename(self.dm.data_location)
+                name = os.path.basename(self.dm.data_file_path)
                 self.globTabs.setTabText(self.globTabs.currentIndex(), name + '.swiftir' + ' *')
 
 
@@ -1868,8 +1824,8 @@ class MainWindow(QMainWindow):
         self.tell('Attempting to restart AlignEM...')
         path = os.path.join(os.getenv('WORK'), 'swift-ir', 'tacc_bootstrap')
         logger.info(f'Attempting to restart AlignEM with {path}...')
-        # run_command('source', arg_list=[path])
-        # run_command('/usr/src/ofa_kernel-5.6/source', arg_list=[path])
+        # run_command('source', arg_list=[file_path])
+        # run_command('/usr/src/ofa_kernel-5.6/source', arg_list=[file_path])
         subprocess.run(["source", path])
         self.shutdownInstructions()
 
@@ -1939,6 +1895,14 @@ class MainWindow(QMainWindow):
         self.tell('Graceful, Goodbye!')
         # time.sleep(1)
         QApplication.quit()
+
+
+    def get_html_resource(self):
+        html_f = os.path.join(self.get_application_root(), 'src/resources/html', 'features.html')
+        with open(html_f, 'r') as f:
+            html = f.read()
+        self._html_view.setHtml(html, baseUrl=QUrl.fromLocalFile(os.getcwd() + os.path.sep))
+        return self._html_view
 
 
     def html_resource(self, resource='features.html', title='Features', ID=''):
@@ -2211,12 +2175,12 @@ class MainWindow(QMainWindow):
             self.cbSkip.setChecked(not self.cbSkip.isChecked())
 
     def show_run_path(self) -> None:
-        '''Prints the current working directory (os.getcwd), the 'running in' path, and sys.path.'''
+        '''Prints the current working directory (os.getcwd), the 'running in' file_path, and sys.file_path.'''
         self.tell('\n\nWorking Directory     : %s\n'
                   'Running In (__file__) : %s' % (os.getcwd(), os.path.dirname(os.path.realpath(__file__))))
 
     def show_module_search_path(self) -> None:
-        '''Prints the current working directory (os.getcwd), the 'running in' path, and sys.path.'''
+        '''Prints the current working directory (os.getcwd), the 'running in' file_path, and sys.file_path.'''
         self.tell('\n\n' + '\n'.join(sys.path))
 
     def show_snr_list(self) -> None:
@@ -2713,6 +2677,15 @@ class MainWindow(QMainWindow):
         # debugMenu.hovered.connect(fn)
         # menu.addAction(action)
 
+        self.tbbOverlay = QToolButton()
+        self.tbbOverlay.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+
+        tip = f"Show Information Overlay"
+        tip = '\n'.join(textwrap.wrap(tip, width=35))
+        self.tbbOverlay = QToolButton()
+        self.tbbOverlay.setCheckable(True)
+        self.tbbOverlay.setToolTip(tip)
+        self.tbbOverlay.clicked.connect(self.onOverlayAction)
 
 
         toolbuttons = [
@@ -2733,8 +2706,10 @@ class MainWindow(QMainWindow):
             self.tbbDetachNgButton,
             self.tbbStats,
             self.tbbLow8,
-            self.tbbAdvanced
+            self.tbbAdvanced,
             # self.tbbTestThread,
+            self.tbbOverlay
+
         ]
 
 
@@ -2745,14 +2720,13 @@ class MainWindow(QMainWindow):
 
         names = ['Menu', 'Projects', '&Refresh','Getting\nStarted','FAQ','Glossary','Issue\nTracker','3DEM\nData',
                  'SWIM\nRegions', ' &Matches', 'SNR P&lot', '&HUD', '&Notes', '&Python\nConsole', '&Detach\nNG',
-                 'Quick Stats','Lowest 8\nSNR', 'Advanced\nOptions']
-        for b,n in zip(toolbuttons,names):
-            b.setText(n)
+                 'Quick Stats','Lowest 8\nSNR', 'Advanced\nOptions', 'Info']
+        for b,name in zip(toolbuttons,names):
+            b.setText(name)
             # b.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-            # b.setFixedSize(QSize(64,24))
+            # b.setLayoutDirection(Qt.RightToLeft)
             b.setIconSize(QSize(16,16))
             b.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-            # b.setLayoutDirection(Qt.RightToLeft)
             b.setStyleSheet("QToolButton { text-align: right; margin-left: 4px;}")
 
         self.bExport = QPushButton('Export ')
@@ -2826,6 +2800,8 @@ class MainWindow(QMainWindow):
         self.toolbar.addWidget(self.tbbGlossary)
         self.toolbar.addWidget(self.tbbReportBug)
         self.toolbar.addWidget(self.tbb3demdata)
+        self.toolbar.addWidget(self.tbbOverlay)
+        self.toolbar.addWidget(ExpandingHWidget(self))
         self.aPbar = self.toolbar.addWidget(self.wPbar)
         self.aPbar.setVisible(False)
         # self.toolbar.addWidget(self.wLcdTimer)
@@ -2965,7 +2941,7 @@ class MainWindow(QMainWindow):
         projects = []
         for i in range(self.globTabs.count()):
             if 'AlignmentTab' in str(self.globTabs.widget(i)):
-                projects.append(self.globTabs.widget(i).dm.data_location)
+                projects.append(self.globTabs.widget(i).dm.data_file_path)
         return projects
 
     def getOpenProjectNames(self):
@@ -2975,12 +2951,14 @@ class MainWindow(QMainWindow):
 
     def isProjectOpen(self, name):
         '''Checks whether an alignment is already open.'''
-        return os.path.splitext(name)[0] in [os.path.splitext(x)[0] for x in self.getOpenProjects()]
+        #Todo this does not differentiate between scenario where two projects
+        # have the same stem name
+        return Path(name).stem in [Path(x).stem for x in self.getOpenProjects()]
 
     def getProjectIndex(self, search):
         for i in range(self.globTabs.count()):
             if 'AlignmentTab' in str(self.globTabs.widget(i)):
-                if self.globTabs.widget(i).dm.data_location == os.path.splitext(search)[0]:
+                if self.globTabs.widget(i).dm.data_file_path == os.path.splitext(search)[0]:
                     return i
 
     def closeAlignment(self, dest):
@@ -3732,17 +3710,17 @@ class MainWindow(QMainWindow):
     # def printExportInstructionsTIFF(self):
     #     work = os.getenv('WORK')
     #     user = os.getenv('USER')
-    #     tiffs = os.path.join(self.dm.im_path, 'scale_1', 'img_src')
-    #     self.hud.post(f'Use the follow command to copy-export full resolution TIFFs to another im_path on the filesystem:\n\n'
+    #     tiffs = os.file_path.join(self.dm.images_path, 'scale_1', 'img_src')
+    #     self.hud.post(f'Use the follow command to copy-export full resolution TIFFs to another images_path on the filesystem:\n\n'
     #                   f'    rsync -atvr {tiffs} {user}@ls6.tacc.utexas.edu:{work}/data')
     #
     #
     # def printExportInstructionsZarr(self):
     #     work = os.getenv('WORK')
     #     user = os.getenv('USER')
-    #     zarr = os.path.join(self.dm.im_path, 'img_aligned.zarr', 's1')
+    #     zarr = os.file_path.join(self.dm.images_path, 'img_aligned.zarr', 's1')
     #     self.hud.post(
-    #         f'Use the follow command to copy-export full resolution Zarr to another im_path on the filesystem:\n\n'
+    #         f'Use the follow command to copy-export full resolution Zarr to another images_path on the filesystem:\n\n'
     #         f'    rsync -atvr {zarr} {user}@ls6.tacc.utexas.edu:{work}/data\n\n'
     #         f'Note: AlignEM supports the opening and re-opening of arbitrary Zarr files in Neuroglancer')
 
@@ -3773,11 +3751,11 @@ class MainWindow(QMainWindow):
     def rechunk(self):
         # if self._isProjectTab():
         #     if self.dm.is_aligned_and_generated():
-        #         target = os.path.join(self.dm.im_path, 'img_aligned.zarr', 's%d' % self.dm.lvl())
-        #         _src = os.path.join(self.dm.im_path, 'img_aligned.zarr', '_s%d' % self.dm.lvl())
+        #         target = os.file_path.join(self.dm.images_path, 'img_aligned.zarr', 's%d' % self.dm.lvl())
+        #         _src = os.file_path.join(self.dm.images_path, 'img_aligned.zarr', '_s%d' % self.dm.lvl())
         #     else:
-        #         target = os.path.join(self.dm.im_path, 'img_src.zarr', 's%d' % self.dm.lvl())
-        #         _src = os.path.join(self.dm.im_path, 'img_src.zarr', '_s%d' % self.dm.lvl())
+        #         target = os.file_path.join(self.dm.images_path, 'img_src.zarr', 's%d' % self.dm.lvl())
+        #         _src = os.file_path.join(self.dm.images_path, 'img_src.zarr', '_s%d' % self.dm.lvl())
         #
         #     dlg = RechunkDialog(self, target=target)
         #     if dlg.exec():
@@ -4126,7 +4104,7 @@ class MainWindow(QMainWindow):
             if self.dw_hud.isVisible():
                 self.setUpdatesEnabled(False)
                 loc_hud = self.dockWidgetArea(self.dw_hud)
-                # logger.info(f'dw_monitor im_path: {loc_hud}')
+                # logger.info(f'dw_monitor images_path: {loc_hud}')
                 if loc_hud in (1,2):
                     self.dw_hud.setFeatures(
                         QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetClosable)
@@ -4516,10 +4494,47 @@ class MainWindow(QMainWindow):
         # self.addToolBar(Qt.BottomToolBarArea, self.wCpanel)
         self.globTabsAndCpanel.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
-        self.setCentralWidget(self.globTabsAndCpanel)
-        # self.setCentralWidget(VW(self.globTabsAndCpanel, self.test_widget))
-        # self.setDockOptions(QMainWindow.AnimatedDocks | QMainWindow.AllowNestedDocks)
-        self.setDockOptions(QMainWindow.AnimatedDocks)
+        self.teInfoOverlay = QTextEdit()
+        self.teInfoOverlay.setStyleSheet("background-color: #f3f6fb")
+        self.teInfoOverlay.setAutoFillBackground(False)
+        self.teInfoOverlay.setReadOnly(True)
+
+        self.twInfoOverlay = QTabWidget()
+        self.twInfoOverlay.setAutoFillBackground(False)
+        self.twInfoOverlay.addTab(self.teInfoOverlay, 'TIFF Info')
+        # self.twInfoOverlay.setMaximumSize(QSize(700, 700))
+        self.twInfoOverlay.setFixedSize(QSize(300, 300))
+        # self.twInfoOverlay.hide()
+
+        self.mainOverlay = QWidget()
+        self.vlMainOverlay = VBL(self.twInfoOverlay)
+        self.vlMainOverlay.setAlignment(Qt.AlignCenter)
+        self.mainOverlay.setLayout(self.vlMainOverlay)
+        self.mainOverlay.setStyleSheet("background-color: rgba(0, 0, 0, 0.5);")
+        self.mainOverlay.setContentsMargins(0, 0, 0, 0)
+        self.mainOverlay.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.mainOverlay.hide()
+
+
+        # self.mainOverlay.setAutoFillBackground(False)
+        # self.mainOverlay.setStyleSheet("background: transparent;")
+        # self.mainOverlay.setAttribute(Qt.WA_TranslucentBackground)
+
+        self.glMain = GL()
+        self.mainWidget = QWidget()
+        self.mainWidget.setContentsMargins(0, 0, 0, 0)
+        self.mainWidget.setLayout(self.glMain)
+        self.glMain.addWidget(self.globTabsAndCpanel, 0, 0, 1, 1)
+        self.glMain.addWidget(self.mainOverlay, 0, 0, 1, 1)
+
+        self.setDockOptions(QMainWindow.AnimatedDocks) #| QMainWindow.AllowNestedDocks
+
+        self.setCentralWidget(self.mainWidget)
+
+    def onOverlayAction(self):
+        self.mainOverlay.setVisible(self.tbbOverlay.isChecked())
+
+
 
 
     def updateLowest8widget(self):

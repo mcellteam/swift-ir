@@ -75,7 +75,7 @@ def get_zarr_tensor(path, bytes_limit, dtype, driver):
         'driver': driver,
         'kvstore': {
             'driver': 'file',
-            'path': path
+            'file_path': path
         },
         'context': {
             'cache_pool': {'total_bytes_limit': bytes_limit},
@@ -166,7 +166,7 @@ if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument(
         '-p',
-        '--path',
+        '--file_path',
         nargs='*',  # 0 or more values expected => creates a list
         type=str,
         required=True,

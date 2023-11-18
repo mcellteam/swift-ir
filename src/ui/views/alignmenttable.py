@@ -342,7 +342,7 @@ class ProjectTable(QWidget):
         tn_ref = self.dm.path_thumb_ref(s=s, l=l)
         tn_aligned = self.dm.path_aligned(s=s, l=l)
 
-        # fn, extension = os.path.splitext(basename)
+        # fn, extension = os.file_path.splitext(basename)
         # dir_signals = self.dm.dir_signals()
 
         # sigs = self.dm.get_signals_filenames()
@@ -350,10 +350,10 @@ class ProjectTable(QWidget):
         # for i, p in enumerate(sigs):
         #     sigs_lst[i] = sigs[i]
 
-        # sig0 = os.path.join(dir_signals, '%s_%s_0%s' % (fn, method, extension))
-        # sig1 = os.path.join(dir_signals, '%s_%s_1%s' % (fn, method, extension))
-        # sig2 = os.path.join(dir_signals, '%s_%s_2%s' % (fn, method, extension))
-        # sig3 = os.path.join(dir_signals, '%s_%s_3%s' % (fn, method, extension))
+        # sig0 = os.file_path.join(dir_signals, '%s_%s_0%s' % (fn, method, extension))
+        # sig1 = os.file_path.join(dir_signals, '%s_%s_1%s' % (fn, method, extension))
+        # sig2 = os.file_path.join(dir_signals, '%s_%s_2%s' % (fn, method, extension))
+        # sig3 = os.file_path.join(dir_signals, '%s_%s_3%s' % (fn, method, extension))
         sigs = self.dm.get_enum_signals_filenames(s=s, l=l)
         notes = self.dm.notes(s=s,l=l)
         try:
@@ -462,7 +462,7 @@ class ProjectTable(QWidget):
                 self.table.setItem(row, col, QTableWidgetItem(str(row_data[col])))
             elif col == 4:
                 if os.path.exists(row_data[col]):
-                    # tn = ThumbnailFast(self, path=row_data[col], name='reference-data', level=scale, z=row)
+                    # tn = ThumbnailFast(self, file_path=row_data[col], name='reference-data', level=scale, z=row)
                     tn = ThumbnailFast(self, path=row_data[col], name='reference-data', s=self.dm.level, l=row)
                     if self.dm.skipped(l=row):
                         tn.set_no_image()
@@ -606,7 +606,7 @@ class ProjectTable(QWidget):
             menu = QMenu()
 
             if self.getNumRowsSelected() == 1:
-                # path = self.getSelectedProjects()[0]
+                # file_path = self.getSelectedProjects()[0]
 
                 pass
 
@@ -618,7 +618,7 @@ class ProjectTable(QWidget):
                 alignedSelectedRangeAction = QAction(txt)
                 # alignedSelectedRangeAction = QAction(f'Align Selected ({self.getSelectedRows()})')
                 # logger.info(f'Multiple rows are selected! _min={self._min}, _max={self._max}')
-                # path = self.getSelectedProjects()[0]
+                # file_path = self.getSelectedProjects()[0]
                 # copyPathAction = QAction(f"Copy Path '{self.getSelectedProjects()[0]}'")
                 # logger.info(f"Added to Clipboard: {QApplication.clipboard().text()}")
                 alignedSelectedRangeAction.triggered.connect(self.alignHighlighted)
@@ -732,7 +732,7 @@ class ImageWidget(QWidget):
 
     def __init__(self, imagePath, parent):
         super(ImageWidget, self).__init__(parent)
-        #             pixmap = QPixmap(path)
+        #             pixmap = QPixmap(file_path)
         #             thumbnail.setPixmap(pixmap)
         #             thumbnail.setScaledContents(True)
         self.picture = QPixmap(imagePath)

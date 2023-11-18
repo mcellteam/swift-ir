@@ -29,7 +29,7 @@ import zarr
 from qtpy.QtCore import QObject, Signal
 
 from src.utils.funcs_image import ComputeBoundingRect, SetStackCafm
-from src.models.hashtable import HashTable
+from src.models.cache import Cache
 from src.utils.helpers import print_exception, path_to_str
 from src.utils.writers import write
 from src.core.files import DirectoryStructure
@@ -73,7 +73,7 @@ class Signals(QObject):
 class DataModel:
 
     """ Encapsulate datamodel dictionary and wrap with methods for convenience """
-    def __init__(self, data=None, path=None, im_path=None, readonly=False, init=False, images_info=None):
+    def __init__(self, data=None, file_path=None, images_path=None, readonly=False, init=False, images_info=None):
         self._current_version = cfg.VERSION
         if data:
             self._data = data  # Load project data from file
@@ -81,17 +81,20 @@ class DataModel:
             try:
                 images_info
             except NameError:
-                logger.warning(f"'series_info' argument is needed to initialize data model."); return
+                logger.warning(f"'series_info' argument is needed to initialize data model.")
+                return
             try:
-                path
+                file_path
             except NameError:
-                logger.warning(f"'path' argument is needed to initialize data model."); return
+                logger.warning(f"'file_path' argument is needed to initialize data model.")
+                return
             self._data = {}
-            self.initializeStack(images_info=images_info, images_location=im_path, data_location=path)
+            self.initializeStack(file_path, images_path, images_info)
         if not readonly:
-            if im_path:
-                self.images_location = im_path
+            if images_path:
+                self.images_path = images_path
             self.ht = None
+            self.loadHashTable()
             self._upgradeDatamodel()
             self.signals = Signals()
             self.signals.dataChanged.connect(lambda: logger.info('emission!'))
@@ -99,14 +102,15 @@ class DataModel:
 
     def loadHashTable(self):
         logger.info('')
-        self.ht = cfg.ht = HashTable(self)
+        self.ht = cfg.ht = Cache(self)
+
 
     def _upgradeDatamodel(self):
         logger.info('Upgrading data model...')
         if 'series_uuid' in self['info']:
             self['info']['images_uuid'] = self['info'].pop('series_uuid')
         if 'series_location' in self['info']:
-            self['info']['im_path'] = self['info'].pop('series_location')
+            self['info']['images_path'] = self['info'].pop('series_location')
 
 
         self._data['modified'] = date_time()
@@ -167,13 +171,13 @@ class DataModel:
 
     @property
     def zattrs(self):
-        path = os.path.join(self.files_location, 'zarr', self.level)
+        path = os.path.join(self.data_dir_path, 'zarr', self.level)
         z = zarr.open(path)
         return z.attrs
 
     @property
     def zarr(self):
-        path = os.path.join(self.files_location, 'zarr', self.level)
+        path = os.path.join(self.data_dir_path, 'zarr', self.level)
         return zarr.open(path)
 
 
@@ -184,7 +188,7 @@ class DataModel:
 
     @property
     def title(self):
-        basename = os.path.basename(self['info']['path'])
+        basename = os.path.basename(self['info']['file_path'])
         name, _ = os.path.splitext(basename)
         return name
 
@@ -194,12 +198,12 @@ class DataModel:
 
     @property
     def basename(self) -> str:
-        '''Get transforming image path.'''
+        '''Get transforming image file_path.'''
         return self['stack'][self.zpos]['levels'][self.level]['swim_settings']['name']
 
     @property
     def refname(self) -> str:
-        '''Get reference image path.'''
+        '''Get reference image file_path.'''
         return self['stack'][self.zpos]['levels'][self.level]['swim_settings']['reference_name']
 
     @property
@@ -223,32 +227,32 @@ class DataModel:
         self['modified'] = val
 
     @property
-    def images_location(self):
-        '''Set alignment data im_path.'''
-        return self['info']['im_path']
+    def images_path(self):
+        '''Set alignment data images_path.'''
+        return self['info']['images_path']
 
-    @images_location.setter
-    def images_location(self, p):
-        '''Get alignment data im_path.'''
-        self['info']['im_path'] = path_to_str(p)
-
-    @property
-    def data_location(self):
-        '''Set alignment data im_path.'''
-        return self['info']['path']
+    @images_path.setter
+    def images_path(self, p):
+        '''Get alignment data images_path.'''
+        self['info']['images_path'] = path_to_str(p)
 
     @property
-    def files_location(self):
-        '''Set alignment data im_path.'''
-        return Path(self['info']['path']).with_suffix('')
+    def data_file_path(self):
+        '''Set alignment data images_path.'''
+        return self['info']['file_path']
 
-    @data_location.setter
-    def data_location(self, p):
-        '''Get alignment data im_path.'''
-        self['info']['path'] = path_to_str(p)
+    @data_file_path.setter
+    def data_file_path(self, p):
+        '''Get alignment data images_path.'''
+        self['info']['file_path'] = path_to_str(p)
+
+    @property
+    def data_dir_path(self):
+        '''Set alignment data images_path.'''
+        return Path(self['info']['file_path']).with_suffix('')
 
     def dest(self) -> str:
-        return self['info']['path']
+        return self['info']['file_path']
 
     @property
     def scales(self) -> list[str]:
@@ -262,12 +266,12 @@ class DataModel:
 
     @property
     def source_path(self):
-        '''Get source path.'''
+        '''Get source file_path.'''
         return self['source_path']
 
     @source_path.setter
     def source_path(self, p):
-        '''Set source path.'''
+        '''Set source file_path.'''
         self['source_path'] = path_to_str(p)
 
     @property
@@ -455,15 +459,15 @@ class DataModel:
     @property
     def gif(self):
         name, _ = os.path.splitext(self.basename)
-        return os.path.join(self.files_location, 'gif', self.level, name + '.gif')
+        return os.path.join(self.data_dir_path, 'gif', self.level, name + '.gif')
 
     def writeDir(self, s=None, l=None) -> str:
         if s == None: s = self.level
         if l == None: l = self.zpos
         ss_hash = str(self.ssHash(s=s, l=l))
         # cafm_hash = str(self.cafmHash(s=s, l=l))
-        # path = os.path.join(self.path, 'data', str(l), s, ss_hash, cafm_hash)
-        path = os.path.join(self.files_location, 'data', str(l), s, ss_hash)
+        # file_path = os.file_path.join(self.file_path, 'data', str(l), s, ss_hash, cafm_hash)
+        path = os.path.join(self.data_dir_path, 'data', str(l), s, ss_hash)
         return path
 
     def writeDirCafm(self, s=None, l=None) -> str:
@@ -471,7 +475,7 @@ class DataModel:
         if l == None: l = self.zpos
         ss_hash = str(self.ssSavedHash(s=s, l=l))
         cafm_hash = str(self.cafmHash(s=s, l=l))
-        path = os.path.join(self.files_location, 'data', str(l), s, ss_hash, cafm_hash)
+        path = os.path.join(self.data_dir_path, 'data', str(l), s, ss_hash, cafm_hash)
         return path
 
     @property
@@ -483,14 +487,14 @@ class DataModel:
         if s == None: s = self.level
         if l == None: l = self.zpos
         ss_hash = str(self.ssHash(s=s, l=l))
-        path = os.path.join(self.files_location, 'data', str(l), s, ss_hash)
+        path = os.path.join(self.data_dir_path, 'data', str(l), s, ss_hash)
         return path
 
     def ssSavedDir(self, s=None, l=None) -> str:
         if s == None: s = self.level
         if l == None: l = self.zpos
         ss_hash = str(self.ssSavedHash(s=s, l=l))
-        path = os.path.join(self.files_location, 'data', str(l), s, ss_hash)
+        path = os.path.join(self.data_dir_path, 'data', str(l), s, ss_hash)
         return path
 
     def isAligned(self, s=None, l=None) -> bool:
@@ -502,7 +506,7 @@ class DataModel:
     def path(self, s=None, l=None):
         if s == None: s = self.level
         if l == None: l = self.zpos
-        return os.path.join(self.images_location, 'tiff', s, self.name(s=s, l=l))
+        return os.path.join(self.images_path, 'tiff', s, self.name(s=s, l=l))
 
     def path_ref(self, s=None, l=None):
         if s == None: s = self.level
@@ -510,11 +514,11 @@ class DataModel:
         if l == self.first_included():
             return self.path(s=s, l=l)
         else:
-            return os.path.join(self.images_location, 'tiff', s, self.name_ref(s=s, l=l))
+            return os.path.join(self.images_path, 'tiff', s, self.name_ref(s=s, l=l))
 
     def path_zarr_transformed(self, s=None):
         if s == None: s = self.level
-        return os.path.join(self.files_location, 'zarr', s)
+        return os.path.join(self.data_dir_path, 'zarr', s)
 
     def get_zarr_transforming(self, s=None):
         if s == None: s = self.level
@@ -528,7 +532,7 @@ class DataModel:
 
     def path_zarr_raw(self, s=None):
         if s == None: s = self.level
-        return os.path.join(self.images_location, 'zarr', s)
+        return os.path.join(self.images_path, 'zarr', s)
 
 
     def path_aligned(self, s=None, l=None) -> str:
@@ -536,7 +540,7 @@ class DataModel:
         if l == None: l = self.zpos
         # name = self.name(s=s, l=l)
         fn, ext = os.path.splitext(self.name(s=s, l=l))
-        # path = os.path.join(self.writeDir(s=s, l=l), name)
+        # file_path = os.file_path.join(self.writeDir(s=s, l=l), name)
         path = os.path.join(self.writeDir(s=s, l=l), fn + '.thumb' + ext)
         return path
 
@@ -568,14 +572,14 @@ class DataModel:
     def path_thumb_src(self, s=None, l=None) -> str:
         if s == None: s = self.level
         if l == None: l = self.zpos
-        path = os.path.join(self['info']['im_path'], 'thumbs', self.name(s=s, l=l))
+        path = os.path.join(self['info']['images_path'], 'thumbs', self.name(s=s, l=l))
         return path
 
     def path_thumb_src_ref(self, s=None, l=None) -> str:
         if s == None: s = self.level
         if l == None: l = self.zpos
         i = self.get_ref_index(l=l)
-        path = os.path.join(self['info']['im_path'], 'thumbs', self.name(s=s, l=i))
+        path = os.path.join(self['info']['images_path'], 'thumbs', self.name(s=s, l=i))
         return path
 
     def path_thumb(self, s=None, l=None) -> str:
@@ -611,21 +615,21 @@ class DataModel:
         if s == None: s = self.level
         if l == None: l = self.zpos
         ss_hash = str(self.ssHash(s=s, l=l))
-        path = os.path.join(self.files_location, 'data', str(l), s, ss_hash, 'signals')
+        path = os.path.join(self.data_dir_path, 'data', str(l), s, ss_hash, 'signals')
         return path
 
     def dir_matches(self, s=None, l=None) -> str:
         if s == None: s = self.level
         if l == None: l = self.zpos
         ss_hash = str(self.ssHash(s=s, l=l))
-        path = os.path.join(self.files_location, 'data', str(l), s, ss_hash, 'matches')
+        path = os.path.join(self.data_dir_path, 'data', str(l), s, ss_hash, 'matches')
         return path
 
     def dir_tmp(self, s=None, l=None) -> str:
         if s == None: s = self.level
         if l == None: l = self.zpos
         ss_hash = str(self.ssHash(s=s, l=l))
-        path = os.path.join(self.files_location, 'data', str(l), s, ss_hash, 'tmp')
+        path = os.path.join(self.data_dir_path, 'data', str(l), s, ss_hash, 'tmp')
         return path
 
     def section(self, s=None, l=None):
@@ -641,11 +645,11 @@ class DataModel:
         # logger.critical(f'caller: {caller}, z={z}')
         # if self.skipped(level=self.level, z=z):
         # if not self.include(s=self.level, l=l):
-        #     return self.get_index(self._data['stack'][l]['levels'][self.level]['swim_settings']['path']) #Todo refactor this but not sure how
+        #     return self.get_index(self._data['stack'][l]['levels'][self.level]['swim_settings']['file_path']) #Todo refactor this but not sure how
         # reference = self._data['stack'][l]['levels'][self.level]['swim_settings']['reference']
         # if reference == '':
         #     logger.warning('Reference is an empty string')
-        #     return self.get_index(self._data['stack'][l]['levels'][self.level]['swim_settings']['path'])
+        #     return self.get_index(self._data['stack'][l]['levels'][self.level]['swim_settings']['file_path'])
         # return self.get_index(reference)
         try:
             return self.swim_settings(s=s, l=l)['reference_index']
@@ -823,7 +827,7 @@ class DataModel:
             return self.swim_settings(s=s, l=l)['reference_name']
         except:
             print_exception(extra=f'Section #{l}')
-        # return os.path.basename(self._data['stack'][l]['levels'][s]['swim_settings']['reference'])
+        # return os.file_path.basename(self._data['stack'][l]['levels'][s]['swim_settings']['reference'])
 
 
     def basefilenames(self):
@@ -883,7 +887,7 @@ class DataModel:
         fn, ext = os.path.splitext(self.base_image_name(s=s, l=l))
         m = self.current_method
         # pattern = '%s_%s_*%s' % (fn, self.current_method, ext)
-        # paths = natural_sort(glob(os.path.join(dir_signals, pattern)))
+        # paths = natural_sort(glob(os.file_path.join(dir_signals, pattern)))
         paths = [os.path.join(d, '%s_%s_%d%s' % (fn, m, i, ext)) for i in range(0, 4)]
         return paths
 
@@ -930,7 +934,7 @@ class DataModel:
     # def get_source_img_paths(self):
     #     imgs = []
     #     for f in self.filenames():
-    #         imgs.append(os.path.join(self.source_path(), os.path.basename(f)))
+    #         imgs.append(os.file_path.join(self.source_path(), os.file_path.basename(f)))
     #     return imgs
 
     def is_mendenhall(self):
@@ -944,14 +948,14 @@ class DataModel:
         return [x['levels'][self.level]['swim_settings']['reference'] for x in self.get_iter()]
 
     def transforming_list(self):
-        return [x['levels'][self.level]['swim_settings']['path'] for x in self.get_iter()]
+        return [x['levels'][self.level]['swim_settings']['file_path'] for x in self.get_iter()]
 
     def transforming_bn_list(self):
-        return [os.path.basename(x['levels'][self.level]['swim_settings']['path']) for x in self.get_iter()]
+        return [os.path.basename(x['levels'][self.level]['swim_settings']['file_path']) for x in self.get_iter()]
 
     def get_index(self, filename):
-        # logger.info(f'[{inspect.stack()[1].function}] path = {path}')
-        # logger.info(f'path = {path}')
+        # logger.info(f'[{inspect.stack()[1].function}] file_path = {file_path}')
+        # logger.info(f'file_path = {file_path}')
         bn = os.path.basename(filename)
         return self.transforming_bn_list().index(bn)
 
@@ -1427,8 +1431,8 @@ class DataModel:
                 answer.append(i)
 
             # if self.include(s=s, l=i):
-            #     # if not os.path.exists(self.path_aligned(s=s, l=i)):
-            #     if not os.path.exists(self.path_aligned_cafm(s=s, l=i)):
+            #     # if not os.file_path.exists(self.path_aligned(s=s, l=i)):
+            #     if not os.file_path.exists(self.path_aligned_cafm(s=s, l=i)):
             #         answer.append(i)
 
         data_dn_comport = self.needsAlignIndexes()
@@ -1449,8 +1453,8 @@ class DataModel:
     #     #             answer.append(i)
     #     for i in range(len(self)):
     #         if self.include(s=s, l=i):
-    #             # if not os.path.exists(self.path_aligned(s=s, l=i)):
-    #             if not os.path.exists(self.path_aligned_cafm(s=s, l=i)):
+    #             # if not os.file_path.exists(self.path_aligned(s=s, l=i)):
+    #             if not os.file_path.exists(self.path_aligned_cafm(s=s, l=i)):
     #                 answer.append(i)
     #
     #     data_dn_comport = self.needsAlignIndexes()
@@ -1543,7 +1547,7 @@ class DataModel:
             for i in range(0,len(self)):
                 if not self['stack'][i]['levels'][level]['swim_settings']['include']:
                     indexes.append(i)
-                    # names.append(os.path.basename(self['stack'][i]['levels'][level]['swim_settings']['path']))
+                    # names.append(os.file_path.basename(self['stack'][i]['levels'][level]['swim_settings']['file_path']))
                     names.append(os.path.basename(self['stack'][i]['levels'][level]['swim_settings']['name']))
             return list(zip(indexes, names))
         except:
@@ -1566,7 +1570,7 @@ class DataModel:
         try:
             for i in range(len(self)):
                 if not self.include(s=s,l=i):
-                    f = os.path.basename(self['stack'][i]['levels'][s]['swim_settings']['path'])
+                    f = os.path.basename(self['stack'][i]['levels'][s]['swim_settings']['file_path'])
                     lst.append(f)
             return lst
         except:
@@ -2121,8 +2125,8 @@ class DataModel:
 
         self._data.update(
             info={
-                'im_path': path_to_str(images_location),
-                'path': path_to_str(data_location),
+                'images_path': path_to_str(images_location),
+                'file_path': path_to_str(data_location),
                 'version': cfg.VERSION,
                 'created': date_time(),
                 'system': platform.system(),
@@ -2188,7 +2192,7 @@ class DataModel:
             self['stack'][i].update(
                 index=i,
                 name=basename,
-                # path=paths[i], #1111-
+                # file_path=paths[i], #1111-
                 levels={s: {} for s in levels},
                 # levels={bottom_level: {}},
                 notes=''
@@ -2269,13 +2273,17 @@ class DataModel:
 
     def save(self, silently=False):
         caller = inspect.stack()[1].function
-        p = self.data_location
+        p = self.data_file_path
         if hasattr(self, 'ht'):
-            try:
-                self.ht.pickle()
-            except Exception as e:
-                print_exception()
-                cfg.mw.warn(f"[{caller}] Cache failed to save; this is not fatal. Reason: {e.__class__.__name__}")
+            if type(self.ht) == Cache:
+                try:
+                    self.ht.pickle()
+                except Exception as e:
+                    print_exception()
+                    cfg.mw.warn(f"[{caller}] Cache failed to save; this is not fatal. Reason: {e.__class__.__name__}")
+            else:
+                logger.warning("Creating a new cache table")
+                self.ht = Cache(self)
         try:
             if not silently:
                 logger.critical(f"[{caller}]\nSaving >> '{p}'")

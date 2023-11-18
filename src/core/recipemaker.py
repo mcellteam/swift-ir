@@ -14,6 +14,7 @@ import time
 import traceback
 import warnings
 from functools import wraps
+from pathlib import Path
 
 import imageio.v3 as iio
 import numpy as np
@@ -134,7 +135,7 @@ class align_recipe:
         self.ss = swim_settings
         self.config = self.ss['glob_cfg']
         self.index = self.ss['index']
-        self.path = self.ss['path']
+        self.path = self.ss['file_path']
         self.solo = self.ss['solo']
         self.path_ref = self.ss['path_reference']
         self.configure_logging()
@@ -152,7 +153,7 @@ class align_recipe:
 
         self.initial_rotation = float(self.ss['initial_rotation'])
         # self.afm = np.array([[1., 0., 0.], [0., 1., 0.]])
-        # Configure platform-specific path to executables for C SWiFT-IR
+        # Configure platform-specific file_path to executables for C SWiFT-IR
         slug = (('linux', 'darwin')[platform.system() == 'Darwin'], 'tacc')[
             'tacc.utexas' in platform.node()]
         p = os.path.dirname(os.path.split(os.path.realpath(__file__))[0])
@@ -172,14 +173,14 @@ class align_recipe:
         tnLogger = logging.getLogger('tnLogger')
 
         if self.config['log_recipe_to_file']:
-            Exceptlogger.addHandler(logging.FileHandler(os.path.join(self.config['path'],
+            Exceptlogger.addHandler(logging.FileHandler(os.path.join(self.config['file_path'],
                                              'logs', 'exceptions.log')))
             MAlogger.addHandler(logging.FileHandler(os.path.join(
-                self.config['path'], 'logs', 'manual_align.log')))
+                self.config['file_path'], 'logs', 'manual_align.log')))
             RMlogger.addHandler(logging.FileHandler(os.path.join(
-                self.config['path'], 'logs', 'recipemaker.log')))
+                self.config['file_path'], 'logs', 'recipemaker.log')))
             tnLogger.addHandler(logging.FileHandler(os.path.join(
-                self.config['path'], 'logs', 'thumbnails.log')))
+                self.config['file_path'], 'logs', 'thumbnails.log')))
         else:
             MAlogger.disabled = True
             RMlogger.disabled = True
@@ -443,6 +444,8 @@ class align_recipe:
             self.ingredients.append(ingredient)
 
     def generate_thumbnail(self):
+        #Fix This is almost certainly the culprit for the mir errors
+        # return
 
         ifp = self.ss['path_thumb_src']
         ofd = self.ss['wd']
@@ -492,7 +495,10 @@ class align_recipe:
             'RW %s\n' \
             'E' % (bb_x, bb_y, border, ifp, a, c, e, b, d, f, ofp)
         # print(f"\n{mir_script}\n")
-        o = run_command(self.mir_c, arg_list=[], cmd_input=mir_script)
+        out, err, rc = run_command(self.mir_c, arg_list=[], cmd_input=mir_script)
+        if rc == 1:
+            logger.critical("\n\n\n\n rc = 1 \n\n\n\n")
+            print("\n\n\n\n rc = 1 \n\n\n\n")
 
         pA = self.ss['path_thumb_transformed']
         pB = self.ss['path_thumb_src_ref']
@@ -500,15 +506,13 @@ class align_recipe:
         try:
             assert os.path.exists(pA)
         except AssertionError:
-            logger.error(f'Image not found: {pA}')
+            logger.error(f'\nImage not found: {pA}\n')
             return
         try:
             assert os.path.exists(pB)
         except AssertionError:
-            logger.error(f'Image not found: {pB}')
+            logger.error(f'\nImage not found: {pB}\n')
             return
-
-
 
         imA = iio.imread(pA)
         imB = iio.imread(pB)
@@ -525,7 +529,7 @@ class align_ingredient:
     2)  If ingredient mode is 'SWIM-Manual', then this is a SWIM to refine the
         alignment of a 'Manual-Hint' using manually specified windows.
     3)  If mode is 'SWIM' then perform a SWIM region matching ingredient using
-        ww and psta specify the size and im_path of windows in im_sta.
+        ww and psta specify the size and images_path of windows in im_sta.
         Corresponding windows (pmov) are contructed from psta and projected
         onto im_mov. Then perform matching to initializeStack or refine the afm.
         If psta contains only one point then return a translation matrix.
@@ -585,7 +589,6 @@ class align_ingredient:
         if self.recipe.solo:
             print('\nExecuting ingredient...\n')
         # Returns an affine matrix
-        # if self.recipe.method in ('manual','manual_strict'):
         if self.recipe.method == 'manual':
             self.clr_indexes = copy.deepcopy(self.recipe.clr_indexes)
         if self.mode == 'MIR':
@@ -593,28 +596,14 @@ class align_ingredient:
         else:
             swim_output = self.run_swim()
             if swim_output == ['']:
-                # raise ValueError(f"[{self.recipe.index}] SWIM Out is empty "
-                #                  f"string! Err:\n{self.swim_err_lines}")
                 logger.warning(f"[{self.recipe.index}] SWIM Out is empty "
                                  f"string! Err:\n{self.swim_err_lines}")
                 self.snr = np.zeros(len(self.psta[0]))
-
-            # self.afm = self.ingest_swim_output(swim_output)
             self.ingest_swim_output(swim_output)
 
         if self.last:
-            # if not self.recipe.ss['first_index']:  # 1107+ #do this sooner
             self.crop_match_signals()
             self.reduce_matches()
-            # if self.recipe.method == 'manual':
-            #     if (self.recipe.n_pts_ref == 3) and (self.recipe.n_pts_tra == 3):
-            #         pass
-            #     else:
-            #         return self.afm
-            # try:
-            #     self.generate_thumbnail()
-            # except:
-            #     print_exception()
         try:
             np.set_printoptions(linewidth=np.inf)
             np.set_printoptions(formatter={'float': lambda x: "{0:.3g}".format(x)})
@@ -633,10 +622,9 @@ class align_ingredient:
         self.cx = int(self.recipe.ss['img_size'][0] / 2.0)
         self.cy = int(self.recipe.ss['img_size'][1] / 2.0)
 
-        basename = os.path.basename(self.recipe.ss['path'])
-        fn, ext = os.path.splitext(basename)
+        basename = os.path.basename(self.recipe.ss['file_path'])
+        fn, suffix = os.path.splitext(basename)
         multi_arg_str = ArgString(sep='\n')
-        # dir_scale = os.path.join(self.recipe.config['im_path'], self.recipe.ss['level']) #1008-
         self.ms_paths = []
         m = self.recipe.method
         iters = str(self.recipe.ss['iterations'])
@@ -658,8 +646,8 @@ class align_ingredient:
                 ind = self.clr_indexes.pop(0)
             else:
                 ind = i
-            # correlation signals argument (output path)
-            b_arg = os.path.join(self.recipe.signals_dir, '%s_%s_%d%s' % (fn, m, ind, ext))
+            # correlation signals argument (output file_path)
+            b_arg = os.path.join(self.recipe.signals_dir, '%s_%s_%d%s' % (fn, m, ind, suffix))
             self.ms_paths.append(b_arg)
             args = ArgString(sep=' ')
             args.append("%dx%d" % (self.ww[0], self.ww[1]))
@@ -677,11 +665,11 @@ class align_ingredient:
                 args.add_flag(flag='-y', arg='%d' % self.offy)
             args.add_flag(flag='-b', arg=b_arg)
             if self.last:
-                k_arg_name = '%s_%s_k_%d%s' % (fn, m, ind, ext)
+                k_arg_name = '%s_%s_k_%d%s' % (fn, m, ind, suffix)
                 k_arg_path = os.path.join(self.recipe.dir_tmp, k_arg_name)
                 args.add_flag(flag='-k', arg=k_arg_path)
                 self.matches_filenames.append(k_arg_path)
-                t_arg_name = '%s_%s_t_%d%s' % (fn, m, ind, ext)
+                t_arg_name = '%s_%s_t_%d%s' % (fn, m, ind, suffix)
                 t_arg_path = os.path.join(self.recipe.dir_tmp, t_arg_name)
                 args.add_flag(flag='-t', arg=t_arg_path)
                 self.matches_filenames.append(t_arg_path)
@@ -702,7 +690,6 @@ class align_ingredient:
             if abs(r) > 0:
                 args.append(convert_rotation(r))
             args.append(afm)
-            # args.append(self.recipe.ss['extra_args'])
             multi_arg_str.append(args())
 
         # print(f"{multi_arg_str()}")
@@ -711,13 +698,14 @@ class align_ingredient:
 
     def run_swim(self):
         self.multi_swim_arg_str = self.get_swim_args()
+
         # if self.recipe.solo:
         #     print(f'\nSwimming...\n{self.multi_swim_arg_str()}\n')
         logging.getLogger('recipemaker').debug(
             f'Multi-SWIM Argument String:\n{self.multi_swim_arg_str()}')
         arg = "%dx%d" % (self.ww[0], self.ww[1])
         t0 = time.time()
-        out, err = run_command(
+        out, err, rc = run_command(
             self.recipe.swim_c,
             arg_list=[arg],
             cmd_input=self.multi_swim_arg_str(),
@@ -755,7 +743,7 @@ class align_ingredient:
             self.crop_str_mir = ' '.join(self.crop_str_args)
             # print(self.crop_str_mir)
             logger.debug(f'MIR crop string:\n{self.crop_str_mir}')
-            _, _ = run_command(
+            _ ,_ ,_ = run_command(
                 self.recipe.mir_c,
                 cmd_input=self.crop_str_mir,
                 desc=f'Crop match signals'
@@ -810,7 +798,7 @@ class align_ingredient:
 
             self.mir_script += 'R\n'
             t0 = time.time()
-            out, err = run_command(
+            out, err, rc = run_command(
                 self.recipe.mir_c,
                 cmd_input=self.mir_script,
                 desc=f'MIR compose affine',
@@ -845,7 +833,7 @@ class align_ingredient:
         # print(f"mir_script_mp:\n{mir_script_mp}")
         mir_script_mp += 'R'
         self.mir_script = mir_script_mp
-        out, err = run_command(
+        out, err, rc = run_command(
             self.recipe.mir_c,
             cmd_input=mir_script_mp,
             desc='MIR to compose affine (strict manual)',
@@ -876,7 +864,7 @@ class align_ingredient:
         src = self.recipe.dir_tmp
         od = self.recipe.matches_dir
         #Special handling since they are variable in # and never 1:1 with project files
-        fn, ext = os.path.splitext(self.recipe.ss['path'])
+        fn, ext = os.path.splitext(self.recipe.ss['file_path'])
         method = self.recipe.method
         od_pattern = os.path.join(od, '%s_%s_[tk]_%d%s'
                                       's' % (fn, method, self.recipe.index, ext))
@@ -907,7 +895,7 @@ class align_ingredient:
             ofn = os.path.join(od, os.path.basename(fn))
             args = ['+%d' % scale_factor, 'of=%s' % ofn, '%s' % fn]
             # tnLogger.critical(f"Args:\n{args}")
-            run_command(self.recipe.iscale2_c, args, desc="Reduce Matches")
+            out, err, rc = run_command(self.recipe.iscale2_c, args, desc="Reduce Matches")
             try:
                 if os.path.exists(fn):
                     os.remove(fn)
@@ -920,18 +908,18 @@ class align_ingredient:
     #
     #     ifp = self.recipe.ss['path_thumb_src']
     #     ofd = self.recipe.ss['wd']
-    #     fn, ext = os.path.splitext(self.recipe.ss['name'])
-    #     ofp = os.path.join(ofd, fn + '.thumb' + ext)
+    #     fn, ext = os.file_path.splitext(self.recipe.ss['name'])
+    #     ofp = os.file_path.join(ofd, fn + '.thumb' + ext)
     #
     #     if self.recipe.index == 0:
     #         logger.critical(f"\n"
     #                         f"{ifp}\n"
     #                         f"{ofp}")
     #
-    #     if os.path.exists(ofp):
+    #     if os.file_path.exists(ofp):
     #         logger.info(f'Cache hit (transformed img, afm): {ofp}')
     #         return
-    #     os.makedirs(os.path.dirname(ofd), exist_ok=True)
+    #     os.makedirs(os.file_path.dirname(ofd), exist_ok=True)
     #
     #     scale = self.recipe.ss['level']
     #     tn_scale = self.recipe.ss['thumbnail_scale_factor']
@@ -940,14 +928,14 @@ class align_ingredient:
     #     rect = [0, 0, w * sf, h * sf]  # might need to swap w/h for Zarr
     #
     #     # Todo add flag to force regenerate
-    #     os.makedirs(os.path.dirname(ofp), exist_ok=True)
+    #     os.makedirs(os.file_path.dirname(ofp), exist_ok=True)
     #     afm = copy.deepcopy(self.afm)
     #     afm[0][2] *= sf
     #     afm[1][2] *= sf
     #
-    #     # cafm_ofp = os.path.join(ofd, fn + '.cafm.thumb' + ext)
-    #     # # if not os.path.exists(cafm_ofp):
-    #     # os.makedirs(os.path.dirname(cafm_ofp), exist_ok=True)
+    #     # cafm_ofp = os.file_path.join(ofd, fn + '.cafm.thumb' + ext)
+    #     # # if not os.file_path.exists(cafm_ofp):
+    #     # os.makedirs(os.file_path.dirname(cafm_ofp), exist_ok=True)
     #     # cafm = copy.deepcopy(dm.cafm(s=scale, l=i))
     #     # cafm[0][2] *= sf
     #     # cafm[1][2] *= sf
@@ -981,12 +969,12 @@ class align_ingredient:
     #     B = self.recipe.ss['path_thumb_src_ref']
     #     out = self.recipe.ss['path_gif']
     #     try:
-    #         assert os.path.exists(A)
+    #         assert os.file_path.exists(A)
     #     except AssertionError:
     #         logger.error(f'Thumbnail image not found: {A}')
     #         return
     #     try:
-    #         assert os.path.exists(B)
+    #         assert os.file_path.exists(B)
     #     except AssertionError:
     #         logger.error(f'Thumbnail image not found: {B}')
     #         return
@@ -994,42 +982,6 @@ class align_ingredient:
     #     imA = iio.imread(A)
     #     imB = iio.imread(B)
     #     iio.imwrite(out, [imA, imB], format='GIF', duration=1, loop=0)
-
-
-# def run_command_swim(cmd, arg_list=(), cmd_input=None, desc=''):
-#     print(f"cmd_input: {cmd_input}")
-#
-#     cmd_arg_list = [cmd]
-#     cmd_arg_list.extend(arg_list)
-#     cmd_str = ''
-#     for arg in cmd_arg_list:
-#         cmd_str += ' ' + str(arg)
-#
-#     # result = sp.run(cmd_arg_list, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True, capture_output=True, text=True)
-#     outs, errs = [], []
-#     for input in cmd_input.splitlines():
-#         command = [cmd_str + ' ' + input]
-#         print(f"command: {command}")
-#         result = sp.run(command, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
-#         out = result.stdout.splitlines()
-#         err = result.stderr.splitlines()
-#         outs.append(out)
-#         errs.append(err)
-#         print('output : ', out)
-#         print('error  : ', err)
-#
-#     # print(f"result: {result}")
-#
-#     # logging.getLogger('recipemaker').critical(
-#     #     f"\n======== Run Command [PID: {cmd_proc.pid}] ========\n"
-#     #     f"Description     : {desc}\n"
-#     #     f"Running command : {cmd_arg_list}\n"
-#     #     f"Passing data    : {cmd_input}\n\n"
-#     #     f">> stdout\n{cmd_stdout}\n>> stderr\n{cmd_stderr}\n"
-#     # )
-#
-#     # time.sleep(.01)
-#     return outs, errs
 
 
 def run_command(cmd, arg_list=(), cmd_input=None, desc=''):
@@ -1046,7 +998,8 @@ def run_command(cmd, arg_list=(), cmd_input=None, desc=''):
         # env=os.environ.copy()) as cmd_proc:
         cmd_stdout, cmd_stderr = cmd_proc.communicate(cmd_input)
 
-    return cmd_stdout, cmd_stderr
+    return cmd_stdout, cmd_stderr, cmd_proc.returncode
+    # return cmd_stdout, cmd_stderr
 
 
 class ArgString:

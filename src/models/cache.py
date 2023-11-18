@@ -13,12 +13,12 @@ from src.utils.helpers import path_to_str
 logger = logging.getLogger(__name__)
 
 
-class HashTable:
-    def __init__(self, dm, name='data.pickle'):
+class Cache:
+    def __init__(self, dm, name='cache.pickle'):
         self.dm = dm
         self.data = {}
         self.name = name
-        self.path = path_to_str(Path(self.dm.files_location).with_suffix('') / self.name)
+        self.path = path_to_str(Path(self.dm.data_dir_path).with_suffix('') / self.name)
         self.unpickle()
 
     def __len__(self):
@@ -44,27 +44,18 @@ class HashTable:
 
     def unpickle(self):
         print(f'Unpickling {self.path}...')
-        fileExist = os.path.exists(self.path)
-        print(f'pickle found? {fileExist}')
-        if not fileExist:
-            print(f'Touching {self.path}...')
-            open(self.path, 'a').close()
-        else:
-            print(f'Unpickling {self.path}...')
+        p = Path(self.path)
+        fileExist = p.exists()
+        if fileExist:
+            print(f'Unpickling cache file {self.path}...')
             with open(self.path, "rb") as f:
                 self.data = pickle.load(f)
+        else:
+            logger.info('Cache file does not exist.')
 
     def _hash(self, key):
         """Generate a hash value for the given key."""
         return hash(key)
-
-
-    # def put(self, key, value):
-    #     """Insert a key-value pair into the hash data."""
-    #     index = self._hash(key)
-    #     if self.data[index] is None:
-    #         self.data[index] = []
-    #     self.data[index].append((key, value))
 
     def put(self, key, value):
         """Insert a key-value pair into the hash data."""
@@ -123,7 +114,7 @@ class HashTable:
 
 if __name__ == '__main__':
     # Example usage:
-    hash_table = HashTable(10)
+    hash_table = Cache(10)
     hash_table.put("example", "item")
     hash_table.put("amount", 20)
     print(hash_table.get("example"))

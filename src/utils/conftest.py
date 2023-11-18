@@ -115,7 +115,7 @@ def _start_server(bind_address: str, output_dir: str) -> int:
     token = neuroglancer.random_token.make_random_token()
     handlers = [
         (fr'/{token}/(.*)', CorsStaticFileHandler, {
-            'path': output_dir
+            'file_path': output_dir
         }),
     ]
     settings = {}

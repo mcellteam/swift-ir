@@ -9,6 +9,7 @@ import textwrap
 import time
 import warnings
 from pprint import pformat
+from pathlib import Path
 
 import qtawesome as qta
 from qtpy.QtCore import *
@@ -30,6 +31,9 @@ from src.ui.widgets.vertlabel import VerticalLabel
 from src.ui.tools.snrplot import SnrPlot
 from src.ui.views.thumbnail import CorrSignalThumbnail, ThumbnailFast
 from src.viewers.viewerfactory import EMViewer, MAViewer
+from src.utils.readers import read
+from src.utils.writers import write
+
 
 __all__ = ['AlignmentTab']
 
@@ -42,7 +46,7 @@ class AlignmentTab(QWidget):
     def __init__(self, parent, dm=None):
         super().__init__(parent)
         logger.info('Initializing AlignmentTab...')
-        cfg.preferences['last_alignment_opened'] = dm.data_location
+        cfg.preferences['last_alignment_opened'] = dm.data_file_path
         # self.signals = Signals()
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.parent = parent
@@ -103,7 +107,7 @@ class AlignmentTab(QWidget):
         # self.dm.signals.dataChanged.connect(lambda: self.cbSaved.setText(('Saved preferences (revert)', 'Saved preferences')[self.dm.ssSavedComports()]))
         self.dm.signals.dataChanged.connect(self.parent.updateMS)
 
-        self.dm.loadHashTable()
+        # self.dm.loadHashTable()
 
         self.dataUpdateMA()
         self.updateTab0()
@@ -279,7 +283,7 @@ class AlignmentTab(QWidget):
             # level = self.dm.levels[self.cbxViewerScale.currentIndex()]
             # level = self.dm['state']['viewer_quality']
             # self.viewer1 = cfg.viewer1 = MAViewer(parent=self, dm=self.dm, role='tra', quality=level, webengine0=self.webengine1)
-            path = os.path.join(self.dm['info']['im_path'], 'zarr', self.dm.level)
+            path = os.path.join(self.dm['info']['images_path'], 'zarr', self.dm.level)
             res = self.dm.resolution(s=self.dm.level)
             self.viewer1 = self.viewer = self.parent.viewer = cfg.viewer = MAViewer(parent=self, webengine=self.webengine1, path=path, dm=self.dm, res=res, )
             self.viewer1.signals.badStateChange.connect(self.set_transforming)
@@ -1578,13 +1582,13 @@ class AlignmentTab(QWidget):
 
         ####
 
-        # path = os.path.join(get_appdir(), 'resources', 'x_reticle.png')
+        # file_path = os.file_path.join(get_appdir(), 'resources', 'x_reticle.png')
         #
         # self.tn_reticle1 = QWidget()
         # layout = QGridLayout()
         # layout.setContentsMargins(0,0,0,0)
         # self.tn_reticle1.setLayout(layout)
-        # self.reticle1 = CorrSignalThumbnail(self, path=path, extra='reticle')
+        # self.reticle1 = CorrSignalThumbnail(self, file_path=file_path, extra='reticle')
         # self.tn_reticle1.layout().addWidget(self.sig0,0,0)
         # self.tn_reticle1.layout().addWidget(self.reticle1,0,0)
         #
@@ -1592,7 +1596,7 @@ class AlignmentTab(QWidget):
         # layout = QGridLayout()
         # layout.setContentsMargins(0,0,0,0)
         # self.tn_reticle2.setLayout(layout)
-        # self.reticle2 = CorrSignalThumbnail(self, path=path, extra='reticle')
+        # self.reticle2 = CorrSignalThumbnail(self, file_path=file_path, extra='reticle')
         # self.tn_reticle2.layout().addWidget(self.sig1,0,0)
         # self.tn_reticle2.layout().addWidget(self.reticle2,0,0)
         #
@@ -1600,7 +1604,7 @@ class AlignmentTab(QWidget):
         # layout = QGridLayout()
         # layout.setContentsMargins(0,0,0,0)
         # self.tn_reticle3.setLayout(layout)
-        # self.reticle3 = CorrSignalThumbnail(self, path=path, extra='reticle')
+        # self.reticle3 = CorrSignalThumbnail(self, file_path=file_path, extra='reticle')
         # self.tn_reticle3.layout().addWidget(self.sig2,0,0)
         # self.tn_reticle3.layout().addWidget(self.reticle3,0,0)
         #
@@ -1608,7 +1612,7 @@ class AlignmentTab(QWidget):
         # layout = QGridLayout()
         # layout.setContentsMargins(0,0,0,0)
         # self.tn_reticle4.setLayout(layout)
-        # self.reticle4 = CorrSignalThumbnail(self, path=path, extra='reticle')
+        # self.reticle4 = CorrSignalThumbnail(self, file_path=file_path, extra='reticle')
         # self.tn_reticle4.layout().addWidget(self.sig3,0,0)
         # self.tn_reticle4.layout().addWidget(self.reticle4,0,0)
 
@@ -2136,7 +2140,7 @@ class AlignmentTab(QWidget):
                 self.cbSaved.setChecked(self.dm.ssSavedComports())
 
                 self.bTransform.setEnabled(self.dm.is_aligned())
-                # self.bApplyOne.setEnabled(self.dm.is_aligned() and not os.path.exists(self.dm.path_aligned()))
+                # self.bApplyOne.setEnabled(self.dm.is_aligned() and not os.file_path.exists(self.dm.path_aligned()))
 
                 self.clTra.setText(f'[{self.dm.zpos}] {self.dm.name()} (Transforming)')
                 if self.dm.skipped():
@@ -2629,12 +2633,42 @@ class AlignmentTab(QWidget):
         self.bRegenerateAll.clicked.connect(lambda: self.regenerateAll())
         self.bRegenerateAll.setFixedHeight(15)
 
+
+        self.bShowHideOverlay = QPushButton('Hide')
+        # self.bShowHideOverlay.setAutoFillBackground(False)
+        # self.bShowHideOverlay.setStyleSheet("background: transparent;")
+        # self.bShowHideOverlay.setAttribute(Qt.WA_TranslucentBackground)
+        self.bShowHideOverlay.setIcon(qta.icon('mdi.close'))
+        def fn():
+            self.wOverlayControls.setVisible(not self.wOverlayControls.isVisible())
+            self.bShowHideOverlay.setText(('Show','Hide')[self.wOverlayControls.isVisible()])
+            self.bShowHideOverlay.setIcon(qta.icon(('mdi.arrow-top-left', 'mdi.close')[self.wOverlayControls.isVisible()]))
+            if not self.wOverlayControls.isVisible():
+                if self.twInfoOverlay.isVisible():
+                    self.twInfoOverlay.hide()
+                    self.bInfo.setText('Show TIFF Info')
+        self.bShowHideOverlay.clicked.connect(fn)
+        self.bShowHideOverlay.setFixedSize(40,14)
+
+        self.bInfo = QPushButton("Show TIFF Info")
+        # self.bInfo.setFixedHeight(15)
+        def fn():
+            self.twInfoOverlay.setVisible(not self.twInfoOverlay.isVisible())
+            self.bInfo.setText(('Show TIFF Info', 'Hide TIFF Info')[self.twInfoOverlay.isVisible()])
+            if self.twInfoOverlay.isVisible():
+                p = Path(self.dm.images_path) / 'tiffinfo.txt'
+                tiffinfo = read('txt')(p)
+                self.teInfoOverlay.setText(tiffinfo)
+        self.bInfo.clicked.connect(fn)
+
+
         self.wOverlayControls = QWidget()
         self.wOverlayControls.setStyleSheet("QLabel{color: #FFFF66;}")
         # self.wOverlayControls.setStyleSheet("font-size: 10px; color: #ffe135; "
-        #                                     "padding: 2px; background-color: rgba(0, 0, 0, 0.5);"
+        #                                     "padding: 2px; background-color: rgba(0, 0, 0, 0.25);"
         #                                     "border-radius: 2px;")
         self.flOverlaycontrols = QFormLayout()
+        self.flOverlaycontrols.setVerticalSpacing(2)
         self.wOverlayControls.setLayout(self.flOverlaycontrols)
         self.flOverlaycontrols.setHorizontalSpacing(4)
         self.flOverlaycontrols.setLabelAlignment(Qt.AlignRight)
@@ -2648,17 +2682,34 @@ class AlignmentTab(QWidget):
         self.flOverlaycontrols.addWidget(self.bZarrRegen)
         self.flOverlaycontrols.addWidget(self.bZarrRefresh)
 
+        self.bInfo.setFixedHeight(16)
+        self.bZarrRefresh.setFixedHeight(16)
+        self.bZarrRegen.setFixedHeight(26)
+
         self.HL0 = QHLine()
         self.HL0.setStyleSheet("background-color: #FFFF66;")
-        self.flOverlaycontrols.addWidget(self.HL0)
+        # self.flOverlaycontrols.addWidget(self.HL0)
         self.flOverlaycontrols.addWidget(QLabel('Neuroglancer Local Volume\nRendering Preferences'))
         self.flOverlaycontrols.addRow("Max Downsampling\n(NG default=64):", self.leMaxDownsampling)
         self.flOverlaycontrols.addRow("Max Downsampled Size\n(NG default=128):", self.leMaxDownsampledSize)
+        self.flOverlaycontrols.addWidget(self.bInfo)
+
+        self.wOverlay = VW(self.bShowHideOverlay, self.wOverlayControls)
+
+        self.teInfoOverlay = QTextEdit()
+        self.teInfoOverlay.setReadOnly(True)
+
+        self.twInfoOverlay = QTabWidget()
+        self.twInfoOverlay.addTab(self.teInfoOverlay, 'TIFF Info')
+        # self.twInfoOverlay.setMaximumSize(QSize(700, 700))
+        self.twInfoOverlay.setFixedSize(380, 300)
+        self.twInfoOverlay.hide()
 
         self.glWebengine0 = GL()
         self.glWebengine0.addWidget(self.webengine0, 0, 0, 3, 3)
         # self.glWebengine0.addWidget(self.wOverlayControls, 2, 0, 1, 1, Qt.AlignBottom | Qt.AlignLeft)
-        self.glWebengine0.addWidget(self.wOverlayControls, 2, 2, 1, 1, Qt.AlignBottom | Qt.AlignRight)
+        self.glWebengine0.addWidget(self.wOverlay, 2, 2, 1, 1, Qt.AlignBottom | Qt.AlignRight)
+        self.glWebengine0.addWidget(self.twInfoOverlay, 0, 0, 3, 3, Qt.AlignCenter)
         self.wWebengine0 = QWidget()
         self.wWebengine0.setLayout(self.glWebengine0)
 

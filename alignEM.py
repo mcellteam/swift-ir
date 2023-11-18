@@ -88,7 +88,7 @@ global app
 
 
 
-# WHITE_LIST = {'src'}      # Look for these words in the file path.
+# WHITE_LIST = {'src'}      # Look for these words in the file file_path.
 # EXCLUSIONS = {'<'}          # Ignore <listcomp>, etc. in the function name.
 
 # def tracefunc(getFrameScale, event, arg):
@@ -100,7 +100,7 @@ global app
 #         if unique_id in tracefunc.memorized:
 #             return
 #
-#         # Part of path MUST be in white list.
+#         # Part of file_path MUST be in white list.
 #         if any(x in getFrameScale.f_code.co_filename for x in WHITE_LIST) \
 #                 and \
 #                 not any(x in getFrameScale.f_code.co_name for x in EXCLUSIONS):
@@ -176,8 +176,8 @@ def main():
     # logger.addHandler(fh)
     # logger.info('Running ' + __file__ + '.__main__()')
     # logger.critical('start cwd: %level' % os.getcwd())
-    # logger.critical('directory of this script: %level' % os.path.dirname(__file__))
-    # # os.chdir(os.path.dirname(__file__))
+    # logger.critical('directory of this script: %level' % os.file_path.dirname(__file__))
+    # # os.chdir(os.file_path.dirname(__file__))
     # logger.critical('new cwd: %level' % os.getcwd())
 
     logger.info('Setting Qt.AA_ShareOpenGLContexts')

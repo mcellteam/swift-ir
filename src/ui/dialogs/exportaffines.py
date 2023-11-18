@@ -1,7 +1,7 @@
 from qtpy.QtWidgets import QFileDialog
 
 def export_affines_dialog() -> str:
-    '''Dialog for saving a datamodel. Returns 'path'.'''
+    '''Dialog for saving a datamodel. Returns 'file_path'.'''
     dialog = QFileDialog()
     dialog.setOption(QFileDialog.DontUseNativeDialog)
     dialog.setWindowTitle('Export Affine Data as .csv')

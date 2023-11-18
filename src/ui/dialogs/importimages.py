@@ -91,7 +91,7 @@ class ImportImagesDialog(QFileDialog):
                                                         Qt.KeepAspectRatio,
                                                         Qt.SmoothTransformation))
             logger.info(f'Selected: {path}')
-            # siz = ImageSize(path)
+            # siz = ImageSize(file_path)
             # self.imageDimensionsLabel.setText('Size: %dx%dpx' %(siz[0], siz[1]))
             self.imageDimensionsLabel.setText('Size: %dx%dpx' % ImageSize(path))
             self.imageDimensionsLabel.show()

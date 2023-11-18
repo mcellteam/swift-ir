@@ -114,39 +114,39 @@ class ManagerTab(QWidget):
         self.bMinusImages.setIcon(qta.icon('fa.minus'))
         self.bMinusImages.clicked.connect(self.onMinusImages)
 
-        self.cmbLevel = QComboBox()
-        self.cmbLevel.setToolTip("Scale Level")
-        self.cmbLevel.setFixedSize(QSize(44, 18))
-        self.cmbLevel.setCursor(QCursor(Qt.PointingHandCursor))
-        self.cmbLevel.setFocusPolicy(Qt.NoFocus)
-        self.cmbLevel.currentIndexChanged.connect(self.onComboLevel)
+        self.comboLevel = QComboBox()
+        self.comboLevel.setToolTip("Scale Level")
+        self.comboLevel.setFixedSize(QSize(44, 18))
+        self.comboLevel.setCursor(QCursor(Qt.PointingHandCursor))
+        self.comboLevel.setFocusPolicy(Qt.NoFocus)
+        self.comboLevel.currentIndexChanged.connect(self.onComboLevel)
 
-        self.cmbSelectAlignment = QComboBox()
-        self.cmbSelectAlignment.setStyleSheet("""QComboBox QAbstractItemView {
-            border: 2px solid darkgray;
-            selection-background-color: lightgray;
-        }""")
-        self.cmbSelectAlignment.setToolTip("Select Alignment (.align)")
-        # self.cmbSelectAlignment.setPlaceholderText("Select Alignment...")
-        self.cmbSelectAlignment.setPlaceholderText("")
-        self.cmbSelectAlignment.setFocusPolicy(Qt.NoFocus)
-        self.cmbSelectAlignment.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # self.cmbSelectAlignment.setEditable(True)
-        # self.cmbSelectAlignment.completer().setCompletionMode(QCompleter.PopupCompletion)
-        self.cmbSelectAlignment.setCursor(QCursor(Qt.PointingHandCursor))
-        self.cmbSelectAlignment.textActivated.connect(self.initPMviewer)
-        # self.cmbSelectAlignment.addItems(["None"])
+        self.comboAlignment = QComboBox()
+        # self.comboAlignment.setStyleSheet("""QComboBox QAbstractItemView {
+        #     border: 2px solid darkgray;
+        #     selection-background-color: lightgray;
+        # }""")
+        self.comboAlignment.setToolTip("Select Alignment (.align)")
+        # self.comboAlignment.setPlaceholderText("Select Alignment...")
+        self.comboAlignment.setPlaceholderText("")
+        self.comboAlignment.setFocusPolicy(Qt.NoFocus)
+        self.comboAlignment.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # self.comboAlignment.setEditable(True)
+        # self.comboAlignment.completer().setCompletionMode(QCompleter.PopupCompletion)
+        self.comboAlignment.setCursor(QCursor(Qt.PointingHandCursor))
+        self.comboAlignment.textActivated.connect(self.initPMviewer)
+        # self.comboAlignment.addItems(["None"])
 
-        self.cmbSelectImages = QComboBox()
-        self.cmbSelectImages.setToolTip("Select Image Stack (.images)")
-        self.cmbSelectImages.setPlaceholderText("Select Image Stack (.images)...")
-        self.cmbSelectImages.setFocusPolicy(Qt.NoFocus)
-        self.cmbSelectImages.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # self.cmbSelectImages.setEditable(True)
-        # self.cmbSelectImages.completer().setCompletionMode(QCompleter.PopupCompletion)
-        self.cmbSelectImages.setCursor(QCursor(Qt.PointingHandCursor))
+        self.comboImages = QComboBox()
+        self.comboImages.setToolTip("Select Image Stack (.images)")
+        self.comboImages.setPlaceholderText("Select Image Stack (.images)...")
+        self.comboImages.setFocusPolicy(Qt.NoFocus)
+        self.comboImages.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # self.comboImages.setEditable(True)
+        # self.comboImages.completer().setCompletionMode(QCompleter.PopupCompletion)
+        self.comboImages.setCursor(QCursor(Qt.PointingHandCursor))
         self.updateCombos()
-        self.cmbSelectImages.textActivated.connect(self.onSelectImagesCombo)
+        self.comboImages.textActivated.connect(self.onSelectImagesCombo)
 
         tip = f"Create Alignment (.align)"
         tip = '\n'.join(textwrap.wrap(tip, width=35))
@@ -183,8 +183,8 @@ class ManagerTab(QWidget):
         self.bOpen.setIcon(qta.icon('fa.folder-open'))
         self.bOpen.clicked.connect(self.onOpenAlignment)
 
-        self.wSelectImageSeries = HW(self.cmbSelectImages, self.cmbLevel, self.bPlusImages, self.bMinusImages)
-        self.wSelectAlignment = HW(self.cmbSelectAlignment, self.bOpen, self.bPlusAlignment, self.bMinusAlignment)
+        self.wSelectImageSeries = HW(self.comboImages, self.comboLevel, self.bPlusImages, self.bMinusImages)
+        self.wSelectAlignment = HW(self.comboAlignment, self.bOpen, self.bPlusAlignment, self.bMinusAlignment)
 
         self.toolbar = QToolBar()
         self.toolbar.addWidget(VW(self.wSelectImageSeries, self.wSelectAlignment))
@@ -375,7 +375,7 @@ class ManagerTab(QWidget):
 
         self.setLayout(self.vbl_main)
 
-        # if self.cmbSelectImages.currentText():
+        # if self.comboImages.currentText():
         #     self.wSelectAlignment.setVisible(True)
 
 
@@ -410,7 +410,7 @@ class ManagerTab(QWidget):
 
 
     def _getImagesName(self):
-        return os.path.basename(self.cmbSelectImages.currentText())
+        return os.path.basename(self.comboImages.currentText())
 
 
     def _getImagesUUID(self, p):
@@ -433,19 +433,11 @@ class ManagerTab(QWidget):
             name += '.images'
 
         out = os.path.join(cfg.preferences['images_root'], name)
-
         im_siz = ImageSize(self._NEW_IMAGES_PATHS[0])
-
         im_config_opts = self.wImagesConfig.getSettings(im_siz=im_siz)
-        # logger.info(f"Scale levels & Zarr preferences:\n{im_config_opts}")
-        try:
-            logger.info(f"Scale levels & Zarr preferences:\n{json.dumps(im_config_opts, indent=4)}")
-        except:
-            print_exception()
-
         logpath = os.path.join(out, 'logs')
         os.makedirs(logpath, exist_ok=True)
-        # open(os.path.join(logpath, 'exceptions.log'), 'a').close()
+        # open(os.file_path.join(logpath, 'exceptions.log'), 'a').close()
 
         cal_grid_path = None
         if im_config_opts['has_cal_grid']:
@@ -493,7 +485,7 @@ class ManagerTab(QWidget):
             count=count,
             cal_grid={
                 'has': im_config_opts['has_cal_grid'],
-                'path': cal_grid_path,
+                'file_path': cal_grid_path,
             },
             paths=self._NEW_IMAGES_PATHS,
             tiffinfo=tiffinfo,
@@ -526,7 +518,7 @@ class ManagerTab(QWidget):
         self.bPlusAlignment.setEnabled(False)
         self.resetView()
         root = Path(cfg.preferences['alignments_root'])
-        seriespath = Path(self.cmbSelectImages.currentText())
+        seriespath = Path(self.comboImages.currentText())
         usertext = self.leNameAlignment.text()
         newproject = (root / usertext).with_suffix('.align')
         info = seriespath / 'info.json'
@@ -546,7 +538,7 @@ class ManagerTab(QWidget):
             self.resetView()
         else:
             info = read('json')(info)
-            dm = DataModel(path=newproject, im_path=seriespath, init=True, images_info=info)
+            dm = DataModel(file_path=newproject, images_path=seriespath, init=True, images_info=info)
             DirectoryStructure(dm).initDirectory()
             AlignmentTab(self.parent, dm)
         self.bPlusAlignment.setEnabled(True)
@@ -563,10 +555,10 @@ class ManagerTab(QWidget):
 
     def initPMviewer(self):
         logger.info('')
-        if self.cmbSelectImages.count() > 0:
-            level = self.cmbLevel.currentText()
-            images = Path(self.cmbSelectImages.currentText())
-            alignment = Path(self.cmbSelectAlignment.currentText())
+        if self.comboImages.count() > 0:
+            level = self.comboLevel.currentText()
+            images = Path(self.comboImages.currentText())
+            alignment = Path(self.comboAlignment.currentText())
             l = images / 'zarr' / level
             r = alignment / 'zarr' / level
             paths = []
@@ -574,7 +566,11 @@ class ManagerTab(QWidget):
                 paths.append(l)
             if r.exists():
                 paths.append(r)
-            res = [50, 8, 8] #Todo why is this hardcoded
+            try:
+                res = read('json')(Path(cfg.pm.comboImages.currentText()) / 'info.json')['resolution'][level]
+            except:
+                logger.warning(f"No resolution found for level {level}")
+                res = [50, 8, 8]
             self.viewer = self.parent.viewer = PMViewer(parent=self, webengine=self.webengine, path=paths, dm=None, res=res, )
             self.viewer.signals.arrowLeft.connect(self.parent.layer_left)
             self.viewer.signals.arrowRight.connect(self.parent.layer_right)
@@ -590,8 +586,8 @@ class ManagerTab(QWidget):
         if self.wNameAlignment.isVisible():
             self.wNameAlignment.hide()
             return
-        if not os.path.isdir(self.cmbSelectImages.currentText()):
-            cfg.mw.warn(f"'{self.cmbSelectImages.currentText()}' is not valid.")
+        if not os.path.isdir(self.comboImages.currentText()):
+            cfg.mw.warn(f"'{self.comboImages.currentText()}' is not valid.")
             return
         self.wNameAlignment.show()
         self.leNameAlignment.setFocus()
@@ -599,7 +595,7 @@ class ManagerTab(QWidget):
 
     def onMinusAlignment(self):
         logger.info('')
-        path = self.cmbSelectAlignment.currentText()
+        path = self.comboAlignment.currentText()
         if path:
             if os.path.isdir(path):
                 logger.warning(f"Removing alignment at: {path}...")
@@ -623,16 +619,8 @@ class ManagerTab(QWidget):
             cfg.mw.warn('No alignment selected.')
 
 
-    def onOpenAlignment(self):
-        logger.info('')
-        p = Path(self.cmbSelectAlignment.currentText())
-        if p.suffix == '.align':
-            impath = Path(self.cmbSelectImages.currentText())
-            self.openAlignment(path=p, images_location=impath)
-
-
     def onMinusImages(self):
-        path = self.cmbSelectImages.currentText()
+        path = self.comboImages.currentText()
         if os.path.isdir(path):
             cfg.mw.tell(f'Starting subprocess: removing {path}...')
             logger.warning(f"Removing images at: {path}...")
@@ -650,43 +638,42 @@ class ManagerTab(QWidget):
                         logger.warning(f"\n\nCANNOT REMOVE THIS PATH: {path}\n")
                 except:
                     print_exception()
-
         else:
             cfg.mw.warn(f"Images not found: {path}")
         logger.info('Sleeping for 3 seconds...')
         time.sleep(3)
         self.refresh()
 
+
     def _updateWatchPaths(self):
         [self._watchImages.watch(sp) for sp in cfg.preferences['images_search_paths']]
         [self._watchAlignments.watch(sp) for sp in cfg.preferences['alignments_search_paths']]
 
 
-
     def updateCombos(self):
         '''Loading this combobox triggers the loading of the alignment and scales comboboxes'''
         caller = inspect.stack()[1].function
-        shown = [self.cmbSelectImages.itemText(i) for i in range(self.cmbSelectImages.count())]
+        shown = [self.comboImages.itemText(i) for i in range(self.comboImages.count())]
         known = self._watchImages.known
         if sorted(shown) == sorted(known):
             logger.info("null return"); return
-        self.cmbSelectImages.clear()
-        self.cmbSelectImages.addItems(known)
+        self.comboImages.clear()
+        self.comboImages.addItems(known)
         mem = cfg.preferences['images_combo_text']
         if mem in known:
-            self.cmbSelectImages.setCurrentText(mem)
+            self.comboImages.setCurrentText(mem)
             info_path = os.path.join(mem,'info.json')
             self._images_info = read('json')(info_path)
-        _im_path = self.cmbSelectImages.currentText()
+        _im_path = self.comboImages.currentText()
         _im_name = os.path.basename(_im_path)
         al_known = self._watchAlignments.known
         if os.path.exists(str(_im_path)):
             if len(al_known) == 0:
-                self.cmbSelectAlignment.setPlaceholderText(f"No Alignments (.align) Found for '{_im_name}'")
+                self.comboAlignment.setPlaceholderText(f"No Alignments (.align) Found for '{_im_name}'")
             else:
-                self.cmbSelectAlignment.setPlaceholderText(f"{len(al_known)} Alignments (.align) of '{_im_name}' Found")
+                self.comboAlignment.setPlaceholderText(f"{len(al_known)} Alignments (.align) of '{_im_name}' Found")
         else:
-            self.cmbSelectAlignment.setPlaceholderText("")
+            self.comboAlignment.setPlaceholderText("")
 
         self.loadLevelsCombo()
         self.loadAlignmentCombo()
@@ -694,9 +681,9 @@ class ManagerTab(QWidget):
 
     def loadAlignmentCombo(self):
         # logger.info('')
-        cur_items = [self.cmbSelectAlignment.itemText(i) for i in range(self.cmbSelectAlignment.count())]
+        cur_items = [self.comboAlignment.itemText(i) for i in range(self.comboAlignment.count())]
         if sorted(cur_items) != sorted(self._watchAlignments.known):
-            _im_path = self.cmbSelectImages.currentText()
+            _im_path = self.comboImages.currentText()
             _im_name = os.path.basename(_im_path)
             _uuid = self._getImagesUUID(_im_path)
             known = self._watchAlignments.known
@@ -708,35 +695,35 @@ class ManagerTab(QWidget):
                     valid.append(p)
 
 
-            self.cmbSelectAlignment.clear()
-            self.cmbSelectAlignment.addItems(valid)
+            self.comboAlignment.clear()
+            self.comboAlignment.addItems(valid)
             mem = cfg.preferences['alignment_combo_text']
             if mem in valid:
-                self.cmbSelectAlignment.setCurrentText(mem)
+                self.comboAlignment.setCurrentText(mem)
             if os.path.exists(str(_im_path)):
                 if len(valid):
-                    self.cmbSelectAlignment.setPlaceholderText(f"{len(valid)} Alignments (.align) of '{_im_name}' "
+                    self.comboAlignment.setPlaceholderText(f"{len(valid)} Alignments (.align) of '{_im_name}' "
                                                                f"Found")
                 else:
-                    self.cmbSelectAlignment.setPlaceholderText(f"No Alignments (.align) of '{_im_name}' Found")
+                    self.comboAlignment.setPlaceholderText(f"No Alignments (.align) of '{_im_name}' Found")
             else:
-                self.cmbSelectAlignment.setPlaceholderText("")
+                self.comboAlignment.setPlaceholderText("")
 
 
     def loadLevelsCombo(self):
         # logger.info('')
-        self.cmbLevel.clear()
-        cur_series = self.cmbSelectImages.currentText()
-        self.cmbLevel.addItems(self._images_info['levels'])
-        self.cmbLevel.setCurrentIndex(self.cmbLevel.count() - 1)
+        self.comboLevel.clear()
+        cur_series = self.comboImages.currentText()
+        self.comboLevel.addItems(self._images_info['levels'])
+        self.comboLevel.setCurrentIndex(self.comboLevel.count() - 1)
 
 
     def onSelectImagesCombo(self):
         logger.info('')
         caller = inspect.stack()[1].function
         if caller == 'main':
-            if self.cmbSelectImages.currentText():
-                path = self.cmbSelectImages.currentText()
+            if self.comboImages.currentText():
+                path = self.comboImages.currentText()
                 info_path = os.path.join(path, 'info.json')
                 self._images_info = read('json')(info_path)
                 self.resetView()
@@ -748,6 +735,7 @@ class ManagerTab(QWidget):
                 self.loadAlignmentCombo()
                 self.initPMviewer()
 
+
     def onComboLevel(self):
         caller = inspect.stack()[1].function
         if caller == 'main':
@@ -756,42 +744,59 @@ class ManagerTab(QWidget):
     # def onSelectAlignmentCombo(self):
     #     caller = inspect.stack()[1].function
     #     if caller == 'main':
-    #         cfg.preferences['alignment_combo_text'] = self.cmbSelectAlignment.currentText()
+    #         cfg.preferences['alignment_combo_text'] = self.comboAlignment.currentText()
     #         self.gbCreateImages.hide()
     #         self.webengine.setFocus()
 
+    def onOpenAlignment(self):
+        logger.info('')
+        p = Path(self.comboAlignment.currentText())
+        if p.suffix == '.align':
+            impath = Path(self.comboImages.currentText())
+            self.openAlignment(file_path=p, images_path=impath)
 
-    def openAlignment(self, path=None, data_location=None, images_location=None):
-        if not path:
-            path = self.selectionReadout.text()
-        if validate_zarr_selection(path):
+
+    def openAlignment(self, file_path, images_path=None):
+        if not file_path:
+            path = Path(self.selectionReadout.text())
+        if validate_zarr_selection(file_path):
             logger.info('Opening Zarr...')
             self.open_zarr_selected()
             return
-        elif validate_project_selection(path):
+        elif validate_project_selection(file_path):
 
-            if self.parent.isProjectOpen(path):
-                self.parent.globTabs.setCurrentIndex(cfg.mw.getProjectIndex(path))
-                self.parent.warn(f'Project {os.path.basename(path)} is already open.')
+            logger.info(f"\nfile_path       : {file_path}"
+                        f"\nimages_location : {images_path}")
+
+            if self.parent.isProjectOpen(file_path):
+                logger.info(f"Project {file_path} is already open...")
+                self.parent.globTabs.setCurrentIndex(self.parent.getProjectIndex(file_path))
+                self.parent.warn(f'Project {file_path.name} is already open.')
                 return
 
-            cfg.mw.tell(f"Opening: {path}...")
+            cfg.mw.tell(f"Opening: {file_path}...")
+            data = read('json')(file_path)
+            dm = DataModel(
+                data=data,
+                file_path=file_path,
+                images_path=images_path,
+            )
 
-            try:
-                data = read('json')(path)
-                dm = DataModel(
-                    data=data,
-                    path=str(data_location),
-                    im_path=str(images_location),
-                )
-            except:
-                cfg.mw.warn(f'No Such File Found: {path}')
-                print_exception()
-                return
-            else:
-                logger.info(f'Project Opened!')
+            # try:
+            #     data = read('json')(file_path)
+            #     dm = DataModel(
+            #         data=data,
+            #         file_path=str(data_file_path),
+            #         images_path=str(images_path),
+            #     )
+            # except:
+            #     cfg.mw.warn(f'No Such File Found: {file_path}')
+            #     print_exception()
+            #     return
+            # else:
+            #     logger.info(f'Project Opened!')
 
-            cfg.preferences['last_alignment_opened'] = dm.data_location
+            cfg.preferences['last_alignment_opened'] = dm.data_file_path
             cfg.mw.saveUserPreferences(silent=True)
             dm.save(silently=True)
             AlignmentTab(self.parent, dm)
@@ -862,7 +867,7 @@ class ManagerTab(QWidget):
             QApplication.processEvents()
             filenames = self.iid_dialog.selectedFiles()
             if len(filenames) > 0:
-                # self.labImgCount.setText(f"{len(filenames)} images selected from {os.path.dirname(filenames[0])}")
+                # self.labImgCount.setText(f"{len(filenames)} images selected from {os.file_path.dirname(filenames[0])}")
                 self.labImgCount.setText(f"{len(filenames)} images selected  ")
                 self.labImgCount.show()
                 self.bSelect.setStyleSheet("")
@@ -888,17 +893,17 @@ class ManagerTab(QWidget):
 
 
     def open_zarr_selected(self):
-        path = self.selectionReadout.text()
-        logger.info("Opening Zarr '%s'..." % path)
+        path = Path(self.filebrowser.selection)
+        logger.info(f"Opening Zarr {path}...")
         try:
-            with open(os.path.join(path, '.zarray')) as j:
+            with open(path / '.zarray') as j:
                 self.zarray = json.load(j)
         except:
             print_exception()
             return
         tab = ZarrTab(self, path=path)
-        cfg.mw.addGlobTab(tab, os.path.basename(path))
-        cfg.mw._setLastTab()
+        self.parent.addGlobTab(tab, path.name)
+        self.parent._setLastTab()
 
 
     def deleteContextMethod(self):
@@ -906,9 +911,9 @@ class ManagerTab(QWidget):
         selected_projects = self.getSelectedProjects()
         self.delete_projects(project_files=selected_projects)
 
-    def openContextMethod(self):
-        logger.info('')
-        self.openAlignment()
+    # def openContextMethod(self):
+    #     logger.info('')
+    #     self.openAlignment()
 
 
     def delete_projects(self, project_files=None):
@@ -970,8 +975,6 @@ class ManagerTab(QWidget):
                     #         logger.warning('There was a problem updating the project list')
                     #         print_exception()
 
-                    self.selectionReadout.setText('')
-
                     cfg.mw.tell('Deletion Complete!')
                     logger.info('Deletion tasks finished')
                 else:
@@ -993,8 +996,8 @@ class ManagerTab(QWidget):
     #
     #         # if self.getNumRowsSelected() == 1:
     #         #     # copyPathAction = QAction('Copy Path')
-    #         #     # path = self.getSelectedProjects()[0]
-    #         #     path = self.getSelectedProjects()[0]
+    #         #     # file_path = self.getSelectedProjects()[0]
+    #         #     file_path = self.getSelectedProjects()[0]
     #         #     copyPathAction = QAction(f"Copy Path '{self.getSelectedProjects()[0]}'")
     #         #     logger.info(f"Added to Clipboard: {QApplication.clipboard().text()}")
     #         #     menu.addAction(copyPathAction)
@@ -1097,11 +1100,11 @@ class Thumbnail(QWidget):
 
 def validate_tiff_folder(path) -> bool:
     # logger.info(f'caller:{inspect.stack()[1].function}')
-    # path, extension = os.path.splitext(path)
-    # contents = glob(os.path.join(path, '*'))
+    # file_path, extension = os.file_path.splitext(file_path)
+    # contents = glob(os.file_path.join(file_path, '*'))
     # n_files = len(contents)
-    # tif_files = glob(os.path.join(path, '*.tif'))
-    # tiff_files = glob(os.path.join(path, '*.tiff'))
+    # tif_files = glob(os.file_path.join(file_path, '*.tif'))
+    # tiff_files = glob(os.file_path.join(file_path, '*.tiff'))
     # n_valid_files = len(tif_files) + len(tiff_files)
     # n_invalid_files = n_files - n_valid_files
     # # print(f'n_files: {n_files}')
@@ -1114,7 +1117,7 @@ def validate_tiff_folder(path) -> bool:
 
 def validate_project_selection(path) -> bool:
     clr = inspect.stack()[1].function
-    logger.info(f'[{clr}] Validating selection %s...' % path)
+    logger.info(f'[{clr}] Validating selection {path}...')
     if Path(path).suffix in ('.align'):
         return True
     return False
@@ -1292,7 +1295,6 @@ class ImagesConfig(QWidget):
 
         # hbl.setSpacing(12)
         self.setLayout(hbl)
-
 
 
 

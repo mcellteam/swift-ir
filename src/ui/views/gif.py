@@ -26,8 +26,8 @@ class GifPlayer(QWidget):
         # self.setSizePolicy(sizePolicy)
         # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)  # 1007-
         self.path = self.dm.path_gif()
-        # self.movie = QMovie(self.path, QByteArray(), self)
-        # self.movie = QMovie(path)
+        # self.movie = QMovie(self.file_path, QByteArray(), self)
+        # self.movie = QMovie(file_path)
         # self.setMinimumSize(QSize(128,128))
         self.label = QLabel()
         # self.label.setSizePolicy(sizePolicy)
@@ -228,7 +228,7 @@ class GifPlayer(QWidget):
             self.bBlink.setEnabled(True)
 
     def set(self):
-        # self.movie = QMovie(self.path, QByteArray(), self)
+        # self.movie = QMovie(self.file_path, QByteArray(), self)
         path_cafm_gif = self.dm.path_cafm_gif()
         self.path = path_gif = self.dm.path_gif()
         if self.controls2.isVisible():
@@ -255,7 +255,7 @@ class GifPlayer(QWidget):
     @Slot()
     def on_click(self):
         # logger.info('')
-        # self.movie = QMovie(self.path, QByteArray(), self)
+        # self.movie = QMovie(self.file_path, QByteArray(), self)
         # self.label.setMovie(self.movie)
         self.movie.start()
         # pass
@@ -303,6 +303,6 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     path = '/Users/joelyancey/alignem_data/alignments/r34_full_series/new_alignment3/gif/s4/R34CA1-BS12.122.gif'
     player = GifPlayer(path)
-    # player = GifPlayer2("bla bla", path)
+    # player = GifPlayer2("bla bla", file_path)
     player.show()
     sys.exit(app.exec_())

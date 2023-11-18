@@ -40,7 +40,7 @@ def run_command(cmd, arg_list=None, cmd_input=None):
 
 def get_bindir() -> str:
     '''Checks operating system. Returns the operating system-dependent
-    path to where SWiFT-IR binaries should exist'''
+    file_path to where SWiFT-IR binaries should exist'''
     bindir = ''
     error = 'Operating System Could Not Be Resolved'
     if is_tacc():     bindir = 'bin_tacc'

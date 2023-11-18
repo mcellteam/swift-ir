@@ -46,7 +46,7 @@ app = pg.mkQApp("pyqtgraph volume viewer")
 # app = pg.mkQApp()
 # pg.setConfigOptions(antialias=True)
 
-# path = '/Users/joelyancey/glanceem_swift/img_aligned.zarr/s4'
+# file_path = '/Users/joelyancey/glanceem_swift/img_aligned.zarr/s4'
 path = '/Users/joelyancey/alignem_data/alignments/test3.alignment/zarr_reduced/s4'
 
 class PythonConsole(RichJupyterWidget):
@@ -137,7 +137,7 @@ def get_zarr_tensor(zarr_path):
         'kvstore': {
             'driver': 'file',
             # 'driver': 'memory',
-            'path': zarr_path
+            'file_path': zarr_path
         },
         'context': {
             'cache_pool': {'total_bytes_limit': total_bytes_limit},
@@ -156,7 +156,7 @@ class VolumeWidget(QWidget):
         super(VolumeWidget, self).__init__()
         print(f"----> get_volume_widget ---->")
 
-        # data = get_zarr_tensor(path).result()
+        # data = get_zarr_tensor(file_path).result()
         self.data = data = get_zarr_tensor(path).result()
         # shape = tensor.shape
         # print(f'tensor shape: {tensor.shape}')

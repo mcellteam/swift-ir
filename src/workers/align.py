@@ -9,6 +9,7 @@ import os
 import re
 import subprocess as sp
 import time
+from pathlib import Path
 
 import imageio.v3 as iio
 # import imagecodecs
@@ -43,7 +44,7 @@ class AlignWorker(QObject):
     hudMessage = Signal(str)
     hudWarning = Signal(str)
 
-    # def __init__(self, scale, path, align_indexes, regen_indexes, align, regenerate, renew_od, reallocate_zarr, dm, ht):
+    # def __init__(self, scale, file_path, align_indexes, regen_indexes, align, regenerate, renew_od, reallocate_zarr, dm, ht):
     def __init__(self, dm, path, scale, indexes, ignore_cache=False):
         super().__init__()
         logger.info('Initializing...')
@@ -97,8 +98,8 @@ class AlignWorker(QObject):
             'verbose_swim': cfg.VERBOSE_SWIM,
             'log_recipe_to_file': cfg.LOG_RECIPE_TO_FILE,
             'target_thumb_size': cfg.TARGET_THUMBNAIL_SIZE,
-            'im_path': dm.images_location,
-            'path': dm.data_location,
+            'images_path': dm.images_path,
+            'file_path': dm.data_file_path,
         }
 
         firstInd = dm.first_included(s=scale)
@@ -111,7 +112,7 @@ class AlignWorker(QObject):
             # ss = sec['levels'][scale]['swim_settings']
             ss = copy.deepcopy(dm.swim_settings(s=scale, l=i))
             ss['first_index'] = firstInd == i
-            ss['path'] = dm.path(s=scale, l=i)
+            ss['file_path'] = dm.path(s=scale, l=i)
             ss['path_reference'] = dm.path_ref(s=scale, l=i)
             ss['dir_signals'] = dm.dir_signals(s=scale, l=i)
             ss['dir_matches'] = dm.dir_matches(s=scale, l=i)
@@ -135,11 +136,14 @@ class AlignWorker(QObject):
                 self.dict_to_file(i, 'swim_settings.json', ss)
             else:
                 if ss['include']:
-                    if not self.dm.ht.haskey(self.dm.swim_settings(s=scale, l=i)):
+                    is_cached = self.dm.ht.haskey(self.dm.swim_settings(s=scale, l=i))
+                    is_generated = Path(ss['path_thumb_transformed']).exists() and Path(ss['path_gif']).exists()
+
+                    if not (is_cached and is_generated):
                         tasks.append(copy.deepcopy(ss))
                         self.dict_to_file(i, 'swim_settings.json', ss)
                     else:
-                        logger.info(f"[{i}] Cache hit!")
+                        logger.info(f"[{i}] Cache hit and generated images exist")
 
         self.cpus = get_core_count(dm, len(tasks))
 
@@ -154,35 +158,6 @@ class AlignWorker(QObject):
         self.dm.t_align = dt
         if fail:
             self.hudWarning.emit(f'Something went wrong! # Success: {succ} / # Failed: {fail}')
-            # self.finished.emit()
-            # return
-        # else:
-        #     '''Use Tom's multiprocessing Queue'''
-        #     task_queue = TaskQueue(n_tasks=len(tasks), dest=dm.path)
-        #     task_queue.taskPrefix = 'Computing Alignment for '
-        #     task_queue.taskNameList = [os.path.basename(layer['swim_settings']['path']) for
-        #                                layer in [dm()[i] for i in self.indexes]]
-        #     task_queue.start(self.cpus)
-        #     align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'recipemaker.py')
-        #     logger.info('Adding tasks to the queue...')
-        #
-        #     for i, sec in [(i, dm()[i]) for i in self.indexes]:
-        #         if sec ['include']:
-        #         # if i != first_included:
-        #             # encoded_data = json.dumps(copy.deepcopy(sec))
-        #             encoded_data = json.dumps(sec['levels'][scale])
-        #             task_args = [sys.executable, align_job, encoded_data]
-        #             task_queue.add_task(task_args)
-        #     dm.t_align = task_queue.collect_results()
-        #     tq_results = task_queue.task_dict
-        #     results = []
-        #     for tnum in range(len(tq_results)):
-        #         # Get the updated datamodel previewmodel from stdout for the task
-        #         parts = tq_results[tnum]['stdout'].split('---JSON-DELIMITER---')
-        #         for p in parts:
-        #             ps = p.strip()
-        #             if ps.startswith('{') and ps.endswith('}'):
-        #                 results.append(json.loads(p))
 
         logger.critical(f"# results returned: {len(results)}")
 
@@ -200,7 +175,7 @@ class AlignWorker(QObject):
 
                 # if not dm['stack'][i]['levels'][scale]['initialized']:
                 #     p = dm.path_aligned(s=scale, l=i)
-                #     if os.path.exists(p):
+                #     if os.file_path.exists(p):
                 #         dm['stack'][i]['levels'][scale]['initialized'] = True
                 #     else:
                 #         self.hudWarning.emit(f"Failed to generate aligned image at index {i}")
@@ -296,23 +271,15 @@ class AlignWorker(QObject):
         s1 = f"{dt:.3g}s".ljust(x)[0:x]
         s2 = str(succ).ljust(x)[0:x]
         s3 = str(fail).ljust(x)[0:x]
-
-        if fail:
-            self.hudWarning.emit(f"\n┌───────────{'─' * x}───┐"
-                                 f"\n│  Summary    {s0} │"
-                                 f"\n├───────────┬{'─' * x}──┤"
-                                 f"\n│  RUNTIME  │ {s1} │"
-                                 f"\n│  SUCCESS  │ {s2} │"
-                                 f"\n│  FAILED   │ {s3} │"
-                                 f"\n└───────────┴{'─' * x}──┘")
-        else:
-            self.hudMessage.emit(f"\n┌───────────{'─' * x}───┐"
-                                 f"\n│  Summary    {s0} │"
-                                 f"\n├───────────┬{'─' * x}──┤"
-                                 f"\n│  RUNTIME  │ {s1} │"
-                                 f"\n│  SUCCESS  │ {s2} │"
-                                 f"\n│  FAILED   │ {s3} │"
-                                 f"\n└───────────┴{'─' * x}──┘")
+        if fail: messagewith = self.hudWarning
+        else: messagewith = self.hudMessage
+        messagewith.emit(f"\n┌───────────{'─' * x}───┐"
+                         f"\n│  Summary    {s0} │"
+                         f"\n├───────────┬{'─' * x}──┤"
+                         f"\n│  RUNTIME  │ {s1} │"
+                         f"\n│  SUCCESS  │ {s2} │"
+                         f"\n│  FAILED   │ {s3} │"
+                         f"\n└───────────┴{'─' * x}──┘")
 
 
 def run_command(cmd, arg_list=None, cmd_input=None):
@@ -381,7 +348,7 @@ def checkForTiffs(path) -> bool:
 
 def save2file(dm, name):
     data_cp = copy.deepcopy(dm)
-    name = data_cp['path']
+    name = data_cp['file_path']
     jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
     proj_json = jde.encode(data_cp)
     logger.info(f'---- SAVING  ----\n{name}')
