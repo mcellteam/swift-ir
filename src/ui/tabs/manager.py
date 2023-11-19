@@ -487,10 +487,12 @@ class ManagerTab(QWidget):
         try:
             tiffinfo = read('tiffinfo')(im_sample)
         except:
+            logger.warning('Failed to read tiffinfo')
             tiffinfo = ''
         try:
             tifftags = read('tifftags')(im_sample)
         except:
+            logger.warning('Failed to read TIFF tags')
             tifftags = {}
         wp = os.path.join(out, 'tiffinfo.txt')
         write('txt')(wp, tiffinfo)
