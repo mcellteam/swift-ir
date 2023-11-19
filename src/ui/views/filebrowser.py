@@ -521,7 +521,12 @@ class FileBrowser(QWidget):
         # self.combobox.addItems([])
 
         items = ['Saved locations...', 'Images Root', 'Alignments Root']
-        items.extend(cfg.preferences['saved_paths'])
+
+        #Critical
+        if hasattr(cfg,'preferences'):
+            if cfg.preferences['saved_paths']:
+                items.extend(cfg.preferences['saved_paths'])
+
         if is_tacc():
             items.extend(['$SCRATCH', '$WORK', 'Corral'])
 

@@ -503,16 +503,20 @@ class align_recipe:
         pA = self.ss['path_thumb_transformed']
         pB = self.ss['path_thumb_src_ref']
         out = self.ss['path_gif']
-        try:
-            assert os.path.exists(pA)
-        except AssertionError:
-            logger.error(f'\nImage not found: {pA}\n')
-            return
-        try:
-            assert os.path.exists(pB)
-        except AssertionError:
-            logger.error(f'\nImage not found: {pB}\n')
-            return
+        # try:
+        #     assert os.path.exists(pA)
+        # except AssertionError:
+        #     logger.error(f'\nImage not found: {pA}\n')
+        #     return
+        # try:
+        #     assert os.path.exists(pB)
+        # except AssertionError:
+        #     logger.error(f'\nImage not found: {pB}\n')
+        #     return
+
+        # ERROR:src.core.recipemaker:
+        # Image not found: /Users/joelyancey/alignem_data/alignments/666/data/35/s4/7910856802294028582/R34CA1-BS12.136.thumb.tif
+        time.sleep(.01)
 
         imA = iio.imread(pA)
         imB = iio.imread(pB)

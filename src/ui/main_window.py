@@ -15,6 +15,7 @@ import subprocess
 import sys
 import textwrap
 import threading
+import statistics
 import time
 from collections import OrderedDict
 from pathlib import Path
@@ -47,7 +48,10 @@ from src.ui.tabs.manager import ManagerTab
 from src.ui.tabs.project import AlignmentTab
 from src.ui.widgets.toggleswitch import ToggleSwitch
 from src.ui.views.webpage import QuickWebPage
+from src.ui.views.webengine import WebEngine
 from src.core.files import DirectoryStructure
+from src.utils.readers import read
+from src.utils.writers import write
 
 
 __all__ = ['MainWindow']
@@ -363,12 +367,12 @@ class MainWindow(QMainWindow):
     def initPrivateMembers(self):
         logger.info('')
 
-        self._html_view = WebEngine(ID='_html_view')
-        self._html_view.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
-        self._html_view.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
-        self._html_view.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
-        self._html_view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
-        self._html_view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
+        self._html_resource = WebEngine(ID='_html_resource')
+        self._html_resource.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
+        self._html_resource.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
+        self._html_resource.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
+        self._html_resource.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
+        self._html_resource.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
         self.pm = None
         self.pt = None
@@ -910,12 +914,8 @@ class MainWindow(QMainWindow):
         # logger.critical(f"[{len(snr_before)}] snr_before = {snr_before}")
         # logger.critical(f"[{len(snr_after)}] snr_after  = {snr_after}")
         try:
-            import statistics
             if self.dm.is_aligned():
                 logger.info('Alignment seems successful')
-            else:
-                logger.info("Returning early...")
-                return
             logger.info('Calculating SNR Diff Values...')
             mean_before = statistics.fmean(snr_before)
             mean_after = statistics.fmean(snr_after)
@@ -968,18 +968,9 @@ class MainWindow(QMainWindow):
                         self.warn(f"Aligned image not found at index {i}")
                         # continue #1111- This does not mean the alignment failed necessarily
 
-            # self.tell(f"Alignment Results:\n"
-            #           f"{final_str}\n"
-            #           f"  Total Avg. SNR       : {self.dm.snr_mean():.3g}\n"
-            #           f"  # No Change  (SNR =) : {str(n1).center(6)}{('', '; ')[n1 > 0]}{s1}\n"
-            #           f"  Better       (SNR ↑) : {str(n2).center(6)}{('', '; ')[n2 > 0]}{s2}\n"
-            #           f"  Worse        (SNR ↓) : {str(n3).center(6)}{('', '; ')[n3 > 0]}{s3}\n"
-            #           )
-
-
-        except:
-            logger.warning('Unable To Present SNR Results')
-            print_exception()
+        except Exception as e:
+            logger.warning(f'Cant show results. Reason: {e.__class__.__name__}')
+            # print_exception()
 
     def alignAllScales(self):
         if self._isProjectTab():
@@ -1135,6 +1126,7 @@ class MainWindow(QMainWindow):
         self._alignworker.moveToThread(self._alignThread)  # Step 4: Move worker to the thread
 
         self._alignworker.finished.connect(self._alignThread.quit)
+        self._alignworker.finished.connect(cfg.dm.set_stack_cafm) #1118+
         self._alignworker.finished.connect(dm.save)
         self._alignworker.finished.connect(self.hidePbar)
         self._alignworker.finished.connect(self.dataUpdateWidgets)
@@ -1157,7 +1149,7 @@ class MainWindow(QMainWindow):
             self.warn('Another Process is Already Running')
             return
         logger.info('\n\nAutoscaling...\n')
-        self.tell("Creating a new .images bundle...")
+        self.tell("Creating a new .images images stack...")
         self._scaleThread = QThread()  # Step 2: Create a QThread object
         scale_keys = opts['levels']
         scales = zip(scale_keys[::-1], [opts['size_xy'][s] for s in scale_keys[::-1]])
@@ -1256,7 +1248,7 @@ class MainWindow(QMainWindow):
         self.wCpanel.hide()
 
         if self._isProjectTab():
-            self.bPropagate.setEnabled(self.dm.scale != self.dm.coarsest_scale_key())
+            self.bPropagate.setEnabled((self.dm.scale != self.dm.coarsest_scale_key()) and self.dm.is_alignable())
             self.pt.bZarrRegen.setEnabled(self.dm.is_aligned())
             self.wCpanel.show()
             try:
@@ -1898,28 +1890,41 @@ class MainWindow(QMainWindow):
 
 
     def get_html_resource(self):
-        html_f = os.path.join(self.get_application_root(), 'src/resources/html', 'features.html')
-        with open(html_f, 'r') as f:
-            html = f.read()
-        self._html_view.setHtml(html, baseUrl=QUrl.fromLocalFile(os.getcwd() + os.path.sep))
-        return self._html_view
+        f = Path(__file__).parents[2] / 'src/resources/html/features.html'
+        html = read('html')(f)
+        self._html_resource.setHtml(html, baseUrl=QUrl.fromLocalFile(os.getcwd() + os.path.sep))
+        return self._html_resource
+
+    def show_html_resource(self, resource='features.html', title='Features', ID=''):
+
+        self.twInfoOverlay.setTabText(0, title)
+        f = Path(__file__).parents[2] / f'src/resources/html/{resource}'
+        html = read('html')(f)
+        print(f"html resource baseUrl: {QUrl.fromLocalFile(os.getcwd() + os.path.sep)}")
+        self._html_resource.setHtml(html, baseUrl=QUrl.fromLocalFile(os.getcwd() + os.path.sep))
+        self.mainOverlay.show()
+
+    def hide_html_resource(self):
+        self._html_resource.setHtml('')
+        self.mainOverlay.hide()
 
 
-    def html_resource(self, resource='features.html', title='Features', ID=''):
+        # self.featuresAction.triggered.connect(
+        #     lambda: self.show_html_resource(resource='features.html', title='Help: Features'))
 
-        html_f = os.path.join(self.get_application_root(), 'src/resources/html', resource)
-        with open(html_f, 'r') as f:
-            html = f.read()
-
-        # webengine0 = QWebEngineView()
-        webengine = WebEngine(ID=ID)
-        webengine.setHtml(html, baseUrl=QUrl.fromLocalFile(os.getcwd() + os.path.sep))
-        webengine.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
-        webengine.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
-        webengine.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
-        webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
-        webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
-        self.addGlobTab(webengine, title)
+        # html_f = os.path.join(self.get_app_root(), 'src/resources/html', resource)
+        # with open(html_f, 'r') as f:
+        #     html = f.read()
+        #
+        # # webengine0 = QWebEngineView()
+        # webengine.py = WebEngine(ID=ID)
+        # webengine.py.setHtml(html, baseUrl=QUrl.fromLocalFile(os.getcwd() + os.path.sep))
+        # webengine.py.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
+        # webengine.py.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
+        # webengine.py.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
+        # webengine.py.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
+        # webengine.py.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
+        # self.addGlobTab(webengine.py, title)
 
     def url_resource(self, url, title):
         webengine = QWebEngineView()
@@ -2427,7 +2432,7 @@ class MainWindow(QMainWindow):
                 self.statusBar.showMessage("FAQ is already open!", msecs=3000)
             else:
                 logger.info('Showing FAQ...')
-                self.html_resource(resource='faq.html', title='FAQ', ID='faq')
+                self.show_html_resource(resource='faq.html', title='FAQ', ID='faq')
 
         self.tbbFAQ = QToolButton()
         self.tbbFAQ.setToolTip(f"Read AlignEM FAQ")
@@ -2442,7 +2447,7 @@ class MainWindow(QMainWindow):
                 self.statusBar.showMessage("Getting started document is already open!", msecs=3000)
             else:
                 logger.info('Showing Getting Started Tips...')
-                self.html_resource(resource='getting-started.html', title='Getting Started', ID='getting-started')
+                self.show_html_resource(resource='getting-started.html', title='Getting Started', ID='getting-started')
 
         self.tbbGettingStarted = QToolButton()
         self.tbbGettingStarted.setToolTip(f"Read AlignEM Tips for Getting Started")
@@ -2457,7 +2462,7 @@ class MainWindow(QMainWindow):
                 self.statusBar.showMessage("Glossary is already open!", msecs=3000)
             else:
                 logger.info('Showing Glossary...')
-                self.html_resource(resource='glossary.html', title='Glossary', ID='glossary')
+                self.show_html_resource(resource='glossary.html', title='Glossary', ID='glossary')
 
         self.tbbGlossary = QToolButton()
         self.tbbGlossary.setToolTip(f"Read AlignEM Glossary")
@@ -2634,7 +2639,6 @@ class MainWindow(QMainWindow):
         # self.tbbTestThread.pressed.connect(self.runLongTask)
         # self.tbbTestThread.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
-
         self.tbbStats = QToolButton()
         menu = QMenu()
         menu.aboutToShow.connect(self.updateStats)
@@ -2645,7 +2649,6 @@ class MainWindow(QMainWindow):
         action = QWidgetAction(self)
         action.setDefaultWidget(self.wStats)
         menu.addAction(action)
-
 
         self.tbbLow8 = QToolButton()
         menu = QMenu()
@@ -2800,8 +2803,8 @@ class MainWindow(QMainWindow):
         self.toolbar.addWidget(self.tbbGlossary)
         self.toolbar.addWidget(self.tbbReportBug)
         self.toolbar.addWidget(self.tbb3demdata)
-        self.toolbar.addWidget(self.tbbOverlay)
-        self.toolbar.addWidget(ExpandingHWidget(self))
+        # self.toolbar.addWidget(self.tbbOverlay)
+        # self.toolbar.addWidget(ExpandingHWidget(self))
         self.aPbar = self.toolbar.addWidget(self.wPbar)
         self.aPbar.setVisible(False)
         # self.toolbar.addWidget(self.wLcdTimer)
@@ -3628,7 +3631,7 @@ class MainWindow(QMainWindow):
 
         self.featuresAction = QAction('AlignEM Features', self)
         self.featuresAction.triggered.connect(
-            lambda: self.html_resource(resource='features.html', title='Help: Features'))
+            lambda: self.show_html_resource(resource='features.html', title='Help: Features'))
         helpMenu.addAction(self.featuresAction)
 
         # self.reloadBrowserAction = QAction('Reload QtWebEngine', self)
@@ -3638,15 +3641,15 @@ class MainWindow(QMainWindow):
         zarrHelpMenu = helpMenu.addMenu('Zarr Help')
 
         action = QAction('Zarr Debrief', self)
-        action.triggered.connect(lambda: self.html_resource(resource='zarr-drawing.html', title='Help: Zarr'))
+        action.triggered.connect(lambda: self.show_html_resource(resource='zarr-drawing.html', title='Help: Zarr'))
         zarrHelpMenu.addAction(action)
 
         action = QAction('Zarr/NGFF (Nature Methods, 2021)', self)
-        action.triggered.connect(lambda: self.html_resource(resource='zarr-nature-2021.html', title="Help: NGFF"))
+        action.triggered.connect(lambda: self.show_html_resource(resource='zarr-nature-2021.html', title="Help: NGFF"))
         zarrHelpMenu.addAction(action)
 
         action = QAction('Lonestar6', self)
-        action.triggered.connect(lambda: self.html_resource(resource='ls6.html', title='Lonestar6', ID='ls6'))
+        action.triggered.connect(lambda: self.show_html_resource(resource='ls6.html', title='Lonestar6', ID='ls6'))
         helpMenu.addAction(action)
 
         action = QAction('GitHub', self)
@@ -3676,7 +3679,7 @@ class MainWindow(QMainWindow):
 
         action = QAction('MCell4 Pre-print', self)
         action.triggered.connect(
-            lambda: self.html_resource(resource="mcell4-preprint.html", title='MCell4 Pre-print (2023)'))
+            lambda: self.show_html_resource(resource="mcell4-preprint.html", title='MCell4 Pre-print (2023)'))
         researchGroupMenu.addAction(action)
 
         # self.googleAction = QAction('Google', self)
@@ -4501,20 +4504,32 @@ class MainWindow(QMainWindow):
 
         self.twInfoOverlay = QTabWidget()
         self.twInfoOverlay.setAutoFillBackground(False)
-        self.twInfoOverlay.addTab(self.teInfoOverlay, 'TIFF Info')
+        self.twInfoOverlay.addTab(self._html_resource, 'TIFF Info')
         # self.twInfoOverlay.setMaximumSize(QSize(700, 700))
-        self.twInfoOverlay.setFixedSize(QSize(300, 300))
+        self.twInfoOverlay.setFixedSize(QSize(500, 400))
         # self.twInfoOverlay.hide()
 
+        # self.bCloseHtmlResource = QPushButton('Close')
+        self.bCloseHtmlResource = QPushButton('To Close: Press Any Key Or Click Here')
+        self.bCloseHtmlResource.setIcon(qta.icon('mdi.close'))
+        self.bCloseHtmlResource.clicked.connect(self.hide_html_resource)
+        self.bCloseHtmlResource.setAutoFillBackground(False)
+        self.bCloseHtmlResource.setStyleSheet("background: transparent;"
+                                              "color: #f3f6fb;"
+                                              "background-color: #141414;"
+                                              "font-size: 12px;"
+                                              "font-weight: 600;")
+        self.bCloseHtmlResource.setAttribute(Qt.WA_TranslucentBackground)
+
         self.mainOverlay = QWidget()
-        self.vlMainOverlay = VBL(self.twInfoOverlay)
+        # self.vlMainOverlay = VBL(self.twInfoOverlay)
+        self.vlMainOverlay = VBL(self.twInfoOverlay, self.bCloseHtmlResource)
         self.vlMainOverlay.setAlignment(Qt.AlignCenter)
         self.mainOverlay.setLayout(self.vlMainOverlay)
         self.mainOverlay.setStyleSheet("background-color: rgba(0, 0, 0, 0.5);")
         self.mainOverlay.setContentsMargins(0, 0, 0, 0)
-        self.mainOverlay.setAttribute(Qt.WA_TransparentForMouseEvents)
+        # self.mainOverlay.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.mainOverlay.hide()
-
 
         # self.mainOverlay.setAutoFillBackground(False)
         # self.mainOverlay.setStyleSheet("background: transparent;")
@@ -4532,9 +4547,8 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.mainWidget)
 
     def onOverlayAction(self):
+        self._html_resource.setHtml('')
         self.mainOverlay.setVisible(self.tbbOverlay.isChecked())
-
-
 
 
     def updateLowest8widget(self):
@@ -4631,7 +4645,7 @@ class MainWindow(QMainWindow):
         # self.globTabs.tabBar().setTabButton(0, QTabBar.RightSide,None)
         # self._setLastTab()
 
-    def get_application_root(self):
+    def get_app_root(self):
         return Path(__file__).parents[2]
 
 
@@ -4782,8 +4796,13 @@ class MainWindow(QMainWindow):
 
 
     def keyPressEvent(self, event):
-        super(MainWindow, self).keyPressEvent(event)
         key = event.key()
+        print(key)
+        super(MainWindow, self).keyPressEvent(event)
+        # print('Relaying key press...')
+
+        if self.mainOverlay.isVisible():
+            self.hide_html_resource()
 
         if cfg.DEV_MODE:
             t0 = time.time()
@@ -4812,7 +4831,20 @@ class MainWindow(QMainWindow):
         elif key == 35 and event.nativeVirtualKey() == 20:
             logger.info("Shift + 3 was pressed")
 
+        elif key == Qt.Key_Enter:
+            logger.info('Enter pressed!')
+            try:
+                if self.pm.vwEmStackProperties.isVisible():
+                    self.pm.bSelect.click()
+                elif self.pm.wNameEmStack.isVisible():
+                     self.pm.bSelect.click()
+            except:
+                pass
+
         elif key == Qt.Key_Escape:
+            logger.info(f"Escape key pressed!")
+            if self.mainOverlay.isVisible():
+                self.hide_html_resource()
             if self.isMaximized():
                 self.showNormal()
             elif self._isOpenProjTab():
@@ -4919,6 +4951,10 @@ class MainWindow(QMainWindow):
 
         elif key == Qt.Key_0:
             logger.info('Key 0 pressed!')
+            print(f"Focus is on: {self.focusWidget()}")
+
+        elif key == Qt.Key_X:
+            logger.info(f'Key {Qt.Key_X} (X) pressed!')
             print(f"Focus is on: {self.focusWidget()}")
 
         elif key == Qt.Key_Delete:
@@ -5057,14 +5093,14 @@ class NullWidget(QLabel):
         self.setStyleSheet("""font-size: 11px; background-color: #222222; color: #ede9e8;""")
         self.setAlignment(Qt.AlignCenter)
 
-class WebEngine(QWebEngineView):
-
-    def __init__(self, ID='webengine0'):
-        QWebEngineView.__init__(self)
-        self.ID = ID
-        self.grabGesture(Qt.PinchGesture, Qt.DontStartGestureOnChildren)
-        # self.inFocus = Signal(str)
-        # self.installEventFilter(self)
+# class WebEngine(QWebEngineView):
+# 
+#     def __init__(self, ID='webengine0'):
+#         QWebEngineView.__init__(self)
+#         self.ID = ID
+#         self.grabGesture(Qt.PinchGesture, Qt.DontStartGestureOnChildren)
+#         # self.inFocus = Signal(str)
+#         # self.installEventFilter(self)
 
 
 class AspectWidget(QWidget):

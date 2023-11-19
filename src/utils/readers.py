@@ -29,9 +29,20 @@ def read_txt(path: PathLike):
         return None
 
 def read_csv(path: PathLike):
-    with open(path_to_str(path), mode='r') as f:
-        reader = csv.reader(f)
-        return list(reader)
+    try:
+        with open(path_to_str(path), mode='r') as f:
+            return list(csv.reader(f))
+    except:
+        logger.warning(f"Unable to read file as HTML: {path_to_str(path)}")
+        return None
+
+def read_html(path: PathLike):
+    try:
+        with open(path_to_str(path), mode='r') as f:
+            return f.read()
+    except:
+        logger.warning(f"Unable to read file as HTML: {path_to_str(path)}")
+        return None
 
 def read_json(path: PathLike):
     # with open(file_path, mode='r') as f:
@@ -89,6 +100,11 @@ def txt_reader(path: PathLike):
 @register_reader('csv')
 def csv_reader(path: PathLike):
     return read_csv(path)
+
+
+@register_reader('html')
+def html_reader(path: PathLike):
+    return read_html(path)
 
 @register_reader('json')
 def json_reader(path: PathLike):

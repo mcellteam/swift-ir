@@ -1303,6 +1303,16 @@ class DataModel:
             print_exception()
             return [[[1, 0, 0], [0, 1, 0]]]
 
+    def afm_cur(self, s=None, l=None) -> list:
+        if s == None: s = self.level
+        if l == None: l = self.zpos
+        try:
+            # return self._data['stack'][l]['levels'][s]['results']['affine_matrix'] #1107-
+            return self.ht.get(self.swim_settings())
+        except:
+            print_exception()
+            return [[[1, 0, 0], [0, 1, 0]]]
+
 
     def cafm(self, s=None, l=None) -> list:
         if s == None: s = self.level

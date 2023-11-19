@@ -456,6 +456,7 @@ def SetSingleCafm(dm, scale, index, c_afm, include, bias_mat=None, method='grid'
         if include:
             # afm = np.array(d['levels'][scale]['results']['affine_matrix'])
             afm = np.array(dm.ht.get(dm.saved_swim_settings(s=scale,l=index)))
+            print(f"SetSingleCafm, afm {index}: {afm}")
             # print(f'index {index} afm: {str(afm)}, cafm: {pprint.pformat(c_afm)}')
         else:
             afm = identityAffine()

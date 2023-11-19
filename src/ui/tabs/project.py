@@ -30,7 +30,7 @@ from src.ui.widgets.sliders import DoubleSlider
 from src.ui.widgets.vertlabel import VerticalLabel
 from src.ui.tools.snrplot import SnrPlot
 from src.ui.views.thumbnail import CorrSignalThumbnail, ThumbnailFast
-from src.viewers.viewerfactory import EMViewer, MAViewer
+from src.viewers.viewerfactory import EMViewer, TransformViewer, MAViewer
 from src.utils.readers import read
 from src.utils.writers import write
 
@@ -266,7 +266,9 @@ class AlignmentTab(QWidget):
             self.cbxNgLayout.setCurrentText(getData('state,neuroglancer,layout'))
 
             path = (self.dm.path_zarr_transformed(), self.dm.path_zarr_raw())[self.rbZarrRaw.isChecked()]
-            res = self.dm.resolution(s=self.dm.level)
+            res = copy.deepcopy(self.dm.resolution(s=self.dm.level))
+            # res[0] *= self.dm.lvl()
+            print(f"res = {res}, self.dm.lvl() = {self.dm.lvl()}")
             self.viewer0 = self.viewer = self.parent.viewer = cfg.viewer = EMViewer(parent=self, webengine=self.webengine0, path=path, dm=self.dm, res=res, )
             self.viewer0.initZoom(self.webengine0.width(), self.webengine0.height())
             # self.viewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
@@ -307,6 +309,8 @@ class AlignmentTab(QWidget):
             #     print_exception()
 
             self.zoomSlider.setValue(self.viewer1.state.cross_section_scale)
+
+            self.transformViewer = TransformViewer(parent=self, webengine=self.webengine2, path=None, dm=self.dm, res=res, )
 
         self.parent.hud.done()
         # QApplication.processEvents() #1009-
@@ -1781,6 +1785,11 @@ class AlignmentTab(QWidget):
         self.wGifPlayer.setMinimumSize(QSize(128,128))
         self.wGifPlayer.setLayout(self.glGifPlayer)
 
+        self.webengine2 = WebEngine(ID='webengine2')
+        self.webengine2.setMinimumSize(QSize(200,200))
+        # res = self.dm.resolution(s=self.dm.level)
+        # self.transformViewer = TransformViewer(parent=self, webengine=self.webengine2, path=None, dm=self.dm, res=self.dm.res, )
+
         self.checkboxes = HW(self.cbDefaults, self.cbSaved, self.cbIgnoreCache)
         self.checkboxes.layout.setSpacing(4)
 
@@ -1794,7 +1803,8 @@ class AlignmentTab(QWidget):
             self.swMethod,
             self.checkboxes,
             self.btnsSWIM,
-            self.wGifPlayer,
+            # self.wGifPlayer,
+            self.webengine2
             )
         self.gbRightPanel = QGroupBox()
         self.gbRightPanel.setLayout(self.vblRightPanel)

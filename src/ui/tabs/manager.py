@@ -73,6 +73,8 @@ class ManagerTab(QWidget):
         self.resetView()
         self.refresh()
 
+        self._selecting_emstack = False
+
         self.webengine.setFocus()
 
 
@@ -309,30 +311,41 @@ class ManagerTab(QWidget):
             self.iid_dialog.hide()
             # self.showMainUI()
             self._NEW_IMAGES_PATHS = []
+            self.vwEmStackProperties.hide()
         self.bCancel.clicked.connect(fn)
 
         self.bCreateImages = QPushButton("Create")
         self.bCreateImages.setCursor(QCursor(Qt.PointingHandCursor))
         self.bCreateImages.clicked.connect(self.confirmCreateImages)
         self.bCreateImages.setEnabled(False)
-        self.wNameImages = HW(QLabel('Images Name:'), self.leNameImages, self.bSelect, self.bCreateImages, self.bCancel)
-        # self.wNameImages.setStyleSheet("QLabel {color: #f3f6fb;} ")
-        self.wNameImages.layout.setSpacing(2)
-        self.wNameImages.layout.setContentsMargins(0, 0, 0, 0)
+
+        # self.wNameEmStack = HW(QLabel('Images Name:'), self.leNameImages, self.bSelect, self.bCreateImages, self.bCancel)
+        self.wNameEmStack = VW(BoldLabel('Step 1:'), HW(QLabel('Images Name:'), self.leNameImages, self.bSelect, self.bCancel))
+        # self.wNameEmStack.setStyleSheet("QLabel {color: #f3f6fb;} ")
+        self.wNameEmStack.layout.setSpacing(2)
+        self.wNameEmStack.layout.setContentsMargins(0, 0, 0, 0)
 
         bs = [self.bSelect, self.bCreateImages]
         for b in bs:
             b.setFixedSize(QSize(78,18))
 
-        self.wImagesConfig = ImagesConfig(parent=self)
-        self.wImagesConfig.layout().setSpacing(4)
+        self.wEmStackProperties = ImagesConfig(parent=self)
+        # self.wEmStackProperties.hide()
+        self.wEmStackProperties.layout().setSpacing(16)
 
         self.labImgCount = QLabel()
         self.labImgCount.setStyleSheet("color: #339933;")
         self.labImgCount.hide()
-        self.wMiddle = HW(ExpandingHWidget(self), self.labImgCount)
-        vbl = VBL(self.wNameImages, self.wMiddle, self.wImagesConfig)
-        vbl.setSpacing(4)
+
+        self.vwEmStackProperties = VW(BoldLabel('Step 2:'), self.wEmStackProperties, HW(ExpandingHWidget(self), self.labImgCount, self.bCreateImages))
+        self.vwEmStackProperties.hide()
+
+
+        # self.wMiddle = HW(ExpandingHWidget(self), self.labImgCount)
+        # vbl = VBL(self.wNameEmStack, self.wMiddle, self.wEmStackProperties)
+        # vbl = VBL(self.wNameEmStack, self.wMiddle, self.vwEmStackProperties)
+        vbl = VBL(self.wNameEmStack, self.vwEmStackProperties)
+        # vbl.setSpacing(4)
         self.gbCreateImages = QGroupBox()
         self.gbCreateImages.setLayout(vbl)
         self.gbCreateImages.hide()
@@ -434,7 +447,7 @@ class ManagerTab(QWidget):
 
         out = os.path.join(cfg.preferences['images_root'], name)
         im_siz = ImageSize(self._NEW_IMAGES_PATHS[0])
-        im_config_opts = self.wImagesConfig.getSettings(im_siz=im_siz)
+        im_config_opts = self.wEmStackProperties.getSettings(im_siz=im_siz)
         logpath = os.path.join(out, 'logs')
         os.makedirs(logpath, exist_ok=True)
         # open(os.file_path.join(logpath, 'exceptions.log'), 'a').close()
@@ -450,7 +463,7 @@ class ManagerTab(QWidget):
 
         src = os.path.dirname(self._NEW_IMAGES_PATHS[0])
         cfg.mw.tell(f'Importing {len(self._NEW_IMAGES_PATHS)} Images...')
-        scales_str = self.wImagesConfig.scales_input.text().strip()
+        scales_str = self.wEmStackProperties.scales_input.text().strip()
         scale_vals = list(map(int,scales_str.split(' ')))
         tiff_path = os.path.join(out, 'tiff')
         zarr_path = os.path.join(out, 'zarr')
@@ -567,8 +580,11 @@ class ManagerTab(QWidget):
             if r.exists():
                 paths.append(r)
             try:
-                res = read('json')(Path(cfg.pm.comboImages.currentText()) / 'info.json')['resolution'][level]
+                # info = read('json')(Path(cfg.pm.comboImages.currentText()) / 'info.json')
+                # res = info['resolution'][level]
+                res = self._images_info['resolution'][level]
             except:
+                print_exception()
                 logger.warning(f"No resolution found for level {level}")
                 res = [50, 8, 8]
             self.viewer = self.parent.viewer = PMViewer(parent=self, webengine=self.webengine, path=paths, dm=None, res=res, )
@@ -576,7 +592,7 @@ class ManagerTab(QWidget):
             self.viewer.signals.arrowRight.connect(self.parent.layer_right)
             self.viewer.signals.arrowUp.connect(self.parent.incrementZoomIn)
             self.viewer.signals.arrowDown.connect(self.parent.incrementZoomOut)
-            # self.webengine.setFocus()
+            # self.webengine.py.setFocus()
         else:
             self.webengine.setHtml("")
 
@@ -595,28 +611,25 @@ class ManagerTab(QWidget):
 
     def onMinusAlignment(self):
         logger.info('')
-        path = self.comboAlignment.currentText()
-        if path:
-            if os.path.isdir(path):
-                logger.warning(f"Removing alignment at: {path}...")
-                reply = QMessageBox.question(self, "Quit", f"Delete this alignment?\n\n'{path}'",
+        path = Path(self.comboAlignment.currentText())
+        if path.suffix == '.align':
+            del_path = path.with_suffix('')
+
+            if del_path.is_dir():
+                logger.warning(f"Removing alignment dir '{del_path}'")
+                reply = QMessageBox.question(self, "Quit", f"Delete this alignment?\n\n'{del_path}'",
                                              QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
                 if reply == QMessageBox.Yes:
-                    cfg.mw.tell(f'Starting subprocess: removing {path}...')
+                    cfg.mw.tell(f'Starting subprocess: removing {del_path}...')
                     try:
-                        if path.endswith('.align'):
-                            run_subprocess(["rm", "-rf", path])
-                        else:
-                            logger.warning(f"\n\nCANNOT REMOVE THIS PATH: {path}\n")
+                        run_subprocess(["rm", "-rf", str(del_path)])
                     except:
                         print_exception()
                     self.updateCombos()
-                    self.resetView()
-                    self.initPMviewer()
-            else:
-                cfg.mw.warn('Path not found.')
-        else:
-            cfg.mw.warn('No alignment selected.')
+                    # self.resetView()     #1118-
+                    # self.initPMviewer()  #1118-
+                else:
+                    cfg.mw.warn(f'Path not found: {del_path}')
 
 
     def onMinusImages(self):
@@ -632,8 +645,6 @@ class ManagerTab(QWidget):
                         cfg.mw.tell(f'Deleting images {path}...')
                         run_subprocess(["rm", "-rf", path])
                         run_subprocess(["rm", "-rf", path])
-                        run_subprocess(["rm", "-rf", path])
-
                     else:
                         logger.warning(f"\n\nCANNOT REMOVE THIS PATH: {path}\n")
                 except:
@@ -656,7 +667,8 @@ class ManagerTab(QWidget):
         shown = [self.comboImages.itemText(i) for i in range(self.comboImages.count())]
         known = self._watchImages.known
         if sorted(shown) == sorted(known):
-            logger.info("null return"); return
+            logger.info("null return")
+            return
         self.comboImages.clear()
         self.comboImages.addItems(known)
         mem = cfg.preferences['images_combo_text']
@@ -694,7 +706,6 @@ class ManagerTab(QWidget):
                 if self._getUUID(p) == _uuid:
                     valid.append(p)
 
-
             self.comboAlignment.clear()
             self.comboAlignment.addItems(valid)
             mem = cfg.preferences['alignment_combo_text']
@@ -713,9 +724,9 @@ class ManagerTab(QWidget):
     def loadLevelsCombo(self):
         # logger.info('')
         self.comboLevel.clear()
-        cur_series = self.comboImages.currentText()
-        self.comboLevel.addItems(self._images_info['levels'])
-        self.comboLevel.setCurrentIndex(self.comboLevel.count() - 1)
+        if self._images_info:
+            self.comboLevel.addItems(self._images_info['levels'])
+            self.comboLevel.setCurrentIndex(self.comboLevel.count() - 1)
 
 
     def onSelectImagesCombo(self):
@@ -746,7 +757,7 @@ class ManagerTab(QWidget):
     #     if caller == 'main':
     #         cfg.preferences['alignment_combo_text'] = self.comboAlignment.currentText()
     #         self.gbCreateImages.hide()
-    #         self.webengine.setFocus()
+    #         self.webengine.py.setFocus()
 
     def onOpenAlignment(self):
         logger.info('')
@@ -758,7 +769,7 @@ class ManagerTab(QWidget):
 
     def openAlignment(self, file_path, images_path=None):
         if not file_path:
-            path = Path(self.selectionReadout.text())
+            file_path = Path(self.selectionReadout.text())
         if validate_zarr_selection(file_path):
             logger.info('Opening Zarr...')
             self.open_zarr_selected()
@@ -807,6 +818,7 @@ class ManagerTab(QWidget):
     def showMainUI(self):
         logger.info('')
         self.gbCreateImages.hide()
+        self.vwEmStackProperties.hide()
         self.update()
 
     def showImportSeriesDialog(self):
@@ -818,14 +830,14 @@ class ManagerTab(QWidget):
         ))])
         self.gbCreateImages.setVisible(not isShown)
         if self.gbCreateImages.isVisible():
-            self.wImagesConfig.leResX.setText(str(cfg.DEFAULT_RESX))
-            self.wImagesConfig.leResY.setText(str(cfg.DEFAULT_RESY))
-            self.wImagesConfig.leResZ.setText(str(cfg.DEFAULT_RESZ))
-            self.wImagesConfig.leNewChunk.setText(str(cfg.CHUNK_FACTOR))
-            # self.wImagesConfig.leChunkX.setText(str(cfg.CHUNK_X))
-            # self.wImagesConfig.leChunkY.setText(str(cfg.CHUNK_Y))
-            # self.wImagesConfig.leChunkZ.setText(str(cfg.CHUNK_Z))
-            self.wImagesConfig.cname_combobox.setCurrentText(str(cfg.CNAME))
+            self.wEmStackProperties.leResX.setText(str(cfg.DEFAULT_RESX))
+            self.wEmStackProperties.leResY.setText(str(cfg.DEFAULT_RESY))
+            self.wEmStackProperties.leResZ.setText(str(cfg.DEFAULT_RESZ))
+            self.wEmStackProperties.leNewChunk.setText(str(cfg.CHUNK_FACTOR))
+            # self.wEmStackProperties.leChunkX.setText(str(cfg.CHUNK_X))
+            # self.wEmStackProperties.leChunkY.setText(str(cfg.CHUNK_Y))
+            # self.wEmStackProperties.leChunkZ.setText(str(cfg.CHUNK_Z))
+            self.wEmStackProperties.cname_combobox.setCurrentText(str(cfg.CNAME))
         self.leNameImages.setFocus()
         self.setUpdatesEnabled(True)
 
@@ -850,6 +862,7 @@ class ManagerTab(QWidget):
         # self.iid_dialog.resize(QSize(820,480))
         # self.bSelect.setStyleSheet("background-color: #339933; color: #f3f6fb; border-color: #f3f6fb;")
         self.bCreateImages.setStyleSheet("")
+        self.vwEmStackProperties.hide()
 
         if self.iid_dialog.isVisible():
             return
@@ -867,6 +880,7 @@ class ManagerTab(QWidget):
             QApplication.processEvents()
             filenames = self.iid_dialog.selectedFiles()
             if len(filenames) > 0:
+                self.vwEmStackProperties.show()
                 # self.labImgCount.setText(f"{len(filenames)} images selected from {os.file_path.dirname(filenames[0])}")
                 self.labImgCount.setText(f"{len(filenames)} images selected  ")
                 self.labImgCount.show()
@@ -980,6 +994,12 @@ class ManagerTab(QWidget):
                 else:
                     logger.warning('(!) Invalid target for deletion: %s' % project_file)
 
+    # def keyPressEvent(self, event):
+    #     key = event.key()
+    #     print(key)
+    #
+    #     if key == Qt.Key_Enter:
+    #         print("Enter pressed!")
 
     # def eventFilter(self, source, event):
     #     if event.type() == QEvent.ContextMenu:

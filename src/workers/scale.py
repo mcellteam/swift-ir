@@ -29,9 +29,11 @@ from numcodecs import Blosc
 numcodecs.blosc.use_threads = False
 
 from src.core.thumbnailer import Thumbnailer
-from src.utils.helpers import print_exception, get_bindir, get_scale_val
+from src.utils.helpers import print_exception, get_bindir, get_scale_val, path_to_str
 # from src.funcs_zarr import preallocate_zarr
 from src.utils.funcs_zarr import remove_zarr
+from src.utils.readers import read
+from src.utils.writers import write
 import src.config as cfg
 
 from qtpy.QtCore import Signal, QObject, QMutex
@@ -176,9 +178,14 @@ class ScaleWorker(QObject):
         thumbnailer = Thumbnailer()
         self._timing_results['t_thumbs'] = thumbnailer.reduce_main(self.src, self.paths, out)
         # count_files(self.out, scales_list)
+        zarr_od = os.path.abspath(os.path.join(self.out, 'zarr'))
+        zarr_layers_od = Path(self.out) / 'zarr_slices'
+        if not zarr_layers_od.exists():
+            zarr_layers_od.mkdir()
         n_imgs = len(self.paths)
         for s, siz in deepcopy(self.scales):
             sv = get_scale_val(s)
+            x, y = siz[0], siz[1]
 
             logger.info(f'Counting files inside of {self.out}')
 
@@ -189,25 +196,23 @@ class ScaleWorker(QObject):
                 # logger.info(f"Waiting on {n_imgs - n_files} images to generate. Total generated: {n_files}/{n_imgs}")
                 print(f"Waiting on: {n_imgs - n_files} {s} image(s), total generated: {n_files}/{n_imgs}", end="\r")
 
-            logger.info('Continuing...')
-
-            zarr_od = os.path.abspath(os.path.join(self.out, 'zarr'))
-            # renew_directory(directory=zarr_od, gui=False)
             self.hudMessage.emit(f"Converting {s} to Zarr...")
             desc = f"Converting {s} to Zarr..."
             logger.info(desc)
             tasks = []
             for ID, img in enumerate(self.paths):
+                preallocate_zarr(p=zarr_layers_od, name=str(ID), shape=(
+                1, y, x), dtype='|u1', opts=self.opts, scale=s, silent=True)
+
                 fn = os.path.join(self.out, 'tiff', 's%d' % sv, os.path.basename(img))
                 out = os.path.join(zarr_od, 's%d' % sv)
-                tasks.append([ID, fn, out])
+                tasks.append([ID, fn, out, str(zarr_layers_od / str(ID))])
                 # logger.critical(f"\n\ntask : {[ID, fn, out]}\n")
 
-            x, y = siz[0], siz[1]
 
             shape = (len(self.paths), y, x)
             name = 's%d' % get_scale_val(s)
-            preallocate_zarr(zarr_od=zarr_od, name=name, shape=shape, dtype='|u1', opts=self.opts, scale=s)
+            preallocate_zarr(p=zarr_od, name=name, shape=shape, dtype='|u1', opts=self.opts, scale=s)
 
             t = time.time()
             self.initPbar.emit((len(tasks), desc))
@@ -265,18 +270,20 @@ class ScaleWorker(QObject):
         print(f"<==== Terminating Background Thread <====")
         self.finished.emit() #Critical
 
-def preallocate_zarr(zarr_od, name, shape, dtype, opts, scale):
+def preallocate_zarr(p, name, shape, dtype, opts, scale, silent=False):
     '''zarr.blosc.list_compressors() -> ['blosclz', 'lz4', 'lz4hc', 'zlib', 'zstd']'''
+    p = path_to_str(p)
     cname, clevel, chunkshape = opts['cname'], opts['clevel'], opts['chunkshape'][scale]
-    output_text = f'\n  Zarr root : {zarr_od}' \
-                  f'\n      group :   └ {name} {dtype}/{cname}/{clevel}' \
-                  f'\n      shape : {str(shape)} ' \
-                  f'\n      chunk : {chunkshape}'
-    logger.info(output_text)
+    if not silent:
+        output_text = f'\n  Zarr root : {p}' \
+                      f'\n      group :   └ {name} {dtype}/{cname}/{clevel}' \
+                      f'\n      shape : {str(shape)} ' \
+                      f'\n      chunk : {chunkshape}'
+        print(output_text, flush=True)
     try:
-        if os.path.isdir(os.path.join(zarr_od, name)):
-            remove_zarr(os.path.join(zarr_od, name))
-        arr = zarr.group(store=zarr_od, overwrite=False)
+        # if os.path.isdir(os.path.join(p, name)):
+        #     remove_zarr(os.path.join(p, name))
+        arr = zarr.group(store=p, overwrite=False)
         compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
         arr.zeros(name=name, shape=shape, chunks=chunkshape, dtype=dtype, compressor=compressor, overwrite=True)
     except:
@@ -289,9 +296,15 @@ def convert_zarr(task):
         ID = task[0]
         fn = task[1]
         out = task[2]
+        out_slice = task[3]
         store = zarr.open(out)
         # img = imread(fn)[:, ::-1]
-        store[ID, :, :] = iio.imread(fn)
+        im = iio.imread(fn)
+        store[ID, :, :] = im
+
+        store_slice = zarr.open(out_slice)
+        store_slice[0, :, :] = im
+
         # store[ID, :, :] = libtiff.TIFF.open(fn).read_image()[:, ::-1]  # store: <zarr.core.Array (19, 1244, 1130) uint8>
         # store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
         return 0

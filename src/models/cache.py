@@ -72,7 +72,8 @@ class Cache:
             for k, v in self.data[hashkey]:
                 if k == key:
                     return v
-        logger.warning(f"hashkey not found: {hashkey}")
+        logger.warning(f"hashkey not found: {hashkey}\n"
+                       f"problem key value:\n{key}")
         # raise KeyError(f"Key '{key}' not found in the hash data.")
 
     def geti(self, i):
