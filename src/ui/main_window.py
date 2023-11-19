@@ -1126,7 +1126,7 @@ class MainWindow(QMainWindow):
         self._alignworker.moveToThread(self._alignThread)  # Step 4: Move worker to the thread
 
         self._alignworker.finished.connect(self._alignThread.quit)
-        self._alignworker.finished.connect(cfg.dm.set_stack_cafm) #1118+
+        self._alignworker.finished.connect(dm.set_stack_cafm) #1118+
         self._alignworker.finished.connect(dm.save)
         self._alignworker.finished.connect(self.hidePbar)
         self._alignworker.finished.connect(self.dataUpdateWidgets)
@@ -1137,7 +1137,7 @@ class MainWindow(QMainWindow):
         self._alignworker.finished.connect(self.updateEnabledButtons)
         
         self._alignworker.finished.connect(lambda: self.present_snr_results(dm, indexes))
-        self._alignworker.finished.connect(lambda: self.pt.initNeuroglancer())
+        self._alignworker.finished.connect(lambda: self.pt.initNeuroglancer(init_all=True))
         self._alignworker.finished.connect(lambda: setattr(self, '_working', False))
         self._alignworker.finished.connect(lambda: self.tell(f'<span style="color: #FFFF66;"><b>**** All Processes Complete ****</b></span>'))
         self._alignThread.start()  # Step 6: Start the thread

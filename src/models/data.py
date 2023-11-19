@@ -514,7 +514,10 @@ class DataModel:
         if l == self.first_included():
             return self.path(s=s, l=l)
         else:
-            return os.path.join(self.images_path, 'tiff', s, self.name_ref(s=s, l=l))
+            try:
+                return os.path.join(self.images_path, 'tiff', s, self.name_ref(s=s, l=l))
+            except:
+                print_exception(f'Section #{l}, Resolution Level {s}')
 
     def path_zarr_transformed(self, s=None):
         if s == None: s = self.level
