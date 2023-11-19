@@ -484,8 +484,14 @@ class ManagerTab(QWidget):
         logger.critical(f"Resolution levels: {level_keys}")
 
         im_sample = self._NEW_IMAGES_PATHS[0]
-        tiffinfo = read('tiffinfo')(im_sample)
-        tifftags = read('tifftags')(im_sample)
+        try:
+            tiffinfo = read('tiffinfo')(im_sample)
+        except:
+            tiffinfo = ''
+        try:
+            tifftags = read('tifftags')(im_sample)
+        except:
+            tifftags = {}
         wp = os.path.join(out, 'tiffinfo.txt')
         write('txt')(wp, tiffinfo)
 
