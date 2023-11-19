@@ -22,7 +22,7 @@ PathLike = TypeVar("PathLike", str, pathlib.Path, None)
 
 def read_txt(path: PathLike):
     try:
-        with open(path_to_str(path), mode='r') as f:
+        with open(path_to_str(path), mode='rb') as f:
             return f.read()
     except:
         logger.warning(f"Unable to read file as TXT: {path_to_str(path)}")
@@ -30,7 +30,7 @@ def read_txt(path: PathLike):
 
 def read_csv(path: PathLike):
     try:
-        with open(path_to_str(path), mode='r') as f:
+        with open(path_to_str(path), mode='rb') as f:
             return list(csv.reader(f))
     except:
         logger.warning(f"Unable to read file as HTML: {path_to_str(path)}")
@@ -38,7 +38,7 @@ def read_csv(path: PathLike):
 
 def read_html(path: PathLike):
     try:
-        with open(path_to_str(path), mode='r') as f:
+        with open(path_to_str(path), mode='rb') as f:
             return f.read()
     except:
         logger.warning(f"Unable to read file as HTML: {path_to_str(path)}")
@@ -48,7 +48,7 @@ def read_json(path: PathLike):
     # with open(file_path, mode='r') as f:
     #     return json.load(f)
     try:
-        with open(path_to_str(path), mode='r') as f:
+        with open(path_to_str(path), mode='rb') as f:
             return json.load(f)
     except:
         logger.warning(f"Unable to read file as JSON: {path_to_str(path)}")
@@ -60,8 +60,11 @@ def read_xml(path: PathLike):
     return root
 
 def read_tiffinfo(path: PathLike):
-    o = sp.check_output(['tiffinfo', path_to_str(path)])
-    return o.decode()
+    o = sp.check_output(['tiffinfo', path_to_str(path)], universal_newlines=True, errors='ignore')
+    print(o)
+    return o
+    # return o.decode()
+
 
 def read_tifftags(path: PathLike):
     page = TiffFile(path_to_str(path)).pages[0] # first page only
