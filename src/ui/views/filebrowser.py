@@ -133,7 +133,7 @@ class FileBrowser(QWidget):
             action.triggered.connect(lambda: cfg.pm.openAlignment(selected))
             menu.addAction(action)
 
-        if ext in ('.align', '.images'):
+        if ext in ('.alignment', '.images', '.align', '.emstack'):
             action = QAction()
             action.setText(f"Delete {selected}")
             action.triggered.connect(self.onDelete)
@@ -371,7 +371,7 @@ class FileBrowser(QWidget):
         # self.teSeriesSearchPaths.setMinimumHeight(40)
         # self.teSeriesSearchPaths.setMaximumHeight(80)
         self.teSeriesSearchPaths.setReadOnly(False)
-        lab = BoldLabel('Images (.images) Search Paths:')
+        lab = BoldLabel('Images (.emstack) Search Paths:')
         lab.setAlignment(Qt.AlignBottom)
         self.wSeriesSearchPaths = VW(lab, self.teSeriesSearchPaths)
         self.wSeriesSearchPaths.setToolTip(tip)

@@ -53,7 +53,8 @@ class ManagerTab(QWidget):
         self.setMinimumHeight(100)
         self.filebrowser = FileBrowser(parent=self)
         self.filebrowser.setContentsMargins(2,2,2,2)
-        self._watchImages = DirectoryWatcher(suffixes=['.images'], preferences=cfg.preferences, key='images_search_paths')
+        self._watchImages = DirectoryWatcher(suffixes=['.emstack'], preferences=cfg.preferences,
+                                             key='images_search_paths')
         self._watchImages.fsChanged.connect(self.updateCombos)
         self._watchAlignments = DirectoryWatcher(suffixes=['.alignment', '.align'], preferences=cfg.preferences, key='alignments_search_paths')
         self._watchAlignments.fsChanged.connect(self.loadAlignmentCombo)
@@ -99,7 +100,7 @@ class ManagerTab(QWidget):
         self.bPlusImages.setFixedSize(QSize(18, 18))
         self.bPlusImages.setIconSize(QSize(13, 13))
         self.bPlusImages.setCursor(QCursor(Qt.PointingHandCursor))
-        self.bPlusImages.setToolTip("Create Images (.images)")
+        self.bPlusImages.setToolTip("Create Images (.emstack)")
         # self.bPlusImages.setIcon(qta.icon('fa5s.images', color='#ede9e8'))
         # self.bPlusImages.setIcon(qta.icon('fa5s.images'))
         self.bPlusImages.setIcon(qta.icon('fa.plus'))
@@ -110,7 +111,7 @@ class ManagerTab(QWidget):
         self.bMinusImages.setFixedSize(QSize(18, 18))
         self.bMinusImages.setIconSize(QSize(13, 13))
         self.bMinusImages.setCursor(QCursor(Qt.PointingHandCursor))
-        self.bMinusImages.setToolTip("Delete Images (.images)")
+        self.bMinusImages.setToolTip("Delete Images (.emstack)")
         self.bMinusImages.setToolTipDuration(-1)
         # self.bMinusImages.setIcon(qta.icon('fa.minus', color='#ede9e8'))
         self.bMinusImages.setIcon(qta.icon('fa.minus'))
@@ -140,8 +141,8 @@ class ManagerTab(QWidget):
         # self.comboAlignment.addItems(["None"])
 
         self.comboImages = QComboBox()
-        self.comboImages.setToolTip("Select Image Stack (.images)")
-        self.comboImages.setPlaceholderText("Select Image Stack (.images)...")
+        self.comboImages.setToolTip("Select Image Stack (.emstack)")
+        self.comboImages.setPlaceholderText("Select Image Stack (.emstack)...")
         self.comboImages.setFocusPolicy(Qt.NoFocus)
         self.comboImages.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # self.comboImages.setEditable(True)
@@ -442,8 +443,8 @@ class ManagerTab(QWidget):
 
         name = self.leNameImages.text()
         name.replace(' ', '_')
-        if not name.endswith('.images'):
-            name += '.images'
+        if not name.endswith('.emstack'):
+            name += '.emstack'
 
         out = os.path.join(cfg.preferences['images_root'], name)
         im_siz = ImageSize(self._NEW_IMAGES_PATHS[0])
@@ -641,7 +642,7 @@ class ManagerTab(QWidget):
                                          QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if reply == QMessageBox.Yes:
                 try:
-                    if path.endswith('.images'):
+                    if path.endswith('.emstack'):
                         cfg.mw.tell(f'Deleting images {path}...')
                         run_subprocess(["rm", "-rf", path])
                         run_subprocess(["rm", "-rf", path])
