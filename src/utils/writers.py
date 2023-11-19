@@ -2,10 +2,13 @@
 
 import os
 import json
+import logging
 import inspect
 import pathlib
 from typing import TypeVar, Any
 from src.utils.helpers import print_exception, path_to_str
+
+logger = logging.getLogger(__name__)
 
 WRITERS = {}
 
@@ -13,13 +16,21 @@ PathLike = TypeVar("PathLike", str, pathlib.Path, None)
 
 
 def write_json(path: PathLike, data: dict):
-    with open(path_to_str(path), 'w') as f:
-        json.dump(data, f, ensure_ascii=False, indent=4, separators=(',', ':'))
-        # json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
+    try:
+        with open(path_to_str(path), 'w') as f:
+            json.dump(data, f, ensure_ascii=False, indent=4, separators=(',', ':'))
+            # json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
+    except:
+        logger.warning(f"Unable to read file as HTML: {path_to_str(path)}")
+        return None
 
 def write_txt(path: PathLike, data: Any):
-    with open(path_to_str(path), 'w') as f:
-        f.write(f)
+    try:
+        with open(path_to_str(path), 'w') as f:
+            f.write(f)
+    except:
+        logger.warning(f"Unable to read file as HTML: {path_to_str(path)}")
+        return None
 
 def register_writer(file_type):
     def decorator(fn):

@@ -145,6 +145,7 @@ class NgBootstrap():
                 volume_type='image',
                 dimensions=self.coordinate_space,
                 voxel_offset=[0, 0, 0],
+
             )
             s.layers['layer'] = ng.ImageLayer(source=self.LV)
 

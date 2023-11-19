@@ -206,16 +206,18 @@ def delete_recursive(dir, keep_core_dirs=False):
 def update_preferences_model():
     # caller = inspect.stack()[1].function
     logger.info(f'Updating user preferences model...')
+    if not cfg.preferences:
+        cfg.preferences = {}
     if '.tacc.utexas.edu' in platform.node():
         DEFAULT_CONTENT_ROOT = os.path.join(os.getenv('SCRATCH', "SCRATCH not found"), 'alignem_data')
     else:
         DEFAULT_CONTENT_ROOT = os.path.join(os.path.expanduser('~'), 'alignem_data')
-    cfg.preferences.pop('search_paths', None)
+    if 'search_paths' in cfg.preferences:
+        cfg.preferences.pop('search_paths', None)
     if 'state' in cfg.preferences:
         cfg.preferences.pop('state', None)
     if 'ui' in cfg.preferences:
         cfg.preferences.pop('ui', None)
-    cfg.preferences.pop('search_paths', None)
 
     cfg.preferences.setdefault('neuroglancer', {})
     cfg.preferences['neuroglancer'].setdefault('SHOW_UI_CONTROLS', False)
@@ -272,16 +274,15 @@ def update_preferences_model():
 def initialize_user_preferences():
     userpreferencespath = os.path.join(os.path.expanduser('~'), '.swiftrc')
     try:
-        if os.path.exists(userpreferencespath):
-            logger.info(f"Loading user preferences from '{userpreferencespath}'...")
-            with open(userpreferencespath, 'r') as f:
-                cfg.preferences = json.load(f)
-        else:
-            logger.critical(f'Creating user preferences from defaults...')
-            open(userpreferencespath, 'a').close()
-            cfg.preferences = {}
+        assert os.path.exists(userpreferencespath)
+        logger.info(f"Loading user preferences from '{userpreferencespath}'...")
+        with open(userpreferencespath, 'r') as f:
+            cfg.preferences = json.load(f)
+
     except:
-        print_exception()
+        logger.warning(f'Creating user preferences from defaults')
+        open(userpreferencespath, 'w').close() #overwrite
+        cfg.preferences = {}
 
     try:
         update_preferences_model()

@@ -17,7 +17,6 @@ import src.config as cfg
 logger = logging.getLogger(__name__)
 
 
-
 class ThumbnailFast(QLabel):
     clicked = Signal(QMouseEvent)
     left_click = Signal(float, float)
