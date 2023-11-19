@@ -64,6 +64,7 @@ import neuroglancer.write_annotations
 from neuroglancer.json_wrappers import array_wrapper, to_json, JsonObjectWrapper
 
 import src.config as cfg
+from src.utils.swiftir import invertAffine
 from src.utils.helpers import getOpt, getData, setData, is_joel
 
 context = ts.Context({'cache_pool': {'total_bytes_limit': 1000000000}})
@@ -582,6 +583,8 @@ class EMViewer(AbstractEMViewer):
 
         # if os.path.exists(os.path.join(self.path, '.zarray')):
         #     self.tensor = cfg.tensor = self.getTensor(str(self.path)).result()
+        with self.config_state.txn() as s:
+            s.show_ui_controls = getData('state,neuroglancer,show_controls')
 
         with self.txn() as s:
             s.layout.type = self._convert_layout(getData('state,neuroglancer,layout'))
@@ -598,8 +601,7 @@ class EMViewer(AbstractEMViewer):
                 p = self.root / str(i)
                 # print(f"{p}")
                 if p.exists():
-                    matrix = conv_mat(self.dm.cafm(l=i))
-                    matrix[0][3] = i
+                    matrix = conv_mat(self.dm.cafm(l=i), i=i)
                     # matrix = [[.999, 0, 0, i],
                     #           [0, 1, 0, 0],
                     #           [0, 0, 1, 0]]
@@ -628,9 +630,6 @@ class EMViewer(AbstractEMViewer):
             # s.layers[f'layer'] = ng.ImageLayer(source=source, shader=copy.deepcopy(self.shader, ))
 
          # https://github.com/google/neuroglancer/blob/ada384e9b27a64ceb704f565fa0989a1262fc903/python/tests/fill_value_test.py#L37
-
-        with self.config_state.txn() as s:
-            s.show_ui_controls = getData('state,neuroglancer,show_controls')
 
         self.set_brightness()
         self.set_contrast()
@@ -1021,8 +1020,12 @@ class MAViewer(AbstractEMViewer):
         D = (y - hh, x - hw)
         return A, B, C, D
 
-def conv_mat(mat):
-    ngmat = [[.999, 0, 0, 0],
+def conv_mat(mat, i=0):
+
+    mat = invertAffine(mat)
+    print(f'inv mat = {mat}')
+
+    ngmat = [[.999, 0, 0, i],
              [0, 1, 0, 0],
              [0, 0, 1, 0]]
     ngmat[2][2] = mat[0][0]
