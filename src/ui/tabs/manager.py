@@ -702,6 +702,7 @@ class ManagerTab(QWidget):
 
     def loadAlignmentCombo(self):
         # logger.info('')
+        self.comboAlignment.clear()
         cur_items = [self.comboAlignment.itemText(i) for i in range(self.comboAlignment.count())]
         if sorted(cur_items) != sorted(self._watchAlignments.known):
             _im_path = self.comboImages.currentText()
@@ -715,7 +716,7 @@ class ManagerTab(QWidget):
                 if self._getUUID(p) == _uuid:
                     valid.append(p)
 
-            self.comboAlignment.clear()
+            # self.comboAlignment.clear()
             self.comboAlignment.addItems(valid)
             mem = cfg.preferences['alignment_combo_text']
             if mem in valid:
