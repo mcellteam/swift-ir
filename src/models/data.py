@@ -1316,6 +1316,16 @@ class DataModel:
             print_exception()
             return [[[1, 0, 0], [0, 1, 0]]]
 
+    def real_afm(self, s=None, l=None) -> list:
+        if s == None: s = self.level
+        if l == None: l = self.zpos
+        try:
+            # return self._data['stack'][l]['levels'][s]['results']['affine_matrix'] #1107-
+            return self['stack'][l]['levels'][s]['results']['real_afm']
+        except:
+            print_exception()
+            return [[[1, 0, 0], [0, 1, 0]]]
+
 
     def cafm(self, s=None, l=None) -> list:
         if s == None: s = self.level
@@ -2214,6 +2224,7 @@ class DataModel:
                 self['stack'][i]['levels'][level].update(
                     initialized=False,
                     cafm=identity_matrix,
+                    cafm_inv=identity_matrix,
                     saved_swim_settings={
                         'index': i,
                         'name': basename,

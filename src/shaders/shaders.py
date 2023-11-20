@@ -5,9 +5,15 @@ setPointMarkerBorderWidth(prop_ptWidth());
 setPointMarkerSize(prop_size());}
 '''
 
-shader_default = '''#uicontrol invlerp normalized
-void main() {
-  emitGrayscale(normalized());
+# shader_basic = '''#uicontrol invlerp normalized
+# void main() {
+#   emitGrayscale(normalized());
+# }
+# '''
+
+shader_basic = '''#uicontrol invlerp normalized
+void main () {
+  emitGrayscale(toNormalized(getDataValue()));
 }
 '''
 

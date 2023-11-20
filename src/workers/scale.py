@@ -179,9 +179,9 @@ class ScaleWorker(QObject):
         self._timing_results['t_thumbs'] = thumbnailer.reduce_main(self.src, self.paths, out)
         # count_files(self.out, scales_list)
         zarr_od = os.path.abspath(os.path.join(self.out, 'zarr'))
-        zarr_layers_od = Path(self.out) / 'zarr_slices'
-        if not zarr_layers_od.exists():
-            zarr_layers_od.mkdir()
+        # zarr_layers_od = Path(self.out) / 'zarr_slices'
+        # if not zarr_layers_od.exists():
+        #     zarr_layers_od.mkdir()
         n_imgs = len(self.paths)
         for s, siz in deepcopy(self.scales):
             sv = get_scale_val(s)
@@ -201,12 +201,13 @@ class ScaleWorker(QObject):
             logger.info(desc)
             tasks = []
             for ID, img in enumerate(self.paths):
-                preallocate_zarr(p=zarr_layers_od, name=str(ID), shape=(
-                1, y, x), dtype='|u1', opts=self.opts, scale=s, silent=True)
+                # preallocate_zarr(p=zarr_layers_od, name=str(ID), shape=(
+                # 1, y, x), dtype='|u1', opts=self.opts, scale=s, silent=True)
 
                 fn = os.path.join(self.out, 'tiff', 's%d' % sv, os.path.basename(img))
                 out = os.path.join(zarr_od, 's%d' % sv)
-                tasks.append([ID, fn, out, str(zarr_layers_od / str(ID))])
+                tasks.append([ID, fn, out])
+                # tasks.append([ID, fn, out, str(zarr_layers_od / str(ID))])
                 # logger.critical(f"\n\ntask : {[ID, fn, out]}\n")
 
 
@@ -302,8 +303,8 @@ def convert_zarr(task):
         # im = iio.imread(fn)
         store[ID, :, :] = im
 
-        store_slice = zarr.open(out_slice)
-        store_slice[0, :, :] = im
+        # store_slice = zarr.open(out_slice)
+        # store_slice[0, :, :] = im
 
         # store[ID, :, :] = libtiff.TIFF.open(fn).read_image()[:, ::-1]  # store: <zarr.core.Array (19, 1244, 1130) uint8>
         # store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]

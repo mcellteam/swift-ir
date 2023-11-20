@@ -21,7 +21,8 @@ def write_json(path: PathLike, data: dict):
             json.dump(data, f, ensure_ascii=False, indent=4, separators=(',', ':'))
             # json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
     except:
-        logger.warning(f"Unable to read file as HTML: {path_to_str(path)}")
+        print_exception()
+        logger.warning(f"Unable to read file as JSON: {path_to_str(path)}")
         return None
 
 def write_txt(path: PathLike, data: Any):
@@ -29,7 +30,7 @@ def write_txt(path: PathLike, data: Any):
         with open(path_to_str(path), 'w') as f:
             f.write(f)
     except:
-        logger.warning(f"Unable to read file as HTML: {path_to_str(path)}")
+        logger.warning(f"Unable to read file as TXT: {path_to_str(path)}")
         return None
 
 def register_writer(file_type):

@@ -154,7 +154,6 @@ class AbstractEMViewer(neuroglancer.Viewer):
             s.input_event_bindings.viewer['control+mousedown1'] = 'ctlMousedown'
             # s.input_event_bindings.slice_view['space'] = 'keySpace'
             s.show_ui_controls = False
-            s.show_ui_controls = False
             s.show_panel_borders = False
             s.show_layer_panel = False
             s.show_help_button = True
@@ -232,25 +231,25 @@ class AbstractEMViewer(neuroglancer.Viewer):
         except Exception as e:
             logger.info(e)
 
-    def set_afm(self, index=0, mat=None):
-        logger.info('')
-        if not mat:
-            mat = self.dm.afm_cur()
-        print(f"afm: {mat}")
-        # cfg.dm.afm()
-        # Out[3]: [[1.0, 0.0, 0.0],
-        #          [0.0, 1.0, 0.0]]
-
-        ngmat = conv_mat(mat)
-
-        # self.state.layers[index].layer.source[0].transform.matrix = matrix
-        state = copy.deepcopy(self.state)
-        try:
-            # state.layers[index].layer['source']['transform']['matrix'] = matrix
-            state.layers[index].layer.source[0].transform.matrix = ngmat
-            self.set_state(state)
-        except Exception as e:
-            logger.info(e)
+    # def set_afm(self, index=0, mat=None):
+    #     logger.info('')
+    #     if not mat:
+    #         mat = self.dm.afm_cur()
+    #     print(f"afm: {mat}")
+    #     # cfg.dm.afm()
+    #     # Out[3]: [[1.0, 0.0, 0.0],
+    #     #          [0.0, 1.0, 0.0]]
+    #
+    #     ngmat = conv_mat(mat)
+    #
+    #     # self.state.layers[index].layer.source[0].transform.matrix = matrix
+    #     state = copy.deepcopy(self.state)
+    #     try:
+    #         # state.layers[index].layer['source']['transform']['matrix'] = matrix
+    #         state.layers[index].layer.source[0].transform.matrix = ngmat
+    #         self.set_state(state)
+    #     except Exception as e:
+    #         logger.info(e)
 
     def set_null_afm(self, index=0, mat=None):
         logger.info('')
@@ -285,6 +284,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
             try:
                 vc[0] = self.dm.zpos + 0.5
             except TypeError:
+                logger.warning("TypeError")
                 pass
         self._blockStateChanged = False
 
@@ -382,8 +382,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
                 'file_io_concurrency': {'limit': 1024},  # 1027+
                 # 'data_copy_concurrency': {'limit': 512},
             },
-            # 'recheck_cached_data': 'open',
-            'recheck_cached_data': True,  # default=True
+            'recheck_cached_data': 'open',
+            # 'recheck_cached_data': True,  # default=True
         })
         return future
 
@@ -537,9 +537,10 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
 class EMViewer(AbstractEMViewer):
 
-    def __init__(self, **kwags):
+    def __init__(self, view='raw', **kwags):
         super().__init__(**kwags)
         self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
+        self.view = view
         self.type = 'EMViewer'
         self.shader = self.dm['rendering']['shader']
         self._mats = [None] * len(self.dm)
@@ -550,7 +551,7 @@ class EMViewer(AbstractEMViewer):
     def on_state_changed(self):
 
         if not self._blockStateChanged:
-            logger.debug('')
+            logger.info('')
 
             _css = self.state.cross_section_scale
             if not isinstance(_css, type(None)):
@@ -564,6 +565,7 @@ class EMViewer(AbstractEMViewer):
             if isinstance(self.state.position, np.ndarray):
                 requested = int(self.state.position[0])
                 if requested != self.dm.zpos:
+                    logger.info(f'Chaning index to {self.dm.zpos}')
                     self.dm.zpos = requested
 
             if self.state.layout.type != self._convert_layout(getData('state,neuroglancer,layout')):
@@ -572,8 +574,6 @@ class EMViewer(AbstractEMViewer):
     # async def initViewer(self, nglayout=None):
     def initViewer(self):
         self._blockStateChanged = False
-
-        self.root = Path(self.dm.images_path) / 'zarr_slices'
 
         siz = self.dm.image_size()
 
@@ -591,43 +591,61 @@ class EMViewer(AbstractEMViewer):
             s.show_scale_bar = getData('state,neuroglancer,show_scalebar')
             s.show_axis_lines = getData('state,neuroglancer,show_axes')
             s.show_default_annotations = getData('state,neuroglancer,show_bounds')
-            # s.position=[self.dm.zpos + 0.5, self.tensor.shape[1]/2, self.tensor.shape[2]/2]
-            s.position=[self.dm.zpos + 0.5, siz[1], siz[0]]
 
-            for i in range(len(self.dm)):
-                # if i < 100:   # this moves light section
-                #     continue
 
-                p = self.root / str(i)
-                # print(f"{p}")
-                if p.exists():
+
+            if self.view == 'experimental':
+                # self.root = Path(self.dm.images_path) / 'zarr_slices'
+                self.path = Path(self.dm.images_path) / 'zarr' / self.dm.level
+                tensor = self.getTensor(str(self.path)).result()
+                s.position = [self.dm.zpos + 0.5, tensor.shape[1] / 2, tensor.shape[2] / 2]
+                for i in range(len(self.dm)):
+                    # p = self.root / str(i)
+                    # if p.exists():
+
+                    # inv_cafm = invertAffine(self.dm.cafm(l=i))
+                    # matrix = conv_mat(inv_cafm, i=i)
+
                     matrix = conv_mat(self.dm.cafm(l=i), i=i)
-                    # matrix = [[.999, 0, 0, i],
-                    #           [0, 1, 0, 0],
-                    #           [0, 0, 1, 0]]
-                    print(f"matrix:\n{matrix}")
                     self._mats[i] = matrix
+
                     transform = {
                         # 'matrix': [[.999, 0, 0, i],
                         'matrix': matrix,
-                        'outputDimensions': {'z': [self.res[0], 'nm'],
-                                             'y': [self.res[1], 'nm'],
-                                             'x': [self.res[2], 'nm']}}
+                        # 'outputDimensions': {'z': [self.res[0], 'nm'],
+                        #                      'y': [self.res[1], 'nm'],
+                        #                      'x': [self.res[2], 'nm']}}
+                        # 'outputDimensions': {'z': [self.res[0], 'nm'],
+                        #                      'y': [self.res[1], 'nm'],
+                        #                      'x': [self.res[2], 'nm']}}
+                        'outputDimensions': {'z': [50, 'nm'],
+                                             'y': [2, 'nm'],
+                                             'x': [2, 'nm']}}
+                    # tensor = self.getTensor(str(p)).result()
 
-                    tensor = self.getTensor(str(p)).result()
-                    LV = self.getLocalVolume(tensor[:, :, :], self.getCoordinateSpace())
+                    LV = self.getLocalVolume(tensor[i:i+1, :, :], self.getCoordinateSpace())
                     # LV = self.getLocalVolume(tensor[:, :, :], self.getCoordinateSpace(), z_offset=i)
                     source = ng.LayerDataSource(
                         url=LV,
                         transform=ng.CoordinateSpaceTransform(transform)
                     )
-                    s.layers[f'{i}'] = ng.ImageLayer(source=source, shader=copy.deepcopy(self.shader,))
+                    # s.layers[f'{i}'] = ng.ImageLayer(source=source, shader=copy.deepcopy(self.shader,))
+                    s.layers.append(
+                        name=f"layer-{i}",
+                        # layer=ng.ImageLayer(source=source, shader=copy.deepcopy(self.shader,))
+                        layer=ng.ImageLayer(source=source, shader=copy.deepcopy(self.shader, )),
+                        opacity=1, #Critical
+                    )
+            else:
 
-            # tensor = self.getTensor(str(self.path)).result()
-            # LV = self.getLocalVolume(tensor[:, :, :], self.getCoordinateSpace())
-            # # LV = self.getLocalVolume(tensor[:, :, :], self.getCoordinateSpace(), z_offset=i)
-            # source = ng.LayerDataSource(url=LV,)
-            # s.layers[f'layer'] = ng.ImageLayer(source=source, shader=copy.deepcopy(self.shader, ))
+                tensor = self.getTensor(str(self.path)).result()
+                s.position = [self.dm.zpos + 0.5, tensor.shape[1] / 2, tensor.shape[2] / 2]
+                LV = self.getLocalVolume(tensor[:, :, :], self.getCoordinateSpace())
+                # LV = self.getLocalVolume(tensor[:, :, :], self.getCoordinateSpace(), z_offset=i)
+                source = ng.LayerDataSource(url=LV,)
+                s.layers[f'layer'] = ng.ImageLayer(source=source, shader=copy.deepcopy(self.shader, ))
+
+
 
          # https://github.com/google/neuroglancer/blob/ada384e9b27a64ceb704f565fa0989a1262fc903/python/tests/fill_value_test.py#L37
 
@@ -640,75 +658,94 @@ class TransformViewer(AbstractEMViewer):
 
     def __init__(self, **kwags):
         super().__init__(**kwags)
-        self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
         self.type = 'EMViewer'
-        self.path = Path(self.dm.images_path) / 'zarr_slices' / str(self.dm.zpos)
-        # self.path = str(self.Path)
+        self.shader = self.dm['rendering']['shader']
+        self.path = Path(self.dm.path_zarr_raw())
+        self.section_number = self.dm.zpos
         self.initViewer()
-        # asyncio.ensure_future(self.initViewer())
-        # self.post_message(f"Voxel Coordinates: {str(self.state.voxel_coordinates)}")
 
-    def on_state_changed(self):
-
-        if not self._blockStateChanged:
-
-            _css = self.state.cross_section_scale
-            if not isinstance(_css, type(None)):
-                val = (_css, _css * 250000000)[_css < .001]
-                if round(val, 2) != round(getData('state,neuroglancer,zoom'), 2):
-                    if getData('state,neuroglancer,zoom') != val:
-                        logger.debug(f'emitting zoomChanged! [{val:.4f}]')
-                        setData('state,neuroglancer,zoom', val)
-                        self.signals.zoomChanged.emit(val)
-
-            if isinstance(self.state.position, np.ndarray):
-                requested = int(self.state.position[0])
-                if requested != self.dm.zpos:
-                    self.dm.zpos = requested
-
-            if self.state.layout.type != self._convert_layout(getData('state,neuroglancer,layout')):
-                self.signals.layoutChanged.emit()
-
-    # async def initViewer(self, nglayout=None):
     def initViewer(self):
-        # caller = inspect.stack()[1].function
         self._blockStateChanged = False
 
-        if not os.path.exists(os.path.join(self.path, '.zarray')):
-            cfg.main_window.warn('Zarr (.zarray) Not Found: %s' % self.path)
+        if not self.path.exists():
+            logger.warning(f"Path not found: {self.path}")
             return
 
-        if os.path.exists(os.path.join(self.path, '.zarray')):
-            self.tensor = cfg.tensor = self.getTensor(str(self.path)).result()
-            self.LV = cfg.LV = self.getLocalVolume(self.tensor[:, :, :], self.getCoordinateSpace())
+        self._tensor = self.getTensor(str(self.path)).result()
 
-        transform = {
-            'matrix': [[.999, 0, 0, 1],
-                       [0, 1, 0, 0],
-                       [0, 0, 1, 0]],
-            'outputDimensions': {'z': [self.res[0], 'nm'],
-                                 'y': [self.res[1], 'nm'],
-                                 'x': [self.res[2], 'nm']}}
+        self.tensor_ref = self.getTensor(str(self.path)).result()
+        ref_pos = self.dm.get_ref_index()
+        if ref_pos:
+            try:
+                self.LV0 = self.getLocalVolume(self.tensor_ref[ref_pos:ref_pos+1, :, :], self.getCoordinateSpace())
+            except Exception as e:
+                print(e)
+
+
+        self.tensor = self.getTensor(str(self.path)).result()
+        self.LV1 = self.getLocalVolume(self._tensor[self.dm.zpos:self.dm.zpos+1, :, :], self.getCoordinateSpace())
+
+        ident = np.array([[1., 0., 0.], [0., 1., 0.]])
+        output_dims = {'z': [self.res[0], 'nm'],
+                       'y': [self.res[1], 'nm'],
+                       'x': [self.res[2], 'nm']}
+
+        # transform0 = {'matrix': conv_mat(ident, i=1),
+        #     'outputDimensions': output_dims}
+        #
+        # transform1 = {'matrix': conv_mat(self.dm.afm_cur(), i=2),
+        #     'outputDimensions': output_dims}
 
         with self.txn() as s:
             s.layout.type = self._convert_layout('xy')
+            # s.layout.type = self._convert_layout('4panel')
             s.show_scale_bar = True
             s.show_axis_lines = False
             s.show_default_annotations = True
-            s.position = [self.dm.zpos + 0.5, self.tensor.shape[1] / 2, self.tensor.shape[2] / 2]
-            source = ng.LayerDataSource(
-                url=self.LV,
-                transform=ng.CoordinateSpaceTransform(transform)
-            )
-            s.layers['layer'] = ng.ImageLayer(
-                source=source,
-                shader=self.dm['rendering']['shader'],
-            )
+            # s.position = [0.5, self.tensor.shape[1] / 2, self.tensor.shape[2] / 2]
+            s.position = [1.5, self.tensor.shape[1] / 2, self.tensor.shape[2] / 2]
+            transform0 = {'matrix': conv_mat(ident, i=0), 'outputDimensions': output_dims}
+            if hasattr(self, 'LV0'):
+                source0 = ng.LayerDataSource(
+                    url=self.LV0,
+                    transform=ng.CoordinateSpaceTransform(transform0),)
+                s.layers.append(
+                    name='layer0',
+                    layer=ng.ImageLayer(source=source0, shader=copy.deepcopy(self.shader, )),
+                    opacity=1,)
 
-        # https://github.com/google/neuroglancer/blob/ada384e9b27a64ceb704f565fa0989a1262fc903/python/tests/fill_value_test.py#L37
+                if self.dm.is_aligned():
+                    mat = conv_mat(self.dm.afm_cur(), i=1)
+                    # mat = conv_mat(self.dm.real_afm(), i=1)
+                    # mat = conv_mat(self.dm.applied_afm(), i=1)
+                else:
+                    mat = conv_mat(ident, i=1)
+                transform1 = {'matrix': mat, 'outputDimensions': output_dims}
+                source1 = ng.LayerDataSource(
+                    url=self.LV1,
+                    transform=ng.CoordinateSpaceTransform(transform1), )
+                s.layers.append(
+                    name='layer1',
+                    layer=ng.ImageLayer(source=source1, shader=copy.deepcopy(self.shader, )),
+                    opacity=1,)
 
         with self.config_state.txn() as s:
             s.show_ui_controls = False
+            s.show_layer_panel = False
+            # s.scale_bar_options.padding_in_pixels = 2  # default = 8
+            s.scale_bar_options.left_pixel_offset = 4  # default = 10
+            s.scale_bar_options.bottom_pixel_offset = 4  # default = 10
+            # s.scale_bar_options.bar_top_margin_in_pixels = 0  # default = 5
+            s.scale_bar_options.max_width_fraction = 0.1
+            s.scale_bar_options.text_height_in_pixels = 10 # default = 15
+            s.scale_bar_options.bar_height_in_pixels = 4  # default = 8
+            # s.scale_bar_options.font_name = 'monospace'
+            # s.scale_bar_options.font_name = 'serif'
+
+        # w = self.webengine.width()
+        # h = self.webengine.height()
+        # self.initZoom(w=w, h=h)
+
         self.set_brightness()
         self.set_contrast()
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
@@ -811,10 +848,14 @@ class MAViewer(AbstractEMViewer):
             try:
                 vc[0] = self.index + 0.5
             except TypeError:
+                logger.warning('TypeError')
                 pass
 
         self.drawSWIMwindow() #1111+
-        print(f"<< set_layer")
+        try:
+            print(f"<< set_layer [{self.index}] [{self.state.voxel_coordinates}]")
+        except Exception as e:
+            print(e)
         # self.signals.zVoxelCoordChanged.emit(self.index)
         self._blockStateChanged = False
 
@@ -1022,19 +1063,15 @@ class MAViewer(AbstractEMViewer):
 
 # @cache # Unhashable type: List
 def conv_mat(mat, i=0):
-
-    mat = invertAffine(mat)
-    print(f'inv mat = {mat}')
-
     ngmat = [[.999, 0, 0, i],
              [0, 1, 0, 0],
              [0, 0, 1, 0]]
     ngmat[2][2] = mat[0][0]
     ngmat[2][1] = mat[0][1]
-    ngmat[2][3] = mat[0][2]
+    ngmat[2][3] = mat[0][2]  # translation
     ngmat[1][2] = mat[1][0]
     ngmat[1][1] = mat[1][1]
-    ngmat[1][3] = mat[1][2]
+    ngmat[1][3] = mat[1][2] #translation
 
     # ngmat[2][2] = mat[0][0]
     # ngmat[2][1] = mat[0][1]

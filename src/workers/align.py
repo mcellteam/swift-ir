@@ -190,6 +190,11 @@ class AlignWorker(QObject):
                     continue
 
                 dm['stack'][i]['levels'][scale]['results'] = r
+                try:
+                    dm['stack'][i]['levels'][scale]['real_afm'] = r['real_afm']
+                except:
+                    dm['stack'][i]['levels'][scale]['real_afm'] = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
+                    print_exception()
                 ss = dm.swim_settings(s=scale, l=i)
                 logger.info(f"[{i}] Success! afm: {afm}")
                 self.dm.ht.put(ss, afm)

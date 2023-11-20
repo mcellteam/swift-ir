@@ -53,7 +53,7 @@ class ManagerTab(QWidget):
         self.setMinimumHeight(100)
         self.filebrowser = FileBrowser(parent=self)
         self.filebrowser.setContentsMargins(2,2,2,2)
-        self._watchImages = DirectoryWatcher(suffixes=['.emstack'], preferences=cfg.preferences,
+        self._watchImages = DirectoryWatcher(suffixes=['.emstack', '.images'], preferences=cfg.preferences,
                                              key='images_search_paths')
         self._watchImages.fsChanged.connect(self.updateCombos)
         self._watchAlignments = DirectoryWatcher(suffixes=['.alignment', '.align'], preferences=cfg.preferences, key='alignments_search_paths')
@@ -549,6 +549,7 @@ class ManagerTab(QWidget):
         seriespath = Path(self.comboImages.currentText())
         usertext = self.leNameAlignment.text()
         newproject = (root / usertext).with_suffix('.align')
+        newdir = (root / usertext).with_suffix('')
         info = seriespath / 'info.json'
         _err = 0
         _msg = None
@@ -561,6 +562,9 @@ class ManagerTab(QWidget):
         elif os.path.exists(newproject):
             _err = 1
             _msg = f"A file with this name already exists: {newproject}"
+        elif os.path.exists(newdir):
+            _err = 1
+            _msg = f"A directory with this name already exists: {newdir}"
         if _err:
             cfg.mw.warn(_msg)
             self.resetView()
@@ -569,6 +573,7 @@ class ManagerTab(QWidget):
             dm = DataModel(file_path=newproject, images_path=seriespath, init=True, images_info=info)
             DirectoryStructure(dm).initDirectory()
             AlignmentTab(self.parent, dm)
+            dm.save(silently=True)
         self.bPlusAlignment.setEnabled(True)
         logger.info(f"<-- createAlignment")
 
@@ -629,21 +634,29 @@ class ManagerTab(QWidget):
         if path.suffix == '.align':
             del_path = path.with_suffix('')
 
-            if del_path.is_dir():
-                logger.warning(f"Removing alignment dir '{del_path}'")
-                reply = QMessageBox.question(self, "Quit", f"Delete this alignment?\n\n'{del_path}'",
-                                             QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-                if reply == QMessageBox.Yes:
-                    cfg.mw.tell(f'Starting subprocess: removing {del_path}...')
+            # if del_path.is_dir():
+            logger.warning(f"Removing alignment dir '{del_path}'")
+            reply = QMessageBox.question(self, "Quit", f"Delete this alignment?\n\n'{del_path}'",
+                                         QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if reply == QMessageBox.Yes:
+                cfg.mw.tell(f'Running background process: removing {del_path}...')
+                if path.exists():
                     try:
-                        run_subprocess(["rm", "-rf", str(del_path)])
+                        os.remove(path) #todo make this more robust/safe, check dir before deleting
                     except:
                         print_exception()
-                    self.updateCombos()
-                    # self.resetView()     #1118-
-                    # self.initPMviewer()  #1118-
-                else:
-                    cfg.mw.warn(f'Path not found: {del_path}')
+                if path.with_suffix('').exists():
+                    try:
+                        run_subprocess(["rm", "-rf", str(del_path)])
+                        time.sleep(2)
+                    except:
+                        print_exception()
+
+                self.updateCombos()
+                # self.resetView()     #1118-
+                # self.initPMviewer()  #1118-
+            else:
+                cfg.mw.warn(f'Path not found: {del_path}')
 
 
     def onMinusImages(self):
@@ -655,7 +668,7 @@ class ManagerTab(QWidget):
                                          QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if reply == QMessageBox.Yes:
                 try:
-                    if path.endswith('.emstack'):
+                    if path.endswith('.emstack') or path.endswith('.images'):
                         cfg.mw.tell(f'Deleting images {path}...')
                         run_subprocess(["rm", "-rf", path])
                         run_subprocess(["rm", "-rf", path])
