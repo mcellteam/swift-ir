@@ -708,32 +708,33 @@ class ManagerTab(QWidget):
     def loadAlignmentCombo(self):
         # logger.info('')
         self.comboAlignment.clear()
-        cur_items = [self.comboAlignment.itemText(i) for i in range(self.comboAlignment.count())]
-        if sorted(cur_items) != sorted(self._watchAlignments.known):
-            _im_path = self.comboImages.currentText()
-            _im_name = os.path.basename(_im_path)
-            _uuid = self._getImagesUUID(_im_path)
-            known = self._watchAlignments.known
+        if self.comboImages.currentText():
+            cur_items = [self.comboAlignment.itemText(i) for i in range(self.comboAlignment.count())]
+            if sorted(cur_items) != sorted(self._watchAlignments.known):
+                _im_path = self.comboImages.currentText()
+                _im_name = os.path.basename(_im_path)
+                _uuid = self._getImagesUUID(_im_path)
+                known = self._watchAlignments.known
 
-            # valid = [p for p in known if self._getUUID(p) == _uuid]
-            valid = []
-            for p in known:
-                if self._getUUID(p) == _uuid:
-                    valid.append(p)
+                # valid = [p for p in known if self._getUUID(p) == _uuid]
+                valid = []
+                for p in known:
+                    if self._getUUID(p) == _uuid:
+                        valid.append(p)
 
-            # self.comboAlignment.clear()
-            self.comboAlignment.addItems(valid)
-            mem = cfg.preferences['alignment_combo_text']
-            if mem in valid:
-                self.comboAlignment.setCurrentText(mem)
-            if os.path.exists(str(_im_path)):
-                if len(valid):
-                    self.comboAlignment.setPlaceholderText(f"{len(valid)} Alignments (.align) of '{_im_name}' "
-                                                               f"Found")
+                # self.comboAlignment.clear()
+                self.comboAlignment.addItems(valid)
+                mem = cfg.preferences['alignment_combo_text']
+                if mem in valid:
+                    self.comboAlignment.setCurrentText(mem)
+                if os.path.exists(str(_im_path)):
+                    if len(valid):
+                        self.comboAlignment.setPlaceholderText(f"{len(valid)} Alignments (.align) of '{_im_name}' "
+                                                                   f"Found")
+                    else:
+                        self.comboAlignment.setPlaceholderText(f"No Alignments (.align) of '{_im_name}' Found")
                 else:
-                    self.comboAlignment.setPlaceholderText(f"No Alignments (.align) of '{_im_name}' Found")
-            else:
-                self.comboAlignment.setPlaceholderText("")
+                    self.comboAlignment.setPlaceholderText("")
 
 
     def loadLevelsCombo(self):
