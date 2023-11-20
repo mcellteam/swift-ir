@@ -60,7 +60,7 @@ class ManagerTab(QWidget):
         self._watchAlignments.fsChanged.connect(self.loadAlignmentCombo)
         # self._fsWatcher = FsWatcher(extension='.align')
         self.filebrowser.navigateTo(os.path.expanduser('~'))
-        self._images_info = None
+        self._images_info = {}
         # self._selected_series = None #Todo
         # self._selected_alignment = None #Todo
 
@@ -429,8 +429,14 @@ class ManagerTab(QWidget):
 
     def _getImagesUUID(self, p):
         path = Path(p) / 'info.json'
+
         if path.exists():
-            return read('json')(path)['uuid']
+            try:
+                return read('json')(path)['uuid']
+            except:
+                logger.warning(f'Unable to read UUID from {path}')
+                return None
+
 
 
     #importseries
@@ -593,7 +599,6 @@ class ManagerTab(QWidget):
                 # res = info['resolution'][level]
                 res = self._images_info['resolution'][level]
             except:
-                print_exception()
                 logger.warning(f"No resolution found for level {level}")
                 res = [50, 8, 8]
             self.viewer = self.parent.viewer = PMViewer(parent=self, webengine=self.webengine, path=paths, dm=None, res=res, )
@@ -735,8 +740,10 @@ class ManagerTab(QWidget):
         # logger.info('')
         self.comboLevel.clear()
         if self._images_info:
-            self.comboLevel.addItems(self._images_info['levels'])
-            self.comboLevel.setCurrentIndex(self.comboLevel.count() - 1)
+            if type(self._images_info) == dict:
+                if 'levels' in self._images_info:
+                    self.comboLevel.addItems(self._images_info['levels'])
+                    self.comboLevel.setCurrentIndex(self.comboLevel.count() - 1)
 
 
     def onSelectImagesCombo(self):
