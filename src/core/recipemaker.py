@@ -503,20 +503,21 @@ class align_recipe:
         pA = self.ss['path_thumb_transformed']
         pB = self.ss['path_thumb_src_ref']
         out = self.ss['path_gif']
-        # try:
-        #     assert os.path.exists(pA)
-        # except AssertionError:
-        #     logger.error(f'\nImage not found: {pA}\n')
-        #     return
-        # try:
-        #     assert os.path.exists(pB)
-        # except AssertionError:
-        #     logger.error(f'\nImage not found: {pB}\n')
-        #     return
+        time.sleep(.1)
+        try:
+            assert os.path.exists(pA)
+        except AssertionError:
+            logger.error(f'\nImage not found: {pA}\n')
+            return
+        try:
+            assert os.path.exists(pB)
+        except AssertionError:
+            logger.error(f'\nImage not found: {pB}\n')
+            return
 
         # ERROR:src.core.recipemaker:
         # Image not found: /Users/joelyancey/alignem_data/alignments/666/data/35/s4/7910856802294028582/R34CA1-BS12.136.thumb.tif
-        time.sleep(.01)
+
 
         imA = iio.imread(pA)
         imB = iio.imread(pB)
@@ -881,10 +882,11 @@ class align_ingredient:
 
         for tn in glob.glob(od_pattern):
             logger.info(f'Removing {tn}...')
-            try:
-                os.remove(tn)
-            except:
-                logger.warning('An exception was triggered during removal of expired thumbnail: %s' % tn)
+            if os.path.exists(tn):
+                try:
+                    os.remove(tn)
+                except:
+                    logger.warning('An exception was triggered during removal of expired thumbnail: %s' % tn)
 
         tnLogger.info('Reducing the following:\n%s' %str(self.matches_filenames))
         # logger.info(f'Reducing {len(self.matches_filenames)} total match images...')
