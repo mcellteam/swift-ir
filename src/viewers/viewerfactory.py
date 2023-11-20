@@ -592,8 +592,6 @@ class EMViewer(AbstractEMViewer):
             s.show_axis_lines = getData('state,neuroglancer,show_axes')
             s.show_default_annotations = getData('state,neuroglancer,show_bounds')
 
-
-
             if self.view == 'experimental':
                 # self.root = Path(self.dm.images_path) / 'zarr_slices'
                 self.path = Path(self.dm.images_path) / 'zarr' / self.dm.level
@@ -609,18 +607,14 @@ class EMViewer(AbstractEMViewer):
                     matrix = conv_mat(self.dm.cafm(l=i), i=i)
                     self._mats[i] = matrix
 
+                    output_dims = {'z': [self.res[0], 'nm'],
+                                   'y': [self.res[1], 'nm'],
+                                   'x': [self.res[2], 'nm']}
+
                     transform = {
-                        # 'matrix': [[.999, 0, 0, i],
                         'matrix': matrix,
-                        # 'outputDimensions': {'z': [self.res[0], 'nm'],
-                        #                      'y': [self.res[1], 'nm'],
-                        #                      'x': [self.res[2], 'nm']}}
-                        # 'outputDimensions': {'z': [self.res[0], 'nm'],
-                        #                      'y': [self.res[1], 'nm'],
-                        #                      'x': [self.res[2], 'nm']}}
-                        'outputDimensions': {'z': [50, 'nm'],
-                                             'y': [2, 'nm'],
-                                             'x': [2, 'nm']}}
+                        'outputDimensions': output_dims
+                    }
                     # tensor = self.getTensor(str(p)).result()
 
                     LV = self.getLocalVolume(tensor[i:i+1, :, :], self.getCoordinateSpace())
