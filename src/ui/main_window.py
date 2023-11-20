@@ -1136,6 +1136,7 @@ class MainWindow(QMainWindow):
             self._alignworker.finished.connect(lambda: self.pt.snr_plot.initSnrPlot())
         self._alignworker.finished.connect(self.updateEnabledButtons)
         
+        self._alignworker.finished.connect(lambda: self.pt.updateZarrRadiobuttons())
         self._alignworker.finished.connect(lambda: self.present_snr_results(dm, indexes))
         self._alignworker.finished.connect(lambda: self.pt.initNeuroglancer(init_all=True))
         self._alignworker.finished.connect(lambda: setattr(self, '_working', False))
@@ -2206,6 +2207,10 @@ class MainWindow(QMainWindow):
         op.setOpacity(val)  # 0 to 1 -> fade effect
         obj.setGraphicsEffect(op)
         obj.setAutoFillBackground(True)
+
+    def set_shader_basic(self):
+        self.dm['rendering']['shader'] = src.shaders.shaders.shader_basic
+        self.pt.initNeuroglancer()
 
     def set_shader_default(self):
         self.dm['rendering']['shader'] = src.shaders.shaders.shader_default_
@@ -3436,15 +3441,21 @@ class MainWindow(QMainWindow):
         self.shader4Action.triggered.connect(self.set_shader_test2)
         ngShaderMenu.addAction(self.shader4Action)
 
+        self.shader5Action = QAction('basic', self)
+        self.shader5Action.triggered.connect(self.set_shader_basic)
+        ngShaderMenu.addAction(self.shader5Action)
+
         shaderActionGroup = QActionGroup(self)
         shaderActionGroup.setExclusive(True)
         shaderActionGroup.addAction(self.shaderDefaultAction)
         shaderActionGroup.addAction(self.shader2Action)
         shaderActionGroup.addAction(self.shader3Action)
         shaderActionGroup.addAction(self.shader4Action)
+        shaderActionGroup.addAction(self.shader5Action)
         self.shader2Action.setCheckable(True)
         self.shader3Action.setCheckable(True)
         self.shader4Action.setCheckable(True)
+        self.shader5Action.setCheckable(True)
 
         self.detachNgAction = QAction('Detach Neuroglancer...', self)
         self.detachNgAction.triggered.connect(self.detachNeuroglancer)

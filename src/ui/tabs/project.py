@@ -10,6 +10,7 @@ import time
 import warnings
 from pprint import pformat
 from pathlib import Path
+from math import floor
 
 import qtawesome as qta
 from qtpy.QtCore import *
@@ -81,6 +82,17 @@ class AlignmentTab(QWidget):
         self.dm.signals.zposChanged.connect(self.parent.setSignalsPixmaps)
         self.dm.signals.zposChanged.connect(self.parent.setTargKargPixmaps)
         self.dm.signals.zposChanged.connect(self.dataUpdateMA) #1111+
+        def fn_create_corner_viewer():
+            if self.wTabs.currentIndex() == 1:
+                if self.twCornerViewer.currentIndex() == 1:
+                    logger.info('')
+                    path = os.path.join(self.dm['info']['images_path'], 'zarr', self.dm.level)
+                    res = self.dm.resolution(s=self.dm.level)
+                    self.transformViewer = TransformViewer(parent=self, webengine=self.webengine2, path=None, dm=self.dm, res=res, )
+                    w = self.webengine2.width()
+                    h = self.webengine2.height()
+                    self.transformViewer.initZoom(w=w, h=h, adjust=1.2)
+        self.dm.signals.zposChanged.connect(fn_create_corner_viewer) #1111+
         # self.dm.signals.zposChanged.connect(self.forceFocus) #1111+
         def fn_updatelayer():
             logger.info('')
@@ -177,7 +189,6 @@ class AlignmentTab(QWidget):
         self.dm['state']['current_tab'] = index
         # self.gifPlayer.stop()
         if index == 0:
-
             self.viewer = self.parent.viewer = cfg.viewer = self.viewer0
             self.viewer.set_layer()
             # self.parent.setdw_thumbs(True)
@@ -191,7 +202,14 @@ class AlignmentTab(QWidget):
             self.initNeuroglancer() #Todo necessary for now
             self.set_transforming() #0802+
             self._updatePointLists() #0726+
-            self.gifPlayer.set()
+            if self.twCornerViewer.currentIndex() == 0:
+                self.gifPlayer.set()
+            elif self.twCornerViewer.currentIndex() == 1:
+                res = self.dm.resolution(s=self.dm.level)
+                self.transformViewer = TransformViewer(parent=self, webengine=self.webengine2, path=None, dm=self.dm, res=res, )
+                w = self.webengine2.width()
+                h = self.webengine2.height()
+                self.transformViewer.initZoom(w=w, h=h, adjust=1.2)
             # self.parent.viewer = self.viewer1
             self.viewer = self.parent.viewer = cfg.viewer = self.viewer1
         elif index == 2:
@@ -215,6 +233,8 @@ class AlignmentTab(QWidget):
         if index == 0:
             self.shutdownNeuroglancer()
             self.initNeuroglancer()
+            self.viewer = self.viewer0
+
         elif index == 1:
             logger.critical('Refreshing editor tab...')
             self.shutdownNeuroglancer()
@@ -226,11 +246,19 @@ class AlignmentTab(QWidget):
                 else:
                     self.dSnr_plot.wipePlot()
 
-            self.gifPlayer.set()
+            if self.twCornerViewer.currentIndex() == 0:
+                self.gifPlayer.set()
+            elif self.twCornerViewer.currentIndex() == 1:
+                res = copy.deepcopy(self.dm.resolution(s=self.dm.level))
+                self.transformViewer = TransformViewer(parent=self, webengine=self.webengine2, path=None, dm=self.dm, res=res, )
+                w = self.webengine2.width()
+                h = self.webengine2.height()
+                self.transformViewer.initZoom(w=w, h=h, adjust=1.2)
             # self.dataUpdateMA() #1019+ #not necessary... initNeuroglancer does this
 
             # if self.dm.is_aligned():
             #     self.gifPlayer.start()
+            self.viewer = self.viewer1
         elif index == 2:
             self.snr_plot.initSnrPlot()
         elif index == 3:
@@ -263,13 +291,21 @@ class AlignmentTab(QWidget):
             return
 
         if self.wTabs.currentIndex() == 0 or init_all:
+            if self.rbZarrTransformed.isChecked():
+                view = 'transformed'
+            elif self.rbZarrExperimental.isChecked():
+                view = 'experimental'
+            else:
+                view = 'raw'
+
+
             self.cbxNgLayout.setCurrentText(getData('state,neuroglancer,layout'))
 
-            path = (self.dm.path_zarr_transformed(), self.dm.path_zarr_raw())[self.rbZarrRaw.isChecked()]
+            path = (self.dm.path_zarr_raw(), self.dm.path_zarr_transformed())[self.rbZarrTransformed.isChecked()]
             res = copy.deepcopy(self.dm.resolution(s=self.dm.level))
             # res[0] *= self.dm.lvl()
             print(f"res = {res}, self.dm.lvl() = {self.dm.lvl()}")
-            self.viewer0 = self.viewer = self.parent.viewer = cfg.viewer = EMViewer(parent=self, webengine=self.webengine0, path=path, dm=self.dm, res=res, )
+            self.viewer0 = self.viewer = self.parent.viewer = cfg.viewer = EMViewer(parent=self, webengine=self.webengine0, path=path, dm=self.dm, res=res, view=view)
             self.viewer0.initZoom(self.webengine0.width(), self.webengine0.height())
             # self.viewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
             self.viewer0.signals.layoutChanged.connect(self.slot_layout_changed)
@@ -301,16 +337,17 @@ class AlignmentTab(QWidget):
             # self.viewer1.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314
             # self.viewer1.signals.zoomChanged.connect(lambda: logger.critical(f"Zoom Slider: {self.zoomSlider.value()} / CS Scale: {self.viewer1.state.cross_section_scale}"))  # 0314
             self.viewer1.signals.zoomChanged.connect(self.zoomSlider.setValue)
-
             #1111-
             # try:
             #     self.dataUpdateMA()
             # except:
             #     print_exception()
-
             self.zoomSlider.setValue(self.viewer1.state.cross_section_scale)
 
             self.transformViewer = TransformViewer(parent=self, webengine=self.webengine2, path=None, dm=self.dm, res=res, )
+            w = self.webengine2.width()
+            h = self.webengine2.height()
+            self.transformViewer.initZoom(w=w, h=h, adjust=1.2)
 
         self.parent.hud.done()
         # QApplication.processEvents() #1009-
@@ -1202,7 +1239,7 @@ class AlignmentTab(QWidget):
             font-size: 9px;
         }
         """)
-        self.twMethod.setTabShape(QTabWidget.Triangular)
+        # self.twMethod.setTabShape(QTabWidget.Triangular)
         # self.twMethod.tabBar().setElideMode(Qt.ElideMiddle)
         # self.twMethod.tabBar().setExpanding(True)
         self.twMethod.setDocumentMode(True)
@@ -1489,19 +1526,24 @@ class AlignmentTab(QWidget):
 
         self.wNgAccessories = HW(BoldLabel("  Neuroglancer  "), self.cbxNgExtras)
 
-        self.labZarrSource = BoldLabel(' Images ')
+        self.labZarrSource = BoldLabel(' View ')
         self.rbZarrRaw = QRadioButton('Raw')
         self.rbZarrRaw.clicked.connect(lambda: setData('state,neuroglancer,layout','xy'))
         self.rbZarrRaw.clicked.connect(self.initNeuroglancer)
         self.rbZarrTransformed = QRadioButton('Transformed')
         self.rbZarrTransformed.clicked.connect(lambda: setData('state,neuroglancer,layout', '4panel'))
         self.rbZarrTransformed.clicked.connect(self.initNeuroglancer)
+        self.rbZarrExperimental = QRadioButton('Transformed (Expertimental)')
+        self.rbZarrExperimental.clicked.connect(lambda: setData('state,neuroglancer,show_bounds', False))
+        self.rbZarrExperimental.clicked.connect(lambda: setData('state,neuroglancer,layout', '4panel'))
+        self.rbZarrExperimental.clicked.connect(self.initNeuroglancer)
 
-        self.wZarrSelect = HW(self.labZarrSource, self.rbZarrRaw, self.rbZarrTransformed)
-        self.wZarrSelect.layout.setSpacing(4)
+        self.wZarrSelect = HW(self.labZarrSource, self.rbZarrRaw, self.rbZarrExperimental, self.rbZarrTransformed)
+        self.wZarrSelect.layout.setSpacing(6)
 
         self.bgZarrSelect = QButtonGroup()
         self.bgZarrSelect.addButton(self.rbZarrRaw)
+        self.bgZarrSelect.addButton(self.rbZarrExperimental)
         self.bgZarrSelect.addButton(self.rbZarrTransformed)
         self.bgZarrSelect.setExclusive(True)
 
@@ -1785,10 +1827,77 @@ class AlignmentTab(QWidget):
         self.wGifPlayer.setMinimumSize(QSize(128,128))
         self.wGifPlayer.setLayout(self.glGifPlayer)
 
+        self.labCornerViewer = QLabel(f'i={self.dm.zpos} | Transformed')
+        # self.labCornerViewer.setStyleSheet("color: #FFFF66; font-weight: 600; font-size: 12px;")
+        self.labCornerViewer.setStyleSheet("""color: #FFFF66; 
+        background-color: rgba(0, 0, 0, 0.40); border-radius: 2px; font-size: 11px; 
+        padding: 2px;""")
+
         self.webengine2 = WebEngine(ID='webengine2')
-        self.webengine2.setMinimumSize(QSize(200,200))
+        self.webengine2.setMinimumSize(QSize(200, 200))
+        # self.webengine2.setStyleSheet("background-color: #000000;")
+        # self.webengine2.page().setBackgroundColor(Qt.transparent)  # 0726+
+        # self.webengine2.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        setWebengineProperties(self.webengine2)
+        self.webengine2.setMouseTracking(True)
         # res = self.dm.resolution(s=self.dm.level)
         # self.transformViewer = TransformViewer(parent=self, webengine=self.webengine2, path=None, dm=self.dm, res=self.dm.res, )
+
+        self.bToggleCornerViewer = QPushButton('Toggle')
+        self.bToggleCornerViewer.setFixedSize(QSize(40,14))
+        def toggle_fn():
+            logger.info('')
+            state = copy.deepcopy(self.transformViewer.state)
+            pos = floor(state.position[0])
+            if pos == 0:
+                state.position[0] = 1.5
+                self.labCornerViewer.setText(f'i={self.dm.zpos} | Transformed')
+            else:
+                state.position[0] = 0.5
+                self.labCornerViewer.setText(f'i={self.dm.get_ref_index()} | Reference')
+
+            self.transformViewer.set_state(state)
+
+        self.bToggleCornerViewer.clicked.connect(toggle_fn)
+
+        self.hwCornerViewer = HW(self.bToggleCornerViewer, self.labCornerViewer)
+        self.hwCornerViewer.layout.setSpacing(4)
+        self.hwCornerViewer.layout.setAlignment(Qt.AlignTop)
+        self.hwCornerViewer.setFixedHeight(16)
+        self.hwCornerViewer.setMaximumWidth(160)
+
+
+        self.wWebengine2 = QWidget()
+        self.glWebengine2 = GL()
+        self.wWebengine2.setLayout(self.glWebengine2)
+        self.glWebengine2.addWidget(self.webengine2, 0, 0, 3, 3)
+        self.glWebengine2.addWidget(self.hwCornerViewer, 0, 1, 1, 1)
+
+
+        self.twCornerViewer = QTabWidget()
+        self.twCornerViewer.setStyleSheet("""
+        QTabBar::tab {
+            padding-top: 1px;
+            padding-bottom: 1px;
+            height: 12px;  
+            min-width: 100px;          
+            font-size: 9px;
+        }
+        """)
+        self.twCornerViewer.addTab(self.wGifPlayer, 'Blink')
+        self.twCornerViewer.addTab(self.wWebengine2, 'Experimental')
+        def tab_changed():
+            if self.twCornerViewer.currentIndex() == 0:
+                self.gifPlayer.set()
+            elif self.twCornerViewer.currentIndex() == 1:
+                if self.transformViewer.section_number != self.dm.zpos:
+                    res = self.dm.resolution(s=self.dm.level)
+                    self.transformViewer = TransformViewer(parent=self, webengine=self.webengine2, path=None, dm=self.dm, res=res, )
+                    w = self.webengine2.width()
+                    h = self.webengine2.height()
+                    self.transformViewer.initZoom(w=w, h=h, adjust=1.2)
+        self.twCornerViewer.currentChanged.connect(tab_changed)
+
 
         self.checkboxes = HW(self.cbDefaults, self.cbSaved, self.cbIgnoreCache)
         self.checkboxes.layout.setSpacing(4)
@@ -1799,20 +1908,29 @@ class AlignmentTab(QWidget):
         self.btnsSWIM.layout.setContentsMargins(2,2,2,2)
         self.btnsSWIM.layout.setSpacing(2)
 
-        self.vblRightPanel = VBL(
+        self.vwRightPanel = VW(
             self.swMethod,
             self.checkboxes,
-            self.btnsSWIM,
-            # self.wGifPlayer,
-            self.webengine2
-            )
-        self.gbRightPanel = QGroupBox()
-        self.gbRightPanel.setLayout(self.vblRightPanel)
-        self.gbRightPanel.setMaximumWidth(360)
+            self.btnsSWIM
+        )
+        self.columnSplitter = QSplitter(Qt.Orientation.Vertical)
+        self.columnSplitter.addWidget(self.vwRightPanel)
+        self.columnSplitter.addWidget(self.twCornerViewer)
+        self.columnSplitter.setCollapsible(0, False)
+        self.columnSplitter.setCollapsible(1, False)
+        self.columnSplitter.setStretchFactor(0, 2)
+        self.columnSplitter.setStretchFactor(1, 1)
+
+
+
+        # self.gbRightPanel = QGroupBox()
+        # self.gbRightPanel.setLayout(VBL(self.columnSplitter))
+        # self.gbRightPanel.setMaximumWidth(360)
 
         self.wEditAlignment = QSplitter(Qt.Orientation.Horizontal)
         self.wEditAlignment.addWidget(self.wWebengine1)
-        self.wEditAlignment.addWidget(self.gbRightPanel)
+        # self.wEditAlignment.addWidget(self.gbRightPanel)
+        self.wEditAlignment.addWidget(self.columnSplitter)
         self.wEditAlignment.setCollapsible(0, False)
         self.wEditAlignment.setCollapsible(1, False)
         self.wEditAlignment.setStretchFactor(0, 99) #1020-
@@ -2062,19 +2180,25 @@ class AlignmentTab(QWidget):
 
     def updateZarrRadiobuttons(self):
         # logger.info('')
-        setData('state,neuroglancer,layout', ('xy', '4panel')[self.dm.is_zarr_generated()])
+        # self.updateZarrButtonsEnabled()
         isGenerated = self.dm.is_zarr_generated()
-        self.parent.bExport.setVisible(self.dm.is_zarr_generated())
-        self.gbGrid.setTitle(f'Level {self.dm.lvl()} Grid Alignment Settings')
-        # self.cbDefaults.setText(f'Uses defaults')
-        self.cbDefaults.setText(f'Default preferences')
-        # ready = self.dm.is_alignable()
-        if isGenerated:
-            self.rbZarrTransformed.setEnabled(True)
+        isAligned = self.dm.is_aligned()
+        self.rbZarrTransformed.setEnabled(isGenerated)
+        self.rbZarrExperimental.setEnabled(isAligned)
+        if self.dm.is_zarr_generated():
             self.rbZarrTransformed.setChecked(True)
+            setData('state,neuroglancer,layout', '4panel')
         else:
-            self.rbZarrTransformed.setEnabled(False)
             self.rbZarrRaw.setChecked(True)
+            setData('state,neuroglancer,layout', 'xy')
+
+
+    # def updateZarrButtonsEnabled(self):
+    #     # isGenerated = self.dm.is_zarr_generated()
+    #     # isAligned = self.dm.is_aligned()
+    #     # self.rbZarrTransformed.setEnabled(isGenerated)
+    #     # self.rbZarrExperimental.setEnabled(isAligned)
+    #     # # self.rbZarrExperimental.setEnabled(isAligned and (Path(self.dm.images_path) / 'zarr_slices').exists())
 
 
     @Slot()
@@ -2089,6 +2213,7 @@ class AlignmentTab(QWidget):
 
         ready = self.dm['level_data'][self.dm.scale]['alignment_ready']
 
+        self.gbGrid.setTitle(f'Level {self.dm.lvl()} Grid Alignment Settings')
 
         if self.wTabs.currentIndex() == 1: #1111 This should make a huge difference
             if self.dm.is_alignable() and ready:
@@ -2562,10 +2687,10 @@ class AlignmentTab(QWidget):
         self.wTabs = QTabWidget()
         self.wTabs.setStyleSheet("""
         QTabBar::tab {
-            color: #141414; 
+            color: #141414;
             padding-top: 1px;
             padding-bottom: 1px;
-            height: 15px;            
+            height: 15px;
             font-size: 11px;
             border: 1px solid #ede9e8;
             background-color: #dadada;
@@ -2668,7 +2793,10 @@ class AlignmentTab(QWidget):
             if self.twInfoOverlay.isVisible():
                 p = Path(self.dm.images_path) / 'tiffinfo.txt'
                 tiffinfo = read('txt')(p)
-                self.teInfoOverlay.setText(tiffinfo)
+                try:
+                    self.teInfoOverlay.setText(tiffinfo)
+                except:
+                    print_exception(f"type(tiffinfo) = {type(tiffinfo)}")
         self.bInfo.clicked.connect(fn)
 
 

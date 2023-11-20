@@ -319,10 +319,12 @@ class align_recipe:
         if self.solo:
             logger.critical(f"\nExecuting recipe (# Ingredients: {len(self.ingredients)})...\n")
 
-
         os.makedirs(self.signals_dir, exist_ok=True)
         os.makedirs(self.matches_dir, exist_ok=True)
         os.makedirs(self.dir_tmp, exist_ok=True)
+        # Path(os.path.dirname(self.signals_dir)).mkdir(parents=True, exist_ok=True)
+        # Path(os.path.dirname(self.matches_dir)).mkdir(parents=True, exist_ok=True)
+        # Path(os.path.dirname(self.dir_tmp)).mkdir(parents=True, exist_ok=True)
 
         self.afm = np.array(self.ss['init_afm'])
         try:
@@ -377,6 +379,17 @@ class align_recipe:
         except: mr['snr_std_deviation'] = 0.0
         try:    mr['snr_mean'] = self.snr.mean()
         except: mr['snr_mean'] = 0.0
+        try:
+            mr['real_afm'] = self.ingredients[-1].real_afm.tolist()
+        except:
+            mr['real_afm'] = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
+            logger.warning('No real afm')
+        # try:
+        #     mr['applied_afm'] = self.applied_afm.tolist()
+        # except:
+        #     mr['applied_afm'] = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
+        #     print_exception()
+
 
         if self.method == 'grid':
             mr['quadrants'] = self.ss['method_opts']['quadrants']
@@ -457,36 +470,49 @@ class align_recipe:
         #                     f"{ifp}\n"
         #                     f"{ofp}")
 
-        if os.path.exists(ofp):
-            logger.info(f'Cache hit (transformed img, afm): {ofp}')
-            return
-        os.makedirs(os.path.dirname(ofd), exist_ok=True)
+        # if os.path.exists(ofp):
+        #     logger.info(f'Cache hit (transformed img, afm): {ofp}')
+        #     return
+        # os.makedirs(os.path.dirname(ofd), exist_ok=True)
+        # # Path(os.path.dirname(ofd)).mkdir(parents=True, exist_ok=True)
 
         tn_scale = self.ss['thumbnail_scale_factor']
         sf = int(self.ss['level'][1:]) / tn_scale #scale factor
-        w, h = self.ss['img_size']
-        rect = [0, 0, w * sf, h * sf]  # might need to swap w/h for Zarr
+
 
         # Todo add flag to force regenerate
         os.makedirs(os.path.dirname(ofp), exist_ok=True)
+        # Path(os.path.dirname(ofp)).mkdir(parents=True, exist_ok=True)
         afm = copy.deepcopy(self.afm)
         afm[0][2] *= sf
         afm[1][2] *= sf
 
         border = 128  # Todo get exact median greyscale value
 
-        bb_x, bb_y = rect[2], rect[3]
-        afm = np.array([afm[0][0], afm[0][1], afm[0][2], afm[1][0], afm[1][1],
-                        afm[1][2]], dtype='float64').reshape((-1, 3))
+        w, h = self.ss['img_size']
+        rect = [0, 0, w * sf, h * sf]  # might need to swap w/h for Zarr
         p1 = applyAffine(afm, (0, 0))  # Transform Origin To Output Space
         p2 = applyAffine(afm, (rect[0], rect[1]))  # Transform BB Lower Left To Output Space
         offset_x, offset_y = p2 - p1  # Offset Is Difference of 'p2' and 'p1'
+        afm[0][2] = afm[0][2] + offset_x
+        afm[1][2] = afm[1][2] + offset_y
+
+        bb_x, bb_y = rect[2], rect[3]
+        afm = np.array([afm[0][0], afm[0][1], afm[0][2], afm[1][0], afm[1][1],
+                        afm[1][2]], dtype='float64').reshape((-1, 3))
+
+        if os.path.exists(ofp):
+            logger.info(f'Cache hit (transformed img, afm): {ofp}')
+            return
+        os.makedirs(os.path.dirname(ofd), exist_ok=True)
+        # Path(os.path.dirname(ofd)).mkdir(parents=True, exist_ok=True)
+
         a = afm[0][0]
         c = afm[0][1]
-        e = afm[0][2] + offset_x
+        e = afm[0][2]
         b = afm[1][0]
         d = afm[1][1]
-        f = afm[1][2] + offset_y
+        f = afm[1][2]
         mir_script = \
             'B %d %d 1\n' \
             'Z %g\n' \
@@ -518,12 +544,14 @@ class align_recipe:
         # ERROR:src.core.recipemaker:
         # Image not found: /Users/joelyancey/alignem_data/alignments/666/data/35/s4/7910856802294028582/R34CA1-BS12.136.thumb.tif
 
-
-        imA = iio.imread(pA)
-        imB = iio.imread(pB)
-        iio.imwrite(pA, imA) # monkey patch - fixes metadata
-        iio.imwrite(pB, imB)  # monkey patch - fixes metadata
-        iio.imwrite(out, [imA, imB], format='GIF', duration=1, loop=0)
+        try:
+            imA = iio.imread(pA)
+            imB = iio.imread(pB)
+            iio.imwrite(pA, imA) # monkey patch - fixes metadata
+            iio.imwrite(pB, imB)  # monkey patch - fixes metadata
+            iio.imwrite(out, [imA, imB], format='GIF', duration=1, loop=0)
+        except:
+            print_exception()
 
 
 class align_ingredient:
@@ -722,7 +750,6 @@ class align_ingredient:
         return self.swim_output
 
 
-
     def crop_match_signals(self):
         px_keep = 128
         # w, h = '%d' % self.ww[0], '%d' % self.ww[1]
@@ -812,15 +839,23 @@ class align_ingredient:
             self.mir_out_lines = out.strip().split('\n')
             self.mir_err_lines = err.strip().split('\n')
             aim = np.eye(2, 3, dtype=np.float32)
+            self.real_afm = np.eye(2, 3, dtype=np.float32)
             for line in self.mir_out_lines:
                 toks = line.strip().split()
                 if (toks[0] == 'AI'):
                     aim[0, 0] = float(toks[1])
                     aim[0, 1] = float(toks[2])
-                    aim[0, 2] = float(toks[3]) + self.swim_drift
+                    aim[0, 2] = float(toks[3]) #+ self.swim_drift
                     aim[1, 0] = float(toks[4])
                     aim[1, 1] = float(toks[5])
-                    aim[1, 2] = float(toks[6]) + self.swim_drift
+                    aim[1, 2] = float(toks[6]) #+ self.swim_drift
+                if (toks[0] == 'AF'):
+                    self.real_afm[0, 0] = float(toks[1])
+                    self.real_afm[0, 1] = float(toks[2])
+                    self.real_afm[0, 2] = float(toks[3]) #+ self.swim_drift
+                    self.real_afm[1, 0] = float(toks[4])
+                    self.real_afm[1, 1] = float(toks[5])
+                    self.real_afm[1, 2] = float(toks[6]) #+ self.swim_drift
             self.afm = aim
             self.snr = np.array(snr_list)
             return self.afm
