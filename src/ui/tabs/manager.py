@@ -560,7 +560,7 @@ class ManagerTab(QWidget):
             _msg = f"Image Stack 'info.json' File Is Missing:\n{info}\nWas it moved?"
         elif os.path.exists(newproject):
             _err = 1
-            _msg = f"A file with this name already exists:\n{newproject}"
+            _msg = f"A file with this name already exists: {newproject}"
         if _err:
             cfg.mw.warn(_msg)
             self.resetView()
