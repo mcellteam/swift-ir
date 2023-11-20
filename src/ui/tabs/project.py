@@ -1538,12 +1538,13 @@ class AlignmentTab(QWidget):
         self.rbZarrExperimental.clicked.connect(lambda: setData('state,neuroglancer,layout', '4panel'))
         self.rbZarrExperimental.clicked.connect(self.initNeuroglancer)
 
-        self.wZarrSelect = HW(self.labZarrSource, self.rbZarrRaw, self.rbZarrExperimental, self.rbZarrTransformed)
+        # self.wZarrSelect = HW(self.labZarrSource, self.rbZarrRaw, self.rbZarrExperimental, self.rbZarrTransformed)
+        self.wZarrSelect = HW(self.labZarrSource, self.rbZarrRaw, self.rbZarrTransformed)
         self.wZarrSelect.layout.setSpacing(6)
 
         self.bgZarrSelect = QButtonGroup()
         self.bgZarrSelect.addButton(self.rbZarrRaw)
-        self.bgZarrSelect.addButton(self.rbZarrExperimental)
+        # self.bgZarrSelect.addButton(self.rbZarrExperimental)
         self.bgZarrSelect.addButton(self.rbZarrTransformed)
         self.bgZarrSelect.setExclusive(True)
 

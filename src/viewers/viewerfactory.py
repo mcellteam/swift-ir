@@ -65,7 +65,7 @@ from neuroglancer.json_wrappers import array_wrapper, to_json, JsonObjectWrapper
 
 import src.config as cfg
 from src.utils.swiftir import invertAffine
-from src.utils.helpers import getOpt, getData, setData, is_joel
+from src.utils.helpers import getOpt, getData, setData, is_joel, print_exception
 
 context = ts.Context({'cache_pool': {'total_bytes_limit': 1000000000}})
 
@@ -166,8 +166,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
         self.setBackground()
         self.webengine.setFocus()
 
-    def defer_callback(self, callback, *args, **kwargs):
-        pass
+    # def defer_callback(self, callback, *args, **kwargs):
+    #     pass
 
     def __repr__(self):
         return self.get_viewer_url()
@@ -1053,17 +1053,37 @@ class MAViewer(AbstractEMViewer):
         D = (y - hh, x - hw)
         return A, B, C, D
 
+
+def cafm_to_matrix(t):
+    """Convert c_afm to Numpy matrix."""
+    return np.matrix([[t[0][0], t[0][1], t[0][2]],
+                      [t[1][0], t[1][1], t[1][2]],
+                      [0, 0, 1]])
+
 # @cache # Unhashable type: List
 def conv_mat(mat, i=0):
+
+
     ngmat = [[.999, 0, 0, i],
              [0, 1, 0, 0],
              [0, 0, 1, 0]]
     ngmat[2][2] = mat[0][0]
     ngmat[2][1] = mat[0][1]
-    ngmat[2][3] = mat[0][2]  # translation
+    ngmat[2][3] = mat[0][2]  #translation
     ngmat[1][2] = mat[1][0]
     ngmat[1][1] = mat[1][1]
     ngmat[1][3] = mat[1][2] #translation
+
+    # try:
+    #     submatrix = np.array([[ ngmat[1][1] , ngmat[1][2] ], [ ngmat[2][1] , ngmat[2][2] ] ])
+    #     invsubmatrix = np.linalg.inv(submatrix)
+    #     ngmat[1][1] = invsubmatrix[0][0]
+    #     ngmat[1][2] = invsubmatrix[0][1]
+    #     ngmat[2][1] = invsubmatrix[1][0]
+    #     ngmat[2][2] = invsubmatrix[1][1]
+    # except:
+    #     print_exception()
+
 
     # ngmat[2][2] = mat[0][0]
     # ngmat[2][1] = mat[0][1]
