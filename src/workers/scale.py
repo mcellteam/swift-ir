@@ -297,7 +297,7 @@ def convert_zarr(task):
         ID = task[0]
         fn = task[1]
         out = task[2]
-        out_slice = task[3]
+        # out_slice = task[3]
         store = zarr.open(out)
         im = imread(fn)[:, ::-1]
         # im = iio.imread(fn)

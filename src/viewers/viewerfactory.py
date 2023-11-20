@@ -676,7 +676,9 @@ class TransformViewer(AbstractEMViewer):
                 print(e)
 
 
-        self.tensor = self.getTensor(str(self.path)).result()
+        # self.tensor = self.getTensor(str(self.path)).result()
+        self.tensor = self.getTensor(str(self.path)).read().result()
+        # self.tensor[:,0:500,0:500] = 1
         self.LV1 = self.getLocalVolume(self._tensor[self.dm.zpos:self.dm.zpos+1, :, :], self.getCoordinateSpace())
 
         ident = np.array([[1., 0., 0.], [0., 1., 0.]])
