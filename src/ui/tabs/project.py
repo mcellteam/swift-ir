@@ -1919,8 +1919,8 @@ class AlignmentTab(QWidget):
         self.columnSplitter.addWidget(self.twCornerViewer)
         self.columnSplitter.setCollapsible(0, False)
         self.columnSplitter.setCollapsible(1, False)
-        self.columnSplitter.setStretchFactor(0, 2)
-        self.columnSplitter.setStretchFactor(1, 1)
+        self.columnSplitter.setStretchFactor(0, 1)
+        self.columnSplitter.setStretchFactor(1, 3)
 
 
 
