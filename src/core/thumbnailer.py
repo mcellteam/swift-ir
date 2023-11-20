@@ -11,7 +11,7 @@ import subprocess as sp
 import time
 from glob import glob
 from multiprocessing.pool import ThreadPool
-
+import imagecodecs
 import imageio.v3 as iio
 import psutil
 import tqdm
@@ -300,7 +300,8 @@ class Thumbnailer:
         _t0 = time.time()
         for f in filenames:
             ofn = os.path.join(od, os.path.basename(f))
-            im = iio.imread(ofn)
+            # im = iio.imread(ofn)
+            im = imread(ofn)
             iio.imwrite(ofn, im)
         _dt = time.time() - _t0
         logger.critical(f"Rewriting images took {_dt:.3g}s")
@@ -367,7 +368,8 @@ class Thumbnailer:
         _t0 = time.time()
         for item in to_reduce:
             ofn = item[1]
-            im = iio.imread(ofn)
+            # im = iio.imread(ofn)
+            im = imread(ofn)
             iio.imwrite(ofn, im)
         _dt = time.time() - _t0
         logger.critical(f"\n\n// Rewriting of images took {_dt:.3g}s //")
@@ -384,3 +386,10 @@ def run_subprocess(task):
         # sp.Popen(task, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
     except Exception as e:
         print("error: %s run(*%r)" % (e, task))
+
+
+def imread(filename):
+    # return first image in TIFF file as numpy array
+    with open(filename, 'rb') as fh:
+        data = fh.read()
+    return imagecodecs.tiff_decode(data)
