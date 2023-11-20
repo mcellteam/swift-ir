@@ -375,6 +375,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
             'driver': 'zarr',
             'kvstore': {
                 'driver': 'file',
+                # 'driver': 'memory',
                 'path': path
             },
             'context': {
@@ -382,7 +383,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
                 'file_io_concurrency': {'limit': 1024},  # 1027+
                 # 'data_copy_concurrency': {'limit': 512},
             },
-            'recheck_cached_data': 'open',
+            'recheck_cached_data': False,
+            # 'recheck_cached_data': 'open',
             # 'recheck_cached_data': True,  # default=True
         })
         return future
@@ -665,21 +667,15 @@ class TransformViewer(AbstractEMViewer):
             logger.warning(f"Path not found: {self.path}")
             return
 
-        self._tensor = self.getTensor(str(self.path)).result()
 
-        self.tensor_ref = self.getTensor(str(self.path)).result()
         ref_pos = self.dm.get_ref_index()
+        self.tensor = self.getTensor(str(self.path)).result()
         if ref_pos:
-            try:
-                self.LV0 = self.getLocalVolume(self.tensor_ref[ref_pos:ref_pos+1, :, :], self.getCoordinateSpace())
-            except Exception as e:
-                print(e)
-
-
+            self.LV0 = self.getLocalVolume(self.tensor[ref_pos:ref_pos + 1, :, :], self.getCoordinateSpace())
         # self.tensor = self.getTensor(str(self.path)).result()
-        self.tensor = self.getTensor(str(self.path)).read().result()
+
         # self.tensor[:,0:500,0:500] = 1
-        self.LV1 = self.getLocalVolume(self._tensor[self.dm.zpos:self.dm.zpos+1, :, :], self.getCoordinateSpace())
+        self.LV1 = self.getLocalVolume(self.tensor[self.dm.zpos:self.dm.zpos+1, :, :], self.getCoordinateSpace())
 
         ident = np.array([[1., 0., 0.], [0., 1., 0.]])
         output_dims = {'z': [self.res[0], 'nm'],
