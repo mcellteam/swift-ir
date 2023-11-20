@@ -1020,7 +1020,7 @@ class MAViewer(AbstractEMViewer):
         D = (y - hh, x - hw)
         return A, B, C, D
 
-@cache
+# @cache # Unhashable type: List
 def conv_mat(mat, i=0):
 
     mat = invertAffine(mat)
