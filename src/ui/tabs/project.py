@@ -1886,7 +1886,7 @@ class AlignmentTab(QWidget):
         }
         """)
         self.twCornerViewer.addTab(self.wGifPlayer, 'Blink')
-        self.twCornerViewer.addTab(self.wWebengine2, 'Experimental')
+        # self.twCornerViewer.addTab(self.wWebengine2, 'Experimental')
         def tab_changed():
             if self.twCornerViewer.currentIndex() == 0:
                 self.gifPlayer.set()
