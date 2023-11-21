@@ -60,7 +60,7 @@ class Cache:
     def put(self, key, value):
         """Insert a key-value pair into the hash data."""
         hashkey = self._hash(key)
-        print(f'Putting data at hash key {hashkey}')
+        # print(f'Putting data at hash key {hashkey}')
         if hashkey not in self.data:
             self.data[hashkey] = []
         self.data[hashkey].append((key, value))
@@ -72,7 +72,7 @@ class Cache:
             for k, v in self.data[hashkey]:
                 if k == key:
                     return v
-        logger.warning(f"hashkey not found: {hashkey}\n"
+        logger.warning(f"hash key not found: {hashkey}\n"
                        f"problem key value:\n{key}")
         # raise KeyError(f"Key '{key}' not found in the hash data.")
 

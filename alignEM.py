@@ -233,7 +233,6 @@ def main():
     # if args.no_tensorstore: cfg.USE_TENSORSTORE = False
     if args.headless:  cfg.HEADLESS = True
     if args.no_splash: cfg.NO_SPLASH = True
-    if args.dummy: cfg.DUMMY = True
     if args.profile:
         cfg.PROFILING_MODE = True
 

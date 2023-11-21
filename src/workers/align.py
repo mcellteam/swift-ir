@@ -58,7 +58,6 @@ class AlignWorker(QObject):
         self.result = None
         self._running = True
         self._mutex = QMutex()
-
         self._tasks = []
         self._tasks.append(self.align)
 
@@ -100,9 +99,9 @@ class AlignWorker(QObject):
             'target_thumb_size': cfg.TARGET_THUMBNAIL_SIZE,
             'images_path': dm.images_path,
             'file_path': dm.data_file_path,
-            'keep_signals': False,
-            'keep_matches': False,
-            'generate_thumbnails': False,
+            'keep_signals': cfg.KEEP_SIGNALS,
+            'keep_matches': cfg.KEEP_MATCHES,
+            'generate_thumbnails': cfg.GENERATE_THUMBNAILS,
         }
 
         firstInd = dm.first_included(s=scale)
@@ -112,7 +111,6 @@ class AlignWorker(QObject):
             i = dm().index(sec)
             for key in ['swim_args', 'swim_out', 'swim_err', 'mir_toks', 'mir_script', 'mir_out', 'mir_err']:
                 sec['levels'][scale]['results'].pop(key, None)
-            # ss = sec['levels'][scale]['swim_settings']
             ss = copy.deepcopy(dm.swim_settings(s=scale, l=i))
             ss['first_index'] = firstInd == i
             ss['file_path'] = dm.path(s=scale, l=i)
@@ -129,89 +127,56 @@ class AlignWorker(QObject):
             ss['solo'] = len(self.indexes) == 1
             ss['img_size'] = dm.image_size(s=scale)
             ss['is_refinement'] = dm.isRefinement(level=scale)
-
+            ss['glob_cfg'] = _glob_config
             wd = dm.ssDir(s=scale, l=i)  # write directory
             os.makedirs(wd, exist_ok=True)
-            _write_to = os.path.join(wd, 'swim_settings.json')
 
             if self.ignore_cache:
                 tasks.append(copy.deepcopy(ss))
-                self.dict_to_file(i, 'swim_settings.json', ss)
             else:
                 if ss['include']:
                     is_cached = self.dm.ht.haskey(self.dm.swim_settings(s=scale, l=i))
                     is_generated = Path(ss['path_thumb_transformed']).exists() and Path(ss['path_gif']).exists()
-
-                    if not (is_cached and is_generated):
+                    do_generate = not is_generated and _glob_config['generate_thumbnails']
+                    if not (is_cached and do_generate):
                         tasks.append(copy.deepcopy(ss))
-                        self.dict_to_file(i, 'swim_settings.json', ss)
                     else:
                         logger.info(f"[{i}] Cache hit and generated images exist")
 
         self.cpus = get_core_count(dm, len(tasks))
 
-        [t.update({'glob_cfg': _glob_config}) for t in tasks]
-
         self.hudMessage.emit(f'Computing {len(tasks)} tasks, {self.cpus} CPUs')
 
-        # if cfg.USE_POOL_FOR_SWIM:
-        '''Use Multiprocessing Pool - Default'''
         desc = f"Compute Alignment"
         dt, succ, fail, results = self.run_multiprocessing(run_recipe, tasks, desc)
         self.dm.t_align = dt
         if fail:
-            self.hudWarning.emit(f'Something went wrong! # Success: {succ} / # Failed: {fail}')
+            self.hudWarning.emit(f"Something went wrong! # Success: {succ} / # Failed: {fail}")
+        self.hudMessage.emit(f"Total Tasks Finished: {len(results)}")
 
-        logger.critical(f"# results returned: {len(results)}")
-
-        ident = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
-        # fu = dm.first_included()
-        # fu_ss = dm.swim_settings(s=scale, l=fu)
-        # if self.dm.ht.haskey(fu_ss):
-        #     self.dm.ht.remove(fu_ss) #This depends on whether the section is first unskipped or not
-        # self.dm.ht.put(fu_ss, ident)
-
-        first_included = dm.first_included(s=scale)
         for r in results:
             if r['complete']:
                 i = r['index']
-
-                # if not dm['stack'][i]['levels'][scale]['initialized']:
-                #     p = dm.path_aligned(s=scale, l=i)
-                #     if os.file_path.exists(p):
-                #         dm['stack'][i]['levels'][scale]['initialized'] = True
-                #     else:
-                #         self.hudWarning.emit(f"Failed to generate aligned image at index {i}")
-                #         # continue #1111- This does not mean the alignment failed necessarily
-
                 afm = r['affine_matrix']
                 try:
                     assert np.array(afm).shape == (2, 3)
                 except:
-                    self.hudWarning.emit(f'Something went wrong for section # {i}')
+                    self.hudWarning.emit(f'Error! No Affine Result, Section # {i}')
                     print_exception(extra=f"Section # {i}")
                     continue
 
                 dm['stack'][i]['levels'][scale]['results'] = r
-                # try:
-                #     dm['stack'][i]['levels'][scale]['results']['mir_afm'] = r['mir_afm']
-                # except:
-                #     dm['stack'][i]['levels'][scale]['results']['mir_afm'] = np.array([[1., 0., 0.], [0., 1.,
-                #                                                                                    0.]]).tolist()
-                #     print_exception()
                 ss = dm.swim_settings(s=scale, l=i)
-                logger.info(f"[{i}] Success! afm: {afm}")
                 self.dm.ht.put(ss, afm)
                 self.dict_to_file(i, 'results.json', r)
-
-        # SetStackCafm(dm, scale=scale, poly_order=dm.poly_order)
-        # dm.set_stack_cafm()
 
         if not self.dm['level_data'][self.dm.level]['aligned']:
             self.dm['level_data'][self.dm.level]['initial_snr'] = self.dm.snr_list()
             self.dm['level_data'][self.dm.level]['aligned'] = True
 
-        # self.hudMessage.emit(f'<span style="color: #FFFF66;"><b>**** All Processes Complete ****</b></span>')
+        dm.set_stack_cafm()
+        dm.save()
+
 
 
     def run_multiprocessing(self, func, tasks, desc):
