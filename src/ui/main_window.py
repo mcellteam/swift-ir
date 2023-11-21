@@ -1068,7 +1068,7 @@ class MainWindow(QMainWindow):
             _ignore_cache = self.pt.cbIgnoreCache.isChecked()
         ready = dm['level_data'][dm.scale]['alignment_ready']
         if not ready:
-            self.warn("Propagate settings before aligning")
+            self.warn("Must propagate settings before aligning!")
             return
 
         if dm.level != dm.coarsest_scale_key():
