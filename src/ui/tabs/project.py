@@ -85,7 +85,7 @@ class AlignmentTab(QWidget):
         self.dm.signals.zposChanged.connect(self.dataUpdateMA) #1111+
         def fn_create_corner_viewer():
             if self.wTabs.currentIndex() == 1:
-                if self.twCornerViewer.currentIndex() == 1:
+                if self.twCornerViewer.currentIndex() == 0:
                     logger.info('')
                     path = os.path.join(self.dm['info']['images_path'], 'zarr', self.dm.level)
                     res = self.dm.resolution(s=self.dm.level)
@@ -204,13 +204,14 @@ class AlignmentTab(QWidget):
             self.set_transforming() #0802+
             self._updatePointLists() #0726+
             if self.twCornerViewer.currentIndex() == 0:
-                self.gifPlayer.set()
-            elif self.twCornerViewer.currentIndex() == 1:
                 res = self.dm.resolution(s=self.dm.level)
                 self.transformViewer = TransformViewer(parent=self, webengine=self.webengine2, path=None, dm=self.dm, res=res, )
                 w = self.webengine2.width()
                 h = self.webengine2.height()
                 self.transformViewer.initZoom(w=w, h=h, adjust=1.2)
+            elif self.twCornerViewer.currentIndex() == 1:
+                self.gifPlayer.set()
+
             # self.parent.viewer = self.viewer1
             self.viewer = self.parent.viewer = cfg.viewer = self.viewer1
         elif index == 2:
@@ -247,14 +248,15 @@ class AlignmentTab(QWidget):
                 else:
                     self.dSnr_plot.wipePlot()
 
-            if self.twCornerViewer.currentIndex() == 0:
-                self.gifPlayer.set()
-            elif self.twCornerViewer.currentIndex() == 1:
+            elif self.twCornerViewer.currentIndex() == 0:
                 res = copy.deepcopy(self.dm.resolution(s=self.dm.level))
                 self.transformViewer = TransformViewer(parent=self, webengine=self.webengine2, path=None, dm=self.dm, res=res, )
                 w = self.webengine2.width()
                 h = self.webengine2.height()
                 self.transformViewer.initZoom(w=w, h=h, adjust=1.2)
+            if self.twCornerViewer.currentIndex() == 1:
+                self.gifPlayer.set()
+
             # self.dataUpdateMA() #1019+ #not necessary... initNeuroglancer does this
 
             # if self.dm.is_aligned():
@@ -1887,12 +1889,12 @@ class AlignmentTab(QWidget):
             font-size: 9px;
         }
         """)
-        self.twCornerViewer.addTab(self.wGifPlayer, 'Blink')
-        self.twCornerViewer.addTab(self.wWebengine2, 'Experimental')
+
+        self.twCornerViewer.addTab(self.wWebengine2, 'Blink (Neuroglancer)')
+        self.twCornerViewer.addTab(self.wGifPlayer, 'Blink (GIF)')
+
         def tab_changed():
             if self.twCornerViewer.currentIndex() == 0:
-                self.gifPlayer.set()
-            elif self.twCornerViewer.currentIndex() == 1:
                 # if self.transformViewer.section_number != self.dm.zpos:
                 #     res = self.dm.resolution(s=self.dm.level)
                 res = self.dm.resolution(s=self.dm.level)
@@ -1901,6 +1903,11 @@ class AlignmentTab(QWidget):
                 w = self.webengine2.width()
                 h = self.webengine2.height()
                 self.transformViewer.initZoom(w=w, h=h, adjust=1.2)
+
+            elif self.twCornerViewer.currentIndex() == 1:
+                self.gifPlayer.set()
+
+
         self.twCornerViewer.currentChanged.connect(tab_changed)
 
 
