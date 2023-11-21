@@ -39,6 +39,7 @@ from src.utils.writers import write
 __all__ = ['AlignmentTab']
 
 logger = logging.getLogger(__name__)
+logger.propagate = False
 
 DEV = is_joel()
 
@@ -1920,9 +1921,7 @@ class AlignmentTab(QWidget):
         self.columnSplitter.setCollapsible(0, False)
         self.columnSplitter.setCollapsible(1, False)
         self.columnSplitter.setStretchFactor(0, 1)
-        self.columnSplitter.setStretchFactor(1, 3)
-
-
+        self.columnSplitter.setStretchFactor(1, 2)
 
         # self.gbRightPanel = QGroupBox()
         # self.gbRightPanel.setLayout(VBL(self.columnSplitter))
@@ -2314,7 +2313,7 @@ class AlignmentTab(QWidget):
 
     def _updatePointLists(self):
         caller = inspect.stack()[1].function
-        logger.critical(f'[{caller}]')
+        logger.info(f'[{caller}]')
         if self.wTabs.currentIndex() == 1:
             if self.twMethod.currentIndex() == 1:
                 siz = self.dm.image_size()

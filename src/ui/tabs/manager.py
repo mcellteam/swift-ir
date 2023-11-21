@@ -129,7 +129,9 @@ class ManagerTab(QWidget):
         #     border: 2px solid darkgray;
         #     selection-background-color: lightgray;
         # }""")
-        self.comboAlignment.setToolTip("Select Alignment (.align)")
+        tip = 'Create a new alignment of the selected EM stack in your alignments content root'
+        tip = '\n'.join(textwrap.wrap(tip, width=35))
+        self.comboAlignment.setToolTip(tip)
         # self.comboAlignment.setPlaceholderText("Select Alignment...")
         self.comboAlignment.setPlaceholderText("")
         self.comboAlignment.setFocusPolicy(Qt.NoFocus)
@@ -141,8 +143,10 @@ class ManagerTab(QWidget):
         # self.comboAlignment.addItems(["None"])
 
         self.comboImages = QComboBox()
-        self.comboImages.setToolTip("Select Image Stack (.emstack)")
-        self.comboImages.setPlaceholderText("Select Image Stack (.emstack)...")
+        tip = 'Select files to create a new EM stack (.emstack) in your images content root'
+        tip = '\n'.join(textwrap.wrap(tip, width=35))
+        self.comboImages.setToolTip(tip)
+        self.comboImages.setPlaceholderText("Select EM Stack (.emstack)...")
         self.comboImages.setFocusPolicy(Qt.NoFocus)
         self.comboImages.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # self.comboImages.setEditable(True)
@@ -286,6 +290,13 @@ class ManagerTab(QWidget):
         self.iid_dialog.hide()
 
         self.leNameImages = QLineEdit()
+        # def fn():
+        #     cur = Path(self.leNameImages.text())
+        #     # od = Path(cfg.preferences['images_root'])
+        #     # if (Path(od) / self.leNameImages.text()).exists()
+        #     if cur.suffix != '.emstack':
+        #         self.leNameImages.setText(str(cur.w))
+        # self.leNameImages.textChanged.connect(fn)
         f = QFont()
         f.setItalic(True)
         self.leNameImages.setFont(f)
@@ -331,14 +342,20 @@ class ManagerTab(QWidget):
             b.setFixedSize(QSize(78,18))
 
         self.wEmStackProperties = ImagesConfig(parent=self)
+        self.wEmStackProperties.cbCalGrid.toggled.connect(self.updateConfirmAlignmentLabels)
         # self.wEmStackProperties.hide()
         self.wEmStackProperties.layout().setSpacing(16)
 
+        self.labConfirmReady = QLabel()
+        # self.labConfirmReady.setStyleSheet("color: #339933;")
+        # self.labConfirmReady.hide()
         self.labImgCount = QLabel()
-        self.labImgCount.setStyleSheet("color: #339933;")
-        self.labImgCount.hide()
+        self.labImgCount.setStyleSheet("font-weight: 600; color: #339933;")
+        # self.labImgCount.hide()
 
-        self.vwEmStackProperties = VW(BoldLabel('Step 2:'), self.wEmStackProperties, HW(ExpandingHWidget(self), self.labImgCount, self.bCreateImages))
+        hw = HW(ExpandingHWidget(self), self.labConfirmReady, self.labImgCount, self.bCreateImages)
+        hw.layout.setSpacing(6)
+        self.vwEmStackProperties = VW(BoldLabel('Step 2:'), self.wEmStackProperties, hw)
         self.vwEmStackProperties.hide()
 
 
@@ -406,8 +423,6 @@ class ManagerTab(QWidget):
 
 
     def _getUUID(self, path):
-
-
         # uuid = ''
         if os.path.exists(path):
             data = read('json')(path) # returns None if not valid JSON
@@ -665,24 +680,27 @@ class ManagerTab(QWidget):
     def onMinusImages(self):
         path = self.comboImages.currentText()
         if os.path.isdir(path):
-            cfg.mw.tell(f'Starting subprocess: removing {path}...')
-            logger.warning(f"Removing images at: {path}...")
+            cfg.mw.tell(f'Running background process: removing {path}...')
             reply = QMessageBox.question(self, "Quit", f"Delete this images?\n\n'{path}'",
                                          QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if reply == QMessageBox.Yes:
                 try:
                     if path.endswith('.emstack') or path.endswith('.images'):
-                        cfg.mw.tell(f'Deleting images {path}...')
+                        cfg.mw.tell(f'Deleting EM stack {path}...')
                         run_subprocess(["rm", "-rf", path])
                         run_subprocess(["rm", "-rf", path])
                     else:
                         logger.warning(f"\n\nCANNOT REMOVE THIS PATH: {path}\n")
                 except:
                     print_exception()
+                else:
+                    logger.info('Sleeping for 2 seconds...')
+                    time.sleep(2)
+                    cfg.mw.hud.done()
+                    cfg.mw.tell('The deletion process will continue running in the background.')
         else:
             cfg.mw.warn(f"Images not found: {path}")
-        logger.info('Sleeping for 3 seconds...')
-        time.sleep(3)
+
         self.refresh()
 
 
@@ -890,6 +908,18 @@ class ManagerTab(QWidget):
         self.labImgCount.setVisible(len(self.iid_dialog.selectedFiles()))
         # self.update()
 
+    def updateConfirmAlignmentLabels(self):
+        n = len(self._NEW_IMAGES_PATHS)
+        if n > 0:
+            im0 = Path(self._NEW_IMAGES_PATHS[0])
+            im1 = Path(self._NEW_IMAGES_PATHS[1])
+            self.labImgCount.setText(f"{n} files selected  ")
+            if self.wEmStackProperties.cbCalGrid.isChecked():
+                self.labConfirmReady.setText(f"Calibration Grid: {im0.name}  |  First Section: {im1.name}")
+            else:
+                self.labConfirmReady.setText(f"No Calibration Grid  |  First Section: {im0.name}")
+
+
 
     def selectImages(self):
         # self.iid_dialog = ImportImagesDialog()
@@ -913,13 +943,14 @@ class ManagerTab(QWidget):
         if self.iid_dialog.exec_() == QDialog.Accepted:
             QApplication.processEvents()
             filenames = self.iid_dialog.selectedFiles()
-            if len(filenames) > 0:
+            self._NEW_IMAGES_PATHS = natural_sort(filenames)
+            n = len(self._NEW_IMAGES_PATHS)
+            if n > 0:
                 self.vwEmStackProperties.show()
-                # self.labImgCount.setText(f"{len(filenames)} images selected from {os.file_path.dirname(filenames[0])}")
-                self.labImgCount.setText(f"{len(filenames)} images selected  ")
-                self.labImgCount.show()
-                self.bSelect.setStyleSheet("")
+                self.updateConfirmAlignmentLabels()
+
                 if self.leNameImages.text():
+                    self.bSelect.setStyleSheet("")
                     self.bCreateImages.setStyleSheet("background-color: #339933; color: #f3f6fb; border-color: #f3f6fb;")
 
             self.iid_dialog.pixmap = None
@@ -934,7 +965,7 @@ class ManagerTab(QWidget):
             self.showMainUI()
             return 1
 
-        self._NEW_IMAGES_PATHS = natural_sort(filenames)
+        # self._NEW_IMAGES_PATHS = natural_sort(filenames)
         self.updateImportImagesUI()
         logger.info(f"<<<< selectImages <<<<")
 
@@ -1343,7 +1374,8 @@ class ImagesConfig(QWidget):
         # wChunk.layout.setAlignment(Qt.AlignCenter)
 
         self.cbCalGrid = QCheckBox('Image 0 is calibration grid')
-        self.cbCalGrid.setChecked(False)
+        # self.cbCalGrid.setChecked(False)
+        self.cbCalGrid.setChecked(True) # Kristen's request
 
         hbl = HBL(wScaling, wVoxelSize, wCompression, wChunk, self.cbCalGrid)
 

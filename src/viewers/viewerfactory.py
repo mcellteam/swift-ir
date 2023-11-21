@@ -1026,7 +1026,7 @@ class MAViewer(AbstractEMViewer):
                 ''',
             )
         self._blockStateChanged = False
-        print("<< drawSWIMwindow", flush=True)
+        # print("<< drawSWIMwindow", flush=True)
 
     def undrawSWIMwindows(self):
         with self.txn() as s:
