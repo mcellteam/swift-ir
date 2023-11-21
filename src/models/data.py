@@ -2348,6 +2348,7 @@ class DataModel:
                 print_exception()
             else:
                 if not silently:
+                    cfg.mw.hud.done()
                     logger.info(f"Save successful!")
 
         except Exception as e:
