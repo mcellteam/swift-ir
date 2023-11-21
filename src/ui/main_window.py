@@ -958,15 +958,15 @@ class MainWindow(QMainWindow):
                 lines.append(f"   No Change   : {n1:7g}{('', '  i = ')[n1 > 0]}{s1}")
             self.tell(f"Alignment Results:\n" + '\n'.join(lines))
 
-            fi = dm.first_included()
-            # for i in range(len(self)):
-            for i in indexes:
-                # if i != fi:
-                if not dm['stack'][i]['levels'][dm.level]['initialized']:
-                    p = dm.path_aligned(s=dm.level, l=i)
-                    if not os.path.exists(p):
-                        self.warn(f"Aligned image not found at index {i}")
-                        # continue #1111- This does not mean the alignment failed necessarily
+            # fi = dm.first_included()
+            # # for i in range(len(self)):
+            # for i in indexes:
+            #     # if i != fi:
+            #     if not dm['stack'][i]['levels'][dm.level]['initialized']:
+            #         p = dm.path_aligned(s=dm.level, l=i)
+            #         if not os.path.exists(p):
+            #             self.warn(f"Aligned image not found at index {i}")
+            #             # continue #1111- This does not mean the alignment failed necessarily
 
         except Exception as e:
             logger.warning(f'Cant show results. Reason: {e.__class__.__name__}')

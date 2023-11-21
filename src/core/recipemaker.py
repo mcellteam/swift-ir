@@ -84,24 +84,6 @@ def cached(func):
     return wrapper
 
 
-# def persist_to_file(fn):
-#     try:
-#         cache = json.load(open(fn, 'r'))
-#     except (IOError, ValueError):
-#         cache = {}
-#
-#     atexit.register(lambda: json.dump(cache, open(fn, 'w')))
-#
-#     def decorator(func):
-#         def new_func(param):
-#             if param not in cache:
-#                 cache[param] = func(param)
-#             return cache[param]
-#
-#         return new_func
-#
-#     return decorator
-
 
 def run_recipe(data):
     '''Assemble and execute an alignment recipe
@@ -113,7 +95,8 @@ def run_recipe(data):
     else:
         recipe.assemble_recipe()
         rc = recipe.execute_recipe()
-    recipe.generate_thumbnail()
+    if data['glob_cfg']['generate_thumbnails']:
+        recipe.generate_thumbnail()
     try:
         mr = recipe.set_results()
     except:
@@ -319,8 +302,11 @@ class align_recipe:
         if self.solo:
             logger.critical(f"\nExecuting recipe (# Ingredients: {len(self.ingredients)})...\n")
 
-        os.makedirs(self.signals_dir, exist_ok=True)
-        os.makedirs(self.matches_dir, exist_ok=True)
+
+        if self.ss['glob_cfg']['keep_signals']:
+            os.makedirs(self.signals_dir, exist_ok=True)
+        if self.ss['glob_cfg']['keep_matches']:
+            os.makedirs(self.matches_dir, exist_ok=True)
         os.makedirs(self.dir_tmp, exist_ok=True)
         # Path(os.path.dirname(self.signals_dir)).mkdir(parents=True, exist_ok=True)
         # Path(os.path.dirname(self.matches_dir)).mkdir(parents=True, exist_ok=True)
@@ -347,7 +333,6 @@ class align_recipe:
                 except:
                     print_exception(extra=f'ERROR ing{i}/{len(self.ingredients)}')
 
-        # self.generate_thumbnail()
         return 0
 
 
@@ -380,10 +365,16 @@ class align_recipe:
         try:    mr['snr_mean'] = self.snr.mean()
         except: mr['snr_mean'] = 0.0
         try:
-            mr['real_afm'] = self.ingredients[-1].real_afm.tolist()
+            mr['mir_afm'] = self.ingredients[-1].mir_afm.tolist()
         except:
-            mr['real_afm'] = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
-            logger.warning('No real afm')
+            mr['mir_afm'] = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
+            logger.warning('No MIR afm (forward matrix)')
+        try:
+            mr['mir_aim'] = self.ingredients[-1].mir_aim.tolist()
+        except:
+            mr['mir_aim'] = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
+            logger.warning('No MIR aim (inverse matrix)')
+
         # try:
         #     mr['applied_afm'] = self.applied_afm.tolist()
         # except:
@@ -634,9 +625,12 @@ class align_ingredient:
                 self.snr = np.zeros(len(self.psta[0]))
             self.ingest_swim_output(swim_output)
 
+
         if self.last:
-            self.crop_match_signals()
-            self.reduce_matches()
+            if self.recipe.ss['glob_cfg']['keep_signals']:
+                self.crop_match_signals()
+            if self.recipe.ss['glob_cfg']['keep_matches']:
+                self.reduce_matches()
         try:
             np.set_printoptions(linewidth=np.inf)
             np.set_printoptions(formatter={'float': lambda x: "{0:.3g}".format(x)})
@@ -696,16 +690,18 @@ class align_ingredient:
                 self.offy = int(self.psta[1][i] - self.cy)
                 args.add_flag(flag='-x', arg='%d' % self.offx)
                 args.add_flag(flag='-y', arg='%d' % self.offy)
-            args.add_flag(flag='-b', arg=b_arg)
-            if self.last:
-                k_arg_name = '%s_%s_k_%d%s' % (fn, m, ind, suffix)
-                k_arg_path = os.path.join(self.recipe.dir_tmp, k_arg_name)
-                args.add_flag(flag='-k', arg=k_arg_path)
-                self.matches_filenames.append(k_arg_path)
-                t_arg_name = '%s_%s_t_%d%s' % (fn, m, ind, suffix)
-                t_arg_path = os.path.join(self.recipe.dir_tmp, t_arg_name)
-                args.add_flag(flag='-t', arg=t_arg_path)
-                self.matches_filenames.append(t_arg_path)
+            if self.recipe.ss['glob_cfg']['keep_signals']:
+                args.add_flag(flag='-b', arg=b_arg)
+            if self.recipe.ss['glob_cfg']['keep_matches']:
+                if self.last:
+                    k_arg_name = '%s_%s_k_%d%s' % (fn, m, ind, suffix)
+                    k_arg_path = os.path.join(self.recipe.dir_tmp, k_arg_name)
+                    args.add_flag(flag='-k', arg=k_arg_path)
+                    self.matches_filenames.append(k_arg_path)
+                    t_arg_name = '%s_%s_t_%d%s' % (fn, m, ind, suffix)
+                    t_arg_path = os.path.join(self.recipe.dir_tmp, t_arg_name)
+                    args.add_flag(flag='-t', arg=t_arg_path)
+                    self.matches_filenames.append(t_arg_path)
             # args.append(self.recipe.ss['extra_kwargs'])
             args.append(self.recipe.path_ref)
             if m == 'manual':
@@ -806,12 +802,12 @@ class align_ingredient:
             #       f"6: {toks[6]}\n")
             self.dx = float(toks[8])
             self.dy = float(toks[9])
-            aim = copy.deepcopy(self.afm)
+            self.mir_aim = copy.deepcopy(self.afm)
             # aim[0, 2] += self.dx
             # aim[1, 2] += self.dy
-            aim[0, 2] += float(toks[5]) - self.cx
-            aim[1, 2] += float(toks[6]) - self.cy
-            self.afm = aim
+            self.mir_aim[0, 2] += float(toks[5]) - self.cx
+            self.mir_aim[1, 2] += float(toks[6]) - self.cy
+            self.afm = self.mir_aim
             # self.snr = np.array([0.0]) #1107-
             self.snr = np.array([0.0])
             snr_list.append(float(toks[0][0:-1]))
@@ -838,25 +834,25 @@ class align_ingredient:
             self.t_mir = time.time() - t0
             self.mir_out_lines = out.strip().split('\n')
             self.mir_err_lines = err.strip().split('\n')
-            aim = np.eye(2, 3, dtype=np.float32)
-            self.real_afm = np.eye(2, 3, dtype=np.float32)
+            self.mir_aim = np.eye(2, 3, dtype=np.float32)
+            self.mir_afm = np.eye(2, 3, dtype=np.float32)
             for line in self.mir_out_lines:
                 toks = line.strip().split()
                 if (toks[0] == 'AI'):
-                    aim[0, 0] = float(toks[1])
-                    aim[0, 1] = float(toks[2])
-                    aim[0, 2] = float(toks[3]) #+ self.swim_drift
-                    aim[1, 0] = float(toks[4])
-                    aim[1, 1] = float(toks[5])
-                    aim[1, 2] = float(toks[6]) #+ self.swim_drift
+                    self.mir_aim[0, 0] = float(toks[1])
+                    self.mir_aim[0, 1] = float(toks[2])
+                    self.mir_aim[0, 2] = float(toks[3]) #+ self.swim_drift
+                    self.mir_aim[1, 0] = float(toks[4])
+                    self.mir_aim[1, 1] = float(toks[5])
+                    self.mir_aim[1, 2] = float(toks[6]) #+ self.swim_drift
                 if (toks[0] == 'AF'):
-                    self.real_afm[0, 0] = float(toks[1])
-                    self.real_afm[0, 1] = float(toks[2])
-                    self.real_afm[0, 2] = float(toks[3]) #+ self.swim_drift
-                    self.real_afm[1, 0] = float(toks[4])
-                    self.real_afm[1, 1] = float(toks[5])
-                    self.real_afm[1, 2] = float(toks[6]) #+ self.swim_drift
-            self.afm = aim
+                    self.mir_afm[0, 0] = float(toks[1])
+                    self.mir_afm[0, 1] = float(toks[2])
+                    self.mir_afm[0, 2] = float(toks[3]) #+ self.swim_drift
+                    self.mir_afm[1, 0] = float(toks[4])
+                    self.mir_afm[1, 1] = float(toks[5])
+                    self.mir_afm[1, 2] = float(toks[6]) #+ self.swim_drift
+            self.afm = self.mir_aim
             self.snr = np.array(snr_list)
             return self.afm
 

@@ -28,7 +28,7 @@ import numpy as np
 import zarr
 from qtpy.QtCore import QObject, Signal
 
-from src.utils.funcs_image import ComputeBoundingRect, SetStackCafm
+from src.utils.funcs_image import ComputeBoundingRect, SetStackCafm, alt_SetStackCafm
 from src.models.cache import Cache
 from src.utils.helpers import print_exception, path_to_str
 from src.utils.writers import write
@@ -1316,16 +1316,25 @@ class DataModel:
             print_exception()
             return [[[1, 0, 0], [0, 1, 0]]]
 
-    def real_afm(self, s=None, l=None) -> list:
+    def mir_afm(self, s=None, l=None) -> list:
         if s == None: s = self.level
         if l == None: l = self.zpos
         try:
             # return self._data['stack'][l]['levels'][s]['results']['affine_matrix'] #1107-
-            return self['stack'][l]['levels'][s]['results']['real_afm']
+            return self['stack'][l]['levels'][s]['results']['mir_afm']
         except:
             print_exception()
             return [[[1, 0, 0], [0, 1, 0]]]
 
+    def mir_aim(self, s=None, l=None) -> list:
+        if s == None: s = self.level
+        if l == None: l = self.zpos
+        try:
+            # return self._data['stack'][l]['levels'][s]['results']['affine_matrix'] #1107-
+            return self['stack'][l]['levels'][s]['results']['mir_aim']
+        except:
+            print_exception()
+            return [[[1, 0, 0], [0, 1, 0]]]
 
     def cafm(self, s=None, l=None) -> list:
         if s == None: s = self.level
@@ -1335,6 +1344,22 @@ class DataModel:
             # method = self.method(s=s, l=l)
             sss = self.saved_swim_settings(s=s, l=l)
             return self._data['stack'][l]['levels'][s]['cafm']
+            # return self.ht_cafm.get(sss)
+        except:
+            # caller = inspect.stack()[1].function
+            # print_exception(extra=f'Layer {z}, caller: {caller}')
+            exi = sys.exc_info()
+            logger.warning(f"[{l}] {exi[0]} {exi[1]}")
+            # return [[1, 0, 0], [0, 1, 0]]
+
+    def alt_cafm(self, s=None, l=None) -> list:
+        if s == None: s = self.level
+        if l == None: l = self.zpos
+        try:
+            # return self._data['stack'][z]['levels'][level]['alignment']['method_results']['cumulative_afm'] #0802-
+            # method = self.method(s=s, l=l)
+            sss = self.saved_swim_settings(s=s, l=l)
+            return self._data['stack'][l]['levels'][s]['alt_cafm']
             # return self.ht_cafm.get(sss)
         except:
             # caller = inspect.stack()[1].function
@@ -1370,6 +1395,7 @@ class DataModel:
     def set_stack_cafm(self, s=None):
         if s == None: s = self.level
         SetStackCafm(self, scale=s, poly_order=self.poly_order)
+        alt_SetStackCafm(self, scale=s, poly_order=self.poly_order)
 
 
     # #Deprecated now registering cafm hash in SetStackCafm

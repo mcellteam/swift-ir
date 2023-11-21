@@ -655,6 +655,9 @@ class ManagerTab(QWidget):
                 self.updateCombos()
                 # self.resetView()     #1118-
                 # self.initPMviewer()  #1118-
+
+                cfg.mw.hud.done()
+                cfg.mw.tell('The deletion process will continue running in the background.')
             else:
                 cfg.mw.warn(f'Path not found: {del_path}')
 

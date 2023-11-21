@@ -100,6 +100,9 @@ class AlignWorker(QObject):
             'target_thumb_size': cfg.TARGET_THUMBNAIL_SIZE,
             'images_path': dm.images_path,
             'file_path': dm.data_file_path,
+            'keep_signals': False,
+            'keep_matches': False,
+            'generate_thumbnails': False,
         }
 
         firstInd = dm.first_included(s=scale)
@@ -190,11 +193,12 @@ class AlignWorker(QObject):
                     continue
 
                 dm['stack'][i]['levels'][scale]['results'] = r
-                try:
-                    dm['stack'][i]['levels'][scale]['real_afm'] = r['real_afm']
-                except:
-                    dm['stack'][i]['levels'][scale]['real_afm'] = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
-                    print_exception()
+                # try:
+                #     dm['stack'][i]['levels'][scale]['results']['mir_afm'] = r['mir_afm']
+                # except:
+                #     dm['stack'][i]['levels'][scale]['results']['mir_afm'] = np.array([[1., 0., 0.], [0., 1.,
+                #                                                                                    0.]]).tolist()
+                #     print_exception()
                 ss = dm.swim_settings(s=scale, l=i)
                 logger.info(f"[{i}] Success! afm: {afm}")
                 self.dm.ht.put(ss, afm)
