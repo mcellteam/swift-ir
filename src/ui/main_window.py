@@ -375,10 +375,10 @@ class MainWindow(QMainWindow):
         self.pm = None
         self.pt = None
 
-        self.uiUpdateTimer = QTimer()
-        self.uiUpdateTimer.setSingleShot(True)
-        self.uiUpdateTimer.timeout.connect(self.dataUpdateWidgets)
-        self.uiUpdateTimer.setInterval(cfg.UI_UPDATE_TIMEOUT)
+        # self.uiUpdateTimer = QTimer()
+        # self.uiUpdateTimer.setSingleShot(True)
+        # self.uiUpdateTimer.timeout.connect(self.dataUpdateWidgets)
+        # self.uiUpdateTimer.setInterval(cfg.UI_UPDATE_TIMEOUT)
 
         self._unsaved_changes = False
         self._working = False
