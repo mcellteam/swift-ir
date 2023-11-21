@@ -44,7 +44,8 @@ if not hashseed:
     os.execv(sys.executable, [sys.executable] + sys.argv)
 
 
-print(f'Hang tight. The app will launch shortly... (called by: {inspect.stack()[1].function})')
+print(f'Hang tight. The app will launch shortly...')
+print(f'python path: {sys.executable}')
 
 
 import os
