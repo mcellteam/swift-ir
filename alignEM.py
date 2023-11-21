@@ -45,8 +45,7 @@ if not hashseed:
 
 
 print(f'Hang tight. The app will launch shortly...')
-print(f'python path: {sys.executable}')
-
+print(f'Python executable: {sys.executable}')
 
 import os
 
