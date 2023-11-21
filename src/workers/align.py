@@ -161,9 +161,7 @@ class AlignWorker(QObject):
                 try:
                     assert np.array(afm).shape == (2, 3)
                 except:
-                    self.hudWarning.emit(f'Error! No Affine Result, Section # {i}')
-                    print_exception(extra=f"Section # {i}")
-                    continue
+                    self.hudWarning.emit(f'Error! No Affine Result, Section # {i}'); continue
 
                 dm['stack'][i]['levels'][scale]['results'] = r
                 ss = dm.swim_settings(s=scale, l=i)
@@ -176,8 +174,6 @@ class AlignWorker(QObject):
 
         dm.set_stack_cafm()
         dm.save()
-
-
 
     def run_multiprocessing(self, func, tasks, desc):
         # Returns 4 objects dt, succ, fail, results
