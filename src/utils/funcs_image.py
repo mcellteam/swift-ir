@@ -461,8 +461,7 @@ def SetSingleCafm(dm, scale, index, c_afm, include, bias_mat=None, method='grid'
         else:
             afm = identityAffine()
     except:
-        siz = len(dm.ht.data)
-        print_exception(extra=f"afm not found for index: {index}, table size: {siz}")
+        logger.warning(f"afm not found for index: {index}")
         afm = identityAffine()
         # atrm['method_results']['affine_matrix'] = afm.tolist() #0802-
     c_afm = np.array(c_afm)
@@ -491,8 +490,7 @@ def alt_SetSingleCafm(dm, scale, index, alt_c_afm, include, bias_mat=None, metho
         else:
             mir_afm = identityAffine()
     except:
-        siz = len(dm.ht.data)
-        print_exception(extra=f"afm not found for index: {index}, table size: {siz}")
+        logger.warning(f"afm not found for index: {index}")
         mir_afm = identityAffine()
         # atrm['method_results']['affine_matrix'] = afm.tolist() #0802-
     alt_c_afm = np.array(alt_c_afm)
