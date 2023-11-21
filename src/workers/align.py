@@ -146,7 +146,7 @@ class AlignWorker(QObject):
                     if (not is_cached) or do_generate:
                         tasks.append(copy.deepcopy(ss))
                     else:
-                        logger.info(f"[{i}] Cache hit and generated images exist")
+                        logger.info(f"[{i}] Cache hit")
 
         self.cpus = get_core_count(dm, len(tasks))
 

@@ -2091,9 +2091,8 @@ class DataModel:
         levels = self.levels
         cur_level = self.level
         prev_level = levels[levels.index(cur_level) + 1]
-        cfg.mw.tell(f'Propagating SWIM settings from resolution level {prev_level} to {cur_level}..')
+        cfg.mw.tell(f'Propagating SWIM settings from resolution level {prev_level} to {cur_level}...')
         sf = int(self.lvl(prev_level) / self.lvl(cur_level))
-        logger.critical(f"sf = {sf}")
 
         os = self['level_data'][cur_level]['output_settings']
         os.update(copy.deepcopy(self['level_data'][prev_level]['output_settings']))
@@ -2157,12 +2156,11 @@ class DataModel:
                 #Critical #1015+
                 self['stack'][i]['levels'][cur_level]['saved_swim_settings'].update(copy.deepcopy(
                     self['stack'][i]['levels'][cur_level]['swim_settings']))
-        except:
-            print_exception()
+        except Exception as e:
+            cfg.mw.warn(f"Unable to propagate settings. Reason: {e.__class__.__name__}")
         else:
             self['level_data'][cur_level]['alignment_ready'] = True
-
-        cfg.mw.hud.done()
+            cfg.mw.hud.done()
 
 
     def initializeStack(self, data_location, images_location, images_info):
