@@ -737,6 +737,11 @@ class TransformViewer(AbstractEMViewer):
             s.scale_bar_options.bar_height_in_pixels = 4  # default = 8
             # s.scale_bar_options.font_name = 'monospace'
             # s.scale_bar_options.font_name = 'serif'
+            s.show_layer_side_panel_button = False
+            s.show_layer_list_panel_button = False
+            s.show_layer_hover_values = False
+            s.viewer_size = [self.webengine.width(), self.webengine.height()]
+
 
         # w = self.webengine.width()
         # h = self.webengine.height()
