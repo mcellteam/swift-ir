@@ -73,7 +73,7 @@ class Cache:
                 if k == key:
                     return v
         logger.warning(f"hash key not found: {hashkey}\n"
-                       f"problem index : {hashkey['index']}, {hashkey['name']}")
+                       f"problem index : {key['index']}, {key['name']}")
         # raise KeyError(f"Key '{key}' not found in the hash data.")
 
     def geti(self, i):
