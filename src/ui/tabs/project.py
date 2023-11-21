@@ -1877,6 +1877,7 @@ class AlignmentTab(QWidget):
 
 
         self.twCornerViewer = QTabWidget()
+        self.twCornerViewer.setMinimumHeight(280)
         self.twCornerViewer.setStyleSheet("""
         QTabBar::tab {
             padding-top: 1px;
@@ -1914,13 +1915,14 @@ class AlignmentTab(QWidget):
 
         self.vwRightPanel = VW( self.swMethod , self.checkboxes , self.btnsSWIM )
         self.vwRightPanel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
         self.columnSplitter = QSplitter(Qt.Orientation.Vertical)
         self.columnSplitter.addWidget(self.vwRightPanel)
         self.columnSplitter.addWidget(self.twCornerViewer)
         self.columnSplitter.setCollapsible(0, False)
         self.columnSplitter.setCollapsible(1, False)
-        self.columnSplitter.setStretchFactor(0, 1)
-        self.columnSplitter.setStretchFactor(1, 2)
+        # self.columnSplitter.setStretchFactor(0, 1)
+        # self.columnSplitter.setStretchFactor(1, 1)
 
         # self.gbRightPanel = QGroupBox()
         # self.gbRightPanel.setLayout(VBL(self.columnSplitter))
