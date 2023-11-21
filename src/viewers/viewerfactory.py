@@ -606,7 +606,10 @@ class EMViewer(AbstractEMViewer):
                     # inv_cafm = invertAffine(self.dm.cafm(l=i))
                     # matrix = conv_mat(inv_cafm, i=i)
 
-                    matrix = conv_mat(self.dm.cafm(l=i), i=i)
+                    # matrix = conv_mat(self.dm.cafm(l=i), i=i)
+                    # matrix = conv_mat(to_tuples(self.dm.cafm(l=i)), i=i)
+                    # matrix = conv_mat(to_tuples(self.dm.cafm(l=i)), i=i)
+                    matrix = conv_mat(to_tuples(self.dm.alt_cafm(l=i)), i=i)
                     self._mats[i] = matrix
 
                     output_dims = {'z': [self.res[0], 'nm'],
@@ -641,8 +644,6 @@ class EMViewer(AbstractEMViewer):
                 source = ng.LayerDataSource(url=LV,)
                 s.layers[f'layer'] = ng.ImageLayer(source=source, shader=copy.deepcopy(self.shader, ))
 
-
-
          # https://github.com/google/neuroglancer/blob/ada384e9b27a64ceb704f565fa0989a1262fc903/python/tests/fill_value_test.py#L37
 
         self.set_brightness()
@@ -670,14 +671,15 @@ class TransformViewer(AbstractEMViewer):
 
         ref_pos = self.dm.get_ref_index()
         self.tensor = self.getTensor(str(self.path)).result()
-        if ref_pos:
+        if ref_pos is not None:
             self.LV0 = self.getLocalVolume(self.tensor[ref_pos:ref_pos + 1, :, :], self.getCoordinateSpace())
         # self.tensor = self.getTensor(str(self.path)).result()
 
         # self.tensor[:,0:500,0:500] = 1
         self.LV1 = self.getLocalVolume(self.tensor[self.dm.zpos:self.dm.zpos+1, :, :], self.getCoordinateSpace())
 
-        ident = np.array([[1., 0., 0.], [0., 1., 0.]])
+        # ident = np.array([[1., 0., 0.], [0., 1., 0.]]
+        ident = [[1., 0., 0.], [0., 1., 0.]]
         output_dims = {'z': [self.res[0], 'nm'],
                        'y': [self.res[1], 'nm'],
                        'x': [self.res[2], 'nm']}
@@ -687,6 +689,7 @@ class TransformViewer(AbstractEMViewer):
         #
         # transform1 = {'matrix': conv_mat(self.dm.afm_cur(), i=2),
         #     'outputDimensions': output_dims}
+        self._mats = []
 
         with self.txn() as s:
             s.layout.type = self._convert_layout('xy')
@@ -696,7 +699,8 @@ class TransformViewer(AbstractEMViewer):
             s.show_default_annotations = True
             # s.position = [0.5, self.tensor.shape[1] / 2, self.tensor.shape[2] / 2]
             s.position = [1.5, self.tensor.shape[1] / 2, self.tensor.shape[2] / 2]
-            transform0 = {'matrix': conv_mat(ident, i=0), 'outputDimensions': output_dims}
+            # transform0 = {'matrix': conv_mat(ident, i=0), 'outputDimensions': output_dims}
+            transform0 = {'matrix': conv_mat(to_tuples(ident), i=0), 'outputDimensions': output_dims}
             if hasattr(self, 'LV0'):
                 source0 = ng.LayerDataSource(
                     url=self.LV0,
@@ -707,11 +711,15 @@ class TransformViewer(AbstractEMViewer):
                     opacity=1,)
 
                 if self.dm.is_aligned():
-                    mat = conv_mat(self.dm.afm_cur(), i=1)
-                    # mat = conv_mat(self.dm.real_afm(), i=1)
-                    # mat = conv_mat(self.dm.applied_afm(), i=1)
+                    # afm = to_tuples(self.dm.mir_aim())
+                    afm = to_tuples(self.dm.mir_afm())
+                    mat = conv_mat(afm, i=1)
+                    # mat = conv_mat(self.dm.afm_cur(), i=1)
+                    # mat = conv_mat(self.dm.mir_afm(), i=1)
                 else:
-                    mat = conv_mat(ident, i=1)
+                    # mat = conv_mat(ident, i=1)
+                    mat = conv_mat(to_tuples(ident), i=1)
+                self._mat = mat
                 transform1 = {'matrix': mat, 'outputDimensions': output_dims}
                 source1 = ng.LayerDataSource(
                     url=self.LV1,
@@ -1054,59 +1062,40 @@ class MAViewer(AbstractEMViewer):
         return A, B, C, D
 
 
+def to_tuples(arg):
+    return tuple(tuple(x) for x in arg)
+
+
+# @cache # Unhashable type: List
+@cache
+def conv_mat(mat, i=0):
+
+    ngmat = [[.999, 0, 0, i],
+             [0, 1, 0, 0],
+             [0, 0, 1, 0]]
+
+    # ngmat[2][1] = mat[0][1]
+    # ngmat[2][2] = mat[0][0]
+    # ngmat[2][3] = mat[0][2]
+    # ngmat[1][1] = mat[1][1]
+    # ngmat[1][2] = mat[1][0]
+    # ngmat[1][3] = mat[1][2]
+
+    ngmat[1][1] = mat[1][1]
+    ngmat[1][2] = mat[1][0]
+    ngmat[1][3] = mat[1][2] # translation
+    ngmat[2][1] = mat[0][1]
+    ngmat[2][2] = mat[0][0]
+    ngmat[2][3] = mat[0][2] #* -1 # translation
+
+    return ngmat
+
+
 def cafm_to_matrix(t):
     """Convert c_afm to Numpy matrix."""
     return np.matrix([[t[0][0], t[0][1], t[0][2]],
                       [t[1][0], t[1][1], t[1][2]],
                       [0, 0, 1]])
-
-# @cache # Unhashable type: List
-def conv_mat(mat, i=0):
-
-
-    ngmat = [[.999, 0, 0, i],
-             [0, 1, 0, 0],
-             [0, 0, 1, 0]]
-    ngmat[2][2] = mat[0][0]
-    ngmat[2][1] = mat[0][1]
-    ngmat[2][3] = mat[0][2]  #translation
-    ngmat[1][2] = mat[1][0]
-    ngmat[1][1] = mat[1][1]
-    ngmat[1][3] = mat[1][2] #translation
-
-    # try:
-    #     submatrix = np.array([[ ngmat[1][1] , ngmat[1][2] ], [ ngmat[2][1] , ngmat[2][2] ] ])
-    #     invsubmatrix = np.linalg.inv(submatrix)
-    #     ngmat[1][1] = invsubmatrix[0][0]
-    #     ngmat[1][2] = invsubmatrix[0][1]
-    #     ngmat[2][1] = invsubmatrix[1][0]
-    #     ngmat[2][2] = invsubmatrix[1][1]
-    # except:
-    #     print_exception()
-
-
-    # ngmat[2][2] = mat[0][0]
-    # ngmat[2][1] = mat[0][1]
-    # ngmat[2][3] = mat[0][2]
-    # ngmat[1][2] = mat[1][0]
-    # ngmat[1][1] = mat[1][1]
-    # ngmat[1][3] = mat[1][2]
-
-    # ngmat[2][2] = mat[0][0]
-    # ngmat[2][1] = mat[0][1]
-    # ngmat[2][0] = mat[0][2]
-    # ngmat[1][2] = mat[1][0]
-    # ngmat[1][1] = mat[1][1]
-    # ngmat[1][0] = mat[1][2]
-
-    # ngmat[2][0] = mat[0][0]
-    # ngmat[2][1] = mat[0][1]
-    # ngmat[2][2] = mat[0][2]
-    # ngmat[1][0] = mat[1][0]
-    # ngmat[1][1] = mat[1][1]
-    # ngmat[1][2] = mat[1][2]
-
-    return ngmat
 
 
 # # Not using TensorStore, so point Neuroglancer directly to local Zarr on disk.
