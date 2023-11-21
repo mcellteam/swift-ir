@@ -137,7 +137,7 @@ class AlignWorker(QObject):
                 if ss['include']:
                     is_cached = self.dm.ht.haskey(self.dm.swim_settings(s=scale, l=i))
                     is_generated = Path(ss['path_thumb_transformed']).exists() and Path(ss['path_gif']).exists()
-                    do_generate = not is_generated and _glob_config['generate_thumbnails']
+                    do_generate = (not is_generated) and _glob_config['generate_thumbnails']
                     if not (is_cached and do_generate):
                         tasks.append(copy.deepcopy(ss))
                     else:
