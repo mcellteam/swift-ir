@@ -2210,7 +2210,7 @@ class DataModel:
                     'zoom': 1.0,
                     'blink': False,
                     'show_controls': False,
-                    'show_bounds': True,
+                    'show_bounds': False,
                     'show_axes': True,
                     'show_scalebar': True,
                     'region_selection': {
