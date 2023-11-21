@@ -367,16 +367,16 @@ class Thumbnailer:
             pool.close()
             pool.join()
 
-
-        logger.critical("(monkey patch) Rewriting images to correct metadata...")
-        _t0 = time.time()
-        for item in to_reduce:
-            ofn = item[1]
-            # im = iio.imread(ofn)
-            im = imread(ofn)
-            iio.imwrite(ofn, im)
-        _dt = time.time() - _t0
-        logger.critical(f"\n\n// Rewriting of images took {_dt:.3g}s //")
+        if 0:
+            logger.critical("(monkey patch) Rewriting images to correct metadata...")
+            _t0 = time.time()
+            for item in to_reduce:
+                ofn = item[1]
+                # im = iio.imread(ofn)
+                im = imread(ofn)
+                iio.imwrite(ofn, im)
+            _dt = time.time() - _t0
+            logger.critical(f"\n\n// Rewriting of images took {_dt:.3g}s //")
 
         dt = time.time() - t0
         logger.info(f'Thumbnailing complete. Time elapsed: {dt:.3f}')
