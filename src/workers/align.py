@@ -104,9 +104,9 @@ class AlignWorker(QObject):
             # 'keep_signals': cfg.KEEP_SIGNALS,
             # 'keep_matches': cfg.KEEP_MATCHES,
             # 'generate_thumbnails': cfg.GENERATE_THUMBNAILS,
-            'keep_signals': dm.lvl() > 2,
-            'keep_matches': dm.lvl() > 2,
-            'generate_thumbnails': dm.lvl() > 2,
+            'keep_signals': dm.lvl() > 1,
+            'keep_matches': dm.lvl() > 1,
+            'generate_thumbnails': dm.lvl() > 1,
         }
 
         firstInd = dm.first_included(s=scale)
