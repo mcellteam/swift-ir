@@ -31,7 +31,7 @@ For more information, please refer to [http://unlicense.org]
 """
 
 print('alignEM:')
-import os, sys
+import os, sys, inspect
 
 # if not getpass.getuser() in ('joelyancey', 'joely', 'jyancey', 'tmbartol', 'tbartol', 'bartol', 'ama8447', 'aalario'):
 # if not getpass.getuser() in ('joelyancey', 'joely', 'jyancey', 'tmbartol', 'tbartol', 'bartol'):
@@ -44,7 +44,7 @@ if not hashseed:
     os.execv(sys.executable, [sys.executable] + sys.argv)
 
 
-print('(Hang tight. The application will launch shortly...)')
+print(f'Hang tight. The app will launch shortly... (called by: {inspect.stack()[1].function})')
 
 
 import os
@@ -58,31 +58,20 @@ os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = plugin_path
 import subprocess as sp
 import logging, argparse
 import faulthandler
-
-print('Importing QtWebEngineWidgets...')
-
-print('Importing QtCore, QtGui, QtWidgets...')
 from qtpy import QtCore
 from qtpy.QtCore import QCoreApplication, Qt
 from qtpy.QtGui import QFont
 from qtpy.QtWidgets import QApplication
 
 # import tensorstore as ts
-print('Importing main window...')
 from src.ui.main_window import MainWindow
-
-print('Importing helpers...')
 from src.utils.helpers import check_for_binaries, initialize_user_preferences, \
     is_tacc, is_joel, is_mac, print_exception, register_login, convert_projects_model, addLoggingLevel, \
     check_macos_isdark_theme
 
-print('Importing configuration...')
 import src.config as cfg
 
 # from qtconsole import __version__ as qcv
-
-print('Setting global application...')
-
 global app
 
 
