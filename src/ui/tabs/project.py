@@ -1903,20 +1903,17 @@ class AlignmentTab(QWidget):
         self.twCornerViewer.currentChanged.connect(tab_changed)
 
 
-        self.checkboxes = HW(self.cbDefaults, self.cbSaved, self.cbIgnoreCache)
+        self.checkboxes = HW( self.cbDefaults , self.cbSaved , self.cbIgnoreCache )
         self.checkboxes.layout.setSpacing(4)
 
         # self.cpanelEditor = HW(self.bTransform, self.bApplyOne, self.bSaveSettings)
         # self.btnsSWIM = VW(HW(self.bApplyOne, self.bSaveSettings, self.bSaveAllSettings), self.bPull)
-        self.btnsSWIM = VW(HW(self.bApplyOne, self.bSaveSettings, self.bSaveAllSettings))
+        self.btnsSWIM = VW(HW( self.bApplyOne , self.bSaveSettings , self.bSaveAllSettings ))
         self.btnsSWIM.layout.setContentsMargins(2,2,2,2)
         self.btnsSWIM.layout.setSpacing(2)
 
-        self.vwRightPanel = VW(
-            self.swMethod,
-            self.checkboxes,
-            self.btnsSWIM
-        )
+        self.vwRightPanel = VW( self.swMethod , self.checkboxes , self.btnsSWIM )
+        self.vwRightPanel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.columnSplitter = QSplitter(Qt.Orientation.Vertical)
         self.columnSplitter.addWidget(self.vwRightPanel)
         self.columnSplitter.addWidget(self.twCornerViewer)
