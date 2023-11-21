@@ -2150,7 +2150,7 @@ class DataModel:
                 except Exception as e:
                     logger.warning(f"[{i}] No valid aligntment data for {prev_level}. Reason: {e.__class__.__name__}")
                     cfg.mw.warn(f"During propagation of {prev_level} to {self.level},"
-                                   f" previous data was missing for index {i}. It will be set to \n"
+                                   f" previous data was missing for index {i}. It will be set to "
                                    f"identity matrix until a valid affine is propagated.")
                 ss['init_afm'] = init_afm
 
