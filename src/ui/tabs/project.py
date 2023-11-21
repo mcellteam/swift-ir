@@ -2186,8 +2186,8 @@ class AlignmentTab(QWidget):
         isAligned = self.dm.is_aligned()
         self.rbZarrTransformed.setEnabled(isGenerated)
         self.rbZarrExperimental.setEnabled(isAligned)
-        if self.dm.is_zarr_generated():
-            self.rbZarrTransformed.setChecked(True)
+        if self.dm.is_aligned():
+            self.rbZarrExperimental.setChecked(True)
             setData('state,neuroglancer,layout', '4panel')
         else:
             self.rbZarrRaw.setChecked(True)
