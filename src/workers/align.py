@@ -10,6 +10,8 @@ import re
 import subprocess as sp
 import time
 from pathlib import Path
+import warnings
+warnings.filterwarnings("ignore")  # Works for supressing tiffile invalid offset warning
 
 import imageio.v3 as iio
 # import imagecodecs
@@ -17,12 +19,10 @@ import numcodecs
 import numpy as np
 import tqdm
 import zarr
-
 numcodecs.blosc.use_threads = False
 import libtiff
 libtiff.libtiff_ctypes.suppress_warnings()
-import warnings
-warnings.filterwarnings("ignore") #Works for supressing tiffile invalid offset warning
+
 # from src.mp_queue import TaskQueue
 from src.utils.readers import read
 from src.utils.writers import write
