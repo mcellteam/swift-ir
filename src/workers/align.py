@@ -171,8 +171,10 @@ class AlignWorker(QObject):
         if not self.dm['level_data'][self.dm.level]['aligned']:
             self.dm['level_data'][self.dm.level]['initial_snr'] = self.dm.snr_list()
             self.dm['level_data'][self.dm.level]['aligned'] = True
-
-        dm.set_stack_cafm()
+        try:
+            dm.set_stack_cafm()
+        except:
+            print_exception()
         dm.save()
 
     def run_multiprocessing(self, func, tasks, desc):
