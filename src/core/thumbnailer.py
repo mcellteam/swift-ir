@@ -233,8 +233,6 @@ class Thumbnailer:
             logger.error(f"Directory '{src}' is empty, nothing to thumbnail...")
             return
 
-
-
         if rmdir:
             if os.path.exists(od):
                 try:    shutil.rmtree(od)
@@ -296,13 +294,18 @@ class Thumbnailer:
             pool.close()
             pool.join()
 
+        time.sleep(.1)
         logger.critical("(monkey patch) Rewriting images to correct metadata...")
         _t0 = time.time()
         for f in filenames:
             ofn = os.path.join(od, os.path.basename(f))
             # im = iio.imread(ofn)
-            im = imread(ofn)
-            iio.imwrite(ofn, im)
+            try:
+                im = imread(ofn)
+                iio.imwrite(ofn, im)
+            except:
+                print_exception()
+
         _dt = time.time() - _t0
         logger.critical(f"Rewriting images took {_dt:.3g}s")
 
@@ -316,7 +319,7 @@ class Thumbnailer:
         # pool.close()
         # pool.join()
         dt = time.time() - t0
-        logger.info('Thumbnailing complete.')
+        logger.info('\n\n<<<< Thumbnailing Complete <<<<\n')
         return dt
 
 
@@ -345,7 +348,8 @@ class Thumbnailer:
         logger.info(f'Downsampling factor for thumbnails: {scale_factor}')
 
         if is_tacc():
-            cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(to_reduce)), 1)
+            # cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(to_reduce)), 1)
+            cpus = 16
         else:
             cpus = psutil.cpu_count(logical=False) - 2
 
