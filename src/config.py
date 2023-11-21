@@ -21,9 +21,9 @@ max_downsampling = 512  # default=64
 max_downsampled_size = 1024  # default=128
 # max_downsampling_scales=1
 
-KEEP_SIGNALS = False
-KEEP_MATCHES = False
-GENERATE_THUMBNAILS = False
+KEEP_SIGNALS = True
+KEEP_MATCHES = True
+GENERATE_THUMBNAILS = True
 
 DEV_MODE = 0
 DEBUG_MP = 0
