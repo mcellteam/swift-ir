@@ -35,7 +35,7 @@ import src.config as cfg
 from src.utils.helpers import print_exception
 
 logger = logging.getLogger(__name__)
-
+logger.propagate = False
 
 class SnrPlot(QWidget):
 
@@ -211,8 +211,7 @@ class SnrPlot(QWidget):
 
 
     def updateSpecialLayerLines(self):
-        logger.info('')
-
+        # logger.info('')
         offset = self._getScaleOffset(s=self.dm.level)
 
         # layers_mp = self.dm.find_layers_with_manpoints()
@@ -316,8 +315,6 @@ class SnrPlot(QWidget):
                     self.plotGhostScaleData()
                 except:
                     print_exception()
-            else:
-                logger.info("Scale is not aligned, no ghost data to plot...")
         self.plotData()
         self.updateLayerLinePos()
         logger.info(f"Time Elapsed: {time() - t0:.3g}")
@@ -504,7 +501,7 @@ class SnrPlot(QWidget):
 
     def plotSingleScale(self, s=None):
         if s == None: s = self.dm.scale
-        logger.critical(f'Plotting SNR data for resolution level {s}...')
+        logger.info(f'Plotting {s}...')
         # logger.info(f'[{self.dock}] plotSingleScale (level_key: {level}):')
         # x_axis, y_axis = self.get_axis_data(level=level)
         # x_axis, y_axis = self.get_everything_comport_axis_data(s=s)
@@ -687,7 +684,7 @@ class SnrPlot(QWidget):
 
 
     def wipePlot(self):
-        logger.info('')
+        # logger.info('')
         try:
             for i in reversed(range(self.checkboxes_hlayout.count())):
                 self.checkboxes_hlayout.removeItem(self.checkboxes_hlayout.itemAt(i))
