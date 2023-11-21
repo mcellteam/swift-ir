@@ -21,6 +21,10 @@ max_downsampling = 512  # default=64
 max_downsampled_size = 1024  # default=128
 # max_downsampling_scales=1
 
+KEEP_SIGNALS = False
+KEEP_MATCHES = False
+GENERATE_THUMBNAILS = False
+
 DEV_MODE = 0
 DEBUG_MP = 0
 DEBUG_NEUROGLANCER = 0
@@ -37,9 +41,34 @@ TARGET_THUMBNAIL_SIZE = 256
 # UI_UPDATE_TIMEOUT = 300 #ms
 UI_UPDATE_TIMEOUT = 350 #ms
 USE_POOL_FOR_SWIM = True
-SCALE_1_CORES_LIMIT = 40
-SCALE_2_CORES_LIMIT = 70
+SCALE_1_CORES_LIMIT = 60
+SCALE_2_CORES_LIMIT = 80
 
+'''Default SWIM parameters'''
+# DEFAULT_POLY_ORDER             = int(0)
+DEFAULT_USE_BOUNDING_BOX = bool(False)
+DEFAULT_INITIAL_ROTATION = float(0.0000)
+DEFAULT_INITIAL_SCALE = float(1.0000)
+DEFAULT_DTYPE = '|u1'
+DEFAULT_MANUAL_SWIM_WINDOW_PERC = float(.125)
+DEFAULT_AUTO_SWIM_WINDOW_PERC = float(0.8125)
+DEFAULT_WHITENING = float(-0.6800)
+DEFAULT_CLOBBER_PX = 3
+DEFAULT_USE_CLOBBER = False
+DEFAULT_SWIM_ITERATIONS = 3  # in pixels
+DEFAULT_CORRECTIVE_POLYNOMIAL = None
+'''Default Image Resolution (Voxel Dimensions)'''
+DEFAULT_RESX, DEFAULT_RESY, DEFAULT_RESZ = 2, 2, 50
+'''Default Zarr Chunk Shape'''
+CHUNK_X, CHUNK_Y, CHUNK_Z = 1024, 1024, 1
+CHUNK_FACTOR = 16
+BLOCKSIZE = 4
+'''Default Compression Parameters'''
+# CNAME = 'zstd'
+CNAME = 'none'
+CLEVEL = 5
+
+preferences = None
 dm = None
 # dataById = {}
 tabsById = {}
@@ -54,8 +83,6 @@ viewer0 = None
 editorViewer = None
 selected = None
 dms = {}
-refLV = None
-baseLV = None
 alLV = None
 LV = None
 tensor = None
@@ -66,60 +93,15 @@ webdriver = None
 py_console = None
 is_mendenhall = False
 
-
-'''Default SWIM parameters'''
-# DEFAULT_POLY_ORDER             = int(0)
-DEFAULT_USE_BOUNDING_BOX         = bool(False)
-DEFAULT_INITIAL_ROTATION         = float(0.0000)
-DEFAULT_INITIAL_SCALE            = float(1.0000)
-DEFAULT_DTYPE                    = '|u1'
-DEFAULT_MANUAL_SWIM_WINDOW_PERC  = float(.125)
-DEFAULT_AUTO_SWIM_WINDOW_PERC    = float(0.8125)
-DEFAULT_WHITENING                = float(-0.6800)
-DEFAULT_CLOBBER_PX               = 3
-DEFAULT_USE_CLOBBER              = False
-DEFAULT_SWIM_ITERATIONS          = 3 # in pixels
-DEFAULT_CORRECTIVE_POLYNOMIAL    = None
-
-'''Default Image Resolution (Voxel Dimensions)'''
-DEFAULT_RESX, DEFAULT_RESY, DEFAULT_RESZ = 2, 2, 50
-
-'''Default Zarr Chunk Shape'''
-CHUNK_X, CHUNK_Y, CHUNK_Z = 1024, 1024, 1
-CHUNK_FACTOR = 16
-BLOCKSIZE = 4
-
-'''Default Compression Parameters'''
-# CNAME = 'zstd'
-CNAME = 'none'
-CLEVEL = 5
-
 '''Other Defaults'''
 DEFAULT_PLAYBACK_SPEED = 4.0 # playback speed (fps)
 PROFILING_MODE = False
 PRINT_EXAMPLE_ARGS = True
 DAEMON_THREADS = True
 PROFILER = False
-DUMMY = False
-USE_TENSORSTORE = True
 FAULT_HANDLER = False
 HEADLESS = False
 SUPPORT_NONSQUARE = True
-USE_PYTHON = False
-MP_MODE = False
-THEME = 0
-MP_LINEWEIGHT = 3
-MP_SIZE = 6
-USE_FILE_IO = 0
-CODE_MODE = 'c'
-# HTTP_PORT = 9000
-MV = True
-
-preferences = None
-selected_file = None
-tasks_remaining = None
-tasks_total = None
-
 DELAY_BEFORE = 0
 DELAY_AFTER = 0
 USE_DELAY = False

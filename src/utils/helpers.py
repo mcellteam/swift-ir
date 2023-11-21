@@ -188,16 +188,10 @@ def delete_recursive(dir, keep_core_dirs=False):
         to_delete.append(dir + '/thumbnails')
         to_delete.append(dir)
         to_delete.append(dir)  # delete twice
-    cfg.nProcessDone = 0
-    cfg.nProcessSteps = len(to_delete)
     logger.info('# directories to delete: %d' % len(to_delete))
-    cfg.main_window.setPbarMax(cfg.nProcessSteps)
     # logger.critical(f'To Delete: {to_delete}')
     for d in to_delete:
-        cfg.nProcessDone += 1
         shutil.rmtree(d, ignore_errors=True, onerror=handleError)
-        cfg.main_window.updatePbar(cfg.nProcessDone)
-        cfg.main_window.update()
     shutil.rmtree(dir, ignore_errors=True, onerror=handleError)
 
     # cfg.main_window.hidePbar()

@@ -165,8 +165,6 @@ class MainWindow(QMainWindow):
 
         logger.debug('\n\nIf this message is seen then the logging level is set to logging.DEBUG\n')
 
-        self.bStopPbar.setEnabled(cfg.DAEMON_THREADS)
-
         # self.preferences = QSettings("cnl", "alignem")
         # # if not self.preferences.value("geometry") == None:
         # #     self.restoreGeometry(self.preferences.value("geometry"))
@@ -1086,7 +1084,7 @@ class MainWindow(QMainWindow):
         dm.save(silently=True)
         # logger.critical('')
         scale = dm.scale
-        self.shutdownNeuroglancer() #1111-
+        # self.shutdownNeuroglancer() #1120-
 
         if self._working == True:
             self.warn('Another Process is Already Running')
@@ -1126,8 +1124,8 @@ class MainWindow(QMainWindow):
         self._alignworker.moveToThread(self._alignThread)  # Step 4: Move worker to the thread
 
         self._alignworker.finished.connect(self._alignThread.quit)
-        self._alignworker.finished.connect(dm.set_stack_cafm) #1118+
-        self._alignworker.finished.connect(dm.save)
+        # self._alignworker.finished.connect(dm.set_stack_cafm) #1118+
+        # self._alignworker.finished.connect(dm.save)
         self._alignworker.finished.connect(self.hidePbar)
         self._alignworker.finished.connect(self.dataUpdateWidgets)
         # self._alignworker.finished.connect(self.onAlignmentEnd)
