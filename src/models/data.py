@@ -2336,8 +2336,18 @@ class DataModel:
                 self.ht = Cache(self)
         try:
             if not silently:
+                cfg.mw.tell(f"Saving '{p}'...")
                 logger.critical(f"[{caller}]\nSaving >> '{p}'")
-            write('json')(p, self._data)
+            try:
+                write('json')(p, self._data)
+            except:
+                if not silently:
+                    cfg.mw.err(f"[{caller}] Unable to save to file. Reason: {e.__class__.__name__}")
+                print_exception()
+            else:
+                if not silently:
+                    logger.info(f"Save successful!")
+
         except Exception as e:
             print_exception()
             logger.critical(f"Error Saving: {p} !!")
