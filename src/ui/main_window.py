@@ -904,6 +904,7 @@ class MainWindow(QMainWindow):
         return ans
 
     def present_snr_results(self, dm, indexes):
+        logger.info('')
         # indexes = list(range(len(dm)))
         # if dm.first_included() in indexes:
         #     indexes.remove(dm.first_included())
@@ -912,9 +913,6 @@ class MainWindow(QMainWindow):
         # logger.critical(f"[{len(snr_before)}] snr_before = {snr_before}")
         # logger.critical(f"[{len(snr_after)}] snr_after  = {snr_after}")
         try:
-            if self.dm.is_aligned():
-                logger.info('Alignment seems successful')
-            logger.info('Calculating SNR Diff Values...')
             mean_before = statistics.fmean(snr_before)
             mean_after = statistics.fmean(snr_after)
             diff_avg = mean_after - mean_before
@@ -4752,7 +4750,7 @@ class MainWindow(QMainWindow):
         sys.stdout.flush() #1015+
 
     def hidePbar(self):
-        logger.info('')
+        # logger.info('')
         # self.wPbar.hide()
         self.aPbar.setVisible(False)
 

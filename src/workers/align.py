@@ -24,6 +24,8 @@ libtiff.libtiff_ctypes.suppress_warnings()
 import warnings
 warnings.filterwarnings("ignore") #Works for supressing tiffile invalid offset warning
 # from src.mp_queue import TaskQueue
+from src.utils.readers import read
+from src.utils.writers import write
 from src.core.recipemaker import run_recipe
 from src.utils.helpers import print_exception, get_core_count
 import src.config as cfg
@@ -99,9 +101,12 @@ class AlignWorker(QObject):
             'target_thumb_size': cfg.TARGET_THUMBNAIL_SIZE,
             'images_path': dm.images_path,
             'file_path': dm.data_file_path,
-            'keep_signals': cfg.KEEP_SIGNALS,
-            'keep_matches': cfg.KEEP_MATCHES,
-            'generate_thumbnails': cfg.GENERATE_THUMBNAILS,
+            # 'keep_signals': cfg.KEEP_SIGNALS,
+            # 'keep_matches': cfg.KEEP_MATCHES,
+            # 'generate_thumbnails': cfg.GENERATE_THUMBNAILS,
+            'keep_signals': dm.lvl() > 2,
+            'keep_matches': dm.lvl() > 2,
+            'generate_thumbnails': dm.lvl() > 2,
         }
 
         firstInd = dm.first_included(s=scale)
@@ -138,7 +143,7 @@ class AlignWorker(QObject):
                     is_cached = self.dm.ht.haskey(self.dm.swim_settings(s=scale, l=i))
                     is_generated = Path(ss['path_thumb_transformed']).exists() and Path(ss['path_gif']).exists()
                     do_generate = (not is_generated) and _glob_config['generate_thumbnails']
-                    if not (is_cached and do_generate):
+                    if (not is_cached) or do_generate:
                         tasks.append(copy.deepcopy(ss))
                     else:
                         logger.info(f"[{i}] Cache hit and generated images exist")
@@ -162,7 +167,6 @@ class AlignWorker(QObject):
                     assert np.array(afm).shape == (2, 3)
                 except:
                     self.hudWarning.emit(f'Error! No Affine Result, Section # {i}'); continue
-
                 dm['stack'][i]['levels'][scale]['results'] = r
                 ss = dm.swim_settings(s=scale, l=i)
                 self.dm.ht.put(ss, afm)
@@ -175,7 +179,7 @@ class AlignWorker(QObject):
             dm.set_stack_cafm()
         except:
             print_exception()
-        dm.save()
+        dm.save(silently=True)
 
     def run_multiprocessing(self, func, tasks, desc):
         # Returns 4 objects dt, succ, fail, results
@@ -213,9 +217,7 @@ class AlignWorker(QObject):
         directory = self.dm.ssDir(s=self.sl, l=i)
         path = os.path.join(directory, name)
         try:
-            with open(path, 'w') as f:
-                jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
-                f.write(jde.encode(data))
+            write('json')(path, data)
         except:
             print_exception()
 

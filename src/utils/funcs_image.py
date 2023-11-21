@@ -465,7 +465,11 @@ def SetSingleCafm(dm, scale, index, c_afm, include, bias_mat=None, method='grid'
         afm = identityAffine()
         # atrm['method_results']['affine_matrix'] = afm.tolist() #0802-
     c_afm = np.array(c_afm)
-    c_afm = composeAffine(afm, c_afm)
+    try:
+        c_afm = composeAffine(afm, c_afm)
+    except Exception as e:
+        logger.warning(f'[{index}] Failed to compose affine, setting to identity matrix. Reason: {e.__class__.__name__}')
+        c_afm = identityAffine()
     # Apply bias_mat if given
     if type(bias_mat) != type(None):
         c_afm = composeAffine(bias_mat, c_afm)

@@ -593,8 +593,8 @@ class EMViewer(AbstractEMViewer):
                 s.show_default_annotations = False
                 # self.root = Path(self.dm.images_path) / 'zarr_slices'
                 self.path = Path(self.dm.images_path) / 'zarr' / self.dm.level
-                tensor = self.getTensor(str(self.path)).result()
-                s.position = [self.dm.zpos + 0.5, tensor.shape[1] / 2, tensor.shape[2] / 2]
+                self.tensor = self.getTensor(str(self.path)).result()
+                s.position = [self.dm.zpos + 0.5, self.tensor.shape[1] / 2, self.tensor.shape[2] / 2]
                 for i in range(len(self.dm)):
                     # p = self.root / str(i)
                     # if p.exists():
@@ -618,7 +618,7 @@ class EMViewer(AbstractEMViewer):
                     }
                     # tensor = self.getTensor(str(p)).result()
 
-                    LV = self.getLocalVolume(tensor[i:i+1, :, :], self.getCoordinateSpace())
+                    LV = self.getLocalVolume(self.tensor[i:i+1, :, :], self.getCoordinateSpace())
                     # LV = self.getLocalVolume(tensor[:, :, :], self.getCoordinateSpace(), z_offset=i)
                     source = ng.LayerDataSource(
                         url=LV,
@@ -633,9 +633,9 @@ class EMViewer(AbstractEMViewer):
                     )
             else:
                 s.show_default_annotations = getData('state,neuroglancer,show_bounds')
-                tensor = self.getTensor(str(self.path)).result()
-                s.position = [self.dm.zpos + 0.5, tensor.shape[1] / 2, tensor.shape[2] / 2]
-                LV = self.getLocalVolume(tensor[:, :, :], self.getCoordinateSpace())
+                self.tensor = self.getTensor(str(self.path)).result()
+                s.position = [self.dm.zpos + 0.5, self.tensor.shape[1] / 2, self.tensor.shape[2] / 2]
+                LV = self.getLocalVolume(self.tensor[:, :, :], self.getCoordinateSpace())
                 # LV = self.getLocalVolume(tensor[:, :, :], self.getCoordinateSpace(), z_offset=i)
                 source = ng.LayerDataSource(url=LV,)
                 s.layers[f'layer'] = ng.ImageLayer(source=source, shader=copy.deepcopy(self.shader, ))

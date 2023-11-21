@@ -265,7 +265,7 @@ class SnrPlot(QWidget):
         logger.info(f"[{caller}] Initializing Plot...")
 
         if cfg.mw.dwSnr.isHidden():
-            logger.warning("Dock widget SNR is hidden!")
+            # logger.warning("Dock widget SNR is hidden!")
             return
 
         t0 = time()
