@@ -1126,6 +1126,7 @@ class MainWindow(QMainWindow):
         self._alignworker.finished.connect(self._alignThread.quit)
         # self._alignworker.finished.connect(dm.set_stack_cafm) #1118+
         # self._alignworker.finished.connect(dm.save)
+        self._alignworker.finished.connect(lambda: self.dm.save(silently=True))
         self._alignworker.finished.connect(self.hidePbar)
         self._alignworker.finished.connect(self.dataUpdateWidgets)
         # self._alignworker.finished.connect(self.onAlignmentEnd)

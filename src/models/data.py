@@ -2091,7 +2091,7 @@ class DataModel:
         levels = self.levels
         cur_level = self.level
         prev_level = levels[levels.index(cur_level) + 1]
-        cfg.mw.tell(f'Migrating SWIM settings from resolution level {prev_level} to {cur_level}..')
+        cfg.mw.tell(f'Propagating SWIM settings from resolution level {prev_level} to {cur_level}..')
         sf = int(self.lvl(prev_level) / self.lvl(cur_level))
         logger.critical(f"sf = {sf}")
 
