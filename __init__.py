@@ -4,18 +4,18 @@ try:
 except DistributionNotFound:
     pass  # package is not installed
 
-__all__ = []
-
-print(f'{__name__}')
+# __all__ = []
+#
+# print(f'{__name__}')
 
 # from . import alignEM
-from .alignEM import main
+# from .alignEM import main
 # __all__.extend(main.__all__)
 
-from . import src
-from .src import *
-__all__.extend(src.__all__)
-__all__.append('src')
+# from . import src
+# from .src import *
+# __all__.extend(src.__all__)
+# __all__.append('src')
 
 
 
