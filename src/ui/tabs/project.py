@@ -1892,12 +1892,14 @@ class AlignmentTab(QWidget):
             if self.twCornerViewer.currentIndex() == 0:
                 self.gifPlayer.set()
             elif self.twCornerViewer.currentIndex() == 1:
-                if self.transformViewer.section_number != self.dm.zpos:
-                    res = self.dm.resolution(s=self.dm.level)
-                    self.transformViewer = TransformViewer(parent=self, webengine=self.webengine2, path=None, dm=self.dm, res=res, )
-                    w = self.webengine2.width()
-                    h = self.webengine2.height()
-                    self.transformViewer.initZoom(w=w, h=h, adjust=1.2)
+                # if self.transformViewer.section_number != self.dm.zpos:
+                #     res = self.dm.resolution(s=self.dm.level)
+                res = self.dm.resolution(s=self.dm.level)
+                self.transformViewer = TransformViewer(parent=self, webengine=self.webengine2, path=None, dm=self.dm, res=res, )
+                # QApplication.processEvents()
+                w = self.webengine2.width()
+                h = self.webengine2.height()
+                self.transformViewer.initZoom(w=w, h=h, adjust=1.2)
         self.twCornerViewer.currentChanged.connect(tab_changed)
 
 
@@ -1929,11 +1931,12 @@ class AlignmentTab(QWidget):
 
         self.wEditAlignment = QSplitter(Qt.Orientation.Horizontal)
         self.wEditAlignment.addWidget(self.wWebengine1)
-        # self.wEditAlignment.addWidget(self.gbRightPanel)
         self.wEditAlignment.addWidget(self.columnSplitter)
         self.wEditAlignment.setCollapsible(0, False)
         self.wEditAlignment.setCollapsible(1, False)
-        self.wEditAlignment.setStretchFactor(0, 99) #1020-
+        self.wEditAlignment.setStretchFactor(0, 3) #1020-
+        self.wEditAlignment.setStretchFactor(1, 1) #1020-
+        self.wEditAlignment.setSizes([int(cfg.WIDTH * (3 / 4)), int(cfg.WIDTH * (1 / 4))]) #1020-
         # self.wEditAlignment.setStretchFactor(1, 1)
 
     @Slot()
