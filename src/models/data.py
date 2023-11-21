@@ -2147,9 +2147,11 @@ class DataModel:
                 try:
                     init_afm[0][2] *= sf
                     init_afm[1][2] *= sf
-                except:
-                    cfg.mw.warn(f"Section #{i}, some data is missing for previous level {prev_level} {type(init_afm)}")
-                    print_exception(f"Section #{i}, some data is missing for previous level {prev_level} {type(init_afm)}")
+                except Exception as e:
+                    logger.warning(f"[{i}] No valid aligntment data for {prev_level}. Reason: {e.__class__.__name__}")
+                    cfg.mw.warn(f"During propagation of {prev_level} to {self.level},"
+                                   f" previous data was missing for index {i}. It will be set to \n"
+                                   f"identity matrix until a valid affine is propagated.")
                 ss['init_afm'] = init_afm
 
                 #Critical #1015+
