@@ -4,7 +4,7 @@
 
 __all__ = ['dm']
 
-VERSION = '0.5.50'
+VERSION = '0.5.51'
 
 LOOP = None
 
