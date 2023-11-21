@@ -152,7 +152,7 @@ class AlignWorker(QObject):
         self.dm.t_align = dt
         if fail:
             self.hudWarning.emit(f"Something went wrong! # Success: {succ} / # Failed: {fail}")
-        self.hudMessage.emit(f"Total Tasks Finished: {len(results)}")
+        self.hudMessage.emit(f"Total Tasks Completed: {len(results)}")
 
         for r in results:
             if r['complete']:

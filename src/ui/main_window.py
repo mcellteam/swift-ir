@@ -1132,11 +1132,13 @@ class MainWindow(QMainWindow):
         self._alignworker.finished.connect(lambda: self.pt.gifPlayer.set())
         if self.pt.wTabs.currentIndex() == 2:
             self._alignworker.finished.connect(lambda: self.pt.snr_plot.initSnrPlot())
+
+        self._alignworker.finished.connect(lambda: self.pt.dSnr_plot.initSnrPlot())
         self._alignworker.finished.connect(self.updateEnabledButtons)
-        
         self._alignworker.finished.connect(lambda: self.pt.updateZarrRadiobuttons())
         self._alignworker.finished.connect(lambda: self.present_snr_results(dm, indexes))
         self._alignworker.finished.connect(lambda: self.pt.initNeuroglancer(init_all=True))
+
         self._alignworker.finished.connect(lambda: setattr(self, '_working', False))
         self._alignworker.finished.connect(lambda: self.tell(f'<span style="color: #FFFF66;"><b>**** All Processes Complete ****</b></span>'))
         self._alignThread.start()  # Step 6: Start the thread

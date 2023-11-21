@@ -368,19 +368,12 @@ class align_recipe:
             mr['mir_afm'] = self.ingredients[-1].mir_afm.tolist()
         except:
             mr['mir_afm'] = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
-            logger.warning('No MIR afm (forward matrix)')
+            logger.warning(f"[{mr['index']}] No MIR afm (forward matrix)")
         try:
             mr['mir_aim'] = self.ingredients[-1].mir_aim.tolist()
         except:
             mr['mir_aim'] = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
-            logger.warning('No MIR aim (inverse matrix)')
-
-        # try:
-        #     mr['applied_afm'] = self.applied_afm.tolist()
-        # except:
-        #     mr['applied_afm'] = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
-        #     print_exception()
-
+            # logger.warning(f"[{mr['index']}] No MIR aim (inverse matrix)")
 
         if self.method == 'grid':
             mr['quadrants'] = self.ss['method_opts']['quadrants']

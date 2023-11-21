@@ -176,16 +176,11 @@ class AbstractEMViewer(neuroglancer.Viewer):
         return '<a href="%s" target="_blank">Viewer</a>' % self.get_viewer_url()
 
     def __del__(self):
-        print('\n')
         try:
             clr = inspect.stack()[1].function
-            logger.critical(f"{self.type} deleted by {clr} ({self.created})")
-            print(f"{self.type} deleted by {clr} ({self.created})", flush=True)
+            print(f"({self.created}) {self.type} deleted by {clr}", flush=True)
         except:
-
-            logger.critical(f"{self.type} deleted, caller unknown ({self.created})")
-            print(f"{self.type} deleted, caller unknown ({self.created})", flush=True)
-        print('\n')
+            print(f"({self.created}) {self.type} deleted, caller unknown", flush=True)
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         clr = inspect.stack()[1].function
