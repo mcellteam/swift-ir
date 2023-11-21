@@ -587,9 +587,10 @@ class EMViewer(AbstractEMViewer):
             s.layout.type = self._convert_layout(getData('state,neuroglancer,layout'))
             s.show_scale_bar = getData('state,neuroglancer,show_scalebar')
             s.show_axis_lines = getData('state,neuroglancer,show_axes')
-            s.show_default_annotations = getData('state,neuroglancer,show_bounds')
+
 
             if self.view == 'experimental':
+                s.show_default_annotations = False
                 # self.root = Path(self.dm.images_path) / 'zarr_slices'
                 self.path = Path(self.dm.images_path) / 'zarr' / self.dm.level
                 tensor = self.getTensor(str(self.path)).result()
@@ -631,7 +632,7 @@ class EMViewer(AbstractEMViewer):
                         opacity=1, #Critical
                     )
             else:
-
+                s.show_default_annotations = getData('state,neuroglancer,show_bounds')
                 tensor = self.getTensor(str(self.path)).result()
                 s.position = [self.dm.zpos + 0.5, tensor.shape[1] / 2, tensor.shape[2] / 2]
                 LV = self.getLocalVolume(tensor[:, :, :], self.getCoordinateSpace())
