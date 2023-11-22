@@ -7,6 +7,7 @@ import shutil
 import subprocess as sp
 import time
 from math import floor
+from pathlib import Path
 from datetime import datetime
 
 import imageio.v3 as iio
@@ -37,6 +38,9 @@ class ZarrWorker(QObject):
     initPbar = Signal(tuple) # (# tasks, description)
     hudMessage = Signal(str)
     hudWarning = Signal(str)
+
+    GENERATE_ANIMATIONS = True
+    GENERATE_MINI_ZARR = False
 
     def __init__(self, dm, renew=False, ignore_cache=False):
         super().__init__()
@@ -73,37 +77,57 @@ class ZarrWorker(QObject):
                         f"transformation as Zarr protocol...\n")
         dm = self.dm
         dm.set_stack_cafm()
-        grp = os.path.join(dm.data_dir_path, 'zarr', 's%d' % dm.lvl())
-        zarrExist = os.path.exists(os.path.join(grp, '.zattrs'))
-        z = zarr.open(grp)
-        make_all = len(list(dm.zattrs.keys())) == 0
+        grp = Path(dm.data_dir_path) / 'zarr' / f's{dm.lvl()}'
+        zarrExist = (grp / '.zattrs').exists()
+        print(f"\nZarr exist? {zarrExist}\n")
 
-        if not zarrExist:
+
+        '''requested settings'''
+        req_os = dm.output_settings()
+        req_bb_use = req_os['bounding_box']['use']
+        req_bb_dims = req_os['bounding_box']['dims']
+        req_poly = req_os['polynomial_bias']
+        '''existing settings'''
+        if zarrExist:
+            z = zarr.open(grp)
+            try:
+                bb_has = z.attrs['bounding_box']['has']
+                bb_dims = z.attrss['bounding_box']['dims']
+                poly = z.attrs['polynomial_bias']
+                if (req_bb_dims != bb_dims) or (req_bb_use != bb_has) or (req_poly != poly):
+                    self.renew = True
+            except:
+                self.renew = True
+        else:
+            self.renew = True
+
+
+        #Todo get settings for last generated zarr. Compare to current settings. Proceed conditionally...
+
+
+        if self.renew or self.ignore_cache:
             self.indexes = list(range(len(dm)))
         else:
             self.indexes = []
             for i in range(len(dm)):
                 comports = dm.zarrCafmHashComports(l=i)
-                if make_all or self.ignore_cache:
-                    self.indexes.append(i)
+                if comports:
+                    logger.info(f"[{i}] Cache hit! {dm.cafmHash(l=i)}!")
                 else:
-                    if comports:
-                        logger.info(f"[{i}] Cache hit! {dm.cafmHash(l=i)}!")
-                    else:
-                        self.indexes.append(i)
+                    self.indexes.append(i)
 
 
-        if not len(self.indexes):
-            logger.info("\n\nZarr is in sync.\n")
+        if len(self.indexes) == 0:
+            print("<---- Zarr is in sync <----")
             return
 
-        if dm.has_bb():
+        if req_bb_use:
             # Note: now have got new cafm'level -> recalculate bounding box
             rect = dm.set_calculate_bounding_rect()  # Only after SetStackCafm
         else:
             w, h = dm.image_size()
             rect = [0, 0, w, h]  # might need to swap w/h for Zarr
-        logger.info(f'Bounding Box : {dm.has_bb()}, Bias: {dm.poly_order}\n')
+        logger.info(f'Bounding Box : {dm.has_bb()}, Polynomial Bias: {dm.poly_order}\n')
 
         tasks = []
         to_reduce = []
@@ -128,21 +152,24 @@ class ZarrWorker(QObject):
 
         if not self.running(): return
 
-        if self.generateAnimations():
-            logger.error(f"Something went wrong during generation GIF animations")
-            print_exception()
 
-        if not self.running(): return
-
-        if self.generateMiniZarr(dm):
-            logger.error(f"Something went wrong during generation of reduced Zarr")
-            print_exception()
-
-        if not self.running(): return
+        if self.GENERATE_ANIMATIONS:
+            if self.generateAnimations():
+                logger.error(f"Something went wrong during generation GIF animations")
+                print_exception()
+            if not self.running(): return
 
 
-        '''GENERATE CUMULATIVE ZARR'''
-        logger.critical("Generating cumulative Zarr...")
+        if self.GENERATE_MINI_ZARR:
+            if self.generateMiniZarr(dm):
+                logger.error(f"Something went wrong during generation of reduced Zarr")
+                print_exception()
+
+            if not self.running(): return
+
+
+        '''Generate cumulative Zarr'''
+        logger.info("Generating cumulative Zarr...")
 
         shape = (len(dm), rect[3], rect[2])
         cname, clevel, chunkshape = dm.get_transforming_zarr_settings(self.level)
@@ -156,25 +183,15 @@ class ZarrWorker(QObject):
         blocksize = chunkshape[0]
         nblocks = floor(len(dm) / blocksize)
 
+        openedZarr = zarr.open(grp)
+
         '''If it is an align all, then we want to set and store bounding box / poly bias'''
-        outputHash = hash(HashableDict(dm['level_data'][self.level]['output_settings']))
-        z.attrs['output_settings_hash'] = outputHash
-        z.attrs['output_settings'] = copy.deepcopy(dm['level_data'][self.level]['output_settings'])
-
-        # z = dm.get_zarr_transforming()
-        # z = dm.zarr
-
-
-        # tasks = []
-        # for i in self.indexes:
-        #     src = dm.path_aligned_cafm(l=i)
-        #     if os.file_path.exists(src):
-        #         z.attrs[i] = (str(dm.ssSavedHash(l=i)), dm.cafmHash(l=i))
-        #         task = [i, src, grp]
-        #         tasks.append(task)
-        #     else:
-        #         logger.warning(f'TIFF Does Not Exist: {src}')
-
+        new_settings = {
+            'bounding_box': {'has': req_bb_use, 'dims': req_bb_dims, },
+            'polynomial_bias': req_poly
+        }
+        openedZarr.attrs.update(new_settings)
+        dm['level_data'][dm.level]['output_settings']['bounding_box']['has'] = req_bb_use
 
         logger.critical(f"# BLOCKS: {nblocks}")
 
@@ -188,7 +205,7 @@ class ZarrWorker(QObject):
                 if j in self.indexes:
                     src = dm.path_aligned_cafm(l=j)
                     if os.path.exists(src):
-                        z.attrs[j] = {
+                        openedZarr.attrs[j] = {
                             'image': os.path.basename(src),
                             'swim_settings_hash': str(dm.ssSavedHash(l=j)),
                             'cafm_hash': dm.cafmHash(l=j),
@@ -200,7 +217,6 @@ class ZarrWorker(QObject):
             if len(task[2]):
                 logger.info(f'Appending task {task}')
                 tasks.append(task)
-
 
         if tasks:
             if ng.is_server_running():
@@ -222,7 +238,7 @@ class ZarrWorker(QObject):
             return 0
         except:
             print_exception()
-            logger.error(f'Th e following GIF Frame(s) Could Not Be Read as Image:\n{paths}')
+            logger.error(f'The following GIF Frame(s) Could Not Be Read as Image:\n{paths}')
             return 1
 
     def generateAnimations(self):

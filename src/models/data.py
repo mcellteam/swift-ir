@@ -1911,14 +1911,20 @@ class DataModel:
         if s == None: s = self.level
         self['level_data'][s]['output_settings']['bounding_box']['use'] = bool(b)
 
-    def set_bounding_rect(self, bounding_rect: list, s=None) -> None:
+    def output_settings(self, s=None):
         if s == None: s = self.level
-        self['level_data'][s]['output_settings']['bounding_box']['size'] = bounding_rect
+        return self['level_data'][s]['output_settings']
+
+    def bounding_rect_dims(self, s=None):
+        if s == None: s = self.level
+        return self['level_data'][s]['output_settings']['bounding_box']['dims']
+
 
     def set_calculate_bounding_rect(self, s=None):
         if s == None: s = self.level
-        self.set_bounding_rect(ComputeBoundingRect(self))
-        return self['level_data'][s]['output_settings']['bounding_box']['size']
+        dims = ComputeBoundingRect(self)
+        self['level_data'][s]['output_settings']['bounding_box']['dims'] = dims
+        return dims
 
 
     def coarsest_scale_key(self) -> str:

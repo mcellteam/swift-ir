@@ -1035,6 +1035,9 @@ class MainWindow(QMainWindow):
 
         renew = not dm['level_data'][dm.level]['zarr_made']
 
+        dm.set_calculate_bounding_rect()
+        dm.save(silently=True)
+
         if self._isProjectTab():
             if dm.is_aligned():
                 logger.info('Regenerating Zarr...')
@@ -1048,13 +1051,14 @@ class MainWindow(QMainWindow):
                 self._zarrworker.hudMessage.connect(self.tell)
                 self._zarrworker.hudWarning.connect(self.warn)
                 self._zarrworker.finished.connect(self._zarrThread.quit)
-                self._zarrworker.finished.connect(dm.save)
+                self._zarrworker.finished.connect(lambda: dm.save(silently=True))
                 self._zarrworker.finished.connect(self.hidePbar)
-                self._zarrworker.finished.connect(lambda: dm.setZarrMade(True))
-                self._zarrworker.finished.connect(lambda: self.pt.bZarrRegen.setEnabled(True))
                 self._zarrworker.finished.connect(self.dataUpdateWidgets)
-                self._zarrworker.finished.connect(self.pt.updateZarrRadiobuttons)
-                self._zarrworker.finished.connect(self.pt.initNeuroglancer)
+                self._zarrworker.finished.connect(lambda: self.pt.bZarrRegen.setEnabled(True))
+                self._zarrworker.finished.connect(lambda: dm.setZarrMade(True))
+                self._zarrworker.finished.connect(lambda: self.pt.rbZarrTransformed.setChecked(True))
+                self._zarrworker.finished.connect(lambda: self.pt.updateZarrUI())
+                self._zarrworker.finished.connect(lambda: self.pt.initNeuroglancer())
                 self._zarrworker.finished.connect(lambda: print('Finished'))
                 self._zarrworker.finished.connect(lambda: self.tell(f'<span style="color: #FFFF66;"><b>**** All Processes Complete ****</b></span>'))
                 self._zarrThread.start()  # Step 6: Start the thread
@@ -1134,7 +1138,7 @@ class MainWindow(QMainWindow):
 
         self._alignworker.finished.connect(lambda: self.pt.dSnr_plot.initSnrPlot())
         self._alignworker.finished.connect(self.updateEnabledButtons)
-        self._alignworker.finished.connect(lambda: self.pt.updateZarrRadiobuttons())
+        self._alignworker.finished.connect(lambda: self.pt.updateZarrUI())
         self._alignworker.finished.connect(lambda: self.present_snr_results(dm, indexes))
         self._alignworker.finished.connect(lambda: self.pt.initNeuroglancer(init_all=True))
 
@@ -1644,7 +1648,7 @@ class MainWindow(QMainWindow):
                     self.pt.project_table.initTableData()
 
                 self.updateEnabledButtons()
-                self.pt.updateZarrRadiobuttons()
+                self.pt.updateZarrUI()
                 self.dataUpdateWidgets()
                 # self.pt.project_table.veil()
 
@@ -3252,6 +3256,7 @@ class MainWindow(QMainWindow):
             logger.info('')
             if self.globTabs.count() > 0:
                 # if self._getTabType() != 'ManagerTab':
+                # if self._isProjectTab():
                 self.globTabs.removeTab(self.globTabs.currentIndex())
             else:
                 self.exit_app()
