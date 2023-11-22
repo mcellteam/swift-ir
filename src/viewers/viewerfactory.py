@@ -373,7 +373,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
             logger.warning(f"Path Not Found: {path}")
             return None
         logger.debug(f'Requested: {path}')
-        total_bytes_limit = 256_000_000_000  # Lonestar6: 256 GB (3200 MT/level) DDR4
+        # total_bytes_limit = 256_000_000_000  # Lonestar6: 256 GB (3200 MT/level) DDR4
+        total_bytes_limit = 16_000_000_000
         future = ts.open({
             'dtype': 'uint8',
             'driver': 'zarr',
@@ -383,15 +384,37 @@ class AbstractEMViewer(neuroglancer.Viewer):
                 'path': path
             },
             'context': {
-                'cache_pool': {'total_bytes_limit': total_bytes_limit},
-                'file_io_concurrency': {'limit': 1024},  # 1027+
-                # 'data_copy_concurrency': {'limit': 512},
+                'cache_pool': {
+                    'total_bytes_limit': total_bytes_limit,
+
+                },
+                'file_io_concurrency': {'limit': 256},
             },
-            'recheck_cached_data': False,
-            # 'recheck_cached_data': 'open',
+
+            'data_copy_concurrency': {'limit': 256},  # 1122+ #
+            # 'recheck_cached_data': False,
+            'recheck_cached_data': False, # What Janelia opensource dataset uses in TensorStore example... may need to be False for total_bytes_limit to take effect
             # 'recheck_cached_data': True,  # default=True
         })
         return future
+
+    """
+    
+    total_bytes_limit : integer[0, +∞) = 0¶
+    Soft limit on the total number of bytes in the cache. The least-recently used data 
+    that is not in use is evicted from the cache when this limit is reached.
+    
+    Context.data_copy_concurrency : object¶
+    Specifies a limit on the number of CPU cores used concurrently for data copying/encoding/decoding.
+    
+    Optional members¶
+    limit : integer[1, +∞) | "shared" = "shared"¶
+        The maximum number of CPU cores that may be used. If the special value of "shared" is specified, a shared global limit equal to the number of CPU cores/threads available applies.
+
+
+
+    
+    """
 
     def url(self):
         return self.get_viewer_url()
@@ -602,7 +625,11 @@ class EMViewer(AbstractEMViewer):
                 s.show_default_annotations = False
                 # self.root = Path(self.dm.images_path) / 'zarr_slices'
                 self.path = Path(self.dm.images_path) / 'zarr' / self.dm.level
+                # self.tensor = self.getTensor(str(self.path)).result()[ts.d['x','y'].transpose[::-1]]
+                # self.tensor = self.getTensor(str(self.path)).result()[ts.d[:].label["z", "y", "x"]]
                 self.tensor = self.getTensor(str(self.path)).result()
+                self.tensor = self.tensor[ts.d[:].label["z", "y", "x"]]
+                # self.tensor = self.tensor[ts.d[:].transpose[::-1]]
                 s.position = [self.dm.zpos + 0.5, self.tensor.shape[1] / 2, self.tensor.shape[2] / 2]
                 for i in range(len(self.dm)):
                     # p = self.root / str(i)
@@ -680,6 +707,9 @@ class TransformViewer(AbstractEMViewer):
 
         ref_pos = self.dm.get_ref_index()
         self.tensor = self.getTensor(str(self.path)).result()
+        self.tensor = self.tensor[ts.d[:].label["z", "y", "x"]]
+        # self.tensor = self.tensor[ts.d[:].transpose[::-1]]
+
         if ref_pos is not None:
             self.LV0 = self.getLocalVolume(self.tensor[ref_pos:ref_pos + 1, :, :], self.getCoordinateSpace())
         # self.tensor = self.getTensor(str(self.path)).result()
