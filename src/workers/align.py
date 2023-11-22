@@ -94,6 +94,10 @@ class AlignWorker(QObject):
         scale = self.scale
         dm = self.dm
 
+        siz = dm.image_size(scale)
+        are_large = siz[0] > 16000 or siz[1] > 16000
+
+
         _glob_config = {
             'dev_mode': cfg.DEV_MODE,
             'verbose_swim': cfg.VERBOSE_SWIM,
@@ -104,9 +108,9 @@ class AlignWorker(QObject):
             # 'keep_signals': cfg.KEEP_SIGNALS,
             # 'keep_matches': cfg.KEEP_MATCHES,
             # 'generate_thumbnails': cfg.GENERATE_THUMBNAILS,
-            'keep_signals': dm.lvl() > 1,
-            'keep_matches': dm.lvl() > 1,
-            'generate_thumbnails': dm.lvl() > 1,
+            'keep_signals': not are_large,
+            'keep_matches': not are_large,
+            'generate_thumbnails': not are_large,
         }
 
         firstInd = dm.first_included(s=scale)

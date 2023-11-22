@@ -474,8 +474,6 @@ def SetSingleCafm(dm, scale, index, c_afm, include, bias_mat=None, method='grid'
     if type(bias_mat) != type(None):
         c_afm = composeAffine(bias_mat, c_afm)
     dm['stack'][index]['levels'][scale]['cafm'] = c_afm.tolist()
-    dm['stack'][index]['levels'][scale]['cafm_inv'] = invertAffine(c_afm).tolist()
-
     # dm.ht_cafm.put()
     dm['stack'][index]['levels'][scale]['afm'] = afm.tolist()
     # Register cumualtive affine hash

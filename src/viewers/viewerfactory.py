@@ -272,12 +272,14 @@ class AbstractEMViewer(neuroglancer.Viewer):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def set_layer(self):
+    def set_layer(self, pos=None):
         self._blockStateChanged = True
+        if not pos:
+            pos = self.dm.zpos
         with self.txn() as s:
             vc = s.voxel_coordinates
             try:
-                vc[0] = self.dm.zpos + 0.5
+                vc[0] = pos + 0.5
             except TypeError:
                 logger.warning("TypeError")
                 pass
@@ -325,6 +327,13 @@ class AbstractEMViewer(neuroglancer.Viewer):
         #         scales=self.res,
         #     )
         # )
+
+    def getCoordinateSpaceXYZ(self):
+        return ng.CoordinateSpace(
+            names=['x', 'y', 'z'],
+            units=['nm', 'nm', 'nm'],
+            scales=[self.res[2], self.res[1], self.res[0]],
+        )
 
     def getLocalVolume(self, data, coordinatespace, z_offset=0):
         """
@@ -606,11 +615,15 @@ class EMViewer(AbstractEMViewer):
                     # matrix = conv_mat(to_tuples(self.dm.cafm(l=i)), i=i)
                     # matrix = conv_mat(to_tuples(self.dm.cafm(l=i)), i=i)
                     matrix = conv_mat(to_tuples(self.dm.alt_cafm(l=i)), i=i)
+                    # matrix = conv_mat(to_tuples(self.dm.cafm(l=i)), i=i)
                     self._mats[i] = matrix
 
                     output_dims = {'z': [self.res[0], 'nm'],
                                    'y': [self.res[1], 'nm'],
                                    'x': [self.res[2], 'nm']}
+                    # output_dims = {'x': [self.res[2], 'nm'],
+                    #                'y': [self.res[1], 'nm'],
+                    #                'z': [self.res[0], 'nm'], }
 
                     transform = {
                         'matrix': matrix,
@@ -679,6 +692,12 @@ class TransformViewer(AbstractEMViewer):
         output_dims = {'z': [self.res[0], 'nm'],
                        'y': [self.res[1], 'nm'],
                        'x': [self.res[2], 'nm']}
+        # output_dims = {'z': [50, 'nm'],
+        #                'y': [1, 'nm'],
+        #                'x': [1, 'nm']}
+        # output_dims = {'x': [self.res[2], 'nm'],
+        #                'y': [self.res[1], 'nm'],
+        #                'z': [self.res[0], 'nm'], }
 
         # transform0 = {'matrix': conv_mat(ident, i=1),
         #     'outputDimensions': output_dims}
@@ -707,8 +726,8 @@ class TransformViewer(AbstractEMViewer):
                     opacity=1,)
 
                 if self.dm.is_aligned():
-                    # afm = to_tuples(self.dm.mir_aim())
-                    afm = to_tuples(self.dm.mir_afm())
+                    afm = to_tuples(self.dm.mir_aim()) #<-?
+                    # afm = to_tuples(self.dm.mir_afm())
                     mat = conv_mat(afm, i=1)
                     # mat = conv_mat(self.dm.afm_cur(), i=1)
                     # mat = conv_mat(self.dm.mir_afm(), i=1)
@@ -1070,39 +1089,75 @@ def to_tuples(arg):
 # @cache # Unhashable type: List
 @cache
 def conv_mat(mat, i=0):
+    # [a, c, e],
+    # [b, d, f]
+
+    # [  ,  ,  ][ ]
+    # [  , d, b][f]
+    # [  , c, a][e]
+
+    b = np.array([[mat[0][0], mat[0][1], mat[0][2]],
+                   [mat[1][0], mat[1][1], mat[1][2]],
+                   [0, 0, 1]])
+
+    # mat = transpose(mat)
+    # b = np.array([[mat[0][0], mat[0][1], mat[0][2]],
+    #               [mat[1][0], mat[1][1], mat[1][2]],
+    #               [0, 0, 1]])
+
+    # b = np.linalg.inv(b)
+    # b[0, 1] *= -1  # a2
+    # b[1, 0] *= -1  # b1
+    # b[1, 2] *= -1  # b3
+
+
+    # print(f"b : {b}")
+    b = transpose(b)  # definitely need this
+
+    print(b)
+
+
 
     ngmat = [[.999, 0, 0, i],
              [0, 1, 0, 0],
              [0, 0, 1, 0]]
 
-    # ngmat[2][1] = mat[0][1]
-    # ngmat[2][2] = mat[0][0]
-    # ngmat[2][3] = mat[0][2]
+    ngmat[1][1] = b[0][0]
+    ngmat[1][2] = b[0][1]
+    ngmat[1][3] = b[0][2]
+    ngmat[2][1] = b[1][0]
+    ngmat[2][2] = b[1][1]
+    ngmat[2][3] = b[1][2]
+
+    #test
+    # ngmat[1][1] = b[0][0]
+    # ngmat[1][2] = b[0][1]
+    # ngmat[1][3] = b[0][2]
+    # ngmat[2][1] = b[1][0]
+    # ngmat[2][2] = b[1][1]
+    # ngmat[2][3] = b[1][2]
+
     # ngmat[1][1] = mat[1][1]
     # ngmat[1][2] = mat[1][0]
-    # ngmat[1][3] = mat[1][2]
-
-    ngmat[1][1] = mat[1][1]
-    ngmat[1][2] = mat[1][0]
-    ngmat[1][3] = mat[1][2] # translation
-    ngmat[2][1] = mat[0][1]
-    ngmat[2][2] = mat[0][0]
-    ngmat[2][3] = mat[0][2] #* -1 # translation
+    # ngmat[1][3] = mat[1][2]  # translation
+    # ngmat[2][1] = mat[0][1]
+    # ngmat[2][2] = mat[0][0]  # * -1 #reflect x-axis across y-axis
+    # ngmat[2][3] = mat[0][2]  # translation
 
     return ngmat
 
 
-def cafm_to_matrix(t):
-    """Convert c_afm to Numpy matrix."""
-    return np.matrix([[t[0][0], t[0][1], t[0][2]],
-                      [t[1][0], t[1][1], t[1][2]],
-                      [0, 0, 1]])
+def transpose(m):
+    return np.array([[m[1][1], m[1][0], m[1][2]],
+            [m[0][1], m[0][0], m[0][2]]])
+
 
 
 # # Not using TensorStore, so point Neuroglancer directly to local Zarr on disk.
 # cfg.refLV = cfg.baseLV = f'zarr://http://localhost:{self.port}/{unal_path}'
 # if is_aligned_and_generated:  cfg.alLV = f'zarr://http://localhost:{self.port}/{al_path}'
 
+#
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()

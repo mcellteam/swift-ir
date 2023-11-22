@@ -474,7 +474,9 @@ class align_recipe:
         border = 128  # Todo get exact median greyscale value
 
         w, h = self.ss['img_size']
-        rect = [0, 0, w * sf, h * sf]  # might need to swap w/h for Zarr
+        # rect = [0, 0, w * sf, h * sf]  # might need to swap w/h for Zarr
+        # rect = [0, 0, w * sf, h * sf]  # might need to swap w/h for Zarr
+        rect = [-20, -20, int(w * sf + 40), int(h * sf + 40)]  # might need to swap w/h for Zarr
         p1 = applyAffine(afm, (0, 0))  # Transform Origin To Output Space
         p2 = applyAffine(afm, (rect[0], rect[1]))  # Transform BB Lower Left To Output Space
         offset_x, offset_y = p2 - p1  # Offset Is Difference of 'p2' and 'p1'
@@ -507,33 +509,43 @@ class align_recipe:
         # print(f"\n{mir_script}\n")
         out, err, rc = run_command(self.mir_c, arg_list=[], cmd_input=mir_script)
         if rc == 1:
-            logger.critical("\n\n\n\n rc = 1 \n\n\n\n")
-            print("\n\n\n\n rc = 1 \n\n\n\n")
+            logger.critical("ERROR Return code = 1")
+
+
+        # return
 
         pA = self.ss['path_thumb_transformed']
         pB = self.ss['path_thumb_src_ref']
         out = self.ss['path_gif']
         time.sleep(.1)
+
         try:
             assert os.path.exists(pA)
         except AssertionError:
-            logger.error(f'\nImage not found: {pA}\n')
+            print(f'\nError: Image not found: {pA}\n')
             return
         try:
             assert os.path.exists(pB)
         except AssertionError:
-            logger.error(f'\nImage not found: {pB}\n')
+            print(f'\nError: Image not found: {pB}\n')
             return
 
         # ERROR:src.core.recipemaker:
         # Image not found: /Users/joelyancey/alignem_data/alignments/666/data/35/s4/7910856802294028582/R34CA1-BS12.136.thumb.tif
-
+        # print('writing gif...')
         try:
+            _M = np.zeros(rect[2:])
+            _M.fill(128)
+            print(_M.shape)
+
             imA = iio.imread(pA)
+            # _imA[20:][20:] = imA
             imB = iio.imread(pB)
+            _M[20:rect[2]-20, 20:rect[3]-20] = imB
             iio.imwrite(pA, imA) # monkey patch - fixes metadata
             iio.imwrite(pB, imB)  # monkey patch - fixes metadata
-            iio.imwrite(out, [imA, imB], format='GIF', duration=1, loop=0)
+            # iio.imwrite(out, [imA, imB], format='GIF', duration=1, loop=0)
+            iio.imwrite(out, [imA, _M], format='GIF', duration=1, loop=0)
         except:
             print_exception()
 

@@ -833,7 +833,11 @@ class ManagerTab(QWidget):
 
             if self.parent.isProjectOpen(file_path):
                 logger.info(f"Project {file_path} is already open...")
-                self.parent.globTabs.setCurrentIndex(self.parent.getProjectIndex(file_path))
+                try:
+                    self.parent.globTabs.setCurrentIndex(self.parent.getProjectIndex(file_path))
+                except Exception as e:
+                    logger.warning(f"Error. Reason: {e.__class__.__name__}")
+
                 self.parent.warn(f'Project {file_path.name} is already open.')
                 return
 
