@@ -1358,7 +1358,7 @@ class DataModel:
         try:
             # return self._data['stack'][z]['levels'][level]['alignment']['method_results']['cumulative_afm'] #0802-
             # method = self.method(s=s, l=l)
-            sss = self.saved_swim_settings(s=s, l=l)
+            # sss = self.saved_swim_settings(s=s, l=l)
             return self._data['stack'][l]['levels'][s]['alt_cafm']
             # return self.ht_cafm.get(sss)
         except:

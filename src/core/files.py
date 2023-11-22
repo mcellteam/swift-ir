@@ -58,6 +58,10 @@ class DirectoryStructure:
         cfg.mw.hud('Making directory structure...')
         if overwrite:
             shutil.rmtree(self.p, ignore_errors=True)
+        if not os.path.exists(cfg.preferences['alignments_root']):
+            os.makedirs(cfg.preferences['alignments_root'], exist_ok=True)
+        if not os.path.exists(cfg.preferences['images_root']):
+            os.makedirs(cfg.preferences['images_root'], exist_ok=True)
         self.initLogs()
         for l in self.levels:
             (self.p / 'zarr' / l).mkdir(parents=True, exist_ok=True)
