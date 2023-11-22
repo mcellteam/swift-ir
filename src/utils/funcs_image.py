@@ -322,6 +322,62 @@ def BiasMat(x, bias_funcs):
     return bias_mat
 
 
+def alt_BiasMat(x, bias_funcs):
+    logger.debug('BiasMat:')
+
+    #  xdot = np.array([4.0,3.0,2.0,1.0])
+
+    poly_order = len(bias_funcs['x']) - 1
+    xdot = np.arange(poly_order, 0, -1, dtype='float64')
+
+    p = bias_funcs['skew_x']
+    dp = p[:-1] * xdot
+    fdp = np.poly1d(dp)
+    skew_x_bias = -fdp(x)
+
+    p = bias_funcs['scale_x']
+    dp = p[:-1] * xdot
+    fdp = np.poly1d(dp)
+    scale_x_bias = 1 - fdp(x)
+
+    p = bias_funcs['scale_y']
+    dp = p[:-1] * xdot
+    fdp = np.poly1d(dp)
+    scale_y_bias = 1 - fdp(x)
+
+    p = bias_funcs['rot']
+    dp = p[:-1] * xdot
+    fdp = np.poly1d(dp)
+    rot_bias = -fdp(x)
+
+    p = bias_funcs['x']
+    dp = p[:-1] * xdot
+    fdp = np.poly1d(dp)
+    x_bias = -fdp(x)
+
+    p = bias_funcs['y']
+    dp = p[:-1] * xdot
+    fdp = np.poly1d(dp)
+    y_bias = -fdp(x)
+
+    # Create skew, level, rot, and tranlation matrices
+    skew_x_bias_mat = np.array([[1.0, skew_x_bias, 0.0], [0.0, 1.0, 0.0]])
+    scale_bias_mat = np.array([[scale_x_bias, 0.0, 0.0], [0.0, scale_y_bias, 0.0]])
+    rot_bias_mat = np.array([[np.cos(rot_bias), -np.sin(rot_bias), 0.0], [np.sin(rot_bias), np.cos(rot_bias), 0.0]])
+    trans_bias_mat = np.array([[1.0, 0.0, x_bias], [0.0, 1.0, y_bias]])
+
+    bias_mat = identityAffine()
+
+    # Compose bias matrix as skew*level*rot*trans
+    bias_mat = composeAffineR(skew_x_bias_mat, bias_mat)
+    bias_mat = composeAffineR(scale_bias_mat, bias_mat)
+    bias_mat = composeAffineR(rot_bias_mat, bias_mat)
+    bias_mat = composeAffineR(trans_bias_mat, bias_mat)
+
+    # logger.info('<<<< BiasMat')
+
+    return bias_mat
+
 # NEW
 # Find the bias functions that best fit the trends in cafm across the whole stack
 # For now the form of the functions is an Nth-order polynomial
@@ -448,6 +504,34 @@ def InitCafm(bias_funcs):
     return c_afm_init
 
 
+def alt_InitCafm(bias_funcs):
+    '''Get the initial cafm from the constant terms of the bias_funcs'''
+    init_skew_x = -bias_funcs['skew_x'][-1]
+    init_scale_x = 1.0 / bias_funcs['scale_x'][-1]
+    init_scale_y = 1.0 / bias_funcs['scale_y'][-1]
+    init_rot = -bias_funcs['rot'][-1]
+    init_x = -bias_funcs['x'][-1]
+    init_y = -bias_funcs['y'][-1]
+
+    # Create skew, level, rot, and tranlation matrices
+    init_skew_x_mat = np.array([[1.0, init_skew_x, 0.0], [0.0, 1.0, 0.0]])
+    init_scale_mat = np.array([[init_scale_x, 0.0, 0.0], [0.0, init_scale_y, 0.0]])
+    init_rot_mat = np.array([[np.cos(init_rot), -np.sin(init_rot), 0.0], [np.sin(init_rot), np.cos(init_rot), 0.0]])
+    init_trans_mat = np.array([[1.0, 0.0, init_x], [0.0, 1.0, init_y]])
+
+    c_afm_init = identityAffine()
+
+    # Compose bias matrix as skew*level*rot*trans
+    c_afm_init = composeAffineR(init_skew_x_mat, c_afm_init)
+    c_afm_init = composeAffineR(init_scale_mat, c_afm_init)
+    c_afm_init = composeAffineR(init_rot_mat, c_afm_init)
+    c_afm_init = composeAffineR(init_trans_mat, c_afm_init)
+
+    logger.info('Returning: %s' % format_cafm(c_afm_init))
+
+    return c_afm_init
+
+
 # def SetSingleCafm(d, scale, c_afm, bias_mat=None, method='grid'):
 def SetSingleCafm(dm, scale, index, c_afm, include, bias_mat=None, method='grid'):
     '''Calculate and set the value of the cafm (with optional bias) for a single section data dict'''
@@ -496,10 +580,11 @@ def alt_SetSingleCafm(dm, scale, index, alt_c_afm, include, bias_mat=None, metho
         mir_afm = identityAffine()
         # atrm['method_results']['affine_matrix'] = afm.tolist() #0802-
     alt_c_afm = np.array(alt_c_afm)
-    alt_c_afm = composeAffine(mir_afm, alt_c_afm)
+    alt_c_afm = composeAffineR(mir_afm, alt_c_afm)
     # Apply bias_mat if given
     if type(bias_mat) != type(None):
-        alt_c_afm = composeAffine(bias_mat, alt_c_afm)
+        # alt_c_afm = composeAffine(bias_mat, alt_c_afm)
+        alt_c_afm = composeAffineR(bias_mat, alt_c_afm)
     dm['stack'][index]['levels'][scale]['alt_cafm'] = alt_c_afm.tolist()
 
     # dm.ht_cafm.put()
@@ -576,7 +661,7 @@ def alt_SetStackCafm(dm, scale, poly_order=None):
     if use_poly:
         # If null_biases==True, Iteratively determine and null out bias in cafm
         bias_funcs = BiasFuncs(dm, scale, poly_order=poly_order)
-        c_afm_init = InitCafm(bias_funcs)
+        c_afm_init = alt_InitCafm(bias_funcs)
     else:
         c_afm_init = identityAffine()
 
@@ -592,7 +677,7 @@ def alt_SetStackCafm(dm, scale, poly_order=None):
             #     logger.error(f"AssertionError, section #{i}: {str(e)}")
             #     break
             if use_poly:
-                bias_mat = BiasMat(i, bias_funcs)
+                bias_mat = alt_BiasMat(i, bias_funcs)
             # method = d['levels'][scale]['swim_settings']['method_opts']['method']
             method = d['levels'][scale]['saved_swim_settings']['method_opts']['method']
             include = dm['stack'][i]['levels'][scale]['saved_swim_settings']['include']
@@ -619,9 +704,21 @@ def composeAffine(afm, bfm):
     Affine matrices must be 2x3 numpy arrays.'''
     afm = np.vstack((afm, [0,0,1]))
     bfm = np.vstack((bfm, [0,0,1]))
+    fm = np.matmul(afm, bfm)
+    # fm = np.matmul(bfm, afm)
+    return fm[0:2,:]
+
+
+def composeAffineR(afm, bfm):
+    '''COMPOSEAFFINE - Compose two affine transforms
+    COMPOSEAFFINE(afm1, afm2) returns the affine generate_thumbnail AFM1 ∘ AFM2
+    that applies AFM1 after AFM2.
+    Affine matrices must be 2x3 numpy arrays.'''
+    afm = np.vstack((afm, [0, 0, 1]))
+    bfm = np.vstack((bfm, [0, 0, 1]))
     # fm = np.matmul(afm, bfm)
     fm = np.matmul(bfm, afm)
-    return fm[0:2,:]
+    return fm[0:2, :]
 
 def identityAffine():
     '''IDENTITYAFFINE - Return an idempotent affine generate_thumbnail
