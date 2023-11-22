@@ -1262,8 +1262,13 @@ class ImagesConfig(QWidget):
             chunk_z = 1
             chunk_y = floor(im_siz[1] / (sv * chunk_fac))
             chunk_x = floor(im_siz[0] / (sv * chunk_fac))
-            self._settings['resolution']['s%d' % sv] = (res_z, res_y, res_x)
-            self._settings['chunkshape']['s%d' % sv] = (chunk_z, chunk_y, chunk_x)
+            if min(chunk_y, chunk_x) < 512:
+                chunk_y = 512
+                chunk_x = 512
+            # self._settings['resolution']['s%d' % sv] = (res_z, res_y, res_x)
+            # self._settings['chunkshape']['s%d' % sv] = (chunk_z, chunk_y, chunk_x)
+            self._settings['resolution']['s%d' % sv] = (res_x, res_y, res_z)
+            self._settings['chunkshape']['s%d' % sv] = (chunk_x, chunk_y, chunk_z)
 
         return self._settings
 

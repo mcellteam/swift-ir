@@ -191,12 +191,13 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
     @staticmethod
     @cache
-    def _convert_layout(type):
-        d = {
-            'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d',
-            'yz-3d': 'xy-3d', 'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'
-        }
-        return d[type]
+    def _convert_layout(x):
+        # d = {
+        #     'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d',
+        #     'yz-3d': 'xy-3d', 'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'
+        # }
+        # return d[x]
+        return x
 
     def transform(self, index=None):
         logger.info('')
@@ -279,7 +280,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
         with self.txn() as s:
             vc = s.voxel_coordinates
             try:
-                vc[0] = pos + 0.5
+                # vc[0] = pos + 0.5
+                vc[2] = pos + 0.5
             except TypeError:
                 logger.warning("TypeError")
                 pass
@@ -315,18 +317,16 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
 
     def getCoordinateSpace(self):
+        # return ng.CoordinateSpace(
+        #     names=['z', 'y', 'x'],
+        #     units=['nm', 'nm', 'nm'],
+        #     scales=self.res,
+        # )
         return ng.CoordinateSpace(
-            names=['z', 'y', 'x'],
+            names=['x', 'y', 'z'],
             units=['nm', 'nm', 'nm'],
             scales=self.res,
         )
-        # return ng.CoordinateSpaceTransform(
-        #     ng.CoordinateSpace(
-        #         names=['z', 'y', 'x'],
-        #         units=['nm', 'nm', 'nm'],
-        #         scales=self.res,
-        #     )
-        # )
 
     def getCoordinateSpaceXYZ(self):
         return ng.CoordinateSpace(
@@ -335,7 +335,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
             scales=[self.res[2], self.res[1], self.res[0]],
         )
 
-    def getLocalVolume(self, data, coordinatespace, z_offset=0):
+    def getLocalVolume(self, data, coordinatespace):
         """
             data – Source data.
             volume_type – 'image'/'segmentation', or, guessed from data type.
@@ -351,7 +351,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
         return ng.LocalVolume(
             volume_type='image',
             data=data,
-            voxel_offset=[z_offset, 0, 0],
+            voxel_offset=[0, 0, 0],
             dimensions=coordinatespace,
             downsampling='3d',
             max_downsampling=cfg.max_downsampling,
@@ -440,13 +440,13 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
     def moveLeftBy(self, val):
         pos = self.position()
-        pos[2] = pos[2] + val
+        pos[0] = pos[0] + val
         with self.txn() as s:
             s.position = pos
 
     def moveRightBy(self, val):
         pos = self.position()
-        pos[2] = pos[2] - val
+        pos[0] = pos[0] - val
         with self.txn() as s:
             s.position = pos
 
@@ -534,8 +534,10 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
     def getFrameScale(self, w, h):
         assert hasattr(self, 'tensor')
-        _, tensor_y, tensor_x = self.tensor.shape
-        _, res_y, res_x = self.res  # nm per imagepixel
+        # _, tensor_y, tensor_x = self.tensor.shape
+        tensor_x, tensor_y, _ = self.tensor.shape
+        # _, res_y, res_x = self.res  # nm per imagepixel
+        res_x, res_y, _ = self.res  # nm per imagepixel
         scale_h = ((res_y * tensor_y) / h) * 1e-9  # nm/pixel
         scale_w = ((res_x * tensor_x) / w) * 1e-9  # nm/pixel
         cs_scale = max(scale_h, scale_w)
@@ -592,7 +594,8 @@ class EMViewer(AbstractEMViewer):
                         self.signals.zoomChanged.emit(val)
 
             if isinstance(self.state.position, np.ndarray):
-                requested = int(self.state.position[0])
+                # requested = int(self.state.position[0])
+                requested = int(self.state.position[2])
                 if requested != self.dm.zpos:
                     logger.info(f'Chaning index to {self.dm.zpos}')
                     self.dm.zpos = requested
@@ -628,9 +631,12 @@ class EMViewer(AbstractEMViewer):
                 # self.tensor = self.getTensor(str(self.path)).result()[ts.d['x','y'].transpose[::-1]]
                 # self.tensor = self.getTensor(str(self.path)).result()[ts.d[:].label["z", "y", "x"]]
                 self.tensor = self.getTensor(str(self.path)).result()
-                self.tensor = self.tensor[ts.d[:].label["z", "y", "x"]]
+                self.tensor = self.tensor[ts.d[:].label["x", "y", "z"]]
+                # self.tensor = self.tensor[ts.d[:].label["x", "y", "z"]]
+                # self.tensor = self.tensor['x', 'y'].transpose[-1]
                 # self.tensor = self.tensor[ts.d[:].transpose[::-1]]
-                s.position = [self.dm.zpos + 0.5, self.tensor.shape[1] / 2, self.tensor.shape[2] / 2]
+                # s.position = [self.dm.zpos + 0.5, self.tensor.shape[1] / 2, self.tensor.shape[2] / 2]
+                s.position = [self.tensor.shape[0] / 2, self.tensor.shape[1] / 2, self.dm.zpos + 0.5]
                 for i in range(len(self.dm)):
                     # p = self.root / str(i)
                     # if p.exists():
@@ -645,12 +651,12 @@ class EMViewer(AbstractEMViewer):
                     # matrix = conv_mat(to_tuples(self.dm.cafm(l=i)), i=i)
                     self._mats[i] = matrix
 
-                    output_dims = {'z': [self.res[0], 'nm'],
-                                   'y': [self.res[1], 'nm'],
-                                   'x': [self.res[2], 'nm']}
-                    # output_dims = {'x': [self.res[2], 'nm'],
+                    # output_dims = {'z': [self.res[0], 'nm'],
                     #                'y': [self.res[1], 'nm'],
-                    #                'z': [self.res[0], 'nm'], }
+                    #                'x': [self.res[2], 'nm']}
+                    output_dims = {'x': [self.res[0], 'nm'],
+                                   'y': [self.res[1], 'nm'],
+                                   'z': [self.res[2], 'nm'], }
 
                     transform = {
                         'matrix': matrix,
@@ -658,23 +664,28 @@ class EMViewer(AbstractEMViewer):
                     }
                     # tensor = self.getTensor(str(p)).result()
 
-                    LV = self.getLocalVolume(self.tensor[i:i+1, :, :], self.getCoordinateSpace())
+                    # LV = self.getLocalVolume(self.tensor[i:i+1, :, :], self.getCoordinateSpace())
+                    LV = self.getLocalVolume(self.tensor[:, :, i:i + 1], self.getCoordinateSpace())
                     # LV = self.getLocalVolume(tensor[:, :, :], self.getCoordinateSpace(), z_offset=i)
                     source = ng.LayerDataSource(
                         url=LV,
                         transform=ng.CoordinateSpaceTransform(transform)
                     )
-                    # s.layers[f'{i}'] = ng.ImageLayer(source=source, shader=copy.deepcopy(self.shader,))
                     s.layers.append(
                         name=f"layer-{i}",
-                        # layer=ng.ImageLayer(source=source, shader=copy.deepcopy(self.shader,))
                         layer=ng.ImageLayer(source=source, shader=copy.deepcopy(self.shader, )),
                         opacity=1, #Critical
                     )
+                    # s.layers.append(
+                    #     name=f"layer-{i}",
+                    #     layer=ng.ImageLayer(source=LV, shader=copy.deepcopy(self.shader, )),
+                    #     opacity=1,  # Critical
+                    # )
             else:
                 s.show_default_annotations = getData('state,neuroglancer,show_bounds')
                 self.tensor = self.getTensor(str(self.path)).result()
-                s.position = [self.dm.zpos + 0.5, self.tensor.shape[1] / 2, self.tensor.shape[2] / 2]
+                # s.position = [self.dm.zpos + 0.5, self.tensor.shape[1] / 2, self.tensor.shape[2] / 2]
+                s.position = [self.tensor.shape[0] / 2, self.tensor.shape[1] / 2, self.dm.zpos + 0.5]
                 LV = self.getLocalVolume(self.tensor[:, :, :], self.getCoordinateSpace())
                 # LV = self.getLocalVolume(tensor[:, :, :], self.getCoordinateSpace(), z_offset=i)
                 source = ng.LayerDataSource(url=LV,)
@@ -691,7 +702,7 @@ class TransformViewer(AbstractEMViewer):
 
     def __init__(self, **kwags):
         super().__init__(**kwags)
-        self.type = 'EMViewer'
+        self.type = 'TransformViewer'
         self.shader = self.dm['rendering']['shader']
         self.path = Path(self.dm.path_zarr_raw())
         self.section_number = self.dm.zpos
@@ -707,24 +718,28 @@ class TransformViewer(AbstractEMViewer):
 
         ref_pos = self.dm.get_ref_index()
         self.tensor = self.getTensor(str(self.path)).result()
-        self.tensor = self.tensor[ts.d[:].label["z", "y", "x"]]
+        # self.tensor = self.tensor[ts.d[:].label["z", "y", "x"]]
+        self.tensor = self.tensor[ts.d[:].label["x", "y", "z"]]
         # self.tensor = self.tensor[ts.d[:].transpose[::-1]]
 
         if ref_pos is not None:
-            self.LV0 = self.getLocalVolume(self.tensor[ref_pos:ref_pos + 1, :, :], self.getCoordinateSpace())
+            # self.LV0 = self.getLocalVolume(self.tensor[ref_pos:ref_pos + 1, :, :], self.getCoordinateSpace())
+            self.LV0 = self.getLocalVolume(self.tensor[:, :, ref_pos:ref_pos + 1], self.getCoordinateSpace())
         # self.tensor = self.getTensor(str(self.path)).result()
 
         # self.tensor[:,0:500,0:500] = 1
-        self.LV1 = self.getLocalVolume(self.tensor[self.dm.zpos:self.dm.zpos+1, :, :], self.getCoordinateSpace())
+        # self.LV1 = self.getLocalVolume(self.tensor[self.dm.zpos:self.dm.zpos+1, :, :], self.getCoordinateSpace())
+        self.LV1 = self.getLocalVolume(self.tensor[:, :, self.dm.zpos:self.dm.zpos + 1], self.getCoordinateSpace())
 
         # ident = np.array([[1., 0., 0.], [0., 1., 0.]]
         ident = [[1., 0., 0.], [0., 1., 0.]]
-        output_dims = {'z': [self.res[0], 'nm'],
+
+        # output_dims = {'z': [self.res[0], 'nm'],
+        #                'y': [self.res[1], 'nm'],
+        #                'x': [self.res[2], 'nm']}
+        output_dims = {'x': [self.res[0], 'nm'],
                        'y': [self.res[1], 'nm'],
-                       'x': [self.res[2], 'nm']}
-        # output_dims = {'z': [50, 'nm'],
-        #                'y': [1, 'nm'],
-        #                'x': [1, 'nm']}
+                       'z': [self.res[2], 'nm']}
         # output_dims = {'x': [self.res[2], 'nm'],
         #                'y': [self.res[1], 'nm'],
         #                'z': [self.res[0], 'nm'], }
@@ -743,7 +758,9 @@ class TransformViewer(AbstractEMViewer):
             s.show_axis_lines = False
             s.show_default_annotations = True
             # s.position = [0.5, self.tensor.shape[1] / 2, self.tensor.shape[2] / 2]
-            s.position = [1.5, self.tensor.shape[1] / 2, self.tensor.shape[2] / 2]
+            # s.position = [1.5, self.tensor.shape[1] / 2, self.tensor.shape[2] / 2]
+            # s.position = [self.tensor.shape[0] / 2, self.tensor.shape[1] / 2, 1.5]
+            s.position = [self.tensor.shape[0] / 2, self.tensor.shape[1] / 2, 1.5]
             # transform0 = {'matrix': conv_mat(ident, i=0), 'outputDimensions': output_dims}
             transform0 = {'matrix': conv_mat(to_tuples(ident), i=0), 'outputDimensions': output_dims}
             if hasattr(self, 'LV0'):
@@ -756,8 +773,8 @@ class TransformViewer(AbstractEMViewer):
                     opacity=1,)
 
                 if self.dm.is_aligned():
-                    afm = to_tuples(self.dm.mir_aim()) #<-?
-                    # afm = to_tuples(self.dm.mir_afm())
+                    # afm = to_tuples(self.dm.mir_aim()) #<-?
+                    afm = to_tuples(self.dm.mir_afm())
                     mat = conv_mat(afm, i=1)
                     # mat = conv_mat(self.dm.afm_cur(), i=1)
                     # mat = conv_mat(self.dm.mir_afm(), i=1)
@@ -806,8 +823,10 @@ class PMViewer(AbstractEMViewer):
     def __init__(self, **kwags):
         super().__init__(**kwags)
         self.type = 'PMViewer'
+        # self.coordspace = ng.CoordinateSpace(
+        #     names=['z', 'y', 'x'], units=['nm', 'nm', 'nm'], scales=[50, 2,2])  # DoThisRight TEMPORARY <---------
         self.coordspace = ng.CoordinateSpace(
-            names=['z', 'y', 'x'], units=['nm', 'nm', 'nm'], scales=[50, 2,2])  # DoThisRight TEMPORARY <---------
+            names=['x', 'y', 'z'], units=['nm', 'nm', 'nm'], scales=self.res)  # DoThisRight TEMPORARY <---------
         self.initViewer()
 
 
@@ -826,7 +845,7 @@ class PMViewer(AbstractEMViewer):
                 self.LV_r = self.getLocalVolume(self.tensor_r[:, :, :], self.getCoordinateSpace())
 
         with self.txn() as s:
-            s.layout.type = 'yz'
+            s.layout.type = self._convert_layout('xy')
             s.show_default_annotations = True
             s.show_axis_lines = True
             s.show_scale_bar = False
@@ -839,12 +858,12 @@ class PMViewer(AbstractEMViewer):
             if hasattr(self,'LV_r'):
                 s.layers['transformed'] = ng.ImageLayer(source=self.LV_r)
                 s.layout = ng.row_layout([
-                    ng.LayerGroupViewer(layout='yz', layers=['source']),
-                    ng.LayerGroupViewer(layout='yz', layers=['transformed'],),
+                    ng.LayerGroupViewer(layout=self._convert_layout('xy'), layers=['source']),
+                    ng.LayerGroupViewer(layout=self._convert_layout('xy'), layers=['transformed'],),
                 ])
             else:
                 s.layout = ng.row_layout([
-                    ng.LayerGroupViewer(layout='yz', layers=['source']),
+                    ng.LayerGroupViewer(layout=self._convert_layout('xy'), layers=['source']),
                 ])
 
         with self.config_state.txn() as s:
@@ -852,17 +871,6 @@ class PMViewer(AbstractEMViewer):
 
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
-    def _left(self, s):
-        logger.debug('')
-        with self.txn() as s:
-            vc = s.voxel_coordinates
-            vc[0] = max(vc[0] - 1, 0)
-
-    def _right(self, s):
-        logger.debug('')
-        with self.txn() as s:
-            vc = s.voxel_coordinates
-            vc[0] = min(vc[0] + 1, self.tensor.shape[0])
 
     def on_state_changed(self):
         pass
@@ -882,7 +890,8 @@ class MAViewer(AbstractEMViewer):
         self.initViewer()
 
     def z(self):
-        return int(self.state.voxel_coordinates[0]) # self.state.position[0]
+        # return int(self.state.voxel_coordinates[0]) # self.state.position[0]
+        return int(self.state.voxel_coordinates[2]) # self.state.position[0]
 
     def set_layer(self):
         caller = inspect.stack()[1].function
@@ -896,7 +905,8 @@ class MAViewer(AbstractEMViewer):
         with self.txn() as s:
             vc = s.voxel_coordinates
             try:
-                vc[0] = self.index + 0.5
+                # vc[0] = self.index + 0.5
+                vc[2] = self.index + 0.5
             except TypeError:
                 logger.warning('TypeError')
                 pass
@@ -924,12 +934,14 @@ class MAViewer(AbstractEMViewer):
         self.LV = self.getLocalVolume(self.tensor[:, :, :], self.getCoordinateSpace())
 
         with self.txn() as s:
-            s.layout.type = 'yz'
+            s.layout.type = self._convert_layout('xy')
             s.show_scale_bar = True
             s.show_axis_lines = False
             s.show_default_annotations = False
-            _, y, x = self.tensor.shape
-            s.voxel_coordinates = [self.index + .5, y / 2, x / 2]
+            # _, y, x = self.tensor.shape
+            x, y, _ = self.tensor.shape
+            # s.voxel_coordinates = [self.index + .5, y / 2, x / 2]
+            s.voxel_coordinates = [x / 2, y / 2, self.index + .5]
             s.layers['layer'] = ng.ImageLayer(source=self.LV, shader=self.dm['rendering']['shader'], )
 
         w = self.parent.wNg1.width()
@@ -955,15 +967,18 @@ class MAViewer(AbstractEMViewer):
                         self.signals.zoomChanged.emit(val)
 
             if self.role == 'ref':
-                if floor(self.state.position[0]) != self.index:
+                # if floor(self.state.position[0]) != self.index:
+                if floor(self.state.position[2]) != self.index:
                     logger.warning(f"[{self.role}] Illegal state change")
                     self.signals.badStateChange.emit()  # New
                     return
 
             elif self.role == 'tra':
-                if floor(self.state.position[0]) != self.index:
+                # if floor(self.state.position[0]) != self.index:
+                if floor(self.state.position[2]) != self.index:
                     logger.debug(f"Signaling Z-position change...")
-                    self.index = floor(self.state.position[0])
+                    # self.index = floor(self.state.position[0])
+                    self.index = floor(self.state.position[2])
                     self.dm.zpos = self.index
                     self.drawSWIMwindow()  # NeedThis #0803
                     # self.dm.zpos = self.index
@@ -1004,9 +1019,13 @@ class MAViewer(AbstractEMViewer):
             if coords.ndim == 0:
                 logger.warning(f'Null coordinates! ({coords})')
                 return
-            _, y, x = s.mouse_voxel_coordinates
+            # _, y, x = s.mouse_voxel_coordinates
+            x, y, _ = s.mouse_voxel_coordinates
+            # frac_x = x / self.store.shape[2]
+            # frac_y = y / self.store.shape[1]
+            frac_x = x / self.store.shape[0]
             frac_y = y / self.store.shape[1]
-            frac_x = x / self.store.shape[2]
+
             logger.debug(f"decimal x = {frac_x}, decimal y = {frac_y}")
             self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings']['method_opts']['points']['coords'][
                 self.role][id] = (frac_x, frac_y)
@@ -1038,11 +1057,16 @@ class MAViewer(AbstractEMViewer):
                 c = colors[i]
                 d1, d2, d3, d4 = self.getRect2(pt, ww_x, ww_y)
                 id = 'roi%d' % i
+                # annotations.extend([
+                #     ng.LineAnnotation(id=id + '%d0', pointA=(z,) + d1, pointB=(z,) + d2, props=[c, m]),
+                #     ng.LineAnnotation(id=id + '%d1', pointA=(z,) + d2, pointB=(z,) + d3, props=[c, m]),
+                #     ng.LineAnnotation(id=id + '%d2', pointA=(z,) + d3, pointB=(z,) + d4, props=[c, m]),
+                #     ng.LineAnnotation(id=id + '%d3', pointA=(z,) + d4, pointB=(z,) + d1, props=[c, m])])
                 annotations.extend([
-                    ng.LineAnnotation(id=id + '%d0', pointA=(z,) + d1, pointB=(z,) + d2, props=[c, m]),
-                    ng.LineAnnotation(id=id + '%d1', pointA=(z,) + d2, pointB=(z,) + d3, props=[c, m]),
-                    ng.LineAnnotation(id=id + '%d2', pointA=(z,) + d3, pointB=(z,) + d4, props=[c, m]),
-                    ng.LineAnnotation(id=id + '%d3', pointA=(z,) + d4, pointB=(z,) + d1, props=[c, m])])
+                    ng.LineAnnotation(id=id + '%d0', pointA=d1 + (z,), pointB=d2 + (z,), props=[c, m]),
+                    ng.LineAnnotation(id=id + '%d1', pointA=d2 + (z,), pointB=d3 + (z,), props=[c, m]),
+                    ng.LineAnnotation(id=id + '%d2', pointA=d3 + (z,), pointB=d4 + (z,), props=[c, m]),
+                    ng.LineAnnotation(id=id + '%d3', pointA=d4 + (z,), pointB=d1 + (z,), props=[c, m])])
             cfg.mw.setFocus()
 
         elif method == 'manual':
@@ -1050,17 +1074,23 @@ class MAViewer(AbstractEMViewer):
             pts = self.dm.ss['method_opts']['points']['coords'][self.role]
             for i, pt in enumerate(pts):
                 if pt:
-                    x = self.store.shape[2] * pt[0]
+                    # x = self.store.shape[2] * pt[0]
+                    # y = self.store.shape[1] * pt[1]
+                    x = self.store.shape[0] * pt[0]
                     y = self.store.shape[1] * pt[1]
                     d1, d2, d3, d4 = self.getRect2(coords=(x, y), ww_x=ww_x, ww_y=ww_y, )
                     c = self.colors[i]
                     id = 'roi%d' % i
+                    # annotations.extend([
+                    #     ng.LineAnnotation(id=id + '%d0', pointA=(z,) + d1, pointB=(z,) + d2, props=[c, m]),
+                    #     ng.LineAnnotation(id=id + '%d1', pointA=(z,) + d2, pointB=(z,) + d3, props=[c, m]),
+                    #     ng.LineAnnotation(id=id + '%d2', pointA=(z,) + d3, pointB=(z,) + d4, props=[c, m]),
+                    #     ng.LineAnnotation(id=id + '%d3', pointA=(z,) + d4, pointB=(z,) + d1, props=[c, m])])
                     annotations.extend([
-                        ng.LineAnnotation(id=id + '%d0', pointA=(z,) + d1, pointB=(z,) + d2, props=[c, m]),
-                        ng.LineAnnotation(id=id + '%d1', pointA=(z,) + d2, pointB=(z,) + d3, props=[c, m]),
-                        ng.LineAnnotation(id=id + '%d2', pointA=(z,) + d3, pointB=(z,) + d4, props=[c, m]),
-                        ng.LineAnnotation(id=id + '%d3', pointA=(z,) + d4, pointB=(z,) + d1, props=[c, m])
-                    ])
+                        ng.LineAnnotation(id=id + '%d0', pointA=d1 + (z,), pointB=d2 + (z,), props=[c, m]),
+                        ng.LineAnnotation(id=id + '%d1', pointA=d2 + (z,), pointB=d3 + (z,), props=[c, m]),
+                        ng.LineAnnotation(id=id + '%d2', pointA=d3 + (z,), pointB=d4 + (z,), props=[c, m]),
+                        ng.LineAnnotation(id=id + '%d3', pointA=d4 + (z,), pointB=d1 + (z,), props=[c, m])])
             self.webengine.setFocus()
 
         with self.txn() as s:
@@ -1105,10 +1135,14 @@ class MAViewer(AbstractEMViewer):
         x, y = coords[0], coords[1]
         hw = int(ww_x / 2)  # Half-width
         hh = int(ww_y / 2)  # Half-height
-        A = (y + hh, x - hw)
-        B = (y + hh, x + hw)
-        C = (y - hh, x + hw)
-        D = (y - hh, x - hw)
+        # A = (y + hh, x - hw)
+        # B = (y + hh, x + hw)
+        # C = (y - hh, x + hw)
+        # D = (y - hh, x - hw)
+        A = (x + hh, y - hw)
+        B = (x + hh, y + hw)
+        C = (x - hh, y + hw)
+        D = (x - hh, y - hw)
         return A, B, C, D
 
 
@@ -1116,7 +1150,6 @@ def to_tuples(arg):
     return tuple(tuple(x) for x in arg)
 
 
-# @cache # Unhashable type: List
 @cache
 def conv_mat(mat, i=0):
     # [a, c, e],
@@ -1142,22 +1175,31 @@ def conv_mat(mat, i=0):
 
 
     # print(f"b : {b}")
-    b = transpose(b)  # definitely need this
+    # b = transpose(b)  # definitely need this
 
     print(b)
 
 
 
-    ngmat = [[.999, 0, 0, i],
+    ngmat = [[.999, 0, 0, 0],
              [0, 1, 0, 0],
-             [0, 0, 1, 0]]
+             [0, 0, 1, i]]
 
-    ngmat[1][1] = b[0][0]
-    ngmat[1][2] = b[0][1]
-    ngmat[1][3] = b[0][2]
-    ngmat[2][1] = b[1][0]
-    ngmat[2][2] = b[1][1]
-    ngmat[2][3] = b[1][2]
+    ngmat[0][0] = b[0][0]
+    ngmat[0][1] = b[0][1]
+    ngmat[0][3] = b[0][2]
+    ngmat[1][0] = b[1][0]
+    ngmat[1][1] = b[1][1]
+    ngmat[1][3] = b[1][2]
+
+    logger.critical(f'ngmat: {ngmat}')
+
+    # ngmat[1][1] = b[0][0]
+    # ngmat[1][2] = b[0][1]
+    # ngmat[1][3] = b[0][2]
+    # ngmat[2][1] = b[1][0]
+    # ngmat[2][2] = b[1][1]
+    # ngmat[2][3] = b[1][2]
 
     #test
     # ngmat[1][1] = b[0][0]

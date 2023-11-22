@@ -28,6 +28,8 @@ import numcodecs
 from numcodecs import Blosc
 numcodecs.blosc.use_threads = False
 
+import numpy as np
+
 from src.core.thumbnailer import Thumbnailer
 from src.utils.helpers import print_exception, get_bindir, get_scale_val, path_to_str
 # from src.funcs_zarr import preallocate_zarr
@@ -213,7 +215,9 @@ class ScaleWorker(QObject):
 
             shape = (len(self.paths), y, x)
             name = 's%d' % get_scale_val(s)
-            preallocate_zarr(p=zarr_od, name=name, shape=shape, dtype='|u1', opts=self.opts, scale=s)
+            # preallocate_zarr(p=zarr_od, name=name, shape=shape, dtype='|u1', opts=self.opts, scale=s)
+            # preallocate_zarr(p=zarr_od, name=name, shape=shape, dtype='|u1', opts=self.opts, scale=s)
+            preallocate_zarr(p=zarr_od, name=name, shape=shape[::-1], dtype='|u1', opts=self.opts, scale=s)
 
             t = time.time()
             self.initPbar.emit((len(tasks), desc))
@@ -299,10 +303,14 @@ def convert_zarr(task):
         out = task[2]
         # out_slice = task[3]
         store = zarr.open(out)
-        im = imread(fn)[:, ::-1]
+        # im = imread(fn)[:, ::-1]
+        im = imread(fn)[:, :]
         # im = imread(fn)
         # im = iio.imread(fn)
-        store[ID, :, :] = im
+        # store[ID, :, :] = im
+        # store[:, :, ID] = im
+        store[:, :, ID] = im.transpose()
+
 
         # store_slice = zarr.open(out_slice)
         # store_slice[0, :, :] = im

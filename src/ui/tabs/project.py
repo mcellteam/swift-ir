@@ -1875,12 +1875,15 @@ class AlignmentTab(QWidget):
         def toggle_fn():
             logger.info('')
             state = copy.deepcopy(self.transformViewer.state)
-            pos = floor(state.position[0])
+            # pos = floor(state.position[0])
+            pos = floor(state.position[2])
             if pos == 0:
-                state.position[0] = 1.5
+                # state.position[0] = 1.5
+                state.position[2] = 1.5
                 self.labCornerViewer.setText(f'i={self.dm.zpos} | Transformed')
             else:
-                state.position[0] = 0.5
+                # state.position[0] = 0.5
+                state.position[2] = 0.5
                 self.labCornerViewer.setText(f'i={self.dm.get_ref_index()} | Reference')
 
             self.transformViewer.set_state(state)
