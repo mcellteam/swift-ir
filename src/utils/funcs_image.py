@@ -619,7 +619,8 @@ def composeAffine(afm, bfm):
     Affine matrices must be 2x3 numpy arrays.'''
     afm = np.vstack((afm, [0,0,1]))
     bfm = np.vstack((bfm, [0,0,1]))
-    fm = np.matmul(afm, bfm)
+    # fm = np.matmul(afm, bfm)
+    fm = np.matmul(bfm, afm)
     return fm[0:2,:]
 
 def identityAffine():
