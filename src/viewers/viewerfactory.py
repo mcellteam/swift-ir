@@ -438,7 +438,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
                     url=local_volume,
                     transform=transform, )
                 s.layers.append(
-                    name=f"l{i}",
+                    # name=f"l{i}",
+                    name=self.dm.base_image_name(l=i),
                     # name=f"mylayer",
                     layer=ng.ImageLayer(
                         source=source,
@@ -721,6 +722,7 @@ class EMViewer(AbstractEMViewer):
             #         ),
             #     ]
             # )
+
 
         self._blockStateChanged = False
 
