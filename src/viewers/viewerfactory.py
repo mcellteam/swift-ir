@@ -300,6 +300,16 @@ class AbstractEMViewer(neuroglancer.Viewer):
     def zoom(self):
         return copy.deepcopy(self.state.crossSectionScale)
 
+    def scroll_dim(self, dim: str, velocity=4, atboundary="loop"):
+        with self.txn() as s:
+            s.velocity[dim] = {"velocity": velocity, "atBoundary": atboundary, "paused": False}
+
+    def stop_scroll(self):
+        with self.txn() as s:
+            s.velocity['x']['paused'] = True
+            s.velocity['y']['paused'] = True
+            s.velocity['z']['paused'] = True
+
     def getCoordinateSpace(self):
         return ng.CoordinateSpace(
             names=['x', 'y', 'z'],
@@ -441,6 +451,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
                     # name=f"l{i}",
                     name=self.dm.base_image_name(l=i),
                     # name=f"mylayer",
+                    tab='source',
                     layer=ng.ImageLayer(
                         source=source,
                         shader=self.shader,
@@ -663,6 +674,11 @@ class EMViewer(AbstractEMViewer):
         # self.post_message(f"Voxel Coordinates: {str(self.state.voxel_coordinates)}")
         self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
 
+    def set_selected_layer(self):
+        with self.txn() as s:
+            s.selected_layer.layer = self.dm.base_image_name()
+
+
     def on_state_changed(self):
 
         if 1:
@@ -683,6 +699,8 @@ class EMViewer(AbstractEMViewer):
                     requested = int(self.state.position[2])
                     if requested != self.dm.zpos:
                         logger.info(f'Changing index to {self.dm.zpos}')
+                        # with self.txn() as s:
+                        #     s.selected_layer.layer = self.dm.base_image_name()
                         self.dm.zpos = requested
 
                 if self.state.layout.type != getData('state,neuroglancer,layout'):

@@ -2264,19 +2264,18 @@ class AlignmentTab(QWidget):
 
     @Slot()
     def dataUpdateMA(self):
-        caller = inspect.stack()[1].function
-        logger.info(f"[{caller}]")
+        # caller = inspect.stack()[1].function
+        # logger.info(f"[{caller}]")
 
         # self.parent.bZarrRegen.setEnabled(self.dm.is_aligned())
-        self.bZarrRegen.setEnabled(self.dm.is_aligned())
+
         # self.bPull.setVisible((self.dm.scale != self.dm.coarsest_scale_key()) and self.dm.is_alignable())
-        self.gifPlayer.controls2.setVisible(os.path.exists(self.dm.path_cafm_gif()))
 
-        ready = self.dm['level_data'][self.dm.scale]['alignment_ready']
-
-        self.gbGrid.setTitle(f'Level {self.dm.lvl()} Grid Alignment Settings')
 
         if self.wTabs.currentIndex() == 1: #1111 This should make a huge difference
+            self.gifPlayer.controls2.setVisible(os.path.exists(self.dm.path_cafm_gif()))
+            self.gbGrid.setTitle(f'Level {self.dm.lvl()} Grid Alignment Settings')
+            ready = self.dm['level_data'][self.dm.scale]['alignment_ready']
             if self.dm.is_alignable() and ready:
                 self.swMethod.setCurrentIndex(0)
                 if hasattr(self.viewer, 'drawSWIMwindow'): #1111+
@@ -2758,7 +2757,7 @@ class AlignmentTab(QWidget):
         }
         """)
         self.wTabs.setDocumentMode(True) #When this property is set the tab widget getFrameScale is not rendered.
-        self.wTabs.setTabPosition(QTabWidget.South)
+        # self.wTabs.setTabPosition(QTabWidget.South)
         self.wTabs.setFocusPolicy(Qt.NoFocus)
         self.wTabs.tabBar().setExpanding(True)
         self.wTabs.setTabsClosable(False)

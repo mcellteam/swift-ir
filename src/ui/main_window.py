@@ -1590,6 +1590,7 @@ class MainWindow(QMainWindow):
             logger.info('')
             requested = int(self.leJump.text())
             self.dm.zpos = requested
+            self.pt.viewer0.set_selected_layer()
 
     @Slot()
     def jump_to_slider(self):
