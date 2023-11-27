@@ -115,11 +115,16 @@ class DataModel:
 
         self._data['modified'] = date_time()
         self['protected'].setdefault('force_reallocate_zarr_flag', False)
+        self['state']['neuroglancer'].setdefault('transformed', True)
+        ident = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
         for i in range(len(self)):
             for level in self.levels:
-                pass
+                self['stack'][i]['levels'][level].setdefault('results', {})
+                self['stack'][i]['levels'][level]['results'].setdefault('mir_afm', ident)
+                self['stack'][i]['levels'][level].setdefault('alt_cafm', np.array([[1., 0., 0.], [0., 1., 0.]]).tolist())
 
         for level in self.levels:
+
             if not 'chunkshape' in self['level_data'][level]:
                 chunkshape = self.get_transforming_chunkshape(level)
                 self['level_data'][level]['chunkshape'] = chunkshape
@@ -2230,7 +2235,8 @@ class DataModel:
                 'brightness': 0,
                 'contrast': 0,
                 'shader':
-                    '''#uicontrol vec3 color color(default="white")
+                    '''
+                    #uicontrol vec3 color color(default="white")
                     #uicontrol float brightness slider(min=-1, max=1, step=0.01)
                     #uicontrol float contrast slider(min=-1, max=1, step=0.01)
                     void main() { emitRGB(color * (toNormalized(getDataValue()) + brightness) * exp(contrast));}

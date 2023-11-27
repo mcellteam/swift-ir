@@ -35,7 +35,7 @@ import src.shaders.shaders
 from src.workers.scale import ScaleWorker
 from src.workers.align import AlignWorker
 from src.workers.generate import ZarrWorker
-from src.utils.helpers import getData, setData, print_exception, get_scale_val, \
+from src.utils.helpers import getData, print_exception, get_scale_val, \
     tracemalloc_start, tracemalloc_stop, tracemalloc_compare, tracemalloc_clear, \
     update_preferences_model, is_mac, hotkey, make_affine_widget_HTML, \
     is_joel, is_tacc, run_command, check_macos_isdark_theme
@@ -774,9 +774,10 @@ class MainWindow(QMainWindow):
         self.tbbHud.setChecked(state)
         self.setUpdatesEnabled(False)
         self.dw_hud.setVisible(state)
-        tip1 = '\n'.join(f"Show Head-up-display/process monitor {hotkey('H')}")
-        tip2 = '\n'.join(f"Hide Head-up-display/process monitor {hotkey('H')}")
+        tip1 = f"Show Head-up-display/process monitor {hotkey('H')}"
+        tip2 = f"Hide Head-up-display/process monitor {hotkey('H')}"
         tip = (tip1, tip2)[state]
+        tip = '\n'.join(textwrap.wrap(tip, width=35))
         self.aHud.setText(tip)
         self.tbbHud.setToolTip(tip)
         self.setUpdatesEnabled(True)
@@ -791,8 +792,8 @@ class MainWindow(QMainWindow):
 
         self.tbbThumbs.setChecked(state)
         self.dwThumbs.setVisible(state)
-        tip1 = '\n'.join(f"Show Source Thumbnails ({hotkey('T')})")
-        tip2 = '\n'.join(f"Hide Source Thumbnails ({hotkey('T')})")
+        tip1 = f"Show Source Thumbnails ({hotkey('T')})"
+        tip2 = f"Hide Source Thumbnails ({hotkey('T')})"
         tip = (tip1, tip2)[state]
         tip = '\n'.join(textwrap.wrap(tip, width=35))
         self.aThumbs.setText(tip)
@@ -813,9 +814,10 @@ class MainWindow(QMainWindow):
             state = False
         self.tbbMatches.setChecked(state)
         self.dwMatches.setVisible(state)
-        tip1 = '\n'.join(f"Show Matches and Signals ({hotkey('M')})")
-        tip2 = '\n'.join(f"Hide Macthes and Signals ({hotkey('M')})")
+        tip1 = f"Show Matches and Signals ({hotkey('M')})"
+        tip2 = f"Hide Macthes and Signals ({hotkey('M')})"
         tip = (tip1, tip2)[state]
+        tip = '\n'.join(textwrap.wrap(tip, width=35))
         self.aMatches.setText(tip)
         self.tbbMatches.setToolTip(tip)
 
@@ -1058,7 +1060,7 @@ class MainWindow(QMainWindow):
                 self._zarrworker.finished.connect(lambda: self.pt.bZarrRegen.setEnabled(True))
                 self._zarrworker.finished.connect(lambda: dm.setZarrMade(True))
                 self._zarrworker.finished.connect(lambda: self.pt.rbZarrTransformed.setChecked(True))
-                self._zarrworker.finished.connect(lambda: self.pt.updateZarrUI())
+                self._zarrworker.finished.connect(lambda: self.pt.updateTab0UI())
                 self._zarrworker.finished.connect(lambda: self.pt.initNeuroglancer())
                 self._zarrworker.finished.connect(lambda: print('Finished'))
                 self._zarrworker.finished.connect(lambda: self.tell(f'<span style="color: #FFFF66;"><b>**** All Processes Complete ****</b></span>'))
@@ -1139,7 +1141,7 @@ class MainWindow(QMainWindow):
 
         self._alignworker.finished.connect(lambda: self.pt.dSnr_plot.initSnrPlot())
         self._alignworker.finished.connect(self.updateEnabledButtons)
-        self._alignworker.finished.connect(lambda: self.pt.updateZarrUI())
+        self._alignworker.finished.connect(lambda: self.pt.updateTab0UI())
         self._alignworker.finished.connect(lambda: self.present_snr_results(dm, indexes))
         self._alignworker.finished.connect(lambda: self.pt.initNeuroglancer(init_all=True))
 
@@ -1589,7 +1591,7 @@ class MainWindow(QMainWindow):
             requested = int(self.leJump.text())
             self.dm.zpos = requested
 
-
+    @Slot()
     def jump_to_slider(self):
 
         if self._isProjectTab():
@@ -1597,6 +1599,7 @@ class MainWindow(QMainWindow):
             logger.info(f'[{caller}]')
             if caller == 'main':
                 self.dm.zpos = self.sldrZpos.value()
+
 
     @Slot()
     def reloadComboScale(self) -> None:
@@ -1629,10 +1632,6 @@ class MainWindow(QMainWindow):
                 logger.critical(f'[{caller}]')
                 requested = self.dm.scales[self.boxScale.currentIndex()]
                 self.dm.scale = requested
-                if self.dm.is_zarr_generated():
-                    setData('state,neuroglancer,layout', '4panel')
-                else:
-                    setData('state,neuroglancer,layout', 'xy')
 
                 if self.dwSnr.isVisible():
                     self.pt.dSnr_plot.initSnrPlot()
@@ -1642,7 +1641,7 @@ class MainWindow(QMainWindow):
                     self.pt.project_table.initTableData()
 
                 self.updateEnabledButtons()
-                self.pt.updateZarrUI()
+                self.pt.updateTab0UI()
                 self.dataUpdateWidgets()
                 # self.pt.project_table.veil()
 
@@ -3883,10 +3882,25 @@ class MainWindow(QMainWindow):
         self.sldrZpos = QSlider(Qt.Orientation.Horizontal, self)
         self.sldrZpos.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.sldrZpos.setFocusPolicy(Qt.StrongFocus)
+
+        # @Slot()
+        # def _slider():
+        #     if self._isProjectTab():
+        #         if self.pt.wTabs.currentIndex() == 0:
+        #             self.pt.viewer.set_layer(int(self.sldrZpos.value()))
+        # self.sldrZpos.valueChanged.connect(_slider)
         # self.sldrZpos.valueChanged.connect(self.jump_to_slider)
-        # self.sldrZpos.valueChanged.connect(self.jump_to_slider)
+        # self.sldrZpos.sliderChanged.connect(self.jump_to_slider)
+        # a =QSlider()
+        # a.triggered.connect(self.jump_to_slider)
+        # self.sldrZpos.setRepeatAction(a, repeatTime=1000)
         self.sldrZpos.valueChanged.connect(lambda: self.leJump.setText(str(self.sldrZpos.value())))
+
+
+
         self.sldrZpos.sliderReleased.connect(self.jump_to_slider)
+
+
 
         tip = 'Jumpt to section #'
         tip = '\n'.join(textwrap.wrap(tip, width=35))
@@ -3981,7 +3995,8 @@ class MainWindow(QMainWindow):
         self.bPropagate.setToolTip(tip)
         self.bPropagate.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.bPropagate.clicked.connect(lambda: self.dm.pullSettings())
-        self.bPropagate.clicked.connect(lambda: self.pt.refreshTab())
+        # self.bPropagate.clicked.connect(lambda: self.pt.refreshTab())
+        self.bPropagate.clicked.connect(lambda: self.pt.dataUpdateMA())
 
         # self.bZarrRegen = QPushButton('Transform 3D')
         # self.bZarrRegen.setFocusPolicy(Qt.FocusPolicy.NoFocus)

@@ -307,26 +307,96 @@ class AbstractEMViewer(neuroglancer.Viewer):
             scales=self.res,
         )
 
-    def transform(self, index=0):
-        try:
-            val = self.state.to_json()['layers'][index]['source']['transform']['matrix']
-            return val
-        except Exception as e:
-            print(e)
-            logger.warning(f'No transform for layer index {index}')
+    def transform(self, i=None):
+        if i == None:
+            i = self.dm.zpos
+        # try:
+        #     val = self.state.to_json()['layers'][index]['source']['transform']['matrix']
+        #     return val
+        # except Exception as e:
+        #     print(e)
+        #     logger.warning(f'No transform for layer index {index}')
+        with self.txn() as s:
+            return s.layers[i].layer.source[0].transform
 
-    def add_im_layer(self, name, data, matrix=None):
+    def set_transform(self, i, transform):
+        self._blockStateChanged = True
+        with self.txn() as s:
+            pass
+
+        self._blockStateChanged = False
+
+    def get_transform(self, afm=None, i=None):
+        if i == None:
+            i = self.dm.zpos
+        if afm == None:
+            afm = [[1., 0., 0.], [0., 1., 0.]]
+        afm = to_tuples(afm)
+        logger.info(f"Getting transform | i = {i}, afm: {afm}")
+        matrix = conv_mat(m=afm, i=i)
+        output_dimensions = {'x': [self.res[0], 'nm'],
+                             'y': [self.res[1], 'nm'],
+                             'z': [self.res[2], 'nm']}
+        return ng.CoordinateSpaceTransform(
+            {'matrix': matrix, 'outputDimensions': output_dimensions})
+
+    def set_affine(self, afm=None, i=None):
+        self._blockStateChanged = True
+        if i == None:
+            i = self.dm.zpos
+        if afm == None:
+            afm = [[1., 0., 0.], [0., 1., 0.]]
+        transform = self.get_transform(afm=afm, i=i)
+        with cfg.pt.viewer.txn() as s:
+            s.layers[i].layer.source[0].transform = transform
+        self._blockStateChanged = False
+
+    def set_affines(self, items):
+        # for testing...
+        # items = zip(range(len(cfg.dm)), [a]*len(cfg.dm))
+        self._blockStateChanged = True
+        with self.txn() as s:
+            for item in items:
+                s.layers[item[0]].layer.source[0].transform = self.get_transform(afm=item[1], i=item[0])
+        self._blockStateChanged = False
+
+    def set_all_affines(self, vals):
+        # for testing...
+        # items = zip(range(len(cfg.dm)), [a]*len(cfg.dm))
+        self._blockStateChanged = True
+        assert len(vals) == len(self.dm)
+        with self.txn() as s:
+            for i, afm in enumerate(vals):
+                s.layers[i].layer.source[0].transform = self.get_transform(afm=afm, i=i)
+        self._blockStateChanged = False
+
+    def set_untransformed(self):
+        # for testing...
+        # items = zip(range(len(cfg.dm)), [a]*len(cfg.dm))
+        self._blockStateChanged = True
+        self._show_transformed = True
+        afm = [[1., 0., 0.], [0., 1., 0.]]
+        with self.txn() as s:
+            for i in range(len(self.dm)):
+                s.layers[i].layer.source[0].transform = self.get_transform(afm=afm, i=i)
+        self._blockStateChanged = False
+
+    def set_transformed(self):
+        # for testing...
+        # items = zip(range(len(cfg.dm)), [a]*len(cfg.dm))
+        self._blockStateChanged = True
+        self._show_transformed = True
+        afms = [self.dm.alt_cafm(l=i) for i in range(len(self.dm))]
+        self.set_all_affines(afms)
+        self._blockStateChanged = False
+
+
+    def add_im_layer(self, name, data, afm=None, i=None):
+        if i == None:
+            i = 0
         with self.txn() as s:
             local_volume = self.getLocalVolume(data, self.getCoordinateSpace())
-            if matrix == None:
-                matrix = [[.999, 0, 0, 0],
-                         [0, 1, 0, 0],
-                         [0, 0, 1, 0]]
-            output_dimensions = {'x': [self.res[0], 'nm'],
-                                 'y': [self.res[1], 'nm'],
-                                 'z': [self.res[2], 'nm']}
-            transform = ng.CoordinateSpaceTransform(
-                {'matrix': matrix, 'outputDimensions': output_dimensions})
+            transform = self.get_transform(afm=afm, i=i)
             source = ng.LayerDataSource(
                 url=local_volume,
                 transform=transform,)
@@ -334,6 +404,54 @@ class AbstractEMViewer(neuroglancer.Viewer):
                 name=name,
                 layer=ng.ImageLayer(source=source, shader=self.shader),
                 opacity=1,)
+
+    def add_transformed_layers(self):
+        with self.txn() as s:
+            # shape = self.tensor.shape
+            for i in range(len(self.dm)):
+                name = f"l{i}"
+                # matrix = conv_mat(to_tuples(self.dm.alt_cafm(l=i)), i=i)
+                afm = self.dm.alt_cafm(l=i)
+                data = self.tensor[:, :, i:i + 1]
+                local_volume = self.getLocalVolume(data, self.getCoordinateSpace())
+                transform = self.get_transform(afm=afm, i=i)
+                source = ng.LayerDataSource(
+                    url=local_volume,
+                    transform=transform, )
+                s.layers.append(
+                    name=name,
+                    layer=ng.ImageLayer(source=source, shader=self.shader),
+                    opacity=1, )
+
+    def add_untransformed_layers(self):
+        self._blockStateChanged = True
+        self._show_transformed = False
+        with self.txn() as s:
+            # shape = self.tensor.shape
+            afm = [[1., 0., 0.], [0., 1., 0.]]
+            for i in range(len(self.dm)):
+                # matrix = conv_mat(to_tuples(self.dm.alt_cafm(l=i)), i=i)
+                data = self.tensor[:, :, i:i + 1]
+                local_volume = self.getLocalVolume(data, self.getCoordinateSpace())
+                transform = self.get_transform(afm=afm, i=i)
+                source = ng.LayerDataSource(
+                    url=local_volume,
+                    transform=transform, )
+                s.layers.append(
+                    name=f"l{i}",
+                    layer=ng.ImageLayer(
+                        source=source,
+                        shader=self.shader,
+                        # volume_rendering_depth_samples=512,
+                        # cross_section_render_scale=1,
+
+                    ),
+                    opacity=1.0,
+                    blend='additive',
+                )
+        self._blockStateChanged = False
+
+
 
     @abc.abstractmethod
     def set_layer(self, pos=None):
@@ -354,7 +472,6 @@ class AbstractEMViewer(neuroglancer.Viewer):
         except:
             print_exception()
         self._blockStateChanged = False
-        logger.info('<<')
 
     def getLocalVolume(self, data, coordinatespace):
         """
@@ -419,7 +536,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
                 'file_io_concurrency': {'limit': 2056},
             },
             'data_copy_concurrency': {'limit': 512},
-            'recheck_cached_data': True,
+            'recheck_cached_data': 'open',
         })
         # recheck_cache_data is what Janelia opensource dataset uses in TensorStore example
         # may need to be False for total_bytes_limit to take effect
@@ -516,10 +633,10 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
 class EMViewer(AbstractEMViewer):
 
-    def __init__(self, view='raw', **kwags):
+    def __init__(self, **kwags):
         super().__init__(**kwags)
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
-        self.view = view
+        # self.view = view
         self.name = 'EMViewer'
         self.shader = self.dm['rendering']['shader']
         print(self.shader)
@@ -532,9 +649,14 @@ class EMViewer(AbstractEMViewer):
             logger.warning(f"Data not found: {self.path}")
             return
         try:
-            self.initViewer()
+            self.add_untransformed_layers()
         except:
             print_exception()
+        self.initViewer()
+
+        self.set_brightness()
+        self.set_contrast()
+        self.webengine.setUrl(QUrl(self.get_viewer_url()))
         # asyncio.ensure_future(self.initViewer())
         # self.post_message(f"Voxel Coordinates: {str(self.state.voxel_coordinates)}")
         self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
@@ -569,58 +691,26 @@ class EMViewer(AbstractEMViewer):
     def initViewer(self):
         clr = inspect.stack()[1].function
         logger.critical(f'[{clr}] [{self.name}] Initializing Viewer...')
-        self._blockStateChanged = False
-        shape = [1,1,1]
-
-        # try:
-        #     # zarr.open(self.path, mode='r')
-        #     self.tensor = self.getTensor(self.path).result()[ts.d[:].label["x", "y", "z"]]
-        # except AssertionError:
-        #     logger.warning(f"Data not found: {self.path}")
-        #     return
-
-        # if hasattr(cfg.pm, 'viewer'):
-        #     del cfg.pm.viewer
+        self._blockStateChanged = True
 
         with self.config_state.txn() as s:
             s.show_ui_controls = getData('state,neuroglancer,show_controls')
 
-        if self.view == 'experimental':
-            shape = self.tensor.shape
-            for i in range(len(self.dm)):
-                matrix = conv_mat(to_tuples(self.dm.alt_cafm(l=i)), i=i)
-                data = self.tensor[:, :, i:i + 1]
-                self.add_im_layer(f'l{i}', data, matrix)
+        _request_transformed = getData('state,neuroglancer,transformed')
+        # if self._show_transformed != _request_transformed:
+        if _request_transformed:
+            self.set_transformed()
         else:
-            shape = self.tensor.shape
-            data = self.tensor[:, :, :]
-            self.add_im_layer(f'volume', data)
-
+            self.set_untransformed()
         with self.txn() as s:
             s.layout.type = getData('state,neuroglancer,layout')
             s.show_scale_bar = getData('state,neuroglancer,show_scalebar')
             s.show_axis_lines = getData('state,neuroglancer,show_axes')
             s.show_default_annotations = getData('state,neuroglancer,show_bounds')
-            # s.projection_orientation = [0.63240087, 0.01582051, 0.05692779, 0.77238464]
             s.projection_orientation = [0.6299939155578613, 0.10509441047906876, 0.1297515481710434, 0.75843745470047]
-            # s.position = [self.tensor.shape[0] / 2, self.tensor.shape[1] / 2, self.dm.zpos + 0.5]
-            # if self.view == 'experimental':
-            #     s.show_default_annotations = False
-            #     shape = self.tensor.shape
-            #     for i in range(len(self.dm)):
-            #         matrix = conv_mat(to_tuples(self.dm.alt_cafm(l=i)), i=i)
-            #         data = self.tensor[:, :, i:i + 1]
-            #         self.add_im_layer(f'l{i}', data, matrix)
-            # else:
-            #     s.show_default_annotations = getData('state,neuroglancer,show_bounds')
-            #     shape = self.tensor.shape
-            #     data = self.tensor[:, :, :]
-            #     self.add_im_layer(f'volume', data)
-            s.position = [shape[0] / 2, shape[1] / 2, self.dm.zpos + 0.5]
+            s.position = [self.tensor.shape[0] / 2, self.tensor.shape[1] / 2, self.dm.zpos + 0.5]
 
-        self.set_brightness()
-        self.set_contrast()
-        self.webengine.setUrl(QUrl(self.get_viewer_url()))
+        self._blockStateChanged = False
 
 
 class TransformViewer(AbstractEMViewer):
@@ -633,6 +723,31 @@ class TransformViewer(AbstractEMViewer):
         self.section_number = self.dm.zpos
         self.tensor = self.getTensor(self.path).result()[ts.d[:].label["x", "y", "z"]]
         self.initViewer()
+        self.set_brightness()
+        self.set_contrast()
+        with self.config_state.txn() as s:
+            s.show_ui_controls = False
+            s.show_layer_panel = False
+            # s.scale_bar_options.padding_in_pixels = 2  # default = 8
+            s.scale_bar_options.left_pixel_offset = 4  # default = 10
+            s.scale_bar_options.bottom_pixel_offset = 4  # default = 10
+            # s.scale_bar_options.bar_top_margin_in_pixels = 0  # default = 5
+            s.scale_bar_options.max_width_fraction = 0.1
+            s.scale_bar_options.text_height_in_pixels = 10  # default = 15
+            s.scale_bar_options.bar_height_in_pixels = 4  # default = 8
+            # s.scale_bar_options.font_name = 'monospace'
+            # s.scale_bar_options.font_name = 'serif'
+            s.show_layer_side_panel_button = False
+            s.show_layer_list_panel_button = False
+            s.show_layer_hover_values = False
+            s.viewer_size = [self.webengine.width(), self.webengine.height()]
+        self.webengine.setUrl(QUrl(self.get_viewer_url()))
+        with self.txn() as s:
+            s.layout.type = 'xy'
+            s.show_scale_bar = True
+            s.show_axis_lines = False
+            s.show_default_annotations = True
+            s.position = [self.tensor.shape[0] / 2, self.tensor.shape[1] / 2, 1.5]
 
     def initViewer(self):
         self._blockStateChanged = False
@@ -647,47 +762,20 @@ class TransformViewer(AbstractEMViewer):
         ref_pos = self.dm.get_ref_index()
         # self.tensor = self.getTensor(self.path).result()[ts.d[:].label["x", "y", "z"]]
 
-        with self.txn() as s:
-            s.layout.type = 'xy'
-            s.show_scale_bar = True
-            s.show_axis_lines = False
-            s.show_default_annotations = True
-            s.position = [self.tensor.shape[0] / 2, self.tensor.shape[1] / 2, 1.5]
-
         # if hasattr(self, 'LV0'):
         if ref_pos is not None:
             data = self.tensor[:, :, ref_pos:ref_pos + 1]
-            self.add_im_layer('reference', data)
-        if self.dm.is_aligned():
-            # afm = to_tuples(self.dm.mir_aim()) #<-?
-            afm = to_tuples(self.dm.mir_afm())
-            mat = conv_mat(afm, i=1)
-        else:
-            ident = [[1., 0., 0.], [0., 1., 0.]]
-            mat = conv_mat(to_tuples(ident), i=1)
+            self.add_im_layer('reference', data, i=0)
+        # if self.dm.is_aligned():
+        #     afm = self.dm.mir_afm()
+        # else:
+        #     afm = [[1., 0., 0.], [0., 1., 0.]]
+        afm = self.dm.mir_afm()
         data = self.tensor[:, :, self.dm.zpos:self.dm.zpos + 1]
-        self.add_im_layer('transforming', data, mat)
+        self.add_im_layer('transforming', data, afm, i=1)
 
-        with self.config_state.txn() as s:
-            s.show_ui_controls = False
-            s.show_layer_panel = False
-            # s.scale_bar_options.padding_in_pixels = 2  # default = 8
-            s.scale_bar_options.left_pixel_offset = 4  # default = 10
-            s.scale_bar_options.bottom_pixel_offset = 4  # default = 10
-            # s.scale_bar_options.bar_top_margin_in_pixels = 0  # default = 5
-            s.scale_bar_options.max_width_fraction = 0.1
-            s.scale_bar_options.text_height_in_pixels = 10 # default = 15
-            s.scale_bar_options.bar_height_in_pixels = 4  # default = 8
-            # s.scale_bar_options.font_name = 'monospace'
-            # s.scale_bar_options.font_name = 'serif'
-            s.show_layer_side_panel_button = False
-            s.show_layer_list_panel_button = False
-            s.show_layer_hover_values = False
-            s.viewer_size = [self.webengine.width(), self.webengine.height()]
 
-        self.set_brightness()
-        self.set_contrast()
-        self.webengine.setUrl(QUrl(self.get_viewer_url()))
+
 
 '''
             self.viewer = self.parent.viewer = PMViewer(self, extra_data={
@@ -994,10 +1082,12 @@ def getRect(coords, ww_x, ww_y):
 
 
 @cache
-def conv_mat(m, i=0):
-    o = [[.999, 0, 0, 0],
-         [0, 1, 0, 0],
-         [0, 0, 1, i]]
+def conv_mat(m=None, i=0):
+    if m == None:
+        m = [[1., 0., 0.], [0., 1., 0.]]
+    o = [[.999, 0., 0., 0.],
+         [0., 1., 0., 0.],
+         [0., 0., 1., i]]
     o[0][0] = m[0][0]
     o[0][1] = m[0][1]
     o[0][3] = m[0][2]
