@@ -305,21 +305,21 @@ class AlignmentTab(QWidget):
             path = os.path.join(self.dm['info']['images_path'], 'zarr', self.dm.level)
             res = self.dm.resolution(s=self.dm.level)
             self.viewer = self.viewer1 =  MAViewer(parent=self, webengine=self.we1, path=path, dm=self.dm, res=res, )
-            self.viewer.signals.badStateChange.connect(self.set_transforming)
-            self.viewer.signals.ptsChanged.connect(self._updatePointLists)
-            self.viewer.signals.toggleView.connect(self.toggle_ref_tra)
-            # self.viewer.signals.ptsChanged.connect(self.updateWarnings)
-            # self.viewer.signals.zVoxelCoordChanged.connect(lambda zpos: setattr(self.dm, 'zpos', zpos))
-            self.viewer.signals.arrowLeft.connect(self.parent.layer_left)
-            self.viewer.signals.arrowRight.connect(self.parent.layer_right)
-            self.viewer.signals.arrowUp.connect(self.parent.incrementZoomIn)
-            self.viewer.signals.arrowDown.connect(self.parent.incrementZoomOut)
-            # self.viewer.signals.swimAction.connect(self.parent.alignOne)
-            # self.viewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314
-            # self.viewer.signals.zoomChanged.connect(lambda: logger.critical(f"Zoom Slider: {self.zoomSlider.value()} / CS Scale: {self.viewer1.state.cross_section_scale}"))  # 0314
-            # self.viewer.signals.zoomChanged.connect(self.zoomSlider.setValue)
-            self.viewer.signals.zoomChanged.connect(lambda x: self.zoomSlider.setValue(x))
-            self.viewer.signals.zoomChanged.connect(lambda x: print(f"Zoom changed! {x}"))
+            self.viewer1.signals.badStateChange.connect(self.set_transforming)
+            self.viewer1.signals.ptsChanged.connect(self._updatePointLists)
+            self.viewer1.signals.toggleView.connect(self.toggle_ref_tra)
+            # self.viewer1.signals.ptsChanged.connect(self.updateWarnings)
+            # self.viewer1.signals.zVoxelCoordChanged.connect(lambda zpos: setattr(self.dm, 'zpos', zpos))
+            self.viewer1.signals.arrowLeft.connect(self.parent.layer_left)
+            self.viewer1.signals.arrowRight.connect(self.parent.layer_right)
+            self.viewer1.signals.arrowUp.connect(self.parent.incrementZoomIn)
+            self.viewer1.signals.arrowDown.connect(self.parent.incrementZoomOut)
+            # self.viewer1.signals.swimAction.connect(self.parent.alignOne)
+            self.viewer1.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314
+            # self.viewer1.signals.zoomChanged.connect(lambda: logger.critical(f"Zoom Slider: {self.zoomSlider.value()} / CS Scale: {self.viewer1.state.cross_section_scale}"))  # 0314
+            # self.viewer1.signals.zoomChanged.connect(self.zoomSlider.setValue)
+            self.viewer1.signals.zoomChanged.connect(lambda x: self.zoomSlider.setValue(x))
+
             #1111-
             # try:
             #     self.dataUpdateMA()
@@ -346,15 +346,15 @@ class AlignmentTab(QWidget):
             # self.viewer = self.viewer0 = EMViewer(parent=self, webengine=self.we0, path=path, dm=self.dm, res=res, view=view)
             if init_all:
                 self.viewer0 = EMViewer(parent=self, webengine=self.we0, path=path, dm=self.dm, res=res)
-                self.viewer.initZoom(self.we0.width(), self.we0.height())
+                # self.viewer.initZoom(self.we0.width(), self.we0.height())
                 # self.viewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
-                self.viewer.signals.layoutChanged.connect(lambda: setData('state,neuroglancer,layout', self.viewer.state.layout.type))
-                self.viewer.signals.layoutChanged.connect(lambda: self.cbxNgLayout.setCurrentText(self.viewer.state.layout.type))
-                self.viewer.signals.arrowLeft.connect(self.parent.layer_left)
-                self.viewer.signals.arrowRight.connect(self.parent.layer_right)
-                self.viewer.signals.arrowUp.connect(self.parent.incrementZoomIn)
-                self.viewer.signals.arrowDown.connect(self.parent.incrementZoomOut)
-                self.viewer.signals.zoomChanged.connect(self.slot_zoom_changed)  # Critical updates the lineedit
+                self.viewer0.signals.layoutChanged.connect(lambda: setData('state,neuroglancer,layout', self.viewer.state.layout.type))
+                self.viewer0.signals.layoutChanged.connect(lambda: self.cbxNgLayout.setCurrentText(self.viewer.state.layout.type))
+                self.viewer0.signals.arrowLeft.connect(lambda: self.parent.layer_left())
+                self.viewer0.signals.arrowRight.connect(lambda: self.parent.layer_right())
+                self.viewer0.signals.arrowUp.connect(lambda: self.parent.incrementZoomIn())
+                self.viewer0.signals.arrowDown.connect(lambda: self.parent.incrementZoomOut())
+                self.viewer0.signals.zoomChanged.connect(lambda x: self.slot_zoom_changed(x))  # Critical updates the lineedit
             else:
                 self.viewer0.initViewer()
 
@@ -368,7 +368,7 @@ class AlignmentTab(QWidget):
     def slot_zoom_changed(self, val):
         if val > 1000:
             val *= 250000000
-        self.leZoom.setText("%.2f" % val)
+        self.leZoom.setText(f'{val:.2f}')
 
 
     def initUI_Neuroglancer(self):
