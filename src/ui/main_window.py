@@ -1979,24 +1979,6 @@ class MainWindow(QMainWindow):
         if ('QTextEdit' or 'QLineEdit') in str(self.focusWidget()):
             return
 
-        # logger.info('')
-        # if self._isProjectTab():
-        #     cur = self.pt.wTabs.currentIndex()
-        #     if cur == 1:
-        #         new_cs_scale = cfg.viewer1.zoom() * 1.1
-        #         logger.info(f'cross section scale: {new_cs_scale}')
-        #         cfg.viewer1.set_zoom(new_cs_scale)
-        #         self.pt.zoomSlider.setValue(1 / new_cs_scale)
-        #     elif cur == 0:
-        #         new_cs_scale = cfg.viewer.zoom() * 1.1
-        #         logger.info(f'cross section scale: {new_cs_scale}')
-        #         cfg.viewer.set_zoom(new_cs_scale)
-        #         self.pt.zoomSlider.setValue(1 / new_cs_scale)
-        # elif self._isOpenProjTab():
-        #     new_cs_scale = self.pm.viewer.zoom() * 1.1
-        #     logger.info(f'cross section scale: {new_cs_scale}')
-        #     self.pm.viewer.set_zoom(new_cs_scale)
-
         if self._isProjectTab() or self._isOpenProjTab():
             new_cs_scale = self.getCurrentTabWidget().viewer.zoom() * 1.1
             logger.info(f'cross section scale: {new_cs_scale}')
@@ -2008,23 +1990,6 @@ class MainWindow(QMainWindow):
         # logger.info('')
         if ('QTextEdit' or 'QLineEdit') in str(self.focusWidget()):
             return
-
-        # if self._isProjectTab():
-        #     cur = self.pt.wTabs.currentIndex()
-        #     if cur == 1:
-        #         new_cs_scale = cfg.viewer1.zoom() * 0.9
-        #         logger.info(f'cross section scale: {new_cs_scale}')
-        #         cfg.viewer1.set_zoom(new_cs_scale)
-        #         self.pt.zoomSlider.setValue(1 / new_cs_scale)
-        #     elif cur == 0:
-        #         new_cs_scale = cfg.viewer.zoom() * 0.9
-        #         logger.info(f'cross section scale: {new_cs_scale}')
-        #         cfg.viewer.set_zoom(new_cs_scale)
-        #         self.pt.zoomSlider.setValue(1 / new_cs_scale)
-        # elif self._isOpenProjTab():
-        #     new_cs_scale = self.pm.viewer.zoom() * 0.9
-        #     logger.info(f'cross section scale: {new_cs_scale}')
-        #     self.pm.viewer.set_zoom(new_cs_scale)
 
         if self._isProjectTab() or self._isOpenProjTab():
             new_cs_scale = self.getCurrentTabWidget().viewer.zoom() * 0.9
@@ -3029,6 +2994,7 @@ class MainWindow(QMainWindow):
             self.dwThumbs.setWidget(self.pt.tableThumbs)
             self.dwMatches.setWidget(self.pt.match_widget)
             self.dwSnr.setWidget(self.pt.dSnr_plot)
+            self.setdw_snr(True)
             if self.dwSnr.isVisible():
                 self.pt.dSnr_plot.initSnrPlot()
             # self.bExport.setVisible(self.dm.is_zarr_generated())

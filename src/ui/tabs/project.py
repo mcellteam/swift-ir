@@ -299,38 +299,23 @@ class AlignmentTab(QWidget):
         if self.wTabs.currentIndex() == 1 or init_all:
             self.gifPlayer.set(start=False)
             # self.we1.setUrl(QUrl("http://localhost:8888/"))
-            # level = self.dm.levels[self.cbxViewerScale.currentIndex()]
-            # level = self.dm['state']['viewer_quality']
-            # self.viewer1 = cfg.viewer1 = MAViewer(parent=self, dm=self.dm, role='tra', quality=level, we0=self.we1)
             path = os.path.join(self.dm['info']['images_path'], 'zarr', self.dm.level)
             res = self.dm.resolution(s=self.dm.level)
             self.viewer = self.viewer1 =  MAViewer(parent=self, webengine=self.we1, path=path, dm=self.dm, res=res, )
             self.viewer1.signals.badStateChange.connect(self.set_transforming)
             self.viewer1.signals.ptsChanged.connect(self._updatePointLists)
             self.viewer1.signals.toggleView.connect(self.toggle_ref_tra)
-            # self.viewer1.signals.ptsChanged.connect(self.updateWarnings)
-            # self.viewer1.signals.zVoxelCoordChanged.connect(lambda zpos: setattr(self.dm, 'zpos', zpos))
-            self.viewer1.signals.arrowLeft.connect(self.parent.layer_left)
-            self.viewer1.signals.arrowRight.connect(self.parent.layer_right)
-            self.viewer1.signals.arrowUp.connect(self.parent.incrementZoomIn)
-            self.viewer1.signals.arrowDown.connect(self.parent.incrementZoomOut)
-            # self.viewer1.signals.swimAction.connect(self.parent.alignOne)
+            self.viewer1.signals.arrowLeft.connect(self.layer_left)
+            self.viewer1.signals.arrowRight.connect(self.layer_right)
+            self.viewer1.signals.arrowUp.connect(lambda: self.viewer0.set_zoom(self.viewer0.zoom() * 0.9))
+            self.viewer1.signals.arrowDown.connect(lambda: self.viewer0.set_zoom(self.viewer0.zoom() * 1.1))
             self.viewer1.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314
-            # self.viewer1.signals.zoomChanged.connect(lambda: logger.critical(f"Zoom Slider: {self.zoomSlider.value()} / CS Scale: {self.viewer1.state.cross_section_scale}"))  # 0314
-            # self.viewer1.signals.zoomChanged.connect(self.zoomSlider.setValue)
             self.viewer1.signals.zoomChanged.connect(lambda x: self.zoomSlider.setValue(x))
 
-            #1111-
-            # try:
-            #     self.dataUpdateMA()
-            # except:
-            #     print_exception()
             self.zoomSlider.setValue(self.viewer1.state.cross_section_scale)
 
             self.transformViewer = TransformViewer(parent=self, webengine=self.we2, path='', dm=self.dm, res=res, )
-            w = self.we2.width()
-            h = self.we2.height()
-            self.transformViewer.initZoom(w=w, h=h, adjust=1.15)
+            self.transformViewer.initZoom(w=self.we2.width(), h=self.we2.height(), adjust=1.15)
 
         #todo for now this needs to happen second so that self.viewer is correct when init_all is True #Refactor
         if self.wTabs.currentIndex() == 0 or init_all:
@@ -339,21 +324,19 @@ class AlignmentTab(QWidget):
             else:
                 setData('state,neuroglancer,transformed', False)
             self.cbxNgLayout.setCurrentText(getData('state,neuroglancer,layout'))
-
             path = self.dm.path_zarr_raw()
-
             res = copy.deepcopy(self.dm.resolution(s=self.dm.level))
-            # self.viewer = self.viewer0 = EMViewer(parent=self, webengine=self.we0, path=path, dm=self.dm, res=res, view=view)
             if init_all:
                 self.viewer0 = EMViewer(parent=self, webengine=self.we0, path=path, dm=self.dm, res=res)
-                # self.viewer.initZoom(self.we0.width(), self.we0.height())
                 # self.viewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
                 self.viewer0.signals.layoutChanged.connect(lambda: setData('state,neuroglancer,layout', self.viewer.state.layout.type))
                 self.viewer0.signals.layoutChanged.connect(lambda: self.cbxNgLayout.setCurrentText(self.viewer.state.layout.type))
-                self.viewer0.signals.arrowLeft.connect(lambda: self.parent.layer_left())
-                self.viewer0.signals.arrowRight.connect(lambda: self.parent.layer_right())
-                self.viewer0.signals.arrowUp.connect(lambda: self.parent.incrementZoomIn())
-                self.viewer0.signals.arrowDown.connect(lambda: self.parent.incrementZoomOut())
+                self.viewer0.signals.arrowLeft.connect(self.layer_left)
+                self.viewer0.signals.arrowRight.connect(self.layer_right)
+                self.viewer0.signals.arrowLeft.connect(lambda: print(f"arrow left!"))
+                self.viewer0.signals.arrowRight.connect(lambda: print(f"arrow right!"))
+                self.viewer0.signals.arrowUp.connect(lambda: self.viewer0.set_zoom(self.viewer0.zoom() * 0.9))
+                self.viewer0.signals.arrowDown.connect(lambda: self.viewer0.set_zoom(self.viewer0.zoom() * 1.1))
                 self.viewer0.signals.zoomChanged.connect(lambda x: self.slot_zoom_changed(x))  # Critical updates the lineedit
             else:
                 self.viewer0.initViewer()
@@ -363,6 +346,26 @@ class AlignmentTab(QWidget):
         self.parent.hud.done()
         # QApplication.processEvents() #1009-
         logger.info(f"<<<< initNeuroglancer")
+
+    @Slot()
+    def layer_left(self):
+        logger.info('')
+        if self.pt.wTabs.currentIndex() == 1:
+            if self.dm['state']['tra_ref_toggle'] == 'ref':
+                self.pt.set_transforming()
+        requested = self.dm.zpos - 1
+        if requested >= 0:
+            self.dm.zpos = requested
+
+    @Slot()
+    def layer_right(self):
+        logger.info('')
+        if self.pt.wTabs.currentIndex() == 1:
+            if self.dm['state']['tra_ref_toggle'] == 'ref':
+                self.pt.set_transforming()
+        requested = self.dm.zpos + 1
+        if requested < len(self.dm):
+            self.dm.zpos = requested
 
 
     def slot_zoom_changed(self, val):
