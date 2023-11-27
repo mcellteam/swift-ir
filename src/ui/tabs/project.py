@@ -74,7 +74,7 @@ class AlignmentTab(QWidget):
         self.initUI_JSON()
         self.initUI_plot()
         self.initTabs()
-        self.updateZarrUI()
+        # self.updateZarrUI()
         self.updateTab0UI()
         self.dataUpdateMA()
 
@@ -82,25 +82,21 @@ class AlignmentTab(QWidget):
         self.wTabs.currentChanged.connect(self._onTabChange)
         self._allow_zoom_change = True
         self.dm.signals.zposChanged.connect(lambda: print(f'(Signal Received: zposChanged...)'))
-        self.dm.signals.zposChanged.connect(lambda: self.viewer.set_layer())
+        def fn_zpos():
+            logger.info('')
+            _tab = self.wTabs.currentIndex()
+            if _tab == 0:
+                self.viewer0.set_layer()
+            elif _tab == 1:
+                self.transformViewer.initViewer()
+                self.viewer1.set_layer()
+
+        self.dm.signals.zposChanged.connect(fn_zpos)
         self.dm.signals.zposChanged.connect(self.parent.updateSlidrZpos)
         self.dm.signals.zposChanged.connect(self.parent.setSignalsPixmaps)
         self.dm.signals.zposChanged.connect(self.parent.setTargKargPixmaps)
         self.dm.signals.zposChanged.connect(self.dataUpdateMA) #1111+
-        def fn_create_corner_viewer():
-            if self.wTabs.currentIndex() == 1:
-                logger.info('')
-                self.transformViewer.initViewer()
-                # if self.twCornerViewer.currentIndex() == 0:
-                #     logger.info('')
-                #     # path = os.path.join(self.dm['info']['images_path'], 'zarr', self.dm.level)
-                #     # res = self.dm.resolution(s=self.dm.level)
-                #     # self.transformViewer = TransformViewer(parent=self, webengine=self.we2, path=None, dm=self.dm, res=res, )
-                #     # w = self.we2.width()
-                #     # h = self.we2.height()
-                #     # self.transformViewer.initZoom(w=w, h=h, adjust=1.15)
-                #     self.transformViewer.set_layer()
-        self.dm.signals.zposChanged.connect(fn_create_corner_viewer) #1111+
+
         # self.dm.signals.zposChanged.connect(self.forceFocus) #1111+
         # def fn_updatelayer():
         #     logger.info('')
@@ -186,6 +182,10 @@ class AlignmentTab(QWidget):
         else: m.item(3).setCheckState(0)
         if self.dm['state']['neuroglancer']['show_scalebar']: m.item(4).setCheckState(2)
         else: m.item(4).setCheckState(0)
+        isAligned = self.dm.is_aligned()
+        self.cbTransformed.setChecked(isAligned)
+        self.cbTransformed.setEnabled(isAligned)
+        self.cbBB.setChecked(self.dm.output_settings()['bounding_box']['has'])
 
 
 
@@ -238,12 +238,16 @@ class AlignmentTab(QWidget):
         index = self.wTabs.currentIndex()
         self.dm['state']['blink'] = False
         # self.matchPlayTimer.stop()
+        self.initNeuroglancer(init_all=True)
         if index == 0:
-            self.initNeuroglancer()
+            self.updateTab0UI()
+            # self.updateZarrUI()
+            # self.initNeuroglancer()
+            pass
 
         elif index == 1:
             logger.critical('Refreshing editor tab...')
-            self.initNeuroglancer()
+            # self.initNeuroglancer()
             self.set_transforming()  # 0802+
             if self.parent.dwSnr.isVisible():
                 if self.dm.is_aligned():
@@ -284,8 +288,9 @@ class AlignmentTab(QWidget):
         self._initNG_calls += 1
         logger.critical(f"[call # {self._initNG_calls}, {caller}] Initializing Neuroglancer...")
 
-        if ng.is_server_running():
-            ng.server.stop()
+        if init_all:
+            if ng.is_server_running():
+                ng.server.stop()
 
         if self.parent._working:
             logger.warning(f"[{caller}] UNABLE TO INITIALIZE NEUROGLANCER AT THIS TIME... BUSY WORKING!")
@@ -327,33 +332,31 @@ class AlignmentTab(QWidget):
 
         #todo for now this needs to happen second so that self.viewer is correct when init_all is True #Refactor
         if self.wTabs.currentIndex() == 0 or init_all:
-            if self.rbZarrTransformed.isChecked():
-                view = 'transformed'
-            elif self.rbZarrExperimental.isChecked():
-                view = 'experimental'
+            if self.cbTransformed.isChecked():
+                setData('state,neuroglancer,transformed', True)
             else:
-                view = 'raw'
-
+                setData('state,neuroglancer,transformed', False)
             self.cbxNgLayout.setCurrentText(getData('state,neuroglancer,layout'))
 
-            if view == 'transformed':
-                path = self.dm.path_zarr_transformed()
-            else:
-                path = self.dm.path_zarr_raw()
-
-            logger.critical(f"view: {view}, path: {path}")
+            path = self.dm.path_zarr_raw()
 
             res = copy.deepcopy(self.dm.resolution(s=self.dm.level))
-            self.viewer = self.viewer0 = EMViewer(parent=self, webengine=self.we0, path=path, dm=self.dm, res=res, view=view)
-            self.viewer.initZoom(self.we0.width(), self.we0.height())
-            # self.viewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
-            self.viewer.signals.layoutChanged.connect(lambda: setData('state,neuroglancer,layout', self.viewer.state.layout.type))
-            self.viewer.signals.layoutChanged.connect(lambda: self.cbxNgLayout.setCurrentText(self.viewer.state.layout.type))
-            self.viewer.signals.arrowLeft.connect(self.parent.layer_left)
-            self.viewer.signals.arrowRight.connect(self.parent.layer_right)
-            self.viewer.signals.arrowUp.connect(self.parent.incrementZoomIn)
-            self.viewer.signals.arrowDown.connect(self.parent.incrementZoomOut)
-            self.viewer.signals.zoomChanged.connect(self.slot_zoom_changed)  # Critical updates the lineedit
+            # self.viewer = self.viewer0 = EMViewer(parent=self, webengine=self.we0, path=path, dm=self.dm, res=res, view=view)
+            if init_all:
+                self.viewer0 = EMViewer(parent=self, webengine=self.we0, path=path, dm=self.dm, res=res)
+                self.viewer.initZoom(self.we0.width(), self.we0.height())
+                # self.viewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
+                self.viewer.signals.layoutChanged.connect(lambda: setData('state,neuroglancer,layout', self.viewer.state.layout.type))
+                self.viewer.signals.layoutChanged.connect(lambda: self.cbxNgLayout.setCurrentText(self.viewer.state.layout.type))
+                self.viewer.signals.arrowLeft.connect(self.parent.layer_left)
+                self.viewer.signals.arrowRight.connect(self.parent.layer_right)
+                self.viewer.signals.arrowUp.connect(self.parent.incrementZoomIn)
+                self.viewer.signals.arrowDown.connect(self.parent.incrementZoomOut)
+                self.viewer.signals.zoomChanged.connect(self.slot_zoom_changed)  # Critical updates the lineedit
+            else:
+                self.viewer0.initViewer()
+
+            self.viewer = self.viewer0
 
         self.parent.hud.done()
         # QApplication.processEvents() #1009-
@@ -1527,25 +1530,43 @@ class AlignmentTab(QWidget):
         self.labZarrSource = BoldLabel(' View ')
         self.wNgAccessories = HW(BoldLabel("  Neuroglancer  "), self.cbxNgExtras)
 
-        tip = "View raw source data in Neuroglancer"
-        self.rbZarrRaw = QRadioButton('Raw')
-        self.rbZarrRaw.setObjectName('raw')
-        self.rbZarrRaw.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        self.rbZarrRaw.clicked.connect(lambda: setData('state,neuroglancer,layout','xy'))
-        self.rbZarrRaw.clicked.connect(self.initNeuroglancer)
-        tip = "View a generated cumulative alignment Zarr in Neuroglancer"
-        self.rbZarrTransformed = QRadioButton('Transformed (Not Generated)')
-        self.rbZarrTransformed.setObjectName('transformed')
-        self.rbZarrTransformed.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        self.rbZarrTransformed.clicked.connect(lambda: setData('state,neuroglancer,layout', '4panel'))
-        self.rbZarrTransformed.clicked.connect(self.initNeuroglancer)
-        tip = "View cumulative alignment by applying transformations in Neuroglancer (generates nothing)"
-        self.rbZarrExperimental = QRadioButton('Transformed (Expertimental)')
-        self.rbZarrExperimental.setObjectName('experimental')
-        self.rbZarrExperimental.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        self.rbZarrExperimental.clicked.connect(lambda: setData('state,neuroglancer,show_bounds', False))
-        self.rbZarrExperimental.clicked.connect(lambda: setData('state,neuroglancer,layout', '4panel'))
-        self.rbZarrExperimental.clicked.connect(self.initNeuroglancer)
+        self.cbTransformed = QCheckBox('Transformed')
+        def fn_cb_transformed():
+            clr = inspect.stack()[1].function
+            if clr == 'main':
+                if self.cbTransformed.isChecked():
+                    self.viewer0.set_transformed()
+                else:
+                    self.viewer0.set_untransformed()
+        self.cbTransformed.toggled.connect(fn_cb_transformed)
+
+
+        # tip = "View raw source data in Neuroglancer"
+        # self.rbZarrRaw = QRadioButton('Raw')
+        # self.rbZarrRaw.setObjectName('raw')
+        # self.rbZarrRaw.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+        # self.rbZarrRaw.clicked.connect(lambda: setData('state,neuroglancer,layout','xy'))
+        # self.rbZarrRaw.clicked.connect(self.initNeuroglancer)
+        # tip = "View a generated cumulative alignment Zarr in Neuroglancer"
+        # self.rbZarrTransformed = QRadioButton('Transformed (Not Generated)')
+        # self.rbZarrTransformed.setObjectName('transformed')
+        # self.rbZarrTransformed.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+        # self.rbZarrTransformed.clicked.connect(lambda: setData('state,neuroglancer,layout', '4panel'))
+        # self.rbZarrTransformed.clicked.connect(self.initNeuroglancer)
+        # tip = "View cumulative alignment by applying transformations in Neuroglancer (generates nothing)"
+        # self.rbZarrExperimental = QRadioButton('Transformed (Expertimental)')
+        # self.rbZarrExperimental.setObjectName('experimental')
+        # self.rbZarrExperimental.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+        # self.rbZarrExperimental.clicked.connect(lambda: setData('state,neuroglancer,show_bounds', False))
+        # self.rbZarrExperimental.clicked.connect(lambda: setData('state,neuroglancer,layout', '4panel'))
+        # self.rbZarrExperimental.clicked.connect(self.initNeuroglancer)
+
+        # self.bgZarrSelect = QButtonGroup()
+        # self.bgZarrSelect.addButton(self.rbZarrRaw)
+        # self.bgZarrSelect.addButton(self.rbZarrExperimental)
+        # self.bgZarrSelect.addButton(self.rbZarrTransformed)
+        # self.bgZarrSelect.setExclusive(True)
+        # self.bgZarrSelect.buttonPressed.connect(self.onZarrRadiobutton)
 
         tip = 'Generate permanent Zarr of cumulative alignment from TIFFs'
         self.bZarrRegen = QPushButton('Generate')
@@ -1557,19 +1578,15 @@ class AlignmentTab(QWidget):
 
         self.wZarrSelect = HW(
             self.labZarrSource,
-            self.rbZarrRaw,
-            self.rbZarrExperimental,
-            self.rbZarrTransformed,
-            self.bZarrRegen,
+            self.cbTransformed,
+            # self.rbZarrRaw,
+            # self.rbZarrExperimental,
+            # self.rbZarrTransformed,
+            # self.bZarrRegen,
             spacing=6
         )
 
-        self.bgZarrSelect = QButtonGroup()
-        self.bgZarrSelect.addButton(self.rbZarrRaw)
-        self.bgZarrSelect.addButton(self.rbZarrExperimental)
-        self.bgZarrSelect.addButton(self.rbZarrTransformed)
-        self.bgZarrSelect.setExclusive(True)
-        self.bgZarrSelect.buttonPressed.connect(self.onZarrRadiobutton)
+
 
 
         self.toolbar0 = QToolBar()
@@ -2175,11 +2192,9 @@ class AlignmentTab(QWidget):
         caller = inspect.stack()[1].function
         if caller in ('main', '<lambda>'):
             choice = self.cbxNgLayout.currentText()
-            logger.info('Setting neuroglancer layout to %s' % choice)
             setData('state,neuroglancer,layout', choice)
-            self.parent.tell(f'Setting Neuroglancer layout to {choice}')
+            self.parent.tell(f'Neuroglancer Layout Set To: {choice}')
             try:
-                self.parent.hud("Setting Neuroglancer Layout to '%s'... " % choice)
                 layout_actions = {
                     'xy': self.parent.ngLayout1Action,
                     'yz': self.parent.ngLayout2Action,
@@ -2207,36 +2222,36 @@ class AlignmentTab(QWidget):
                 QApplication.setOverrideCursor(cursor)
 
 
-    def updateZarrUI(self):
-        caller = inspect.stack()[1].function
-        logger.critical(f'{caller}')
-        # self.updateZarrButtonsEnabled()
-        isGenerated = self.dm.is_zarr_generated()
-        isAligned = self.dm.is_aligned()
-        self.rbZarrTransformed.setEnabled(isGenerated)
-        self.rbZarrTransformed.setText(f"Transformed ({('Not ','')[isGenerated]}Generated)")
-        self.rbZarrExperimental.setEnabled(isAligned)
-        settings = self.dm.output_settings()
-        bias = settings['polynomial_bias']
-        if type(bias) == int:
-            self.cbxBias.setCurrentIndex(bias + 1)
-        else:
-            self.cbxBias.setCurrentIndex(0)
-        self.cbBB.setChecked(settings['bounding_box']['has'])
-        selected = self.bgZarrSelect.checkedButton()
-        if not selected:
-            if self.dm.is_aligned():
-                self.rbZarrExperimental.setChecked(True)
-            else:
-                self.rbZarrRaw.setChecked(True)
-        else:
-            if self.dm.is_aligned():
-                if selected.objectName() == 'raw':
-                    setData('state,neuroglancer,layout', '4panel')
-                    self.rbZarrExperimental.setChecked(True)
-            else:
-                setData('state,neuroglancer,layout', 'xy')
-                self.rbZarrRaw.setChecked(True)
+    # def updateZarrUI(self):
+    #     caller = inspect.stack()[1].function
+    #     logger.critical(f'{caller}')
+    #     # self.updateZarrButtonsEnabled()
+    #     isGenerated = self.dm.is_zarr_generated()
+    #     isAligned = self.dm.is_aligned()
+    #     self.rbZarrTransformed.setEnabled(isGenerated)
+    #     self.rbZarrTransformed.setText(f"Transformed ({('Not ','')[isGenerated]}Generated)")
+    #     self.rbZarrExperimental.setEnabled(isAligned)
+    #     settings = self.dm.output_settings()
+    #     bias = settings['polynomial_bias']
+    #     if type(bias) == int:
+    #         self.cbxBias.setCurrentIndex(bias + 1)
+    #     else:
+    #         self.cbxBias.setCurrentIndex(0)
+    #     # self.cbBB.setChecked(settings['bounding_box']['has'])
+    #     selected = self.bgZarrSelect.checkedButton()
+    #     if not selected:
+    #         if self.dm.is_aligned():
+    #             self.rbZarrExperimental.setChecked(True)
+    #         else:
+    #             self.rbZarrRaw.setChecked(True)
+    #     else:
+    #         if self.dm.is_aligned():
+    #             if selected.objectName() == 'raw':
+    #                 setData('state,neuroglancer,layout', '4panel')
+    #                 self.rbZarrExperimental.setChecked(True)
+    #         else:
+    #             setData('state,neuroglancer,layout', 'xy')
+    #             self.rbZarrRaw.setChecked(True)
 
 
     # def updateZarrButtonsEnabled(self):
@@ -2784,6 +2799,7 @@ class AlignmentTab(QWidget):
         tip = """Bounding Box is a parameter associated with the cumulative alignment. Caution: Turning bounding box ON may 
         significantly increase the size of generated images (default=False)."""
         self.cbBB = QCheckBox()
+        self.cbBB = QCheckBox()
         self.cbBB.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.cbBB.toggled.connect(lambda state: self.dm.set_use_bounding_rect(state))
 
@@ -2846,7 +2862,7 @@ class AlignmentTab(QWidget):
         self.HL1 = QHLine()
         self.HL1.setStyleSheet("background-color: #FFFF66;")
         self.flOverlaycontrols.addWidget(QLabel('3D Alignment Options'))
-        self.flOverlaycontrols.addRow("Bounding Box:", self.cbBB)
+        # self.flOverlaycontrols.addRow("Bounding Box:", self.cbBB)
         self.flOverlaycontrols.addRow("Corrective Bias:", self.cbxBias)
         self.flOverlaycontrols.addWidget(self.bZarrRefresh)
 
@@ -2901,7 +2917,9 @@ class AlignmentTab(QWidget):
                 val = self.cbxBias.currentIndex() - 1
             self.parent.tell(f'Corrective bias is set to {val}')
             self.dm.poly_order = val
-            self.initNeuroglancer()
+            self.dm.set_stack_cafm()
+            # self.initNeuroglancer()
+            self.viewer0.initViewer()
 
     def initShader(self):
 
@@ -2971,7 +2989,8 @@ class AlignmentTab(QWidget):
         # self.wContrast.layout.setSpacing(4)
         self.wContrast.setMaximumWidth(180)
 
-        self.wBC = HW(self.wBrightness, self.wContrast, self.bResetShaders, self.bVolumeRendering)
+        # self.wBC = HW(self.wBrightness, self.wContrast, self.bResetShaders, self.bVolumeRendering)
+        self.wBC = HW(self.wBrightness, self.wContrast, self.bResetShaders)
         # self.wBC.layout.setSpacing(4)
         self.wBC.setMaximumWidth(400)
 
