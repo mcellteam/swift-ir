@@ -216,8 +216,9 @@ class MainWindow(QMainWindow):
 
     def runUiChecks(self):
         #Todo add UI checks
-        if not getData('state,manual_mode'):
-            assert (cfg.viewer0.state.layout.type == self.comboboxNgLayout.currentText())
+        if self._isProjectTab():
+            if not getData('state,manual_mode'):
+                assert (self.pt.viewer.state.layout.type == self.comboboxNgLayout.currentText())
 
 
     def memory(self):
@@ -291,8 +292,8 @@ class MainWindow(QMainWindow):
                 ng.server.stop()
             elif self.pt:
                 self.pt.initNeuroglancer()
-            elif cfg.zarr_tab:
-                cfg.zarr_tab.load()
+            elif self.zarr_tab:
+                self.zarr_tab.load()
         if cfg.USE_DELAY:
             time.sleep(cfg.DELAY_AFTER)
 
@@ -1168,7 +1169,6 @@ class MainWindow(QMainWindow):
         self._scaleworker.finished.connect(self._scaleThread.quit)
         self._scaleworker.moveToThread(self._scaleThread)  # Step 4: Move worker to the thread
         self._scaleworker.finished.connect(self._scaleworker.deleteLater)
-        self._scaleworker.finished.connect(lambda: logger.critical(f"\n\n\nHiding pbar...\n\n"))
         self._scaleworker.finished.connect(self.hidePbar)
         self._scaleworker.finished.connect(self._refresh)
         self._scaleworker.finished.connect(lambda: self.pm.bCreateImages.setEnabled(True))
@@ -1265,7 +1265,7 @@ class MainWindow(QMainWindow):
             self.bLeftArrow.setEnabled(True)
             self.bRightArrow.setEnabled(True)
             self.sldrZpos.setEnabled(True)
-            self.bPlayback.setEnabled(True)
+            # self.bPlayback.setEnabled(True)
             self.sbFPS.setEnabled(True)
             self.wToggleExclude.setEnabled(True)
             self.leJump.setEnabled(True)
@@ -1362,22 +1362,22 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def updateSlidrZpos(self):
+        #Todo refactor this #1126
         # caller = inspect.stack()[1].function
         # logger.info(f'[{caller}]')
         if self._isProjectTab():
-            cur = self.dm.zpos
-            self.leJump.setText(str(cur))
-            self.sldrZpos.setValue(cur)
+            self.leJump.setText(str(self.dm.zpos))
+            self.sldrZpos.setValue(self.dm.zpos)
             self.cbSkip.setChecked(not self.dm.skipped())
-            self.bLeftArrow.setEnabled(cur > 0)
-            self.bRightArrow.setEnabled(cur < len(self.dm) - 1)
+            self.bLeftArrow.setEnabled(self.dm.zpos > 0)
+            self.bRightArrow.setEnabled(self.dm.zpos < len(self.dm) - 1)
             if self.dwSnr.isVisible():
                 self.pt.dSnr_plot.updateLayerLinePos()
-            if cfg.viewer0:
-                cfg.viewer0.set_layer()
-            self.dataUpdateWidgets()
-            if self.pt.wTabs.currentIndex() == 1:
-                self.pt.gifPlayer.set()
+            # if self.pt.viewer:
+            #     self.pt.viewer.set_layer()
+            # self.dataUpdateWidgets()
+            # if self.pt.wTabs.currentIndex() == 1:
+            #     self.pt.gifPlayer.set()
 
 
     def setStatusInfo(self):
@@ -1543,14 +1543,6 @@ class MainWindow(QMainWindow):
         with open(path, 'r') as f:
             scale = json.load(f)
 
-    def ng_layer(self):
-        '''The idea behind this was to cache the current layer. Not Being Used Currently'''
-        try:
-            index = cfg.viewer0.cur_index
-            assert isinstance(index, int)
-            return index
-        except:
-            print_exception()
 
     def reload_zpos_slider_and_lineedit(self):
         '''Requires Neuroglancer '''
@@ -1599,9 +1591,11 @@ class MainWindow(QMainWindow):
 
 
     def jump_to_slider(self):
+
         if self._isProjectTab():
-            if inspect.stack()[1].function == 'main':
-                logger.info('')
+            caller = inspect.stack()[1].function
+            logger.info(f'[{caller}]')
+            if caller == 'main':
                 self.dm.zpos = self.sldrZpos.value()
 
     @Slot()
@@ -1728,7 +1722,7 @@ class MainWindow(QMainWindow):
         logger.info('')
         if self._isProjectTab() or self._isZarrTab():
             try:
-                self.detachedNg = QuickWebPage(url=cfg.viewer0.url())
+                self.detachedNg = QuickWebPage(url=self.getCurrentTabWidget().viewer.url())
             except:
                 logger.info('Cannot open detached neuroglancer view')
 
@@ -1920,7 +1914,7 @@ class MainWindow(QMainWindow):
         # with open(html_f, 'r') as f:
         #     html = f.read()
         #
-        # # webengine0 = QWebEngineView()
+        # # we0 = QWebEngineView()
         # webengine.py = WebEngine(ID=ID)
         # webengine.py.setHtml(html, baseUrl=QUrl.fromLocalFile(os.getcwd() + os.path.sep))
         # webengine.py.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
@@ -2004,9 +1998,9 @@ class MainWindow(QMainWindow):
         #     self.pm.viewer.set_zoom(new_cs_scale)
 
         if self._isProjectTab() or self._isOpenProjTab():
-            new_cs_scale = self.viewer.zoom() * 1.1
+            new_cs_scale = self.getCurrentTabWidget().viewer.zoom() * 1.1
             logger.info(f'cross section scale: {new_cs_scale}')
-            self.viewer.set_zoom(new_cs_scale)
+            self.getCurrentTabWidget().viewer.set_zoom(new_cs_scale)
 
 
 
@@ -2033,9 +2027,9 @@ class MainWindow(QMainWindow):
         #     self.pm.viewer.set_zoom(new_cs_scale)
 
         if self._isProjectTab() or self._isOpenProjTab():
-            new_cs_scale = self.viewer.zoom() * 0.9
+            new_cs_scale = self.getCurrentTabWidget().viewer.zoom() * 0.9
             logger.info(f'cross section scale: {new_cs_scale}')
-            self.viewer.set_zoom(new_cs_scale)
+            self.getCurrentTabWidget().viewer.set_zoom(new_cs_scale)
 
     # def initShortcuts(self):
     #     logger.info('')
@@ -2120,7 +2114,7 @@ class MainWindow(QMainWindow):
         if self.pt:
             try:
                 if ng.is_server_running():
-                    txt = json.dumps(cfg.viewer0.state.to_json(), indent=2)
+                    txt = json.dumps(self.pt.viewer.state.to_json(), indent=2)
                     return f"Viewer State:\n{txt}"
                 else:
                     return f"Neuroglancer Is Not Running."
@@ -3010,12 +3004,36 @@ class MainWindow(QMainWindow):
         self.setUpdatesEnabled(False)
         self.tabChanged.emit()
         caller = inspect.stack()[1].function
-        logger.critical(f'[{caller}] Changing tabs...')
+        logger.info(f'[{caller}] Changing tabs...')
         [b.setEnabled(False) for b in self._lower_tb_buttons]
         # QApplication.restoreOverrideCursor()
 
+        if self._isOpenProjTab():
+            self.pm.initPMviewer()
+        else:
+            if hasattr(self.pm, 'viewer'):
+                del self.pm.viewer
 
-        if not self._isProjectTab():
+
+        if self._isProjectTab():
+
+            self.dm = cfg.dm = self.globTabs.currentWidget().dm
+            self.pt = cfg.pt = self.globTabs.currentWidget()
+            # self.viewer = self.pt.viewer
+            # self.pt.initNeuroglancer()  # 0815-
+            self.pt.initNeuroglancer(init_all=True)  # 0815-
+
+            # self.updateLowest8widget()
+            [b.setEnabled(True) for b in self._lower_tb_buttons]
+
+            # self.pt.dataUpdateMA()
+            self.dwThumbs.setWidget(self.pt.tableThumbs)
+            self.dwMatches.setWidget(self.pt.match_widget)
+            self.dwSnr.setWidget(self.pt.dSnr_plot)
+            if self.dwSnr.isVisible():
+                self.pt.dSnr_plot.initSnrPlot()
+            self.bExport.setVisible(self.dm.is_zarr_generated())
+        else:
             self.statusBar.clearMessage()
             self.dwThumbs.setWidget(NullWidget())
             self.dwMatches.setWidget(NullWidget())
@@ -3030,33 +3048,16 @@ class MainWindow(QMainWindow):
                 self.setdw_thumbs(False)
             self.bExport.setVisible(False)
 
-        elif self._isProjectTab():
-            self.dm = cfg.dm = self.globTabs.currentWidget().dm
-            self.pt = cfg.pt = self.globTabs.currentWidget()
-            self.viewer = self.pt.viewer
-
-            self.pt.initNeuroglancer() #0815-
-            # self.updateLowest8widget()
-            [b.setEnabled(True) for b in self._lower_tb_buttons]
-
-            # self.pt.dataUpdateMA()
-            self.dwThumbs.setWidget(self.pt.tableThumbs)
-            self.dwMatches.setWidget(self.pt.match_widget)
-            self.dwSnr.setWidget(self.pt.dSnr_plot)
-            if self.dwSnr.isVisible():
-                self.pt.dSnr_plot.initSnrPlot()
-            self.bExport.setVisible(self.dm.is_zarr_generated())
-
-        elif self._getTabType() == 'ZarrTab':
+        if self._getTabType() == 'ZarrTab':
             logger.debug('Loading Zarr Tab...')
-            cfg.zarr_tab = self.globTabs.currentWidget()
-            self.viewer = cfg.viewer = cfg.zarr_tab.viewer
-            cfg.zarr_tab.viewer.bootstrap()
+            self.zarr_tab = self.globTabs.currentWidget()
+            # self.viewer = cfg.viewer = self.zarr_tab.viewer
+            self.zarr_tab.viewer.bootstrap()
 
         # elif self._getTabType() == 'ManagerTab':
         #     self.pm.refresh()
         #     self.viewer = self.pm.viewer
-        
+
         logger.debug('Wrapping up...')
         # self.updateMenus()
         self.reload_zpos_slider_and_lineedit()  # future changes to image importing will require refactor
@@ -3149,19 +3150,6 @@ class MainWindow(QMainWindow):
         action.setDefaultWidget(textedit)
         self.ngStateMenu.clear()
         self.ngStateMenu.addAction(action)
-
-    # def clearNgStateMenus(self):
-    #     self.clearMenu(menu=self.ngStateMenu)
-
-    # def clearMenu(self, menu):
-    #     menu.clear()
-    #     textedit = QTextEdit(self)
-    #     textedit.setFixedSize(QSize(50, 28))
-    #     textedit.setReadOnly(True)
-    #     textedit.setText('N/A')
-    #     action = QWidgetAction(self)
-    #     action.setDefaultWidget(textedit)
-    #     menu.addAction(action)
 
 
 
@@ -3895,7 +3883,10 @@ class MainWindow(QMainWindow):
         self.sldrZpos = QSlider(Qt.Orientation.Horizontal, self)
         self.sldrZpos.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.sldrZpos.setFocusPolicy(Qt.StrongFocus)
-        self.sldrZpos.valueChanged.connect(self.jump_to_slider)
+        # self.sldrZpos.valueChanged.connect(self.jump_to_slider)
+        # self.sldrZpos.valueChanged.connect(self.jump_to_slider)
+        self.sldrZpos.valueChanged.connect(lambda: self.leJump.setText(str(self.sldrZpos.value())))
+        self.sldrZpos.sliderReleased.connect(self.jump_to_slider)
 
         tip = 'Jumpt to section #'
         tip = '\n'.join(textwrap.wrap(tip, width=35))
@@ -3908,8 +3899,10 @@ class MainWindow(QMainWindow):
         # self.leJump.returnPressed.connect(lambda: self.jump_to(int(self.leJump.text())))
 
         self.bPlayback = QPushButton()
+        self.bPlayback.setToolTip(f"This button is undergoing maintenance...")
         self.bPlayback.setFixedSize(18, 18)
         self.bPlayback.setIcon(qta.icon('fa.play'))
+        self.bPlayback.setEnabled(False)
 
         self.timerPlayback = QTimer(self)
         self.bPlayback.clicked.connect(self.startStopTimer)
@@ -5110,7 +5103,7 @@ class NullWidget(QLabel):
 
 # class WebEngine(QWebEngineView):
 # 
-#     def __init__(self, ID='webengine0'):
+#     def __init__(self, ID='we0'):
 #         QWebEngineView.__init__(self)
 #         self.ID = ID
 #         self.grabGesture(Qt.PinchGesture, Qt.DontStartGestureOnChildren)

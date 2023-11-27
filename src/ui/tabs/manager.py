@@ -197,7 +197,7 @@ class ManagerTab(QWidget):
         self.toolbar.addWidget(VW(self.wSelectImageSeries, self.wSelectAlignment))
 
         self.webengine = WebEngine(ID='pmViewer')
-        # self.webengine0.setFocusPolicy(Qt.StrongFocus)
+        # self.we0.setFocusPolicy(Qt.StrongFocus)
         setWebengineProperties(self.webengine)
 
         self.leNameAlignment = QLineEdit()
@@ -555,7 +555,6 @@ class ManagerTab(QWidget):
         cfg.preferences['images_combo_text'] = out
         self.initPMviewer()
 
-
     def createAlignment(self):
         logger.info('')
         self.bPlusAlignment.setEnabled(False)
@@ -600,28 +599,18 @@ class ManagerTab(QWidget):
         self.updateCombos()
         self.initPMviewer()
 
-
     def initPMviewer(self):
         logger.info('')
         if self.comboImages.count() > 0:
             level = self.comboLevel.currentText()
-            images = Path(self.comboImages.currentText())
-            alignment = Path(self.comboAlignment.currentText())
-            l = images / 'zarr' / level
-            r = alignment / 'zarr' / level
-            paths = []
-            if l.exists():
-                paths.append(l)
-            if r.exists():
-                paths.append(r)
-            try:
-                # info = read('json')(Path(cfg.pm.comboImages.currentText()) / 'info.json')
-                # res = info['resolution'][level]
-                res = self._images_info['resolution'][level]
-            except:
-                logger.warning(f"No resolution found for level {level}")
-                res = [50, 8, 8]
-            self.viewer = self.parent.viewer = PMViewer(parent=self, webengine=self.webengine, path=paths, dm=None, res=res, )
+            self.viewer = self.parent.viewer = PMViewer(
+                parent=self,
+                webengine=self.webengine,
+                extra_data={
+                    'resolution': self._images_info['resolution'][level],
+                    'raw_path': Path(self.comboImages.currentText()) / 'zarr' / level,
+                    'transformed_path': Path(self.comboAlignment.currentText()) / 'zarr' / level,
+                })
             self.viewer.signals.arrowLeft.connect(self.parent.layer_left)
             self.viewer.signals.arrowRight.connect(self.parent.layer_right)
             self.viewer.signals.arrowUp.connect(self.parent.incrementZoomIn)
@@ -629,7 +618,6 @@ class ManagerTab(QWidget):
             # self.webengine.py.setFocus()
         else:
             self.webengine.setHtml("")
-
 
     def onPlusAlignment(self):
         logger.info('')
@@ -641,7 +629,6 @@ class ManagerTab(QWidget):
             return
         self.wNameAlignment.show()
         self.leNameAlignment.setFocus()
-
 
     def onMinusAlignment(self):
         logger.info('')
@@ -849,19 +836,6 @@ class ManagerTab(QWidget):
                 images_path=images_path,
             )
 
-            # try:
-            #     data = read('json')(file_path)
-            #     dm = DataModel(
-            #         data=data,
-            #         file_path=str(data_file_path),
-            #         images_path=str(images_path),
-            #     )
-            # except:
-            #     cfg.mw.warn(f'No Such File Found: {file_path}')
-            #     print_exception()
-            #     return
-            # else:
-            #     logger.info(f'Project Opened!')
 
             cfg.preferences['last_alignment_opened'] = dm.data_file_path
             cfg.mw.saveUserPreferences(silent=True)
@@ -1454,18 +1428,18 @@ class ExpandingHWidget(QWidget):
         # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
 class WebEngine(QWebEngineView):
-    def __init__(self, ID='webengine0'):
+    def __init__(self, ID='we0'):
         QWebEngineView.__init__(self)
         self.ID = ID
         self.grabGesture(Qt.PinchGesture, Qt.DontStartGestureOnChildren)
 
 
 def setWebengineProperties(webengine):
-    # webengine0.preferences().setAttribute(QWebEngineSettings.PluginsEnabled, True)
-    # webengine0.preferences().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
-    # webengine0.preferences().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
-    # webengine0.preferences().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
-    # webengine0.preferences().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
+    # we0.preferences().setAttribute(QWebEngineSettings.PluginsEnabled, True)
+    # we0.preferences().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
+    # we0.preferences().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
+    # we0.preferences().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
+    # we0.preferences().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
     pass
 
 

@@ -39,6 +39,26 @@ with viewer.config_state.txn() as s:
 
 https://github.com/shwetagopaul92/neuroglancer/tree/master/examples/dependent-project
 
+https://stackoverflow.com/questions/865115/how-do-i-correctly-clean-up-a-python-object
+class Package:
+    def __init__(self):
+        self.files = []
+
+    def __enter__(self):
+        return self
+
+    # ...
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        for file in self.files:
+            os.unlink(file)
+
+Then, when someone wanted to use your class, they'd do the following:
+
+with Package() as package_obj:
+    # use package_obj
+
+
 '''
 
 import abc
@@ -56,6 +76,7 @@ from pathlib import Path
 import numcodecs
 import numpy as np
 import tensorstore as ts
+import zarr
 # from neuroglancer import ScreenshotSaver
 from qtpy.QtCore import QObject, Signal, QUrl
 
@@ -64,7 +85,6 @@ import neuroglancer.write_annotations
 from neuroglancer.json_wrappers import array_wrapper, to_json, JsonObjectWrapper
 
 import src.config as cfg
-from src.utils.swiftir import invertAffine
 from src.utils.helpers import getOpt, getData, setData, is_joel, print_exception
 
 context = ts.Context({'cache_pool': {'total_bytes_limit': 1000000000}})
@@ -76,8 +96,6 @@ numcodecs.blosc.use_threads = False
 __all__ = ['EMViewer', 'TransformViewer', 'PMViewer', 'MAViewer']
 
 logger = logging.getLogger(__name__)
-if not is_joel():
-    logger.propagate = False
 handler = logging.StreamHandler(stream=sys.stdout)
 logger.addHandler(handler)
 
@@ -108,17 +126,18 @@ class WorkerSignals(QObject):
 class AbstractEMViewer(neuroglancer.Viewer):
 
     # @abc.abstractmethod
-    def __init__(self, parent, webengine, path, dm, res, **kwargs):
+    def __init__(self, parent, webengine, path='', dm=None, res=None, extra_data=None, **kwargs):
         super().__init__(**kwargs)
         clr = inspect.stack()[1].function
         tstamp = datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S")
-        logger.critical(f'[{clr}] {tstamp}')
-        self.type = 'AbstractEMViewer'
+        logger.info(f'[{clr}] {tstamp} {path}')
+        self.name = 'AbstractEMViewer'
         self.created = datetime.datetime.now()
         self.parent = parent
-        self.path = path
+        self.path = str(path)
         self.dm = dm
         self.res = res
+        self.extra_data = extra_data
         # self.res *= self.res / self.dm.lvl()  # monkey patch #Todo fix this
         self.tensor = None
         self.webengine = webengine
@@ -176,116 +195,24 @@ class AbstractEMViewer(neuroglancer.Viewer):
         return '<a href="%s" target="_blank">Viewer</a>' % self.get_viewer_url()
 
     def __del__(self):
+        clr = inspect.stack()[1].function
         try:
             clr = inspect.stack()[1].function
-            print(f"({self.created}) {self.type} deleted by {clr}", flush=True)
+            logger.warning(f"[{clr}] ({self.created}) {self.name} deleted by {clr}")
         except:
-            print(f"({self.created}) {self.type} deleted, caller unknown", flush=True)
+            logger.warning(f"[{clr}] ({self.created}) {self.name} deleted, caller unknown")
+
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         clr = inspect.stack()[1].function
-        logger.warning(f"\n{self.type} exiting | caller: {clr}"
+        logger.warning(f"\n{self.name} exiting | caller: {clr}"
                        f"\nexc_type      : {exc_type}"
                        f"\nexc_value     : {exc_value}"
                        f"\nexc_traceback : {exc_traceback}")
 
-    @staticmethod
-    @cache
-    def _convert_layout(x):
-        # d = {
-        #     'xy': 'yz', 'yz': 'xy', 'xz': 'xz', 'xy-3d': 'yz-3d',
-        #     'yz-3d': 'xy-3d', 'xz-3d': 'xz-3d', '4panel': '4panel', '3d': '3d'
-        # }
-        # return d[x]
-        return x
-
-    def transform(self, index=None):
-        logger.info('')
-        if not index:
-            index = 0
-        try:
-            val = self.state.to_json()['layers'][index]['source']['transform']['matrix']
-            print(f"transform: {val}")
-            return val
-        except Exception as e:
-            print(e)
-            logger.warning(f'No transform for layer index {index}')
-
-    def set_transform(self, index=0, matrix=None):
-        logger.info('')
-        if not matrix:
-            matrix = [[.999, 0, 0, 0],
-                      [0, 1, 0, 0],
-                      [0, 0, 1, 0]]
-
-        # self.state.layers[index].layer.source[0].transform.matrix = matrix
-        state = copy.deepcopy(self.state)
-        try:
-            # state.layers[index].layer['source']['transform']['matrix'] = matrix
-            state.layers[index].layer.source[0].transform.matrix = matrix
-            self.set_state(state)
-        except Exception as e:
-            logger.info(e)
-
-    # def set_afm(self, index=0, mat=None):
-    #     logger.info('')
-    #     if not mat:
-    #         mat = self.dm.afm_cur()
-    #     print(f"afm: {mat}")
-    #     # cfg.dm.afm()
-    #     # Out[3]: [[1.0, 0.0, 0.0],
-    #     #          [0.0, 1.0, 0.0]]
-    #
-    #     ngmat = conv_mat(mat)
-    #
-    #     # self.state.layers[index].layer.source[0].transform.matrix = matrix
-    #     state = copy.deepcopy(self.state)
-    #     try:
-    #         # state.layers[index].layer['source']['transform']['matrix'] = matrix
-    #         state.layers[index].layer.source[0].transform.matrix = ngmat
-    #         self.set_state(state)
-    #     except Exception as e:
-    #         logger.info(e)
-
-    def set_null_afm(self, index=0, mat=None):
-        logger.info('')
-        # cfg.dm.afm()
-        # Out[3]: [[1.0, 0.0, 0.0],
-        #          [0.0, 1.0, 0.0]]
-
-        mat = [[.999, 0, 0, 0],
-               [0, 1, 0, 0],
-               [0, 0, 1, 0]]
-
-        # self.state.layers[index].layer.source[0].transform.matrix = matrix
-        state = copy.deepcopy(self.state)
-        try:
-            # state.layers[index].layer['source']['transform']['matrix'] = matrix
-            state.layers[index].layer.source[0].transform.matrix = mat
-            self.set_state(state)
-        except Exception as e:
-            logger.info(e)
-
-
-
     @abc.abstractmethod
     def initViewer(self):
         raise NotImplementedError
-
-    @abc.abstractmethod
-    def set_layer(self, pos=None):
-        self._blockStateChanged = True
-        if not pos:
-            pos = self.dm.zpos
-        with self.txn() as s:
-            vc = s.voxel_coordinates
-            try:
-                # vc[0] = pos + 0.5
-                vc[2] = pos + 0.5
-            except TypeError:
-                logger.warning("TypeError")
-                pass
-        self._blockStateChanged = False
 
     @abc.abstractmethod
     def on_state_changed(self):
@@ -314,107 +241,6 @@ class AbstractEMViewer(neuroglancer.Viewer):
     @abc.abstractmethod
     def _key3(self, s):
         raise NotImplementedError
-
-
-    def getCoordinateSpace(self):
-        # return ng.CoordinateSpace(
-        #     names=['z', 'y', 'x'],
-        #     units=['nm', 'nm', 'nm'],
-        #     scales=self.res,
-        # )
-        return ng.CoordinateSpace(
-            names=['x', 'y', 'z'],
-            units=['nm', 'nm', 'nm'],
-            scales=self.res,
-        )
-
-    def getCoordinateSpaceXYZ(self):
-        return ng.CoordinateSpace(
-            names=['x', 'y', 'z'],
-            units=['nm', 'nm', 'nm'],
-            scales=[self.res[2], self.res[1], self.res[0]],
-        )
-
-    def getLocalVolume(self, data, coordinatespace):
-        """
-            data – Source data.
-            volume_type – 'image'/'segmentation', or, guessed from data type.
-            mesh_options – A dict with the following keys specifying options
-                for mesh simplification for 'segmentation' volumes:
-            downsampling – '3d' to use isotropic downsampling, '2d' to
-                downsample separately in XY, XZ, and YZ; or, None.
-            max_downsampling (default=64) – Maximum amount by which on-the-fly
-                downsampling may reduce the volume of a chunk. Ex. 4x4x4
-                downsampling reduces the volume by 64
-            max_downsampled_size (default=128)
-        """
-        return ng.LocalVolume(
-            volume_type='image',
-            data=data,
-            voxel_offset=[0, 0, 0],
-            dimensions=coordinatespace,
-            downsampling='3d',
-            max_downsampling=cfg.max_downsampling,
-            max_downsampled_size=cfg.max_downsampled_size,
-        )
-
-
-    # async def get_zarr_tensor(file_path):
-    def getTensor(self, path):
-        #Todo can this be made async?
-        '''**All TensorStore indexing operations produce lazy views**
-        https://stackoverflow.com/questions/64924224/getting-a-view-of-a-zarr-array-slice
-
-        :param path: Fully qualified Zarr file_path
-        :return: A TensorStore future object
-        :rtype: tensorstore.Future
-        '''
-        if not os.path.exists(path):
-            logger.warning(f"Path Not Found: {path}")
-            return None
-        logger.debug(f'Requested: {path}')
-        # total_bytes_limit = 256_000_000_000  # Lonestar6: 256 GB (3200 MT/level) DDR4
-        total_bytes_limit = 16_000_000_000
-        future = ts.open({
-            'dtype': 'uint8',
-            'driver': 'zarr',
-            'kvstore': {
-                'driver': 'file',
-                # 'driver': 'memory',
-                'path': path
-            },
-            'context': {
-                'cache_pool': {
-                    'total_bytes_limit': total_bytes_limit,
-
-                },
-                'file_io_concurrency': {'limit': 256},
-            },
-
-            'data_copy_concurrency': {'limit': 256},  # 1122+ #
-            # 'recheck_cached_data': False,
-            'recheck_cached_data': False, # What Janelia opensource dataset uses in TensorStore example... may need to be False for total_bytes_limit to take effect
-            # 'recheck_cached_data': True,  # default=True
-        })
-        return future
-
-    """
-    
-    total_bytes_limit : integer[0, +∞) = 0¶
-    Soft limit on the total number of bytes in the cache. The least-recently used data 
-    that is not in use is evicted from the cache when this limit is reached.
-    
-    Context.data_copy_concurrency : object¶
-    Specifies a limit on the number of CPU cores used concurrently for data copying/encoding/decoding.
-    
-    Optional members¶
-    limit : integer[1, +∞) | "shared" = "shared"¶
-        The maximum number of CPU cores that may be used. If the special value of "shared" is specified, a shared global limit equal to the number of CPU cores/threads available applies.
-
-
-
-    
-    """
 
     def url(self):
         return self.get_viewer_url()
@@ -474,6 +300,131 @@ class AbstractEMViewer(neuroglancer.Viewer):
     def zoom(self):
         return copy.deepcopy(self.state.crossSectionScale)
 
+    def getCoordinateSpace(self):
+        return ng.CoordinateSpace(
+            names=['x', 'y', 'z'],
+            units=['nm', 'nm', 'nm'],
+            scales=self.res,
+        )
+
+    def transform(self, index=0):
+        try:
+            val = self.state.to_json()['layers'][index]['source']['transform']['matrix']
+            return val
+        except Exception as e:
+            print(e)
+            logger.warning(f'No transform for layer index {index}')
+
+    def add_im_layer(self, name, data, matrix=None):
+        with self.txn() as s:
+            local_volume = self.getLocalVolume(data, self.getCoordinateSpace())
+            if matrix == None:
+                matrix = [[.999, 0, 0, 0],
+                         [0, 1, 0, 0],
+                         [0, 0, 1, 0]]
+            output_dimensions = {'x': [self.res[0], 'nm'],
+                                 'y': [self.res[1], 'nm'],
+                                 'z': [self.res[2], 'nm']}
+            transform = ng.CoordinateSpaceTransform(
+                {'matrix': matrix, 'outputDimensions': output_dimensions})
+            source = ng.LayerDataSource(
+                url=local_volume,
+                transform=transform,)
+            s.layers.append(
+                name=name,
+                layer=ng.ImageLayer(source=source, shader=self.shader),
+                opacity=1,)
+
+    @abc.abstractmethod
+    def set_layer(self, pos=None):
+
+        self._blockStateChanged = True
+        if not pos:
+            pos = self.dm.zpos
+        logger.info(f'pos={pos}')
+        with self.txn() as s:
+            vc = s.voxel_coordinates
+            try:
+                vc[2] = pos + 0.5
+            except TypeError:
+                logger.warning("TypeError")
+                pass
+        try:
+            self.LV.invalidate()
+        except:
+            print_exception()
+        self._blockStateChanged = False
+        logger.info('<<')
+
+    def getLocalVolume(self, data, coordinatespace):
+        """
+            data – Source data.
+            volume_type – 'image'/'segmentation', or, guessed from data type.
+            mesh_options – A dict with the following keys specifying options
+                for mesh simplification for 'segmentation' volumes:
+            downsampling – '3d' to use isotropic downsampling, '2d' to
+                downsample separately in XY, XZ, and YZ; or, None.
+            max_downsampling (default=64) – Maximum amount by which on-the-fly
+                downsampling may reduce the volume of a chunk. Ex. 4x4x4
+                downsampling reduces the volume by 64
+            max_downsampled_size (default=128)
+        """
+        # return ng.LocalVolume(
+        #     volume_type='image',
+        #     data=data,
+        #     voxel_offset=[0, 0, 0],
+        #     dimensions=coordinatespace,
+        #     downsampling='3d',
+        #     max_downsampling=cfg.max_downsampling,
+        #     max_downsampled_size=cfg.max_downsampled_size,
+        # )
+        self.LV = ng.LocalVolume(
+            volume_type='image',
+            data=data,
+            voxel_offset=[0, 0, 0],
+            dimensions=coordinatespace,
+            downsampling='3d',
+            max_downsampling=cfg.max_downsampling,
+            max_downsampled_size=cfg.max_downsampled_size,
+        )
+        return self.LV
+
+    # async def get_zarr_tensor(file_path):
+    def getTensor(self, path):
+        #Todo can this be made async?
+        '''**All TensorStore indexing operations produce lazy views**
+        https://stackoverflow.com/questions/64924224/getting-a-view-of-a-zarr-array-slice
+
+        :param path: Fully qualified Zarr file_path
+        :return: A TensorStore future object
+        :rtype: tensorstore.Future
+        '''
+        try:
+            assert Path(path).exists()
+        except AssertionError:
+            logger.info(f"No Data At Path: {path}")
+            return
+        logger.debug(f'Requested: {path}')
+        # total_bytes_limit = 256_000_000_000  # Lonestar6: 256 GB (3200 MT/level) DDR4
+        total_bytes_limit = 16_000_000_000
+        future = ts.open({
+            'dtype': 'uint8',
+            'driver': 'zarr',
+            'kvstore': {
+                'driver': 'file',
+                'path': path
+            },
+            'context': {
+                'cache_pool': { 'total_bytes_limit': total_bytes_limit, },
+                'file_io_concurrency': {'limit': 2056},
+            },
+            'data_copy_concurrency': {'limit': 512},
+            'recheck_cached_data': True,
+        })
+        # recheck_cache_data is what Janelia opensource dataset uses in TensorStore example
+        # may need to be False for total_bytes_limit to take effect
+        return future
+
     def set_zoom(self, val):
         caller = inspect.stack()[1].function
         logger.debug(f'Setting zoom to {caller}')
@@ -505,9 +456,8 @@ class AbstractEMViewer(neuroglancer.Viewer):
             s.show_default_annotations = self.dm['state']['neuroglancer']['show_bounds']
             s.show_axis_lines = self.dm['state']['neuroglancer']['show_axes']
             s.show_scale_bar = self.dm['state']['neuroglancer']['show_scalebar']
-
         with self.config_state.txn() as s:
-            s.show_ui_controls = getData('state,neuroglancer,show_controls')
+            s.show_ui_controls = self.dm['state']['neuroglancer']['show_controls']
 
 
     def setBackground(self):
@@ -534,9 +484,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
     def getFrameScale(self, w, h):
         assert hasattr(self, 'tensor')
-        # _, tensor_y, tensor_x = self.tensor.shape
         tensor_x, tensor_y, _ = self.tensor.shape
-        # _, res_y, res_x = self.res  # nm per imagepixel
         res_x, res_y, _ = self.res  # nm per imagepixel
         scale_h = ((res_y * tensor_y) / h) * 1e-9  # nm/pixel
         scale_w = ((res_x * tensor_x) / w) * 1e-9  # nm/pixel
@@ -570,128 +518,105 @@ class EMViewer(AbstractEMViewer):
 
     def __init__(self, view='raw', **kwags):
         super().__init__(**kwags)
-        self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
+        # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
         self.view = view
-        self.type = 'EMViewer'
+        self.name = 'EMViewer'
         self.shader = self.dm['rendering']['shader']
+        print(self.shader)
         self._mats = [None] * len(self.dm)
-        self.initViewer()
+        self.created = datetime.datetime.now()
+        try:
+            # zarr.open(self.path, mode='r')
+            self.tensor = self.getTensor(self.path).result()[ts.d[:].label["x", "y", "z"]]
+        except AssertionError:
+            logger.warning(f"Data not found: {self.path}")
+            return
+        try:
+            self.initViewer()
+        except:
+            print_exception()
         # asyncio.ensure_future(self.initViewer())
         # self.post_message(f"Voxel Coordinates: {str(self.state.voxel_coordinates)}")
+        self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
 
     def on_state_changed(self):
 
-        if not self._blockStateChanged:
-            logger.info('')
+        if 1:
+            if not self._blockStateChanged:
+                clr = inspect.stack()[1].function
+                logger.info(f'[{self.created}] [{clr}] [{self.name}]')
 
-            _css = self.state.cross_section_scale
-            if not isinstance(_css, type(None)):
-                val = (_css, _css * 250000000)[_css < .001]
-                if round(val, 2) != round(getData('state,neuroglancer,zoom'), 2):
-                    if getData('state,neuroglancer,zoom') != val:
-                        logger.debug(f'emitting zoomChanged! [{val:.4f}]')
-                        setData('state,neuroglancer,zoom', val)
-                        self.signals.zoomChanged.emit(val)
+                _css = self.state.cross_section_scale
+                if not isinstance(_css, type(None)):
+                    val = (_css, _css * 250000000)[_css < .001]
+                    if round(val, 2) != round(getData('state,neuroglancer,zoom'), 2):
+                        if getData('state,neuroglancer,zoom') != val:
+                            logger.debug(f'emitting zoomChanged! [{val:.4f}]')
+                            setData('state,neuroglancer,zoom', val)
+                            self.signals.zoomChanged.emit(val)
 
-            if isinstance(self.state.position, np.ndarray):
-                # requested = int(self.state.position[0])
-                requested = int(self.state.position[2])
-                if requested != self.dm.zpos:
-                    logger.info(f'Chaning index to {self.dm.zpos}')
-                    self.dm.zpos = requested
+                if isinstance(self.state.position, np.ndarray):
+                    requested = int(self.state.position[2])
+                    if requested != self.dm.zpos:
+                        logger.info(f'Changing index to {self.dm.zpos}')
+                        self.dm.zpos = requested
 
-            if self.state.layout.type != self._convert_layout(getData('state,neuroglancer,layout')):
-                self.signals.layoutChanged.emit()
+                if self.state.layout.type != getData('state,neuroglancer,layout'):
+                    self.signals.layoutChanged.emit()
+
 
     # async def initViewer(self, nglayout=None):
     def initViewer(self):
+        clr = inspect.stack()[1].function
+        logger.critical(f'[{clr}] [{self.name}] Initializing Viewer...')
         self._blockStateChanged = False
+        shape = [1,1,1]
 
-        siz = self.dm.image_size()
-
-        # if not os.path.exists(os.path.join(self.path,'.zarray')):
-        #     cfg.main_window.warn('Zarr (.zarray) Not Found: %s' % self.path)
+        # try:
+        #     # zarr.open(self.path, mode='r')
+        #     self.tensor = self.getTensor(self.path).result()[ts.d[:].label["x", "y", "z"]]
+        # except AssertionError:
+        #     logger.warning(f"Data not found: {self.path}")
         #     return
 
-        # if os.path.exists(os.path.join(self.path, '.zarray')):
-        #     self.tensor = cfg.tensor = self.getTensor(str(self.path)).result()
+        # if hasattr(cfg.pm, 'viewer'):
+        #     del cfg.pm.viewer
+
         with self.config_state.txn() as s:
             s.show_ui_controls = getData('state,neuroglancer,show_controls')
 
+        if self.view == 'experimental':
+            shape = self.tensor.shape
+            for i in range(len(self.dm)):
+                matrix = conv_mat(to_tuples(self.dm.alt_cafm(l=i)), i=i)
+                data = self.tensor[:, :, i:i + 1]
+                self.add_im_layer(f'l{i}', data, matrix)
+        else:
+            shape = self.tensor.shape
+            data = self.tensor[:, :, :]
+            self.add_im_layer(f'volume', data)
+
         with self.txn() as s:
-            s.layout.type = self._convert_layout(getData('state,neuroglancer,layout'))
+            s.layout.type = getData('state,neuroglancer,layout')
             s.show_scale_bar = getData('state,neuroglancer,show_scalebar')
             s.show_axis_lines = getData('state,neuroglancer,show_axes')
-
-
-            if self.view == 'experimental':
-                s.show_default_annotations = False
-                # self.root = Path(self.dm.images_path) / 'zarr_slices'
-                self.path = Path(self.dm.images_path) / 'zarr' / self.dm.level
-                # self.tensor = self.getTensor(str(self.path)).result()[ts.d['x','y'].transpose[::-1]]
-                # self.tensor = self.getTensor(str(self.path)).result()[ts.d[:].label["z", "y", "x"]]
-                self.tensor = self.getTensor(str(self.path)).result()
-                self.tensor = self.tensor[ts.d[:].label["x", "y", "z"]]
-                # self.tensor = self.tensor[ts.d[:].label["x", "y", "z"]]
-                # self.tensor = self.tensor['x', 'y'].transpose[-1]
-                # self.tensor = self.tensor[ts.d[:].transpose[::-1]]
-                # s.position = [self.dm.zpos + 0.5, self.tensor.shape[1] / 2, self.tensor.shape[2] / 2]
-                s.position = [self.tensor.shape[0] / 2, self.tensor.shape[1] / 2, self.dm.zpos + 0.5]
-                for i in range(len(self.dm)):
-                    # p = self.root / str(i)
-                    # if p.exists():
-
-                    # inv_cafm = invertAffine(self.dm.cafm(l=i))
-                    # matrix = conv_mat(inv_cafm, i=i)
-
-                    # matrix = conv_mat(self.dm.cafm(l=i), i=i)
-                    # matrix = conv_mat(to_tuples(self.dm.cafm(l=i)), i=i)
-                    # matrix = conv_mat(to_tuples(self.dm.cafm(l=i)), i=i)
-                    matrix = conv_mat(to_tuples(self.dm.alt_cafm(l=i)), i=i)
-                    # matrix = conv_mat(to_tuples(self.dm.cafm(l=i)), i=i)
-                    self._mats[i] = matrix
-
-                    # output_dims = {'z': [self.res[0], 'nm'],
-                    #                'y': [self.res[1], 'nm'],
-                    #                'x': [self.res[2], 'nm']}
-                    output_dims = {'x': [self.res[0], 'nm'],
-                                   'y': [self.res[1], 'nm'],
-                                   'z': [self.res[2], 'nm'], }
-
-                    transform = {
-                        'matrix': matrix,
-                        'outputDimensions': output_dims
-                    }
-                    # tensor = self.getTensor(str(p)).result()
-
-                    # LV = self.getLocalVolume(self.tensor[i:i+1, :, :], self.getCoordinateSpace())
-                    LV = self.getLocalVolume(self.tensor[:, :, i:i + 1], self.getCoordinateSpace())
-                    # LV = self.getLocalVolume(tensor[:, :, :], self.getCoordinateSpace(), z_offset=i)
-                    source = ng.LayerDataSource(
-                        url=LV,
-                        transform=ng.CoordinateSpaceTransform(transform)
-                    )
-                    s.layers.append(
-                        name=f"layer-{i}",
-                        layer=ng.ImageLayer(source=source, shader=copy.deepcopy(self.shader, )),
-                        opacity=1, #Critical
-                    )
-                    # s.layers.append(
-                    #     name=f"layer-{i}",
-                    #     layer=ng.ImageLayer(source=LV, shader=copy.deepcopy(self.shader, )),
-                    #     opacity=1,  # Critical
-                    # )
-            else:
-                s.show_default_annotations = getData('state,neuroglancer,show_bounds')
-                self.tensor = self.getTensor(str(self.path)).result()
-                # s.position = [self.dm.zpos + 0.5, self.tensor.shape[1] / 2, self.tensor.shape[2] / 2]
-                s.position = [self.tensor.shape[0] / 2, self.tensor.shape[1] / 2, self.dm.zpos + 0.5]
-                LV = self.getLocalVolume(self.tensor[:, :, :], self.getCoordinateSpace())
-                # LV = self.getLocalVolume(tensor[:, :, :], self.getCoordinateSpace(), z_offset=i)
-                source = ng.LayerDataSource(url=LV,)
-                s.layers[f'layer'] = ng.ImageLayer(source=source, shader=copy.deepcopy(self.shader, ))
-
-         # https://github.com/google/neuroglancer/blob/ada384e9b27a64ceb704f565fa0989a1262fc903/python/tests/fill_value_test.py#L37
+            s.show_default_annotations = getData('state,neuroglancer,show_bounds')
+            # s.projection_orientation = [0.63240087, 0.01582051, 0.05692779, 0.77238464]
+            s.projection_orientation = [0.6299939155578613, 0.10509441047906876, 0.1297515481710434, 0.75843745470047]
+            # s.position = [self.tensor.shape[0] / 2, self.tensor.shape[1] / 2, self.dm.zpos + 0.5]
+            # if self.view == 'experimental':
+            #     s.show_default_annotations = False
+            #     shape = self.tensor.shape
+            #     for i in range(len(self.dm)):
+            #         matrix = conv_mat(to_tuples(self.dm.alt_cafm(l=i)), i=i)
+            #         data = self.tensor[:, :, i:i + 1]
+            #         self.add_im_layer(f'l{i}', data, matrix)
+            # else:
+            #     s.show_default_annotations = getData('state,neuroglancer,show_bounds')
+            #     shape = self.tensor.shape
+            #     data = self.tensor[:, :, :]
+            #     self.add_im_layer(f'volume', data)
+            s.position = [shape[0] / 2, shape[1] / 2, self.dm.zpos + 0.5]
 
         self.set_brightness()
         self.set_contrast()
@@ -702,94 +627,46 @@ class TransformViewer(AbstractEMViewer):
 
     def __init__(self, **kwags):
         super().__init__(**kwags)
-        self.type = 'TransformViewer'
+        self.name = 'TransformViewer'
+        self.path = self.dm.path_zarr_raw()
         self.shader = self.dm['rendering']['shader']
-        self.path = Path(self.dm.path_zarr_raw())
         self.section_number = self.dm.zpos
+        self.tensor = self.getTensor(self.path).result()[ts.d[:].label["x", "y", "z"]]
         self.initViewer()
 
     def initViewer(self):
         self._blockStateChanged = False
+        self.clear_layers()
 
-        if not self.path.exists():
-            logger.warning(f"Path not found: {self.path}")
+        try:
+            assert Path(self.path).exists()
+        except AssertionError:
+            logger.warning(f"Data not found: {self.path}")
             return
 
-
         ref_pos = self.dm.get_ref_index()
-        self.tensor = self.getTensor(str(self.path)).result()
-        # self.tensor = self.tensor[ts.d[:].label["z", "y", "x"]]
-        self.tensor = self.tensor[ts.d[:].label["x", "y", "z"]]
-        # self.tensor = self.tensor[ts.d[:].transpose[::-1]]
-
-        if ref_pos is not None:
-            # self.LV0 = self.getLocalVolume(self.tensor[ref_pos:ref_pos + 1, :, :], self.getCoordinateSpace())
-            self.LV0 = self.getLocalVolume(self.tensor[:, :, ref_pos:ref_pos + 1], self.getCoordinateSpace())
-        # self.tensor = self.getTensor(str(self.path)).result()
-
-        # self.tensor[:,0:500,0:500] = 1
-        # self.LV1 = self.getLocalVolume(self.tensor[self.dm.zpos:self.dm.zpos+1, :, :], self.getCoordinateSpace())
-        self.LV1 = self.getLocalVolume(self.tensor[:, :, self.dm.zpos:self.dm.zpos + 1], self.getCoordinateSpace())
-
-        # ident = np.array([[1., 0., 0.], [0., 1., 0.]]
-        ident = [[1., 0., 0.], [0., 1., 0.]]
-
-        # output_dims = {'z': [self.res[0], 'nm'],
-        #                'y': [self.res[1], 'nm'],
-        #                'x': [self.res[2], 'nm']}
-        output_dims = {'x': [self.res[0], 'nm'],
-                       'y': [self.res[1], 'nm'],
-                       'z': [self.res[2], 'nm']}
-        # output_dims = {'x': [self.res[2], 'nm'],
-        #                'y': [self.res[1], 'nm'],
-        #                'z': [self.res[0], 'nm'], }
-
-        # transform0 = {'matrix': conv_mat(ident, i=1),
-        #     'outputDimensions': output_dims}
-        #
-        # transform1 = {'matrix': conv_mat(self.dm.afm_cur(), i=2),
-        #     'outputDimensions': output_dims}
-        self._mats = []
+        # self.tensor = self.getTensor(self.path).result()[ts.d[:].label["x", "y", "z"]]
 
         with self.txn() as s:
-            s.layout.type = self._convert_layout('xy')
-            # s.layout.type = self._convert_layout('4panel')
+            s.layout.type = 'xy'
             s.show_scale_bar = True
             s.show_axis_lines = False
             s.show_default_annotations = True
-            # s.position = [0.5, self.tensor.shape[1] / 2, self.tensor.shape[2] / 2]
-            # s.position = [1.5, self.tensor.shape[1] / 2, self.tensor.shape[2] / 2]
-            # s.position = [self.tensor.shape[0] / 2, self.tensor.shape[1] / 2, 1.5]
             s.position = [self.tensor.shape[0] / 2, self.tensor.shape[1] / 2, 1.5]
-            # transform0 = {'matrix': conv_mat(ident, i=0), 'outputDimensions': output_dims}
-            transform0 = {'matrix': conv_mat(to_tuples(ident), i=0), 'outputDimensions': output_dims}
-            if hasattr(self, 'LV0'):
-                source0 = ng.LayerDataSource(
-                    url=self.LV0,
-                    transform=ng.CoordinateSpaceTransform(transform0),)
-                s.layers.append(
-                    name='layer0',
-                    layer=ng.ImageLayer(source=source0, shader=copy.deepcopy(self.shader, )),
-                    opacity=1,)
 
-                if self.dm.is_aligned():
-                    # afm = to_tuples(self.dm.mir_aim()) #<-?
-                    afm = to_tuples(self.dm.mir_afm())
-                    mat = conv_mat(afm, i=1)
-                    # mat = conv_mat(self.dm.afm_cur(), i=1)
-                    # mat = conv_mat(self.dm.mir_afm(), i=1)
-                else:
-                    # mat = conv_mat(ident, i=1)
-                    mat = conv_mat(to_tuples(ident), i=1)
-                self._mat = mat
-                transform1 = {'matrix': mat, 'outputDimensions': output_dims}
-                source1 = ng.LayerDataSource(
-                    url=self.LV1,
-                    transform=ng.CoordinateSpaceTransform(transform1), )
-                s.layers.append(
-                    name='layer1',
-                    layer=ng.ImageLayer(source=source1, shader=copy.deepcopy(self.shader, )),
-                    opacity=1,)
+        # if hasattr(self, 'LV0'):
+        if ref_pos is not None:
+            data = self.tensor[:, :, ref_pos:ref_pos + 1]
+            self.add_im_layer('reference', data)
+        if self.dm.is_aligned():
+            # afm = to_tuples(self.dm.mir_aim()) #<-?
+            afm = to_tuples(self.dm.mir_afm())
+            mat = conv_mat(afm, i=1)
+        else:
+            ident = [[1., 0., 0.], [0., 1., 0.]]
+            mat = conv_mat(to_tuples(ident), i=1)
+        data = self.tensor[:, :, self.dm.zpos:self.dm.zpos + 1]
+        self.add_im_layer('transforming', data, mat)
 
         with self.config_state.txn() as s:
             s.show_ui_controls = False
@@ -808,69 +685,66 @@ class TransformViewer(AbstractEMViewer):
             s.show_layer_hover_values = False
             s.viewer_size = [self.webengine.width(), self.webengine.height()]
 
-
-        # w = self.webengine.width()
-        # h = self.webengine.height()
-        # self.initZoom(w=w, h=h)
-
         self.set_brightness()
         self.set_contrast()
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
+'''
+            self.viewer = self.parent.viewer = PMViewer(self, extra_data={
+                    'webengine': self.webengine,
+                    'resolution': self._images_info['resolution'][level],
+                    'raw_path': Path(self.comboImages.currentText()) / 'zarr' / level,
+                    'transformed_path': Path(self.comboAlignment.currentText()) / 'zarr' / level,
+                })
+
+'''
 
 class PMViewer(AbstractEMViewer):
 
     def __init__(self, **kwags):
         super().__init__(**kwags)
-        self.type = 'PMViewer'
-        # self.coordspace = ng.CoordinateSpace(
-        #     names=['z', 'y', 'x'], units=['nm', 'nm', 'nm'], scales=[50, 2,2])  # DoThisRight TEMPORARY <---------
-        self.coordspace = ng.CoordinateSpace(
-            names=['x', 'y', 'z'], units=['nm', 'nm', 'nm'], scales=self.res)  # DoThisRight TEMPORARY <---------
+        self.name = 'PMViewer'
+        self.res = self.extra_data['resolution']
+        self.raw_path = self.extra_data['raw_path']
+        self.transformed_path = self.extra_data['transformed_path']
         self.initViewer()
 
-
     def initViewer(self):
-        if not len(self.path):
-            logger.info('No paths passed to viewer.')
+
+        if not Path(self.raw_path).exists():
+            self.webengine.setHtml('No data.')
             return
-        p = Path(self.path[0])
-        if (p / '.zarray').exists():
-            self.tensor = self.getTensor(str(p)).result()
-            self.LV_l = self.getLocalVolume(self.tensor[:, :, :], self.getCoordinateSpace())
-        if len(self.path) == 2:
-            p = Path(self.path[1])
-            if (p / '.zarray').exists():
-                self.tensor_r = self.getTensor(str(p)).result()
-                self.LV_r = self.getLocalVolume(self.tensor_r[:, :, :], self.getCoordinateSpace())
+
+        try:
+            # zarr.open(self.raw_path, mode='r')
+            tensor = self.getTensor(str(self.raw_path)).result()
+            self.vol_source = self.getLocalVolume(tensor[:, :, :], self.getCoordinateSpace())
+        except:
+            logger.warning(f"Could not open Zarr: {self.raw_path}")
+            return
+
+
+        try:
+            # zarr.open(self.transformed_path, mode='r')
+            tensor_r = self.getTensor(str(self.transformed_path)).result()
+            self.vol_transformed = self.getLocalVolume(tensor_r[:, :, :], self.getCoordinateSpace())
+        except:
+            pass
 
         with self.txn() as s:
-            s.layout.type = self._convert_layout('xy')
+            s.layout.type = 'xy'
             s.show_default_annotations = True
             s.show_axis_lines = True
             s.show_scale_bar = False
-
-            if hasattr(self, 'LV_l'):
-                s.layers['source'] = ng.ImageLayer(source=self.LV_l)
-            else:
-                s.layers['source'] = ng.ImageLayer()
-
-            if hasattr(self,'LV_r'):
-                s.layers['transformed'] = ng.ImageLayer(source=self.LV_r)
-                s.layout = ng.row_layout([
-                    ng.LayerGroupViewer(layout=self._convert_layout('xy'), layers=['source']),
-                    ng.LayerGroupViewer(layout=self._convert_layout('xy'), layers=['transformed'],),
-                ])
-            else:
-                s.layout = ng.row_layout([
-                    ng.LayerGroupViewer(layout=self._convert_layout('xy'), layers=['source']),
-                ])
-
+            s.layers['source'] = ng.ImageLayer(source=self.vol_source)
+            _layer_groups = [ng.LayerGroupViewer(layout='xy', layers=['source'])]
+            if hasattr(self, 'vol_transformed'):
+                s.layers['transformed'] = ng.ImageLayer(source=self.vol_transformed)
+                _layer_groups.append(ng.LayerGroupViewer(layout='xy', layers=['transformed']))
+            s.layout = ng.row_layout(_layer_groups)
         with self.config_state.txn() as s:
             s.show_ui_controls = False
-
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
-
 
     def on_state_changed(self):
         pass
@@ -880,14 +754,17 @@ class MAViewer(AbstractEMViewer):
 
     def __init__(self, **kwags):
         super().__init__(**kwags)
-        self.type = 'MAViewer'
+        self.name = 'MAViewer'
         self.role = 'tra'
-        self.index = 0 #None -1026
+        self.index = 0
         self.cs_scale = None
         self.marker_size = 1
+        self.shader = self.dm['rendering']['shader']
+        # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
+        # self.signals.ptsChanged.connect(self.drawSWIMwindow)
+        self.initViewer()
         self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
         self.signals.ptsChanged.connect(self.drawSWIMwindow)
-        self.initViewer()
 
     def z(self):
         # return int(self.state.voxel_coordinates[0]) # self.state.position[0]
@@ -926,29 +803,27 @@ class MAViewer(AbstractEMViewer):
         self.index = ref if self.role == 'ref' else self.dm.zpos
 
         try:
-            self.store = self.tensor = self.getTensor(self.path).result()
-        except Exception as e:
-            logger.error('Unable to Load Data Store at %s' % self.path)
-            raise e
+            assert Path(self.path).exists()
+        except AssertionError:
+            logger.warning(f"Data not found: {self.path}")
+            return
 
-        self.LV = self.getLocalVolume(self.tensor[:, :, :], self.getCoordinateSpace())
+        self.tensor = self.getTensor(self.path).result()
+        self.add_im_layer('volume', self.tensor[:, :, :])
 
         with self.txn() as s:
-            s.layout.type = self._convert_layout('xy')
+            s.layout.type = 'xy'
             s.show_scale_bar = True
             s.show_axis_lines = False
             s.show_default_annotations = False
-            # _, y, x = self.tensor.shape
             x, y, _ = self.tensor.shape
-            # s.voxel_coordinates = [self.index + .5, y / 2, x / 2]
             s.voxel_coordinates = [x / 2, y / 2, self.index + .5]
-            s.layers['layer'] = ng.ImageLayer(source=self.LV, shader=self.dm['rendering']['shader'], )
 
         w = self.parent.wNg1.width()
         h = self.parent.wNg1.height()
         self.initZoom(w=w, h=h)
-        self.webengine.setUrl(QUrl(self.get_viewer_url()))
         self.drawSWIMwindow()
+        self.webengine.setUrl(QUrl(self.get_viewer_url()))
         self.webengine.setFocus()
         self._blockStateChanged = False
 
@@ -977,7 +852,6 @@ class MAViewer(AbstractEMViewer):
                 # if floor(self.state.position[0]) != self.index:
                 if floor(self.state.position[2]) != self.index:
                     logger.debug(f"Signaling Z-position change...")
-                    # self.index = floor(self.state.position[0])
                     self.index = floor(self.state.position[2])
                     self.dm.zpos = self.index
                     self.drawSWIMwindow()  # NeedThis #0803
@@ -987,29 +861,24 @@ class MAViewer(AbstractEMViewer):
             self._blockStateChanged = False
             # logger.debug('<< on_state_changed')
 
-
     def _key1(self, s):
         logger.debug('')
         self.add_matchpoint(s, id=0, ignore_pointer=True)
         self.webengine.setFocus()
-
 
     def _key2(self, s):
         logger.debug('')
         self.add_matchpoint(s, id=1, ignore_pointer=True)
         self.webengine.setFocus()
 
-
     def _key3(self, s):
         logger.debug('')
         self.add_matchpoint(s, id=2, ignore_pointer=True)
         self.webengine.setFocus()
 
-
     def swim(self, s):
         logger.debug('[futures] Emitting SWIM signal...')
         self.signals.swimAction.emit()
-
 
     def add_matchpoint(self, s, id, ignore_pointer=False):
         if self.dm.method() == 'manual':
@@ -1019,19 +888,14 @@ class MAViewer(AbstractEMViewer):
             if coords.ndim == 0:
                 logger.warning(f'Null coordinates! ({coords})')
                 return
-            # _, y, x = s.mouse_voxel_coordinates
             x, y, _ = s.mouse_voxel_coordinates
-            # frac_x = x / self.store.shape[2]
-            # frac_y = y / self.store.shape[1]
-            frac_x = x / self.store.shape[0]
-            frac_y = y / self.store.shape[1]
-
+            frac_x = x / self.tensor.shape[0]
+            frac_y = y / self.tensor.shape[1]
             logger.debug(f"decimal x = {frac_x}, decimal y = {frac_y}")
             self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings']['method_opts']['points']['coords'][
                 self.role][id] = (frac_x, frac_y)
             self.signals.ptsChanged.emit()
             self.drawSWIMwindow()
-
 
     def drawSWIMwindow(self):
         caller = inspect.stack()[1].function
@@ -1048,20 +912,15 @@ class MAViewer(AbstractEMViewer):
             ww1x1 = tuple(self.dm.size1x1())  # full window width
             ww2x2 = tuple(self.dm.size2x2())  # 2x2 window width
             w, h = self.dm.image_size(s=self.dm.level)
-            p = self.getCenterpoints(w, h, ww1x1, ww2x2)
+            p = getCenterpoints(w, h, ww1x1, ww2x2)
             colors = self.colors[0:sum(self.dm.quadrants)]
             cps = [x for i, x in enumerate(p) if self.dm.quadrants[i]]
             ww_x = ww2x2[0] - (24 // level_val)
             ww_y = ww2x2[1] - (24 // level_val)
             for i, pt in enumerate(cps):
                 c = colors[i]
-                d1, d2, d3, d4 = self.getRect2(pt, ww_x, ww_y)
+                d1, d2, d3, d4 = getRect(pt, ww_x, ww_y)
                 id = 'roi%d' % i
-                # annotations.extend([
-                #     ng.LineAnnotation(id=id + '%d0', pointA=(z,) + d1, pointB=(z,) + d2, props=[c, m]),
-                #     ng.LineAnnotation(id=id + '%d1', pointA=(z,) + d2, pointB=(z,) + d3, props=[c, m]),
-                #     ng.LineAnnotation(id=id + '%d2', pointA=(z,) + d3, pointB=(z,) + d4, props=[c, m]),
-                #     ng.LineAnnotation(id=id + '%d3', pointA=(z,) + d4, pointB=(z,) + d1, props=[c, m])])
                 annotations.extend([
                     ng.LineAnnotation(id=id + '%d0', pointA=d1 + (z,), pointB=d2 + (z,), props=[c, m]),
                     ng.LineAnnotation(id=id + '%d1', pointA=d2 + (z,), pointB=d3 + (z,), props=[c, m]),
@@ -1074,18 +933,11 @@ class MAViewer(AbstractEMViewer):
             pts = self.dm.ss['method_opts']['points']['coords'][self.role]
             for i, pt in enumerate(pts):
                 if pt:
-                    # x = self.store.shape[2] * pt[0]
-                    # y = self.store.shape[1] * pt[1]
-                    x = self.store.shape[0] * pt[0]
-                    y = self.store.shape[1] * pt[1]
-                    d1, d2, d3, d4 = self.getRect2(coords=(x, y), ww_x=ww_x, ww_y=ww_y, )
+                    x = self.tensor.shape[0] * pt[0]
+                    y = self.tensor.shape[1] * pt[1]
+                    d1, d2, d3, d4 = getRect(coords=(x, y), ww_x=ww_x, ww_y=ww_y, )
                     c = self.colors[i]
                     id = 'roi%d' % i
-                    # annotations.extend([
-                    #     ng.LineAnnotation(id=id + '%d0', pointA=(z,) + d1, pointB=(z,) + d2, props=[c, m]),
-                    #     ng.LineAnnotation(id=id + '%d1', pointA=(z,) + d2, pointB=(z,) + d3, props=[c, m]),
-                    #     ng.LineAnnotation(id=id + '%d2', pointA=(z,) + d3, pointB=(z,) + d4, props=[c, m]),
-                    #     ng.LineAnnotation(id=id + '%d3', pointA=(z,) + d4, pointB=(z,) + d1, props=[c, m])])
                     annotations.extend([
                         ng.LineAnnotation(id=id + '%d0', pointA=d1 + (z,), pointB=d2 + (z,), props=[c, m]),
                         ng.LineAnnotation(id=id + '%d1', pointA=d2 + (z,), pointB=d3 + (z,), props=[c, m]),
@@ -1102,12 +954,9 @@ class MAViewer(AbstractEMViewer):
                     ng.AnnotationPropertySpec(id='color', type='rgb', default='#ffff66', ),
                     ng.AnnotationPropertySpec(id='size', type='float32', default=1, )
                 ],
-                shader='''
-                    void main() {
-                      setColor(prop_color());
-                      setPointMarkerSize(prop_size());
-                    }
-                ''',
+                shader='''void main() {
+                    setColor(prop_color());
+                    setPointMarkerSize(prop_size());}''',
             )
         self._blockStateChanged = False
         # print("<< drawSWIMwindow", flush=True)
@@ -1118,105 +967,48 @@ class MAViewer(AbstractEMViewer):
                 if 'annotations' in s.layers['SWIM'].to_json().keys():
                     s.layers['SWIM'].annotations = None
 
-    @cache
-    def getCenterpoints(self, w, h, ww1x1, ww2x2):
-        d_x1 = ((w - ww1x1[0]) / 2) + (ww2x2[0] / 2)
-        d_x2 = w - d_x1
-        d_y1 = ((h - ww1x1[1]) / 2) + (ww2x2[1] / 2)
-        d_y2 = h - d_y1
-        p1 = (d_x2, d_y1)
-        p2 = (d_x1, d_y1)
-        p3 = (d_x2, d_y2)
-        p4 = (d_x1, d_y2)
-        return p1, p2, p3, p4
 
-    @cache
-    def getRect2(self, coords, ww_x, ww_y):
-        x, y = coords[0], coords[1]
-        hw = int(ww_x / 2)  # Half-width
-        hh = int(ww_y / 2)  # Half-height
-        # A = (y + hh, x - hw)
-        # B = (y + hh, x + hw)
-        # C = (y - hh, x + hw)
-        # D = (y - hh, x - hw)
-        A = (x + hh, y - hw)
-        B = (x + hh, y + hw)
-        C = (x - hh, y + hw)
-        D = (x - hh, y - hw)
-        return A, B, C, D
+@cache
+def getCenterpoints(w, h, ww1x1, ww2x2):
+    d_x1 = ((w - ww1x1[0]) / 2) + (ww2x2[0] / 2)
+    d_x2 = w - d_x1
+    d_y1 = ((h - ww1x1[1]) / 2) + (ww2x2[1] / 2)
+    d_y2 = h - d_y1
+    p1 = (d_x2, d_y1)
+    p2 = (d_x1, d_y1)
+    p3 = (d_x2, d_y2)
+    p4 = (d_x1, d_y2)
+    return p1, p2, p3, p4
+
+
+@cache
+def getRect(coords, ww_x, ww_y):
+    x, y = coords[0], coords[1]
+    hw = int(ww_x / 2)  # Half-width
+    hh = int(ww_y / 2)  # Half-height
+    A = (x + hh, y - hw)
+    B = (x + hh, y + hw)
+    C = (x - hh, y + hw)
+    D = (x - hh, y - hw)
+    return A, B, C, D
+
+
+@cache
+def conv_mat(m, i=0):
+    o = [[.999, 0, 0, 0],
+         [0, 1, 0, 0],
+         [0, 0, 1, i]]
+    o[0][0] = m[0][0]
+    o[0][1] = m[0][1]
+    o[0][3] = m[0][2]
+    o[1][0] = m[1][0]
+    o[1][1] = m[1][1]
+    o[1][3] = m[1][2]
+    return o
 
 
 def to_tuples(arg):
     return tuple(tuple(x) for x in arg)
-
-
-@cache
-def conv_mat(mat, i=0):
-    # [a, c, e],
-    # [b, d, f]
-
-    # [  ,  ,  ][ ]
-    # [  , d, b][f]
-    # [  , c, a][e]
-
-    b = np.array([[mat[0][0], mat[0][1], mat[0][2]],
-                   [mat[1][0], mat[1][1], mat[1][2]],
-                   [0, 0, 1]])
-
-    # mat = transpose(mat)
-    # b = np.array([[mat[0][0], mat[0][1], mat[0][2]],
-    #               [mat[1][0], mat[1][1], mat[1][2]],
-    #               [0, 0, 1]])
-
-    # b = np.linalg.inv(b)
-    # b[0, 1] *= -1  # a2
-    # b[1, 0] *= -1  # b1
-    # b[1, 2] *= -1  # b3
-
-
-    # print(f"b : {b}")
-    # b = transpose(b)  # definitely need this
-
-    print(b)
-
-
-
-    ngmat = [[.999, 0, 0, 0],
-             [0, 1, 0, 0],
-             [0, 0, 1, i]]
-
-    ngmat[0][0] = b[0][0]
-    ngmat[0][1] = b[0][1]
-    ngmat[0][3] = b[0][2]
-    ngmat[1][0] = b[1][0]
-    ngmat[1][1] = b[1][1]
-    ngmat[1][3] = b[1][2]
-
-    logger.critical(f'ngmat: {ngmat}')
-
-    # ngmat[1][1] = b[0][0]
-    # ngmat[1][2] = b[0][1]
-    # ngmat[1][3] = b[0][2]
-    # ngmat[2][1] = b[1][0]
-    # ngmat[2][2] = b[1][1]
-    # ngmat[2][3] = b[1][2]
-
-    #test
-    # ngmat[1][1] = b[0][0]
-    # ngmat[1][2] = b[0][1]
-    # ngmat[1][3] = b[0][2]
-    # ngmat[2][1] = b[1][0]
-    # ngmat[2][2] = b[1][1]
-    # ngmat[2][3] = b[1][2]
-
-    # ngmat[1][1] = mat[1][1]
-    # ngmat[1][2] = mat[1][0]
-    # ngmat[1][3] = mat[1][2]  # translation
-    # ngmat[2][1] = mat[0][1]
-    # ngmat[2][2] = mat[0][0]  # * -1 #reflect x-axis across y-axis
-    # ngmat[2][3] = mat[0][2]  # translation
-
-    return ngmat
 
 
 def transpose(m):
@@ -1224,12 +1016,25 @@ def transpose(m):
             [m[0][1], m[0][0], m[0][2]]])
 
 
+"""
 
-# # Not using TensorStore, so point Neuroglancer directly to local Zarr on disk.
+# Code for not using TensorStore, point Neuroglancer directly at local Zarr
 # cfg.refLV = cfg.baseLV = f'zarr://http://localhost:{self.port}/{unal_path}'
 # if is_aligned_and_generated:  cfg.alLV = f'zarr://http://localhost:{self.port}/{al_path}'
 
-#
+total_bytes_limit : integer[0, +∞) = 0¶
+Soft limit on the total number of bytes in the cache. The least-recently used data 
+that is not in use is evicted from the cache when this limit is reached.
+
+Context.data_copy_concurrency : object¶
+Specifies a limit on the number of CPU cores used concurrently for data copying/encoding/decoding.
+
+Optional members¶
+limit : integer[1, +∞) | "shared" = "shared"¶
+    The maximum number of CPU cores that may be used. If the special value of "shared" is specified, a shared global limit equal to the number of CPU cores/threads available applies.
+
+
+"""
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()

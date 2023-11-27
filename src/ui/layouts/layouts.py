@@ -38,12 +38,12 @@ class GL(QGridLayout):
 
 
 class HW(QWidget):
-    def __init__(self, *args):
+    def __init__(self, *args, spacing=0):
         super().__init__()
         self.layout = QHBoxLayout()
         self.layout.setContentsMargins(0, 0, 0, 0)
         # self.layout.setSpacing(2)
-        self.layout.setSpacing(0)
+        self.layout.setSpacing(spacing)
         self.setLayout(self.layout)
         for w in args:
             self.layout.addWidget(w)
@@ -53,12 +53,12 @@ class HW(QWidget):
 
 
 class VW(QWidget):
-    def __init__(self, *args):
+    def __init__(self, *args, spacing=0):
         super().__init__()
         self.layout = QVBoxLayout()
         self.layout.setContentsMargins(0, 0, 0, 0)
         # self.layout.setSpacing(2)
-        self.layout.setSpacing(0)
+        self.layout.setSpacing(spacing)
         self.setLayout(self.layout)
         for w in args:
             self.layout.addWidget(w)
