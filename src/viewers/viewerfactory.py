@@ -219,15 +219,19 @@ class AbstractEMViewer(neuroglancer.Viewer):
         raise NotImplementedError
 
     def _keyLeft(self, s):
+        logger.info('')
         self.signals.arrowLeft.emit()
 
     def _keyRight(self, s):
+        logger.info('')
         self.signals.arrowRight.emit()
 
     def _keyUp(self, s):
+        logger.info('')
         self.signals.arrowUp.emit()
 
     def _keyDown(self, s):
+        logger.info('')
         self.signals.arrowDown.emit()
 
     @abc.abstractmethod
@@ -726,6 +730,7 @@ class EMViewer(AbstractEMViewer):
                 logger.info('State change signal blocked!')
 
 
+
     # async def initViewer(self, nglayout=None):
     def initViewer(self):
         clr = inspect.stack()[1].function
@@ -748,7 +753,7 @@ class EMViewer(AbstractEMViewer):
             s.show_default_annotations = getData('state,neuroglancer,show_bounds')
             s.projection_orientation = [0.6299939155578613, 0.10509441047906876, 0.1297515481710434, 0.75843745470047]
             s.position = [self.tensor.shape[0] / 2, self.tensor.shape[1] / 2, self.dm.zpos + 0.5]
-            s.layout.cross_sections["a"] = ng.CrossSection()
+            # s.layout.cross_sections["a"] = ng.CrossSection()
             s.show_slices = True
             # s.layout = ng.row_layout(
             #     [
