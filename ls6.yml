@@ -121,7 +121,7 @@ dependencies:
   - python_abi=3.11=2_cp311
   - pyzmq=25.0.2=py311h6a678d5_0
   - qt-main=5.15.2=h8373d8f_8
-  - qt-webengine0=5.15.9=hbbf29b9_6
+  - qt-we0=5.15.9=hbbf29b9_6
   - qtawesome=1.2.3=pyhd8ed1ab_0
   - qtconsole=5.4.1=pyhd8ed1ab_0
   - qtconsole-base=5.4.1=pyha770c72_0

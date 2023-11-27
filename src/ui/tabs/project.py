@@ -39,7 +39,7 @@ from src.utils.writers import write
 __all__ = ['AlignmentTab']
 
 logger = logging.getLogger(__name__)
-logger.propagate = False
+# logger.propagate = False
 
 DEV = is_joel()
 
@@ -57,13 +57,13 @@ class AlignmentTab(QWidget):
         self.dm = self.parent.dm = cfg.dm = dm
         self.parent.pt = cfg.pt = self
         self.setUpdatesEnabled(True)
-        self.webengine0 = WebEngine(ID='viewer')
-        self.webengine0.setStyleSheet("background-color: #000000;")
-        self.webengine0.setFocusPolicy(Qt.NoFocus)
-        self.webengine0.loadFinished.connect(lambda: print('Web engine load finished!'))
-        setWebengineProperties(self.webengine0)
-        # self.webengine0.setStyleSheet('background-color: #222222;')
-        self.webengine0.setMouseTracking(True)
+        self.we0 = WebEngine(ID='viewer')
+        self.we0.setStyleSheet("background-color: #000000;")
+        self.we0.setFocusPolicy(Qt.NoFocus)
+        self.we0.loadFinished.connect(lambda: print('Web engine load finished!'))
+        setWebengineProperties(self.we0)
+        # self.we0.setStyleSheet('background-color: #222222;')
+        self.we0.setMouseTracking(True)
         self._initNG_calls = 0
         self.wTable = QWidget()
         self.wTreeview = QWidget()
@@ -75,44 +75,48 @@ class AlignmentTab(QWidget):
         self.initUI_plot()
         self.initTabs()
         self.updateZarrUI()
+        self.updateTab0UI()
+        self.dataUpdateMA()
+
+
         self.wTabs.currentChanged.connect(self._onTabChange)
-        self.mp_colors = cfg.glob_colors
         self._allow_zoom_change = True
-        self.dm.signals.zposChanged.connect(lambda: print(f'Z-position changed...'))
+        self.dm.signals.zposChanged.connect(lambda: print(f'(Signal Received: zposChanged...)'))
+        self.dm.signals.zposChanged.connect(lambda: self.viewer.set_layer())
         self.dm.signals.zposChanged.connect(self.parent.updateSlidrZpos)
         self.dm.signals.zposChanged.connect(self.parent.setSignalsPixmaps)
         self.dm.signals.zposChanged.connect(self.parent.setTargKargPixmaps)
         self.dm.signals.zposChanged.connect(self.dataUpdateMA) #1111+
         def fn_create_corner_viewer():
             if self.wTabs.currentIndex() == 1:
-                if self.twCornerViewer.currentIndex() == 0:
-                    logger.info('')
-                    path = os.path.join(self.dm['info']['images_path'], 'zarr', self.dm.level)
-                    res = self.dm.resolution(s=self.dm.level)
-                    self.transformViewer = TransformViewer(parent=self, webengine=self.webengine2, path=None, dm=self.dm, res=res, )
-                    w = self.webengine2.width()
-                    h = self.webengine2.height()
-                    self.transformViewer.initZoom(w=w, h=h, adjust=1.15)
+                logger.info('')
+                self.transformViewer.initViewer()
+                # if self.twCornerViewer.currentIndex() == 0:
+                #     logger.info('')
+                #     # path = os.path.join(self.dm['info']['images_path'], 'zarr', self.dm.level)
+                #     # res = self.dm.resolution(s=self.dm.level)
+                #     # self.transformViewer = TransformViewer(parent=self, webengine=self.we2, path=None, dm=self.dm, res=res, )
+                #     # w = self.we2.width()
+                #     # h = self.we2.height()
+                #     # self.transformViewer.initZoom(w=w, h=h, adjust=1.15)
+                #     self.transformViewer.set_layer()
         self.dm.signals.zposChanged.connect(fn_create_corner_viewer) #1111+
         # self.dm.signals.zposChanged.connect(self.forceFocus) #1111+
-        def fn_updatelayer():
-            logger.info('')
-            if hasattr(self,'viewer'):
-                if self.viewer:
-                    if self.wTabs.currentIndex() in (0,1):
-                        logger.info('actionable...')
-                        self.viewer.set_layer()
-        self.dm.signals.zposChanged.connect(fn_updatelayer) #1111+
-
+        # def fn_updatelayer():
+        #     logger.info('')
+        #     if hasattr(self,'viewer'):
+        #         if self.viewer:
+        #             if self.wTabs.currentIndex() in (0,1):
+        #                 logger.info('actionable...')
+        #                 self.viewer.set_layer()
+        # self.dm.signals.zposChanged.connect(fn_updatelayer) #1111+
 
         self.dm.signals.savedChanged.connect(self.parent.setStatusInfo)
-        self.dm.signals.dataChanged.connect(self.parent.setStatusInfo)
-
         self.dm.signals.savedChanged.connect(self.parent.updateAlignAllButtonText)
+
+        self.dm.signals.dataChanged.connect(self.parent.setStatusInfo)
         self.dm.signals.dataChanged.connect(self.parent.updateAlignAllButtonText)
-
         self.dm.signals.dataChanged.connect(self.updateAaButtons)
-
         self.dm.signals.dataChanged.connect(lambda: self.cbDefaults.setChecked(self.dm.isDefaults()))
         self.dm.signals.dataChanged.connect(lambda: self.cbSaved.setChecked(self.dm.ssSavedComports()))
         # self.dm.signals.dataChanged.connect(lambda: self.bSaveSettings.setEnabled(not self.dm.ssSavedComports()))
@@ -122,9 +126,6 @@ class AlignmentTab(QWidget):
 
         # self.dm.loadHashTable()
 
-        self.dataUpdateMA()
-        self.updateTab0()
-
         # self.installEventFilter(self)
         self.parent.addGlobTab(self, self.dm.title, switch_to=True)
         msg =      f"\n  {'Project'.rjust(15)}: {self.dm.title}"
@@ -133,24 +134,22 @@ class AlignmentTab(QWidget):
         self.parent.tell(msg)
 
 
+
+
+
     #1111+
     # def forceFocus(self):
     #     logger.info('')
     #     logger.debug('Forcing focus...')
     #     if self.wTabs.currentIndex() == 1:
-    #         # self.webengine1.setFocus()
+    #         # self.we1.setFocus()
     #         self.parent.setFocus()
     #         self.viewer.set_layer()
 
-
-
-        
-
     def updateAaButtons(self):
-        logger.info('')
+        # logger.info('')
         # if self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings']['method_opts']['method'] == 'grid':
         alignment_ready = self.dm['level_data'][self.dm.scale]['alignment_ready']
-
         if alignment_ready:
             if self.twMethod.currentIndex() == 0:
                 def_dl = self.dm['level_data'][self.dm.level]['defaults']
@@ -168,7 +167,6 @@ class AlignmentTab(QWidget):
                     self.aaButtons[4].setEnabled((def_dl['clobber'] != dl['swim_settings']['clobber']) or
                                                  (def_dl['clobber_size'] != dl['swim_settings']['clobber_size']))
                     self.aaButtons[5].setEnabled(def_mo['quadrants'] != mo['quadrants'])
-
                 except:
                     print_exception()
         print('<<', flush=True)
@@ -176,9 +174,19 @@ class AlignmentTab(QWidget):
     def load_data_from_treeview(self):
         self.dm = DataModel(self.mdlTreeview.to_json())
 
-    def updateTab0(self):
+    def updateTab0UI(self):
         logger.info('')
         self.bZarrRegen.setEnabled(self.dm.is_aligned())
+        m = self.cbxNgExtras.model()
+        if self.dm['state']['neuroglancer']['show_controls']: m.item(1).setCheckState(2)
+        else: m.item(1).setCheckState(0)
+        if self.dm['state']['neuroglancer']['show_bounds']: m.item(2).setCheckState(2)
+        else: m.item(2).setCheckState(0)
+        if self.dm['state']['neuroglancer']['show_axes']: m.item(3).setCheckState(2)
+        else: m.item(3).setCheckState(0)
+        if self.dm['state']['neuroglancer']['show_scalebar']: m.item(4).setCheckState(2)
+        else: m.item(4).setCheckState(0)
+
 
 
     def _onTabChange(self):
@@ -190,14 +198,15 @@ class AlignmentTab(QWidget):
         self.dm['state']['current_tab'] = index
         # self.gifPlayer.stop()
         if index == 0:
-            self.viewer = self.parent.viewer = cfg.viewer = self.viewer0
-            self.viewer.set_layer()
-            # self.parent.setdw_thumbs(True)
-            # self.parent.setdw_matches(False)
-            self.updateTab0()
+            self.viewer = self.viewer0
+            self.updateTab0UI()
+            # self.updateZarrUI()
+            # self.initNeuroglancer()
+
         elif index == 1:
             # self.parent.setdw_thumbs(False) #BEFORE init neuroglancer
             # self.parent.setdw_matches(True) #BEFORE init neuroglancer
+            self.viewer = self.viewer1
             self.dataUpdateMA()
             self.cbxViewerScale.setCurrentIndex(self.dm.levels.index(self.dm.level))
             self.initNeuroglancer() #Todo necessary for now
@@ -205,15 +214,12 @@ class AlignmentTab(QWidget):
             self._updatePointLists() #0726+
             if self.twCornerViewer.currentIndex() == 0:
                 res = self.dm.resolution(s=self.dm.level)
-                self.transformViewer = TransformViewer(parent=self, webengine=self.webengine2, path=None, dm=self.dm, res=res, )
-                w = self.webengine2.width()
-                h = self.webengine2.height()
+                self.transformViewer = TransformViewer(parent=self, webengine=self.we2, path=None, dm=self.dm, res=res, )
+                w = self.we2.width()
+                h = self.we2.height()
                 self.transformViewer.initZoom(w=w, h=h, adjust=1.15)
             elif self.twCornerViewer.currentIndex() == 1:
                 self.gifPlayer.set()
-
-            # self.parent.viewer = self.viewer1
-            self.viewer = self.parent.viewer = cfg.viewer = self.viewer1
         elif index == 2:
             self.snr_plot.initSnrPlot()
         elif index == 3:
@@ -233,13 +239,10 @@ class AlignmentTab(QWidget):
         self.dm['state']['blink'] = False
         # self.matchPlayTimer.stop()
         if index == 0:
-            self.shutdownNeuroglancer()
             self.initNeuroglancer()
-            self.viewer = self.viewer0
 
         elif index == 1:
             logger.critical('Refreshing editor tab...')
-            self.shutdownNeuroglancer()
             self.initNeuroglancer()
             self.set_transforming()  # 0802+
             if self.parent.dwSnr.isVisible():
@@ -250,17 +253,13 @@ class AlignmentTab(QWidget):
 
             elif self.twCornerViewer.currentIndex() == 0:
                 res = copy.deepcopy(self.dm.resolution(s=self.dm.level))
-                self.transformViewer = TransformViewer(parent=self, webengine=self.webengine2, path=None, dm=self.dm, res=res, )
-                w = self.webengine2.width()
-                h = self.webengine2.height()
+                self.transformViewer = TransformViewer(parent=self, webengine=self.we2, path=None, dm=self.dm, res=res, )
+                w = self.we2.width()
+                h = self.we2.height()
                 self.transformViewer.initZoom(w=w, h=h, adjust=1.15)
             if self.twCornerViewer.currentIndex() == 1:
                 self.gifPlayer.set()
 
-            # self.dataUpdateMA() #1019+ #not necessary... initNeuroglancer does this
-
-            # if self.dm.is_aligned():
-            #     self.gifPlayer.start()
             self.viewer = self.viewer1
         elif index == 2:
             self.snr_plot.initSnrPlot()
@@ -274,13 +273,9 @@ class AlignmentTab(QWidget):
 
     def shutdownNeuroglancer(self):
         logger.info('')
-        if cfg.USE_DELAY:
-            time.sleep(cfg.DELAY_BEFORE)
         if ng.is_server_running():
             ng.server.stop()
             # time.sleep(.5)
-        if cfg.USE_DELAY:
-            time.sleep(cfg.DELAY_AFTER)
 
 
     def initNeuroglancer(self, init_all=False):
@@ -289,10 +284,48 @@ class AlignmentTab(QWidget):
         self._initNG_calls += 1
         logger.critical(f"[call # {self._initNG_calls}, {caller}] Initializing Neuroglancer...")
 
+        if ng.is_server_running():
+            ng.server.stop()
+
         if self.parent._working:
             logger.warning(f"[{caller}] UNABLE TO INITIALIZE NEUROGLANCER AT THIS TIME... BUSY WORKING!")
             return
 
+        if self.wTabs.currentIndex() == 1 or init_all:
+            self.gifPlayer.set(start=False)
+            # self.we1.setUrl(QUrl("http://localhost:8888/"))
+            # level = self.dm.levels[self.cbxViewerScale.currentIndex()]
+            # level = self.dm['state']['viewer_quality']
+            # self.viewer1 = cfg.viewer1 = MAViewer(parent=self, dm=self.dm, role='tra', quality=level, we0=self.we1)
+            path = os.path.join(self.dm['info']['images_path'], 'zarr', self.dm.level)
+            res = self.dm.resolution(s=self.dm.level)
+            self.viewer = self.viewer1 =  MAViewer(parent=self, webengine=self.we1, path=path, dm=self.dm, res=res, )
+            self.viewer.signals.badStateChange.connect(self.set_transforming)
+            self.viewer.signals.ptsChanged.connect(self._updatePointLists)
+            self.viewer.signals.toggleView.connect(self.toggle_ref_tra)
+            # self.viewer.signals.ptsChanged.connect(self.updateWarnings)
+            # self.viewer.signals.zVoxelCoordChanged.connect(lambda zpos: setattr(self.dm, 'zpos', zpos))
+            self.viewer.signals.arrowLeft.connect(self.parent.layer_left)
+            self.viewer.signals.arrowRight.connect(self.parent.layer_right)
+            self.viewer.signals.arrowUp.connect(self.parent.incrementZoomIn)
+            self.viewer.signals.arrowDown.connect(self.parent.incrementZoomOut)
+            # self.viewer.signals.swimAction.connect(self.parent.alignOne)
+            # self.viewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314
+            # self.viewer.signals.zoomChanged.connect(lambda: logger.critical(f"Zoom Slider: {self.zoomSlider.value()} / CS Scale: {self.viewer1.state.cross_section_scale}"))  # 0314
+            self.viewer.signals.zoomChanged.connect(self.zoomSlider.setValue)
+            #1111-
+            # try:
+            #     self.dataUpdateMA()
+            # except:
+            #     print_exception()
+            self.zoomSlider.setValue(self.viewer1.state.cross_section_scale)
+
+            self.transformViewer = TransformViewer(parent=self, webengine=self.we2, path='', dm=self.dm, res=res, )
+            w = self.we2.width()
+            h = self.we2.height()
+            self.transformViewer.initZoom(w=w, h=h, adjust=1.15)
+
+        #todo for now this needs to happen second so that self.viewer is correct when init_all is True #Refactor
         if self.wTabs.currentIndex() == 0 or init_all:
             if self.rbZarrTransformed.isChecked():
                 view = 'transformed'
@@ -301,82 +334,31 @@ class AlignmentTab(QWidget):
             else:
                 view = 'raw'
 
-
             self.cbxNgLayout.setCurrentText(getData('state,neuroglancer,layout'))
 
-            path = (self.dm.path_zarr_raw(), self.dm.path_zarr_transformed())[self.rbZarrTransformed.isChecked()]
+            if view == 'transformed':
+                path = self.dm.path_zarr_transformed()
+            else:
+                path = self.dm.path_zarr_raw()
+
+            logger.critical(f"view: {view}, path: {path}")
+
             res = copy.deepcopy(self.dm.resolution(s=self.dm.level))
-            # res[0] *= self.dm.lvl()
-            print(f"res = {res}, self.dm.lvl() = {self.dm.lvl()}")
-            self.viewer0 = self.viewer = self.parent.viewer = cfg.viewer = EMViewer(parent=self, webengine=self.webengine0, path=path, dm=self.dm, res=res, view=view)
-            # self.viewerRaw = EMViewer(parent=self, webengine=self.webengine0, path=path, dm=self.dm, res=res, view=view)
-            # self.viewerTransformed = EMViewer(parent=self, webengine=self.webengine0, path=path, dm=self.dm, res=res, view=view)
-            # self.viewerExperimental = EMViewer(parent=self, webengine=self.webengine0, path=path, dm=self.dm, res=res, view=view)
-            # if self.rbZarrRaw.isChecked():
-            #     self.viewer0 = self.viewer = self.parent.viewer = cfg.viewer = self.viewerRaw
-            # elif self.rbZarrExperimental.isChecked():
-            #     self.viewer0 = self.viewer = self.parent.viewer = cfg.viewer = self.viewerExperimental
-            # elif self.rbZarrTransformed.isChecked():
-            #     self.viewer0 = self.viewer = self.parent.viewer = cfg.viewer = self.viewerTransformed
-
-
-            self.viewer0.initZoom(self.webengine0.width(), self.webengine0.height())
+            self.viewer = self.viewer0 = EMViewer(parent=self, webengine=self.we0, path=path, dm=self.dm, res=res, view=view)
+            self.viewer.initZoom(self.we0.width(), self.we0.height())
             # self.viewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
-            self.viewer0.signals.layoutChanged.connect(self.slot_layout_changed)
-            self.viewer0.signals.arrowLeft.connect(self.parent.layer_left)
-            self.viewer0.signals.arrowRight.connect(self.parent.layer_right)
-            self.viewer0.signals.arrowUp.connect(self.parent.incrementZoomIn)
-            self.viewer0.signals.arrowDown.connect(self.parent.incrementZoomOut)
-            self.viewer0.signals.zoomChanged.connect(self.slot_zoom_changed)  # Critical updates the lineedit
-            # logger.info(f"Local Volume:\n{cfg.LV.info()}")
-
-        if self.wTabs.currentIndex() == 1 or init_all:
-            self.gifPlayer.set(start=False)
-            # self.webengine1.setUrl(QUrl("http://localhost:8888/"))
-            # level = self.dm.levels[self.cbxViewerScale.currentIndex()]
-            # level = self.dm['state']['viewer_quality']
-            # self.viewer1 = cfg.viewer1 = MAViewer(parent=self, dm=self.dm, role='tra', quality=level, webengine0=self.webengine1)
-            path = os.path.join(self.dm['info']['images_path'], 'zarr', self.dm.level)
-            res = self.dm.resolution(s=self.dm.level)
-            self.viewer1 = self.viewer = self.parent.viewer = cfg.viewer = MAViewer(parent=self, webengine=self.webengine1, path=path, dm=self.dm, res=res, )
-            self.viewer1.signals.badStateChange.connect(self.set_transforming)
-            self.viewer1.signals.ptsChanged.connect(self._updatePointLists)
-            self.viewer1.signals.toggleView.connect(self.toggle_ref_tra)
-            # self.viewer1.signals.ptsChanged.connect(self.updateWarnings)
-            # self.viewer1.signals.zVoxelCoordChanged.connect(lambda zpos: setattr(self.dm, 'zpos', zpos))
-            self.viewer1.signals.arrowLeft.connect(self.parent.layer_left)
-            self.viewer1.signals.arrowRight.connect(self.parent.layer_right)
-            self.viewer1.signals.arrowUp.connect(self.parent.incrementZoomIn)
-            self.viewer1.signals.arrowDown.connect(self.parent.incrementZoomOut)
-            # self.viewer1.signals.swimAction.connect(self.parent.alignOne)
-            # self.viewer1.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314
-            # self.viewer1.signals.zoomChanged.connect(lambda: logger.critical(f"Zoom Slider: {self.zoomSlider.value()} / CS Scale: {self.viewer1.state.cross_section_scale}"))  # 0314
-            self.viewer1.signals.zoomChanged.connect(self.zoomSlider.setValue)
-            #1111-
-            # try:
-            #     self.dataUpdateMA()
-            # except:
-            #     print_exception()
-            self.zoomSlider.setValue(self.viewer1.state.cross_section_scale)
-
-            self.transformViewer = TransformViewer(parent=self, webengine=self.webengine2, path=None, dm=self.dm, res=res, )
-            w = self.webengine2.width()
-            h = self.webengine2.height()
-            self.transformViewer.initZoom(w=w, h=h, adjust=1.15)
+            self.viewer.signals.layoutChanged.connect(lambda: setData('state,neuroglancer,layout', self.viewer.state.layout.type))
+            self.viewer.signals.layoutChanged.connect(lambda: self.cbxNgLayout.setCurrentText(self.viewer.state.layout.type))
+            self.viewer.signals.arrowLeft.connect(self.parent.layer_left)
+            self.viewer.signals.arrowRight.connect(self.parent.layer_right)
+            self.viewer.signals.arrowUp.connect(self.parent.incrementZoomIn)
+            self.viewer.signals.arrowDown.connect(self.parent.incrementZoomOut)
+            self.viewer.signals.zoomChanged.connect(self.slot_zoom_changed)  # Critical updates the lineedit
 
         self.parent.hud.done()
         # QApplication.processEvents() #1009-
         logger.info(f"<<<< initNeuroglancer")
 
-    def slot_layout_changed(self):
-        rev_mapping = {'yz':'xy', 'xy':'yz', 'xz':'xz', 'yz-3d':'xy-3d','xy-3d':'yz-3d',
-                   'xz-3d':'xz-3d', '4panel': '4panel', '3d': '3d'}
-        requested = rev_mapping[self.viewer0.state.layout.type]
-        if DEV:
-            logger.info(f"Layout changed! requested: {requested}")
-        setData('state,neuroglancer,layout', requested)
-        self.cbxNgLayout.setCurrentText(requested)
-        # self.parent.tell(f'Neuroglancer Layout (set from native NG controls): {requested}')
 
     def slot_zoom_changed(self, val):
         if val > 1000:
@@ -435,14 +417,14 @@ class AlignmentTab(QWidget):
         # self.sliderZdisplay.setValue(1.0)
         # self.sliderZdisplay.valueChanged.connect(self.onSliderZmag)
 
-        self.webengine1 = WebEngine(ID='tra')
-        # self.webengine1.setFocusPolicy(Qt.NoFocus) #1011-
-        self.webengine1.setStyleSheet("background-color: #000000;")
-        self.webengine1.page().setBackgroundColor(Qt.transparent) #0726+
-        self.webengine1.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        setWebengineProperties(self.webengine1)
-        self.webengine1.setMouseTracking(True)
-        # self.webengine1.setFocusPolicy(Qt.NoFocus) #0726-
+        self.we1 = WebEngine(ID='tra')
+        # self.we1.setFocusPolicy(Qt.NoFocus) #1011-
+        self.we1.setStyleSheet("background-color: #000000;")
+        self.we1.page().setBackgroundColor(Qt.transparent) #0726+
+        self.we1.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        setWebengineProperties(self.we1)
+        self.we1.setMouseTracking(True)
+        # self.we1.setFocusPolicy(Qt.NoFocus) #0726-
 
         '''Mouse move events will occur only when a mouse bBlink is pressed down, 
         unless mouse tracking has been enabled with setMouseTracking() .'''
@@ -942,7 +924,7 @@ class AlignmentTab(QWidget):
                     self.dm['stack'][l]['levels'][s]['swim_settings']['method_opts'] = copy.deepcopy(mo)
                 self.dataUpdateMA() #1019+ #Critical
                 self.viewer1.drawSWIMwindow()  # 1019+
-                self.webengine1.setFocus()
+                self.we1.setFocus()
 
 
         class ItemDelegate(QStyledItemDelegate):
@@ -1338,7 +1320,7 @@ class AlignmentTab(QWidget):
         # '''THIS WORKS'''
         # self.mdi = QMdiArea()
         # self.sub_webengine = QMdiSubWindow()
-        # self.sub_webengine.setWidget(self.webengine0)
+        # self.sub_webengine.setWidget(self.we0)
         # self.sub_webengine.showMaximized()
         # self.sub_webengine.setWindowFlags(Qt.FramelessWindowHint)
         # self.mdi.addSubWindow(self.sub_webengine)
@@ -1364,7 +1346,7 @@ class AlignmentTab(QWidget):
 
         self._wNg1 = QWidget()
         self.glNg1 = GL()
-        self.glNg1.addWidget(self.webengine1, 0, 0, 3, 3)
+        self.glNg1.addWidget(self.we1, 0, 0, 3, 3)
         self.glNg1.addWidget(self._overlayLab, 0, 0, 3, 3)
         self._wNg1.setLayout(self.glNg1)
         self.wNg1 = VW(self.wSwitchRefTra, self._wNg1)
@@ -1504,20 +1486,21 @@ class AlignmentTab(QWidget):
         self.wZoom.layout.setSpacing(4)
         self.wZoom.setMaximumWidth(100)
 
-        # self.tbbNgHelp = QToolButton()
-        # def fn_ng_help():
-        #     logger.info('')
-        #     self.viewer.setHelpMenu(not self.tbbNgHelp.isChecked())
-        #     # if self.tbbNgHelp.isChecked():
-        #     #     self.tbbNgHelp.setIcon(qta.icon("fa.question", color='#161c20'))
-        #     # else:
-        #     #     self.tbbNgHelp.setIcon(qta.icon("fa.question", color='#f3f6fb'))
-        #
-        # self.tbbNgHelp.setToolTip("Neuroglancer Help")
-        # self.tbbNgHelp.setCheckable(True)
-        # self.tbbNgHelp.pressed.connect(fn_ng_help)
-        # self.tbbNgHelp.setFocusPolicy(Qt.NoFocus)
-        # self.tbbNgHelp.setIcon(qta.icon("fa.question", color='#f3f6fb'))
+        self.tbbNgHelp = QToolButton()
+        def fn_ng_help():
+            logger.info('')
+            self.viewer.setHelpMenu(not self.tbbNgHelp.isChecked())
+            # if self.tbbNgHelp.isChecked():
+            #     self.tbbNgHelp.setIcon(qta.icon("fa.question", color='#161c20'))
+            # else:
+            #     self.tbbNgHelp.setIcon(qta.icon("fa.question", color='#f3f6fb'))
+
+        self.tbbNgHelp.setToolTip("Neuroglancer Help")
+        self.tbbNgHelp.setCheckable(True)
+        self.tbbNgHelp.pressed.connect(fn_ng_help)
+        self.tbbNgHelp.setFocusPolicy(Qt.NoFocus)
+        self.tbbNgHelp.setIcon(qta.icon("fa.question", color='#f3f6fb'))
+
 
         self.cbxNgExtras = CheckableComboBox()
         self.cbxNgExtras.setFixedWidth(86)
@@ -1529,19 +1512,20 @@ class AlignmentTab(QWidget):
         self.cbxNgExtras.addItem("Scale Bar", state=self.dm['state']['neuroglancer']['show_scalebar'])
 
         def cb_itemChanged():
-            logger.info('')
-            self.dm['state']['neuroglancer']['show_controls'] = self.cbxNgExtras.itemChecked(1)
-            self.dm['state']['neuroglancer']['show_bounds'] = self.cbxNgExtras.itemChecked(2)
-            self.dm['state']['neuroglancer']['show_axes'] = self.cbxNgExtras.itemChecked(3)
-            self.dm['state']['neuroglancer']['show_scalebar'] = self.cbxNgExtras.itemChecked(4)
-            self.viewer0.updateDisplayExtras()
-            self.parent.saveUserPreferences(silent=True)
+            caller = inspect.stack()[1].function
+            logger.info(f'caller: {caller}')
+            if caller == 'main':
+                self.dm['state']['neuroglancer']['show_controls'] = self.cbxNgExtras.itemChecked(1)
+                self.dm['state']['neuroglancer']['show_bounds'] = self.cbxNgExtras.itemChecked(2)
+                self.dm['state']['neuroglancer']['show_axes'] = self.cbxNgExtras.itemChecked(3)
+                self.dm['state']['neuroglancer']['show_scalebar'] = self.cbxNgExtras.itemChecked(4)
+                self.viewer0.updateDisplayExtras()
+                self.parent.saveUserPreferences(silent=True)
 
         self.cbxNgExtras.model().itemChanged.connect(cb_itemChanged)
 
-        self.wNgAccessories = HW(BoldLabel("  Neuroglancer  "), self.cbxNgExtras)
-
         self.labZarrSource = BoldLabel(' View ')
+        self.wNgAccessories = HW(BoldLabel("  Neuroglancer  "), self.cbxNgExtras)
 
         tip = "View raw source data in Neuroglancer"
         self.rbZarrRaw = QRadioButton('Raw')
@@ -1549,8 +1533,8 @@ class AlignmentTab(QWidget):
         self.rbZarrRaw.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.rbZarrRaw.clicked.connect(lambda: setData('state,neuroglancer,layout','xy'))
         self.rbZarrRaw.clicked.connect(self.initNeuroglancer)
-        tip = "View a cumulative alignment Zarr generated from TIFFs in Neuroglancer (must be generated)"
-        self.rbZarrTransformed = QRadioButton('Transformed')
+        tip = "View a generated cumulative alignment Zarr in Neuroglancer"
+        self.rbZarrTransformed = QRadioButton('Transformed (Not Generated)')
         self.rbZarrTransformed.setObjectName('transformed')
         self.rbZarrTransformed.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.rbZarrTransformed.clicked.connect(lambda: setData('state,neuroglancer,layout', '4panel'))
@@ -1563,9 +1547,22 @@ class AlignmentTab(QWidget):
         self.rbZarrExperimental.clicked.connect(lambda: setData('state,neuroglancer,layout', '4panel'))
         self.rbZarrExperimental.clicked.connect(self.initNeuroglancer)
 
-        # self.wZarrSelect = HW(self.labZarrSource, self.rbZarrRaw, self.rbZarrTransformed)
-        self.wZarrSelect = HW(self.labZarrSource, self.rbZarrRaw, self.rbZarrExperimental, self.rbZarrTransformed)
-        self.wZarrSelect.layout.setSpacing(6)
+        tip = 'Generate permanent Zarr of cumulative alignment from TIFFs'
+        self.bZarrRegen = QPushButton('Generate')
+        self.bZarrRegen.setFixedSize(QSize(42,15))
+        self.bZarrRegen.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+        self.bZarrRegen.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.bZarrRegen.clicked.connect(lambda: self.bZarrRegen.setEnabled(False))
+        self.bZarrRegen.clicked.connect(lambda: self.parent.regenZarr(self.dm))
+
+        self.wZarrSelect = HW(
+            self.labZarrSource,
+            self.rbZarrRaw,
+            self.rbZarrExperimental,
+            self.rbZarrTransformed,
+            self.bZarrRegen,
+            spacing=6
+        )
 
         self.bgZarrSelect = QButtonGroup()
         self.bgZarrSelect.addButton(self.rbZarrRaw)
@@ -1574,19 +1571,20 @@ class AlignmentTab(QWidget):
         self.bgZarrSelect.setExclusive(True)
         self.bgZarrSelect.buttonPressed.connect(self.onZarrRadiobutton)
 
-        self.toolbarNg0 = QToolBar()
-        self.toolbarNg0.setStyleSheet("padding: 0px;")
-        self.toolbarNg0.setFixedHeight(20)
-        self.toolbarNg0.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        self.toolbarNg0.addSeparator()
-        self.toolbarNg0.addWidget(self.wZarrSelect)
-        self.toolbarNg0.addSeparator()
-        self.toolbarNg0.addWidget(self.wNgLayout)
-        self.toolbarNg0.addWidget(self.wNgAccessories)
-        self.toolbarNg0.addWidget(self.wZoom)
-        self.toolbarNg0.addWidget(self.wBC)
-        self.toolbarNg0.addWidget(self.tbbColorPicker)
-        # self.toolbarNg0.addSeparator()
+
+        self.toolbar0 = QToolBar()
+        self.toolbar0.setStyleSheet("padding: 0px;")
+        self.toolbar0.setFixedHeight(20)
+        self.toolbar0.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.toolbar0.addSeparator()
+        self.toolbar0.addWidget(self.wZarrSelect)
+        self.toolbar0.addSeparator()
+        self.toolbar0.addWidget(self.wNgLayout)
+        self.toolbar0.addWidget(self.wNgAccessories)
+        self.toolbar0.addWidget(self.wZoom)
+        self.toolbar0.addWidget(self.wBC)
+        self.toolbar0.addWidget(self.tbbColorPicker)
+        self.toolbar0.addWidget(self.tbbNgHelp)
 
         '''REFERENCE AND TRANSFORMING THUMBNAILS WITH PAINTED SWIM REGION ANNOTATIONS'''
         # self.tn_tra_overlay = QLabel('Excluded')
@@ -1839,12 +1837,6 @@ class AlignmentTab(QWidget):
 
         # Warnings
         self.wWebengine1 = HW(self.ngVertLab, self.wNg1, self.zoomSliderAndLabel)
-        # self.wWebengine1.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-
-        # self.warning_data = WarningNotice(self, '<b>Warning:</b> Some data is out of sync.', fixbutton=True, symbol='×')
-        # self.warning_data.fixbutton.clicked.connect(self.fixAll)
-        # self.warning_data.fixbutton.setText('Fix All')
-        # self.warning_data.hide()
 
         self.glGifPlayer = QGridLayout()
         self.glGifPlayer.addWidget(self.gifPlayer, 0, 0)
@@ -1860,35 +1852,29 @@ class AlignmentTab(QWidget):
         background-color: rgba(0, 0, 0, 0.40); border-radius: 2px; font-size: 11px; 
         padding: 2px;""")
 
-        self.webengine2 = WebEngine(ID='webengine2')
-        self.webengine2.setMinimumSize(QSize(200, 200))
-        # self.webengine2.setStyleSheet("background-color: #000000;")
-        # self.webengine2.page().setBackgroundColor(Qt.transparent)  # 0726+
-        # self.webengine2.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        setWebengineProperties(self.webengine2)
-        self.webengine2.setMouseTracking(True)
-        # res = self.dm.resolution(s=self.dm.level)
-        # self.transformViewer = TransformViewer(parent=self, webengine=self.webengine2, path=None, dm=self.dm, res=self.dm.res, )
+        self.we2 = WebEngine(ID='we2')
+        self.we2.setMinimumSize(QSize(200, 200))
+        setWebengineProperties(self.we2)
+        self.we2.setMouseTracking(True)
 
         self.bToggleCornerViewer = QPushButton('Toggle')
         self.bToggleCornerViewer.setFixedSize(QSize(40,14))
-        def toggle_fn():
+        def _toggle():
             logger.info('')
             state = copy.deepcopy(self.transformViewer.state)
-            # pos = floor(state.position[0])
-            pos = floor(state.position[2])
-            if pos == 0:
-                # state.position[0] = 1.5
-                state.position[2] = 1.5
-                self.labCornerViewer.setText(f'i={self.dm.zpos} | Transformed')
+            curpos = floor(state.position[2])
+            if curpos == 0:
+                newpos = 1.5
+                newlab = f'i={self.dm.zpos} | Transformed'
             else:
-                # state.position[0] = 0.5
-                state.position[2] = 0.5
-                self.labCornerViewer.setText(f'i={self.dm.get_ref_index()} | Reference')
+                newpos = 0.5
+                newlab = f'i={self.dm.get_ref_index()} | Reference'
+            state.position[2] = newpos
+            self.labCornerViewer.setText(newlab)
 
             self.transformViewer.set_state(state)
 
-        self.bToggleCornerViewer.clicked.connect(toggle_fn)
+        self.bToggleCornerViewer.clicked.connect(_toggle)
 
         self.hwCornerViewer = HW(self.bToggleCornerViewer, self.labCornerViewer)
         self.hwCornerViewer.layout.setSpacing(4)
@@ -1900,7 +1886,7 @@ class AlignmentTab(QWidget):
         self.wWebengine2 = QWidget()
         self.glWebengine2 = GL()
         self.wWebengine2.setLayout(self.glWebengine2)
-        self.glWebengine2.addWidget(self.webengine2, 0, 0, 3, 3)
+        self.glWebengine2.addWidget(self.we2, 0, 0, 3, 3)
         self.glWebengine2.addWidget(self.hwCornerViewer, 0, 1, 1, 1)
 
 
@@ -1922,9 +1908,9 @@ class AlignmentTab(QWidget):
         def tab_changed():
             if self.twCornerViewer.currentIndex() == 0:
                 res = self.dm.resolution(s=self.dm.level)
-                self.transformViewer = TransformViewer(parent=self, webengine=self.webengine2, path=None, dm=self.dm, res=res, )
-                w = self.webengine2.width()
-                h = self.webengine2.height()
+                self.transformViewer = TransformViewer(parent=self, webengine=self.we2, path=None, dm=self.dm, res=res, )
+                w = self.we2.width()
+                h = self.we2.height()
                 self.transformViewer.initZoom(w=w, h=h, adjust=1.15)
                 # self.transformViewer.set_layer(0.5)
                 pass
@@ -2045,7 +2031,7 @@ class AlignmentTab(QWidget):
         for i in list(range(0,3)):
             self.lwL.item(i).setForeground(QColor('#666666'))
             self.lwR.item(i).setForeground(QColor('#141414'))
-        self.webengine1.setFocus()
+        self.we1.setFocus()
 
     @Slot()
     def set_transforming(self):
@@ -2067,7 +2053,7 @@ class AlignmentTab(QWidget):
         for i in list(range(0,3)):
             self.lwL.item(i).setForeground(QColor('#141414'))
             self.lwR.item(i).setForeground(QColor('#666666'))
-        self.webengine1.setFocus()
+        self.we1.setFocus()
 
 
     def onSideTabChange(self):
@@ -2222,11 +2208,13 @@ class AlignmentTab(QWidget):
 
 
     def updateZarrUI(self):
-        # logger.info('')
+        caller = inspect.stack()[1].function
+        logger.critical(f'{caller}')
         # self.updateZarrButtonsEnabled()
         isGenerated = self.dm.is_zarr_generated()
         isAligned = self.dm.is_aligned()
         self.rbZarrTransformed.setEnabled(isGenerated)
+        self.rbZarrTransformed.setText(f"Transformed ({('Not ','')[isGenerated]}Generated)")
         self.rbZarrExperimental.setEnabled(isAligned)
         settings = self.dm.output_settings()
         bias = settings['polynomial_bias']
@@ -2242,7 +2230,6 @@ class AlignmentTab(QWidget):
             else:
                 self.rbZarrRaw.setChecked(True)
         else:
-
             if self.dm.is_aligned():
                 if selected.objectName() == 'raw':
                     setData('state,neuroglancer,layout', '4panel')
@@ -2277,7 +2264,6 @@ class AlignmentTab(QWidget):
         if self.wTabs.currentIndex() == 1: #1111 This should make a huge difference
             if self.dm.is_alignable() and ready:
                 self.swMethod.setCurrentIndex(0)
-
                 if hasattr(self.viewer, 'drawSWIMwindow'): #1111+
                     try:
                         self.viewer.drawSWIMwindow()
@@ -2355,9 +2341,6 @@ class AlignmentTab(QWidget):
                 if self.teLogs.isVisible():
                     self.refreshLogs()
 
-                # if self.wTabs.currentIndex() == 1:
-                #     self.viewer1.drawSWIMwindow()
-
             else:
                 self.swMethod.setCurrentIndex(1)
                 self.bApplyOne.hide()
@@ -2366,8 +2349,6 @@ class AlignmentTab(QWidget):
                 self.checkboxes.hide()
             # if hasattr(self, 'viewer1'):
             #     self.viewer1.drawSWIMwindow() #1009+
-
-        self.parent.updateMS() #Todo
 
 
     def _updatePointLists(self):
@@ -2796,27 +2777,19 @@ class AlignmentTab(QWidget):
         self.leMaxDownsampledSize.textEdited.connect(update_le_max_downsampled_size)
         self.leMaxDownsampledSize.returnPressed.connect(update_le_max_downsampled_size)
 
-        # self.bZarrRegen = QPushButton('Generate 3D Zarr With\n'
-        #                               'Cumulative Affine Applied')
-        self.bZarrRegen = QPushButton('Generate Cumulative\nAlignment Zarr')
-        self.bZarrRegen.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.bZarrRegen.clicked.connect(lambda: self.bZarrRegen.setEnabled(False))
-        self.bZarrRegen.clicked.connect(lambda: self.parent.regenZarr(self.dm))
-
         self.bZarrRefresh = QPushButton('Refresh')
         self.bZarrRefresh.setIcon(qta.icon("fa.refresh"))
         self.bZarrRefresh.clicked.connect(self.refreshTab)
 
         tip = """Bounding Box is a parameter associated with the cumulative alignment. Caution: Turning bounding box ON may 
         significantly increase the size of generated images (default=False)."""
-        tip = '\n'.join(textwrap.wrap(tip, width=35))
         self.cbBB = QCheckBox()
-        self.cbBB.setToolTip(tip)
+        self.cbBB.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.cbBB.toggled.connect(lambda state: self.dm.set_use_bounding_rect(state))
 
         tip = 'Bias/Polynomial Correction is a parameter associated with the cumulative affine. It can counteract ' \
               'distortions caused by cumulative drift (default=0)'
-        self.cbxBias = QComboBox(self)
+        self.cbxBias = QComboBox()
         self.cbxBias.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.cbxBias.addItems(['None', 'poly 0°', 'poly 1°', 'poly 2°', 'poly 3°', 'poly 4°'])
         self.cbxBias.currentIndexChanged.connect(self.onBiasChanged)
@@ -2859,13 +2832,8 @@ class AlignmentTab(QWidget):
                     print_exception(f"type(tiffinfo) = {type(tiffinfo)}")
         self.bInfo.clicked.connect(fn)
 
-
         self.wOverlayControls = QWidget()
         self.wOverlayControls.setObjectName('wOverlayControls')
-        # self.wOverlayControls.setStyleSheet("QLabel{color: #FFFF66;}")
-        # self.wOverlayControls.setStyleSheet("font-size: 10px; color: #ffe135; "
-        #                                     "padding: 2px; background-color: rgba(0, 0, 0, 0.25);"
-        #                                     "border-radius: 2px;")
         self.wOverlayControls.setStyleSheet("QLabel{color: #FFFF66;} "
                                             "QWidget#wOverlayControls{padding: 2px; color: #FFFF66; background-color: rgba(0, 0, 0, 0.25); border-radius: 2px;}")
         self.flOverlaycontrols = QFormLayout()
@@ -2880,16 +2848,13 @@ class AlignmentTab(QWidget):
         self.flOverlaycontrols.addWidget(QLabel('3D Alignment Options'))
         self.flOverlaycontrols.addRow("Bounding Box:", self.cbBB)
         self.flOverlaycontrols.addRow("Corrective Bias:", self.cbxBias)
-        self.flOverlaycontrols.addWidget(self.bZarrRegen)
         self.flOverlaycontrols.addWidget(self.bZarrRefresh)
 
         self.bInfo.setFixedHeight(16)
         self.bZarrRefresh.setFixedHeight(16)
-        self.bZarrRegen.setFixedHeight(26)
 
         self.HL0 = QHLine()
         self.HL0.setStyleSheet("background-color: #FFFF66;")
-        # self.flOverlaycontrols.addWidget(self.HL0)
         self.flOverlaycontrols.addWidget(QLabel('Neuroglancer Local Volume\nRendering Preferences'))
         self.flOverlaycontrols.addRow("Max Downsampling\n(NG default=64):", self.leMaxDownsampling)
         self.flOverlaycontrols.addRow("Max Downsampled Size\n(NG default=128):", self.leMaxDownsampledSize)
@@ -2903,18 +2868,17 @@ class AlignmentTab(QWidget):
         self.twInfoOverlay = QTabWidget()
         self.twInfoOverlay.addTab(self.teInfoOverlay, 'TIFF Info')
         # self.twInfoOverlay.setMaximumSize(QSize(700, 700))
-        self.twInfoOverlay.setFixedSize(380, 300)
+        self.twInfoOverlay.setFixedSize(QSize(380, 300))
         self.twInfoOverlay.hide()
 
         self.glWebengine0 = GL()
-        self.glWebengine0.addWidget(self.webengine0, 0, 0, 3, 3)
-        # self.glWebengine0.addWidget(self.wOverlayControls, 2, 0, 1, 1, Qt.AlignBottom | Qt.AlignLeft)
+        self.glWebengine0.addWidget(self.we0, 0, 0, 3, 3)
         self.glWebengine0.addWidget(self.wOverlay, 2, 2, 1, 1, Qt.AlignBottom | Qt.AlignRight)
         self.glWebengine0.addWidget(self.twInfoOverlay, 0, 0, 3, 3, Qt.AlignCenter)
         self.wWebengine0 = QWidget()
         self.wWebengine0.setLayout(self.glWebengine0)
 
-        self.wNG = VW(self.toolbarNg0, self.wWebengine0)
+        self.wNG = VW(self.toolbar0, self.wWebengine0)
 
         tabs = [(self.wNG, '3D Alignment'),
                 (self.wEditAlignment, 'Edit Alignment'),
@@ -2955,14 +2919,12 @@ class AlignmentTab(QWidget):
                 self.viewer1.set_contrast()
 
         self.bResetShaders = QPushButton('Reset')
-        # self.bResetShaders.setFixedSize(QSize(40, 15))
-        self.bResetShaders.setFixedWidth(40)
+        self.bResetShaders.setFixedSize(QSize(34, 15))
         self.bResetShaders.clicked.connect(resetBrightessAndContrast)
 
-        # self._btn_volumeRendering = QPushButton('Volume')
-        # self._btn_volumeRendering.setFixedSize(QSize(58,20))
-        # self._btn_volumeRendering.clicked.connect(self.fn_volume_rendering)
-        # self.shaderSideButtons = HW(self.bResetShaders, self._btn_volumeRendering)
+        self.bVolumeRendering = QPushButton('Volume')
+        self.bVolumeRendering.setFixedSize(QSize(40, 15))
+        self.bVolumeRendering.clicked.connect(self.fn_volume_rendering)
 
         self.leBrightness = QLineEdit()
         self.leBrightness.setAlignment(Qt.AlignCenter)
@@ -3009,7 +2971,7 @@ class AlignmentTab(QWidget):
         # self.wContrast.layout.setSpacing(4)
         self.wContrast.setMaximumWidth(180)
 
-        self.wBC = HW(self.wBrightness, self.wContrast, self.bResetShaders)
+        self.wBC = HW(self.wBrightness, self.wContrast, self.bResetShaders, self.bVolumeRendering)
         # self.wBC.layout.setSpacing(4)
         self.wBC.setMaximumWidth(400)
 
@@ -3085,7 +3047,7 @@ class ExpandingHWidget(QWidget):
 
 class WebEngine(QWebEngineView):
 
-    def __init__(self, ID='webengine0'):
+    def __init__(self, ID='we0'):
         QWebEngineView.__init__(self)
         self.ID = ID
         self.grabGesture(Qt.PinchGesture, Qt.DontStartGestureOnChildren)
@@ -3210,15 +3172,11 @@ class WarningNotice(QWidget):
         super().__init__(parent)
         self.msg = msg
         self.label = QLabel(self.msg)
-        # self.label.setStyleSheet("QLabel { background: none; font-size: 9px; color: #a30000; font-weight: 600;"
-        #                          "border-radius: 4px; font-family: Tahoma, sans-serif; padding: 4px; } ")
         self.label.setStyleSheet("QLabel { background: none; font-size: 9px; color: #a30000; font-weight: 600;"
                                  "padding: 0px; } ")
         self.label.setWordWrap(True)
-        # self.setFixedHeight(16)
         self.layout = HBL()
         self.layout.setSpacing(4)
-        # self.layout.setAlignment(Qt.AlignBottom)
         self.setAutoFillBackground(True)
         self.setAttribute(Qt.WA_StyledBackground, True)
         self.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
