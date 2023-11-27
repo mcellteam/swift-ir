@@ -708,7 +708,7 @@ class EMViewer(AbstractEMViewer):
                     val = (_css, _css * 250000000)[_css < .001]
                     if round(val, 2) != round(getData('state,neuroglancer,zoom'), 2):
                         if getData('state,neuroglancer,zoom') != val:
-                            logger.debug(f'emitting zoomChanged! [{val:.4f}]')
+                            logger.info(f'emitting zoomChanged! [{val:.4f}]')
                             setData('state,neuroglancer,zoom', val)
                             self.signals.zoomChanged.emit(val)
 
@@ -722,6 +722,8 @@ class EMViewer(AbstractEMViewer):
 
                 if self.state.layout.type != getData('state,neuroglancer,layout'):
                     self.signals.layoutChanged.emit()
+            else:
+                logger.info('State change signal blocked!')
 
 
     # async def initViewer(self, nglayout=None):
@@ -926,10 +928,7 @@ class MAViewer(AbstractEMViewer):
                 pass
 
         self.drawSWIMwindow() #1111+
-        try:
-            print(f"<< set_layer [{self.index}] [{self.state.voxel_coordinates}]")
-        except Exception as e:
-            print(e)
+        print(f"<< set_layer [{self.index}]")
         # self.signals.zVoxelCoordChanged.emit(self.index)
         self._blockStateChanged = False
 
