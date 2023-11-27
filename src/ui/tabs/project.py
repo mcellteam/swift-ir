@@ -317,7 +317,9 @@ class AlignmentTab(QWidget):
             # self.viewer.signals.swimAction.connect(self.parent.alignOne)
             # self.viewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314
             # self.viewer.signals.zoomChanged.connect(lambda: logger.critical(f"Zoom Slider: {self.zoomSlider.value()} / CS Scale: {self.viewer1.state.cross_section_scale}"))  # 0314
-            self.viewer.signals.zoomChanged.connect(self.zoomSlider.setValue)
+            # self.viewer.signals.zoomChanged.connect(self.zoomSlider.setValue)
+            self.viewer.signals.zoomChanged.connect(lambda x: self.zoomSlider.setValue(x))
+            self.viewer.signals.zoomChanged.connect(lambda x: print(f"Zoom changed! {x}"))
             #1111-
             # try:
             #     self.dataUpdateMA()
@@ -1480,14 +1482,14 @@ class AlignmentTab(QWidget):
         except:
             print_exception()
 
-        self.zoomLab = QLabel('  Zoom  ')
-        self.zoomLab.setFixedWidth(40)
-        self.zoomLab.setAlignment(Qt.AlignCenter)
-        self.zoomLab.setStyleSheet("font-weight: 600;")
+        self.zoomLab = BoldLabel('  Zoom  ')
+        self.zoomLab.setFixedWidth(34)
+        # self.zoomLab.setAlignment(Qt.AlignCenter)
+        # self.zoomLab.setStyleSheet("font-weight: 600;")
         self.wZoom = HW(self.zoomLab, self.leZoom)
         self.wZoom.layout.setAlignment(Qt.AlignCenter)
         self.wZoom.layout.setSpacing(4)
-        self.wZoom.setMaximumWidth(100)
+        self.wZoom.setMaximumWidth(80)
 
         self.tbbNgHelp = QToolButton()
         def fn_ng_help():
@@ -2957,9 +2959,8 @@ class AlignmentTab(QWidget):
         self.sldBrightness.setMouseTracking(False)
         self.sldBrightness.setFocusPolicy(Qt.NoFocus)
         self.sldBrightness.setRange(-100, 100)
-        self.sldBrightness.valueChanged.connect(self.fn_brightness_control)
-        self.sldBrightness.valueChanged.connect(
-            lambda: self.leBrightness.setText('%d' % self.sldBrightness.value()))
+        self.sldBrightness.sliderReleased.connect(self.fn_brightness_control)
+        self.sldBrightness.valueChanged.connect(lambda: self.leBrightness.setText('%d' % self.sldBrightness.value()))
         self.lBrightness = BoldLabel('  Brightness  ')
         self.wBrightness = HW(self.lBrightness, self.sldBrightness, self.leBrightness)
         # self.wBrightness.layout.setSpacing(4)
@@ -2979,7 +2980,7 @@ class AlignmentTab(QWidget):
         self.sldContrast.setMouseTracking(False)
         self.sldContrast.setFocusPolicy(Qt.NoFocus)
         self.sldContrast.setRange(-100, 100)
-        self.sldContrast.valueChanged.connect(self.fn_contrast_control)
+        self.sldContrast.sliderReleased.connect(self.fn_contrast_control)
         self.sldContrast.valueChanged.connect(
             lambda: self.leContrast.setText('%d' % self.sldContrast.value()))
         self.lContrast = BoldLabel('  Contrast  ')
@@ -3002,6 +3003,7 @@ class AlignmentTab(QWidget):
                 self.viewer0.set_brightness()
             elif self.wTabs.currentIndex() == 1:
                 self.viewer1.set_brightness()
+                self.transformViewer.set_brightness()
 
     def fn_contrast_control(self):
         caller = inspect.stack()[1].function
@@ -3011,6 +3013,7 @@ class AlignmentTab(QWidget):
                 self.viewer0.set_contrast()
             elif self.wTabs.currentIndex() == 1:
                 self.viewer1.set_contrast()
+                self.transformViewer.set_contrast()
 
 
     def fn_volume_rendering(self):

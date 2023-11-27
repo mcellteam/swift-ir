@@ -564,22 +564,39 @@ class AbstractEMViewer(neuroglancer.Viewer):
         self._blockStateChanged = False
 
     def set_brightness(self, val=None):
-        state = copy.deepcopy(self.state)
-        for layer in state.layers:
-            if val:
-                layer.shaderControls['brightness'] = val
-            else:
-                layer.shaderControls['brightness'] = self.dm.brightness
-        self.set_state(state)
+
+        with self.txn() as s:
+            for layer in s.layers:
+                if val:
+                    layer.shaderControls['brightness'] = val
+                else:
+                    layer.shaderControls['brightness'] = self.dm.brightness
+
+
+        # state = copy.deepcopy(self.state)
+        # for layer in state.layers:
+        #     if val:
+        #         layer.shaderControls['brightness'] = val
+        #     else:
+        #         layer.shaderControls['brightness'] = self.dm.brightness
+        # self.set_state(state)
 
     def set_contrast(self, val=None):
-        state = copy.deepcopy(self.state)
-        for layer in state.layers:
-            if val:
-                layer.shaderControls['contrast'] = val
-            else:
-                layer.shaderControls['contrast'] = self.dm.contrast
-        self.set_state(state)
+
+        with self.txn() as s:
+            for layer in s.layers:
+                if val:
+                    layer.shaderControls['contrast'] = val
+                else:
+                    layer.shaderControls['contrast'] = self.dm.contrast
+
+        # state = copy.deepcopy(self.state)
+        # for layer in state.layers:
+        #     if val:
+        #         layer.shaderControls['contrast'] = val
+        #     else:
+        #         layer.shaderControls['contrast'] = self.dm.contrast
+        # self.set_state(state)
 
     def updateDisplayExtras(self):
         with self.txn() as s:

@@ -2734,18 +2734,17 @@ class MainWindow(QMainWindow):
             b.setFocusPolicy(Qt.FocusPolicy.NoFocus)
             b.setStyleSheet("QToolButton { text-align: right; margin-left: 4px;}")
 
-        self.bExport = QPushButton('Export ')
-        tip = """Export images to Zarr & TIFF"""
-        tip = '\n'.join(textwrap.wrap(tip, width=35))
-        self.bExport.setToolTip(tip)
-        self.bExport.setIconSize(QSize(15,15))
-        self.bExport.setIcon(qta.icon('mdi.export', color='#141414', color_disabled='#f3f6fb'),)
-        self.bExport.setLayoutDirection(Qt.RightToLeft)
-        # self.bExport.setStyleSheet("QPushButton{color: #141414; font-size: 11px; font-weight: 600; background-color: #b3e6b3; "
-        #                            "border: 1px solid #141414; border-radius: 2px; padding: 2px;} QPushButton:disabled{color: #f3f6fb; background-color: #a3a3a3; border: none;}")
-        self.bExport.setVisible(False)
-
-        self.wExport = HW(ExpandingHWidget(self), self.bExport)
+        # self.bExport = QPushButton('Export ')
+        # tip = """Export images to Zarr & TIFF"""
+        # tip = '\n'.join(textwrap.wrap(tip, width=35))
+        # self.bExport.setToolTip(tip)
+        # self.bExport.setIconSize(QSize(15,15))
+        # self.bExport.setIcon(qta.icon('mdi.export', color='#141414', color_disabled='#f3f6fb'),)
+        # self.bExport.setLayoutDirection(Qt.RightToLeft)
+        # # self.bExport.setStyleSheet("QPushButton{color: #141414; font-size: 11px; font-weight: 600; background-color: #b3e6b3; "
+        # #                            "border: 1px solid #141414; border-radius: 2px; padding: 2px;} QPushButton:disabled{color: #f3f6fb; background-color: #a3a3a3; border: none;}")
+        # self.bExport.setVisible(False)
+        # self.wExport = HW(ExpandingHWidget(self), self.bExport)
 
         # self.tbb3demdata.setIconSize(QSize(40,20))
 
@@ -3032,7 +3031,7 @@ class MainWindow(QMainWindow):
             self.dwSnr.setWidget(self.pt.dSnr_plot)
             if self.dwSnr.isVisible():
                 self.pt.dSnr_plot.initSnrPlot()
-            self.bExport.setVisible(self.dm.is_zarr_generated())
+            # self.bExport.setVisible(self.dm.is_zarr_generated())
         else:
             self.statusBar.clearMessage()
             self.dwThumbs.setWidget(NullWidget())
@@ -3046,7 +3045,7 @@ class MainWindow(QMainWindow):
                 self.setdw_matches(False)
             if self.dwThumbs.isVisible():
                 self.setdw_thumbs(False)
-            self.bExport.setVisible(False)
+            # self.bExport.setVisible(False)
 
         if self._getTabType() == 'ZarrTab':
             logger.debug('Loading Zarr Tab...')
