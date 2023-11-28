@@ -4280,18 +4280,12 @@ class MainWindow(QMainWindow):
         self.globTabs.tabCloseRequested[int].connect(self._onGlobTabClose)
         self.globTabs.currentChanged.connect(self._onGlobTabChange)
 
-        if is_mac():
-            from src.ui.tools.pythonconsole import PythonConsoleWidget
-            # self.pythonConsole = PythonConsole()
-            self.pythonConsole = PythonConsoleWidget()
-            self.pythonConsole.pyconsole.set_color_none()
-            self.pythonConsole.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        else:
-            import pyqtgraph.console
-            self.pythonConsole = pyqtgraph.console.ConsoleWidget()
-
-
         self.dwPython = DockWidget('Python', self)
+        if is_tacc():
+            self._python_backend = 'pyqtgraph'
+        else:
+            self._python_backend = 'ipython'
+        self.switchPython(backend=self._python_backend)
         self.dwPython.visibilityChanged.connect(self.callbackDwVisibilityChanged)
         def fn_dw_python_visChanged():
             caller = inspect.stack()[1].function
@@ -4629,6 +4623,31 @@ class MainWindow(QMainWindow):
 
         else:
             self.sa8.setWidget(NullWidget())
+
+    def switchPython(self, backend=None):
+        if backend == None:
+            if self._python_backend == 'ipython':
+                self._python_backend = 'pyqtgraph'
+            else:
+                self._python_backend = 'ipython'
+        from src.ui.tools.pythonconsole import PythonConsoleWidget
+        # self.pythonConsole = PythonConsole()
+        self.pythonConsole = PythonConsoleWidget()
+        self.pythonConsole.pyconsole.set_color_none()
+        self.pythonConsole.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.dwPython.setWidget(self.pythonConsole)
+        if self._python_backend == 'pyqtgraph':
+            import pyqtgraph.console
+            self.pythonConsole = pyqtgraph.console.ConsoleWidget()
+        else:
+            from src.ui.tools.pythonconsole import PythonConsoleWidget
+            # self.pythonConsole = PythonConsole()
+            self.pythonConsole = PythonConsoleWidget()
+            self.pythonConsole.pyconsole.set_color_none()
+            self.pythonConsole.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.dwPython.setWidget(self.pythonConsole)
+
+
 
 
     def initLowest8Widget(self):

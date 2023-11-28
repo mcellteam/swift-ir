@@ -44,7 +44,7 @@ if not hashseed:
     os.execv(sys.executable, [sys.executable] + sys.argv)
 
 
-print(f'Hang tight. The app will launch shortly...')
+print(f'\nEnvironment activated successfully. alignEM will launch shortly...\n')
 print(f'Python executable: {sys.executable}')
 
 import os
