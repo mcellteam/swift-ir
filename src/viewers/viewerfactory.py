@@ -877,11 +877,25 @@ class TransformViewer(AbstractEMViewer):
             curpos = floor(s.position[2])
             if curpos == 0:
                 newpos = 1.5
-                self.title = f'i={self.dm.zpos} | Transformed'
+                self.title = f'i={self.dm.zpos} | Transformed | SNR: {self.dm.snr():.3g}'
             else:
                 newpos = 0.5
-                self.title = f'i={self.dm.get_ref_index()} | Reference'
+                self.title = f'i={self.dm.get_ref_index()} | Reference | SNR: {self.dm.snr():.3g}'
             s.position[2] = newpos
+
+    @Slot()
+    def setReference(self):
+        logger.info('')
+        with self.txn() as s:
+            self.title = f'i={self.dm.get_ref_index()} | Reference | SNR: {self.dm.snr():.3g}'
+            s.position[2] = 0.5
+
+    @Slot()
+    def setTransforming(self):
+        logger.info('')
+        with self.txn() as s:
+            self.title = f'i={self.dm.zpos} | Transformed | SNR: {self.dm.snr():.3g}'
+            s.position[2] = 1.5
 
 
 

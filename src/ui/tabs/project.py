@@ -2013,6 +2013,8 @@ class AlignmentTab(QWidget):
             return
         # self._tra_pt_selected = None
         self.viewer1.set_layer()
+        self.transformViewer.setReference()
+        self.labCornerViewer.setText(self.transformViewer.title)
         # self._updatePointLists()
         self.clRef.setChecked(True)
         self.clTra.setChecked(False)
@@ -2035,6 +2037,8 @@ class AlignmentTab(QWidget):
         logger.info(f'[{caller}]')
         self.dm['state']['tra_ref_toggle'] = 'tra'
         self.viewer1.set_layer()
+        self.transformViewer.setTransforming()
+        self.labCornerViewer.setText(self.transformViewer.title)
         # self._updatePointLists()
         self.clTra.setChecked(True)
         self.clRef.setChecked(False)
