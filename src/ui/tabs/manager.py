@@ -507,16 +507,14 @@ class ManagerTab(QWidget):
         im_sample = self._NEW_IMAGES_PATHS[0]
         try:
             tiffinfo = read('tiffinfo')(im_sample)
+            write('txt')(Path(out) / 'tiffinfo.txt', tiffinfo)
         except:
-            logger.warning('Failed to read tiffinfo')
-            tiffinfo = ''
+            logger.warning('Unable to read or write tiffinfo to file.')
         try:
             tifftags = read('tifftags')(im_sample)
+            write('json')(Path(out) / 'tifftags.json', tifftags)
         except:
-            logger.warning('Failed to read TIFF tags')
-            tifftags = {}
-        wp = os.path.join(out, 'tiffinfo.txt')
-        write('txt')(wp, tiffinfo)
+            logger.warning('Unable to read or write TIFF tags to file')
 
         opts = {}
         opts.update(
@@ -531,8 +529,6 @@ class ManagerTab(QWidget):
                 'file_path': cal_grid_path,
             },
             paths=self._NEW_IMAGES_PATHS,
-            tiffinfo=tiffinfo,
-            tifftags=tifftags,
             size_zyx={},
             size_xy={},
         )
@@ -835,8 +831,6 @@ class ManagerTab(QWidget):
                 file_path=file_path,
                 images_path=images_path,
             )
-
-
             cfg.preferences['last_alignment_opened'] = dm.data_file_path
             cfg.mw.saveUserPreferences(silent=True)
             dm.save(silently=True)
@@ -891,7 +885,7 @@ class ManagerTab(QWidget):
         if n > 0:
             im0 = Path(self._NEW_IMAGES_PATHS[0])
             im1 = Path(self._NEW_IMAGES_PATHS[1])
-            self.labImgCount.setText(f"{n} files selected  ")
+            self.labImgCount.setText(f"{n} images selected  ")
             if self.wEmStackProperties.cbCalGrid.isChecked():
                 self.labConfirmReady.setText(f"Calibration Grid: {im0.name}  |  First Section: {im1.name}")
             else:
