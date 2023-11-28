@@ -4517,7 +4517,7 @@ class MainWindow(QMainWindow):
         self.bCloseHtmlResource.setIcon(qta.icon('mdi.close'))
         self.bCloseHtmlResource.clicked.connect(self.hide_html_resource)
         self.bCloseHtmlResource.setAutoFillBackground(False)
-        self.bCloseHtmlResource.setStyleSheet("background: transparent;"
+        self.bCloseHtmlResource.setStyleSheet(""
                                               "color: #f3f6fb;"
                                               "background-color: #141414;"
                                               "font-size: 12px;"

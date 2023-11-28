@@ -22,7 +22,7 @@ PathLike = TypeVar("PathLike", str, pathlib.Path, None)
 
 def read_txt(path: PathLike):
     try:
-        with open(path_to_str(path), mode='rb') as f:
+        with open(path_to_str(path), mode='r') as f:
             return f.read()
     except Exception as e:
         logger.warning(f"Unable to read file as TXT: {path_to_str(path)}. Reason: {e.__class__.__name__}")
@@ -30,7 +30,7 @@ def read_txt(path: PathLike):
 
 def read_csv(path: PathLike):
     try:
-        with open(path_to_str(path), mode='rb') as f:
+        with open(path_to_str(path), mode='r') as f:
             return list(csv.reader(f))
     except Exception as e:
         logger.warning(f"Unable to read file as HTML: {path_to_str(path)}. Reason: {e.__class__.__name__}")
@@ -38,8 +38,9 @@ def read_csv(path: PathLike):
 
 def read_html(path: PathLike):
     try:
-        with open(path_to_str(path), mode='rb') as f:
-            return f.read()
+        with open(path_to_str(path), mode='r') as f:
+            data = f.read()
+            return data
     except Exception as e:
         logger.warning(f"Unable to read file as HTML: {path_to_str(path)}. Reason: {e.__class__.__name__}")
         return None
@@ -48,8 +49,12 @@ def read_json(path: PathLike):
     # with open(file_path, mode='r') as f:
     #     return json.load(f)
     try:
-        with open(path_to_str(path), mode='rb') as f:
-            return json.load(f)
+        with open(path_to_str(path), mode='r') as f:
+            data = json.load(f)
+            if type(data) == bytes:
+                logger.warning(f'Decoding byte data of {path}')
+                data = data.decode()
+            return data
     except Exception as e:
         logger.warning(f"Unable to read file as JSON: {path_to_str(path)}. Reason: {e.__class__.__name__}")
         return None
