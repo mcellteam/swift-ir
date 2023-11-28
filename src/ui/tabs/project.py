@@ -93,6 +93,8 @@ class AlignmentTab(QWidget):
                 self.viewer1.initViewer()
                 self.transformViewer.initViewer()
                 self.labCornerViewer.setText(self.transformViewer.title)
+                if self.dm['state']['tra_ref_toggle'] == 'ref':
+                    self.set_transforming()
 
             if self.dSnr_plot.isVisible():
                 self.dSnr_plot.updateLayerLinePos()
@@ -1889,7 +1891,7 @@ class AlignmentTab(QWidget):
         self.hwCornerViewer.layout.setSpacing(4)
         self.hwCornerViewer.layout.setAlignment(Qt.AlignTop)
         self.hwCornerViewer.setFixedHeight(16)
-        self.hwCornerViewer.setMaximumWidth(160)
+        self.hwCornerViewer.setMaximumWidth(240)
 
 
         self.wWebengine2 = QWidget()

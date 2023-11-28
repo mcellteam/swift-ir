@@ -799,7 +799,7 @@ class TransformViewer(AbstractEMViewer):
     def __init__(self, **kwags):
         super().__init__(**kwags)
         self.name = 'TransformViewer'
-        self.title = f'i={self.dm.zpos} | Transformed'
+        self.title = ''
         self.path = self.dm.path_zarr_raw()
         self.shader = self.dm['rendering']['shader']
         self.section_number = self.dm.zpos
@@ -831,6 +831,7 @@ class TransformViewer(AbstractEMViewer):
             s.show_axis_lines = False
             s.show_default_annotations = True
             s.position = [self.tensor.shape[0] / 2, self.tensor.shape[1] / 2, 1.5]
+
         self.initZoom(w=self.webengine.width(), h=self.webengine.height(), adjust=1.15)
 
 
@@ -868,6 +869,8 @@ class TransformViewer(AbstractEMViewer):
                     layer=ng.ImageLayer(source=source, shader=self.shader),
                     opacity=1,
                 )
+            s.position = [self.tensor.shape[0] / 2, self.tensor.shape[1] / 2, 1.5]
+        self.title = f'[{self.dm.zpos}] SNR: {self.dm.snr():.3g}'
         self.webengine.reload()
 
     @Slot()
@@ -877,24 +880,24 @@ class TransformViewer(AbstractEMViewer):
             curpos = floor(s.position[2])
             if curpos == 0:
                 newpos = 1.5
-                self.title = f'i={self.dm.zpos} | Transformed | SNR: {self.dm.snr():.3g}'
+                self.title = f'[{self.dm.zpos}] SNR: {self.dm.snr():.3g}'
             else:
                 newpos = 0.5
-                self.title = f'i={self.dm.get_ref_index()} | Reference | SNR: {self.dm.snr():.3g}'
+                self.title = f'[{self.dm.get_ref_index()}] SNR: {self.dm.snr():.3g}'
             s.position[2] = newpos
 
     @Slot()
     def setReference(self):
         logger.info('')
         with self.txn() as s:
-            self.title = f'i={self.dm.get_ref_index()} | Reference | SNR: {self.dm.snr():.3g}'
+            self.title = f'[{self.dm.get_ref_index()}] SNR: {self.dm.snr():.3g}'
             s.position[2] = 0.5
 
     @Slot()
     def setTransforming(self):
         logger.info('')
         with self.txn() as s:
-            self.title = f'i={self.dm.zpos} | Transformed | SNR: {self.dm.snr():.3g}'
+            self.title = f'[{self.dm.zpos}] SNR: {self.dm.snr():.3g}'
             s.position[2] = 1.5
 
 
