@@ -67,7 +67,7 @@ QTextEdit:focus {
 
 QToolBar{
     background-color: #ede9e8;
-    padding: 3px;
+    padding: 0px;
     margin: 0px;
 }
 

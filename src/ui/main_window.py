@@ -1143,7 +1143,8 @@ class MainWindow(QMainWindow):
         self._alignworker.finished.connect(self.updateEnabledButtons)
         self._alignworker.finished.connect(lambda: self.pt.updateTab0UI())
         self._alignworker.finished.connect(lambda: self.present_snr_results(dm, indexes))
-        self._alignworker.finished.connect(lambda: self.pt.initNeuroglancer(init_all=True))
+        # self._alignworker.finished.connect(lambda: self.pt.initNeuroglancer(init_all=True))
+        self._alignworker.finished.connect(lambda: self.pt.initNeuroglancer())
 
         self._alignworker.finished.connect(lambda: setattr(self, '_working', False))
         self._alignworker.finished.connect(lambda: self.tell(f'<span style="color: #FFFF66;"><b>**** All Processes Complete ****</b></span>'))
@@ -1312,23 +1313,27 @@ class MainWindow(QMainWindow):
 
 
     def layer_left(self):
+        logger.info('')
         if self._isProjectTab():
-            if self.pt.wTabs.currentIndex() == 1:
-                if self.dm['state']['tra_ref_toggle'] == 'ref':
-                    self.pt.set_transforming()
-            requested = self.dm.zpos - 1
-            logger.info(f'requested: {requested}')
-            if requested >= 0:
-                self.dm.zpos = requested
+            # if self.pt.wTabs.currentIndex() == 1:
+            #     if self.dm['state']['tra_ref_toggle'] == 'ref':
+            #         self.pt.set_transforming()
+            # requested = self.dm.zpos - 1
+            # logger.info(f'requested: {requested}')
+            # if requested >= 0:
+            #     self.dm.zpos = requested
+            self.pt.layer_left()
 
     def layer_right(self):
+        logger.info('')
         if self._isProjectTab():
-            if self.pt.wTabs.currentIndex() == 1:
-                if self.dm['state']['tra_ref_toggle'] == 'ref':
-                    self.pt.set_transforming()
-            requested = self.dm.zpos + 1
-            if requested < len(self.dm):
-                self.dm.zpos = requested
+            # if self.pt.wTabs.currentIndex() == 1:
+            #     if self.dm['state']['tra_ref_toggle'] == 'ref':
+            #         self.pt.set_transforming()
+            # requested = self.dm.zpos + 1
+            # if requested < len(self.dm):
+            #     self.dm.zpos = requested
+            self.pt.layer_right()
 
 
     def scale_down(self) -> None:
@@ -1365,8 +1370,8 @@ class MainWindow(QMainWindow):
     @Slot()
     def updateSlidrZpos(self):
         #Todo refactor this #1126
-        # caller = inspect.stack()[1].function
-        # logger.info(f'[{caller}]')
+        caller = inspect.stack()[1].function
+        logger.info(f'[{caller}]')
         if self._isProjectTab():
             self.leJump.setText(str(self.dm.zpos))
             self.sldrZpos.setValue(self.dm.zpos)
@@ -1629,6 +1634,12 @@ class MainWindow(QMainWindow):
         if not self._working:
             if self._isProjectTab():
                 caller = inspect.stack()[1].function
+                if hasattr(self.pt, 'viewer0'):
+                    del self.pt.viewer0
+                if hasattr(self.pt, 'viewer0'):
+                    del self.pt.viewer1
+                if hasattr(self.pt, 'transformViewer'):
+                    del self.pt.transformViewer
 
                 logger.critical(f'[{caller}]')
                 requested = self.dm.scales[self.boxScale.currentIndex()]
@@ -2979,13 +2990,15 @@ class MainWindow(QMainWindow):
                 del self.pm.viewer
 
 
+
         if self._isProjectTab():
 
             self.dm = cfg.dm = self.globTabs.currentWidget().dm
             self.pt = cfg.pt = self.globTabs.currentWidget()
             # self.viewer = self.pt.viewer
             # self.pt.initNeuroglancer()  # 0815-
-            self.pt.initNeuroglancer(init_all=True)  # 0815-
+            # self.pt.initNeuroglancer(init_all=True)  # 0815-
+            self.pt.initNeuroglancer()  # 0815-
 
             # self.updateLowest8widget()
             [b.setEnabled(True) for b in self._lower_tb_buttons]
@@ -3862,9 +3875,10 @@ class MainWindow(QMainWindow):
         # self.sldrZpos.setRepeatAction(a, repeatTime=1000)
         self.sldrZpos.valueChanged.connect(lambda: self.leJump.setText(str(self.sldrZpos.value())))
 
-
-
-        self.sldrZpos.sliderReleased.connect(self.jump_to_slider)
+        # self.sldrZpos.sliderReleased.connect(self.jump_to_slider)
+        # self.sldrZpos.valueChanged.connect(self.jump_to_slider)
+        # self.sldrZpos.valueChanged.connect(lambda: self.dm.zpos = self.sldrZpos.value())
+        self.sldrZpos.valueChanged.connect(lambda: setattr(self.dm,'zpos', self.sldrZpos.value()))
 
 
 
