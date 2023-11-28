@@ -88,9 +88,12 @@ class AlignmentTab(QWidget):
             if _tab == 0:
                 self.viewer0.set_layer()
                 # self.viewer0.defer_callback(self.viewer0.set_layer)
+
             elif _tab == 1:
-                self.transformViewer.initViewer()
                 self.viewer1.initViewer()
+                self.transformViewer.initViewer()
+                self.labCornerViewer.setText(self.transformViewer.title)
+
             if self.dSnr_plot.isVisible():
                 self.dSnr_plot.updateLayerLinePos()
 
