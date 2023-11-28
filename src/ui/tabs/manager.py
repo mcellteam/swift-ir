@@ -597,23 +597,31 @@ class ManagerTab(QWidget):
 
     def initPMviewer(self):
         logger.info('')
-        if self.comboImages.count() > 0:
-            level = self.comboLevel.currentText()
-            self.viewer = self.parent.viewer = PMViewer(
-                parent=self,
-                webengine=self.webengine,
-                extra_data={
-                    'resolution': self._images_info['resolution'][level],
-                    'raw_path': Path(self.comboImages.currentText()) / 'zarr' / level,
-                    'transformed_path': Path(self.comboAlignment.currentText()) / 'zarr' / level,
-                })
-            self.viewer.signals.arrowLeft.connect(self.parent.layer_left)
-            self.viewer.signals.arrowRight.connect(self.parent.layer_right)
-            self.viewer.signals.arrowUp.connect(self.parent.incrementZoomIn)
-            self.viewer.signals.arrowDown.connect(self.parent.incrementZoomOut)
-            # self.webengine.py.setFocus()
-        else:
-            self.webengine.setHtml("")
+        try:
+            wefweg
+            if self.comboImages.count() > 0:
+                level = self.comboLevel.currentText()
+                self.viewer = self.parent.viewer = PMViewer(
+                    parent=self,
+                    webengine=self.webengine,
+                    extra_data={
+                        'resolution': self._images_info['resolution'][level],
+                        'raw_path': Path(self.comboImages.currentText()) / 'zarr' / level,
+                        'transformed_path': Path(self.comboAlignment.currentText()) / 'zarr' / level,
+                    })
+                self.viewer.signals.arrowLeft.connect(self.parent.layer_left)
+                self.viewer.signals.arrowRight.connect(self.parent.layer_right)
+                self.viewer.signals.arrowUp.connect(self.parent.incrementZoomIn)
+                self.viewer.signals.arrowDown.connect(self.parent.incrementZoomOut)
+                # self.webengine.py.setFocus()
+            else:
+                self.webengine.setHtml("")
+        except:
+            self.webengine.setHtml("Nothing to display.")
+            f = Path(__file__).parents[3] / f'src/resources/html/null.html'
+            print(f'Loading html doc from {f}')
+            html = read('html')(f)
+            self.webengine.setHtml(html)
 
     def onPlusAlignment(self):
         logger.info('')

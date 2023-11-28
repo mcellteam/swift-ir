@@ -1,0 +1,14 @@
+
+
+html, body, .container {
+    height: 100%;
+    color: #f3f6fb;
+    background-color: #000000;
+    font-family: Tahoma, sans-serif;
+}
+
+.container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
