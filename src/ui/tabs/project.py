@@ -1046,33 +1046,37 @@ class AlignmentTab(QWidget):
                 QGroupBox {font-weight:600; border-radius: 2px;}
                 """
 
-        self.gbL = GroupBox()
-        self.gbL.setProperty('current', True)
-        self.gbL.clicked.connect(lambda: print("gbL clicked!"))
-        self.gbL.setStyleSheet(style)
+        self.gbR = GroupBox()
+        self.gbR.setProperty('current', True)
+        self.gbR.clicked.connect(lambda: print("gbL clicked!"))
+        self.gbR.setStyleSheet(style)
 
         def fn():
             if self.dm['state']['tra_ref_toggle'] == 'ref':
                 self.set_transforming()
 
-        self.gbL.clicked.connect(fn)
-        self.gbL.setLayout(VBL(BoldLabel('Transforming'), self.lwL, self.bClearL))
+        # self.gbL.clicked.connect(fn)
+        # self.gbL.setLayout(VBL(BoldLabel('Transforming'), self.lwL, self.bClearL))
+        self.gbR.clicked.connect(fn)
+        self.gbR.setLayout(VBL(BoldLabel('Reference'), self.lwR, self.bClearR))
 
-        self.gbR = GroupBox()
-        self.gbR.setProperty('current', True)
-        self.gbR.clicked.connect(lambda: print("gbR clicked!"))
-        self.gbR.setStyleSheet(style)
+        self.gbL = GroupBox()
+        self.gbL.setProperty('current', True)
+        self.gbL.clicked.connect(lambda: print("gbR clicked!"))
+        self.gbL.setStyleSheet(style)
 
         def fn():
             if self.dm['state']['tra_ref_toggle'] == 'tra':
                 self.set_reference()
 
-        self.gbR.clicked.connect(fn)
-        self.gbR.setLayout(VBL(BoldLabel('Reference'), self.lwR, self.bClearR))
+        # self.gbR.clicked.connect(fn)
+        # self.gbR.setLayout(VBL(BoldLabel('Reference'), self.lwR, self.bClearR))
+        self.gbL.clicked.connect(fn)
+        self.gbL.setLayout(VBL(BoldLabel('Transforming'), self.lwL, self.bClearL))
 
         self.labSlash = QLabel('←/→')
         self.labSlash.setStyleSheet("""font-size: 10px; font-weight: 600;""")
-        self.hwPointsLists = HW(self.gbL, self.labSlash, self.gbR)
+        self.hwPointsLists = HW(self.gbR, self.labSlash, self.gbL)
         self.hwPointsLists.setMaximumHeight(106)
 
         self.flManual = QFormLayout()
