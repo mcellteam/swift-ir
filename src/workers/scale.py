@@ -309,7 +309,11 @@ def convert_zarr(task):
         # im = iio.imread(fn)
         # store[ID, :, :] = im
         # store[:, :, ID] = im
-        store[:, :, ID] = im.transpose()
+        try:
+            store[:, :, ID] = im.transpose()
+        except ValueError:
+            logger.warning(f'ValueError during TIFF read: [{ID}] {fn}. Data has shape: {im.shape}')
+
 
 
         # store_slice = zarr.open(out_slice)
