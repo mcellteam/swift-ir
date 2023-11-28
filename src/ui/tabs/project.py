@@ -424,7 +424,7 @@ class AlignmentTab(QWidget):
         self.sldrZoomTab1.setMinimum(1)
 
         # self.sldrZoomTab1.sliderMoved.connect(self.onZoomSlider) #Original #0314
-        self.sldrZoomTab1.valueChanged.connect(self.onZoomSlider)
+        self.sldrZoomTab1.sliderReleased.connect(self.onZoomSlider)
         self.sldrZoomTab1.setValue(4.0)
 
         vlab = VerticalLabel('Zoom:')
