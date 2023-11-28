@@ -24,24 +24,24 @@ def read_txt(path: PathLike):
     try:
         with open(path_to_str(path), mode='rb') as f:
             return f.read()
-    except:
-        logger.warning(f"Unable to read file as TXT: {path_to_str(path)}")
+    except Exception as e:
+        logger.warning(f"Unable to read file as TXT: {path_to_str(path)}. Reason: {e.__class__.__name__}")
         return None
 
 def read_csv(path: PathLike):
     try:
         with open(path_to_str(path), mode='rb') as f:
             return list(csv.reader(f))
-    except:
-        logger.warning(f"Unable to read file as HTML: {path_to_str(path)}")
+    except Exception as e:
+        logger.warning(f"Unable to read file as HTML: {path_to_str(path)}. Reason: {e.__class__.__name__}")
         return None
 
 def read_html(path: PathLike):
     try:
         with open(path_to_str(path), mode='rb') as f:
             return f.read()
-    except:
-        logger.warning(f"Unable to read file as HTML: {path_to_str(path)}")
+    except Exception as e:
+        logger.warning(f"Unable to read file as HTML: {path_to_str(path)}. Reason: {e.__class__.__name__}")
         return None
 
 def read_json(path: PathLike):
@@ -50,14 +50,18 @@ def read_json(path: PathLike):
     try:
         with open(path_to_str(path), mode='rb') as f:
             return json.load(f)
-    except:
-        logger.warning(f"Unable to read file as JSON: {path_to_str(path)}")
+    except Exception as e:
+        logger.warning(f"Unable to read file as JSON: {path_to_str(path)}. Reason: {e.__class__.__name__}")
         return None
 
 def read_xml(path: PathLike):
-    tree = ET.parse(path_to_str(path))
-    root = tree.getroot()
-    return root
+    try:
+        tree = ET.parse(path_to_str(path))
+        root = tree.getroot()
+        return root
+    except Exception as e:
+        logger.warning(f"Unable to read XML: {path_to_str(path)}. Reason: {e.__class__.__name__}")
+
 
 def read_tiffinfo(path: PathLike):
     o = sp.check_output(['tiffinfo', path_to_str(path)], universal_newlines=True, errors='ignore')
