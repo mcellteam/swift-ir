@@ -63,7 +63,7 @@ def date_time():
     return datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
 class Signals(QObject):
-    zposChanged = Signal()
+    zposChanged = Signal(int)
     dataChanged = Signal()
     savedChanged = Signal()
     outputSettingsChanged = Signal()
@@ -295,16 +295,17 @@ class DataModel:
         return self['state']['z_position']
 
     @zpos.setter
-    def zpos(self, index):
+    def zpos(self, pos):
         '''Set global Z-position. Signals UI to update.'''
-        caller = inspect.stack()[1].function
+        # caller = inspect.stack()[1].function
         # self['data']['Current Section (Index)'] = index
-        if int(index) in range(0, len(self)):
-            if int(index) != self.zpos:
-                self['state']['z_position'] = int(index)
-                self.signals.zposChanged.emit()
+        pos = int(pos)
+        if pos in range(0, len(self)):
+            if pos != self.zpos:
+                self['state']['z_position'] = pos
+                self.signals.zposChanged.emit(pos)
         else:
-            logger.warning(f'\nINDEX OUT OF RANGE: {index} [caller: {inspect.stack()[1].function}]\n')
+            logger.warning(f'\nINDEX OUT OF RANGE: {pos} [caller: {inspect.stack()[1].function}]\n')
 
     @property
     def cname(self) -> str:

@@ -67,6 +67,7 @@ import copy
 import datetime
 import inspect
 import logging
+import time
 import os
 import sys
 from functools import cache
@@ -78,11 +79,16 @@ import numpy as np
 import tensorstore as ts
 import zarr
 # from neuroglancer import ScreenshotSaver
-from qtpy.QtCore import QObject, Signal, QUrl
+from qtpy.QtCore import QObject, Signal, QUrl, Slot
 
 import neuroglancer as ng
+ng.server.debug = True
 import neuroglancer.write_annotations
+import neuroglancer.futures
 from neuroglancer.json_wrappers import array_wrapper, to_json, JsonObjectWrapper
+
+
+ng.server.multiprocessing.log_to_stderr()
 
 import src.config as cfg
 from src.utils.helpers import getOpt, getData, setData, is_joel, print_exception
@@ -99,6 +105,7 @@ logger = logging.getLogger(__name__)
 handler = logging.StreamHandler(stream=sys.stdout)
 logger.addHandler(handler)
 
+
 class WorkerSignals(QObject):
     arrowLeft = Signal()
     arrowRight = Signal()
@@ -114,6 +121,7 @@ class WorkerSignals(QObject):
 
     '''MAviewer'''
     zVoxelCoordChanged = Signal(int)
+    zChanged = Signal(int)
     ptsChanged = Signal()
     swimAction = Signal()
     badStateChange = Signal()
@@ -195,12 +203,11 @@ class AbstractEMViewer(neuroglancer.Viewer):
         return '<a href="%s" target="_blank">Viewer</a>' % self.get_viewer_url()
 
     def __del__(self):
-        clr = inspect.stack()[1].function
         try:
             clr = inspect.stack()[1].function
             logger.warning(f"[{clr}] ({self.created}) {self.name} deleted by {clr}")
         except:
-            logger.warning(f"[{clr}] ({self.created}) {self.name} deleted, caller unknown")
+            logger.warning(f"[caller unknown] ({self.created}) {self.name} deleted, caller unknown")
 
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
@@ -361,7 +368,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
         if afm == None:
             afm = [[1., 0., 0.], [0., 1., 0.]]
         transform = self.get_transform(afm=afm, i=i)
-        with cfg.pt.viewer.txn() as s:
+        with self.txn() as s:
             s.layers[i].layer.source[0].transform = transform
         self._blockStateChanged = False
 
@@ -387,6 +394,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
     def set_untransformed(self):
         # for testing...
         # items = zip(range(len(cfg.dm)), [a]*len(cfg.dm))
+        setData('state,neuroglancer,transformed', False)
         self._blockStateChanged = True
         self._show_transformed = True
         afm = [[1., 0., 0.], [0., 1., 0.]]
@@ -398,6 +406,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
     def set_transformed(self):
         # for testing...
         # items = zip(range(len(cfg.dm)), [a]*len(cfg.dm))
+        setData('state,neuroglancer,transformed', True)
         self._blockStateChanged = True
         self._show_transformed = True
         afms = [self.dm.alt_cafm(l=i) for i in range(len(self.dm))]
@@ -409,15 +418,14 @@ class AbstractEMViewer(neuroglancer.Viewer):
         if i == None:
             i = 0
         with self.txn() as s:
-            local_volume = self.getLocalVolume(data, self.getCoordinateSpace())
+            self.LV = self.getLocalVolume(data, self.getCoordinateSpace())
             transform = self.get_transform(afm=afm, i=i)
-            source = ng.LayerDataSource(
-                url=local_volume,
-                transform=transform,)
+            source = ng.LayerDataSource(url=self.LV, transform=transform,)
             s.layers.append(
                 name=name,
                 layer=ng.ImageLayer(source=source, shader=self.shader),
-                opacity=1,)
+                opacity=1,
+            )
 
     def add_transformed_layers(self):
         with self.txn() as s:
@@ -472,23 +480,19 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
     @abc.abstractmethod
     def set_layer(self, pos=None):
-
-        self._blockStateChanged = True
-        if not pos:
-            pos = self.dm.zpos
-        logger.info(f'pos={pos}')
-        with self.txn() as s:
-            vc = s.voxel_coordinates
-            try:
-                vc[2] = pos + 0.5
-            except TypeError:
-                logger.warning("TypeError")
-                pass
-        try:
-            self.LV.invalidate()
-        except:
-            print_exception()
-        self._blockStateChanged = False
+        raise NotImplementedError
+    # def set_layer(self, pos=None):
+    #
+    #     self._blockStateChanged = True
+    #     if not pos:
+    #         pos = self.dm.zpos
+    #     with self.txn() as s:
+    #         s.voxel_coordinates[2] = pos + 0.5
+    #     # try:
+    #     #     self.LV.invalidate()
+    #     # except:
+    #     #     print_exception()
+    #     self._blockStateChanged = False
 
     def getLocalVolume(self, data, coordinatespace):
         """
@@ -540,7 +544,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
             return
         logger.debug(f'Requested: {path}')
         # total_bytes_limit = 256_000_000_000  # Lonestar6: 256 GB (3200 MT/level) DDR4
-        total_bytes_limit = 16_000_000_000
+        total_bytes_limit = 128_000_000_000
         future = ts.open({
             'dtype': 'uint8',
             'driver': 'zarr',
@@ -554,14 +558,16 @@ class AbstractEMViewer(neuroglancer.Viewer):
             },
             'data_copy_concurrency': {'limit': 512},
             'recheck_cached_data': 'open',
+
         })
+
         # recheck_cache_data is what Janelia opensource dataset uses in TensorStore example
         # may need to be False for total_bytes_limit to take effect
         return future
 
     def set_zoom(self, val):
-        caller = inspect.stack()[1].function
-        logger.debug(f'Setting zoom to {caller}')
+        # caller = inspect.stack()[1].function
+        logger.info(f'Setting zoom to {val}...')
         self._blockStateChanged = True
         with self.txn() as s:
             s.crossSectionScale = val
@@ -625,13 +631,17 @@ class AbstractEMViewer(neuroglancer.Viewer):
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
         self.webengine.setFocus()
 
+    def clearAllLayers(self):
+        #New method
+        with self.txn() as s:
+            s.layers.clear()
 
-    def clear_layers(self):
-        if self.state.layers:
-            logger.debug('Clearing viewer layers...')
-            state = copy.deepcopy(self.state)
-            state.layers.clear()
-            self.set_state(state)
+    # def clear_layers(self):
+    #     if self.state.layers:
+    #         logger.debug('Clearing viewer layers...')
+    #         state = copy.deepcopy(self.state)
+    #         state.layers.clear()
+    #         self.set_state(state)
 
     def getFrameScale(self, w, h):
         assert hasattr(self, 'tensor')
@@ -699,13 +709,28 @@ class EMViewer(AbstractEMViewer):
         with self.txn() as s:
             s.selected_layer.layer = self.dm.base_image_name()
 
+    @Slot()
+    def set_layer(self, pos=None):
+
+        self._blockStateChanged = True
+        if not pos:
+            pos = self.dm.zpos
+        with self.txn() as s:
+            # s.voxel_coordinates[2] = pos + 0.5
+            s.position[2] = pos + 0.5
+        # try:
+        #     self.LV.invalidate()
+        # except:
+        #     print_exception()
+        self._blockStateChanged = False
 
     def on_state_changed(self):
 
         if 1:
             if not self._blockStateChanged:
-                clr = inspect.stack()[1].function
-                logger.info(f'[{self.created}] [{clr}] [{self.name}]')
+                # clr = inspect.stack()[1].function
+                # logger.info(f'[{self.created}] [{clr}] [{self.name}]')
+                self._blockStateChanged = True
 
                 _css = self.state.cross_section_scale
                 if not isinstance(_css, type(None)):
@@ -726,8 +751,10 @@ class EMViewer(AbstractEMViewer):
 
                 if self.state.layout.type != getData('state,neuroglancer,layout'):
                     self.signals.layoutChanged.emit()
-            else:
-                logger.info('State change signal blocked!')
+
+                self._blockStateChanged = False
+            # else:
+            #     logger.info('State change signal blocked!')
 
 
 
@@ -764,8 +791,6 @@ class EMViewer(AbstractEMViewer):
             #         ),
             #     ]
             # )
-
-
         self._blockStateChanged = False
 
 
@@ -774,6 +799,7 @@ class TransformViewer(AbstractEMViewer):
     def __init__(self, **kwags):
         super().__init__(**kwags)
         self.name = 'TransformViewer'
+        self.title = f'i={self.dm.zpos} | Transformed'
         self.path = self.dm.path_zarr_raw()
         self.shader = self.dm['rendering']['shader']
         self.section_number = self.dm.zpos
@@ -798,37 +824,64 @@ class TransformViewer(AbstractEMViewer):
             s.show_layer_hover_values = False
             s.viewer_size = [self.webengine.width(), self.webengine.height()]
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
+
         with self.txn() as s:
             s.layout.type = 'xy'
             s.show_scale_bar = True
             s.show_axis_lines = False
             s.show_default_annotations = True
             s.position = [self.tensor.shape[0] / 2, self.tensor.shape[1] / 2, 1.5]
+        self.initZoom(w=self.webengine.width(), h=self.webengine.height(), adjust=1.15)
+
 
     def initViewer(self):
         self._blockStateChanged = False
-        self.clear_layers()
-
-        try:
-            assert Path(self.path).exists()
-        except AssertionError:
-            logger.warning(f"Data not found: {self.path}")
-            return
-
+        self.clearAllLayers()
+        pos = self.dm.zpos
         ref_pos = self.dm.get_ref_index()
-        # self.tensor = self.getTensor(self.path).result()[ts.d[:].label["x", "y", "z"]]
+        # afm = self.dm.mir_afm()
+        # data = self.tensor[:, :, pos:pos + 1]
+        # self.add_im_layer('transforming', data, afm, i=1)
+        # if ref_pos is not None:
+        #     data = self.tensor[:, :, ref_pos:ref_pos + 1]
+        #     self.add_im_layer('reference', data, i=0)
+        if hasattr(self,'LV'):
+            self.LV.invalidate()
+        if hasattr(self, 'LV2'):
+            self.LV2.invalidate()
+        with self.txn() as s:
+            afm = self.dm.mir_afm()
+            self.LV = self.getLocalVolume(self.tensor[:, :, pos:pos + 1], self.getCoordinateSpace())
+            transform = self.get_transform(afm=afm, i=1)
+            source = ng.LayerDataSource(url=self.LV, transform=transform, )
+            s.layers.append(
+                name='transforming',
+                layer=ng.ImageLayer(source=source, shader=self.shader),
+                opacity=1,
+            )
+            if ref_pos is not None:
+                self.LV2 = self.getLocalVolume(self.tensor[:, :, ref_pos:ref_pos + 1], self.getCoordinateSpace())
+                transform = self.get_transform(afm=None, i=0)
+                source = ng.LayerDataSource(url=self.LV2, transform=transform, )
+                s.layers.append(
+                    name='transforming',
+                    layer=ng.ImageLayer(source=source, shader=self.shader),
+                    opacity=1,
+                )
+        self.webengine.reload()
 
-        # if hasattr(self, 'LV0'):
-        if ref_pos is not None:
-            data = self.tensor[:, :, ref_pos:ref_pos + 1]
-            self.add_im_layer('reference', data, i=0)
-        # if self.dm.is_aligned():
-        #     afm = self.dm.mir_afm()
-        # else:
-        #     afm = [[1., 0., 0.], [0., 1., 0.]]
-        afm = self.dm.mir_afm()
-        data = self.tensor[:, :, self.dm.zpos:self.dm.zpos + 1]
-        self.add_im_layer('transforming', data, afm, i=1)
+    @Slot()
+    def toggle(self):
+        logger.info('')
+        with self.txn() as s:
+            curpos = floor(s.position[2])
+            if curpos == 0:
+                newpos = 1.5
+                self.title = f'i={self.dm.zpos} | Transformed'
+            else:
+                newpos = 0.5
+                self.title = f'i={self.dm.get_ref_index()} | Reference'
+            s.position[2] = newpos
 
 
 
@@ -899,108 +952,119 @@ class MAViewer(AbstractEMViewer):
     def __init__(self, **kwags):
         super().__init__(**kwags)
         self.name = 'MAViewer'
-        self.role = 'tra'
-        self.index = 0
+        # self.role = 'tra'
         self.cs_scale = None
         self.marker_size = 1
         self.shader = self.dm['rendering']['shader']
+        self.level_val = self.dm.lvl()
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
         # self.signals.ptsChanged.connect(self.drawSWIMwindow)
-        self.initViewer()
-        self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
-        self.signals.ptsChanged.connect(self.drawSWIMwindow)
-
-    def z(self):
-        # return int(self.state.voxel_coordinates[0]) # self.state.position[0]
-        return int(self.state.voxel_coordinates[2]) # self.state.position[0]
-
-    def set_layer(self):
-        caller = inspect.stack()[1].function
-        self._blockStateChanged = True
-
-        if self.role == 'ref':
-            self.index = self.dm.get_ref_index()
-        else:
-            self.index = self.dm.zpos
-        logger.debug(f"[{caller}] Setting Z-position [{self.index}]")
-        with self.txn() as s:
-            vc = s.voxel_coordinates
-            try:
-                # vc[0] = self.index + 0.5
-                vc[2] = self.index + 0.5
-            except TypeError:
-                logger.warning('TypeError')
-                pass
-
-        self.drawSWIMwindow() #1111+
-        print(f"<< set_layer [{self.index}]")
-        # self.signals.zVoxelCoordChanged.emit(self.index)
-        self._blockStateChanged = False
-
-    def initViewer(self):
-        logger.debug('')
-        self._blockStateChanged = True
-        ref = self.dm.get_ref_index()
-        self.index = ref if self.role == 'ref' else self.dm.zpos
-
         try:
             assert Path(self.path).exists()
         except AssertionError:
             logger.warning(f"Data not found: {self.path}")
             return
-
         self.tensor = self.getTensor(self.path).result()
-        self.add_im_layer('volume', self.tensor[:, :, :])
 
+        self.coordinate_space = self.getCoordinateSpace()
         with self.txn() as s:
             s.layout.type = 'xy'
             s.show_scale_bar = True
             s.show_axis_lines = False
             s.show_default_annotations = False
             x, y, _ = self.tensor.shape
-            s.voxel_coordinates = [x / 2, y / 2, self.index + .5]
-
-        w = self.parent.wNg1.width()
-        h = self.parent.wNg1.height()
-        self.initZoom(w=w, h=h)
-        self.drawSWIMwindow()
+            s.voxel_coordinates = [x / 2, y / 2, 0.5]
+        self.initViewer()
+        self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
+        # self.shared_state.add_changed_callback(self.on_state_changed)
+        self.signals.ptsChanged.connect(self.drawSWIMwindow)
+        self.initZoom(w=self.webengine.width(), h=self.webengine.height())
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
         self.webengine.setFocus()
+
+
+    def set_layer(self):
+        self._blockStateChanged = True
+        logger.info(f"----> set_layer ---->")
+        with self.txn() as s:
+            if self.dm['state']['tra_ref_toggle'] == 'ref':
+                s.position[2] = 1.5
+            else:
+                s.position[2] = 0.5
+
+        # neuroglancer.futures.run_on_new_thread(self.drawSWIMwindow)
+        self.drawSWIMwindow()
+        logger.info(f"<---- set_layer <----")
+        self._blockStateChanged = False
+
+    def applyTransformation(self):
+        afm = self.dm.mir_afm()
+        self.set_affine(afm=afm, i=0)
+
+    def initViewer(self):
+        logger.debug('')
+        self._blockStateChanged = True
+        self.clearAllLayers()
+        pos = self.dm.zpos
+        ref_pos = self.dm.get_ref_index()
+        # afm = self.dm.mir_afm()
+        if hasattr(self, 'LV'):
+            self.LV.invalidate()
+        if hasattr(self, 'LV2'):
+            self.LV2.invalidate()
+        with self.txn() as s:
+            self.LV = self.getLocalVolume(self.tensor[:, :, pos:pos + 1], self.getCoordinateSpace())
+            transform = self.get_transform(afm=None, i=1)
+            source = ng.LayerDataSource(url=self.LV, transform=transform, )
+            s.layers.append(
+                name='transforming',
+                layer=ng.ImageLayer(source=source, shader=self.shader),
+                opacity=1,
+            )
+            if ref_pos is not None:
+                self.LV2 = self.getLocalVolume(self.tensor[:, :, ref_pos:ref_pos + 1], self.getCoordinateSpace())
+                transform = self.get_transform(afm=None, i=0)
+                source = ng.LayerDataSource(url=self.LV2, transform=transform, )
+                s.layers.append(
+                    name='transforming',
+                    layer=ng.ImageLayer(source=source, shader=self.shader),
+                    opacity=1,
+                )
+
+        # self.defer_callback(self.drawSWIMwindow)
+        self.drawSWIMwindow()
         self._blockStateChanged = False
 
     def on_state_changed(self):
-        if not self._blockStateChanged:
-            # logger.debug(f'[{self.role}]')
-            self._blockStateChanged = True
+        logger.info('----> STATE CHANGE ---->')
+        if 1:
+            if not self._blockStateChanged:
+                logger.info(f'')
 
-            if self.state.cross_section_scale:
-                val = (self.state.cross_section_scale, self.state.cross_section_scale * 250000000)[
-                    self.state.cross_section_scale < .001]
-                if round(val, 2) != round(getData('state,neuroglancer,zoom'), 2):
-                    if getData('state,neuroglancer,zoom') != val:
-                        logger.debug(f'emitting zoomChanged! val = {val:.4f}')
-                        setData('state,neuroglancer,zoom', val)
-                        self.signals.zoomChanged.emit(val)
+                self._blockStateChanged = True
 
-            if self.role == 'ref':
-                # if floor(self.state.position[0]) != self.index:
-                if floor(self.state.position[2]) != self.index:
-                    logger.warning(f"[{self.role}] Illegal state change")
-                    self.signals.badStateChange.emit()  # New
-                    return
+                if self.state.cross_section_scale:
+                    val = (self.state.cross_section_scale, self.state.cross_section_scale * 250000000)[
+                        self.state.cross_section_scale < .001]
+                    if round(val, 2) != round(getData('state,neuroglancer,zoom'), 2):
+                        if getData('state,neuroglancer,zoom') != val:
+                            logger.debug(f'emitting zoomChanged! val = {val:.4f}')
+                            setData('state,neuroglancer,zoom', val)
+                            self.signals.zoomChanged.emit(val)
+                if 1:
+                    requested = floor(self.state.position[2])
+                    _role = self.dm['state']['tra_ref_toggle']
+                    if floor(requested) < 1:
+                        _newrole = 'tra'
+                    else:
+                        _newrole = 'ref'
+                    if _role != _newrole:
+                        self.dm['state']['tra_ref_toggle'] = _newrole
+                        self.drawSWIMwindow()
 
-            elif self.role == 'tra':
-                # if floor(self.state.position[0]) != self.index:
-                if floor(self.state.position[2]) != self.index:
-                    logger.debug(f"Signaling Z-position change...")
-                    self.index = floor(self.state.position[2])
-                    self.dm.zpos = self.index
-                    self.drawSWIMwindow()  # NeedThis #0803
-                    # self.dm.zpos = self.index
-                    # self.signals.zVoxelCoordChanged.emit(self.index)
+                self._blockStateChanged = False
 
-            self._blockStateChanged = False
-            # logger.debug('<< on_state_changed')
+        logger.info('<---- STATE CHANGE <----')
 
     def _key1(self, s):
         logger.debug('')
@@ -1033,22 +1097,25 @@ class MAViewer(AbstractEMViewer):
             frac_x = x / self.tensor.shape[0]
             frac_y = y / self.tensor.shape[1]
             logger.debug(f"decimal x = {frac_x}, decimal y = {frac_y}")
+            role = self.dm['state']['tra_ref_toggle']
             self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings']['method_opts']['points']['coords'][
-                self.role][id] = (frac_x, frac_y)
+                role][id] = (frac_x, frac_y)
             self.signals.ptsChanged.emit()
-            self.drawSWIMwindow()
+            neuroglancer.futures.run_on_new_thread(self.drawSWIMwindow)
 
     def drawSWIMwindow(self):
-        caller = inspect.stack()[1].function
-        logger.debug(f"[{caller}][{self.index}] Drawing SWIM windows...")
-        z = self.dm.zpos + 0.5
+        # caller = inspect.stack()[1].function
+        # logger.info(f"----> [{caller}][{self.index}] drawSWIMwindow ---->")
+        # z = self.dm.zpos + 0.5
         self._blockStateChanged = True
-        self.undrawSWIMwindows()
+        if self.dm['state']['tra_ref_toggle'] == 'ref':
+            z = 1.5
+        else:
+            z = 0.5
+
         m = self.marker_size
-        level_val = self.dm.lvl()
         method = self.dm.current_method
         annotations = []
-
         if method == 'grid':
             ww1x1 = tuple(self.dm.size1x1())  # full window width
             ww2x2 = tuple(self.dm.size2x2())  # 2x2 window width
@@ -1056,22 +1123,24 @@ class MAViewer(AbstractEMViewer):
             p = getCenterpoints(w, h, ww1x1, ww2x2)
             colors = self.colors[0:sum(self.dm.quadrants)]
             cps = [x for i, x in enumerate(p) if self.dm.quadrants[i]]
-            ww_x = ww2x2[0] - (24 // level_val)
-            ww_y = ww2x2[1] - (24 // level_val)
+            ww_x = ww2x2[0] - (24 // self.level_val)
+            ww_y = ww2x2[1] - (24 // self.level_val)
             for i, pt in enumerate(cps):
                 c = colors[i]
                 d1, d2, d3, d4 = getRect(pt, ww_x, ww_y)
                 id = 'roi%d' % i
                 annotations.extend([
-                    ng.LineAnnotation(id=id + '%d0', pointA=d1 + (z,), pointB=d2 + (z,), props=[c, m]),
-                    ng.LineAnnotation(id=id + '%d1', pointA=d2 + (z,), pointB=d3 + (z,), props=[c, m]),
-                    ng.LineAnnotation(id=id + '%d2', pointA=d3 + (z,), pointB=d4 + (z,), props=[c, m]),
-                    ng.LineAnnotation(id=id + '%d3', pointA=d4 + (z,), pointB=d1 + (z,), props=[c, m])])
-            cfg.mw.setFocus()
+                    ng.LineAnnotation(id=id + '_0', pointA=d1 + (z,), pointB=d2 + (z,), props=[c, m]),
+                    ng.LineAnnotation(id=id + '_1', pointA=d2 + (z,), pointB=d3 + (z,), props=[c, m]),
+                    ng.LineAnnotation(id=id + '_2', pointA=d3 + (z,), pointB=d4 + (z,), props=[c, m]),
+                    ng.LineAnnotation(id=id + '_3', pointA=d4 + (z,), pointB=d1 + (z,), props=[c, m])])
+            # cfg.mw.setFocus()
 
         elif method == 'manual':
             ww_x = ww_y = self.dm.manual_swim_window_px()
-            pts = self.dm.ss['method_opts']['points']['coords'][self.role]
+            role = self.dm['state']['tra_ref_toggle']
+            pts = self.dm.ss['method_opts']['points']['coords'][role]
+            # z = 1.5
             for i, pt in enumerate(pts):
                 if pt:
                     x = self.tensor.shape[0] * pt[0]
@@ -1084,29 +1153,42 @@ class MAViewer(AbstractEMViewer):
                         ng.LineAnnotation(id=id + '%d1', pointA=d2 + (z,), pointB=d3 + (z,), props=[c, m]),
                         ng.LineAnnotation(id=id + '%d2', pointA=d3 + (z,), pointB=d4 + (z,), props=[c, m]),
                         ng.LineAnnotation(id=id + '%d3', pointA=d4 + (z,), pointB=d1 + (z,), props=[c, m])])
+
             self.webengine.setFocus()
 
-        with self.txn() as s:
-            s.layers['SWIM'] = ng.LocalAnnotationLayer(
-                annotations=annotations,
-                dimensions=self.getCoordinateSpace(),
-                annotationColor='blue',
-                annotation_properties=[
-                    ng.AnnotationPropertySpec(id='color', type='rgb', default='#ffff66', ),
-                    ng.AnnotationPropertySpec(id='size', type='float32', default=1, )
-                ],
-                shader='''void main() {
-                    setColor(prop_color());
-                    setPointMarkerSize(prop_size());}''',
-            )
-        self._blockStateChanged = False
-        # print("<< drawSWIMwindow", flush=True)
+        self.new_annotations = ng.LocalAnnotationLayer(
+            annotations=annotations,
+            dimensions=self.coordinate_space,
+            annotationColor='blue',
+            annotation_properties=[
+                ng.AnnotationPropertySpec(id='color', type='rgb', default='#ffff66', ),
+                ng.AnnotationPropertySpec(id='size', type='float32', default=1, )
+            ],
+            shader='''void main() {setColor(prop_color()); setPointMarkerSize(prop_size());}''',
+        )
 
-    def undrawSWIMwindows(self):
         with self.txn() as s:
             if s.layers['SWIM']:
-                if 'annotations' in s.layers['SWIM'].to_json().keys():
+                try:
                     s.layers['SWIM'].annotations = None
+                except AttributeError:
+                    pass
+            s.layers['SWIM'] = self.new_annotations
+        self._blockStateChanged = False
+        # self.webengine.reload()
+        logger.info(f"<---- drawSWIMwindow <----")
+        # print("<< drawSWIMwindow", flush=True)
+
+    # def undrawSWIMwindows(self):
+    #     #Fast, ~0.002
+    #     with self.txn() as s:
+    #         if s.layers['SWIM']:
+    #             try:
+    #                 s.layers['SWIM'].annotations = None
+    #             except AttributeError:
+    #                 pass
+
+
 
 
 @cache
@@ -1157,6 +1239,8 @@ def to_tuples(arg):
 def transpose(m):
     return np.array([[m[1][1], m[1][0], m[1][2]],
             [m[0][1], m[0][0], m[0][2]]])
+
+
 
 
 """

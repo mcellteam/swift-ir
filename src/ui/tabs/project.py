@@ -57,7 +57,7 @@ class AlignmentTab(QWidget):
         self.dm = self.parent.dm = cfg.dm = dm
         self.parent.pt = cfg.pt = self
         self.setUpdatesEnabled(True)
-        self.we0 = WebEngine(ID='viewer')
+        self.we0 = WebEngine(self, ID='viewer')
         self.we0.setStyleSheet("background-color: #000000;")
         self.we0.setFocusPolicy(Qt.NoFocus)
         self.we0.loadFinished.connect(lambda: print('Web engine load finished!'))
@@ -87,25 +87,19 @@ class AlignmentTab(QWidget):
             _tab = self.wTabs.currentIndex()
             if _tab == 0:
                 self.viewer0.set_layer()
+                # self.viewer0.defer_callback(self.viewer0.set_layer)
             elif _tab == 1:
                 self.transformViewer.initViewer()
-                self.viewer1.set_layer()
+                self.viewer1.initViewer()
+            if self.dSnr_plot.isVisible():
+                self.dSnr_plot.updateLayerLinePos()
 
         self.dm.signals.zposChanged.connect(fn_zpos)
-        self.dm.signals.zposChanged.connect(self.parent.updateSlidrZpos)
+        # self.dm.signals.zposChanged.connect(self.parent.updateSlidrZpos)
         self.dm.signals.zposChanged.connect(self.parent.setSignalsPixmaps)
         self.dm.signals.zposChanged.connect(self.parent.setTargKargPixmaps)
         self.dm.signals.zposChanged.connect(self.dataUpdateMA) #1111+
-
-        # self.dm.signals.zposChanged.connect(self.forceFocus) #1111+
-        # def fn_updatelayer():
-        #     logger.info('')
-        #     if hasattr(self,'viewer'):
-        #         if self.viewer:
-        #             if self.wTabs.currentIndex() in (0,1):
-        #                 logger.info('actionable...')
-        #                 self.viewer.set_layer()
-        # self.dm.signals.zposChanged.connect(fn_updatelayer) #1111+
+        self.dm.signals.zposChanged.connect(lambda x: self.parent.sldrZpos.setValue(x)) #1111+
 
         self.dm.signals.savedChanged.connect(self.parent.setStatusInfo)
         self.dm.signals.savedChanged.connect(self.parent.updateAlignAllButtonText)
@@ -118,7 +112,6 @@ class AlignmentTab(QWidget):
         # self.dm.signals.dataChanged.connect(lambda: self.bSaveSettings.setEnabled(not self.dm.ssSavedComports()))
         self.dm.signals.dataChanged.connect(lambda: self.bSaveSettings.setEnabled(not self.dm.ssSavedComports() and self.dm.ht.haskey(self.dm.swim_settings())))
         # self.dm.signals.dataChanged.connect(lambda: self.cbSaved.setText(('Saved preferences (revert)', 'Saved preferences')[self.dm.ssSavedComports()]))
-        self.dm.signals.dataChanged.connect(self.parent.updateMS)
 
         # self.dm.loadHashTable()
 
@@ -197,27 +190,30 @@ class AlignmentTab(QWidget):
         index = self.wTabs.currentIndex()
         self.dm['state']['current_tab'] = index
         # self.gifPlayer.stop()
+
         if index == 0:
-            self.viewer = self.viewer0
             self.updateTab0UI()
             # self.updateZarrUI()
-            # self.initNeuroglancer()
+            self.initNeuroglancer()
 
         elif index == 1:
             # self.parent.setdw_thumbs(False) #BEFORE init neuroglancer
             # self.parent.setdw_matches(True) #BEFORE init neuroglancer
-            self.viewer = self.viewer1
             self.dataUpdateMA()
             self.cbxViewerScale.setCurrentIndex(self.dm.levels.index(self.dm.level))
             self.initNeuroglancer() #Todo necessary for now
             self.set_transforming() #0802+
             self._updatePointLists() #0726+
             if self.twCornerViewer.currentIndex() == 0:
-                res = self.dm.resolution(s=self.dm.level)
-                self.transformViewer = TransformViewer(parent=self, webengine=self.we2, path=None, dm=self.dm, res=res, )
-                w = self.we2.width()
-                h = self.we2.height()
-                self.transformViewer.initZoom(w=w, h=h, adjust=1.15)
+                # res = self.dm.resolution(s=self.dm.level)
+                # self.transformViewer = TransformViewer(parent=self, webengine=self.we2, path=None, dm=self.dm, res=res, )
+                # w = self.we2.width()
+                # h = self.we2.height()
+                # self.transformViewer.initZoom(w=w, h=h, adjust=1.15)
+                # self.transformViewer.set_layer()
+
+                # self.transformViewer.webengine.reload()
+                pass
             elif self.twCornerViewer.currentIndex() == 1:
                 self.gifPlayer.set()
         elif index == 2:
@@ -238,7 +234,8 @@ class AlignmentTab(QWidget):
         index = self.wTabs.currentIndex()
         self.dm['state']['blink'] = False
         # self.matchPlayTimer.stop()
-        self.initNeuroglancer(init_all=True)
+        # self.initNeuroglancer(init_all=True)
+        self.initNeuroglancer(force=True)
         if index == 0:
             self.updateTab0UI()
             # self.updateZarrUI()
@@ -255,12 +252,12 @@ class AlignmentTab(QWidget):
                 else:
                     self.dSnr_plot.wipePlot()
 
-            elif self.twCornerViewer.currentIndex() == 0:
-                res = copy.deepcopy(self.dm.resolution(s=self.dm.level))
-                self.transformViewer = TransformViewer(parent=self, webengine=self.we2, path=None, dm=self.dm, res=res, )
-                w = self.we2.width()
-                h = self.we2.height()
-                self.transformViewer.initZoom(w=w, h=h, adjust=1.15)
+            # elif self.twCornerViewer.currentIndex() == 0:
+            #     res = copy.deepcopy(self.dm.resolution(s=self.dm.level))
+            #     self.transformViewer = TransformViewer(parent=self, webengine=self.we2, path=None, dm=self.dm, res=res, )
+            #     w = self.we2.width()
+            #     h = self.we2.height()
+            #     self.transformViewer.initZoom(w=w, h=h, adjust=1.15)
             if self.twCornerViewer.currentIndex() == 1:
                 self.gifPlayer.set()
 
@@ -279,90 +276,106 @@ class AlignmentTab(QWidget):
         logger.info('')
         if ng.is_server_running():
             ng.server.stop()
-            # time.sleep(.5)
+
+    def initVolumeTab0(self):
+        path = self.dm.path_zarr_raw()
+        res = copy.deepcopy(self.dm.resolution(s=self.dm.level))
+        self.viewer0 = EMViewer(parent=self, webengine=self.we0, path=path, dm=self.dm, res=res)
+        self.viewer0.signals.layoutChanged.connect(lambda: setData('state,neuroglancer,layout', self.viewer0.state.layout.type))
+        self.viewer0.signals.layoutChanged.connect(lambda: self.cbxNgLayout.setCurrentText(self.viewer0.state.layout.type))
+        self.viewer0.signals.arrowLeft.connect(self.layer_left)
+        self.viewer0.signals.arrowRight.connect(self.layer_right)
+        self.viewer0.signals.arrowLeft.connect(lambda: print(f"arrow left!"))
+        self.viewer0.signals.arrowRight.connect(lambda: print(f"arrow right!"))
+        self.viewer0.signals.arrowUp.connect(lambda: self.viewer0.set_zoom(self.viewer0.zoom() * 0.9))
+        self.viewer0.signals.arrowDown.connect(lambda: self.viewer0.set_zoom(self.viewer0.zoom() * 1.1))
+        self.viewer0.signals.zoomChanged.connect(lambda x: self.slot_zoom_changed(x))  # Critical updates the lineedit
+        # self.viewer0.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314
+        self.viewer0.signals.zoomChanged.connect(lambda x: self.sldrZoomTab0.setValue(x))
+
+        self.sldrZoomTab1.setValue(self.viewer0.state.cross_section_scale)
+
+    def initVolumeTab1(self):
+        path = os.path.join(self.dm['info']['images_path'], 'zarr', self.dm.level)
+        res = self.dm.resolution(s=self.dm.level)
+        self.viewer = self.viewer1 = MAViewer(parent=self, webengine=self.we1, path=path, dm=self.dm, res=res, )
+        self.viewer1.signals.badStateChange.connect(self.set_transforming)
+        self.viewer1.signals.ptsChanged.connect(self._updatePointLists)
+        self.viewer1.signals.toggleView.connect(self.toggle_ref_tra)
+        self.viewer1.signals.arrowLeft.connect(self.layer_left)
+        self.viewer1.signals.arrowRight.connect(self.layer_right)
+        self.viewer1.signals.arrowUp.connect(lambda: self.viewer1.set_zoom(self.viewer1.zoom() * 0.9))
+        self.viewer1.signals.arrowDown.connect(lambda: self.viewer1.set_zoom(self.viewer1.zoom() * 1.1))
+        # self.viewer1.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314
+        self.viewer1.signals.zoomChanged.connect(lambda x: self.sldrZoomTab1.setValue(x))
+
+        def fn(x):
+            logger.info(f'signal received. requested: {x}')
+            self.dm.zpos = x
+            # self.viewer1.webengine.reload()
+
+        self.viewer1.signals.zChanged.connect(lambda x: fn(x))
+        self.viewer1.signals.zChanged.connect(self.viewer1.drawSWIMwindow)
+        if hasattr(self,'transformViewer'):
+            del self.transformViewer
+        self.transformViewer = TransformViewer(parent=self, webengine=self.we2, path='', dm=self.dm, res=res, )
+
+        self.sldrZoomTab1.setValue(self.viewer1.state.cross_section_scale)
 
 
-    def initNeuroglancer(self, init_all=False):
+
+    def initNeuroglancer(self, force=False):
         caller = inspect.stack()[1].function
 
         self._initNG_calls += 1
         logger.critical(f"[call # {self._initNG_calls}, {caller}] Initializing Neuroglancer...")
 
-        if init_all:
-            if ng.is_server_running():
-                ng.server.stop()
-
         if self.parent._working:
-            logger.warning(f"[{caller}] UNABLE TO INITIALIZE NEUROGLANCER AT THIS TIME... BUSY WORKING!")
+            logger.warning(f"[{caller}] Unable to initialize Neuroglancer at this time, busy working!")
             return
 
-        if self.wTabs.currentIndex() == 1 or init_all:
-            self.gifPlayer.set(start=False)
-            # self.we1.setUrl(QUrl("http://localhost:8888/"))
-            path = os.path.join(self.dm['info']['images_path'], 'zarr', self.dm.level)
-            res = self.dm.resolution(s=self.dm.level)
-            self.viewer = self.viewer1 =  MAViewer(parent=self, webengine=self.we1, path=path, dm=self.dm, res=res, )
-            self.viewer1.signals.badStateChange.connect(self.set_transforming)
-            self.viewer1.signals.ptsChanged.connect(self._updatePointLists)
-            self.viewer1.signals.toggleView.connect(self.toggle_ref_tra)
-            self.viewer1.signals.arrowLeft.connect(self.layer_left)
-            self.viewer1.signals.arrowRight.connect(self.layer_right)
-            self.viewer1.signals.arrowUp.connect(lambda: self.viewer0.set_zoom(self.viewer0.zoom() * 0.9))
-            self.viewer1.signals.arrowDown.connect(lambda: self.viewer0.set_zoom(self.viewer0.zoom() * 1.1))
-            self.viewer1.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314
-            self.viewer1.signals.zoomChanged.connect(lambda x: self.zoomSlider.setValue(x))
+        if force:
+            if hasattr(self, 'viewer0'):
+                del self.viewer0
+            if hasattr(self, 'viewer1'):
+                del self.viewer1
+            if hasattr(self, 'transformViewer'):
+                del self.transformViewer
+            self.shutdownNeuroglancer()
 
-            self.zoomSlider.setValue(self.viewer1.state.cross_section_scale)
+        QApplication.processEvents() #Critical for viewer1 to take correct size
 
-            self.transformViewer = TransformViewer(parent=self, webengine=self.we2, path='', dm=self.dm, res=res, )
-            self.transformViewer.initZoom(w=self.we2.width(), h=self.we2.height(), adjust=1.15)
-
-        #todo for now this needs to happen second so that self.viewer is correct when init_all is True #Refactor
-        if self.wTabs.currentIndex() == 0 or init_all:
-            if self.cbTransformed.isChecked():
-                setData('state,neuroglancer,transformed', True)
-            else:
-                setData('state,neuroglancer,transformed', False)
-            self.cbxNgLayout.setCurrentText(getData('state,neuroglancer,layout'))
-            path = self.dm.path_zarr_raw()
-            res = copy.deepcopy(self.dm.resolution(s=self.dm.level))
-            if init_all:
-                self.viewer0 = EMViewer(parent=self, webengine=self.we0, path=path, dm=self.dm, res=res)
-                # self.viewer.signals.zoomChanged.connect(self.slotUpdateZoomSlider)
-                self.viewer0.signals.layoutChanged.connect(lambda: setData('state,neuroglancer,layout', self.viewer.state.layout.type))
-                self.viewer0.signals.layoutChanged.connect(lambda: self.cbxNgLayout.setCurrentText(self.viewer.state.layout.type))
-                self.viewer0.signals.arrowLeft.connect(self.layer_left)
-                self.viewer0.signals.arrowRight.connect(self.layer_right)
-                self.viewer0.signals.arrowLeft.connect(lambda: print(f"arrow left!"))
-                self.viewer0.signals.arrowRight.connect(lambda: print(f"arrow right!"))
-                self.viewer0.signals.arrowUp.connect(lambda: self.viewer0.set_zoom(self.viewer0.zoom() * 0.9))
-                self.viewer0.signals.arrowDown.connect(lambda: self.viewer0.set_zoom(self.viewer0.zoom() * 1.1))
-                self.viewer0.signals.zoomChanged.connect(lambda x: self.slot_zoom_changed(x))  # Critical updates the lineedit
+        _tab = self.wTabs.currentIndex()
+        if _tab == 0:
+            # self.cbxNgLayout.setCurrentText(getData('state,neuroglancer,layout'))
+            if force or not hasattr(self, 'viewer0'):
+                self.initVolumeTab0()
             else:
                 self.viewer0.initViewer()
-
-            self.viewer = self.viewer0
+        elif _tab == 1:
+            self.gifPlayer.set(start=False)
+            # self.we1.setUrl(QUrl("http://localhost:8888/"))
+            if force or not hasattr(self,'viewer1'):
+                self.initVolumeTab1()
+            else:
+                self.viewer1.initViewer()
+                self.transformViewer.initViewer()
 
         self.parent.hud.done()
-        # QApplication.processEvents() #1009-
         logger.info(f"<<<< initNeuroglancer")
 
     @Slot()
     def layer_left(self):
         logger.info('')
-        if self.pt.wTabs.currentIndex() == 1:
-            if self.dm['state']['tra_ref_toggle'] == 'ref':
-                self.pt.set_transforming()
         requested = self.dm.zpos - 1
         if requested >= 0:
             self.dm.zpos = requested
+            # if self.wTabs.currentIndex() == 1:
+            #     self.pt.set_transforming()
 
     @Slot()
     def layer_right(self):
         logger.info('')
-        if self.pt.wTabs.currentIndex() == 1:
-            if self.dm['state']['tra_ref_toggle'] == 'ref':
-                self.pt.set_transforming()
         requested = self.dm.zpos + 1
         if requested < len(self.dm):
             self.dm.zpos = requested
@@ -390,7 +403,7 @@ class AlignmentTab(QWidget):
         # self.hud_overlay.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
         # self.hud_overlay.set_theme_overlay()
 
-        self.ngVertLab = VerticalLabel('Neuroglancer 3DEM View')
+
         self.detailsSNR = QLabel()
         self.detailsSNR.setWindowFlags(Qt.FramelessWindowHint)
         self.detailsSNR.setAttribute(Qt.WA_TransparentForMouseEvents)
@@ -398,25 +411,25 @@ class AlignmentTab(QWidget):
         self.detailsSNR.setWordWrap(True)
         self.detailsSNR.hide()
 
-        self.zoomSlider = DoubleSlider(Qt.Orientation.Vertical, self)
-        self.zoomSlider.setFocusPolicy(Qt.NoFocus)
-        self.zoomSlider.setMouseTracking(True)
-        # self.zoomSlider.setInvertedAppearance(True)
-        self.zoomSlider.setMaximum(4)
-        self.zoomSlider.setMinimum(1)
+        self.sldrZoomTab1 = DoubleSlider(Qt.Orientation.Vertical, self)
+        self.sldrZoomTab1.setFocusPolicy(Qt.NoFocus)
+        self.sldrZoomTab1.setMouseTracking(True)
+        # self.sldrZoomTab1.setInvertedAppearance(True)
+        self.sldrZoomTab1.setMaximum(4)
+        self.sldrZoomTab1.setMinimum(1)
 
-        # self.zoomSlider.sliderMoved.connect(self.onZoomSlider) #Original #0314
-        self.zoomSlider.valueChanged.connect(self.onZoomSlider)
-        self.zoomSlider.setValue(4.0)
+        # self.sldrZoomTab1.sliderMoved.connect(self.onZoomSlider) #Original #0314
+        self.sldrZoomTab1.valueChanged.connect(self.onZoomSlider)
+        self.sldrZoomTab1.setValue(4.0)
 
         vlab = VerticalLabel('Zoom:')
 
-        self.zoomSliderAndLabel = VW()
-        self.zoomSliderAndLabel.layout.setSpacing(0)
-        self.zoomSliderAndLabel.setFocusPolicy(Qt.NoFocus)
-        self.zoomSliderAndLabel.setFixedWidth(16)
-        self.zoomSliderAndLabel.addWidget(self.zoomSlider)
-        self.zoomSliderAndLabel.addWidget(vlab)
+        self.wSldrZoomTab1 = VW()
+        self.wSldrZoomTab1.layout.setSpacing(0)
+        self.wSldrZoomTab1.setFocusPolicy(Qt.NoFocus)
+        self.wSldrZoomTab1.setFixedWidth(16)
+        self.wSldrZoomTab1.addWidget(self.sldrZoomTab1)
+        self.wSldrZoomTab1.addWidget(vlab)
 
         # self.sliderZdisplay = DoubleSlider(Qt.Orientation.Vertical, self)
         # self.sliderZdisplay.setFocusPolicy(Qt.NoFocus)
@@ -424,15 +437,6 @@ class AlignmentTab(QWidget):
         # self.sliderZdisplay.setMinimum(1)
         # self.sliderZdisplay.setValue(1.0)
         # self.sliderZdisplay.valueChanged.connect(self.onSliderZmag)
-
-        self.we1 = WebEngine(ID='tra')
-        # self.we1.setFocusPolicy(Qt.NoFocus) #1011-
-        self.we1.setStyleSheet("background-color: #000000;")
-        self.we1.page().setBackgroundColor(Qt.transparent) #0726+
-        self.we1.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        setWebengineProperties(self.we1)
-        self.we1.setMouseTracking(True)
-        # self.we1.setFocusPolicy(Qt.NoFocus) #0726-
 
         '''Mouse move events will occur only when a mouse bBlink is pressed down, 
         unless mouse tracking has been enabled with setMouseTracking() .'''
@@ -1295,34 +1299,6 @@ class AlignmentTab(QWidget):
 
         # self.cbxViewerScale.currentIndexChanged.connect(fn_cmbViewerScale)
 
-
-        self.clTra = ClickLabel(' Transforming ')
-        self.clTra.setFocusPolicy(Qt.NoFocus)
-        self.clTra.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.clTra.setMinimumWidth(128)
-        self.clTra.setAlignment(Qt.AlignLeft)
-        self.clTra.setFixedHeight(16)
-        self.clTra.clicked.connect(self.set_transforming)
-
-        self.clRef = ClickLabel(' Reference ')
-        self.clRef.setFocusPolicy(Qt.NoFocus)
-        self.clRef.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.clRef.setMinimumWidth(128)
-        self.clRef.setAlignment(Qt.AlignRight)
-        self.clRef.setFixedHeight(16)
-        self.clRef.clicked.connect(self.set_reference)
-
-        self.clTra.setStyleSheet('background-color: #339933; color: #f3f6fb; font-size: 10px; font-weight: 600; border: none;')
-        self.clRef.setStyleSheet('background-color: #222222; color: #f3f6fb; font-size: 10px; font-weight: 600; border-width: 4px;')
-
-        self.wSwitchRefTra = QWidget()
-        self.wSwitchRefTra.setFixedHeight(16)
-        # self.wSwitchRefTra.setStyleSheet("background-color: #222222;")
-        self.wSwitchRefTra.setFocusPolicy(Qt.NoFocus)
-
-        self.wSwitchRefTra = HW(self.clTra, self.clRef)
-        self.wSwitchRefTra.setFixedHeight(15)
-
         # https://codeloop.org/pyqt5-make-multi-document-interface-mdi-application/
 
         # '''THIS WORKS'''
@@ -1351,13 +1327,6 @@ class AlignmentTab(QWidget):
         # testmenu.addAction("New")
         # testmenu.addAction("cascade")
         # testmenu.addAction("Tiled")
-
-        self._wNg1 = QWidget()
-        self.glNg1 = GL()
-        self.glNg1.addWidget(self.we1, 0, 0, 3, 3)
-        self.glNg1.addWidget(self._overlayLab, 0, 0, 3, 3)
-        self._wNg1.setLayout(self.glNg1)
-        self.wNg1 = VW(self.wSwitchRefTra, self._wNg1)
 
         ngFont = QFont('Tahoma')
         ngFont.setBold(True)
@@ -1497,7 +1466,7 @@ class AlignmentTab(QWidget):
         self.tbbNgHelp = QToolButton()
         def fn_ng_help():
             logger.info('')
-            self.viewer.setHelpMenu(not self.tbbNgHelp.isChecked())
+            self.viewer0.setHelpMenu(not self.tbbNgHelp.isChecked())
             # if self.tbbNgHelp.isChecked():
             #     self.tbbNgHelp.setIcon(qta.icon("fa.question", color='#161c20'))
             # else:
@@ -1581,21 +1550,9 @@ class AlignmentTab(QWidget):
         self.bZarrRegen.clicked.connect(lambda: self.bZarrRegen.setEnabled(False))
         self.bZarrRegen.clicked.connect(lambda: self.parent.regenZarr(self.dm))
 
-        self.wZarrSelect = HW(
-            self.labZarrSource,
-            self.cbTransformed,
-            # self.rbZarrRaw,
-            # self.rbZarrExperimental,
-            # self.rbZarrTransformed,
-            # self.bZarrRegen,
-            spacing=6
-        )
-
-
-
+        self.wZarrSelect = HW(self.labZarrSource, self.cbTransformed, spacing=6)
 
         self.toolbar0 = QToolBar()
-        self.toolbar0.setStyleSheet("padding: 0px;")
         self.toolbar0.setFixedHeight(20)
         self.toolbar0.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         self.toolbar0.addSeparator()
@@ -1851,22 +1808,58 @@ class AlignmentTab(QWidget):
         self.mwTitle.layout.setAlignment(Qt.AlignRight)
         self.mwTitle.layout.setSpacing(4)
 
-
         hw = HW(self.tableMatches, self.tableSigs)
         hw.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.match_widget = VW(self.mwTitle, hw)
         self.match_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        # Warnings
-        self.wWebengine1 = HW(self.ngVertLab, self.wNg1, self.zoomSliderAndLabel)
+        self.we1 = WebEngine(self, ID='tra')
+        # self.we1.setStyleSheet("background-color: #000000;")
+        # self.we1.page().setBackgroundColor(Qt.transparent)  # 0726+
+        # self.we1.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        setWebengineProperties(self.we1)
+        self.we1.setMouseTracking(True)
 
-        self.glGifPlayer = QGridLayout()
-        self.glGifPlayer.addWidget(self.gifPlayer, 0, 0)
-        self.glGifPlayer.setContentsMargins(2,2,2,2)
+        w = QWidget()
+        gl = GL()
+        gl.addWidget(self.we1, 0, 0, 3, 3)
+        gl.addWidget(self._overlayLab, 0, 0, 3, 3)
+        w.setLayout(gl)
 
-        self.wGifPlayer = QWidget()
-        self.wGifPlayer.setMinimumSize(QSize(128,128))
-        self.wGifPlayer.setLayout(self.glGifPlayer)
+        self.clTra = ClickLabel(' Transforming ')
+        self.clTra.setFocusPolicy(Qt.NoFocus)
+        # self.clTra.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # self.clTra.setMinimumWidth(128)
+        # self.clTra.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.clTra.setAlignment(Qt.AlignCenter)
+        # self.clTra.setFixedHeight(16)
+        self.clTra.clicked.connect(self.set_transforming)
+
+        self.clRef = ClickLabel(' Reference ')
+        self.clRef.setFocusPolicy(Qt.NoFocus)
+        # self.clRef.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # self.clRef.setMinimumWidth(128)
+        # self.clRef.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self.clRef.setAlignment(Qt.AlignCenter)
+        # self.clRef.setFixedHeight(16)
+        self.clRef.clicked.connect(self.set_reference)
+
+        # self.wClickHeader = HW(self.clTra, self.clRef)
+        self.wClickHeader = HW(self.clRef, self.clTra)
+        self.wClickHeader.setFixedHeight(16)
+
+        self.vlabTab1 = VerticalLabel('Alignment Editor')
+        self.wWebengine1 = HW(self.vlabTab1, VW(self.wClickHeader, w), self.wSldrZoomTab1)
+        self.wWebengine1.layout.setSpacing(0)
+
+        # self.glGifPlayer = QGridLayout()
+        # self.glGifPlayer.addWidget(self.gifPlayer, 0, 0)
+        # self.glGifPlayer.setContentsMargins(2,2,2,2)
+        #
+        # self.wGifPlayer = QWidget()
+        # self.wGifPlayer.setStyleSheet("background-color: #808080;")
+        # self.wGifPlayer.setMinimumSize(QSize(128,128))
+        # self.wGifPlayer.setLayout(self.glGifPlayer)
 
         self.labCornerViewer = QLabel(f'i={self.dm.zpos} | Transformed')
         # self.labCornerViewer.setStyleSheet("color: #FFFF66; font-weight: 600; font-size: 12px;")
@@ -1874,31 +1867,18 @@ class AlignmentTab(QWidget):
         background-color: rgba(0, 0, 0, 0.40); border-radius: 2px; font-size: 11px; 
         padding: 2px;""")
 
-        self.we2 = WebEngine(ID='we2')
+        self.we2 = WebEngine(self, ID='we2')
         self.we2.setMinimumSize(QSize(200, 200))
         setWebengineProperties(self.we2)
         self.we2.setMouseTracking(True)
 
-        self.bToggleCornerViewer = QPushButton('Toggle')
-        self.bToggleCornerViewer.setFixedSize(QSize(40,14))
-        def _toggle():
-            logger.info('')
-            state = copy.deepcopy(self.transformViewer.state)
-            curpos = floor(state.position[2])
-            if curpos == 0:
-                newpos = 1.5
-                newlab = f'i={self.dm.zpos} | Transformed'
-            else:
-                newpos = 0.5
-                newlab = f'i={self.dm.get_ref_index()} | Reference'
-            state.position[2] = newpos
-            self.labCornerViewer.setText(newlab)
+        self.bToggleResult = QPushButton('Toggle Result')
+        self.bToggleResult.setFixedSize(QSize(68, 14))
 
-            self.transformViewer.set_state(state)
+        self.bToggleResult.clicked.connect(lambda: self.transformViewer.toggle())
+        self.bToggleResult.clicked.connect(lambda: self.labCornerViewer.setText(self.transformViewer.title))
 
-        self.bToggleCornerViewer.clicked.connect(_toggle)
-
-        self.hwCornerViewer = HW(self.bToggleCornerViewer, self.labCornerViewer)
+        self.hwCornerViewer = HW(self.bToggleResult, self.labCornerViewer)
         self.hwCornerViewer.layout.setSpacing(4)
         self.hwCornerViewer.layout.setAlignment(Qt.AlignTop)
         self.hwCornerViewer.setFixedHeight(16)
@@ -1925,16 +1905,16 @@ class AlignmentTab(QWidget):
         """)
 
         self.twCornerViewer.addTab(self.wWebengine2, 'Blink Neuroglancer (Experimental)')
-        self.twCornerViewer.addTab(self.wGifPlayer, 'Blink GIF')
+        # self.twCornerViewer.addTab(self.wGifPlayer, 'Blink GIF')
+        self.twCornerViewer.addTab(self.gifPlayer, 'Blink GIF')
 
         def tab_changed():
             if self.twCornerViewer.currentIndex() == 0:
-                res = self.dm.resolution(s=self.dm.level)
-                self.transformViewer = TransformViewer(parent=self, webengine=self.we2, path=None, dm=self.dm, res=res, )
-                w = self.we2.width()
-                h = self.we2.height()
-                self.transformViewer.initZoom(w=w, h=h, adjust=1.15)
-                # self.transformViewer.set_layer(0.5)
+                # res = self.dm.resolution(s=self.dm.level)
+                # self.transformViewer = TransformViewer(parent=self, webengine=self.we2, path=None, dm=self.dm, res=res, )
+                # w = self.we2.width()
+                # h = self.we2.height()
+                # self.transformViewer.initZoom(w=w, h=h, adjust=1.15)
                 pass
             if self.twCornerViewer.currentIndex() == 1:
                 self.gifPlayer.set(start=False)
@@ -1960,20 +1940,15 @@ class AlignmentTab(QWidget):
         self.columnSplitter.setStretchFactor(0, 1)
         self.columnSplitter.setStretchFactor(1, 2)
 
-        # self.gbRightPanel = QGroupBox()
-        # self.gbRightPanel.setLayout(VBL(self.columnSplitter))
-        # self.gbRightPanel.setMaximumWidth(360)
+        self.wTab1 = QSplitter(Qt.Orientation.Horizontal)
+        self.wTab1.addWidget(self.wWebengine1)
+        self.wTab1.addWidget(self.columnSplitter)
+        self.wTab1.setCollapsible(0, False)
+        self.wTab1.setCollapsible(1, False)
+        self.wTab1.setStretchFactor(0, 3) #1020-
+        self.wTab1.setStretchFactor(1, 1) #1020-
+        self.wTab1.setSizes([int(cfg.WIDTH * (3 / 4)), int(cfg.WIDTH * (1 / 4))]) #1020-
 
-        self.wEditAlignment = QSplitter(Qt.Orientation.Horizontal)
-        self.wEditAlignment.addWidget(self.wWebengine1)
-        self.wEditAlignment.addWidget(self.columnSplitter)
-        self.wEditAlignment.setCollapsible(0, False)
-        self.wEditAlignment.setCollapsible(1, False)
-        self.wEditAlignment.setStretchFactor(0, 3) #1020-
-        self.wEditAlignment.setStretchFactor(1, 1) #1020-
-        self.wEditAlignment.setSizes([int(cfg.WIDTH * (3 / 4)), int(cfg.WIDTH * (1 / 4))]) #1020-
-        # self.wEditAlignment.setStretchFactor(1, 1)
-        
         
     def onZarrRadiobutton(self):
         # # self.rbZarrRaw, self.rbZarrExperimental, self.rbZarrTransformed
@@ -2015,19 +1990,14 @@ class AlignmentTab(QWidget):
             self.dataUpdateMA()
 
 
-    def set_viewer_role(self, role):
-        logger.info(f'Setting viewer role: {role}...')
-        if role == 'ref':
-            self.set_reference()
-        elif role == 'tra':
-            self.set_transforming()
-
-
     def toggle_ref_tra(self):
         logger.info('')
         if self.wTabs.currentIndex() == 1:
-            _other_role = ('ref','tra')[self.viewer1.role == 'ref']
-            self.set_viewer_role(_other_role)
+            if self.dm['state']['tra_ref_toggle'] == 'tra':
+                self.set_reference()
+            else:
+                self.set_transforming()
+
 
     @Slot()
     def set_reference(self):
@@ -2038,21 +2008,21 @@ class AlignmentTab(QWidget):
             self.parent.warn('This section does not have a reference because it is excluded.')
             return
         # self._tra_pt_selected = None
-        self.viewer1.role = 'ref'
         self.viewer1.set_layer()
         # self._updatePointLists()
         self.clRef.setChecked(True)
         self.clTra.setChecked(False)
-        self.lwR.setEnabled(True)
-        self.lwL.setEnabled(False)
-        self.gbR.setProperty("current", True)
-        self.gbR.style().unpolish(self.gbR)
-        self.gbL.setProperty("current", False)
-        self.gbL.style().unpolish(self.gbL)
-        self.viewer1.drawSWIMwindow() #redundant
-        for i in list(range(0,3)):
-            self.lwL.item(i).setForeground(QColor('#666666'))
-            self.lwR.item(i).setForeground(QColor('#141414'))
+        self.parent.leJump.setText(str(self.dm.get_ref_index()))
+        if self.twMethod.currentIndex() == 1:
+            self.lwR.setEnabled(True)
+            self.lwL.setEnabled(False)
+            self.gbR.setProperty("current", True)
+            self.gbR.style().unpolish(self.gbR)
+            self.gbL.setProperty("current", False)
+            self.gbL.style().unpolish(self.gbL)
+            for i in list(range(0,3)):
+                self.lwL.item(i).setForeground(QColor('#666666'))
+                self.lwR.item(i).setForeground(QColor('#141414'))
         self.we1.setFocus()
 
     @Slot()
@@ -2060,21 +2030,21 @@ class AlignmentTab(QWidget):
         caller = inspect.stack()[1].function
         logger.info(f'[{caller}]')
         self.dm['state']['tra_ref_toggle'] = 'tra'
-        self.viewer1.role = 'tra'
         self.viewer1.set_layer()
         # self._updatePointLists()
         self.clTra.setChecked(True)
         self.clRef.setChecked(False)
-        self.lwL.setEnabled(True)
-        self.lwR.setEnabled(False)
-        self.gbR.setProperty("current", False)
-        self.gbR.style().unpolish(self.gbR)
-        self.gbL.setProperty("current", True)
-        self.gbL.style().unpolish(self.gbL)
-        self.viewer1.drawSWIMwindow() #redundant
-        for i in list(range(0,3)):
-            self.lwL.item(i).setForeground(QColor('#141414'))
-            self.lwR.item(i).setForeground(QColor('#666666'))
+        self.parent.leJump.setText(str(self.dm.zpos))
+        if self.twMethod.currentIndex() == 1:
+            self.lwL.setEnabled(True)
+            self.lwR.setEnabled(False)
+            self.gbR.setProperty("current", False)
+            self.gbR.style().unpolish(self.gbR)
+            self.gbL.setProperty("current", True)
+            self.gbL.style().unpolish(self.gbL)
+            for i in list(range(0,3)):
+                self.lwL.item(i).setForeground(QColor('#141414'))
+                self.lwR.item(i).setForeground(QColor('#666666'))
         self.we1.setFocus()
 
 
@@ -2211,7 +2181,8 @@ class AlignmentTab(QWidget):
                     '4panel': self.parent.ngLayout8Action
                 }
                 layout_actions[choice].setChecked(True)
-                self.viewer0.initViewer()
+                with self.viewer0.txn() as s:
+                    s.layout.type = choice
             except:
                 print_exception()
                 logger.error('Unable To Change Neuroglancer Layout')
@@ -2280,12 +2251,13 @@ class AlignmentTab(QWidget):
         if self.wTabs.currentIndex() == 1: #1111 This should make a huge difference
             self.gifPlayer.controls2.setVisible(os.path.exists(self.dm.path_cafm_gif()))
             self.gbGrid.setTitle(f'Level {self.dm.lvl()} Grid Alignment Settings')
+            self.hwCornerViewer.setVisible(self.dm.is_aligned())
             ready = self.dm['level_data'][self.dm.scale]['alignment_ready']
             if self.dm.is_alignable() and ready:
                 self.swMethod.setCurrentIndex(0)
                 if hasattr(self.viewer, 'drawSWIMwindow'): #1111+
                     try:
-                        self.viewer.drawSWIMwindow()
+                        self.viewer1.drawSWIMwindow()
                     except AttributeError:
                         print_exception()
 
@@ -2341,15 +2313,15 @@ class AlignmentTab(QWidget):
                 self.bTransform.setEnabled(self.dm.is_aligned())
                 # self.bApplyOne.setEnabled(self.dm.is_aligned() and not os.file_path.exists(self.dm.path_aligned()))
 
-                self.clTra.setText(f'[{self.dm.zpos}] {self.dm.name()} (Transforming)')
+                self.clTra.setText(f' [{self.dm.zpos}] {self.dm.name()} (Transforming)')
                 if self.dm.skipped():
-                    self.clTra.setText(f'[{self.dm.zpos}] {self.dm.name()} (Transforming)')
-                    self.clRef.setText(f'--')
+                    self.clTra.setText(f' [{self.dm.zpos}] {self.dm.name()} (Transforming)')
+                    self.clRef.setText(f' --')
                 else:
                     try:
-                        self.clRef.setText(f'[{self.dm.get_ref_index()}] {self.dm.name_ref()} (Reference)')
+                        self.clRef.setText(f' [{self.dm.get_ref_index()}] {self.dm.name_ref()} (Reference)')
                     except:
-                        self.clRef.setText(f'Null (Reference)')
+                        self.clRef.setText(f' Null (Reference)')
 
                 self.leWhitening.setText(str(ss['whitening']))
                 self.leIterations.setText(str(ss['iterations']))
@@ -2481,46 +2453,45 @@ class AlignmentTab(QWidget):
                 # val =
                 # if val in range(-2147483648, 2147483647):
                 try:
-                    self.zoomSlider.setValue(1/zoom)
+                    self.sldrZoomTab1.setValue(1 / zoom)
                 except:
                     print_exception()
                     logger.warning(f"zoom = {zoom}")
-                # self.zoomSlider.setValue(zoom)
+                # self.sldrZoomTab1.setValue(zoom)
                 self._allow_zoom_change = True
 
     def onZoomSlider(self):
         caller = inspect.stack()[1].function
-        # logger.info(f'caller: {caller}')
+        logger.info(f'caller: {caller}')
         if caller not in ('slotUpdateZoomSlider', 'setValue'):  # Original #0314
-            val = 1 / self.zoomSlider.value()
-            if self.dm['state']['current_tab'] == 1:
+            _tab = self.wTabs.currentIndex()
+            if _tab == 0:
+                val = 1 / self.sldrZoomTab0.value()
+                if abs(self.viewer0.state.cross_section_scale - val) > .0001:
+                    self.viewer0.set_zoom(val)
+            elif _tab == 1:
+                val = 1 / self.sldrZoomTab1.value()
                 if abs(self.viewer1.state.cross_section_scale - val) > .0001:
                     self.viewer1.set_zoom(val)
-            elif self.dm['state']['current_tab'] == 0:
-                try:
-                    if abs(self.viewer0.state.cross_section_scale - val) > .0001:
-                        self.viewer0.set_zoom(val)
-                except:
-                    print_exception()
+
 
 
     def slotUpdateZoomSlider(self):
         # Lets only care about REF <--> wSlider
         caller = inspect.stack()[1].function
         logger.info(f'[{caller}]')
-        try:
-            if self.dm['state']['current_tab'] == 1:
-                val = self.viewer1.state.cross_section_scale
-            else:
-                val = self.viewer0.state.cross_section_scale
+        _tab = self.wTabs.currentIndex()
+        if _tab == 0:
+            val = self.viewer0.state.cross_section_scale
             if val:
                 if val != 0:
-                    # new_val = float(sqrt(val))
-                    new_val = float(val * val)
-                    logger.info('new_val = %s' % str(new_val))
-                    self.zoomSlider.setValue(new_val)
-        except:
-            print_exception()
+                    self.sldrZoomTab0.setValue(float(val * val))
+        elif _tab == 1:
+            val = self.viewer1.state.cross_section_scale
+            if val:
+                if val != 0:
+                    self.sldrZoomTab1.setValue(float(val * val))
+
 
 
     def onSliderZmag(self):
@@ -2750,13 +2721,14 @@ class AlignmentTab(QWidget):
             padding-top: 1px;
             padding-bottom: 1px;
             height: 15px;
-            font-size: 11px;
+            font-size: 10px;
             border: 1px solid #ede9e8;
             background-color: #dadada;
         }
         QTabBar::tab:selected
         {
             font-weight: 600;
+            font-size: 10px;
             color: #f3f6fb;
             background-color: #222222;
         }
@@ -2891,6 +2863,26 @@ class AlignmentTab(QWidget):
         self.twInfoOverlay.setFixedSize(QSize(380, 300))
         self.twInfoOverlay.hide()
 
+        self.sldrZoomTab0 = DoubleSlider(Qt.Orientation.Vertical, self)
+        self.sldrZoomTab0.setFocusPolicy(Qt.NoFocus)
+        self.sldrZoomTab0.setMouseTracking(True)
+        # self.sldrZoomTab1.setInvertedAppearance(True)
+        self.sldrZoomTab0.setMaximum(4)
+        self.sldrZoomTab0.setMinimum(1)
+        self.sldrZoomTab0.valueChanged.connect(self.onZoomSlider)
+        self.sldrZoomTab0.setValue(4.0)
+
+        vlab = VerticalLabel('Zoom:')
+
+        self.wSldrZoomTab0 = VW()
+        self.wSldrZoomTab0.layout.setSpacing(0)
+        self.wSldrZoomTab0.setFocusPolicy(Qt.NoFocus)
+        self.wSldrZoomTab0.setFixedWidth(16)
+        self.wSldrZoomTab0.addWidget(self.sldrZoomTab0)
+        self.wSldrZoomTab0.addWidget(vlab)
+
+        self.vlabTab0 = VerticalLabel('Neuroglancer 3DEM View')
+
         self.glWebengine0 = GL()
         self.glWebengine0.addWidget(self.we0, 0, 0, 3, 3)
         self.glWebengine0.addWidget(self.wOverlay, 2, 2, 1, 1, Qt.AlignBottom | Qt.AlignRight)
@@ -2898,10 +2890,10 @@ class AlignmentTab(QWidget):
         self.wWebengine0 = QWidget()
         self.wWebengine0.setLayout(self.glWebengine0)
 
-        self.wNG = VW(self.toolbar0, self.wWebengine0)
+        self.wTab0 = HW(self.vlabTab0, VW(self.toolbar0, self.wWebengine0), self.wSldrZoomTab0)
 
-        tabs = [(self.wNG, '3D Alignment'),
-                (self.wEditAlignment, 'Edit Alignment'),
+        tabs = [(self.wTab0, '3D Alignment'),
+                (self.wTab1, 'Edit Alignment'),
                 (self.wSNR, ' All SNR Plots '),
                 (self.wTable, ' Table '),
                 (self.wTreeview, ' JSON ')
@@ -2923,7 +2915,8 @@ class AlignmentTab(QWidget):
             self.dm.poly_order = val
             self.dm.set_stack_cafm()
             # self.initNeuroglancer()
-            self.viewer0.initViewer()
+            if self.dm.is_aligned():
+                self.viewer0.set_transformed()
 
     def initShader(self):
 
@@ -3068,17 +3061,89 @@ class ExpandingHWidget(QWidget):
         super().__init__(parent, **kwargs)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
+'''
+Forward key strokes to QWebEngineView:
+new_event = QKeyEvent(QEvent.KeyPress, Qt.Key_R, Qt.KeyboardModifiers(),"r",)
+new_event.artificial = True
+QCoreApplication.postEvent(cfg.pt.viewer0.webengine.focusProxy(), new_event)
+
+
+
+            MB = Qt.MouseButton
+            KM = Qt.KeyboardModifier
+            pos = QPointF(5.,5.)
+            pixdel = QPoint()
+            angdel = QPoint(int(10), int(10))
+            btns = MB.NoButton
+            mods = KM.NoModifier
+            phase = Qt.ScrollPhase.NoScrollPhase
+            inverted = False
+            scroll_event = QWheelEvent(pos, pos, pixdel, angdel, btns, mods, phase, inverted)
+            
+            
+https://github.com/vispy/jupyter_rfb/issues/48
+'''
+class ForwardKeyEvent(QObject):
+    def __init__(self, sender, receiver, parent=None):
+        super(ForwardKeyEvent, self).__init__(parent)
+        self.m_sender = sender
+        self.m_receiver = receiver
+        self.m_sender.installEventFilter(self)
+
+    def eventFilter(self, obj, event):
+        if self.m_sender is obj and event.type() == QEvent.KeyPress:
+            new_event = QKeyEvent(
+                QEvent.KeyPress, 65, Qt.KeyboardModifiers(),"r",)
+            new_event.artificial = True
+            QCoreApplication.postEvent(self.m_receiver.focusProxy(), new_event)
+            return True
+        return False
+
+
+
 
 class WebEngine(QWebEngineView):
 
-    def __init__(self, ID='we0'):
-        QWebEngineView.__init__(self)
+    
+    def __init__(self, parent, ID='we0'):
+        super().__init__(parent)
         self.ID = ID
-        self.grabGesture(Qt.PinchGesture, Qt.DontStartGestureOnChildren)
+        # self.grabGesture(Qt.PinchGesture, Qt.DontStartGestureOnChildren)
+        # self.focusProxy().installEventFilter(self)
+        # self.installEventFilter(self)
+
+    # def injectEvent(self, new_event):
+    #     new_event.artificial = True
+    #     QCoreApplication.postEvent(self.focusProxy(), new_event)
+    # 
+    # def rotate(self):
+    #     new_event = QKeyEvent(QEvent.KeyPress, Qt.Key_R, Qt.KeyboardModifiers(), "r", )
+    #     new_event.artificial = True
+    #     QCoreApplication.postEvent(self.focusProxy(), new_event)
 
         # self.widget_id = id(self.children()[2])
         # self.inFocus = Signal(str)
         # self.installEventFilter(self)
+        # self.focusProxy().installEventFilter(self)
+        # self.installEventFilter(self)
+
+
+
+    # def eventFilter(self, obj, event):
+    #     # print(event.type())
+    #     _type = event.type()
+    #     print(_type)
+    #     if _type == QEvent.Wheel:
+    #         print(event.angleDelta())
+    #         print(f"[{_type}] SCROLL event!")
+    #         self.se = event
+    #         return False
+    #     elif _type == QEvent.KeyPress and hasattr(event, "artificial"):
+    #         print("event:", event.key(), event.text())
+    #         return False
+    #     return super().eventFilter(obj, event)
+
+
 
     # def eventFilter(self, object, event):
     #     if event.type() == QEvent.Enter:
@@ -3249,19 +3314,31 @@ class ClickLabel(QLabel):
     def setChecked(self, b):
         self.isClicked = b
         if self.isClicked:
-            self.setStyleSheet(
-                """background-color: #339933; 
-                color: #ede9e8; 
-                font-size: 10px; 
-                border: 1px solid #ede9e8; 
-                font-weight: 600;""")
-        else:
+            # self.setStyleSheet(
+            #     """background-color: #dadada;
+            #     color: #222222;
+            #     font-size: 10px;
+            #     font-weight: 600;""")
             self.setStyleSheet(
                 """background-color: #222222; 
-                color: #ede9e8; 
+                color: #f3f6fb; 
                 font-size: 10px; 
-                border: 1px solid #ede9e8; 
                 font-weight: 600;""")
+        else:
+            # self.setStyleSheet(
+            #     """background-color: #222222;
+            #     color: #ede9e8;
+            #     font-size: 10px;
+            #     font-weight: 600;""")
+            self.setStyleSheet(
+                """ color: #141414;
+                    padding-top: 1px;
+                    padding-bottom: 1px;
+                    height: 15px;
+                    font-size: 10px;
+                    border: 1px solid #ede9e8;
+                    background-color: #dadada;
+                """)
 
     def isChecked(self):
         return self.isChecked
@@ -3308,10 +3385,11 @@ class BoldLabel(QLabel):
 
 def setWebengineProperties(webengine):
     webengine.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
-    webengine.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
+    webengine.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True) #Turning this off block neuroglancer, expectedly
     webengine.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
     webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
     webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
+    # webengine.settings().setAttribute(QWebEngineSettings.ErrorPageEnabled, True)
 
 
 def delete_correlation_signals(dm):

@@ -582,10 +582,10 @@ class ProjectTable(QWidget):
             self.dm.zpos = r
             self.parent.parent.alignOne(dm=self.dm)
             QApplication.processEvents()
-            if self.parent.wTabs.currentIndex() == 0:
-                self.parent.viewer.set_layer()
-            elif self.parent.wTabs.currentIndex() == 1:
-                self.parent.viewer1.set_layer()
+            # if self.parent.wTabs.currentIndex() == 0:
+            #     self.parent.viewer.set_layer()
+            # elif self.parent.wTabs.currentIndex() == 1:
+            #     self.parent.viewer1.set_layer()
 
     # btn.clicked.connect(lambda state, x=zpos: self.jump_to_manual(x))
 
