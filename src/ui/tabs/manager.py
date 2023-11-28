@@ -598,7 +598,6 @@ class ManagerTab(QWidget):
     def initPMviewer(self):
         logger.info('')
         try:
-            wefweg
             if self.comboImages.count() > 0:
                 level = self.comboLevel.currentText()
                 self.viewer = self.parent.viewer = PMViewer(
@@ -617,6 +616,7 @@ class ManagerTab(QWidget):
             else:
                 self.webengine.setHtml("")
         except:
+            print_exception()
             self.webengine.setHtml("Nothing to display.")
             f = Path(__file__).parents[3] / f'src/resources/html/null.html'
             print(f'Loading html doc from {f}')
