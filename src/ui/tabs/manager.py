@@ -655,44 +655,58 @@ class ManagerTab(QWidget):
 
         path = Path(self.comboImages.currentText()) / 'zarr' / level
 
-        self.viewer0 = PMViewer(
-            parent=self,
-            webengine=self.webengine0,
-            path=path,
-            res=self._images_info['resolution'][level],
-            extra_data={'name': 'viewer0', 'dm': None})
-        self.viewer0.signals.arrowLeft.connect(self.parent.layer_left)
-        self.viewer0.signals.arrowRight.connect(self.parent.layer_right)
-        self.viewer0.signals.arrowUp.connect(self.parent.incrementZoomIn)
-        self.viewer0.signals.arrowDown.connect(self.parent.incrementZoomOut)
+        try:
+            resolution = self._images_info['resolution'][level]
+        except:
+            logger.warning(f'(hotfix) resolution could not be determined. Using default instead.')
+            resolution = [8, 8, 50]
 
+        try:
+            self.viewer0 = PMViewer(
+                parent=self,
+                webengine=self.webengine0,
+                path=path,
+                res=resolution,
+                extra_data={'name': 'viewer0', 'dm': None})
+            self.viewer0.signals.arrowLeft.connect(self.parent.layer_left)
+            self.viewer0.signals.arrowRight.connect(self.parent.layer_right)
+            self.viewer0.signals.arrowUp.connect(self.parent.incrementZoomIn)
+            self.viewer0.signals.arrowDown.connect(self.parent.incrementZoomOut)
+        except:
+            print_exception()
 
-        # REQUIRES having dm
-        self.viewer1 = PMViewer(
-            parent=self,
-            webengine=self.webengine1,
-            path=path,
-            res=self._images_info['resolution'][level],
-            extra_data={'name': 'viewer1', 'dm': None})
-        self.viewer1.signals.arrowLeft.connect(self.parent.layer_left)
-        self.viewer1.signals.arrowRight.connect(self.parent.layer_right)
-        self.viewer1.signals.arrowUp.connect(self.parent.incrementZoomIn)
-        self.viewer1.signals.arrowDown.connect(self.parent.incrementZoomOut)
+        try:
+            # REQUIRES having dm
+            self.viewer1 = PMViewer(
+                parent=self,
+                webengine=self.webengine1,
+                path=path,
+                res=resolution,
+                extra_data={'name': 'viewer1', 'dm': None})
+            self.viewer1.signals.arrowLeft.connect(self.parent.layer_left)
+            self.viewer1.signals.arrowRight.connect(self.parent.layer_right)
+            self.viewer1.signals.arrowUp.connect(self.parent.incrementZoomIn)
+            self.viewer1.signals.arrowDown.connect(self.parent.incrementZoomOut)
+        except:
+            print_exception()
 
         self.updatePMViewers()
         self.setUpdatesEnabled(True)
 
     def updatePMViewers(self):
         logger.info('')
-        self.setUpdatesEnabled(False)
-        level = self.comboLevel.currentText()
-        if self.comboImages.currentText():
-            path = Path(self.comboImages.currentText()) / 'zarr' / level
-            if path.exists():
-                self.viewer0.initViewer()
-                if self.comboTransformed.currentText():
-                    self.viewer1.initViewer()
-        self.setUpdatesEnabled(True)
+        try:
+            self.setUpdatesEnabled(False)
+            level = self.comboLevel.currentText()
+            if self.comboImages.currentText():
+                path = Path(self.comboImages.currentText()) / 'zarr' / level
+                if path.exists():
+                    self.viewer0.initViewer()
+                    if self.comboTransformed.currentText():
+                        self.viewer1.initViewer()
+            self.setUpdatesEnabled(True)
+        except:
+            print_exception()
 
 
 
