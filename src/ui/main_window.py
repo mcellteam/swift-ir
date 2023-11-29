@@ -2129,42 +2129,43 @@ class MainWindow(QMainWindow):
         '''Callback Function for Skip Image Toggle'''
         #Todo refactor
         caller = inspect.stack()[1].function
-        # if caller == 'main':
-        if self._isProjectTab():
-            if caller != 'updateSlidrZpos':
-                logger.info(f'[{caller}]')
-                skip_state = not self.cbSkip.isChecked()
-                layer = self.dm.zpos
-                # for s in self.dm.finer_scales():
-                if layer < len(self.dm):
-                    self.dm.set_skip(skip_state, s=self.dm.level, l=layer)
-                else:
-                    logger.warning(f'Request layer is out of range ({layer}) - Returning')
-                    return
+        if caller == 'main':
+            if self._isProjectTab():
+                logger.critical(f'[{caller}]')
+                if caller != 'updateSlidrZpos':
+                    logger.info(f'[{caller}]')
+                    skip_state = not self.cbSkip.isChecked()
+                    layer = self.dm.zpos
+                    # for s in self.dm.finer_scales():
+                    if layer < len(self.dm):
+                        self.dm.set_skip(skip_state, s=self.dm.level, l=layer)
+                    else:
+                        logger.warning(f'Request layer is out of range ({layer}) - Returning')
+                        return
 
-                if skip_state:
-                    self.tell("Exclude: %s" % self.dm.name())
-                else:
-                    self.tell("Include: %s" % self.dm.name())
-                self.dm.linkReference(level=self.dm.level)
+                    if skip_state:
+                        self.tell("Exclude: %s" % self.dm.name())
+                    else:
+                        self.tell("Include: %s" % self.dm.name())
+                    self.dm.linkReference(level=self.dm.level)
 
-                # if getData('state,blink'):
-                self.dm.set_stack_cafm()
+                    # if getData('state,blink'):
+                    self.dm.set_stack_cafm()
 
-                # self.pt.project_table.set_row_data(row=layer)
+                    # self.pt.project_table.set_row_data(row=layer)
 
-                # #Todo Fix this. This is just a kluge to make the data reflect correct data for now.
-                # for x in range(0,5):
-                #     if layer + x in range(0,len(self.dm)):
-                #         self.pt.project_table.set_row_data(row=layer + x)
+                    # #Todo Fix this. This is just a kluge to make the data reflect correct data for now.
+                    # for x in range(0,5):
+                    #     if layer + x in range(0,len(self.dm)):
+                    #         self.pt.project_table.set_row_data(row=layer + x)
 
-                if self.pt.wTabs.currentIndex() == 4:
-                    self.pt.snr_plot.initSnrPlot()
+                    if self.pt.wTabs.currentIndex() == 4:
+                        self.pt.snr_plot.initSnrPlot()
 
-                if self.dwSnr.isVisible():
-                    self.pt.dSnr_plot.initSnrPlot()
+                    if self.dwSnr.isVisible():
+                        self.pt.dSnr_plot.initSnrPlot()
 
-                self.dataUpdateWidgets()
+                    self.dataUpdateWidgets()
 
 
     def skip_change_shortcut(self):
