@@ -434,7 +434,7 @@ class CorrSignalThumbnail(QLabel):
                     qp.drawArc(arcRect, 30*16 + 270*16, spanAngle*16)
 
                     font = QFont()
-                    font.setFamily('Consolas')
+                    font.setFamily('Tahoma')
                     fsize = max(int(pm.height() / 10 + 0.5), 5)
                     font.setPointSize(fsize)
                     font.setWeight(10)
