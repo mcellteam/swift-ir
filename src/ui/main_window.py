@@ -1462,28 +1462,6 @@ class MainWindow(QMainWindow):
             if _tab == 1:
                 self.pt.dataUpdateMA()
 
-    #
-    #     if self._isProjectTab():
-    #         dm = self.pt.dm
-    #
-    #         self.ifDwThumbsIsVisible(dm)
-    #         self.updateNotes()
-    #         self.updateMS()
-    #         # self.setStatusInfo()
-    #         if floor(self.viewer.state.position[0]) != dm.zpos:
-    #             self.viewer.set_layer()
-    #         _tab = self.pt.wTabs.currentIndex()
-    #         if _tab == 0:
-    #             self.pt._overlayLab.setVisible(dm.skipped()) #Todo find/fix
-    #         elif _tab == 1:
-    #             # self.pt.viewer1.set_layer()
-    #             self.pt.dataUpdateMA()
-    #         elif _tab == 2:
-    #             self.pt.snr_plot.updateLayerLinePos()
-    #         elif _tab == 4:
-    #             self.pt.mdlTreeview.jumpToLayer()
-    #         self.setFocus()
-
 
     def updateNotes(self):
         # caller = inspect.stack()[1].function
@@ -1492,11 +1470,10 @@ class MainWindow(QMainWindow):
             self.notes.clear()
             if self._isProjectTab():
                 self.notes.setPlaceholderText('Enter notes about %s here...'
-                                              % self.pt.dm.base_image_name(s=self.pt.dm.level, l=self.pt.dm.zpos))
-                if self.pt.dm.notes(s=self.dm.level, l=self.dm.zpos):
-                    self.notes.setPlainText(self.pt.dm.notes(s=self.pt.dm.level, l=self.pt.dm.zpos))
+                                              % self.dm.base_image_name(s=self.dm.level, l=self.dm.zpos))
+                if self.dm.notes(s=self.dm.level, l=self.dm.zpos):
+                    self.notes.setPlainText(self.dm.notes(s=self.dm.level, l=self.dm.zpos))
             else:
-                self.notes.clear()
                 self.notes.setPlaceholderText('Notes are stored automatically...')
             self.notes.update()
 
@@ -2134,23 +2111,15 @@ class MainWindow(QMainWindow):
                 logger.critical(f'[{caller}]')
                 if caller != 'updateSlidrZpos':
                     logger.info(f'[{caller}]')
-                    skip_state = not self.cbSkip.isChecked()
-                    layer = self.dm.zpos
-                    # for s in self.dm.finer_scales():
-                    if layer < len(self.dm):
-                        self.dm.set_skip(skip_state, s=self.dm.level, l=layer)
-                    else:
-                        logger.warning(f'Request layer is out of range ({layer}) - Returning')
-                        return
+                    _is_checked = self.cbSkip.isChecked()
+                    self.dm.set_include(_is_checked, l=self.dm.zpos)
 
-                    if skip_state:
-                        self.tell("Exclude: %s" % self.dm.name())
-                    else:
-                        self.tell("Include: %s" % self.dm.name())
+                    self.tell(f'Include: {_is_checked}')
                     self.dm.linkReference(level=self.dm.level)
 
                     # if getData('state,blink'):
-                    self.dm.set_stack_cafm()
+                    if self.dm.is_aligned():
+                        self.dm.set_stack_cafm()
 
                     # self.pt.project_table.set_row_data(row=layer)
 
@@ -2159,7 +2128,7 @@ class MainWindow(QMainWindow):
                     #     if layer + x in range(0,len(self.dm)):
                     #         self.pt.project_table.set_row_data(row=layer + x)
 
-                    if self.pt.wTabs.currentIndex() == 4:
+                    if self.pt.wTabs.currentIndex() == 2:
                         self.pt.snr_plot.initSnrPlot()
 
                     if self.dwSnr.isVisible():

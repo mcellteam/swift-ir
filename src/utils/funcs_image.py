@@ -633,7 +633,9 @@ def SetStackCafm(dm, scale, poly_order=None):
                 bias_mat = BiasMat(i, bias_funcs)
             # method = d['levels'][scale]['swim_settings']['method_opts']['method']
             method = d['levels'][scale]['saved_swim_settings']['method_opts']['method']
+            # include = dm['stack'][i]['levels'][scale]['saved_swim_settings']['include']
             include = dm['stack'][i]['levels'][scale]['saved_swim_settings']['include']
+            # include = dm['stack'][i]['levels'][scale]['swim_settings']['include'] #1129
             c_afm = SetSingleCafm(dm, scale, i, c_afm, include, bias_mat=bias_mat, method=method) # <class
             # 'numpy.ndarray'>
 
