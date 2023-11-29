@@ -83,7 +83,7 @@ QComboBox{
     border: 0px solid #c7c7c7;
     padding-left: 2px;
     combobox-popup: 0;
-    height: 16px;
+    height: 14px;
     font-size: 10px;
     border-radius: 3px;
 }

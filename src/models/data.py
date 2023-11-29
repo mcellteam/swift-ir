@@ -77,6 +77,7 @@ class DataModel:
         self._current_version = cfg.VERSION
         if data:
             self._data = data  # Load project data from file
+
         elif init:
             try:
                 images_info
@@ -90,6 +91,7 @@ class DataModel:
                 return
             self._data = {}
             self.initializeStack(file_path, images_path, images_info)
+
         if not readonly:
             if images_path:
                 self.images_path = images_path
@@ -99,6 +101,11 @@ class DataModel:
             self.signals = Signals()
             self.signals.dataChanged.connect(lambda: logger.info('emission!'))
             self.ds = DirectoryStructure(self)
+
+        if readonly:
+            clr = inspect.stack()[1].function
+            logger.info(f"[{clr}] [{self['info']['file_path']}]")
+            assert hasattr(self, '_data')
 
     def loadHashTable(self):
         logger.info('')

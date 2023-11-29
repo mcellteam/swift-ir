@@ -108,14 +108,15 @@ class MainWindow(QMainWindow):
     # finished = Signal()
     updateTable = Signal()
     tabChanged = Signal()
-    scaleChanged = Signal()
+    # scaleChanged = Signal()
 
     def __init__(self, data=None):
         QMainWindow.__init__(self)
+        t0 = time.time()
         logger.debug(f"\nDebugging...\n\n")
 
         self.app = QApplication.instance()
-        font = QFont("Tahoma")
+        font = QFont("Consolas")
         self.app.setFont(font)
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.setObjectName('mainwindow')
@@ -197,8 +198,8 @@ class MainWindow(QMainWindow):
 
         self.tabChanged.connect(self.stopPlaybackTimer)
 
-        self.scaleChanged.connect(self.stopPlaybackTimer)
-        self.scaleChanged.connect(lambda: self._refresh(silently=True))
+        dt = time.time() - t0
+        logger.critical(f"mainwindow init time: {dt:.3g}s")
 
 
     def initSizeAndPos(self, width, height):
@@ -1252,12 +1253,28 @@ class MainWindow(QMainWindow):
         caller = inspect.stack()[1].function
         logger.info('')
 
-        self.wCpanel.hide()
+
 
         if self._isProjectTab():
+            self.wCpanel.show()
+
+            index = self.pt.wTabs.currentIndex()
+            if index == 1:
+                self.bPlayback.hide()
+                self.sldrZpos.show()
+                self.sbFPS.hide()
+                self.ehw.hide()
+            else:
+                self.bPlayback.hide()
+                self.sldrZpos.hide()
+                self.sbFPS.hide()
+                self.ehw.show()
+
+            # self.ehw
+
             self.bPropagate.setEnabled((self.dm.scale != self.dm.coarsest_scale_key()) and self.dm.is_alignable())
             self.pt.bZarrRegen.setEnabled(self.dm.is_aligned())
-            self.wCpanel.show()
+
             try:
                 self.pt.bApplyOne.setEnabled(True)
                 self.pt.bTransform.setEnabled(True)
@@ -1296,6 +1313,7 @@ class MainWindow(QMainWindow):
                     self.bArrowDown.setEnabled(True)
                     self.bArrowUp.setEnabled(True)
         else:
+            self.wCpanel.hide()
             self.bArrowUp.setEnabled(False)
             self.bArrowDown.setEnabled(False)
             self.bLeftArrow.setEnabled(False)
@@ -1659,7 +1677,8 @@ class MainWindow(QMainWindow):
 
                 # self.pt.dataUpdateMA() #1019-
                 # self.pt.refreshTab() #1019-
-                self.scaleChanged.emit()
+                # self.scaleChanged.emit()
+                self._refresh(silently=True)
 
 
     '''
@@ -1925,15 +1944,15 @@ class MainWindow(QMainWindow):
         # with open(html_f, 'r') as f:
         #     html = f.read()
         #
-        # # we0 = QWebEngineView()
-        # webengine.py = WebEngine(ID=ID)
-        # webengine.py.setHtml(html, baseUrl=QUrl.fromLocalFile(os.getcwd() + os.path.sep))
-        # webengine.py.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
-        # webengine.py.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
-        # webengine.py.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
-        # webengine.py.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
-        # webengine.py.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
-        # self.addGlobTab(webengine.py, title)
+        # # webengine0 = QWebEngineView()
+        # webengine0.py = WebEngine(ID=ID)
+        # webengine0.py.setHtml(html, baseUrl=QUrl.fromLocalFile(os.getcwd() + os.path.sep))
+        # webengine0.py.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
+        # webengine0.py.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
+        # webengine0.py.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
+        # webengine0.py.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
+        # webengine0.py.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
+        # self.addGlobTab(webengine0.py, title)
 
     def url_resource(self, url, title):
         webengine = QWebEngineView()
@@ -2387,7 +2406,6 @@ class MainWindow(QMainWindow):
         # self.exitButton.setIcon(qta.icon('mdi.close'))
         # self.exitButton.clicked.connect(self.exit_app)
         # # self.exitButton.setStyleSheet(button_gradient_style)
-        # # self.exitButton.setStyleSheet('font-size: 11px; font-family: Tahoma, sans-serif; border: none;')
         #
         # self.minimizeButton = QPushButton()
         # self.minimizeButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -2985,13 +3003,13 @@ class MainWindow(QMainWindow):
 
         if self._isOpenProjTab():
             self.pm.initPMviewer()
-        else:
-            if hasattr(self.pm, 'viewer'):
-                del self.pm.viewer
-
+        # else:
+        #     if hasattr(self.pm, 'viewer'):
+        #         del self.pm.viewer
 
 
         if self._isProjectTab():
+
 
             self.dm = cfg.dm = self.globTabs.currentWidget().dm
             self.pt = cfg.pt = self.globTabs.currentWidget()
@@ -3011,6 +3029,7 @@ class MainWindow(QMainWindow):
             if self.dwSnr.isVisible():
                 self.pt.dSnr_plot.initSnrPlot()
             # self.bExport.setVisible(self.dm.is_zarr_generated())
+            self.updateEnabledButtons()
         else:
             self.statusBar.clearMessage()
             self.dwThumbs.setWidget(NullWidget())
@@ -3040,7 +3059,7 @@ class MainWindow(QMainWindow):
         # self.updateMenus()
         self.reload_zpos_slider_and_lineedit()  # future changes to image importing will require refactor
         self.reloadComboScale()
-        self.updateEnabledButtons()
+        self.updateEnabledButtons() #redundant?
         self.updateNotes()
         self._lastTab = self._getTabObject()
         # self.setFocus()
@@ -4034,16 +4053,21 @@ class MainWindow(QMainWindow):
         # self.wOutputSettings.setFixedWidth(220)
         # self.wOutputSettings.hide()
 
+        self.ehw = ExpandingHWidget(self)
+        self.ehw.setAutoFillBackground(False)
+
         self.wCpanel = HW(self.wScaleLevel, QVLine(),
                           self.wwZpos, QVLine(),
                           self.wZpos,
                           self.wToggleExclude,
                           self.wAlign,
+                          self.ehw
                           # self.bOutputSettings,
                           # self.wOutputSettings
                           )
 
-        self.setAutoFillBackground(True)
+        # self.setAutoFillBackground(True)
+        self.setAutoFillBackground(False)
         f = QFont()
         f.setPixelSize(9)
         self.wCpanel.setFont(f)
@@ -5098,7 +5122,7 @@ class NullWidget(QLabel):
 
 # class WebEngine(QWebEngineView):
 # 
-#     def __init__(self, ID='we0'):
+#     def __init__(self, ID='webengine0'):
 #         QWebEngineView.__init__(self)
 #         self.ID = ID
 #         self.grabGesture(Qt.PinchGesture, Qt.DontStartGestureOnChildren)
