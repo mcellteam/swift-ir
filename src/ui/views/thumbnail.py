@@ -357,7 +357,7 @@ class CorrSignalThumbnail(QLabel):
              'ms2': cfg.glob_colors[2],
              'ms3': cfg.glob_colors[3]
         }
-        # self.setStyleSheet("background-color: #f3e9df; font-size: 10px; font-family: 'Tahoma';") #1030-
+        # self.setStyleSheet("background-color: #f3e9df; font-size: 10px; font-family: 'Consolas';") #1030-
 
         self.setAutoFillBackground(True)
 
@@ -434,9 +434,7 @@ class CorrSignalThumbnail(QLabel):
                     qp.drawArc(arcRect, 30*16 + 270*16, spanAngle*16)
 
                     font = QFont()
-                    font.setFamily('Tahoma')
-                    # font.setFamily('Ubuntu')
-                    # font.setFamily('Helvetica')
+                    font.setFamily('Consolas')
                     fsize = max(int(pm.height() / 10 + 0.5), 5)
                     font.setPointSize(fsize)
                     font.setWeight(10)
