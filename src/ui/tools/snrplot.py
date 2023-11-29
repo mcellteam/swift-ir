@@ -95,7 +95,7 @@ class SnrPlot(QWidget):
         else:
             self._snr_label = pg.InfLineLabel(self._curLayerLine, '', position=0.1, anchor=(1, 1), color='#f3f6fb')
 
-        f = QFont('Tahoma')
+        f = QFont('Consolas')
         f.setBold(True)
         # f.setPointSize(12)
         f.setPointSize((12,10)[self.dock])

@@ -62,7 +62,7 @@ class AlignmentTab(QWidget):
         self.we0.setFocusPolicy(Qt.NoFocus)
         self.we0.loadFinished.connect(lambda: print('Web engine load finished!'))
         setWebengineProperties(self.we0)
-        # self.we0.setStyleSheet('background-color: #222222;')
+        # self.webengine0.setStyleSheet('background-color: #222222;')
         self.we0.setMouseTracking(True)
         self._initNG_calls = 0
         self.wTable = QWidget()
@@ -136,7 +136,7 @@ class AlignmentTab(QWidget):
     #     logger.info('')
     #     logger.debug('Forcing focus...')
     #     if self.wTabs.currentIndex() == 1:
-    #         # self.we1.setFocus()
+    #         # self.webengine1.setFocus()
     #         self.parent.setFocus()
     #         self.viewer.set_layer()
 
@@ -196,6 +196,19 @@ class AlignmentTab(QWidget):
         self.dm['state']['current_tab'] = index
         # self.gifPlayer.stop()
 
+        index = self.wTabs.currentIndex()
+        if index == 1:
+            self.parent.bPlayback.hide()
+            self.parent.sldrZpos.show()
+            self.parent.sbFPS.hide()
+            self.parent.ehw.hide()
+        else:
+            self.parent.bPlayback.hide()
+            self.parent.sldrZpos.hide()
+            self.parent.sbFPS.hide()
+            self.parent.ehw.show()
+
+
         if index == 0:
             self.updateTab0UI()
             # self.updateZarrUI()
@@ -211,13 +224,13 @@ class AlignmentTab(QWidget):
             self._updatePointLists() #0726+
             if self.twCornerViewer.currentIndex() == 0:
                 # res = self.dm.resolution(s=self.dm.level)
-                # self.transformViewer = TransformViewer(parent=self, webengine=self.we2, path=None, dm=self.dm, res=res, )
+                # self.transformViewer = TransformViewer(parent=self, webengine0=self.we2, path=None, dm=self.dm, res=res, )
                 # w = self.we2.width()
                 # h = self.we2.height()
                 # self.transformViewer.initZoom(w=w, h=h, adjust=1.15)
                 # self.transformViewer.set_layer()
 
-                # self.transformViewer.webengine.reload()
+                # self.transformViewer.webengine0.reload()
                 pass
             elif self.twCornerViewer.currentIndex() == 1:
                 self.gifPlayer.set()
@@ -259,7 +272,7 @@ class AlignmentTab(QWidget):
 
             # elif self.twCornerViewer.currentIndex() == 0:
             #     res = copy.deepcopy(self.dm.resolution(s=self.dm.level))
-            #     self.transformViewer = TransformViewer(parent=self, webengine=self.we2, path=None, dm=self.dm, res=res, )
+            #     self.transformViewer = TransformViewer(parent=self, webengine0=self.we2, path=None, dm=self.dm, res=res, )
             #     w = self.we2.width()
             #     h = self.we2.height()
             #     self.transformViewer.initZoom(w=w, h=h, adjust=1.15)
@@ -296,7 +309,7 @@ class AlignmentTab(QWidget):
         self.viewer0.signals.arrowDown.connect(lambda: self.viewer0.set_zoom(self.viewer0.zoom() * 1.1))
         self.viewer0.signals.zoomChanged.connect(lambda x: self.slot_zoom_changed(x))  # Critical updates the lineedit
         # self.viewer0.signals.zoomChanged.connect(self.slotUpdateZoomSlider)  # 0314
-        self.viewer0.signals.zoomChanged.connect(lambda x: self.sldrZoomTab0.setValue(x))
+        # self.viewer0.signals.zoomChanged.connect(lambda x: self.sldrZoomTab0.setValue(x)) #debug #1129 was on
 
         self.sldrZoomTab1.setValue(self.viewer0.state.cross_section_scale)
 
@@ -317,7 +330,7 @@ class AlignmentTab(QWidget):
         def fn(x):
             logger.info(f'signal received. requested: {x}')
             self.dm.zpos = x
-            # self.viewer1.webengine.reload()
+            # self.viewer1.webengine0.reload()
 
         self.viewer1.signals.zChanged.connect(lambda x: fn(x))
         self.viewer1.signals.zChanged.connect(self.viewer1.drawSWIMwindow)
@@ -359,7 +372,7 @@ class AlignmentTab(QWidget):
                 self.viewer0.initViewer()
         elif _tab == 1:
             self.gifPlayer.set(start=False)
-            # self.we1.setUrl(QUrl("http://localhost:8888/"))
+            # self.webengine1.setUrl(QUrl("http://localhost:8888/"))
             if force or not hasattr(self,'viewer1'):
                 self.initVolumeTab1()
             else:
@@ -872,6 +885,8 @@ class AlignmentTab(QWidget):
             hw = HW(b)
             hw.layout.setAlignment(Qt.AlignRight)
             self.aaWidgets.append(hw)
+            self.aaButtons[w].clicked.connect(lambda: self.parent.bAlign.setEnabled(False))
+            self.aaButtons[w].clicked.connect(self.parent.alignAll)
 
         self.aaButtons[0].clicked.connect(lambda: self.dm.aa1x1(int(self.le1x1.text())))
         self.aaButtons[1].clicked.connect(lambda: self.dm.aa2x2(int(self.le2x2.text())))
@@ -880,12 +895,6 @@ class AlignmentTab(QWidget):
         self.aaButtons[4].clicked.connect(lambda: self.dm.aaClobber((self.cbClobber.isChecked(), int(self.leClobber.text()))))
         self.aaButtons[5].clicked.connect(lambda: self.dm.aaQuadrants([self.Q1.isClicked, self.Q2.isClicked,self.Q3.isClicked, self.Q4.isClicked]))
 
-        self.aaButtons[0].clicked.connect(self.parent.alignAll)
-        self.aaButtons[1].clicked.connect(self.parent.alignAll)
-        self.aaButtons[2].clicked.connect(self.parent.alignAll)
-        self.aaButtons[3].clicked.connect(self.parent.alignAll)
-        self.aaButtons[4].clicked.connect(self.parent.alignAll)
-        self.aaButtons[5].clicked.connect(self.parent.alignAll)
 
         for b in self.aaButtons:
             b.clicked.connect(self.dataUpdateMA)
@@ -1313,7 +1322,7 @@ class AlignmentTab(QWidget):
         # '''THIS WORKS'''
         # self.mdi = QMdiArea()
         # self.sub_webengine = QMdiSubWindow()
-        # self.sub_webengine.setWidget(self.we0)
+        # self.sub_webengine.setWidget(self.webengine0)
         # self.sub_webengine.showMaximized()
         # self.sub_webengine.setWindowFlags(Qt.FramelessWindowHint)
         # self.mdi.addSubWindow(self.sub_webengine)
@@ -1337,7 +1346,7 @@ class AlignmentTab(QWidget):
         # testmenu.addAction("cascade")
         # testmenu.addAction("Tiled")
 
-        ngFont = QFont('Tahoma')
+        ngFont = QFont('Consolas')
         ngFont.setBold(True)
         pal = QPalette()
         pal.setColor(QPalette.Text, QColor("#FFFF66"))
@@ -1485,7 +1494,8 @@ class AlignmentTab(QWidget):
         self.tbbNgHelp.setCheckable(True)
         self.tbbNgHelp.pressed.connect(fn_ng_help)
         self.tbbNgHelp.setFocusPolicy(Qt.NoFocus)
-        self.tbbNgHelp.setIcon(qta.icon("fa.question", color='#f3f6fb'))
+        # self.tbbNgHelp.setIcon(qta.icon("fa.question", color='#f3f6fb'))
+        self.tbbNgHelp.setIcon(qta.icon('fa.question'))
 
 
         self.cbxNgExtras = CheckableComboBox()
@@ -1823,9 +1833,9 @@ class AlignmentTab(QWidget):
         self.match_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         self.we1 = WebEngine(self, ID='tra')
-        # self.we1.setStyleSheet("background-color: #000000;")
-        # self.we1.page().setBackgroundColor(Qt.transparent)  # 0726+
-        # self.we1.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # self.webengine1.setStyleSheet("background-color: #000000;")
+        # self.webengine1.page().setBackgroundColor(Qt.transparent)  # 0726+
+        # self.webengine1.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         setWebengineProperties(self.we1)
         self.we1.setMouseTracking(True)
 
@@ -1877,17 +1887,20 @@ class AlignmentTab(QWidget):
         padding: 2px;""")
 
         self.we2 = WebEngine(self, ID='we2')
+        self.we2.setFocusPolicy(Qt.NoFocus)
         self.we2.setMinimumSize(QSize(200, 200))
         setWebengineProperties(self.we2)
         self.we2.setMouseTracking(True)
 
         self.bToggleResult = QPushButton('Toggle Result')
+        self.bToggleResult.setFocusPolicy(Qt.NoFocus)
         self.bToggleResult.setFixedSize(QSize(68, 14))
 
         self.bToggleResult.clicked.connect(lambda: self.transformViewer.toggle())
         self.bToggleResult.clicked.connect(lambda: self.labCornerViewer.setText(self.transformViewer.title))
 
         self.hwCornerViewer = HW(self.bToggleResult, self.labCornerViewer)
+        self.hwCornerViewer.setFocusPolicy(Qt.NoFocus)
         self.hwCornerViewer.layout.setSpacing(4)
         self.hwCornerViewer.layout.setAlignment(Qt.AlignTop)
         self.hwCornerViewer.setFixedHeight(16)
@@ -1895,6 +1908,7 @@ class AlignmentTab(QWidget):
 
 
         self.wWebengine2 = QWidget()
+        self.wWebengine2.setFocusPolicy(Qt.NoFocus)
         self.glWebengine2 = GL()
         self.wWebengine2.setLayout(self.glWebengine2)
         self.glWebengine2.addWidget(self.we2, 0, 0, 3, 3)
@@ -1902,6 +1916,7 @@ class AlignmentTab(QWidget):
 
 
         self.twCornerViewer = QTabWidget()
+        self.twCornerViewer.setFocusPolicy(Qt.NoFocus)
         self.twCornerViewer.setMinimumHeight(280)
         self.twCornerViewer.setStyleSheet("""
         QTabBar::tab {
@@ -1920,7 +1935,7 @@ class AlignmentTab(QWidget):
         def tab_changed():
             if self.twCornerViewer.currentIndex() == 0:
                 # res = self.dm.resolution(s=self.dm.level)
-                # self.transformViewer = TransformViewer(parent=self, webengine=self.we2, path=None, dm=self.dm, res=res, )
+                # self.transformViewer = TransformViewer(parent=self, webengine0=self.we2, path=None, dm=self.dm, res=res, )
                 # w = self.we2.width()
                 # h = self.we2.height()
                 # self.transformViewer.initZoom(w=w, h=h, adjust=1.15)
@@ -2478,11 +2493,11 @@ class AlignmentTab(QWidget):
         logger.info(f'caller: {caller}')
         if caller not in ('slotUpdateZoomSlider', 'setValue'):  # Original #0314
             _tab = self.wTabs.currentIndex()
-            if _tab == 0:
-                val = 1 / self.sldrZoomTab0.value()
-                if abs(self.viewer0.state.cross_section_scale - val) > .0001:
-                    self.viewer0.set_zoom(val)
-            elif _tab == 1:
+            # if _tab == 0:
+            #     val = 1 / self.sldrZoomTab0.value()
+            #     if abs(self.viewer0.state.cross_section_scale - val) > .0001:
+            #         self.viewer0.set_zoom(val)
+            if _tab == 1:
                 val = 1 / self.sldrZoomTab1.value()
                 if abs(self.viewer1.state.cross_section_scale - val) > .0001:
                     self.viewer1.set_zoom(val)
@@ -2494,12 +2509,12 @@ class AlignmentTab(QWidget):
         caller = inspect.stack()[1].function
         logger.info(f'[{caller}]')
         _tab = self.wTabs.currentIndex()
-        if _tab == 0:
-            val = self.viewer0.state.cross_section_scale
-            if val:
-                if val != 0:
-                    self.sldrZoomTab0.setValue(float(val * val))
-        elif _tab == 1:
+        # if _tab == 0:
+        #     val = self.viewer0.state.cross_section_scale
+        #     if val:
+        #         if val != 0:
+        #             self.sldrZoomTab0.setValue(float(val * val))
+        if _tab == 1:
             val = self.viewer1.state.cross_section_scale
             if val:
                 if val != 0:
@@ -2882,7 +2897,7 @@ class AlignmentTab(QWidget):
         # self.sldrZoomTab1.setInvertedAppearance(True)
         self.sldrZoomTab0.setMaximum(4)
         self.sldrZoomTab0.setMinimum(1)
-        self.sldrZoomTab0.valueChanged.connect(self.onZoomSlider)
+        # self.sldrZoomTab0.valueChanged.connect(self.onZoomSlider)
         self.sldrZoomTab0.setValue(4.0)
 
         vlab = VerticalLabel('Zoom:')
@@ -2903,7 +2918,8 @@ class AlignmentTab(QWidget):
         self.wWebengine0 = QWidget()
         self.wWebengine0.setLayout(self.glWebengine0)
 
-        self.wTab0 = HW(self.vlabTab0, VW(self.toolbar0, self.wWebengine0), self.wSldrZoomTab0)
+        # self.wTab0 = HW(self.vlabTab0, VW(self.toolbar0, self.wWebengine0), self.wSldrZoomTab0)
+        self.wTab0 = HW(self.vlabTab0, VW(self.toolbar0, self.wWebengine0))
 
         tabs = [(self.wTab0, '3D Alignment'),
                 (self.wTab1, 'Edit Alignment'),
@@ -3078,7 +3094,7 @@ class ExpandingHWidget(QWidget):
 Forward key strokes to QWebEngineView:
 new_event = QKeyEvent(QEvent.KeyPress, Qt.Key_R, Qt.KeyboardModifiers(),"r",)
 new_event.artificial = True
-QCoreApplication.postEvent(cfg.pt.viewer0.webengine.focusProxy(), new_event)
+QCoreApplication.postEvent(cfg.pt.viewer0.webengine0.focusProxy(), new_event)
 
 
 
@@ -3118,7 +3134,7 @@ class ForwardKeyEvent(QObject):
 class WebEngine(QWebEngineView):
 
     
-    def __init__(self, parent, ID='we0'):
+    def __init__(self, parent, ID='webengine0'):
         super().__init__(parent)
         self.ID = ID
         # self.grabGesture(Qt.PinchGesture, Qt.DontStartGestureOnChildren)
@@ -3402,7 +3418,7 @@ def setWebengineProperties(webengine):
     webengine.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
     webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
     webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
-    # webengine.settings().setAttribute(QWebEngineSettings.ErrorPageEnabled, True)
+    # webengine0.settings().setAttribute(QWebEngineSettings.ErrorPageEnabled, True)
 
 
 def delete_correlation_signals(dm):

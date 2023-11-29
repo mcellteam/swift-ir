@@ -53,6 +53,8 @@ class ManagerTab(QWidget):
         self.setMinimumHeight(100)
         self.filebrowser = FileBrowser(parent=self)
         self.filebrowser.setContentsMargins(2,2,2,2)
+        self.dm = None
+        self._level = None
         self._watchImages = DirectoryWatcher(suffixes=['.emstack', '.images'], preferences=cfg.preferences,
                                              key='images_search_paths')
         self._watchImages.fsChanged.connect(self.updateCombos)
@@ -63,6 +65,8 @@ class ManagerTab(QWidget):
         self._images_info = {}
         # self._selected_series = None #Todo
         # self._selected_alignment = None #Todo
+        self.setAttribute(Qt.WA_TranslucentBackground)
+
 
         self._updateWatchPaths()
         self.initUI()
@@ -72,11 +76,13 @@ class ManagerTab(QWidget):
         self.filebrowser.setRootLastKnownRoot()
 
         self.resetView()
-        self.refresh()
+        # self.refresh()
 
         self._selecting_emstack = False
 
-        self.webengine.setFocus()
+        self.updateCombos()
+
+        self.webengine0.setFocus()
 
 
 
@@ -124,25 +130,27 @@ class ManagerTab(QWidget):
         self.comboLevel.setFocusPolicy(Qt.NoFocus)
         self.comboLevel.currentIndexChanged.connect(self.onComboLevel)
 
-        self.comboAlignment = QComboBox()
-        # self.comboAlignment.setStyleSheet("""QComboBox QAbstractItemView {
+        self.comboTransformed = QComboBox()
+        self.comboTransformed.setFixedHeight(16)
+        # self.comboTransformed.setStyleSheet("""QComboBox QAbstractItemView {
         #     border: 2px solid darkgray;
         #     selection-background-color: lightgray;
         # }""")
         tip = 'Create a new alignment of the selected EM stack in your alignments content root'
         tip = '\n'.join(textwrap.wrap(tip, width=35))
-        self.comboAlignment.setToolTip(tip)
-        # self.comboAlignment.setPlaceholderText("Select Alignment...")
-        self.comboAlignment.setPlaceholderText("")
-        self.comboAlignment.setFocusPolicy(Qt.NoFocus)
-        self.comboAlignment.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # self.comboAlignment.setEditable(True)
-        # self.comboAlignment.completer().setCompletionMode(QCompleter.PopupCompletion)
-        self.comboAlignment.setCursor(QCursor(Qt.PointingHandCursor))
-        self.comboAlignment.textActivated.connect(self.initPMviewer)
-        # self.comboAlignment.addItems(["None"])
+        self.comboTransformed.setToolTip(tip)
+        # self.comboTransformed.setPlaceholderText("Select Alignment...")
+        self.comboTransformed.setPlaceholderText("")
+        self.comboTransformed.setFocusPolicy(Qt.NoFocus)
+        self.comboTransformed.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # self.comboTransformed.setEditable(True)
+        # self.comboTransformed.completer().setCompletionMode(QCompleter.PopupCompletion)
+        self.comboTransformed.setCursor(QCursor(Qt.PointingHandCursor))
+        self.comboTransformed.textActivated.connect(self.onComboTransformed)
+        # self.comboTransformed.addItems(["None"])
 
         self.comboImages = QComboBox()
+        self.comboImages.setFixedHeight(16)
         tip = 'Select files to create a new EM stack (.emstack) in your images content root'
         tip = '\n'.join(textwrap.wrap(tip, width=35))
         self.comboImages.setToolTip(tip)
@@ -152,8 +160,8 @@ class ManagerTab(QWidget):
         # self.comboImages.setEditable(True)
         # self.comboImages.completer().setCompletionMode(QCompleter.PopupCompletion)
         self.comboImages.setCursor(QCursor(Qt.PointingHandCursor))
-        self.updateCombos()
-        self.comboImages.textActivated.connect(self.onSelectImagesCombo)
+        # self.updateCombos()
+        self.comboImages.textActivated.connect(self.onComboSelectEmstack)
 
         tip = f"Create Alignment (.align)"
         tip = '\n'.join(textwrap.wrap(tip, width=35))
@@ -190,15 +198,22 @@ class ManagerTab(QWidget):
         self.bOpen.setIcon(qta.icon('fa.folder-open'))
         self.bOpen.clicked.connect(self.onOpenAlignment)
 
-        self.wSelectImageSeries = HW(self.comboImages, self.comboLevel, self.bPlusImages, self.bMinusImages)
-        self.wSelectAlignment = HW(self.comboAlignment, self.bOpen, self.bPlusAlignment, self.bMinusAlignment)
+        self.wSelectEmstack = HW(self.comboImages, self.comboLevel, self.bPlusImages, self.bMinusImages)
+        self.wSelectAlignment = HW(self.comboTransformed, self.bOpen, self.bPlusAlignment, self.bMinusAlignment)
 
-        self.toolbar = QToolBar()
-        self.toolbar.addWidget(VW(self.wSelectImageSeries, self.wSelectAlignment))
+        # self.toolbar = QToolBar()
+        # self.toolbar.addWidget(VW(self.wSelectEmstack, self.wSelectAlignment))
 
-        self.webengine = WebEngine(ID='pmViewer')
-        # self.we0.setFocusPolicy(Qt.StrongFocus)
-        setWebengineProperties(self.webengine)
+
+
+        self.webengine0 = WebEngine(ID='emstack-viewer')
+        self.wrapper0 = VW(self.webengine0)
+        # self.wrapper0.setStyleSheet("border-radius: 4px; background-color: #222222;")
+
+        self.webengine1 = WebEngine(ID='align-viewer')
+        # self.webengine1._load()
+        self.wrapper1 = VW(self.webengine1)
+        # self.wrapper1.setStyleSheet("border-radius: 4px; background-color: #222222; padding: 20px;")
 
         self.leNameAlignment = QLineEdit()
         self.leNameAlignment.setFixedHeight(18)
@@ -231,7 +246,7 @@ class ManagerTab(QWidget):
         self.bCancelNewAligment.setFocusPolicy(Qt.NoFocus)
         self.bCancelNewAligment.setCursor(QCursor(Qt.PointingHandCursor))
         self.bCancelNewAligment.clicked.connect(lambda: self.wNameAlignment.hide())
-        self.bCancelNewAligment.clicked.connect(lambda: self.webengine.setFocus())
+        self.bCancelNewAligment.clicked.connect(lambda: self.webengine0.setFocus())
 
         newAlignmentLab = QLabel("Alignment Name:")
         self.wNameAlignment = HW(self.leNameAlignment, self.bConfirmNewAlignment, self.bCancelNewAligment)
@@ -285,7 +300,7 @@ class ManagerTab(QWidget):
         sidebar.setItemDelegate(delegate)
 
         self.iid_dialog = ImportImagesDialog()
-        self.iid_dialog.filesSelected.connect(self.updateImportImagesUI)
+        # self.iid_dialog.filesSelected.connect(self.updateImportImagesUI)
         self.iid_dialog.setAutoFillBackground(True)
         self.iid_dialog.hide()
 
@@ -311,6 +326,7 @@ class ManagerTab(QWidget):
 
         # self.bSelect = QPushButton("Select Images (TIFF)")
         self.bSelect = QPushButton("Select Images")
+        # self.bSelect.setCheckable(True)
         self.bSelect.setCursor(QCursor(Qt.PointingHandCursor))
         self.bSelect.clicked.connect(self.selectImages)
 
@@ -373,36 +389,67 @@ class ManagerTab(QWidget):
         self.wOverlay.layout.setSpacing(4)
         self.wOverlay.layout.setAlignment(Qt.AlignTop)
         self.wOverlay.adjustSize()
-
         self.wOverlay.layout.setAlignment(Qt.AlignTop)
-        self.setAttribute(Qt.WA_TranslucentBackground)
-        self.glMain = QGridLayout()
-        self.glMain.setContentsMargins(0,0,0,0)
-        self.glMain.addWidget(self.webengine, 0, 0, 4, 3)
-        self.glMain.addWidget(self.wOverlay, 0, 0, 1, 3)
-        self.glMain.setRowStretch(1,9)
 
-        self._wProjects = QWidget()
-        self._wProjects.setContentsMargins(0,0,0,0)
-        self._wProjects.setLayout(self.glMain)
+        self.labFound0 = BoldLabel('0 Found')
+        self.labFound0.setAlignment(Qt.AlignRight)
+        self.labFound0.setFixedHeight(14)
+        self.gl0 = QGridLayout()
+        self.gl0.setContentsMargins(0, 0, 0, 0)
+        self.gl0.addWidget(self.wrapper0, 0, 0, 4, 3)
+        self.gl0.addWidget(self.wOverlay, 0, 0, 1, 3)
+        self.gl0.setRowStretch(1, 9)
+        w = QWidget()
+        w.setContentsMargins(0, 0, 0, 0)
+        w.setLayout(self.gl0)
+        self.gbWebengine0 = GroupBox('EM Image Stacks (.emstack)')
+        vl = VBL(self.labFound0, self.wSelectEmstack, self.gbCreateImages, w)
+        self.gbWebengine0.setLayout(vl)
+        self.gbWebengine0.setContentsMargins(0, 0, 0, 0)
 
-        self.vlPM = VerticalLabel('Alignment Manager')
-        self.wProjects = HW(self.vlPM, VW(self.toolbar, self.gbCreateImages, self.wNameAlignment, self._wProjects))
+        self.labFound1 = BoldLabel('0 Found')
+        self.labFound1.setAlignment(Qt.AlignRight)
+        self.labFound1.setFixedHeight(14)
+        self.gl1 = QGridLayout()
+        self.gl1.setContentsMargins(0, 0, 0, 0)
+        self.gl1.addWidget(self.wrapper1, 0, 0, 4, 3)
+        self.gl1.setRowStretch(1, 9)
+        w = QWidget()
+        w.setContentsMargins(0, 0, 0, 0)
+        w.setLayout(self.gl1)
+        self.gbWebengine1 = GroupBox('Alignments (.align)')
+        vl = VBL(self.labFound1, self.wSelectAlignment, self.wNameAlignment, w)
+        self.gbWebengine1.setLayout(vl)
+        self.gbWebengine1.setContentsMargins(0, 0, 0, 0)
 
-        self._hsplitter = HSplitter()
-        self._hsplitter.addWidget(self.wProjects)
-        self._hsplitter.addWidget(self.filebrowser)
-        self._hsplitter.setSizes([int(cfg.WIDTH * (8/10)), int(cfg.WIDTH * (2/10))])
-        self._hsplitter.setStretchFactor(0,1)
-        self._hsplitter.setStretchFactor(1,1)
-        self._hsplitter.setCollapsible(0, False)
-        self._hsplitter.setCollapsible(1, False)
+
+        self.vsplitter = QSplitter(Qt.Orientation.Vertical)
+        self.vsplitter.setOpaqueResize(False)
+        self.vsplitter.addWidget(self.gbWebengine0)
+        self.vsplitter.addWidget(self.gbWebengine1)
+        self.vsplitter.setStretchFactor(0, 1)
+        self.vsplitter.setStretchFactor(1, 1)
+        self.vsplitter.setCollapsible(0, False)
+        self.vsplitter.setCollapsible(1, False)
+
+        # self.vlPM = VerticalLabel('Alignment Manager')
+        # self.wManager = HW(self.vlPM, self.vsplitter)
+
+        self.hsplitter = HSplitter()
+        self.hsplitter.setOpaqueResize(False)
+        self.hsplitter.addWidget(self.vsplitter)
+        self.hsplitter.addWidget(self.filebrowser)
+        self.hsplitter.setSizes([int(cfg.WIDTH * (8 / 10)), int(cfg.WIDTH * (2 / 10))])
+        self.hsplitter.setStretchFactor(0, 1)
+        self.hsplitter.setStretchFactor(1, 1)
+        self.hsplitter.setCollapsible(0, False)
+        self.hsplitter.setCollapsible(1, False)
 
         self.vbl_main = VBL()
         self.vbl_main.setSpacing(0)
         self._vw = VW()
 
-        self.vbl_main.addWidget(self._hsplitter)
+        self.vbl_main.addWidget(self.hsplitter)
 
         self.setLayout(self.vbl_main)
 
@@ -479,12 +526,12 @@ class ManagerTab(QWidget):
             cal_grid_path = self._NEW_IMAGES_PATHS[0]
             cal_grid_name = os.path.basename(cal_grid_path)
             self._NEW_IMAGES_PATHS = self._NEW_IMAGES_PATHS[1:]
-            cfg.mw.tell(f"Copying calibration grid image '{cal_grid_name}'")
+            self.parent.tell(f"Copying calibration grid image '{cal_grid_name}'")
             shutil.copyfile(cal_grid_path, os.path.join(out, cal_grid_name))
             #Todo create multiscale Zarr
 
         src = os.path.dirname(self._NEW_IMAGES_PATHS[0])
-        cfg.mw.tell(f'Importing {len(self._NEW_IMAGES_PATHS)} Images...')
+        self.parent.tell(f'Importing {len(self._NEW_IMAGES_PATHS)} Images...')
         scales_str = self.wEmStackProperties.scales_input.text().strip()
         scale_vals = list(map(int,scales_str.split(' ')))
         tiff_path = os.path.join(out, 'tiff')
@@ -492,7 +539,7 @@ class ManagerTab(QWidget):
         thumbs_path = os.path.join(out, 'thumbs')
 
         for sv in scale_vals:
-            cfg.mw.tell('Making directory structure for level %d...' % sv)
+            self.parent.tell('Making directory structure for level %d...' % sv)
             os.makedirs(os.path.join(tiff_path,   's%d' % sv), exist_ok=True)
             os.makedirs(os.path.join(zarr_path,   's%d' % sv), exist_ok=True)
             os.makedirs(os.path.join(thumbs_path, 's%d' % sv), exist_ok=True)
@@ -547,9 +594,11 @@ class ManagerTab(QWidget):
         opts['thumbnail_scale_factor'] = sf
         p = os.path.join(out, 'info.json')
         write('json')(p, opts)
-        cfg.mw.autoscaleImages(src, out, opts)
+        self.update()
+        # QApplication.processEvents()
+        self.parent.autoscaleImages(src, out, opts)
         cfg.preferences['images_combo_text'] = out
-        self.initPMviewer()
+        self.updatePMViewers()
 
     def createAlignment(self):
         logger.info('')
@@ -576,11 +625,11 @@ class ManagerTab(QWidget):
             _err = 1
             _msg = f"A directory with this name already exists: {newdir}"
         if _err:
-            cfg.mw.warn(_msg)
+            self.parent.warn(_msg)
             self.resetView()
         else:
             info = read('json')(info)
-            dm = DataModel(file_path=newproject, images_path=seriespath, init=True, images_info=info)
+            self.dm = dm = DataModel(file_path=newproject, images_path=seriespath, init=True, images_info=info)
             DirectoryStructure(dm).initDirectory()
             AlignmentTab(self.parent, dm)
             dm.save(silently=True)
@@ -591,37 +640,59 @@ class ManagerTab(QWidget):
     def refresh(self):
         caller = inspect.stack()[1].function
         logger.info(f"[{caller}]")
+        self.setUpdatesEnabled(False)
         self.resetView()
         self.updateCombos()
         self.initPMviewer()
+        self.setUpdatesEnabled(True)
 
-    def initPMviewer(self):
+
+    def initPMviewer(self, path=None):
+        self.setUpdatesEnabled(False)
+        level = self.comboLevel.currentText()
+
+        path = Path(self.comboImages.currentText()) / 'zarr' / level
+
+        self.viewer0 = PMViewer(
+            parent=self,
+            webengine=self.webengine0,
+            path=path,
+            res=self._images_info['resolution'][level],
+            extra_data={'name': 'viewer0', 'dm': None})
+        self.viewer0.signals.arrowLeft.connect(self.parent.layer_left)
+        self.viewer0.signals.arrowRight.connect(self.parent.layer_right)
+        self.viewer0.signals.arrowUp.connect(self.parent.incrementZoomIn)
+        self.viewer0.signals.arrowDown.connect(self.parent.incrementZoomOut)
+
+
+        # REQUIRES having dm
+        self.viewer1 = PMViewer(
+            parent=self,
+            webengine=self.webengine1,
+            path=path,
+            res=self._images_info['resolution'][level],
+            extra_data={'name': 'viewer1', 'dm': None})
+        self.viewer1.signals.arrowLeft.connect(self.parent.layer_left)
+        self.viewer1.signals.arrowRight.connect(self.parent.layer_right)
+        self.viewer1.signals.arrowUp.connect(self.parent.incrementZoomIn)
+        self.viewer1.signals.arrowDown.connect(self.parent.incrementZoomOut)
+
+        self.updatePMViewers()
+        self.setUpdatesEnabled(True)
+
+    def updatePMViewers(self):
         logger.info('')
-        try:
-            if self.comboImages.count() > 0:
-                level = self.comboLevel.currentText()
-                self.viewer = self.parent.viewer = PMViewer(
-                    parent=self,
-                    webengine=self.webengine,
-                    extra_data={
-                        'resolution': self._images_info['resolution'][level],
-                        'raw_path': Path(self.comboImages.currentText()) / 'zarr' / level,
-                        'transformed_path': Path(self.comboAlignment.currentText()) / 'zarr' / level,
-                    })
-                self.viewer.signals.arrowLeft.connect(self.parent.layer_left)
-                self.viewer.signals.arrowRight.connect(self.parent.layer_right)
-                self.viewer.signals.arrowUp.connect(self.parent.incrementZoomIn)
-                self.viewer.signals.arrowDown.connect(self.parent.incrementZoomOut)
-                # self.webengine.py.setFocus()
-            else:
-                self.webengine.setHtml("")
-        except:
-            print_exception()
-            self.webengine.setHtml("Nothing to display.")
-            f = Path(__file__).parents[3] / f'src/resources/html/null.html'
-            print(f'Loading html doc from {f}')
-            html = read('html')(f)
-            self.webengine.setHtml(html)
+        self.setUpdatesEnabled(False)
+        level = self.comboLevel.currentText()
+        if self.comboImages.currentText():
+            path = Path(self.comboImages.currentText()) / 'zarr' / level
+            if path.exists():
+                self.viewer0.initViewer()
+                if self.comboTransformed.currentText():
+                    self.viewer1.initViewer()
+        self.setUpdatesEnabled(True)
+
+
 
     def onPlusAlignment(self):
         logger.info('')
@@ -629,14 +700,14 @@ class ManagerTab(QWidget):
             self.wNameAlignment.hide()
             return
         if not os.path.isdir(self.comboImages.currentText()):
-            cfg.mw.warn(f"'{self.comboImages.currentText()}' is not valid.")
+            self.parent.warn(f"'{self.comboImages.currentText()}' is not valid.")
             return
         self.wNameAlignment.show()
         self.leNameAlignment.setFocus()
 
     def onMinusAlignment(self):
         logger.info('')
-        path = Path(self.comboAlignment.currentText())
+        path = Path(self.comboTransformed.currentText())
         if path.suffix == '.align':
             del_path = path.with_suffix('')
 
@@ -645,7 +716,7 @@ class ManagerTab(QWidget):
             reply = QMessageBox.question(self, "Quit", f"Delete this alignment?\n\n'{del_path}'",
                                          QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if reply == QMessageBox.Yes:
-                cfg.mw.tell(f'Running background process: removing {del_path}...')
+                self.parent.tell(f'Running background process: removing {del_path}...')
                 if path.exists():
                     try:
                         os.remove(path) #todo make this more robust/safe, check dir before deleting
@@ -661,23 +732,24 @@ class ManagerTab(QWidget):
                 self.updateCombos()
                 # self.resetView()     #1118-
                 # self.initPMviewer()  #1118-
+                self.updatePMViewers()
 
-                cfg.mw.hud.done()
-                cfg.mw.tell('The deletion process will continue running in the background.')
+                self.parent.hud.done()
+                self.parent.tell('The deletion process will continue running in the background.')
             else:
-                cfg.mw.warn(f'Path not found: {del_path}')
+                self.parent.warn(f'Path not found: {del_path}')
 
 
     def onMinusImages(self):
         path = self.comboImages.currentText()
         if os.path.isdir(path):
-            cfg.mw.tell(f'Running background process: removing {path}...')
+            self.parent.tell(f'Running background process: removing {path}...')
             reply = QMessageBox.question(self, "Quit", f"Delete this images?\n\n'{path}'",
                                          QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if reply == QMessageBox.Yes:
                 try:
                     if path.endswith('.emstack') or path.endswith('.images'):
-                        cfg.mw.tell(f'Deleting EM stack {path}...')
+                        self.parent.tell(f'Deleting EM stack {path}...')
                         run_subprocess(["rm", "-rf", path])
                         run_subprocess(["rm", "-rf", path])
                     else:
@@ -687,10 +759,10 @@ class ManagerTab(QWidget):
                 else:
                     logger.info('Sleeping for 2 seconds...')
                     time.sleep(2)
-                    cfg.mw.hud.done()
-                    cfg.mw.tell('The deletion process will continue running in the background.')
+                    self.parent.hud.done()
+                    self.parent.tell('The deletion process will continue running in the background.')
         else:
-            cfg.mw.warn(f"Images not found: {path}")
+            self.parent.warn(f"Images not found: {path}")
 
         self.refresh()
 
@@ -703,6 +775,7 @@ class ManagerTab(QWidget):
     def updateCombos(self):
         '''Loading this combobox triggers the loading of the alignment and scales comboboxes'''
         caller = inspect.stack()[1].function
+        # logger.critical(f"{caller}")
         shown = [self.comboImages.itemText(i) for i in range(self.comboImages.count())]
         known = self._watchImages.known
         if sorted(shown) == sorted(known):
@@ -710,6 +783,7 @@ class ManagerTab(QWidget):
             return
         self.comboImages.clear()
         self.comboImages.addItems(known)
+        self.labFound0.setText(f"{len(known)} Found")
         mem = cfg.preferences['images_combo_text']
         if mem in known:
             self.comboImages.setCurrentText(mem)
@@ -720,21 +794,21 @@ class ManagerTab(QWidget):
         al_known = self._watchAlignments.known
         if os.path.exists(str(_im_path)):
             if len(al_known) == 0:
-                self.comboAlignment.setPlaceholderText(f"No Alignments (.align) Found for '{_im_name}'")
+                self.comboTransformed.setPlaceholderText(f"No Alignments (.align) Found for '{_im_name}'")
             else:
-                self.comboAlignment.setPlaceholderText(f"{len(al_known)} Alignments (.align) of '{_im_name}' Found")
+                self.comboTransformed.setPlaceholderText(f"{len(al_known)} Alignments (.align) of '{_im_name}' Found")
         else:
-            self.comboAlignment.setPlaceholderText("")
+            self.comboTransformed.setPlaceholderText("")
 
         self.loadLevelsCombo()
         self.loadAlignmentCombo()
-        self.update()
+
 
     def loadAlignmentCombo(self):
         # logger.info('')
-        self.comboAlignment.clear()
+        self.comboTransformed.clear()
         if self.comboImages.currentText():
-            cur_items = [self.comboAlignment.itemText(i) for i in range(self.comboAlignment.count())]
+            cur_items = [self.comboTransformed.itemText(i) for i in range(self.comboTransformed.count())]
             if sorted(cur_items) != sorted(self._watchAlignments.known):
                 _im_path = self.comboImages.currentText()
                 _im_name = os.path.basename(_im_path)
@@ -747,19 +821,20 @@ class ManagerTab(QWidget):
                     if self._getUUID(p) == _uuid:
                         valid.append(p)
 
-                # self.comboAlignment.clear()
-                self.comboAlignment.addItems(valid)
+                # self.comboTransformed.clear()
+                self.comboTransformed.addItems(valid)
+                self.labFound1.setText(f"{len(valid)} Found")
                 mem = cfg.preferences['alignment_combo_text']
                 if mem in valid:
-                    self.comboAlignment.setCurrentText(mem)
+                    self.comboTransformed.setCurrentText(mem)
                 if os.path.exists(str(_im_path)):
                     if len(valid):
-                        self.comboAlignment.setPlaceholderText(f"{len(valid)} Alignments (.align) of '{_im_name}' "
+                        self.comboTransformed.setPlaceholderText(f"{len(valid)} Alignments (.align) of '{_im_name}' "
                                                                    f"Found")
                     else:
-                        self.comboAlignment.setPlaceholderText(f"No Alignments (.align) of '{_im_name}' Found")
+                        self.comboTransformed.setPlaceholderText(f"No Alignments (.align) of '{_im_name}' Found")
                 else:
-                    self.comboAlignment.setPlaceholderText("")
+                    self.comboTransformed.setPlaceholderText("")
 
 
     def loadLevelsCombo(self):
@@ -772,10 +847,12 @@ class ManagerTab(QWidget):
                     self.comboLevel.setCurrentIndex(self.comboLevel.count() - 1)
 
 
-    def onSelectImagesCombo(self):
+    def onComboSelectEmstack(self):
         logger.info('')
         caller = inspect.stack()[1].function
         if caller == 'main':
+            self.webengine0.setnull()
+            self.webengine1.setnull()
             if self.comboImages.currentText():
                 path = self.comboImages.currentText()
                 info_path = os.path.join(path, 'info.json')
@@ -787,24 +864,37 @@ class ManagerTab(QWidget):
                 except:
                     print_exception()
                 self.loadAlignmentCombo()
-                self.initPMviewer()
+                self.updatePMViewers()
+
+    def onComboTransformed(self):
+        caller = inspect.stack()[1].function
+        logger.critical(f"[{caller}]")
+        if caller == 'main':
+            try:
+                self.dm = DataModel(data=read('json')(self.comboTransformed.currentText()), readonly=True)
+            except:
+                self.dm = None
+                print_exception()
+            if self.comboTransformed.currentText():
+                self.viewer1.initViewer()
 
 
     def onComboLevel(self):
         caller = inspect.stack()[1].function
         if caller == 'main':
-            self.initPMviewer()
+            self._level = self.comboLevel.currentText()
+            self.updatePMViewers()
 
     # def onSelectAlignmentCombo(self):
     #     caller = inspect.stack()[1].function
     #     if caller == 'main':
-    #         cfg.preferences['alignment_combo_text'] = self.comboAlignment.currentText()
+    #         cfg.preferences['alignment_combo_text'] = self.comboTransformed.currentText()
     #         self.gbCreateImages.hide()
-    #         self.webengine.py.setFocus()
+    #         self.webengine0.py.setFocus()
 
     def onOpenAlignment(self):
         logger.info('')
-        p = Path(self.comboAlignment.currentText())
+        p = Path(self.comboTransformed.currentText())
         if p.suffix == '.align':
             impath = Path(self.comboImages.currentText())
             self.openAlignment(file_path=p, images_path=impath)
@@ -832,7 +922,7 @@ class ManagerTab(QWidget):
                 self.parent.warn(f'Project {file_path.name} is already open.')
                 return
 
-            cfg.mw.tell(f"Opening: {file_path}...")
+            self.parent.tell(f"Opening: {file_path}...")
             data = read('json')(file_path)
             dm = DataModel(
                 data=data,
@@ -840,11 +930,11 @@ class ManagerTab(QWidget):
                 images_path=images_path,
             )
             cfg.preferences['last_alignment_opened'] = dm.data_file_path
-            cfg.mw.saveUserPreferences(silent=True)
+            self.parent.saveUserPreferences(silent=True)
             dm.save(silently=True)
             AlignmentTab(self.parent, dm)
         else:
-            cfg.mw.warn("Invalid Path")
+            self.parent.warn("Invalid Path")
 
 
     def showMainUI(self):
@@ -906,9 +996,10 @@ class ManagerTab(QWidget):
         # self.iid_dialog.resize(QSize(820,480))
         # self.bSelect.setStyleSheet("background-color: #339933; color: #f3f6fb; border-color: #f3f6fb;")
         self.bCreateImages.setStyleSheet("")
-        self.vwEmStackProperties.hide()
+        # self.vwEmStackProperties.hide()
 
         if self.iid_dialog.isVisible():
+            self.iid_dialog.hide()
             return
 
         self.gbCreateImages.setAutoFillBackground(True)
@@ -935,13 +1026,14 @@ class ManagerTab(QWidget):
 
             self.iid_dialog.pixmap = None
         else:
-            cfg.mw.warn('Import images dialog did not return a valid file list')
-            self.showMainUI()
-            self.iid_dialog.pixmap = None
+            self.iid_dialog.hide()
+            # self.iid_dialog.pixmap = None
+            self.parent.warn('Import images dialog did not return a valid file list')
+            # self.showMainUI()
             return 1
 
         if filenames == 1:
-            cfg.mw.warn('No Project Canceled')
+            self.parent.warn('No Project Canceled')
             self.showMainUI()
             return 1
 
@@ -984,7 +1076,7 @@ class ManagerTab(QWidget):
             if project_file:
                 if validate_project_selection(project_file):
                     project = Path(project_file).with_suffix('')
-                    cfg.mw.tell("Delete this project? %s" % project_file)
+                    self.parent.tell("Delete this project? %s" % project_file)
                     txt = "Are you sure you want to PERMANENTLY DELETE " \
                           "the following project?\n\n" \
                           "Project: %s" % project_file
@@ -998,43 +1090,43 @@ class ManagerTab(QWidget):
                     msgbox.setDefaultButton(QMessageBox.Cancel)
                     reply = msgbox.exec_()
                     if reply == QMessageBox.Cancel:
-                        cfg.mw.tell('Canceling Delete Project Permanently Instruction...')
+                        self.parent.tell('Canceling Delete Project Permanently Instruction...')
                         return
                     if reply == QMessageBox.Ok:
                         logger.info('Deleting file %s...' % project_file)
-                        cfg.mw.tell('Reclaiming Disk Space. Deleting Project File %s...' % project_file)
+                        self.parent.tell('Reclaiming Disk Space. Deleting Project File %s...' % project_file)
 
-                    cfg.mw.tell(f'Deleting project file {project_file}...')
+                    self.parent.tell(f'Deleting project file {project_file}...')
 
                     try:
                         os.remove(project_file)
                     except:
                         print_exception()
                     # else:
-                    #     cfg.mw.hud.done()
+                    #     self.parent.hud.done()
 
                     # configure_project_paths()
                     # self.user_projects.set_data()
 
-                    cfg.mw.tell(f'Deleting: {project}...')
+                    self.parent.tell(f'Deleting: {project}...')
                     try:
                         run_subprocess(["rm","-rf", project])
                     except:
-                        cfg.mw.warn('An Error Was Encountered During Deletion of the Project Directory')
+                        self.parent.warn('An Error Was Encountered During Deletion of the Project Directory')
                         print_exception()
                     else:
-                        cfg.mw.hud.done()
+                        self.parent.hud.done()
 
-                    # cfg.mw.tell('Wrapping up...')
+                    # self.parent.tell('Wrapping up...')
                     # configure_project_paths()
-                    # if cfg.mw.globTabs.currentWidget().__class__.__name__ == 'ManagerTab':
+                    # if self.parent.globTabs.currentWidget().__class__.__name__ == 'ManagerTab':
                     #     try:
                     #         self.user_projects.set_data()
                     #     except:
                     #         logger.warning('There was a problem updating the project list')
                     #         print_exception()
 
-                    cfg.mw.tell('Deletion Complete!')
+                    self.parent.tell('Deletion Complete!')
                     logger.info('Deletion tasks finished')
                 else:
                     logger.warning('(!) Invalid target for deletion: %s' % project_file)
@@ -1363,6 +1455,7 @@ class ImagesConfig(QWidget):
         self.cbCalGrid.setChecked(True) # Kristen's request
 
         hbl = HBL(wScaling, wVoxelSize, wCompression, wChunk, self.cbCalGrid)
+        hbl.setContentsMargins(4,4,4,4)
 
         # hbl.setSpacing(12)
         self.setLayout(hbl)
@@ -1429,20 +1522,89 @@ class ExpandingHWidget(QWidget):
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
+
+
 class WebEngine(QWebEngineView):
-    def __init__(self, ID='we0'):
+    # use .settings() to access settings
+    def __init__(self, ID):
         QWebEngineView.__init__(self)
+        self.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
+        self.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
+        self.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
+        self.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
+        self.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
+        self.settings().setAttribute(QWebEngineSettings.JavascriptCanOpenWindows, False)
+        self.settings().setAttribute(QWebEngineSettings.AutoLoadImages, True)
+        # self.loadFinished.connect(self.on_load_finish)
         self.ID = ID
         self.grabGesture(Qt.PinchGesture, Qt.DontStartGestureOnChildren)
+        # self.setnull()
+        # self.setMinimumSize(QSize(200,200))
+        self.setnull()
 
 
-def setWebengineProperties(webengine):
-    # we0.preferences().setAttribute(QWebEngineSettings.PluginsEnabled, True)
-    # we0.preferences().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
-    # we0.preferences().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
-    # we0.preferences().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
-    # we0.preferences().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
-    pass
+        # self.page().loadFinished.connect(lambda: self.page().runJavaScript(self.injectOnLoadFinish()))
+        # self.urlChanged.connect(self._on_url_change)
+
+    def injectOnLoadFinish(self):
+        script = """
+        new QWebChannel(qt.webChannelTransport, function (channel) {
+            window.handler = channel.objects.handler;
+            handler.test(function(retVal) {
+                // console.error as console.log message don't show up in the python console
+                console.error(JSON.stringify(retVal));
+            });
+        
+        """
+        return script
+
+    def setText(self, text:str):
+        self.setHtml(self.createHTML(text))
+
+    def setnull(self):
+        self.setText('No Data.')
+        caller = inspect.stack()[1].function
+        logger.critical(f"[{caller}] Null view set")
+
+    def loadRandom(self):
+        script = """
+        alert(document.title);
+        document.body.style.backgroundImage = "url('https://www.w3schools.com/jsref/img_tree.png')";"""
+        self.page().runJavaScript(script)
+
+    def _load(self, path='https://cnl.salk.edu/~jyancey/media/emguy.gif'):
+        script = f"""
+        alert(document.title);
+        document.body.style.backgroundImage = "url('{path}')";
+        document.body.style.backgroundSize = "360px 180px";
+        """
+        self.page().runJavaScript(script)
+
+
+    def createHTML(self, text):
+        doc = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+           <title>Null</title>
+            <meta charset="utf-8">
+        </head>
+        <body style="font-family: Consolas, sans-serif; background-color: #000000; color: #f3f6fb;">
+            <b>&nbsp;&nbsp;{text}&nbsp;&nbsp;</b>
+        </body>
+        </html>
+        """
+        return doc
+
+    # def _on_load_finished(self):
+    #     self.current_url = self.url().toString()
+
+    # def _on_url_change(self):
+    #     self.page().runJavaScript("document.getElementsByName('email')[0].value", self.store_value)
+    #
+    # def store_value(self, param):
+    #     self.value = param
+    #     print("Param: " + str(param))
 
 
 class BoldLabel(QLabel):
@@ -1478,3 +1640,48 @@ class HoverButton(QPushButton):
            self.update()
 
        return super().eventFilter(source, event)
+
+
+class GroupBox(QGroupBox):
+    clicked = Signal(str, object)
+
+    def __init__(self, title=None):
+        super(GroupBox, self).__init__()
+        if title:
+            self.setTitle(title)
+
+        self.setStyleSheet("""QGroupBox {
+            font-weight: 600;
+            font: 11px consolas;
+            border: 1px solid silver;
+            border-radius: 4px;
+            margin-top: 6px;
+        }
+
+        QGroupBox::title {
+            font-weight: 600;
+            font: 11px consolas;
+            subcontrol-origin: margin;
+            left: 7px;
+            padding: 0px 5px 0px 5px;
+        }
+        """)
+
+
+
+# def createHTML(text='Nothing To Display'):
+#     html = f"""
+#     <!DOCTYPE html>
+#     <html>
+#     <head>
+#        <title>Null</title>
+#         <meta charset="utf-8">
+#     </head>
+#     <body style="font-family: Consolas, sans-serif; background-color: #000000; color: #f3f6fb;">
+#
+#         <b>&nbsp;&nbsp;{text}&nbsp;&nbsp;</b>
+#
+#     </body>
+#     </html>
+#     """
+#     return html
