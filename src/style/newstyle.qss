@@ -2,8 +2,7 @@
 
 QMainWindow {
     background-color: #ede9e8;
-    font-size: 11px;
-    font-family: Tahoma, sans-serif;
+    font-size: 10px;
 }
 
 QStatusBar {
@@ -98,11 +97,11 @@ QCheckBox::indicator {
 }
 
 QComboBox {
-    border: 1px solid #d3d3d3;
     background-color: #f3f6fb;
+    border: 1px solid #d3d3d3;
     padding-left: 2px;
     combobox-popup: 0;
-    height: 16px;
+    height: 14px;
     font-size: 10px;
     border-radius: 3px;
 }

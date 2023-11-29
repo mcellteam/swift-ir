@@ -353,7 +353,6 @@ class AbstractEMViewer(neuroglancer.Viewer):
         if afm == None:
             afm = [[1., 0., 0.], [0., 1., 0.]]
         afm = to_tuples(afm)
-        logger.info(f"Getting transform | i = {i}, afm: {afm}")
         matrix = conv_mat(m=afm, i=i)
         output_dimensions = {'x': [self.res[0], 'nm'],
                              'y': [self.res[1], 'nm'],
@@ -427,52 +426,55 @@ class AbstractEMViewer(neuroglancer.Viewer):
                 opacity=1,
             )
 
-    def add_transformed_layers(self):
-        with self.txn() as s:
-            # shape = self.tensor.shape
-            for i in range(len(self.dm)):
-                name = f"l{i}"
-                # matrix = conv_mat(to_tuples(self.dm.alt_cafm(l=i)), i=i)
-                afm = self.dm.alt_cafm(l=i)
-                data = self.tensor[:, :, i:i + 1]
-                local_volume = self.getLocalVolume(data, self.getCoordinateSpace())
-                transform = self.get_transform(afm=afm, i=i)
-                source = ng.LayerDataSource(
-                    url=local_volume,
-                    transform=transform, )
-                s.layers.append(
-                    name=name,
-                    layer=ng.ImageLayer(source=source, shader=self.shader),
-                    opacity=1, )
+    # def add_transformed_layers(self):
+    #     with self.txn() as s:
+    #         # shape = self.tensor.shape
+    #         for i in range(len(self.dm)):
+    #             name = f"l{i}"
+    #             # matrix = conv_mat(to_tuples(self.dm.alt_cafm(l=i)), i=i)
+    #             afm = self.dm.alt_cafm(l=i)
+    #             data = self.tensor[:, :, i:i + 1]
+    #             local_volume = self.getLocalVolume(data, self.getCoordinateSpace())
+    #             transform = self.get_transform(afm=afm, i=i)
+    #             source = ng.LayerDataSource(
+    #                 url=local_volume,
+    #                 transform=transform, )
+    #             if self.name == 'EMViewer':
+    #                 name = self.dm.base_image_name(l=i)
+    #             else:
+    #                 name = f"layer{i}"
+    #             s.layers.append(
+    #                 name=name,
+    #                 layer=ng.ImageLayer(source=source, shader=self.shader),
+    #                 opacity=1, )
 
-    def add_untransformed_layers(self):
+    def add_transformation_layers(self, affine=False):
         self._blockStateChanged = True
         self._show_transformed = False
         with self.txn() as s:
             # shape = self.tensor.shape
-            afm = [[1., 0., 0.], [0., 1., 0.]]
-            for i in range(len(self.dm)):
+            _range = self.tensor.shape[2]
+            for i in range(_range):
+                if affine:
+                    afm = self.dm.alt_cafm(l=i)
+                    print(f"[{self.name}] [{i}] afm: {afm}")
+                else:
+                    afm = [[1., 0., 0.], [0., 1., 0.]]
                 # matrix = conv_mat(to_tuples(self.dm.alt_cafm(l=i)), i=i)
                 data = self.tensor[:, :, i:i + 1]
                 local_volume = self.getLocalVolume(data, self.getCoordinateSpace())
                 transform = self.get_transform(afm=afm, i=i)
-                source = ng.LayerDataSource(
-                    url=local_volume,
-                    transform=transform, )
+                source = ng.LayerDataSource(url=local_volume, transform=transform, )
+                if self.name == 'EMViewer':
+                    name = self.dm.base_image_name(l=i)
+                else:
+                    name = f"layer{i}"
                 s.layers.append(
-                    # name=f"l{i}",
-                    name=self.dm.base_image_name(l=i),
-                    # name=f"mylayer",
+                    name=name,
                     tab='source',
-                    layer=ng.ImageLayer(
-                        source=source,
-                        shader=self.shader,
-                        # volume_rendering_depth_samples=512,
-                        # cross_section_render_scale=1,
-
-                    ),
+                    layer=ng.ImageLayer(source=source, shader=self.shader,),
                     opacity=1.0,
-                    blend='additive',
+                    # blend='additive',
                 )
         self._blockStateChanged = False
 
@@ -693,7 +695,7 @@ class EMViewer(AbstractEMViewer):
             logger.warning(f"Data not found: {self.path}")
             return
         try:
-            self.add_untransformed_layers()
+            self.add_transformation_layers()
         except:
             print_exception()
         self.initViewer()
@@ -905,10 +907,10 @@ class TransformViewer(AbstractEMViewer):
 
 '''
             self.viewer = self.parent.viewer = PMViewer(self, extra_data={
-                    'webengine': self.webengine,
+                    'webengine0': self.webengine0,
                     'resolution': self._images_info['resolution'][level],
                     'raw_path': Path(self.comboImages.currentText()) / 'zarr' / level,
-                    'transformed_path': Path(self.comboAlignment.currentText()) / 'zarr' / level,
+                    'transformed_path': Path(self.comboTransformed.currentText()) / 'zarr' / level,
                 })
 
 '''
@@ -917,45 +919,62 @@ class PMViewer(AbstractEMViewer):
 
     def __init__(self, **kwags):
         super().__init__(**kwags)
-        self.name = 'PMViewer'
-        self.res = self.extra_data['resolution']
-        self.raw_path = self.extra_data['raw_path']
-        self.transformed_path = self.extra_data['transformed_path']
-        self.initViewer()
+        # self.name = 'PMViewer'
+        print(kwags)
+        self.name = self.extra_data['name']
+        self.shader = '''
+                    #uicontrol vec3 color color(default="white")
+                    #uicontrol float brightness slider(min=-1, max=1, step=0.01)
+                    #uicontrol float contrast slider(min=-1, max=1, step=0.01)
+                    void main() { emitRGB(color * (toNormalized(getDataValue()) + brightness) * exp(contrast));}
+                    '''
 
     def initViewer(self):
+        path = self.path
+        logger.critical(f"INITIALIZING [{self.name}]\nLoading: {path}")
 
-        if not Path(self.raw_path).exists():
-            self.webengine.setHtml('No data.')
+        if not Path(path).exists():
+            logger.warning(f"[{self.name}] not found: {path}")
+            self.webengine.setnull()
             return
+
+        if self.name == 'viewer1':
+            self.dm = self.parent.dm
+            assert hasattr(self.dm, '_data')
+            #Todo
+            # if not self.dm.is_aligned(s=self.parent.):
+            #     self.webengine.setnull()
+            #     return
+
 
         try:
             # zarr.open(self.raw_path, mode='r')
-            tensor = self.getTensor(str(self.raw_path)).result()
-            self.vol_source = self.getLocalVolume(tensor[:, :, :], self.getCoordinateSpace())
+            self.tensor = self.getTensor(str(path)).result()
+            self.vol_source = self.getLocalVolume(self.tensor[:, :, :], self.getCoordinateSpace())
         except:
-            logger.warning(f"Could not open Zarr: {self.raw_path}")
+            logger.warning(f"[{self.name}] Could not open Zarr: {path}")
+            print_exception()
             return
 
-
-        try:
-            # zarr.open(self.transformed_path, mode='r')
-            tensor_r = self.getTensor(str(self.transformed_path)).result()
-            self.vol_transformed = self.getLocalVolume(tensor_r[:, :, :], self.getCoordinateSpace())
-        except:
-            pass
+        if self.name == 'viewer1':
+            if self.dm is not None:
+                self.add_transformation_layers(affine=True)
+            else:
+                # self.webengine.setnull()
+                return
+        else:
+            # self.add_transformation_layers(affine=False)
+            self.add_im_layer('layer', self.tensor[:,:,:])
 
         with self.txn() as s:
             s.layout.type = 'xy'
             s.show_default_annotations = True
             s.show_axis_lines = True
             s.show_scale_bar = False
-            s.layers['source'] = ng.ImageLayer(source=self.vol_source)
-            _layer_groups = [ng.LayerGroupViewer(layout='xy', layers=['source'])]
-            if hasattr(self, 'vol_transformed'):
-                s.layers['transformed'] = ng.ImageLayer(source=self.vol_transformed)
-                _layer_groups.append(ng.LayerGroupViewer(layout='xy', layers=['transformed']))
-            s.layout = ng.row_layout(_layer_groups)
+            if self.name == 'viewer0':
+                s.layers['source'] = ng.ImageLayer(source=self.vol_source)
+            # _layer_groups = [ng.LayerGroupViewer(layout='xy', layers=['source'])]
+            # s.layout = ng.row_layout(_layer_groups)
         with self.config_state.txn() as s:
             s.show_ui_controls = False
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
@@ -1192,7 +1211,7 @@ class MAViewer(AbstractEMViewer):
                     pass
             s.layers['SWIM'] = self.new_annotations
         self._blockStateChanged = False
-        # self.webengine.reload()
+        # self.webengine0.reload()
         logger.info(f"<---- drawSWIMwindow <----")
         # print("<< drawSWIMwindow", flush=True)
 
