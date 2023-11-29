@@ -1590,6 +1590,7 @@ class DataModel:
     def include(self, s=None, l=None) -> bool:
         if s == None: s = self.level
         if l == None: l = self.zpos
+        #this needs
         return bool(self['stack'][l]['levels'][s]['swim_settings']['include'])
 
 
@@ -1598,7 +1599,16 @@ class DataModel:
         if l == None: l = self.zpos
         '''Sets the Bounding Rectangle On/Off State for the Current Scale.'''
         self._data['stack'][l]['levels'][s]['skipped'] = b
-        self._data['stack'][l]['levels'][s]['swim_settings']['include'] = not b
+        self._data['stack'][l]['levels'][s]['swim_settings']['include'] = not b #Todo refactor
+        self._data['stack'][l]['levels'][s]['saved_swim_settings']['include'] = not b
+
+    def set_include(self, b: bool, s=None, l=None) -> None:
+        if s == None: s = self.level
+        if l == None: l = self.zpos
+        '''Sets the Bounding Rectangle On/Off State for the Current Scale.'''
+        self._data['stack'][l]['levels'][s]['skipped'] = not b
+        self._data['stack'][l]['levels'][s]['swim_settings']['include'] = b  # Todo refactor
+        self._data['stack'][l]['levels'][s]['saved_swim_settings']['include'] = b
 
 
     def skips_list(self, level=None) -> list:

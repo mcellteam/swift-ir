@@ -457,7 +457,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
             for i in range(_range):
                 if affine:
                     afm = self.dm.alt_cafm(l=i)
-                    print(f"[{self.name}] [{i}] afm: {afm}")
+                    # print(f"[{self.name}] [{i}] afm: {afm}")
                 else:
                     afm = [[1., 0., 0.], [0., 1., 0.]]
                 # matrix = conv_mat(to_tuples(self.dm.alt_cafm(l=i)), i=i)
