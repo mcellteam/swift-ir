@@ -104,6 +104,7 @@ class AlignmentTab(QWidget):
         # self.dm.signals.zposChanged.connect(self.parent.updateSlidrZpos)
         self.dm.signals.zposChanged.connect(self.parent.setSignalsPixmaps)
         self.dm.signals.zposChanged.connect(self.parent.setTargKargPixmaps)
+        self.dm.signals.zposChanged.connect(lambda: self.parent.cbSkip.setChecked(not self.dm.skipped()))
         self.dm.signals.zposChanged.connect(self.dataUpdateMA) #1111+
         self.dm.signals.zposChanged.connect(lambda x: self.parent.sldrZpos.setValue(x)) #1111+
 
@@ -225,7 +226,7 @@ class AlignmentTab(QWidget):
             self.cbxViewerScale.setCurrentIndex(self.dm.levels.index(self.dm.level))
             self.initNeuroglancer() #Todo necessary for now
             self.set_transforming() #0802+
-            self._updatePointLists() #0726+
+            self._updatePointLists() #0726+Failed to compose
             if self.twCornerViewer.currentIndex() == 0:
                 # res = self.dm.resolution(s=self.dm.level)
                 # self.transformViewer = TransformViewer(parent=self, webengine0=self.we2, path=None, dm=self.dm, res=res, )
@@ -2346,7 +2347,10 @@ class AlignmentTab(QWidget):
                 # self.bApplyOne.setEnabled(self.dm.is_aligned() and not os.file_path.exists(self.dm.path_aligned()))
 
                 self.clTra.setText(f' [{self.dm.zpos}] {self.dm.name()} (Transforming)')
-                if self.dm.skipped():
+
+                _skipped = self.dm.skipped()
+                self.cbBB.setChecked(_skipped)
+                if _skipped:
                     self.clTra.setText(f' [{self.dm.zpos}] {self.dm.name()} (Transforming)')
                     self.clRef.setText(f' --')
                 else:
