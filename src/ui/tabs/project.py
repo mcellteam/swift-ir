@@ -77,6 +77,7 @@ class AlignmentTab(QWidget):
         # self.updateZarrUI()
         self.updateTab0UI()
         self.dataUpdateMA()
+        # self.glWebengine0.addWidget(self.parent.wCpanel, 0, 1, 1, 1)
 
 
         self.wTabs.currentChanged.connect(self._onTabChange)
@@ -208,11 +209,14 @@ class AlignmentTab(QWidget):
             self.parent.sbFPS.hide()
             self.parent.ehw.show()
 
+        # if index != 0:
+        #     self.parent.globTabsAndCpanel.layout.addWidget(self.parent.wCpanel)
 
         if index == 0:
             self.updateTab0UI()
             # self.updateZarrUI()
             self.initNeuroglancer()
+            # self.glWebengine0.addWidget(self.parent.wCpanel, 0, 1, 1, 1)
 
         elif index == 1:
             # self.parent.setdw_thumbs(False) #BEFORE init neuroglancer
@@ -1346,7 +1350,7 @@ class AlignmentTab(QWidget):
         # testmenu.addAction("cascade")
         # testmenu.addAction("Tiled")
 
-        ngFont = QFont('Consolas')
+        ngFont = QFont('Tahoma')
         ngFont.setBold(True)
         pal = QPalette()
         pal.setColor(QPalette.Text, QColor("#FFFF66"))
@@ -2919,7 +2923,8 @@ class AlignmentTab(QWidget):
         self.wWebengine0.setLayout(self.glWebengine0)
 
         # self.wTab0 = HW(self.vlabTab0, VW(self.toolbar0, self.wWebengine0), self.wSldrZoomTab0)
-        self.wTab0 = HW(self.vlabTab0, VW(self.toolbar0, self.wWebengine0))
+        self.vwTab0 = VW(self.toolbar0, self.wWebengine0)
+        self.wTab0 = HW(self.vlabTab0, self.vwTab0)
 
         tabs = [(self.wTab0, '3D Alignment'),
                 (self.wTab1, 'Edit Alignment'),

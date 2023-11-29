@@ -116,7 +116,7 @@ class MainWindow(QMainWindow):
         logger.debug(f"\nDebugging...\n\n")
 
         self.app = QApplication.instance()
-        font = QFont("Consolas")
+        font = QFont("Tahoma")
         self.app.setFont(font)
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.setObjectName('mainwindow')
@@ -4056,7 +4056,7 @@ class MainWindow(QMainWindow):
         self.ehw = ExpandingHWidget(self)
         self.ehw.setAutoFillBackground(False)
 
-        self.wCpanel = HW(self.wScaleLevel, QVLine(),
+        self.wCpanel = HW(QLabel('  '), self.wScaleLevel, QVLine(),
                           self.wwZpos, QVLine(),
                           self.wZpos,
                           self.wToggleExclude,
@@ -4526,45 +4526,29 @@ class MainWindow(QMainWindow):
         self.twInfoOverlay = QTabWidget()
         self.twInfoOverlay.setAutoFillBackground(False)
         self.twInfoOverlay.addTab(self._html_resource, 'TIFF Info')
-        # self.twInfoOverlay.setMaximumSize(QSize(700, 700))
-        self.twInfoOverlay.setFixedSize(QSize(500, 400))
-        # self.twInfoOverlay.hide()
+        self.twInfoOverlay.setFixedSize(QSize(600, 500))
 
-        # self.bCloseHtmlResource = QPushButton('Close')
-        self.bCloseHtmlResource = QPushButton('To Close: Press Any Key Or Click Here')
-        self.bCloseHtmlResource.setIcon(qta.icon('mdi.close'))
-        self.bCloseHtmlResource.clicked.connect(self.hide_html_resource)
-        self.bCloseHtmlResource.setAutoFillBackground(False)
-        self.bCloseHtmlResource.setStyleSheet(""
-                                              "color: #f3f6fb;"
-                                              "background-color: #141414;"
-                                              "font-size: 12px;"
-                                              "font-weight: 600;")
-        self.bCloseHtmlResource.setAttribute(Qt.WA_TranslucentBackground)
+        bCloseHtmlResource = QPushButton('To Close: Press Any Key Or Click Here')
+        bCloseHtmlResource.setIcon(qta.icon('mdi.close'))
+        bCloseHtmlResource.clicked.connect(self.hide_html_resource)
+        bCloseHtmlResource.setAutoFillBackground(False)
+        bCloseHtmlResource.setStyleSheet("color: #f3f6fb; background-color: #141414;"
+                                              "font-size: 12px; font-weight: 600;")
+        bCloseHtmlResource.setAttribute(Qt.WA_TranslucentBackground)
 
-        self.mainOverlay = QWidget()
-        # self.vlMainOverlay = VBL(self.twInfoOverlay)
-        self.vlMainOverlay = VBL(self.twInfoOverlay, self.bCloseHtmlResource)
-        self.vlMainOverlay.setAlignment(Qt.AlignCenter)
-        self.mainOverlay.setLayout(self.vlMainOverlay)
+        self.mainOverlay = VW(self.twInfoOverlay, bCloseHtmlResource)
+        self.mainOverlay.layout.setAlignment(Qt.AlignCenter)
         self.mainOverlay.setStyleSheet("background-color: rgba(0, 0, 0, 0.5);")
         self.mainOverlay.setContentsMargins(0, 0, 0, 0)
-        # self.mainOverlay.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.mainOverlay.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.mainOverlay.hide()
 
-        # self.mainOverlay.setAutoFillBackground(False)
-        # self.mainOverlay.setStyleSheet("background: transparent;")
-        # self.mainOverlay.setAttribute(Qt.WA_TranslucentBackground)
-
-        self.glMain = GL()
+        gl = GL()
+        gl.addWidget(self.globTabsAndCpanel, 0, 0, 1, 1)
+        gl.addWidget(self.mainOverlay, 0, 0, 1, 1)
         self.mainWidget = QWidget()
-        self.mainWidget.setContentsMargins(0, 0, 0, 0)
-        self.mainWidget.setLayout(self.glMain)
-        self.glMain.addWidget(self.globTabsAndCpanel, 0, 0, 1, 1)
-        self.glMain.addWidget(self.mainOverlay, 0, 0, 1, 1)
-
-        self.setDockOptions(QMainWindow.AnimatedDocks) #| QMainWindow.AllowNestedDocks
-
+        self.mainWidget.setLayout(gl)
+        # self.setDockOptions(QMainWindow.AnimatedDocks) #| QMainWindow.AllowNestedDocks
         self.setCentralWidget(self.mainWidget)
 
     def onOverlayAction(self):

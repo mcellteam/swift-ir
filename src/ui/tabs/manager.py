@@ -1591,7 +1591,7 @@ class WebEngine(QWebEngineView):
            <title>Null</title>
             <meta charset="utf-8">
         </head>
-        <body style="font-family: Consolas, sans-serif; background-color: #000000; color: #f3f6fb;">
+        <body style="font-family: Tahoma, sans-serif; background-color: #000000; color: #f3f6fb;">
             <b>&nbsp;&nbsp;{text}&nbsp;&nbsp;</b>
         </body>
         </html>
@@ -1654,7 +1654,7 @@ class GroupBox(QGroupBox):
 
         self.setStyleSheet("""QGroupBox {
             font-weight: 600;
-            font: 11px consolas;
+            font: 11px Tahoma;
             border: 1px solid silver;
             border-radius: 4px;
             margin-top: 6px;
@@ -1662,7 +1662,7 @@ class GroupBox(QGroupBox):
 
         QGroupBox::title {
             font-weight: 600;
-            font: 11px consolas;
+            font: 11px Tahoma;
             subcontrol-origin: margin;
             left: 7px;
             padding: 0px 5px 0px 5px;
