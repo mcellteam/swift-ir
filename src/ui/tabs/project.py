@@ -110,7 +110,7 @@ class AlignmentTab(QWidget):
 
 
     def onPositionChange(self):
-        print("positionChanged signal received...", flush=True)
+        print("positionChanged!", flush=True)
 
         self.mw.sldrZpos.setValue(self.dm.zpos)
         self.mw.cbInclude.setChecked(self.dm.include(l=self.dm.zpos))
@@ -127,6 +127,8 @@ class AlignmentTab(QWidget):
             if self.dm['state']['tra_ref_toggle'] == 'ref':
                 self.set_transforming()
             self.dataUpdateMA()
+        elif _tab == 2:
+            self.snr_plot.updateLayerLinePos()
 
         if self.dSnr_plot.isVisible():
             self.dSnr_plot.updateLayerLinePos()
@@ -781,20 +783,21 @@ class AlignmentTab(QWidget):
             clr = inspect.stack()[1].function
             if clr == 'main':
                 logger.info(f'clr: {clr}')
-                val = int(self.leSwimWindow.text())
-                logger.info(f"val = {val}")
-                if (val % 2) == 1:
-                    new_val = val - 1
-                    self.mw.tell(f'SWIM requires even values as input. Setting value to {new_val}')
-                    self.leSwimWindow.setText(str(new_val))
-                    return
+                if self.leSwimWindow.text():
+                    val = int(self.leSwimWindow.text())
+                    logger.info(f"val = {val}")
+                    if (val % 2) == 1:
+                        new_val = val - 1
+                        self.mw.tell(f'SWIM requires even values as input. Setting value to {new_val}')
+                        self.leSwimWindow.setText(str(new_val))
+                        return
 
-                if self.wTabs.currentIndex() == 1:
-                    self.viewer1.drawSWIMwindow()
-                if self.tableThumbs.isVisible():
-                    self.tn_ref.update()
-                    self.tn_tra.update()
-                self.mw.tell(f'SWIM Window set to: {str(val)}')
+                    if self.wTabs.currentIndex() == 1:
+                        self.viewer1.drawSWIMwindow()
+                    if self.tableThumbs.isVisible():
+                        self.tn_ref.update()
+                        self.tn_tra.update()
+                    self.mw.tell(f'SWIM Window set to: {str(val)}')
         self.leSwimWindow.selectionChanged.connect(fn)
         self.leSwimWindow.returnPressed.connect(fn)
 
@@ -1920,7 +1923,7 @@ class AlignmentTab(QWidget):
         self.wTab1.addWidget(self.columnSplitter)
         self.wTab1.setCollapsible(0, False)
         self.wTab1.setCollapsible(1, False)
-        self.wTab1.setStretchFactor(0, 3) #1020-
+        self.wTab1.setStretchFactor(0, 2) #1020-
         self.wTab1.setStretchFactor(1, 1) #1020-
         self.wTab1.setSizes([int(cfg.WIDTH * (3 / 4)), int(cfg.WIDTH * (1 / 4))]) #1020-
 
@@ -2764,7 +2767,6 @@ class AlignmentTab(QWidget):
 
         tip = """Bounding Box is a parameter associated with the cumulative alignment. Caution: Turning bounding box ON may 
         significantly increase the size of generated images (default=False)."""
-        self.cbBB = QCheckBox()
         self.cbBB = QCheckBox()
         self.cbBB.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.cbBB.toggled.connect(lambda state: self.dm.set_use_bounding_rect(state))

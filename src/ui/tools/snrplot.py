@@ -35,7 +35,7 @@ import src.config as cfg
 from src.utils.helpers import print_exception
 
 logger = logging.getLogger(__name__)
-logger.propagate = False
+# logger.propagate = False
 
 class SnrPlot(QWidget):
 
@@ -276,7 +276,7 @@ class SnrPlot(QWidget):
 
             if not self.dock:
                 n_aligned = 0
-                for s in self.dm.scales:
+                for s in self.dm.levels:
                     if self.dm.is_aligned(s=s):
                         n_aligned += 1
                 if n_aligned == 0:
@@ -286,14 +286,15 @@ class SnrPlot(QWidget):
                 for i in reversed(range(self.checkboxes_hlayout.count())):
                     self.checkboxes_hlayout.itemAt(i).widget().setParent(None)
 
-                for i, s in enumerate(self.dm.scales):
+                for i, s in enumerate(self.dm.levels):
                     if self.dm.is_aligned(s=s):
-                        color = self._plot_colors[self.dm.scales[::-1].index(s)]
+                        color = self._plot_colors[self.dm.levels[::-1].index(s)]
                         self._snr_checkboxes[s] = QCheckBox()
                         self._snr_checkboxes[s].setText(self.dm.level_pretty(s=s))
                         self.checkboxes_hlayout.addWidget(self._snr_checkboxes[s],
                                                           alignment=Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
                         self._snr_checkboxes[s].setChecked(True)
+                        self._snr_checkboxes[s].clicked.connect(lambda: print('cb clicked!'))
                         self._snr_checkboxes[s].clicked.connect(self.plotData)
                         self._snr_checkboxes[s].setStatusTip('On/Off SNR Plot %s' % self.dm.level_pretty(s=s))
                         self._snr_checkboxes[s].setStyleSheet(
@@ -317,7 +318,7 @@ class SnrPlot(QWidget):
                 except:
                     print_exception()
         self.plotData()
-        self.updateLayerLinePos()
+        # self.updateLayerLinePos()
         logger.info(f"Time Elapsed: {time() - t0:.3g}")
         # logger.info('<<')
 
@@ -405,8 +406,9 @@ class SnrPlot(QWidget):
 
     def plotData(self):
         '''Update SNR plot widget based on checked/unchecked state of checkboxes'''
-        logger.info('Plotting data...')
-        # logger.info(f"[{self.dock}] {self.dm.snr_list()}")
+        print('\nPlotting data...')
+        logger.info(f"")
+        self.wipePlot(checkboxes=False)
         # caller = inspect.stack()[1].function
         t0 = time()
         # if self.dm:
@@ -416,29 +418,23 @@ class SnrPlot(QWidget):
         if self.dock:
             # self.plotGhostScaleData()
             self.plotSingleScale()
-            xMin = 0
-            xMax = len(self.dm) + 1
-            yMin = 0
-            yMax = max(self.dm.snr_list()) + 1
-            self.plot.setLimits(xMin=xMin, xMax=xMax, yMin=yMin, yMax=yMax)
+            self.plot.setLimits(xMin=0, xMax=len(self.dm) + 1, yMin=0, yMax=max(self.dm.snr_list()) + 1)
             self.plot.enableAutoRange()  #Fixed
 
         else:
-            for s in self.dm.scales[::-1]:
+            for s in self.dm.levels[::-1]:
                 if self.dm.is_aligned(s=s):
                     if self._snr_checkboxes[s].isChecked():
                         self.plotSingleScale(s=s)
             self.updateSpecialLayerLines()
-            xMin=0
             xMax = len(self.dm) + 1
-            yMin = 0
             yMax = ceil(self.dm.snr_max_all_scales()) + 5
             self.plot.setLimits(
                 minXRange=1,
-                xMin=xMin,
+                xMin=0,
                 xMax=xMax,
                 maxXRange=xMax,
-                yMin=yMin,
+                yMin=0,
                 yMax=yMax,
                 minYRange=20,
                 maxYRange=yMax,
@@ -454,6 +450,8 @@ class SnrPlot(QWidget):
         elif n < 751:  ax0.setTickSpacing(25, 1)
         else:          ax0.setTickSpacing(30, 1)
 
+        self.updateLayerLinePos()
+
 
 
         # logger.info(f"plotData dt={time() - t0:.3g}")
@@ -463,8 +461,8 @@ class SnrPlot(QWidget):
         if self.dock:
             return 0
         else:
-            # return self.dm.scales()[::-1].index(level) * (.5/len(self.dm.scales()))
-            return self.dm.scales.index(s) * (.5/len(self.dm.scales))
+            # return self.dm.levels()[::-1].index(level) * (.5/len(self.dm.levels()))
+            return self.dm.levels.index(s) * (.5/len(self.dm.levels))
 
 
     def plotGhostScaleData(self, s=None):
@@ -500,16 +498,17 @@ class SnrPlot(QWidget):
         self._pts_ghost = (x_axis, y_axis)
         self.plot.addItem(self.ghost_points[s])
 
+
     def plotSingleScale(self, s=None):
         if s == None: s = self.dm.scale
-        logger.info(f'Plotting {s}...')
+        print(f'Plotting {s}...')
         # logger.info(f'[{self.dock}] plotSingleScale (level_key: {level}):')
         # x_axis, y_axis = self.get_axis_data(level=level)
         # x_axis, y_axis = self.get_everything_comport_axis_data(s=s)
         x_axis, y_axis = self.get_axis_data(s=s)
         if not self.dock:
             x_axis = [x+self._getScaleOffset(s=s) for x in x_axis]
-        brush = self._plot_brushes[self.dm.scales[::-1].index(s)]
+        brush = self._plot_brushes[self.dm.levels[::-1].index(s)]
 
         self.snr_points[s] = pg.ScatterPlotItem(
             size=(11,8)[self.dock],
@@ -684,15 +683,28 @@ class SnrPlot(QWidget):
         # logger.info('<<')
 
 
-    def wipePlot(self):
+    def wipePlot(self, checkboxes=True):
         # logger.info('')
         try:
-            for i in reversed(range(self.checkboxes_hlayout.count())):
-                self.checkboxes_hlayout.removeItem(self.checkboxes_hlayout.itemAt(i))
+            if checkboxes:
+                for i in reversed(range(self.checkboxes_hlayout.count())):
+                    self.checkboxes_hlayout.removeItem(self.checkboxes_hlayout.itemAt(i))
             self.plot.clear()
             self.plot.addItem(self._curLayerLine)
             for eb in self._error_bars:
                 self.plot.removeItem(eb)
+        except:
+            print_exception()
+            logger.warning('Unable To Wipe SNR Plot')
+
+    def wipeScale(self, s):
+        # logger.info('')
+        #Not Tested
+        try:
+            self.snr_points[s].clear()
+            self.plot.clear()
+            self.plot.addItem(self._curLayerLine)
+            self.plot.removeItem(self._error_bars[s])
         except:
             print_exception()
             logger.warning('Unable To Wipe SNR Plot')
@@ -706,7 +718,7 @@ class SnrPlot(QWidget):
             pos_click = int(mouseClickEvent.pos()[0])
             logger.info('Position Clicked: %d' % pos_click)
             self.dm.zpos = int(pos_click)
-            self.updateLayerLinePos()
+            # self.updateLayerLinePos()
         except:
             print_exception()
 
