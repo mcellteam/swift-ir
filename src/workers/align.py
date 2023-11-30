@@ -9,6 +9,7 @@ import os
 import re
 import subprocess as sp
 import time
+import statistics
 from pathlib import Path
 import warnings
 warnings.filterwarnings("ignore")  # Works for supressing tiffile invalid offset warning
@@ -31,6 +32,7 @@ from src.utils.helpers import print_exception, get_core_count
 import src.config as cfg
 
 from qtpy.QtCore import Signal, QObject, QMutex
+from qtpy.QtWidgets import QApplication
 
 __all__ = ['AlignWorker']
 
@@ -47,13 +49,14 @@ class AlignWorker(QObject):
     hudWarning = Signal(str)
 
     # def __init__(self, scale, file_path, align_indexes, regen_indexes, align, regenerate, renew_od, reallocate_zarr, dm, ht):
-    def __init__(self, dm, path, scale, indexes, ignore_cache=False):
+    def __init__(self, dm, path, scale, indexes, prev_snr, ignore_cache=False):
         super().__init__()
         logger.info('Initializing...')
         self.scale = scale
         self.sl = scale # scale level
         self.path = path
         self.indexes = indexes
+        self.prev_snr = prev_snr
         self.ignore_cache = ignore_cache
         # self.regen_indexes = regen_indexes
         self.dm = dm
@@ -115,11 +118,12 @@ class AlignWorker(QObject):
 
         firstInd = dm.first_included(s=scale)
 
+        print(self.dm.swim_settings(s=scale, l=5))
+
         tasks = []
+        _actual_indexes = []
         for i, sec in [(i, dm()[i]) for i in self.indexes]:
             i = dm().index(sec)
-            for key in ['swim_args', 'swim_out', 'swim_err', 'mir_toks', 'mir_script', 'mir_out', 'mir_err']:
-                sec['levels'][scale]['results'].pop(key, None)
             ss = copy.deepcopy(dm.swim_settings(s=scale, l=i))
             ss['first_index'] = firstInd == i
             ss['file_path'] = dm.path(s=scale, l=i)
@@ -141,16 +145,36 @@ class AlignWorker(QObject):
             os.makedirs(wd, exist_ok=True)
 
             if self.ignore_cache:
-                tasks.append(copy.deepcopy(ss))
+                _actual_indexes.append(i)
+                tasks.append(ss)
             else:
                 if ss['include']:
-                    is_cached = self.dm.ht.haskey(self.dm.swim_settings(s=scale, l=i))
-                    is_generated = Path(ss['path_thumb_transformed']).exists() and Path(ss['path_gif']).exists()
-                    do_generate = (not is_generated) and _glob_config['generate_thumbnails']
-                    if (not is_cached) or do_generate:
-                        tasks.append(copy.deepcopy(ss))
+                    result_cached = self.dm.ht.haskey(self.dm.swim_settings(s=scale, l=i))
+                    thumbs_exist = Path(ss['path_thumb_transformed']).exists() and Path(ss['path_gif']).exists()
+                    must_generate = _glob_config['generate_thumbnails'] and not thumbs_exist
+                    if must_generate or not result_cached:
+                        _actual_indexes.append(i)
+                        tasks.append(ss)
                     else:
+                        result = self.dm.ht.get(self.dm.swim_settings(s=scale, l=i))
+                        try:
+                            dm['stack'][i]['levels'][scale]['results'] = result
+                            dm['stack'][i]['levels'][scale].update({'affine_matrix': result['affine_matrix']})
+                            dm['stack'][i]['levels'][scale].update({'mir_afm': result['mir_afm']})
+                            dm['stack'][i]['levels'][scale].update({'mir_aim': result['mir_aim']})
+                            dm['stack'][i]['levels'][scale].update({'snr': result['snr']})
+                        except:
+                            print_exception()
+                            self.hudWarning.emit(f'[{i}] Cached data exists, but certain keys are missing. This '
+                                                 f'is non-fatal and the cache will be re-built.')
+                            _actual_indexes.append(i)
+                            tasks.append(ss)
+                            continue
                         logger.info(f"[{i}] Cache hit")
+
+        # _prev_snr = dm.indexes_to_snr_list(_actual_indexes)
+        _prev_snr = dm.indexes_to_snr_list(range(len(dm)))
+
 
         self.cpus = get_core_count(dm, len(tasks))
 
@@ -161,29 +185,43 @@ class AlignWorker(QObject):
         self.dm.t_align = dt
         if fail:
             self.hudWarning.emit(f"Something went wrong! # Success: {succ} / # Failed: {fail}")
-        self.hudMessage.emit(f"Total Tasks Completed: {len(results)}")
 
         for r in results:
             if r['complete']:
-                i = r['index']
-                afm = r['affine_matrix']
+                layer = int(r['index'])
                 try:
-                    assert np.array(afm).shape == (2, 3)
+                    assert np.array(r['affine_matrix']).shape == (2, 3)
                 except:
-                    self.hudWarning.emit(f'Error! No Affine Result, Section # {i}'); continue
-                dm['stack'][i]['levels'][scale]['results'] = r
-                ss = dm.swim_settings(s=scale, l=i)
-                self.dm.ht.put(ss, afm)
-                self.dict_to_file(i, 'results.json', r)
+                    self.hudWarning.emit(f'[{i}] No affine was returned for this layer. This may indicate a failed alignment.')
+                    continue
+                ss = dm.swim_settings(s=scale, l=layer)
+                self.dm.ht.put(ss, r)
+                dm['stack'][layer]['levels'][scale].update({'results': r})
+                dm['stack'][layer]['levels'][scale].update({'mir_afm': r['mir_afm']})
+                dm['stack'][layer]['levels'][scale].update({'mir_aim': r['mir_aim']})
+                dm['stack'][layer]['levels'][scale].update({'affine_matrix': r['affine_matrix']})
+                dm['stack'][layer]['levels'][scale].update({'snr': r['snr']})
+                # self.dict_to_file(i, 'results.json', r)
+            else:
+                logger.warning(f"Recipe Maker reports incomplete alignment, index={r['index']}")
 
-        if not self.dm['level_data'][self.dm.level]['aligned']:
-            self.dm['level_data'][self.dm.level]['initial_snr'] = self.dm.snr_list()
-            self.dm['level_data'][self.dm.level]['aligned'] = True
+        if not self.dm['level_data'][scale]['aligned']:
+            self.dm['level_data'][scale]['initial_snr'] = self.dm.snr_list()
+            self.dm['level_data'][scale]['aligned'] = True
         try:
             dm.set_stack_cafm()
         except:
             print_exception()
         dm.save(silently=True)
+
+        try:
+            self.present_snr_results(dt, succ, fail, desc, dm, _actual_indexes, _prev_snr)
+        except:
+            print_exception()
+
+
+
+
 
     def run_multiprocessing(self, func, tasks, desc):
         # Returns 4 objects dt, succ, fail, results
@@ -212,7 +250,7 @@ class AlignWorker(QObject):
         fail = len(tasks) - len(results)
         succ = len(results) - fail
         dt = time.time() - t0
-        self.print_summary(dt, succ, fail, desc)
+        # self.print_summary(dt, succ, fail, desc)
         print(f"<---- {desc} <----")
         return (dt, succ, fail, results)
 
@@ -225,23 +263,6 @@ class AlignWorker(QObject):
         except:
             print_exception()
 
-
-    # def print_summary(self, dt, succ, fail, desc):
-    #
-    #     if fail:
-    #         self.hudWarning.emit(f"\n"
-    #                         f"\n//  Summary  //  {desc}  //"
-    #                         f"\n//  RUNTIME   : {dt:.3g}s"
-    #                         f"\n//  SUCCESS   : {succ}"
-    #                         f"\n//  FAILED    : {fail}"
-    #                         f"\n")
-    #     else:
-    #         self.hudMessage.emit(f"\n"
-    #                         f"\n//  Summary  //  {desc}  //"
-    #                         f"\n//  RUNTIME   : {dt:.3g}s"
-    #                         f"\n//  SUCCESS   : {succ}"
-    #                         f"\n//  FAILED    : {fail}"
-    #                         f"\n")
 
     def print_summary(self, dt, succ, fail, desc):
         x = 30
@@ -258,6 +279,108 @@ class AlignWorker(QObject):
                          f"\n│  SUCCESS  │ {s2} │"
                          f"\n│  FAILED   │ {s3} │"
                          f"\n└───────────┴{'─' * x}──┘")
+
+    def present_snr_results(self, dt, succ, fail, desc, dm, indexes, _prev_snr):
+
+        x = len(desc)
+        # s0 = f"<span style='color: #999999;'><b>{desc}</b></span>".ljust(x)[0:x]
+        s0 = f"{desc}".ljust(x)[0:x]
+        s1 = f"{dt:.3g}s".rjust(x)[0:x]
+        s2 = str(succ).rjust(x)[0:x]
+        s3 = str(fail).rjust(x)[0:x]
+        if fail:
+            messagewith = self.hudWarning
+        else:
+            messagewith = self.hudMessage
+
+        # indexes = list(range(len(dm)))
+        # if dm.first_included() in indexes:
+        #     indexes.remove(dm.first_included())
+
+        # logger.info(f"indexes  : {indexes}")
+
+
+        # logger.critical(f"[{len(snr_before)}] snr_before = {snr_before}")
+        # logger.critical(f"[{len(snr_after)}] snr_after  = {snr_after}")
+
+        if len(indexes) > 0:
+            prev_snr = [_prev_snr[i] for i in indexes]
+            snr_after = [dm.snr(l=i) for i in indexes]
+            # logger.info(f"snr  prev: {prev_snr}")
+            # logger.info(f"snr after: {snr_after}")
+            mean_before = statistics.fmean(prev_snr)
+            mean_after = statistics.fmean(snr_after)
+            diff_avg = mean_after - mean_before
+            delta_list = dm.delta_snr_list(snr_after, prev_snr)
+            # delta_snr_list = dm.delta_snr_list(snr_after, prev_snr)
+            # logger.info(f"delta_snr_list: {delta_snr_list}")
+            # delta_list = [delta_snr_list[i] for i in indexes]
+            pos = [i for i, x in enumerate(delta_list) if x > 0]
+            neg = [i for i, x in enumerate(delta_list) if x < 0]
+            no_chg = [i for i, x in enumerate(delta_list) if x == 0]
+            fi = dm.first_included()
+            if fi in no_chg:
+                no_chg.remove(fi)
+            n1 = len(no_chg)
+            n2 = len(pos)
+            n3 = len(neg)
+        else:
+            n1, n2, n3 = 0, 0, 0
+            diff_avg = 0.
+
+        # i1 = (' '.join(map(str, no_chg))).ljust(4) if n1 < 11 \
+        #     else (' '.join(map(str, no_chg[:5])) + ' ... ' + ' '.join(map(str, no_chg[n1 - 5:]))).ljust(x)
+        # i2 = (' '.join(map(str, pos))).ljust(4) if n2 < 11 \
+        #     else (' '.join(map(str, pos[:5])) + ' ... ' + ' '.join(map(str, pos[n2 - 5:]))).ljust(x)
+        # i3 = (' '.join(map(str, neg))).ljust(4) if n3 < 11 \
+        #     else (' '.join(map(str, neg[:5])) + ' ... ' + ' '.join(map(str, neg[n3 - 5:]))).ljust(x)
+
+        if abs(diff_avg) < .01:
+            _s4 = f"    {(f'{0:4.2f}')}".rjust(x)
+            # s4 = f"<span style=''><b>{_s4}</b></span>"
+            s4 = _s4
+        elif diff_avg < 0:
+            _s4 = f'(-) {abs(diff_avg):4.2f}'.rjust(x)
+            s4 = f"<span style='color: #f1807e;'><b>{_s4}</b></span>"
+        else:
+            _s4 = f'(+) {diff_avg:4.2f}'.rjust(x)
+            s4 = f"<span style='color: #66FF00;'><b>{_s4}</b></span>"
+
+
+
+        # _s5 = f"{f'{n2:4g}'}{('', ' |  i = ')[n2 > 0]}{i2}".ljust(x2)
+        _s5 = f"{n2}".rjust(x)
+        s5 = f"<span style='color: #66FF00;'><b>{_s5}</b></span>"
+
+        # _s6 = f"{f'{n3:4g}'}{('', ' |  i = ')[n3 > 0]}{i3}".ljust(x2)
+        _s6 = f"{n3}".rjust(x)
+        s6 = f"<span style='color: #f1807e;'>{_s6}</b></span>"
+
+        # s7 = f"{f'{n1:4g}'}{('', ' |  i = ')[n1 > 0]}{i1}".ljust(x2)
+        s7 = f"{n1}".rjust(x)
+
+
+        lA =                                  f"Δ Avg SNR "
+        lB = f"<span style='color: #66FF00;'><b>    SNR ↑ </b></span>"
+
+        lC = f"<span style='color: #f1807e;'><b>    SNR ↓ </b></span>"
+
+        lD =                                  f"No Change "
+
+        # self.hudMessage.emit(f"Alignment Results:\n" + '\n'.join(lines))
+
+        messagewith.emit(f"\n┌─────────────{'─' * x}───┐"
+                         f"\n│    Summary   {s0}  │"
+                         f"\n├─────────────┬{'─' * x}──┤"
+                         f"\n│    RUNTIME  │ {s1} │"
+                         f"\n│    SUCCESS  │ {s2} │"
+                         f"\n│     FAILED  │ {s3} │"
+                         f"\n│  {   lA   } │ {s4} │"
+                         f"\n│  {   lD   } │ {s7} │"
+                         f"\n│  {   lC   } │ {s6} │"
+                         f"\n│  {   lB   } │ {s5} │"
+                         f"\n└─────────────┴{'─' * x}──┘")
+
 
 
 def run_command(cmd, arg_list=None, cmd_input=None):
@@ -388,6 +511,7 @@ def print_example_cafms(dm):
             print(str(dm.cafm(l=2)))
     except:
         pass
+
 
 
 class HashableDict(dict):

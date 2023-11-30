@@ -195,7 +195,7 @@ class ProjectTable(QWidget):
         self.table.setRowCount(len(self.dm))
         self.set_column_headers() #Critical
         cnt = 0
-        self.parent.parent.resetPbar((self.dm.count, 'Loading Table'))
+        # self.parent.parent.resetPbar((self.dm.count, 'Loading Table'))
         try:
             for row in range(0, len(self.dm)):
                 if cfg.CancelProcesses:
@@ -241,7 +241,7 @@ class ProjectTable(QWidget):
 
     def updateTableData(self):
         logger.info('')
-        self.parent.parent.resetPbar((self.dm.count, 'Updating Table'))
+        # self.parent.parent.resetPbar((self.dm.count, 'Updating Table'))
 
         if self.btn_splash_load_table.isVisible():
             self.initTableData()

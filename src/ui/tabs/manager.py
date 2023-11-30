@@ -110,7 +110,7 @@ class ManagerTab(QWidget):
         # self.bPlusImages.setIcon(qta.icon('fa5s.images', color='#ede9e8'))
         # self.bPlusImages.setIcon(qta.icon('fa5s.images'))
         self.bPlusImages.setIcon(qta.icon('fa.plus'))
-        self.bPlusImages.clicked.connect(self.showImportSeriesDialog)
+        self.bPlusImages.clicked.connect(self.onPlusEmstack)
 
         # self.bMinusAlignment = HoverButton('Delete')
         self.bMinusImages = QPushButton()
@@ -248,7 +248,9 @@ class ManagerTab(QWidget):
         self.bCancelNewAligment.setFocusPolicy(Qt.NoFocus)
         self.bCancelNewAligment.setCursor(QCursor(Qt.PointingHandCursor))
         self.bCancelNewAligment.clicked.connect(lambda: self.wNameAlignment.hide())
+        self.bCancelNewAligment.clicked.connect(lambda: self.wSelectAlignment.show())
         self.bCancelNewAligment.clicked.connect(lambda: self.webengine0.setFocus())
+        self.bCancelNewAligment.clicked.connect(lambda: self.leNameAlignment.clear())
 
         newAlignmentLab = QLabel("Alignment Name:")
         self.wNameAlignment = HW(self.leNameAlignment, self.bConfirmNewAlignment, self.bCancelNewAligment)
@@ -336,13 +338,13 @@ class ManagerTab(QWidget):
         self.bCancel.setCursor(QCursor(Qt.PointingHandCursor))
         self.bCancel.setFixedSize(QSize(18, 18))
         self.bCancel.setIcon(qta.icon('fa.close', color='#161c20'))
-        def fn():
-            self.gbCreateImages.hide()
-            self.iid_dialog.hide()
-            # self.showMainUI()
-            self._NEW_IMAGES_PATHS = []
-            self.vwEmStackProperties.hide()
-        self.bCancel.clicked.connect(fn)
+        self.bCancel.clicked.connect(lambda: setattr(self, '_NEW_IMAGES_PATHS', []))
+        self.bCancel.clicked.connect(lambda: self.leNameImages.clear())
+        self.bCancel.clicked.connect(lambda: self.gbCreateImages.hide())
+        self.bCancel.clicked.connect(lambda: self.iid_dialog.hide())
+        self.bCancel.clicked.connect(lambda: self.vwEmStackProperties.hide())
+        self.bCancel.clicked.connect(lambda: self.wSelectEmstack.show())
+
 
         self.bCreateImages = QPushButton("Create")
         self.bCreateImages.setCursor(QCursor(Qt.PointingHandCursor))
@@ -459,8 +461,9 @@ class ManagerTab(QWidget):
         #     self.wSelectAlignment.setVisible(True)
 
 
-    def resetView(self):
+    def resetView(self, init_viewer=False):
         logger.info('')
+        self.setUpdatesEnabled(False)
         self.leNameImages.setStyleSheet("border-color: #339933; border-width: 2px;")
         self.bSelect.setStyleSheet("background-color: #339933; color: #f3f6fb; border-color: #f3f6fb;")
         self.bCreateImages.setStyleSheet("")
@@ -468,7 +471,18 @@ class ManagerTab(QWidget):
         self.labImgCount.hide()
         self.iid_dialog.hide()
         self.wNameAlignment.hide()
+        self.wSelectAlignment.show()
+        self.wSelectEmstack.show()
         self.bPlusAlignment.setEnabled(True)
+        self.leNameAlignment.clear()
+        self.leNameImages.clear()
+        setattr(self, '_NEW_IMAGES_PATHS', [])
+
+        if init_viewer:
+            # self.updateCombos()
+            self.initPMviewer()
+
+        self.setUpdatesEnabled(True)
 
 
     def _getUUID(self, path):
@@ -506,7 +520,6 @@ class ManagerTab(QWidget):
     #importseries
     def confirmCreateImages(self):
         logger.info("")
-        self.resetView()
         self.bCreateImages.setEnabled(False)
         self.bCreateImages.setStyleSheet("")
         self.bSelect.setStyleSheet("")
@@ -600,12 +613,11 @@ class ManagerTab(QWidget):
         # QApplication.processEvents()
         self.parent.autoscaleImages(src, out, opts)
         cfg.preferences['images_combo_text'] = out
-        self.updatePMViewers()
+        self.resetView(init_viewer=True)
 
     def createAlignment(self):
         logger.info('')
         self.bPlusAlignment.setEnabled(False)
-        self.resetView()
         root = Path(cfg.preferences['alignments_root'])
         seriespath = Path(self.comboImages.currentText())
         usertext = self.leNameAlignment.text()
@@ -636,21 +648,14 @@ class ManagerTab(QWidget):
             AlignmentTab(self.parent, dm)
             dm.save(silently=True)
         self.bPlusAlignment.setEnabled(True)
+        self.resetView()
         logger.info(f"<-- createAlignment")
 
-
-    def refresh(self):
-        caller = inspect.stack()[1].function
-        logger.info(f"[{caller}]")
-        self.setUpdatesEnabled(False)
-        self.resetView()
-        self.updateCombos()
-        self.initPMviewer()
-        self.setUpdatesEnabled(True)
 
 
     def initPMviewer(self, path=None):
         self.setUpdatesEnabled(False)
+        self.loadLevelsCombo()
         level = self.comboLevel.currentText()
 
         path = Path(self.comboImages.currentText()) / 'zarr' / level
@@ -718,6 +723,7 @@ class ManagerTab(QWidget):
         if not os.path.isdir(self.comboImages.currentText()):
             self.parent.warn(f"'{self.comboImages.currentText()}' is not valid.")
             return
+        self.wSelectAlignment.hide()
         self.wNameAlignment.show()
         self.leNameAlignment.setFocus()
 
@@ -745,13 +751,13 @@ class ManagerTab(QWidget):
                     except:
                         print_exception()
 
-                self.updateCombos()
-                # self.resetView()     #1118-
+                # self.updateCombos()
                 # self.initPMviewer()  #1118-
-                self.updatePMViewers()
+
 
                 self.parent.hud.done()
                 self.parent.tell('The deletion process will continue running in the background.')
+                self.resetView(init_viewer=True)
             else:
                 self.parent.warn(f'Path not found: {del_path}')
 
@@ -777,10 +783,12 @@ class ManagerTab(QWidget):
                     time.sleep(2)
                     self.parent.hud.done()
                     self.parent.tell('The deletion process will continue running in the background.')
+
+                self.resetView(init_viewer=True)
         else:
             self.parent.warn(f"Images not found: {path}")
 
-        self.refresh()
+        self.resetView()
 
 
     def _updateWatchPaths(self):
@@ -891,6 +899,9 @@ class ManagerTab(QWidget):
             except:
                 self.dm = None
                 print_exception()
+
+            self.wNameAlignment.hide()
+            self.leNameAlignment.clear()
             if self.comboTransformed.currentText():
                 self.viewer1.initViewer()
 
@@ -959,7 +970,7 @@ class ManagerTab(QWidget):
         self.vwEmStackProperties.hide()
         self.update()
 
-    def showImportSeriesDialog(self):
+    def onPlusEmstack(self):
         self.setUpdatesEnabled(False)
         isShown = self.gbCreateImages.isVisible()
         self.resetView()
@@ -967,6 +978,7 @@ class ManagerTab(QWidget):
             self.leNameImages.text(
         ))])
         self.gbCreateImages.setVisible(not isShown)
+        self.wSelectEmstack.hide()
         if self.gbCreateImages.isVisible():
             self.wEmStackProperties.leResX.setText(str(cfg.DEFAULT_RESX))
             self.wEmStackProperties.leResY.setText(str(cfg.DEFAULT_RESY))
@@ -1578,9 +1590,9 @@ class WebEngine(QWebEngineView):
         self.setHtml(self.createHTML(text))
 
     def setnull(self):
-        self.setText('No Data.')
+        self.setText('Neuroglancer: No Data.')
         caller = inspect.stack()[1].function
-        logger.critical(f"[{caller}] Null view set")
+        logger.info(f"[{caller}] Null view set")
 
     def loadRandom(self):
         script = """
@@ -1596,7 +1608,6 @@ class WebEngine(QWebEngineView):
         """
         self.page().runJavaScript(script)
 
-
     def createHTML(self, text):
         doc = f"""
         <!DOCTYPE html>
@@ -1605,8 +1616,9 @@ class WebEngine(QWebEngineView):
            <title>Null</title>
             <meta charset="utf-8">
         </head>
-        <body style="font-family: Tahoma, sans-serif; background-color: #000000; color: #f3f6fb;">
-            <b>&nbsp;&nbsp;{text}&nbsp;&nbsp;</b>
+        <body style="font-family: Tahoma, sans-serif; background-color: #000000; 
+        color: #f3f6fb; font-size: 12px;">
+            &nbsp;{text}&nbsp;
         </body>
         </html>
         """

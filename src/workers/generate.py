@@ -207,7 +207,7 @@ class ZarrWorker(QObject):
                     if os.path.exists(src):
                         openedZarr.attrs[j] = {
                             'image': os.path.basename(src),
-                            'swim_settings_hash': str(dm.ssSavedHash(l=j)),
+                            'swim_settings_hash': str(dm.ssHash(l=j)),
                             'cafm_hash': dm.cafmHash(l=j),
                         }
                         index = j

@@ -115,7 +115,7 @@ class WorkerSignals(QObject):
     result = Signal(str)
     stateChanged = Signal()
     layoutChanged = Signal()
-    # zposChanged = Signal()
+    # positionChanged = Signal()
     zoomChanged = Signal(float)
     mpUpdate = Signal()
 
@@ -770,6 +770,9 @@ class EMViewer(AbstractEMViewer):
             s.show_ui_controls = getData('state,neuroglancer,show_controls')
 
         _request_transformed = getData('state,neuroglancer,transformed')
+        if not self.dm.is_aligned():
+            _request_transformed = setData('state,neuroglancer,transformed', False)
+
         # if self._show_transformed != _request_transformed:
         if _request_transformed:
             self.set_transformed()
@@ -931,7 +934,7 @@ class PMViewer(AbstractEMViewer):
 
     def initViewer(self):
         path = self.path
-        logger.critical(f"INITIALIZING [{self.name}]\nLoading: {path}")
+        # logger.critical(f"INITIALIZING [{self.name}]\nLoading: {path}")
 
         if not Path(path).exists():
             logger.warning(f"[{self.name}] not found: {path}")
@@ -958,7 +961,10 @@ class PMViewer(AbstractEMViewer):
 
         if self.name == 'viewer1':
             if self.dm is not None:
-                self.add_transformation_layers(affine=True)
+                #Todo fix
+                # if self.dm.is_aligned():
+                # self.add_transformation_layers(affine=True)
+                self.add_transformation_layers(affine=False)
             else:
                 # self.webengine.setnull()
                 return
@@ -1175,7 +1181,7 @@ class MAViewer(AbstractEMViewer):
         elif method == 'manual':
             ww_x = ww_y = self.dm.manual_swim_window_px()
             role = self.dm['state']['tra_ref_toggle']
-            pts = self.dm.ss['method_opts']['points']['coords'][role]
+            pts = self.dm.swim_settings()['method_opts']['points']['coords'][role]
             # z = 1.5
             for i, pt in enumerate(pts):
                 if pt:
