@@ -87,8 +87,8 @@ class AlignmentTab(QWidget):
         self.dm.signals.positionChanged.connect(self.mw.setTargKargPixmaps)
         self.dm.signals.swimArgsChanged.connect(self.onSwimArgsChanged)
 
-        self.mw.cbInclude.setChecked(self.dm.include())
-        self.mw.cbInclude.toggled.connect(lambda x: self.onIncludeExcludeToggle(x))
+        self.mw.cbInclude.setChecked(self.dm.include(l=self.dm.zpos))
+        self.mw.cbInclude.stateChanged.connect(self.onIncludeExcludeToggle)
 
         # self.dm.loadHashTable()
 
@@ -111,17 +111,16 @@ class AlignmentTab(QWidget):
 
     def onPositionChange(self):
         print("positionChanged signal received...", flush=True)
-        z = self.dm.zpos
 
-        self.mw.sldrZpos.setValue(z)
-        self.mw.cbInclude.setChecked(not self.dm.skipped())
+        self.mw.sldrZpos.setValue(self.dm.zpos)
+        self.mw.cbInclude.setChecked(self.dm.include(l=self.dm.zpos))
 
         _tab = self.wTabs.currentIndex()
         if _tab == 0:
             self.viewer0.set_layer()
             # self.viewer0.defer_callback(self.viewer0.set_layer)
         elif _tab == 1:
-            self.bApplyOne.setText(f"Align Layer {z}")
+            self.bApplyOne.setText(f"Align Layer {self.dm.zpos}")
             self.viewer1.initViewer()
             self.transformViewer.initViewer()
             self.labCornerViewer.setText(self.transformViewer.title)
@@ -1953,16 +1952,17 @@ class AlignmentTab(QWidget):
     #     self.mw.regenZarr()
 
     @Slot()
-    def onIncludeExcludeToggle(self, state):
+    def onIncludeExcludeToggle(self):
         '''Callback to set include/exclude section'''
         clr = inspect.stack()[1].function
         logger.critical(f'<<{clr}')
         if clr == 'main':
-            self.dm.set_include(state, l=self.dm.zpos)
+            _bool = self.mw.cbInclude.isChecked()
+            self.dm.set_include(_bool, l=self.dm.zpos)
             self.dm.linkReference()
             if self.dm.is_aligned():
                 self.dm.set_stack_cafm()
-            self.mw.tell(f"Include -> {('No', 'Yes')[state]}")
+            self.mw.tell(f"Include -> {('No', 'Yes')[_bool]}")
 
 
     @Slot()
