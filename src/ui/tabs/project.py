@@ -2795,6 +2795,7 @@ class AlignmentTab(QWidget):
         # self.bShowHideOverlay.setAttribute(Qt.WA_TranslucentBackground)
         self.bShowHideOverlay.setIcon(qta.icon('mdi.close'))
         def fn():
+            self.setUpdatesEnabled(False)
             self.wOverlayControls.setVisible(not self.wOverlayControls.isVisible())
             self.bShowHideOverlay.setText(('Show','Hide')[self.wOverlayControls.isVisible()])
             self.bShowHideOverlay.setIcon(qta.icon(('mdi.arrow-top-left', 'mdi.close')[self.wOverlayControls.isVisible()]))
@@ -2802,6 +2803,7 @@ class AlignmentTab(QWidget):
                 if self.twInfoOverlay.isVisible():
                     self.twInfoOverlay.hide()
                     self.bInfo.setText('Show TIFF Info')
+            self.setUpdatesEnabled(True)
         self.bShowHideOverlay.clicked.connect(fn)
         self.bShowHideOverlay.setFixedSize(40,14)
 
