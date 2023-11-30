@@ -1013,7 +1013,7 @@ class AlignmentTab(QWidget):
                 """
 
         self.gbR = GroupBox()
-        self.gbR.setProperty('current', True)
+        self.gbR.setProperty('current', False)
         self.gbR.clicked.connect(lambda: print("gbL clicked!"))
         self.gbR.setStyleSheet(style)
 
