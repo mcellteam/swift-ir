@@ -51,11 +51,11 @@ class AlignmentTab(QWidget):
         cfg.preferences['last_alignment_opened'] = dm.data_file_path
         # self.signals = Signals()
         self.setAttribute(Qt.WA_DeleteOnClose)
-        self.parent = parent
+        self.mw = parent
         self.viewer= None
         # self.viewer0 = None
-        self.dm = self.parent.dm = cfg.dm = dm
-        self.parent.pt = cfg.pt = self
+        self.dm = self.mw.dm = cfg.dm = dm
+        self.mw.pt = cfg.pt = self
         self.setUpdatesEnabled(True)
         self.we0 = WebEngine(self, ID='viewer')
         self.we0.setStyleSheet("background-color: #000000;")
@@ -77,58 +77,60 @@ class AlignmentTab(QWidget):
         # self.updateZarrUI()
         self.updateTab0UI()
         self.dataUpdateMA()
-        # self.glWebengine0.addWidget(self.parent.wCpanel, 0, 1, 1, 1)
+        # self.glWebengine0.addWidget(self.mw.wCpanel, 0, 1, 1, 1)
 
 
         self.wTabs.currentChanged.connect(self._onTabChange)
         self._allow_zoom_change = True
-        self.dm.signals.zposChanged.connect(lambda: print(f'(Signal Received: zposChanged...)'))
-        def fn_zpos():
-            logger.info('')
-            _tab = self.wTabs.currentIndex()
-            if _tab == 0:
-                self.viewer0.set_layer()
-                # self.viewer0.defer_callback(self.viewer0.set_layer)
+        self.dm.signals.positionChanged.connect(self.onPositionChange)
+        self.dm.signals.positionChanged.connect(self.mw.setSignalsPixmaps)
+        self.dm.signals.positionChanged.connect(self.mw.setTargKargPixmaps)
+        self.dm.signals.swimArgsChanged.connect(self.onSwimArgsChanged)
 
-            elif _tab == 1:
-                self.viewer1.initViewer()
-                self.transformViewer.initViewer()
-                self.labCornerViewer.setText(self.transformViewer.title)
-                if self.dm['state']['tra_ref_toggle'] == 'ref':
-                    self.set_transforming()
-
-            if self.dSnr_plot.isVisible():
-                self.dSnr_plot.updateLayerLinePos()
-
-        self.dm.signals.zposChanged.connect(fn_zpos)
-        # self.dm.signals.zposChanged.connect(self.parent.updateSlidrZpos)
-        self.dm.signals.zposChanged.connect(self.parent.setSignalsPixmaps)
-        self.dm.signals.zposChanged.connect(self.parent.setTargKargPixmaps)
-        self.dm.signals.zposChanged.connect(lambda: self.parent.cbSkip.setChecked(not self.dm.skipped()))
-        self.dm.signals.zposChanged.connect(self.dataUpdateMA) #1111+
-        self.dm.signals.zposChanged.connect(lambda x: self.parent.sldrZpos.setValue(x)) #1111+
-
-        self.dm.signals.savedChanged.connect(self.parent.setStatusInfo)
-        self.dm.signals.savedChanged.connect(self.parent.updateAlignAllButtonText)
-
-        self.dm.signals.dataChanged.connect(self.parent.setStatusInfo)
-        self.dm.signals.dataChanged.connect(self.parent.updateAlignAllButtonText)
-        self.dm.signals.dataChanged.connect(self.updateAaButtons)
-        self.dm.signals.dataChanged.connect(lambda: self.cbDefaults.setChecked(self.dm.isDefaults()))
-        self.dm.signals.dataChanged.connect(lambda: self.cbSaved.setChecked(self.dm.ssSavedComports()))
-        # self.dm.signals.dataChanged.connect(lambda: self.bSaveSettings.setEnabled(not self.dm.ssSavedComports()))
-        self.dm.signals.dataChanged.connect(lambda: self.bSaveSettings.setEnabled(not self.dm.ssSavedComports() and self.dm.ht.haskey(self.dm.swim_settings())))
-        # self.dm.signals.dataChanged.connect(lambda: self.cbSaved.setText(('Saved preferences (revert)', 'Saved preferences')[self.dm.ssSavedComports()]))
+        self.mw.cbInclude.setChecked(self.dm.include())
+        self.mw.cbInclude.toggled.connect(lambda x: self.onIncludeExcludeToggle(x))
 
         # self.dm.loadHashTable()
 
         # self.installEventFilter(self)
-        self.parent.addGlobTab(self, self.dm.title, switch_to=True)
+        self.mw.addGlobTab(self, self.dm.title, switch_to=True)
         msg =      f"\n  {'Project'.rjust(15)}: {self.dm.title}"
         for k,v in self.dm['info'].items():
             msg += f"\n  {k.rjust(15)}: {v}"
-        self.parent.tell(msg)
+        self.mw.tell(msg)
 
+    def onSwimArgsChanged(self):
+        print("swimArgsChanged signal received...", flush=True)
+        _tab = self.wTabs.currentIndex()
+        if _tab == 1:
+            self.mw.updateAlignAllButtonText()
+            self.updateAaButtons()
+            self.cbDefaults.setChecked(self.dm.isDefaults())
+            self.dataUpdateMA()
+
+
+    def onPositionChange(self):
+        print("positionChanged signal received...", flush=True)
+        z = self.dm.zpos
+
+        self.mw.sldrZpos.setValue(z)
+        self.mw.cbInclude.setChecked(not self.dm.skipped())
+
+        _tab = self.wTabs.currentIndex()
+        if _tab == 0:
+            self.viewer0.set_layer()
+            # self.viewer0.defer_callback(self.viewer0.set_layer)
+        elif _tab == 1:
+            self.bApplyOne.setText(f"Align Layer {z}")
+            self.viewer1.initViewer()
+            self.transformViewer.initViewer()
+            self.labCornerViewer.setText(self.transformViewer.title)
+            if self.dm['state']['tra_ref_toggle'] == 'ref':
+                self.set_transforming()
+            self.dataUpdateMA()
+
+        if self.dSnr_plot.isVisible():
+            self.dSnr_plot.updateLayerLinePos()
 
 
 
@@ -139,7 +141,7 @@ class AlignmentTab(QWidget):
     #     logger.debug('Forcing focus...')
     #     if self.wTabs.currentIndex() == 1:
     #         # self.webengine1.setFocus()
-    #         self.parent.setFocus()
+    #         self.mw.setFocus()
     #         self.viewer.set_layer()
 
     def updateAaButtons(self):
@@ -183,15 +185,13 @@ class AlignmentTab(QWidget):
         if self.dm['state']['neuroglancer']['show_scalebar']: m.item(4).setCheckState(2)
         else: m.item(4).setCheckState(0)
         isAligned = self.dm.is_aligned()
-        self.cbTransformed.setChecked(isAligned)
-        self.cbTransformed.setEnabled(isAligned)
         self.cbBB.setChecked(self.dm.output_settings()['bounding_box']['has'])
 
 
 
     def _onTabChange(self):
-        caller = inspect.stack()[1].function
-        logger.critical(f"[{caller}]")
+        clr = inspect.stack()[1].function
+        logger.critical(f"[{clr}]")
         # QApplication.restoreOverrideCursor()
         self.dm['state']['blink'] = False
         index = self.wTabs.currentIndex()
@@ -200,28 +200,28 @@ class AlignmentTab(QWidget):
 
         index = self.wTabs.currentIndex()
         if index == 1:
-            self.parent.bPlayback.hide()
-            self.parent.sldrZpos.show()
-            self.parent.sbFPS.hide()
-            self.parent.ehw.hide()
+            self.mw.bPlayback.hide()
+            self.mw.sldrZpos.show()
+            self.mw.sbFPS.hide()
+            self.mw.ehw.hide()
         else:
-            self.parent.bPlayback.hide()
-            self.parent.sldrZpos.hide()
-            self.parent.sbFPS.hide()
-            self.parent.ehw.show()
+            self.mw.bPlayback.hide()
+            self.mw.sldrZpos.hide()
+            self.mw.sbFPS.hide()
+            self.mw.ehw.show()
 
         # if index != 0:
-        #     self.parent.globTabsAndCpanel.layout.addWidget(self.parent.wCpanel)
+        #     self.mw.globTabsAndCpanel.layout.addWidget(self.mw.wCpanel)
 
         if index == 0:
             self.updateTab0UI()
             # self.updateZarrUI()
             self.initNeuroglancer()
-            # self.glWebengine0.addWidget(self.parent.wCpanel, 0, 1, 1, 1)
+            # self.glWebengine0.addWidget(self.mw.wCpanel, 0, 1, 1, 1)
 
         elif index == 1:
-            # self.parent.setdw_thumbs(False) #BEFORE init neuroglancer
-            # self.parent.setdw_matches(True) #BEFORE init neuroglancer
+            # self.mw.setdw_thumbs(False) #BEFORE init neuroglancer
+            # self.mw.setdw_matches(True) #BEFORE init neuroglancer
             self.dataUpdateMA()
             self.cbxViewerScale.setCurrentIndex(self.dm.levels.index(self.dm.level))
             self.initNeuroglancer() #Todo necessary for now
@@ -269,7 +269,7 @@ class AlignmentTab(QWidget):
             logger.critical('Refreshing editor tab...')
             # self.initNeuroglancer()
             self.set_transforming()  # 0802+
-            if self.parent.dwSnr.isVisible():
+            if self.mw.dwSnr.isVisible():
                 if self.dm.is_aligned():
                     self.dSnr_plot.initSnrPlot()
                 else:
@@ -294,11 +294,6 @@ class AlignmentTab(QWidget):
             self.updateTreeWidget()
             self.mdlTreeview.jumpToLayer()
 
-
-    def shutdownNeuroglancer(self):
-        logger.info('')
-        if ng.is_server_running():
-            ng.server.stop()
 
     def initVolumeTab0(self):
         path = self.dm.path_zarr_raw()
@@ -348,13 +343,13 @@ class AlignmentTab(QWidget):
 
 
     def initNeuroglancer(self, force=False):
-        caller = inspect.stack()[1].function
+        clr = inspect.stack()[1].function
 
         self._initNG_calls += 1
-        logger.critical(f"[call # {self._initNG_calls}, {caller}] Initializing Neuroglancer...")
+        logger.critical(f"[call # {self._initNG_calls}, {clr}] Initializing Neuroglancer...")
 
-        if self.parent._working:
-            logger.warning(f"[{caller}] Unable to initialize Neuroglancer at this time, busy working!")
+        if self.mw._working:
+            logger.warning(f"[{clr}] Unable to initialize Neuroglancer at this time, busy working!")
             return
 
         if force:
@@ -364,7 +359,8 @@ class AlignmentTab(QWidget):
                 del self.viewer1
             if hasattr(self, 'transformViewer'):
                 del self.transformViewer
-            self.shutdownNeuroglancer()
+            if ng.is_server_running():
+                ng.server.stop()
 
         QApplication.processEvents() #Critical for viewer1 to take correct size
 
@@ -384,7 +380,7 @@ class AlignmentTab(QWidget):
                 self.viewer1.initViewer()
                 self.transformViewer.initViewer()
 
-        self.parent.hud.done()
+        self.mw.hud.done()
         logger.info(f"<<<< initNeuroglancer")
 
     @Slot()
@@ -422,7 +418,7 @@ class AlignmentTab(QWidget):
         self._overlayLab.setStyleSheet("""color: #FF0000; font-size: 16px; font-weight: 600; background-color: rgba(0, 0, 0, 0.5); """)
         self._overlayLab.hide()
 
-        # self.hud_overlay = HeadupDisplay(self.parent.app, overlay=True)
+        # self.hud_overlay = HeadupDisplay(self.mw.app, overlay=True)
         # self.hud_overlay.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
         # self.hud_overlay.set_theme_overlay()
 
@@ -464,40 +460,6 @@ class AlignmentTab(QWidget):
         '''Mouse move events will occur only when a mouse bBlink is pressed down, 
         unless mouse tracking has been enabled with setMouseTracking() .'''
 
-        tip = "Save settings for current section"
-        tip = '\n'.join(textwrap.wrap(tip, width=35))
-        self.bSaveSettings = QPushButton('Save Result')
-        self.bSaveSettings.setToolTip(tip)
-        self.bSaveSettings.setFocusPolicy(Qt.NoFocus)
-        self.bSaveSettings.setFixedHeight(16)
-        def _save():
-            logger.info('')
-            self.dm.saveSettings()
-            self.dm.save(silently=True)  # Critical, as the key will be assumed to exist
-            # self.dataUpdateMA()
-            if self.parent.dwSnr.isVisible():
-                self.dSnr_plot.initSnrPlot()
-            self.refreshTab()
-        self.bSaveSettings.clicked.connect(_save)
-
-        tip = "Save settings for all sections"
-        tip = '\n'.join(textwrap.wrap(tip, width=35))
-        self.bSaveAllSettings = QPushButton('Save All Results')
-        self.bSaveAllSettings.setToolTip(tip)
-        self.bSaveAllSettings.setFocusPolicy(Qt.NoFocus)
-        self.bSaveAllSettings.setFixedHeight(16)
-
-        def _saveAll():
-            logger.info('')
-            self.dm.saveAllSettings()
-            self.dm.save(silently=True)  # Critical, as the key will be assumed to exist
-            # self.dataUpdateMA()
-            if self.parent.dwSnr.isVisible():
-                self.dSnr_plot.initSnrPlot()
-            self.refreshTab()
-        self.bSaveAllSettings.clicked.connect(_saveAll)
-        self.bSaveAllSettings.setEnabled(False)
-
 
         # self.bRevertSettings = QPushButton('Revert Settings')
         # self.bRevertSettings.setFocusPolicy(Qt.NoFocus)
@@ -535,14 +497,14 @@ class AlignmentTab(QWidget):
         tip = '\n'.join(textwrap.wrap(tip, width=35))
         # self.bApplyOne = QPushButton('Align (Affine, Match Signals, SNR)')
         # self.bApplyOne = QPushButton('Align')
-        self.bApplyOne = QPushButton('Apply')
+        self.bApplyOne = QPushButton('Align Layer')
         self.bApplyOne.setToolTip(tip)
         self.bApplyOne.setFixedHeight(16)
         self.bApplyOne.setFocusPolicy(Qt.NoFocus)
         self.bApplyOne.clicked.connect(lambda: self.bApplyOne.setEnabled(False))
         self.bApplyOne.clicked.connect(lambda: self.bTransform.setEnabled(False))
-        self.bApplyOne.clicked.connect(lambda: self.parent.alignOne(dm=self.dm, regenerate=True))
-        # self.bApplyOne.clicked.connect(lambda: self.parent.setdw_matches(True))
+        self.bApplyOne.clicked.connect(lambda: self.mw.alignOne(dm=self.dm, regenerate=True))
+        # self.bApplyOne.clicked.connect(lambda: self.mw.setdw_matches(True))
 
         tip = "Apply the affine transformation from SWIM to the images."
         tip = '\n'.join(textwrap.wrap(tip, width=35))
@@ -553,7 +515,7 @@ class AlignmentTab(QWidget):
         self.bTransform.setFocusPolicy(Qt.NoFocus)
         self.bTransform.clicked.connect(lambda: self.bApplyOne.setEnabled(False))
         self.bTransform.clicked.connect(lambda: self.bTransform.setEnabled(False))
-        self.bTransform.clicked.connect(lambda: self.parent.alignOne(dm=self.dm, regenerate=True, align=False))
+        self.bTransform.clicked.connect(lambda: self.mw.alignOne(dm=self.dm, regenerate=True, align=False))
         self.bTransform.hide()
 
         # self.bMove = QPushButton('Move')
@@ -589,8 +551,8 @@ class AlignmentTab(QWidget):
         tip = '\n'.join(textwrap.wrap(tip, width=35))
 
         def fn_sliderMatch():
-            caller = inspect.stack()[1].function
-            if caller == 'main':
+            clr = inspect.stack()[1].function
+            if clr == 'main':
                 logger.info('')
                 val = ensure_even(int(self.sliderMatch.value()))
                 if val != self.sliderMatch.value():
@@ -618,8 +580,8 @@ class AlignmentTab(QWidget):
         self.leMatch.setFixedSize(QSize(48, 16))
 
         def fn_leMatch():
-            caller = inspect.stack()[1].function
-            logger.info('caller: %s' % caller)
+            clr = inspect.stack()[1].function
+            logger.info('clr: %s' % clr)
             # logger.info(f'manua lswim window value {int(self.leMatch.text())}')
             val = ensure_even(int(self.leMatch.text()))
             if val != self.sliderMatch.value():
@@ -639,8 +601,8 @@ class AlignmentTab(QWidget):
         tip = '\n'.join(textwrap.wrap(tip, width=35))
 
         def fn_slider1x1():
-            caller = inspect.stack()[1].function
-            if caller in ('main','fn_le1x1'):
+            clr = inspect.stack()[1].function
+            if clr in ('main','fn_le1x1'):
                 logger.info('')
                 val = int(self.slider1x1.value())
                 if (val % 2) == 1:
@@ -680,8 +642,8 @@ class AlignmentTab(QWidget):
         tip = '\n'.join(textwrap.wrap(tip, width=35))
 
         def fn_slider2x2():
-            caller = inspect.stack()[1].function
-            if caller in ('main','fn_le2x2'):
+            clr = inspect.stack()[1].function
+            if clr in ('main','fn_le2x2'):
                 logger.info('')
                 val = int(self.slider2x2.value())
                 self.dm.set_size2x2(val)
@@ -712,8 +674,8 @@ class AlignmentTab(QWidget):
         self.le2x2.setFixedSize(QSize(48, 16))
 
         def fn():
-            caller = inspect.stack()[1].function
-            if caller == 'main':
+            clr = inspect.stack()[1].function
+            if clr == 'main':
                 # if self.rbHint.isChecked():
                 #     self.dm.current_method = 'manual_hint'
                 # elif self.rbStrict.isChecked():
@@ -722,9 +684,9 @@ class AlignmentTab(QWidget):
                 if self.tableThumbs.isVisible():
                     self.tn_ref.update()
                     self.tn_tra.update()
-                self.parent.setSignalsPixmaps()
-                self.parent.setTargKargPixmaps()
-                if self.parent.dwSnr.isVisible():
+                self.mw.setSignalsPixmaps()
+                self.mw.setTargKargPixmaps()
+                if self.mw.dwSnr.isVisible():
                     self.dSnr_plot.initSnrPlot()
 
         self.rbHint = QRadioButton('Match Regions')
@@ -782,8 +744,8 @@ class AlignmentTab(QWidget):
         self.leWhitening.setFixedSize(QSize(48, 16))
         def fnWhitening():
             logger.info('')
-            # caller = inspect.stack()[1].function
-            # if caller == 'main':
+            # clr = inspect.stack()[1].function
+            # if clr == 'main':
             txt = self.leWhitening.text()
             if txt:
                 val = float(txt)
@@ -817,14 +779,14 @@ class AlignmentTab(QWidget):
         self.leSwimWindow.setFixedSize(QSize(48, 16))
         self.leSwimWindow.setValidator(QIntValidator())
         def fn():
-            caller = inspect.stack()[1].function
-            if caller == 'main':
-                logger.info(f'caller: {caller}')
+            clr = inspect.stack()[1].function
+            if clr == 'main':
+                logger.info(f'clr: {clr}')
                 val = int(self.leSwimWindow.text())
                 logger.info(f"val = {val}")
                 if (val % 2) == 1:
                     new_val = val - 1
-                    self.parent.tell(f'SWIM requires even values as input. Setting value to {new_val}')
+                    self.mw.tell(f'SWIM requires even values as input. Setting value to {new_val}')
                     self.leSwimWindow.setText(str(new_val))
                     return
 
@@ -833,7 +795,7 @@ class AlignmentTab(QWidget):
                 if self.tableThumbs.isVisible():
                     self.tn_ref.update()
                     self.tn_tra.update()
-                self.parent.tell(f'SWIM Window set to: {str(val)}')
+                self.mw.tell(f'SWIM Window set to: {str(val)}')
         self.leSwimWindow.selectionChanged.connect(fn)
         self.leSwimWindow.returnPressed.connect(fn)
 
@@ -853,20 +815,6 @@ class AlignmentTab(QWidget):
         self.cbDefaults.setFocusPolicy(Qt.NoFocus)
         self.cbDefaults.toggled.connect(self.onDefaultsCheckbox)
         self.cbDefaults.setFixedHeight(14)
-
-        self.cbSaved = QCheckBox('Saved preferences')
-        self.cbSaved.setFocusPolicy(Qt.NoFocus)
-        self.cbSaved.setFixedHeight(14)
-        def fn_cbSaved():
-            logger.info('')
-            caller = inspect.stack()[1].function
-            if caller == 'main':
-                if self.cbSaved.isChecked():
-                    self.dm.restoreSavedSettings()
-                    self.parent.tell(f'Saved settings restored at index {self.dm.zpos}')
-                self.dataUpdateMA()
-                self.refreshTab() #1115+
-        self.cbSaved.toggled.connect(fn_cbSaved)
 
         self.cbIgnoreCache = QCheckBox('Ignore cache')
         self.cbIgnoreCache.setFocusPolicy(Qt.NoFocus)
@@ -890,8 +838,6 @@ class AlignmentTab(QWidget):
             hw = HW(b)
             hw.layout.setAlignment(Qt.AlignRight)
             self.aaWidgets.append(hw)
-            self.aaButtons[w].clicked.connect(lambda: self.parent.bAlign.setEnabled(False))
-            self.aaButtons[w].clicked.connect(self.parent.alignAll)
 
         self.aaButtons[0].clicked.connect(lambda: self.dm.aa1x1(int(self.le1x1.text())))
         self.aaButtons[1].clicked.connect(lambda: self.dm.aa2x2(int(self.le2x2.text())))
@@ -902,7 +848,9 @@ class AlignmentTab(QWidget):
 
 
         for b in self.aaButtons:
-            b.clicked.connect(self.dataUpdateMA)
+            # b.clicked.connect(self.dataUpdateMA)
+            b.clicked.connect(lambda: self.mw.bAlign.setEnabled(False))
+            b.clicked.connect(self.mw.alignAll)
 
         hw1x1 = HW(self.w1x1, self.aaWidgets[0])
         hw1x1.layout.setSpacing(4)
@@ -942,8 +890,8 @@ class AlignmentTab(QWidget):
         tip = '\n'.join(textwrap.wrap(tip, width=35))
 
         def fn_method_select():
-            caller = inspect.stack()[1].function
-            if caller == 'main':
+            clr = inspect.stack()[1].function
+            if clr == 'main':
                 logger.info('')
                 l = self.dm.zpos
                 s = self.dm.scale
@@ -1311,13 +1259,13 @@ class AlignmentTab(QWidget):
         self.cbxViewerScale.setCurrentIndex(self.dm.levels.index(self.dm['state']['viewer_quality']))
 
         def fn_cmbViewerScale():
-            caller = inspect.stack()[1].function
-            logger.info(f"[{caller}]")
-            if caller == 'main':
+            clr = inspect.stack()[1].function
+            logger.info(f"[{clr}]")
+            if clr == 'main':
                 level = self.dm.levels[self.cbxViewerScale.currentIndex()]
                 siz = self.dm.image_size(s=level)
                 self.dm['state']['viewer_quality'] = level
-                self.parent.tell('Viewing quality set to 1/%d (%d x %dpx)' % (self.dm.lvl(level), siz[0], siz[1]))
+                self.mw.tell('Viewing quality set to 1/%d (%d x %dpx)' % (self.dm.lvl(level), siz[0], siz[1]))
                 self.initNeuroglancer()
 
         # self.cbxViewerScale.currentIndexChanged.connect(fn_cmbViewerScale)
@@ -1513,15 +1461,15 @@ class AlignmentTab(QWidget):
         self.cbxNgExtras.addItem("Scale Bar", state=self.dm['state']['neuroglancer']['show_scalebar'])
 
         def cb_itemChanged():
-            caller = inspect.stack()[1].function
-            logger.info(f'caller: {caller}')
-            if caller == 'main':
+            clr = inspect.stack()[1].function
+            logger.info(f'clr: {clr}')
+            if clr == 'main':
                 self.dm['state']['neuroglancer']['show_controls'] = self.cbxNgExtras.itemChecked(1)
                 self.dm['state']['neuroglancer']['show_bounds'] = self.cbxNgExtras.itemChecked(2)
                 self.dm['state']['neuroglancer']['show_axes'] = self.cbxNgExtras.itemChecked(3)
                 self.dm['state']['neuroglancer']['show_scalebar'] = self.cbxNgExtras.itemChecked(4)
                 self.viewer0.updateDisplayExtras()
-                self.parent.saveUserPreferences(silent=True)
+                self.mw.saveUserPreferences(silent=True)
 
         self.cbxNgExtras.model().itemChanged.connect(cb_itemChanged)
 
@@ -1572,7 +1520,7 @@ class AlignmentTab(QWidget):
         self.bZarrRegen.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.bZarrRegen.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.bZarrRegen.clicked.connect(lambda: self.bZarrRegen.setEnabled(False))
-        self.bZarrRegen.clicked.connect(lambda: self.parent.regenZarr(self.dm))
+        self.bZarrRegen.clicked.connect(lambda: self.mw.regenZarr(self.dm))
 
         self.wZarrSelect = HW(self.labZarrSource, self.cbTransformed, spacing=6)
 
@@ -1794,7 +1742,7 @@ class AlignmentTab(QWidget):
 
         def startStopMatchTimer():
             logger.info('')
-            if self.parent._isProjectTab():
+            if self.mw._isProjectTab():
                 self.dm['state']['blink'] = not self.dm['state']['blink']
                 if self.dm['state']['blink']:
                     self.matchPlayTimer.start()
@@ -1950,12 +1898,10 @@ class AlignmentTab(QWidget):
 
         self.twCornerViewer.currentChanged.connect(tab_changed)
 
-        self.checkboxes = HW( self.cbDefaults , self.cbSaved , self.cbIgnoreCache )
+        self.checkboxes = HW( self.cbDefaults , self.cbIgnoreCache )
         self.checkboxes.layout.setSpacing(4)
 
-        # self.cpanelEditor = HW(self.bTransform, self.bApplyOne, self.bSaveSettings)
-        # self.btnsSWIM = VW(HW(self.bApplyOne, self.bSaveSettings, self.bSaveAllSettings), self.bPull)
-        self.btnsSWIM = VW(HW( self.bApplyOne , self.bSaveSettings , self.bSaveAllSettings ))
+        self.btnsSWIM = HW(self.bApplyOne)
         self.btnsSWIM.layout.setContentsMargins(2,2,2,2)
         self.btnsSWIM.layout.setSpacing(2)
         self.vwRightPanel = VW( self.swMethod , self.checkboxes , self.btnsSWIM )
@@ -1982,11 +1928,11 @@ class AlignmentTab(QWidget):
     def onZarrRadiobutton(self):
         # # self.rbZarrRaw, self.rbZarrExperimental, self.rbZarrTransformed
         # if self.rbZarrRaw.isChecked():
-        #     self.viewer0 = self.viewer = self.parent.viewer = cfg.viewer = self.viewerRaw
+        #     self.viewer0 = self.viewer = self.mw.viewer = cfg.viewer = self.viewerRaw
         # elif self.rbZarrExperimental.isChecked():
-        #     self.viewer0 = self.viewer = self.parent.viewer = cfg.viewer = self.viewerExperimental
+        #     self.viewer0 = self.viewer = self.mw.viewer = cfg.viewer = self.viewerExperimental
         # elif self.rbZarrTransformed.isChecked():
-        #     self.viewer0 = self.viewer = self.parent.viewer = cfg.viewer = self.viewerTransformed
+        #     self.viewer0 = self.viewer = self.mw.viewer = cfg.viewer = self.viewerTransformed
         # self.viewer.set_layer()
         pass
 
@@ -2003,13 +1949,26 @@ class AlignmentTab(QWidget):
     #     to_align = self.dm.needsAlignIndexes()
     #     # to_regenerate = self.dm.needsGenerateIndexes()
     #     logger.info(f'\nAlign indexes: {pprint.pformat(to_align)}')
-    #     self.parent.align(dm=self.dm, indexes=to_align)
-    #     self.parent.regenZarr()
+    #     self.mw.align(dm=self.dm, indexes=to_align)
+    #     self.mw.regenZarr()
+
+    @Slot()
+    def onIncludeExcludeToggle(self, state):
+        '''Callback to set include/exclude section'''
+        clr = inspect.stack()[1].function
+        logger.critical(f'<<{clr}')
+        if clr == 'main':
+            self.dm.set_include(state, l=self.dm.zpos)
+            self.dm.linkReference()
+            if self.dm.is_aligned():
+                self.dm.set_stack_cafm()
+            self.mw.tell(f"Include -> {('No', 'Yes')[state]}")
+
 
     @Slot()
     def onDefaultsCheckbox(self):
-        caller = inspect.stack()[1].function
-        if caller == 'main':
+        clr = inspect.stack()[1].function
+        if clr == 'main':
             logger.info('')
             if self.cbDefaults.isChecked():
                 if not self.dm.isDefaults():
@@ -2034,7 +1993,7 @@ class AlignmentTab(QWidget):
         logger.info('')
         self.dm['state']['tra_ref_toggle'] = 'ref'
         if self.dm.skipped():
-            self.parent.warn('This section does not have a reference because it is excluded.')
+            self.mw.warn('This section does not have a reference because it is excluded.')
             return
         # self._tra_pt_selected = None
         self.viewer1.set_layer()
@@ -2043,7 +2002,7 @@ class AlignmentTab(QWidget):
         # self._updatePointLists()
         self.clRef.setChecked(True)
         self.clTra.setChecked(False)
-        self.parent.leJump.setText(str(self.dm.get_ref_index()))
+        self.mw.leJump.setText(str(self.dm.get_ref_index()))
         if self.twMethod.currentIndex() == 1:
             self.lwR.setEnabled(True)
             self.lwL.setEnabled(False)
@@ -2058,8 +2017,8 @@ class AlignmentTab(QWidget):
 
     @Slot()
     def set_transforming(self):
-        caller = inspect.stack()[1].function
-        logger.info(f'[{caller}]')
+        clr = inspect.stack()[1].function
+        logger.info(f'[{clr}]')
         self.dm['state']['tra_ref_toggle'] = 'tra'
         self.viewer1.set_layer()
         self.transformViewer.setTransforming()
@@ -2067,7 +2026,7 @@ class AlignmentTab(QWidget):
         # self._updatePointLists()
         self.clTra.setChecked(True)
         self.clRef.setChecked(False)
-        self.parent.leJump.setText(str(self.dm.zpos))
+        self.mw.leJump.setText(str(self.dm.zpos))
         if self.twMethod.currentIndex() == 1:
             self.lwL.setEnabled(True)
             self.lwR.setEnabled(False)
@@ -2093,7 +2052,7 @@ class AlignmentTab(QWidget):
         self.toggleMatches.setIcon(qta.icon(
             ('mdi.toggle-switch', 'mdi.toggle-switch-off')[getData('state,targ_karg_toggle')]))
         # (self.rb_targ.setChecked, self.rb_karg.setChecked)[getData('state,targ_karg_toggle')](True)
-        self.parent.setTargKargPixmaps()
+        self.mw.setTargKargPixmaps()
 
 
     def refreshLogs(self):
@@ -2116,7 +2075,7 @@ class AlignmentTab(QWidget):
     #
     # def onTranslate(self):
     #     if (self.lwL.selectedIndexes() == []) and (self.lwR.selectedIndexes() == []):
-    #         self.parent.warn('No points are selected in the list')
+    #         self.mw.warn('No points are selected in the list')
     #         return
     #
     #     selections = []
@@ -2143,7 +2102,7 @@ class AlignmentTab(QWidget):
     #
     # def onTranslate_x(self):
     #     if (self.lwL.selectedIndexes() == []) and (self.lwR.selectedIndexes() == []):
-    #         self.parent.warn('No points are selected in the list')
+    #         self.mw.warn('No points are selected in the list')
     #         return
     #
     #     selections = []
@@ -2170,7 +2129,7 @@ class AlignmentTab(QWidget):
     #
     # def onTranslate_y(self):
     #     if (self.lwL.selectedIndexes() == []) and (self.lwR.selectedIndexes() == []):
-    #         self.parent.warn('No points are selected in the list')
+    #         self.mw.warn('No points are selected in the list')
     #         return
     #
     #     selections = []
@@ -2197,21 +2156,21 @@ class AlignmentTab(QWidget):
 
     @Slot()
     def onNgLayoutCombobox(self) -> None:
-        caller = inspect.stack()[1].function
-        if caller in ('main', '<lambda>'):
+        clr = inspect.stack()[1].function
+        if clr in ('main', '<lambda>'):
             choice = self.cbxNgLayout.currentText()
             setData('state,neuroglancer,layout', choice)
-            self.parent.tell(f'Neuroglancer Layout Set To: {choice}')
+            self.mw.tell(f'Neuroglancer Layout Set To: {choice}')
             try:
                 layout_actions = {
-                    'xy': self.parent.ngLayout1Action,
-                    'yz': self.parent.ngLayout2Action,
-                    'xz': self.parent.ngLayout3Action,
-                    'xy-3d': self.parent.ngLayout4Action,
-                    'yz-3d': self.parent.ngLayout5Action,
-                    'xz-3d': self.parent.ngLayout6Action,
-                    # '3d': self.parent.ngLayout7Action,
-                    '4panel': self.parent.ngLayout8Action
+                    'xy': self.mw.ngLayout1Action,
+                    'yz': self.mw.ngLayout2Action,
+                    'xz': self.mw.ngLayout3Action,
+                    'xy-3d': self.mw.ngLayout4Action,
+                    'yz-3d': self.mw.ngLayout5Action,
+                    'xz-3d': self.mw.ngLayout6Action,
+                    # '3d': self.mw.ngLayout7Action,
+                    '4panel': self.mw.ngLayout8Action
                 }
                 layout_actions[choice].setChecked(True)
                 with self.viewer0.txn() as s:
@@ -2232,8 +2191,8 @@ class AlignmentTab(QWidget):
 
 
     # def updateZarrUI(self):
-    #     caller = inspect.stack()[1].function
-    #     logger.critical(f'{caller}')
+    #     clr = inspect.stack()[1].function
+    #     logger.critical(f'{clr}')
     #     # self.updateZarrButtonsEnabled()
     #     isGenerated = self.dm.is_zarr_generated()
     #     isAligned = self.dm.is_aligned()
@@ -2273,10 +2232,10 @@ class AlignmentTab(QWidget):
 
     @Slot()
     def dataUpdateMA(self):
-        # caller = inspect.stack()[1].function
-        # logger.info(f"[{caller}]")
+        # clr = inspect.stack()[1].function
+        # logger.info(f"[{clr}]")
 
-        # self.parent.bZarrRegen.setEnabled(self.dm.is_aligned())
+        # self.mw.bZarrRegen.setEnabled(self.dm.is_aligned())
 
         # self.bPull.setVisible((self.dm.scale != self.dm.coarsest_scale_key()) and self.dm.is_alignable())
 
@@ -2297,8 +2256,6 @@ class AlignmentTab(QWidget):
                 # self.btnsSWIM.show()
                 # self.bPull.setVisible((self.dm.scale != self.dm.coarsest_scale_key()) and self.dm.is_alignable())
                 self.bApplyOne.show()
-                self.bSaveSettings.show()
-                self.bSaveAllSettings.show()
                 self.checkboxes.show()
                 ss = self.dm['stack'][self.dm.zpos]['levels'][self.dm.scale]['swim_settings']
                 if self.dm.current_method == 'grid':
@@ -2341,7 +2298,6 @@ class AlignmentTab(QWidget):
                 self.updateAaButtons()
 
                 self.cbDefaults.setChecked(self.dm.isDefaults())
-                self.cbSaved.setChecked(self.dm.ssSavedComports())
 
                 self.bTransform.setEnabled(self.dm.is_aligned())
                 # self.bApplyOne.setEnabled(self.dm.is_aligned() and not os.file_path.exists(self.dm.path_aligned()))
@@ -2371,16 +2327,14 @@ class AlignmentTab(QWidget):
             else:
                 self.swMethod.setCurrentIndex(1)
                 self.bApplyOne.hide()
-                self.bSaveSettings.hide()
-                self.bSaveAllSettings.hide()
                 self.checkboxes.hide()
             # if hasattr(self, 'viewer1'):
             #     self.viewer1.drawSWIMwindow() #1009+
 
 
     def _updatePointLists(self):
-        caller = inspect.stack()[1].function
-        logger.info(f'[{caller}]')
+        clr = inspect.stack()[1].function
+        logger.info(f'[{clr}]')
         if self.wTabs.currentIndex() == 1:
             if self.twMethod.currentIndex() == 1:
                 siz = self.dm.image_size()
@@ -2404,7 +2358,7 @@ class AlignmentTab(QWidget):
 
 
     def deleteAllMpRef(self):
-        self.parent.tell('Deleting All Reference Image Manual Correspondence Points from Buffer...')
+        self.mw.tell('Deleting All Reference Image Manual Correspondence Points from Buffer...')
         self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings']['method_opts']['points']['coords']['ref'] = [None]*3
         # delete_matches(self.dm) #1025-
         # delete_correlation_signals(self.dm) #1025-
@@ -2414,7 +2368,7 @@ class AlignmentTab(QWidget):
 
 
     def deleteAllMpBase(self):
-        self.parent.tell('Deleting All Base Image Manual Correspondence Points from Buffer...')
+        self.mw.tell('Deleting All Base Image Manual Correspondence Points from Buffer...')
         # self.dm.set_manpoints('tra', [None, None, None])
         self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings']['method_opts']['points']['coords']['tra'] = [None] * 3
         # delete_matches(self.dm)
@@ -2424,7 +2378,7 @@ class AlignmentTab(QWidget):
 
 
     def deleteAllMp(self):
-        self.parent.tell('Deleting All Base + Reference Image Manual Correspondence Points from Buffer...')
+        self.mw.tell('Deleting All Base + Reference Image Manual Correspondence Points from Buffer...')
         self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings']['method_opts']['points']['coords'][
             'ref'] = [None] * 3
         self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings']['method_opts']['points']['coords'][
@@ -2475,11 +2429,11 @@ class AlignmentTab(QWidget):
         self._allow_zoom_change = True
 
     def setZoomSlider(self):
-        caller = inspect.stack()[1].function
-        if caller == 'main':
-            logger.info(f'[{caller}]')
+        clr = inspect.stack()[1].function
+        if clr == 'main':
+            logger.info(f'[{clr}]')
             if self._allow_zoom_change:
-                # caller = inspect.stack()[1].function
+                # clr = inspect.stack()[1].function
                 if self.dm['state']['current_tab'] == 1:
                     zoom = self.viewer1.zoom()
                 else:
@@ -2497,9 +2451,9 @@ class AlignmentTab(QWidget):
                 self._allow_zoom_change = True
 
     def onZoomSlider(self):
-        caller = inspect.stack()[1].function
-        logger.info(f'caller: {caller}')
-        if caller not in ('slotUpdateZoomSlider', 'setValue'):  # Original #0314
+        clr = inspect.stack()[1].function
+        logger.info(f'clr: {clr}')
+        if clr not in ('slotUpdateZoomSlider', 'setValue'):  # Original #0314
             _tab = self.wTabs.currentIndex()
             # if _tab == 0:
             #     val = 1 / self.sldrZoomTab0.value()
@@ -2514,8 +2468,8 @@ class AlignmentTab(QWidget):
 
     def slotUpdateZoomSlider(self):
         # Lets only care about REF <--> wSlider
-        caller = inspect.stack()[1].function
-        logger.info(f'[{caller}]')
+        clr = inspect.stack()[1].function
+        logger.info(f'[{clr}]')
         _tab = self.wTabs.currentIndex()
         # if _tab == 0:
         #     val = self.viewer0.state.cross_section_scale
@@ -2532,8 +2486,8 @@ class AlignmentTab(QWidget):
 
     def onSliderZmag(self):
 
-        caller = inspect.stack()[1].function
-        logger.info('caller: %s' % caller)
+        clr = inspect.stack()[1].function
+        logger.info('clr: %s' % clr)
         try:
             val = self.sliderZdisplay.value()
             if self.dm['state']['current_tab'] == 1:
@@ -2549,7 +2503,7 @@ class AlignmentTab(QWidget):
                 state = copy.deepcopy(self.viewer0.state)
                 state.relative_display_scales = {'z': val}
                 self.viewer0.set_state(state)
-            self.parent.update()
+            self.mw.update()
         except:
             print_exception()
 
@@ -2563,7 +2517,7 @@ class AlignmentTab(QWidget):
         '''Layer View Widget'''
         logger.info('')
         self.project_table = ProjectTable(parent=self, dm=self.dm)
-        self.project_table.updatePbar.connect(self.parent.pbar.setValue)
+        self.project_table.updatePbar.connect(self.mw.pbar.setValue)
         # self.project_table.setStyleSheet("color: #f3f6fb;")
         vbl = VBL()
         vbl.addWidget(self.project_table)
@@ -2579,9 +2533,9 @@ class AlignmentTab(QWidget):
 
 
     def updateTreeWidget(self):
-        # self.parent.statusBar.showMessage('Loading data into tree view...')
+        # self.mw.statusBar.showMessage('Loading data into tree view...')
         # time consuming - refactor?
-        self.parent.tell('Loading data into tree view...')
+        self.mw.tell('Loading data into tree view...')
         self.mdlTreeview.load(self.dm.to_dict())
         # self.treeview.setModel(self.mdlTreeview)
         self.treeview.header().resizeSection(0, 340)
@@ -2744,7 +2698,7 @@ class AlignmentTab(QWidget):
         self.wSNR.setStyleSheet('background-color: #222222; font-weight: 600; font-size: 14px; color: #ede9e8;')
         self.dSnr_plot = SnrPlot(dm=self.dm, dock=True)
         self.dSnr_plot.setStyleSheet('background-color: #222222; font-weight: 600; font-size: 12px; color: #ede9e8;')
-        self.parent.dwSnr.setWidget(self.dSnr_plot)
+        self.mw.dwSnr.setWidget(self.dSnr_plot)
 
 
     def initTabs(self):
@@ -2943,13 +2897,13 @@ class AlignmentTab(QWidget):
 
     def onBiasChanged(self):
         logger.info('')
-        caller = inspect.stack()[1].function
-        if caller == 'main':
+        clr = inspect.stack()[1].function
+        if clr == 'main':
             if self.cbxBias.currentText() == 'None':
                 val = None
             else:
                 val = self.cbxBias.currentIndex() - 1
-            self.parent.tell(f'Corrective bias is set to {val}')
+            self.mw.tell(f'Corrective bias is set to {val}')
             self.dm.poly_order = val
             self.dm.set_stack_cafm()
             # self.initNeuroglancer()
@@ -3030,8 +2984,8 @@ class AlignmentTab(QWidget):
 
 
     def fn_brightness_control(self):
-        caller = inspect.stack()[1].function
-        if caller == 'main':
+        clr = inspect.stack()[1].function
+        if clr == 'main':
             self.dm.brightness = self.sldBrightness.value() / 100
             if self.wTabs.currentIndex() == 0:
                 self.viewer0.set_brightness()
@@ -3040,8 +2994,8 @@ class AlignmentTab(QWidget):
                 self.transformViewer.set_brightness()
 
     def fn_contrast_control(self):
-        caller = inspect.stack()[1].function
-        if caller == 'main':
+        clr = inspect.stack()[1].function
+        if clr == 'main':
             self.dm.contrast = self.sldContrast.value() / 100
             if self.wTabs.currentIndex() == 0:
                 self.viewer0.set_contrast()

@@ -63,12 +63,14 @@ def date_time():
     return datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
 class Signals(QObject):
-    zposChanged = Signal(int)
-    dataChanged = Signal()
-    savedChanged = Signal()
+    positionChanged = Signal(int)
+    swimArgsChanged = Signal() #should prob be swimSettingsChanged
     outputSettingsChanged = Signal()
     swimSettingsChanged = Signal()
 
+
+class Level:
+    pass
 
 class DataModel:
 
@@ -99,7 +101,6 @@ class DataModel:
             self.loadHashTable()
             self._upgradeDatamodel()
             self.signals = Signals()
-            self.signals.dataChanged.connect(lambda: logger.info('emission!'))
             self.ds = DirectoryStructure(self)
 
         if readonly:
@@ -123,15 +124,17 @@ class DataModel:
         self._data['modified'] = date_time()
         self['protected'].setdefault('force_reallocate_zarr_flag', False)
         self['state']['neuroglancer'].setdefault('transformed', True)
-        ident = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
+        # ident = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
         for i in range(len(self)):
             for level in self.levels:
-                self['stack'][i]['levels'][level].setdefault('results', {})
-                self['stack'][i]['levels'][level]['results'].setdefault('mir_afm', ident)
-                self['stack'][i]['levels'][level].setdefault('alt_cafm', np.array([[1., 0., 0.], [0., 1., 0.]]).tolist())
+                d = self['stack'][i]['levels'][level]
+                if 'saved_swim_settings' in d:
+                    d.pop('saved_swim_settings')
+                d.setdefault('results', {})
+                # self['stack'][i]['levels'][level]['results'].setdefault('mir_afm', ident)
+                # self['stack'][i]['levels'][level].setdefault('alt_cafm', np.array([[1., 0., 0.], [0., 1., 0.]]).tolist())
 
         for level in self.levels:
-
             if not 'chunkshape' in self['level_data'][level]:
                 chunkshape = self.get_transforming_chunkshape(level)
                 self['level_data'][level]['chunkshape'] = chunkshape
@@ -166,8 +169,8 @@ class DataModel:
         return result
 
     def __deepcopy__(self, memo):
-        caller = inspect.stack()[1].function
-        logger.info(f'Creating __deepcopy__ of DataModel [{caller}]...')
+        clr = inspect.stack()[1].function
+        logger.info(f'Creating __deepcopy__ of DataModel [{clr}]...')
         cls = self.__class__
         result = cls.__new__(cls)
         memo[id(self)] = result
@@ -211,12 +214,12 @@ class DataModel:
     @property
     def basename(self) -> str:
         '''Get transforming image file_path.'''
-        return self['stack'][self.zpos]['levels'][self.level]['swim_settings']['name']
+        return self.SS['name']
 
     @property
     def refname(self) -> str:
         '''Get reference image file_path.'''
-        return self['stack'][self.zpos]['levels'][self.level]['swim_settings']['reference_name']
+        return self.SS['reference_name']
 
     @property
     def created(self):
@@ -304,15 +307,15 @@ class DataModel:
     @zpos.setter
     def zpos(self, pos):
         '''Set global Z-position. Signals UI to update.'''
-        # caller = inspect.stack()[1].function
+        # clr = inspect.stack()[1].function
         # self['data']['Current Section (Index)'] = index
         pos = int(pos)
         if pos in range(0, len(self)):
             if pos != self.zpos:
                 self['state']['z_position'] = pos
-                self.signals.zposChanged.emit(pos)
+                self.signals.positionChanged.emit(pos)
         else:
-            logger.warning(f'\nINDEX OUT OF RANGE: {pos} [caller: {inspect.stack()[1].function}]\n')
+            logger.warning(f'\nINDEX OUT OF RANGE: {pos} [clr: {inspect.stack()[1].function}]\n')
 
     @property
     def cname(self) -> str:
@@ -398,14 +401,14 @@ class DataModel:
     @property
     def quadrants(self):
         '''property previously called grid_custom_regions'''
-        return self._data['stack'][self.zpos]['levels'][self.level]['swim_settings']['method_opts']['quadrants']
+        return self.SS['method_opts']['quadrants']
 
     @quadrants.setter
     def quadrants(self, lst):
         '''property previously called grid_custom_regions'''
         # for level in self.levels():
-        self._data['stack'][self.zpos]['levels'][self.scale]['swim_settings']['method_opts']['quadrants'] = lst
-        self.signals.dataChanged.emit()
+        self.SS['method_opts']['quadrants'] = lst
+        self.signals.swimArgsChanged.emit()
 
     @property
     def padlock(self):
@@ -441,20 +444,19 @@ class DataModel:
     @poly_order.setter
     def poly_order(self, use):
         self['level_data'][self.level]['output_settings']['polynomial_bias'] = use
-        self.signals.dataChanged.emit()
 
     # def whitening(self) -> float:
     #     '''Returns the Signal Whitening Factor for the Current Layer.'''
-    #     return float(self._data['stack'][self.zpos]['levels'][self.level]['swim_settings']['whitening'])
+    #     return float(self.SS['whitening'])
 
     @property
     def whitening(self):
-        return float(self._data['stack'][self.zpos]['levels'][self.level]['swim_settings']['whitening'])
+        return float(self.SS['whitening'])
 
     @whitening.setter
     def whitening(self, x):
-        self._data['stack'][self.zpos]['levels'][self.level]['swim_settings']['whitening'] = float(x)
-        self.signals.dataChanged.emit()
+        self.SS['whitening'] = float(x)
+        self.signals.swimArgsChanged.emit()
 
     #Todo this isn't right!
     @property
@@ -486,15 +488,16 @@ class DataModel:
     def writeDirCafm(self, s=None, l=None) -> str:
         if s == None: s = self.level
         if l == None: l = self.zpos
-        ss_hash = str(self.ssSavedHash(s=s, l=l))
+        ss_hash = str(self.ssHash(s=s, l=l))
         cafm_hash = str(self.cafmHash(s=s, l=l))
         path = os.path.join(self.data_dir_path, 'data', str(l), s, ss_hash, cafm_hash)
         return path
 
     @property
-    def ss(self):
+    def SS(self):
         '''Return SWIM preferences as copy of dict representing the current section'''
-        return copy.deepcopy(self._data['stack'][self.zpos]['levels'][self.level]['swim_settings'])
+        return self._data['stack'][self.zpos]['levels'][self.level]['swim_settings']
+
 
     def ssDir(self, s=None, l=None) -> str:
         if s == None: s = self.level
@@ -503,17 +506,10 @@ class DataModel:
         path = os.path.join(self.data_dir_path, 'data', str(l), s, ss_hash)
         return path
 
-    def ssSavedDir(self, s=None, l=None) -> str:
-        if s == None: s = self.level
-        if l == None: l = self.zpos
-        ss_hash = str(self.ssSavedHash(s=s, l=l))
-        path = os.path.join(self.data_dir_path, 'data', str(l), s, ss_hash)
-        return path
-
     def isAligned(self, s=None, l=None) -> bool:
         if s == None: s = self.level
         if l == None: l = self.zpos
-        path = os.path.join(self.ssSavedDir(), 'results.json')
+        path = os.path.join(self.ssDir(), 'results.json')
         return os.path.exists(path)
 
     def path(self, s=None, l=None):
@@ -657,8 +653,8 @@ class DataModel:
     def get_ref_index(self, s=None, l=None):
         if s == None: s = self.level
         if l == None: l = self.zpos
-        # caller = inspect.stack()[1].function
-        # logger.critical(f'caller: {caller}, z={z}')
+        # clr = inspect.stack()[1].function
+        # logger.critical(f'clr: {clr}, z={z}')
         # if self.skipped(level=self.level, z=z):
         # if not self.include(s=self.level, l=l):
         #     return self.get_index(self._data['stack'][l]['levels'][self.level]['swim_settings']['file_path']) #Todo refactor this but not sure how
@@ -825,7 +821,7 @@ class DataModel:
     def base_image_name(self, s=None, l=None):
         if s == None: s = self.level
         if l == None: l = self.zpos
-        # logger.info(f'Caller: {inspect.stack()[1].function}, level={level}, z={z}')
+        # logger.info(f'clr: {inspect.stack()[1].function}, level={level}, z={z}')
         return self._data['stack'][l]['levels'][s]['swim_settings']['name']
 
     '''NEW METHODS USING NEW DATA SCHEMA 2023'''
@@ -852,7 +848,7 @@ class DataModel:
 
 
     def clobber(self):
-        return self._data['stack'][self.zpos]['levels'][self.level]['swim_settings']['clobber']
+        return self.SS['clobber']
 
     def set_clobber(self, b, s=None, l=None, glob=False):
         if s == None: s = self.level
@@ -866,10 +862,10 @@ class DataModel:
                 cur = self._data['stack'][l]['levels'][s]['swim_settings']['clobber']
                 self['stack'][l]['levels'][s]['swim_settings']['clobber'] = b
                 if cur != b:
-                    self.signals.dataChanged.emit()
+                    self.signals.swimArgsChanged.emit()
 
     def clobber_px(self):
-        return self._data['stack'][self.zpos]['levels'][self.level]['swim_settings']['clobber_size']
+        return self.SS['clobber_size']
 
     def set_clobber_px(self, x, s=None, l=None, glob=False):
         if s == None: s = self.level
@@ -883,7 +879,7 @@ class DataModel:
                 cur = self._data['stack'][l]['levels'][s]['swim_settings']['clobber_size']
                 self._data['stack'][l]['levels'][s]['swim_settings']['clobber_size'] = x
                 if cur != x:
-                    self.signals.dataChanged.emit()
+                    self.signals.swimArgsChanged.emit()
 
     def get_signals_filenames(self, s=None, l=None):
         if s == None: s = self.level
@@ -1090,21 +1086,23 @@ class DataModel:
                 return components
             else:
                 return statistics.fmean(map(float, components))
-        except:
-            tstamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            exi = sys.exc_info()
-            txt = f" [{tstamp}] Error Type/Value : {exi[0]} / {exi[1]}"
-            logger.warning(f"{txt}\nresolution level: {s}\n[{l}] Unable to return SNR. Returning 0.0")
-            return 0.0
+        except Exception as e:
+            # tstamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            # exi = sys.exc_info()
+            # txt = f" [{tstamp}] Error Type/Value : {exi[0]} / {exi[1]}"
+            logger.warning(f"[{l}] Failed to get SNR data from results. Reason: {e.__class__.__name__}")
+            return 0.
 
 
     def snr_list(self, s=None) -> list[float]:
         try:
             return [self.snr(s=s, l=i) for i in range(len(self))]
-        except:
-            logger.warning(f'No SNR Data Found. Returning 0s List [caller: {inspect.stack()[1].function}]...')
-            print_exception()
+        except Exception as e:
+            logger.warning(f"Failed to create SNR list. Reason: {e.__class__.__name__}")
             return [0] * len(self)
+
+    def indexes_to_snr_list(self, indexes, s=None) -> list[float]:
+        return [self.snr(s=s, l=i) for i in indexes]
 
 
     def delta_snr_list(self, after, before):
@@ -1112,7 +1110,7 @@ class DataModel:
 
 
     def snr_components(self, s=None, l=None, method=None) -> list[float]:
-        caller = inspect.stack()[1].function
+        clr = inspect.stack()[1].function
         if s == None: s = self.level
         if l == None: l = self.zpos
         if method == None:
@@ -1126,40 +1124,20 @@ class DataModel:
             else:
                 return [components]
         except:
-            logger.warning(f'No SNR components for section {l}, method {method} [caller: {caller}]...\n')
+            logger.warning(f'No SNR components for section {l}, method {method} [clr: {clr}]...\n')
             return []
 
-
-    def snr_report(self, s=None, l=None) -> str:
-        if s == None: s = self.level
-        if l == None: l = self.zpos
-        caller = inspect.stack()[1].function
-        logger.info(f"[{caller}]")
-        #Todo called too frequently by snr_errorbar_size
-        try:
-            method = self.method(s=s, l=l)
-            return self._data['stack'][l]['levels'][s]['results']['snr_report']
-        except:
-            logger.warning('No SNR Report for Layer %d' % l)
-            return ''
 
 
     def snr_errorbar_size(self, s=None, l=None):
         if s == None: s = self.level
         if l == None: l = self.zpos
         try:
-            # if l == 0:
-            #     return 0.0
-            # report = self.snr_report(s=s, l=l)
             return self._data['stack'][l]['levels'][s]['results']['snr_std_deviation']
-            # if not isinstance(report, str):
-            #     logger.debug(f'No SNR Report Available For Layer {l}, Returning 0.0...')
-            #     return 0.0
-            # substr = '+-'
-            # return float(report[report.index(substr) + 2: report.index(substr) + 5])
-        except:
-            print_exception()
-            return 0.0
+        except Exception as e:
+            logger.warning(f"[{l}] Unknown error bar size. Reason: {e.__class__.__name__}")
+            return 0.
+
 
 
     def snr_errorbars(self, s=None):
@@ -1187,8 +1165,8 @@ class DataModel:
                     max_snr.append(m)
             return max(max_snr)
         except:
-            caller = inspect.stack()[1].function
-            logger.warning('Unable to append maximum SNR, none found (%s) - Returning Empty List' % caller)
+            clr = inspect.stack()[1].function
+            logger.warning('Unable to append maximum SNR, none found (%s) - Returning Empty List' % clr)
             return 0.0
 
 
@@ -1200,7 +1178,7 @@ class DataModel:
 
 
     def snr_mean(self, scale=None) -> float:
-        # logger.info('caller: %level...' % inspect.stack()[1].function)
+        # logger.info('clr: %level...' % inspect.stack()[1].function)
         if scale == None: scale = self.level
         # NOTE: skip the first layer which does not have an SNR value level may be equal to zero
         try:
@@ -1212,8 +1190,8 @@ class DataModel:
     @property
     def current_method(self):
         try:
-            if 'method_opts' in self['stack'][self.zpos]['levels'][self.level]['swim_settings']:
-                return self['stack'][self.zpos]['levels'][self.level]['swim_settings']['method_opts']['method']
+            if 'method_opts' in self.SS:
+                return self.SS['method_opts']['method']
             else:
                 return None
         except:
@@ -1222,16 +1200,16 @@ class DataModel:
 
     @current_method.setter
     def current_method(self, str):
-        self._data['stack'][self.zpos]['levels'][self.scale]['swim_settings']['method_opts']['method'] = str
-        self.signals.dataChanged.emit()
+        self.SS['method_opts']['method'] = str
+        self.signals.swimArgsChanged.emit()
 
 
     def method(self, s=None, l=None):
         if s == None: s = self.level
         if l == None: l = self.zpos
         try:
-            if 'method_opts' in self['stack'][self.zpos]['levels'][self.level]['swim_settings']:
-                return self['stack'][self.zpos]['levels'][self.level]['swim_settings']['method_opts']['method']
+            if 'method_opts' in self.SS:
+                return self.SS['method_opts']['method']
             else:
                 return None
         except:
@@ -1313,80 +1291,51 @@ class DataModel:
         if s == None: s = self.level
         if l == None: l = self.zpos
         try:
-            # return self._data['stack'][l]['levels'][s]['results']['affine_matrix'] #1107-
-            return self.ht.get(self.saved_swim_settings())
-        except:
-            print_exception()
-            return [[[1, 0, 0], [0, 1, 0]]]
-
-    def afm_cur(self, s=None, l=None) -> list:
-        if s == None: s = self.level
-        if l == None: l = self.zpos
-        try:
-            # return self._data['stack'][l]['levels'][s]['results']['affine_matrix'] #1107-
-            return self.ht.get(self.swim_settings())
-        except:
-            print_exception()
+            return self['stack'][l]['levels'][s]['mir_afm']
+        except Exception as e:
+            logger.warning(f"[{l}] afm key not found in result data. Reason: {e.__class__.__name__}")
             return [[[1, 0, 0], [0, 1, 0]]]
 
     def mir_afm(self, s=None, l=None) -> list:
         if s == None: s = self.level
         if l == None: l = self.zpos
         try:
-            # return self._data['stack'][l]['levels'][s]['results']['affine_matrix'] #1107-
-            return self['stack'][l]['levels'][s]['results']['mir_afm']
-        except:
-            print_exception()
+            return self['stack'][l]['levels'][s]['mir_afm']
+        except Exception as e:
+            logger.warning(f"[{l}] mir_afm key not found in result data. Reason: {e.__class__.__name__}")
             return [[[1, 0, 0], [0, 1, 0]]]
 
     def mir_aim(self, s=None, l=None) -> list:
         if s == None: s = self.level
         if l == None: l = self.zpos
         try:
-            # return self._data['stack'][l]['levels'][s]['results']['affine_matrix'] #1107-
-            return self['stack'][l]['levels'][s]['results']['mir_aim']
-        except:
-            print_exception()
+            return self['stack'][l]['levels'][s]['mir_aim']
+        except Exception as e:
+            logger.warning(f"[{l}] mir_aim key not found in result data. Reason: {e.__class__.__name__}")
             return [[[1, 0, 0], [0, 1, 0]]]
 
     def cafm(self, s=None, l=None) -> list:
         if s == None: s = self.level
         if l == None: l = self.zpos
         try:
-            # return self._data['stack'][z]['levels'][level]['alignment']['method_results']['cumulative_afm'] #0802-
-            # method = self.method(s=s, l=l)
-            sss = self.saved_swim_settings(s=s, l=l)
             return self._data['stack'][l]['levels'][s]['cafm']
-            # return self.ht_cafm.get(sss)
-        except:
-            # caller = inspect.stack()[1].function
-            # print_exception(extra=f'Layer {z}, caller: {caller}')
-            exi = sys.exc_info()
-            logger.warning(f"[{l}] {exi[0]} {exi[1]}")
-            # return [[1, 0, 0], [0, 1, 0]]
+        except Exception as e:
+            logger.warning(f"[{l}] cafm key not found in result data. Reason: {e.__class__.__name__}")
+            return [[[1, 0, 0], [0, 1, 0]]]
 
     def alt_cafm(self, s=None, l=None) -> list:
         if s == None: s = self.level
         if l == None: l = self.zpos
         try:
-            # return self._data['stack'][z]['levels'][level]['alignment']['method_results']['cumulative_afm'] #0802-
-            # method = self.method(s=s, l=l)
-            # sss = self.saved_swim_settings(s=s, l=l)
             return self._data['stack'][l]['levels'][s]['alt_cafm']
-            # return self.ht_cafm.get(sss)
-        except:
-            # caller = inspect.stack()[1].function
-            # print_exception(extra=f'Layer {z}, caller: {caller}')
-            exi = sys.exc_info()
-            logger.warning(f"[{l}] {exi[0]} {exi[1]}")
-            # return [[1, 0, 0], [0, 1, 0]]
+        except Exception as e:
+            logger.warning(f"[{l}] alt_cafm key not found in result data. Reason: {e.__class__.__name__}")
+            return [[[1, 0, 0], [0, 1, 0]]]
 
 
     def cafmHash(self, s=None, l=None):
         return abs(hash(str(self.cafm(s=s, l=l))))
 
-    # if self.ht.haskey(self.saved_swim_settings()):
-    #     d = self.ht.get(self.saved_swim_settings())
 
 
     def afm_list(self, s=None, l=None) -> list:
@@ -1434,18 +1383,9 @@ class DataModel:
         #Todo make this not use global
         do = []
         for i in range(len(self)):
-            if not self.ht.haskey(self.saved_swim_settings(s=s, l=i)):
+            if not self.ht.haskey(self.swim_settings(s=s, l=i)):
                 do.append(i)
         return do
-
-    def hasUnsavedChangesIndexes(self, s=None):
-        #Todo create warning for this
-        if s == None: s = self.level
-        answer = []
-        for i in range(len(self)):
-            if not self.ssSavedComports(s=s, l=i):
-                answer.append(i)
-        return answer
 
 
     def all_comports_indexes(self, s=None):
@@ -1575,7 +1515,6 @@ class DataModel:
         if s == None: s = self.level
         if l == None: l = self.zpos
         try:
-            # return bool(self._data['stack'][z]['levels'][level]['skipped'])
             return not bool(self._data['stack'][l]['levels'][s]['swim_settings']['include'])
         except IndexError:
             logger.warning(f'Index {l} is out of range.')
@@ -1590,26 +1529,15 @@ class DataModel:
     def include(self, s=None, l=None) -> bool:
         if s == None: s = self.level
         if l == None: l = self.zpos
-        #this needs
         return bool(self['stack'][l]['levels'][s]['swim_settings']['include'])
 
-
-    def set_skip(self, b: bool, s=None, l=None) -> None:
-        if s == None: s = self.level
-        if l == None: l = self.zpos
-        '''Sets the Bounding Rectangle On/Off State for the Current Scale.'''
-        self._data['stack'][l]['levels'][s]['skipped'] = b
-        self._data['stack'][l]['levels'][s]['swim_settings']['include'] = not b #Todo refactor
-        self._data['stack'][l]['levels'][s]['saved_swim_settings']['include'] = not b
 
     def set_include(self, b: bool, s=None, l=None) -> None:
         if s == None: s = self.level
         if l == None: l = self.zpos
         '''Sets the Bounding Rectangle On/Off State for the Current Scale.'''
-        self._data['stack'][l]['levels'][s]['skipped'] = not b
-        self._data['stack'][l]['levels'][s]['swim_settings']['include'] = b  # Todo refactor
-        self._data['stack'][l]['levels'][s]['saved_swim_settings']['include'] = b
-
+        self.SS['include'] = b
+        self.signals.swimArgsChanged.emit()
 
     def skips_list(self, level=None) -> list:
         '''Returns the list of excluded images for a level'''
@@ -1635,20 +1563,6 @@ class DataModel:
                 indexes.append(i)
         return indexes
 
-    def skips_by_name(self, s=None) -> list[str]:
-        '''Returns the list of skipped images for a level'''
-        if s == None: s = self.level
-        lst = []
-        try:
-            for i in range(len(self)):
-                if not self.include(s=s,l=i):
-                    f = os.path.basename(self['stack'][i]['levels'][s]['swim_settings']['file_path'])
-                    lst.append(f)
-            return lst
-        except:
-            logger.warning('Unable to To Return Skips By Name List')
-            return []
-
 
     def swim_iterations(self, s=None, l=None):
         if s == None: s = self.level
@@ -1660,7 +1574,7 @@ class DataModel:
         if s == None: s = self.level
         if l == None: l = self.zpos
         self._data['stack'][l]['levels'][s]['swim_settings']['iterations'] = val
-        self.signals.dataChanged.emit()
+        self.signals.swimArgsChanged.emit()
 
     def swim_settings(self, s=None, l=None):
         '''Returns SWIM preferences as a hashable dictionary'''
@@ -1668,33 +1582,6 @@ class DataModel:
         if l == None: l = self.zpos
         return HashableDict(self._data['stack'][l]['levels'][s]['swim_settings'])
         # return self._data['stack'][l]['levels'][s]['swim_settings']
-
-    def saved_swim_settings(self, s=None, l=None):
-        '''Returns the Saved SWIM preferences as a hashable dictionary'''
-        if s == None: s = self.level
-        if l == None: l = self.zpos
-        return HashableDict(self._data['stack'][l]['levels'][s]['saved_swim_settings'])
-        # return self._data['stack'][l]['levels'][s]['saved_swim_settings']
-
-    def saveSettings(self, s=None, l=None, signal=True):
-        if s == None: s = self.level
-        if l == None: l = self.zpos
-        if self.ht.haskey(self.swim_settings(s=s, l=l)):
-            self._data['stack'][l]['levels'][s]['saved_swim_settings'].update(copy.deepcopy(self.swim_settings(s=s, l=l)))
-        else:
-            cfg.mw.err(f"Unable to save settings at index {l}: Alignment result is unknown")
-        # self.set_stack_cafm(s=s) #1019- # Not believe this should be needed
-        if signal:
-            self.signals.savedChanged.emit()
-
-
-    def saveAllSettings(self, s=None):
-        if s == None: s = self.level
-        #Todo #Critical perform checks to see what can actually be saved, i.e. have an affine for
-        for i in range(len(self)):
-            self.saveSettings(s=s, l=i, signal=False)
-        # self.set_stack_cafm(s=s) #1019- # Not believe this should be needed
-        self.signals.savedChanged.emit()
 
 
     def ssHash(self, s=None, l=None):
@@ -1704,55 +1591,18 @@ class DataModel:
         # return abs(hash(HashableDict(self.swim_settings(s=s, l=l))))
         return abs(hash(self.swim_settings(s=s, l=l)))
 
-    def ssSavedHash(self, s=None, l=None):
-        '''Returns the Saved SWIM preferences as a hashable dictionary'''
-        if s == None: s = self.level
-        if l == None: l = self.zpos
-        return abs(hash(self.saved_swim_settings(s=s, l=l)))
 
-    def ssSavedComports(self, s=None, l=None):
-        if s == None: s = self.level
-        if l == None: l = self.zpos
-        return self.ssHash(s=s, l=l) == self.ssSavedHash(s=s, l=l)
-
-    def ssSavedComportsIndexes(self, s=None):
-        if s == None: s = self.level
-        indexes = []
-        for i in range(len(self)):
-            if not self.ssSavedComports(s=s, l=i):
-                indexes.append(i)
-        return indexes
-
-    def restoreSavedSettings(self, s=None, l=None):
-        if s == None: s = self.level
-        if l == None: l = self.zpos
-        self['stack'][l]['levels'][s]['swim_settings'].update(copy.deepcopy(self.saved_swim_settings()))
-        self.signals.savedChanged.emit()
 
     def unknownAnswerIndexes(self, s=None):
         if s == None: s = self.level
         indexes = []
         for i in range(len(self)):
-            if not self.ht.haskey(self.swim_settings(s=s, l=i)):
+            try:
+                assert np.array(self['stack'][i]['levels'][s]['mir_afm']).shape == (2, 3)
+            except:
                 indexes.append(i)
         return indexes
 
-    def unknownSavedAnswerIndexes(self, s=None):
-        if s == None: s = self.level
-        indexes = []
-        for i in range(len(self)):
-            if not self.ht.haskey(self.saved_swim_settings(s=s, l=i)):
-                indexes.append(i)
-        return indexes
-
-
-    def knownAnswerUnsavedIndexes(self, s=None):
-        if s == None: s = self.level
-        indexes = []
-        for i in range(len(self)):
-            if self.ht.haskey(self.swim_settings(s=s, l=i)) and not self.ssSavedComports(s=s, l=i):
-                indexes.append(i)
-        return indexes
 
 
     def zarrCafmHashComports(self, s=None, l=None):
@@ -1781,7 +1631,7 @@ class DataModel:
         for i in range(len(self)):
             if self['stack'][i]['levels'][self.level]['swim_settings']['method_opts']['method'] == 'grid':
                 self['stack'][i]['levels'][self.level]['swim_settings']['method_opts']['size_1x1'] = [val, val_y]
-        self.signals.dataChanged.emit()
+        self.signals.swimArgsChanged.emit()
 
     def aa2x2(self, val):
         val = ensure_even(val)
@@ -1792,7 +1642,7 @@ class DataModel:
         for i in range(len(self)):
             if self['stack'][i]['levels'][self.level]['swim_settings']['method_opts']['method'] == 'grid':
                 self['stack'][i]['levels'][self.level]['swim_settings']['method_opts']['size_2x2'] = [val, val_y]
-        self.signals.dataChanged.emit()
+        self.signals.swimArgsChanged.emit()
 
     def aaQuadrants(self, lst):
         cfg.mw.tell(f"Setting default SWIM grid quadrants: {lst}")
@@ -1800,21 +1650,21 @@ class DataModel:
         for i in range(len(self)):
             if self['stack'][i]['levels'][self.level]['swim_settings']['method_opts']['method'] == 'grid':
                 self['stack'][i]['levels'][self.level]['swim_settings']['method_opts']['quadrants'] = lst
-        self.signals.dataChanged.emit()
+        self.signals.swimArgsChanged.emit()
 
     def aaIters(self, val):
         cfg.mw.tell(f"Setting default SWIM iterations: {val}")
         self['level_data'][self.level]['defaults']['iterations'] = val
         for i in range(len(self)):
             self['stack'][i]['levels'][self.level]['swim_settings']['iterations'] = val
-        self.signals.dataChanged.emit()
+        self.signals.swimArgsChanged.emit()
 
     def aaWhitening(self, val):
         cfg.mw.tell(f"Setting default SWIM whitening factor: {val}")
         self['level_data'][self.level]['defaults']['whitening'] = val
         for i in range(len(self)):
             self['stack'][i]['levels'][self.level]['swim_settings']['whitening'] = val
-        self.signals.dataChanged.emit()
+        self.signals.swimArgsChanged.emit()
 
     def aaClobber(self, tup):
         if tup[0]:
@@ -1826,7 +1676,7 @@ class DataModel:
         for i in range(len(self)):
             self['stack'][i]['levels'][self.level]['swim_settings']['clobber'] = tup[0]
             self['stack'][i]['levels'][self.level]['swim_settings']['clobber_size'] = tup[1]
-        self.signals.dataChanged.emit()
+        self.signals.swimArgsChanged.emit()
 
 
     def size1x1(self, s=None, l=None):
@@ -1843,11 +1693,11 @@ class DataModel:
         img_w, img_h = self.image_size(s=self.level)
         pixels = pixels
         pixels_y = (pixels / img_w) * img_h
-        self._data['stack'][self.zpos]['levels'][self.level]['swim_settings']['method_opts']['size_1x1'] = [pixels,pixels_y]
+        self.SS['method_opts']['size_1x1'] = [pixels,pixels_y]
         if (self.size2x2()[0] * 2) > pixels:
-            self._data['stack'][self.zpos]['levels'][self.level]['swim_settings']['method_opts']['size_2x2'] = [int(pixels / 2  + 0.5), int(pixels_y / 2 + 0.5)]
+            self.SS['method_opts']['size_2x2'] = [int(pixels / 2  + 0.5), int(pixels_y / 2 + 0.5)]
         if not silent:
-            self.signals.dataChanged.emit()
+            self.signals.swimArgsChanged.emit()
 
     def size2x2(self, s=None, l=None):
         '''Returns the SWIM Window in pixels'''
@@ -1859,22 +1709,22 @@ class DataModel:
 
     def set_size2x2(self, pixels=None, silent=False):
         '''Returns the SWIM Window in pixels'''
-        # caller = inspect.stack()[1].function
+        # clr = inspect.stack()[1].function
         pixels = ensure_even(pixels)
 
         img_w, img_h = self.image_size(s=self.level)
         pixels_y = (pixels / img_w) * img_h
 
         if (2 * pixels) <= self.size1x1()[0]:
-            self._data['stack'][self.zpos]['levels'][self.level]['swim_settings']['method_opts']['size_2x2'] = [pixels, pixels_y]
+            self.SS['method_opts']['size_2x2'] = [pixels, pixels_y]
         else:
             force_pixels = [int(self.size1x1()[0] / 2 + 0.5), int(self.size1x1()[1] / 2 + 0.5)]
             if (force_pixels[0] % 2) == 1:
                 force_pixels[0] -= 1
                 force_pixels[1] -= 1
-            self._data['stack'][self.zpos]['levels'][self.level]['swim_settings']['method_opts']['size_2x2'] = force_pixels
+            self.SS['method_opts']['size_2x2'] = force_pixels
         if not silent:
-            self.signals.dataChanged.emit()
+            self.signals.swimArgsChanged.emit()
 
 
     def manual_swim_window_px(self, s=None, l=None) -> int:
@@ -1891,9 +1741,9 @@ class DataModel:
     #
     #     dec = float(pixels / self.image_size()[0])
     #
-    #     self['stack'][self.zpos]['levels'][self.level]['swim_settings']['method_opts']['size'] = dec
+    #     self.SS['method_opts']['size'] = dec
     #     if not silent:
-    #         self.signals.dataChanged.emit()
+    #         self.signals.swimArgsChanged.emit()
 
     def set_manual_swim_window_dec(self, dec:float, s=None, l=None):
         if s == None: s = self.level
@@ -1901,8 +1751,8 @@ class DataModel:
         dec = float(dec)
         assert dec < 1
         assert dec > 0
-        self['stack'][self.zpos]['levels'][self.level]['swim_settings']['method_opts']['size'] = dec
-        self.signals.dataChanged.emit()
+        self.SS['method_opts']['size'] = dec
+        self.signals.swimArgsChanged.emit()
 
 
     def image_size(self, s=None) -> tuple:
@@ -1965,7 +1815,7 @@ class DataModel:
 
 
     def first_included(self, s=None):
-        # logger.info(f"{caller_name()}")
+        # logger.info(f"{clr_name()}")
         if s == None: s = self.level
         for section in self.get_iter(s=s):
             # print(section['levels'][s]['swim_settings'])
@@ -1973,25 +1823,24 @@ class DataModel:
                 return section['levels'][s]['swim_settings']['index']
 
 
-    def linkReference(self, level):
-        logger.info(f'[{level}]')
-        skip_list = self.exclude_indices(s=level)
-        for layer_index in range(len(self)):
-            j = layer_index - 1  # Find nearest previous non-skipped z
+    def linkReference(self, s=None):
+        if s == None:
+            s = self.level
+        logger.info(f'[{s}]')
+        skip_list = self.exclude_indices(s=s)
+        for i in range(len(self)):
+            j = i - 1  # Find nearest previous non-skipped z
             while (j in skip_list) and (j >= 0):
                 j -= 1
             if (j not in skip_list) and (j >= 0):
-                ref = self.path(s=level, l=j)
+                ref = self.path(s=s, l=j)
                 # self['stack'][layer_index]['levels'][level]['swim_settings']['reference'] = ref
-                self['stack'][layer_index]['levels'][level]['swim_settings']['reference_index'] = j
-                self['stack'][layer_index]['levels'][level]['swim_settings']['reference_name'] = os.path.basename(ref)
-                self['stack'][layer_index]['levels'][level]['saved_swim_settings']['reference_index'] = j
-                self['stack'][layer_index]['levels'][level]['saved_swim_settings']['reference_name'] = os.path.basename(ref)
+                self['stack'][i]['levels'][s]['swim_settings']['reference_index'] = j
+                self['stack'][i]['levels'][s]['swim_settings']['reference_name'] = os.path.basename(ref)
         # self['stack'][self.first_included(s=level)]['levels'][level]['swim_settings']['reference'] = ''  # 0804
-        self['stack'][self.first_included(s=level)]['levels'][level]['swim_settings']['reference_index'] = None
-        self['stack'][self.first_included(s=level)]['levels'][level]['swim_settings']['reference_name'] = None
-        self['stack'][self.first_included(s=level)]['levels'][level]['saved_swim_settings']['reference_index'] = None
-        self['stack'][self.first_included(s=level)]['levels'][level]['saved_swim_settings']['reference_name'] = None
+        self['stack'][self.first_included(s=s)]['levels'][s]['swim_settings']['reference_index'] = None
+        self['stack'][self.first_included(s=s)]['levels'][s]['swim_settings']['reference_name'] = None
+
 
 
     def getSWIMSettings(self, s=None, l=None):
@@ -2019,7 +1868,7 @@ class DataModel:
             #Check if default preferences are in use for each layer, if so, update with new preferences
             if self.isDefaults(l=l):
                 self['stack'][l]['levels'][self.level]['swim_settings'].update(copy.deepcopy(new_settings))
-        self.signals.dataChanged.emit()
+        self.signals.swimArgsChanged.emit()
 
     def applyDefaults(self, s=None, l=None):
         if s == None: s = self.level
@@ -2027,7 +1876,7 @@ class DataModel:
         def_settings = copy.deepcopy(self['level_data'][self.level]['defaults'])
         logger.info(f"Applying default preferences...")
         self['stack'][l]['levels'][s]['swim_settings'].update(def_settings)
-        self.signals.dataChanged.emit()
+        self.signals.swimArgsChanged.emit()
 
     def getSwimPresets(self) -> dict:
         logger.info('')
@@ -2102,11 +1951,6 @@ class DataModel:
 
     #### Pulls the settings from the previous scale level ####
     def pullSettings(self, all=True):
-        '''
-        Saving pulls the scaling factor-adjusted 'saved_swim_settings' from previous scale.
-        'saved_swim_settings' is populated on the first 'Align All' of each scale, so will always be available.
-
-        '''
         logger.critical("\n\nPulling settings...\n")
         if self.level == self.coarsest_scale_key():
             cfg.mw.err("Cannot pull SWIM settings from a coarser resolution level. \n"
@@ -2168,7 +2012,7 @@ class DataModel:
                     mo['size_2x2'][0] *= sf
                     mo['size_2x2'][1] *= sf
                 try:
-                    init_afm = copy.deepcopy(self.ht.get(self.saved_swim_settings(s=prev_level, l=i)))
+                    init_afm = copy.deepcopy(self.afm(s=prev_level, l=i))
                 except:
                     print_exception(extra=f'Section #{i}. Using identity instead...')
                     init_afm = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
@@ -2182,9 +2026,6 @@ class DataModel:
                                    f"identity matrix until a valid affine is propagated.")
                 ss['init_afm'] = init_afm
 
-                #Critical #1015+
-                self['stack'][i]['levels'][cur_level]['saved_swim_settings'].update(copy.deepcopy(
-                    self['stack'][i]['levels'][cur_level]['swim_settings']))
         except Exception as e:
             cfg.mw.warn(f"Unable to propagate settings. Reason: {e.__class__.__name__}")
         else:
@@ -2281,15 +2122,6 @@ class DataModel:
                     initialized=False,
                     cafm=identity_matrix,
                     cafm_inv=identity_matrix,
-                    saved_swim_settings={
-                        'index': i,
-                        'name': basename,
-                        'level': level,
-                        'include': True,
-                        'is_refinement': self.isRefinement(level=level),
-                        'img_size': self['images']['size_xy'][level],
-                        'init_afm': identity_matrix,
-                    },
                     swim_settings={
                         'index': i,
                         'name': basename,
@@ -2329,7 +2161,7 @@ class DataModel:
                 },
                 results={},
             )
-            self.linkReference(level=level)
+            self.linkReference(s=level)
 
             self['level_data'][level]['defaults'].update(copy.deepcopy(swim_presets), method_opts=copy.deepcopy(
                 method_presets[level]['grid']))
@@ -2341,10 +2173,6 @@ class DataModel:
             )
 
             for i in range(len(self)):
-                self['stack'][i]['levels'][level]['saved_swim_settings'].update(
-                    copy.deepcopy(swim_presets),
-                    method_opts=copy.deepcopy(method_presets[level]['grid']),
-                )
                 self['stack'][i]['levels'][level]['swim_settings'].update(
                     copy.deepcopy(swim_presets),
                     method_opts=copy.deepcopy(method_presets[level]['grid']),
@@ -2352,7 +2180,7 @@ class DataModel:
 
 
     def save(self, silently=False):
-        caller = inspect.stack()[1].function
+        clr = inspect.stack()[1].function
         p = self.data_file_path
         if hasattr(self, 'ht'):
             if type(self.ht) == Cache:
@@ -2360,19 +2188,19 @@ class DataModel:
                     self.ht.pickle()
                 except Exception as e:
                     print_exception()
-                    cfg.mw.warn(f"[{caller}] Cache failed to save; this is not fatal. Reason: {e.__class__.__name__}")
+                    cfg.mw.warn(f"[{clr}] Cache failed to save; this is not fatal. Reason: {e.__class__.__name__}")
             else:
                 logger.warning("Creating a new cache table")
                 self.ht = Cache(self)
         try:
             if not silently:
                 cfg.mw.tell(f"Saving '{p}'...")
-                logger.critical(f"[{caller}]\nSaving >> '{p}'")
+                logger.critical(f"[{clr}]\nSaving >> '{p}'")
             try:
                 write('json')(p, self._data)
             except:
                 if not silently:
-                    cfg.mw.err(f"[{caller}] Unable to save to file. Reason: {e.__class__.__name__}")
+                    cfg.mw.err(f"[{clr}] Unable to save to file. Reason: {e.__class__.__name__}")
                 print_exception()
             else:
                 if not silently:
@@ -2382,7 +2210,7 @@ class DataModel:
         except Exception as e:
             print_exception()
             logger.critical(f"Error Saving: {p} !!")
-            cfg.mw.err(f"[{caller}] Unable to save to file. Reason: {e.__class__.__name__}")
+            cfg.mw.err(f"[{clr}] Unable to save to file. Reason: {e.__class__.__name__}")
         else:
             logger.info(f"Save successful!")
 
@@ -2468,6 +2296,13 @@ class HashableDict(dict):
     def __hash__(self):
         # return abs(hash(str(sorted(self.items()))))
         return abs(hash(str(sorted(self.items()))))
+
+
+'''
+except Exception as e:
+    logger.warning(f"[{l}] . Reason: {e.__class__.__name__}")
+
+'''
 
 if __name__ == '__main__':
     data = DataModel()

@@ -308,7 +308,7 @@ class MainWindow(QMainWindow):
             if self._isProjectTab():
                 self.pt.refreshTab()
             elif self._isOpenProjTab():
-                self.pm.refresh()
+                self.pm.resetView(init_viewer=True)
             elif self._getTabType() == 'WebBrowser':
                 self._getTabObject().browser.page().triggerAction(QWebEnginePage.Reload)
             elif self._getTabType() == 'QWebEngineView':
@@ -328,8 +328,9 @@ class MainWindow(QMainWindow):
             ng.server.stop()
             time.sleep(.1)
 
-    def tell(self, message):
-        hudlogger.info(f"[HUD] {message}")
+    def tell(self, message, console=True):
+        if console:
+            hudlogger.info(f"[HUD] {message}")
         self.hud.post(message, level=logging.INFO)
         QApplication.processEvents()
         self.update()
@@ -923,6 +924,10 @@ class MainWindow(QMainWindow):
             delta_snr_list = self.dm.delta_snr_list(snr_after, snr_before)
             delta_list = [delta_snr_list[i] for i in indexes]
             no_chg = [i for i, x in enumerate(delta_list) if x == 0]
+            fi = dm.first_included()
+            if fi in no_chg:
+                no_chg.remove(fi)
+
             pos = [i for i, x in enumerate(delta_list) if x > 0]
             neg = [i for i, x in enumerate(delta_list) if x < 0]
             n1 = len(no_chg)
@@ -1013,7 +1018,7 @@ class MainWindow(QMainWindow):
                 indexes = list(range(0,len(self.dm)))
                 self.align(dm=self.dm, indexes=indexes)
             else:
-                logger.warning("This scale is not alignable!")
+                self.warn("This scale is not alignable!")
 
 
     @Slot()
@@ -1021,13 +1026,13 @@ class MainWindow(QMainWindow):
         logger.info("")
 
         #Todo build out pre-generate checks
-        _err_indexes = dm.unknownSavedAnswerIndexes()
-        if len(_err_indexes) > 0:
-            self.err(f"No alignments for indexes: {', '.join(map(str, _err_indexes))}")
-            self._refresh()
-            return
-        else:
-            self.tell("All checks passed...")
+        # _err_indexes = dm.unknownSavedAnswerIndexes()
+        # if len(_err_indexes) > 0:
+        #     self.err(f"No alignments for indexes: {', '.join(map(str, _err_indexes))}")
+        #     self._refresh()
+        #     return
+        # else:
+        #     self.tell("All checks passed...")
 
         _ignore_cache = False
         if self._isProjectTab():
@@ -1053,6 +1058,7 @@ class MainWindow(QMainWindow):
                 self._zarrworker.progress.connect(self.setPbar)
                 self._zarrworker.initPbar.connect(self.resetPbar)
                 self._zarrworker.hudMessage.connect(self.tell)
+                # self._zarrworker.hudMessage.connect(lambda x: self.tell(x, console=False))
                 self._zarrworker.hudWarning.connect(self.warn)
                 self._zarrworker.finished.connect(self._zarrThread.quit)
                 self._zarrworker.finished.connect(lambda: dm.save(silently=True))
@@ -1076,7 +1082,7 @@ class MainWindow(QMainWindow):
             _ignore_cache = self.pt.cbIgnoreCache.isChecked()
         ready = dm['level_data'][dm.scale]['alignment_ready']
         if not ready:
-            self.warn("Must propagate settings before aligning!")
+            self.warn("Propagate settings before aligning!")
             return
 
         if dm.level != dm.coarsest_scale_key():
@@ -1118,11 +1124,13 @@ class MainWindow(QMainWindow):
             path=None,
             scale=scale,
             indexes=indexes,
+            prev_snr=self._snr_before,
             ignore_cache=_ignore_cache,
         )  # Step 3: Create a worker object
         self._alignworker.progress.connect(self.setPbar)
         self._alignworker.initPbar.connect(self.resetPbar)
-        self._alignworker.hudMessage.connect(self.tell)
+        # self._alignworker.hudMessage.connect(self.tell)
+        self._alignworker.hudMessage.connect(lambda x: self.tell(x, console=False))
         self._alignworker.hudWarning.connect(self.warn)
         logger.info("Connecting worker signals...")
         self._alignThread.started.connect(self._alignworker.run)  # Step 5: Connect signals and slots
@@ -1143,12 +1151,12 @@ class MainWindow(QMainWindow):
         self._alignworker.finished.connect(lambda: self.pt.dSnr_plot.initSnrPlot())
         self._alignworker.finished.connect(self.updateEnabledButtons)
         self._alignworker.finished.connect(lambda: self.pt.updateTab0UI())
-        self._alignworker.finished.connect(lambda: self.present_snr_results(dm, indexes))
         # self._alignworker.finished.connect(lambda: self.pt.initNeuroglancer(init_all=True))
         self._alignworker.finished.connect(lambda: self.pt.initNeuroglancer())
+        self._alignworker.finished.connect(lambda: self.bAlign.setEnabled(True))
 
         self._alignworker.finished.connect(lambda: setattr(self, '_working', False))
-        self._alignworker.finished.connect(lambda: self.tell(f'<span style="color: #FFFF66;"><b>**** All Processes Complete ****</b></span>'))
+        # self._alignworker.finished.connect(lambda: self.tell(f'<span style="color: #FFFF66;"><b>**** All Processes Complete ****</b></span>'))
         self._alignThread.start()  # Step 6: Start the thread
 
 
@@ -1178,7 +1186,7 @@ class MainWindow(QMainWindow):
         self._scaleworker.finished.connect(lambda: self.pm.bCreateImages.setEnabled(True))
         def fn():
             self.saveUserPreferences()
-            self.pm.refresh()
+            self.pm.resetView(init_viewer=True)
         self._scaleworker.finished.connect(fn)
         self._scaleworker.finished.connect(lambda: self.tell(f'<span style="color: #FFFF66;"><b>**** All Processes Complete ****</b></span>'))
         self._scaleworker.progress.connect(self.setPbar)
@@ -1210,7 +1218,7 @@ class MainWindow(QMainWindow):
         self.bAlign.setEnabled(True)
         self.bArrowDown.setEnabled(True)
         self.bArrowUp.setEnabled(True)
-        self.cbSkip.setEnabled(True)
+        self.cbInclude.setEnabled(True)
         self.cbBB.setEnabled(True)
         self.cbxBias.setEnabled(True)
         self.startRangeInput.setEnabled(True)
@@ -1227,26 +1235,12 @@ class MainWindow(QMainWindow):
             _enable = _is_alignable and _count_unknown_answer_indexes > 0
             # logger.info(f'_enable: {_enable} // _is_alignable: {_is_alignable} // _count_unknown_answer_indexes: {_count_unknown_answer_indexes}')
             if _enable:
-                self.bAlign.setText(f"Align All ({_count_unknown_answer_indexes})")
+                # self.bAlign.setText(f"Align All ({_count_unknown_answer_indexes})")
+                self.bAlign.setText(f"Align")
             else:
-                self.bAlign.setText(f"Align All")
+                # self.bAlign.setText(f"Align All")
+                self.bAlign.setText(f"Align")
             # self.bAlign.setEnabled(_enable)
-
-            _current_saved = self.dm.ssSavedComports()
-            _has_alignment_result = self.dm.ht.haskey(self.dm.swim_settings())
-            self.pt.bSaveSettings.setEnabled(not _current_saved and _has_alignment_result) #Critical
-
-            _known_unsaved_indexes = self.dm.knownAnswerUnsavedIndexes()
-            _n_known_unsaved = len(_known_unsaved_indexes)
-            _all_consistent = _n_known_unsaved == 0
-
-            if _all_consistent:
-                self.pt.bSaveAllSettings.setText("Save All Results")
-            else:
-                self.pt.bSaveAllSettings.setText(f"Save All Results ({_n_known_unsaved})")
-
-            self.pt.bSaveAllSettings.setEnabled(not _all_consistent)
-
 
     
     def updateEnabledButtons(self) -> None:
@@ -1280,7 +1274,7 @@ class MainWindow(QMainWindow):
                 self.pt.bTransform.setEnabled(True)
             except:
                 print_exception()
-            self.cbSkip.setEnabled(True)
+            self.cbInclude.setEnabled(True)
             self.boxScale.setEnabled(True)
             self.bLeftArrow.setEnabled(True)
             self.bRightArrow.setEnabled(True)
@@ -1292,7 +1286,8 @@ class MainWindow(QMainWindow):
             self.boxScale.setEnabled(True)
 
             # self.bAlign.setEnabled(self.dm.is_alignable() and self.dm['level_data'][self.dm.scale]['alignment_ready'])
-            # self.bAlign.setEnabled(True)
+            # self.bAlign.setEnabled(self.dm.is_alignable())
+            self.bAlign.setEnabled(True)
             self.updateAlignAllButtonText()
             self.setStatusInfo()
 
@@ -1318,7 +1313,7 @@ class MainWindow(QMainWindow):
             self.bArrowDown.setEnabled(False)
             self.bLeftArrow.setEnabled(False)
             self.bRightArrow.setEnabled(False)
-            self.cbSkip.setEnabled(False)
+            self.cbInclude.setEnabled(False)
             self.sldrZpos.setRange(0, 1)
             self.sldrZpos.setValue(0)
             self.sldrZpos.setEnabled(False)
@@ -1393,7 +1388,7 @@ class MainWindow(QMainWindow):
         if self._isProjectTab():
             self.leJump.setText(str(self.dm.zpos))
             self.sldrZpos.setValue(self.dm.zpos)
-            self.cbSkip.setChecked(not self.dm.skipped())
+            self.cbInclude.setChecked(not self.dm.skipped())
             self.bLeftArrow.setEnabled(self.dm.zpos > 0)
             self.bRightArrow.setEnabled(self.dm.zpos < len(self.dm) - 1)
             if self.dwSnr.isVisible():
@@ -1406,20 +1401,20 @@ class MainWindow(QMainWindow):
 
 
     def setStatusInfo(self):
-        status_msg = ""
-        us = self.dm.ssSavedComportsIndexes()  # unsaved indexes
-        if len(us) == 0:
-            # status_msg += f"--"
-            status_msg += f"--"
-            # status_msg += f"None Unsaved"
-        elif len(us) < 7:
-            status_msg += f"{len(us)}/{len(self.dm)} Unsaved: "
-            status_msg += ', '.join(map(str, us))
-        else:
-            status_msg += f"{len(us)}/{len(self.dm)} Unsaved: "
-            status_msg += f'{str(us[0])}, {str(us[1])}, {str(us[2])},...{str(us[-3])}, {str(us[-2])}, {str(us[-1])}'
-
-        self.statusBar.showMessage(status_msg)
+        # status_msg = ""
+        # us = self.dm.ssSavedComportsIndexes()  # unsaved indexes
+        # if len(us) == 0:
+        #     # status_msg += f"--"
+        #     status_msg += f"--"
+        #     # status_msg += f"None Unsaved"
+        # elif len(us) < 7:
+        #     status_msg += f"{len(us)}/{len(self.dm)} Unsaved: "
+        #     status_msg += ', '.join(map(str, us))
+        # else:
+        #     status_msg += f"{len(us)}/{len(self.dm)} Unsaved: "
+        #     status_msg += f'{str(us[0])}, {str(us[1])}, {str(us[2])},...{str(us[-3])}, {str(us[-2])}, {str(us[-1])}'
+        # self.statusBar.showMessage(status_msg)
+        self.statusBar.showMessage('')
 
 
     def ifDwThumbsIsVisible(self, dm):
@@ -2102,45 +2097,10 @@ class MainWindow(QMainWindow):
             print_exception()
 
 
-    def _callbk_skipChanged(self, state: int):  # 'state' is connected to skipped toggle
-        '''Callback Function for Skip Image Toggle'''
-        #Todo refactor
-        caller = inspect.stack()[1].function
-        if caller == 'main':
-            if self._isProjectTab():
-                logger.critical(f'[{caller}]')
-                if caller != 'updateSlidrZpos':
-                    logger.info(f'[{caller}]')
-                    _is_checked = self.cbSkip.isChecked()
-                    self.dm.set_include(_is_checked, l=self.dm.zpos)
-
-                    self.tell(f'Include: {_is_checked}')
-                    self.dm.linkReference(level=self.dm.level)
-
-                    # if getData('state,blink'):
-                    if self.dm.is_aligned():
-                        self.dm.set_stack_cafm()
-
-                    # self.pt.project_table.set_row_data(row=layer)
-
-                    # #Todo Fix this. This is just a kluge to make the data reflect correct data for now.
-                    # for x in range(0,5):
-                    #     if layer + x in range(0,len(self.dm)):
-                    #         self.pt.project_table.set_row_data(row=layer + x)
-
-                    if self.pt.wTabs.currentIndex() == 2:
-                        self.pt.snr_plot.initSnrPlot()
-
-                    if self.dwSnr.isVisible():
-                        self.pt.dSnr_plot.initSnrPlot()
-
-                    self.dataUpdateWidgets()
-
-
-    def skip_change_shortcut(self):
-        logger.info('')
-        if self.dm:
-            self.cbSkip.setChecked(not self.cbSkip.isChecked())
+    # def skip_change_shortcut(self):
+    #     logger.info('')
+    #     if self.dm:
+    #         self.cbInclude.setChecked(not self.cbInclude.isChecked())
 
     def show_run_path(self) -> None:
         '''Prints the current working directory (os.getcwd), the 'running in' file_path, and sys.file_path.'''
@@ -2971,8 +2931,13 @@ class MainWindow(QMainWindow):
         [b.setEnabled(False) for b in self._lower_tb_buttons]
         # QApplication.restoreOverrideCursor()
 
+        self.hud.clear_display()
+
         if self._isOpenProjTab():
             self.pm.initPMviewer()
+            self.tell(f"Alignment Manager...")
+        # else:
+
         # else:
         #     if hasattr(self.pm, 'viewer'):
         #         del self.pm.viewer
@@ -2988,8 +2953,12 @@ class MainWindow(QMainWindow):
             # self.pt.initNeuroglancer(init_all=True)  # 0815-
             self.pt.initNeuroglancer()  # 0815-
 
+            self.tell(f"Aligning {Path(self.dm['info']['file_path']).name}...")
+
             # self.updateLowest8widget()
             [b.setEnabled(True) for b in self._lower_tb_buttons]
+
+            self.cbInclude.setChecked(self.dm.include())
 
             # self.pt.dataUpdateMA()
             self.dwThumbs.setWidget(self.pt.tableThumbs)
@@ -3314,11 +3283,11 @@ class MainWindow(QMainWindow):
         self.alignOneAction.triggered.connect(self.alignOne)
         alignMenu.addAction(self.alignOneAction)
 
-        self.skipChangeAction = QAction('Toggle Include', self)
-        # self.skipChangeAction.triggered.connect(self.skip_change_shortcut)
-        # self.skipChangeAction.setShortcut('Ctrl+K')
-        self.addAction(self.skipChangeAction)
-        alignMenu.addAction(self.skipChangeAction)
+        # self.skipChangeAction = QAction('Toggle Include', self)
+        # # self.skipChangeAction.triggered.connect(self.skip_change_shortcut)
+        # # self.skipChangeAction.setShortcut('Ctrl+K')
+        # self.addAction(self.skipChangeAction)
+        # alignMenu.addAction(self.skipChangeAction)
 
         ngMenu = self.menu.addMenu("Neuroglancer")
 
@@ -3793,14 +3762,14 @@ class MainWindow(QMainWindow):
 
         tip = """Sections marked for exclusion will not be aligned or used by SWIM in any way (like a dropped getFrameScale)."""
         tip = '\n'.join(textwrap.wrap(tip, width=35))
-        self.cbSkip = ToggleSwitch()
-        self.cbSkip.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.cbSkip.setToolTip(tip)
-        self.cbSkip.setEnabled(False)
-        self.cbSkip.stateChanged.connect(self._callbk_skipChanged)
+        self.cbInclude = ToggleSwitch()
+        self.cbInclude.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.cbInclude.setToolTip(tip)
+        # self.cbInclude.setEnabled(False)
+        # self.cbInclude.toggled.connect(self._callbk_skipChanged)
         labSkip = QLabel('Include:')
         labSkip.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        self.wToggleExclude = VW(QVLine(), labSkip, self.cbSkip)
+        self.wToggleExclude = VW(QVLine(), labSkip, self.cbInclude)
         self.wToggleExclude.layout.setSpacing(0)
         self.wToggleExclude.layout.setAlignment(Qt.AlignCenter)
 
@@ -3944,7 +3913,8 @@ class MainWindow(QMainWindow):
         tip = '\n'.join(textwrap.wrap(tip, width=35))
         # self.bAlign = QPushButton(f"Apply")
         # self.bAlign = QPushButton('Align All')
-        self.bAlign = QPushButton('Align Stack')
+        # self.bAlign = QPushButton('Align Stack')
+        self.bAlign = QPushButton('Align')
         self.bAlign.setFixedHeight(22)
         self.bAlign.setToolTip(tip)
         self.bAlign.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -4669,7 +4639,7 @@ class MainWindow(QMainWindow):
         self.pbar.setMinimumWidth(180)
         self.pbar.setFixedHeight(16)
         self.bStopPbar = QPushButton('Stop')
-        self.bStopPbar.setFixedSize(36, 14)
+        self.bStopPbar.setFixedSize(38, 16)
         self.bStopPbar.setIconSize(QSize(12, 12))
         self.bStopPbar.setToolTip('Cancel running tasks')
         self.bStopPbar.setIcon(qta.icon('mdi.cancel'))

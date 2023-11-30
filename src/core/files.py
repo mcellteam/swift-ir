@@ -102,7 +102,7 @@ class DirectoryWatcher(QObject):
 
     def _updateVersions(self):
         caller = inspect.stack()[1].function
-        logger.critical(f"[{caller}] Updating versions...")
+        logger.info(f"[{caller}] Upgrading data model...")
         to_update = []
         if '.alignment' in self._suffixes:
             for p in self._known:

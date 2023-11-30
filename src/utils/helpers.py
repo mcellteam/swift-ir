@@ -129,6 +129,7 @@ def setData(lookup, val):
     if isinstance(lookup, str):
         lookup = lookup.split(',')
     getData(lookup[:-1])[lookup[-1]] = val
+    return val
 
 
 def natural_sort(l):
@@ -1024,44 +1025,6 @@ def module_debug() -> None:
 def print_scratch(msg):
     with open('~/Logs/scratchlog', "w") as f:
         f.write(str(msg))
-
-
-
-
-def update_skip_annotations():
-    logger.info('update_skip_annotations:')
-    # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
-    remove_list = []
-    add_list = []
-    for sk, scale in cfg.mw.dm['data']['scales'].items():
-        for layer in scale['stack']:
-            layer_num = scale['stack'].index(layer)
-            for ik, im in layer['images'].items():
-                if not 'metadata' in im:
-                    im['metadata'] = {}
-                if not 'annotations' in im['metadata']:
-                    im['metadata']['annotations'] = []
-                ann = im['metadata']['annotations']
-                if layer['skipped']:
-                    # Check and set as needed
-                    already_skipped = False
-                    for a in ann:
-                        if a.startswith('skipped'):
-                            already_skipped = True
-                            break
-                    if not already_skipped:
-                        add_list.append((sk, layer_num, ik))
-                        ann.append('skipped(1)')
-                else:
-                    # Remove all "skipped"
-                    for a in ann:
-                        if a.startswith('skipped'):
-                            remove_list.append((sk, layer_num, ik))
-                            ann.remove(a)
-    # for item in remove_list:
-    #     interface.print_debug(80, "Removed skipped from " + str(item))
-    # for item in add_list:
-    #     interface.print_debug(80, "Added skipped to " + str(item))
 
 
 class SwiftirException:

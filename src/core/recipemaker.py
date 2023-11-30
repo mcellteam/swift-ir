@@ -103,6 +103,9 @@ def run_recipe(data):
         print_exception(extra=f"Something went wrong (Section #{data['index']})...")
         mr = {
             'affine_matrix': np.array([[1., 0., 0.], [0., 1., 0.]]).tolist(),
+            'mir_afm': np.array([[1., 0., 0.], [0., 1., 0.]]).tolist(),
+            'mir_aim': np.array([[1., 0., 0.], [0., 1., 0.]]).tolist(),
+            'snr': 0.,
             'index': data['index'],
             'complete': False
         }
@@ -355,8 +358,7 @@ class align_recipe:
         #     logger.warning(f"[{self.index}] No afm found! {type(self.afm)}")
         #     self.afm = np.array([[1., 0., 0.], [0., 1., 0.]])
 
-        mr['affine_matrix'] = self.afm.tolist()
-        mr['init_afm'] = self.ss['init_afm']
+
         mr['snr'] = self.snr.tolist()
         try:    mr['std_deviation'] = self.snr.std()
         except: mr['std_deviation'] = 0.0
@@ -364,16 +366,25 @@ class align_recipe:
         except: mr['snr_std_deviation'] = 0.0
         try:    mr['snr_mean'] = self.snr.mean()
         except: mr['snr_mean'] = 0.0
+
+        mr['init_afm'] = self.ss['init_afm']
+
         try:
             mr['mir_afm'] = self.ingredients[-1].mir_afm.tolist()
         except:
             mr['mir_afm'] = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
-            logger.warning(f"[{mr['index']}] Null MIR afm (forward matrix)")
         try:
             mr['mir_aim'] = self.ingredients[-1].mir_aim.tolist()
         except:
             mr['mir_aim'] = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
             # logger.warning(f"[{mr['index']}] No MIR aim (inverse matrix)")
+
+        try:
+            mr['affine_matrix'] = self.ingredients[-1].mir_aim.tolist()
+        except:
+            mr['affine_matrix'] = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
+
+
 
         if self.method == 'grid':
             mr['quadrants'] = self.ss['method_opts']['quadrants']
