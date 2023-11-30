@@ -1635,6 +1635,9 @@ class MainWindow(QMainWindow):
                 requested = self.dm.scales[self.boxScale.currentIndex()]
                 self.dm.scale = requested
 
+                siz = self.dm.image_size()
+                self.tell(f"Viewing Resolution Level {self.dm.lvl()}: {siz[0]}x{siz[1]}px")
+
                 if self.dwSnr.isVisible():
                     self.pt.dSnr_plot.initSnrPlot()
 
