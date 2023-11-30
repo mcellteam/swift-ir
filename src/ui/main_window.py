@@ -4864,7 +4864,9 @@ class MainWindow(QMainWindow):
         # p = 80
         elif key == Qt.Key_K:
             if self._isProjectTab():
-                self.skip_change_shortcut()
+                logger.info('')
+                # self.skip_change_shortcut()
+                self.pt.dm.set_include(not self.pt.dm.include())
 
         elif key == Qt.Key_P:
             self.aPython.trigger()

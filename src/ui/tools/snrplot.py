@@ -106,6 +106,8 @@ class SnrPlot(QWidget):
         self._mp_labels = []
         self._skip_lines = []
         self._skip_labels = []
+        self._text_labels = []
+        self._fill_rois = []
         self._error_bars = {}
         # self.pt_selected = None
 
@@ -241,23 +243,48 @@ class SnrPlot(QWidget):
 
         self._skip_lines = []
         self._skip_labels = []
+        self._fill_rois = []
+        self._text_labels = []
 
-        for layer in self.dm.skips_list():
-            line = pg.InfiniteLine(
-                movable=False,
-                angle=90,
-                pen='#ff0000',
-                # snr='Skip #{value:.0f}',
-                # # snr=self.label_value,
-                labelOpts={'position': .1, 'color': (255,250,250), 'fill': (255, 0, 0, 75), 'movable': True}
-            )
-            self._skip_lines.append(line)
+        for i, name in self.dm.skips_list():
+
+            
+            lr = pg.LinearRegionItem([i, i+1], movable=False, pen=(238, 75, 43, 256), brush=(238, 75, 43, 80))
+            self.plot.addItem(lr)
+            self._fill_rois.append(lr)
+
+            # Create line
+            # line = pg.InfiniteLine(
+            #     movable=False,
+            #     angle=90,
+            #     pen='#ede9e8',
+            #     # snr='Skip #{value:.0f}',
+            #     # # snr=self.label_value,
+            #     labelOpts={'position': -1, 'color': '#666666', 'fill': '#fffff', 'movable': True, 'size': '8pt'}
+            # )
+            # self._skip_lines.append(line)
             if not self.dock:
-                label = pg.InfLineLabel(line, f'Exclude', position=0.10, color='#ff0000', rotateAxis=(1, 0), anchor=(1, 1))
+                # Create label
+
+                text = pg.TextItem(html='<span style="color: rgb(238, 75, 43); font-size: 9pt;">Exclude</span>', anchor=(.5,.5), angle=90)
+                self.plot.addItem(text)
+                text.setPos(i+1, 1)
+                self._text_labels.append(text)
+
+
+                # label = pg.InfLineLabel(line, f"<span style='font-size: 8px;'>Exclude</span>",
+                #                         position=0.12,
+                #                         # color='#ff0000',
+                #                         color='#ede9e8',
+                #                         # rotateAxis=(1, 0),
+                #                         angle=90,
+                #                         anchor=(1, 0),
+                #                         )
                 # ^^ position is vertical position of 'skip' label
-                self._skip_labels.append(label)
-            line.setPos([layer[0] + offset, 1])
-            self.plot.addItem(line)
+                # self._skip_labels.append(label)
+            # line.setPos([i[0] + offset, 1])
+            # line.setPos([i, 1])
+            # self.plot.addItem(line)
 
 
     def initSnrPlot(self, s=None):
@@ -302,7 +329,7 @@ class SnrPlot(QWidget):
                             f'background-color: #161c20;'
                             f'border-color: {color};'
                             f'border-width: 3px;'
-                            f'border-style: outset;'
+                            # f'border-style: outset;'
                             f'border-radius: 4px;')
                     # if self.dm.is_aligned(level=level):
                     #     self._snr_checkboxes[level].show()
@@ -332,10 +359,7 @@ class SnrPlot(QWidget):
         firstInd = self.dm.first_included(s=s)
         for i, snr in enumerate(self.dm.snr_list(s=s)): #0601+
             if i != firstInd:
-                if self.dm.skipped(s=s, l=i):
-                    x_axis.append(i)
-                    y_axis.append(0)
-                else:
+                if self.dm.include(s=s, l=i):
                     x_axis.append(i)
                     y_axis.append(snr)
 
@@ -676,8 +700,8 @@ class SnrPlot(QWidget):
         err_bar = pg.ErrorBarItem(x=x, y=y,
                                   top=deltas,
                                   bottom=deltas,
-                                  beam=0.10,
-                                  pen={'color': '#ff0000', 'width': 1})
+                                  beam=0.15,
+                                  pen={'color': '#ff0000', 'width': 2})
         self._error_bars[s] = err_bar
         self.plot.addItem(err_bar)
         # logger.info('<<')
@@ -693,6 +717,10 @@ class SnrPlot(QWidget):
             self.plot.addItem(self._curLayerLine)
             for eb in self._error_bars:
                 self.plot.removeItem(eb)
+            for item in self._text_labels:
+                self.plot.removeItem(item)
+            for item in self._fill_rois:
+                self.plot.removeItem(item)
         except:
             print_exception()
             logger.warning('Unable To Wipe SNR Plot')

@@ -107,6 +107,9 @@ class AlignmentTab(QWidget):
             self.updateAaButtons()
             self.cbDefaults.setChecked(self.dm.isDefaults())
             self.dataUpdateMA()
+        if _tab == 2:
+            self.snr_plot.plotData()
+        self.mw.cbInclude.setChecked(self.dm.include())
 
 
     def onPositionChange(self):
