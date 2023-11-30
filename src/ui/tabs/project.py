@@ -1900,10 +1900,11 @@ class AlignmentTab(QWidget):
         self.checkboxes = HW( self.cbDefaults , self.cbIgnoreCache )
         self.checkboxes.layout.setSpacing(4)
 
-        self.btnsSWIM = HW(self.bApplyOne)
-        self.btnsSWIM.layout.setContentsMargins(2,2,2,2)
-        self.btnsSWIM.layout.setSpacing(2)
-        self.vwRightPanel = VW( self.swMethod , self.checkboxes , self.btnsSWIM )
+        # self.btnsSWIM = HW(self.bApplyOne)
+        # self.btnsSWIM.layout.setContentsMargins(2,2,2,2)
+        # self.btnsSWIM.layout.setSpacing(2)
+        # self.vwRightPanel = VW( self.swMethod , self.checkboxes , self.btnsSWIM )
+        self.vwRightPanel = VW(self.checkboxes, self.swMethod)
         self.vwRightPanel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         self.columnSplitter = QSplitter(Qt.Orientation.Vertical)
@@ -2253,9 +2254,8 @@ class AlignmentTab(QWidget):
                     except AttributeError:
                         print_exception()
 
-                # self.btnsSWIM.show()
                 # self.bPull.setVisible((self.dm.scale != self.dm.coarsest_scale_key()) and self.dm.is_alignable())
-                self.bApplyOne.show()
+                # self.bApplyOne.show()
                 self.checkboxes.show()
                 ss = self.dm['stack'][self.dm.zpos]['levels'][self.dm.scale]['swim_settings']
                 if self.dm.current_method == 'grid':
@@ -3312,7 +3312,7 @@ class ClickLabel(QLabel):
             #     font-size: 10px;
             #     font-weight: 600;""")
             self.setStyleSheet(
-                """background-color: #222222; 
+                """background-color: #339933; 
                 color: #f3f6fb; 
                 font-size: 10px; 
                 font-weight: 600;""")
