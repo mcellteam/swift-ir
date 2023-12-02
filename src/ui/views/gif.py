@@ -1,7 +1,7 @@
 import sys, logging, inspect
 import qtawesome as qta
-import libtiff
-libtiff.libtiff_ctypes.suppress_warnings()
+# import libtiff
+# libtiff.libtiff_ctypes.suppress_warnings()
 from qtpy.QtWidgets import *
 from qtpy.QtGui import *
 from qtpy.QtCore import *
