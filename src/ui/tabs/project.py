@@ -1482,6 +1482,7 @@ class AlignmentTab(QWidget):
         self.wNgAccessories = HW(BoldLabel("  Neuroglancer  "), self.cbxNgExtras)
 
         self.cbTransformed = QCheckBox('Transformed')
+        # self.cbTransformed.setStyleSheet("")
         def fn_cb_transformed():
             clr = inspect.stack()[1].function
             if clr == 'main':
@@ -1490,34 +1491,6 @@ class AlignmentTab(QWidget):
                 else:
                     self.viewer0.set_untransformed()
         self.cbTransformed.toggled.connect(fn_cb_transformed)
-
-
-        # tip = "View raw source data in Neuroglancer"
-        # self.rbZarrRaw = QRadioButton('Raw')
-        # self.rbZarrRaw.setObjectName('raw')
-        # self.rbZarrRaw.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        # self.rbZarrRaw.clicked.connect(lambda: setData('state,neuroglancer,layout','xy'))
-        # self.rbZarrRaw.clicked.connect(self.initNeuroglancer)
-        # tip = "View a generated cumulative alignment Zarr in Neuroglancer"
-        # self.rbZarrTransformed = QRadioButton('Transformed (Not Generated)')
-        # self.rbZarrTransformed.setObjectName('transformed')
-        # self.rbZarrTransformed.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        # self.rbZarrTransformed.clicked.connect(lambda: setData('state,neuroglancer,layout', '4panel'))
-        # self.rbZarrTransformed.clicked.connect(self.initNeuroglancer)
-        # tip = "View cumulative alignment by applying transformations in Neuroglancer (generates nothing)"
-        # self.rbZarrExperimental = QRadioButton('Transformed (Expertimental)')
-        # self.rbZarrExperimental.setObjectName('experimental')
-        # self.rbZarrExperimental.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        # self.rbZarrExperimental.clicked.connect(lambda: setData('state,neuroglancer,show_bounds', False))
-        # self.rbZarrExperimental.clicked.connect(lambda: setData('state,neuroglancer,layout', '4panel'))
-        # self.rbZarrExperimental.clicked.connect(self.initNeuroglancer)
-
-        # self.bgZarrSelect = QButtonGroup()
-        # self.bgZarrSelect.addButton(self.rbZarrRaw)
-        # self.bgZarrSelect.addButton(self.rbZarrExperimental)
-        # self.bgZarrSelect.addButton(self.rbZarrTransformed)
-        # self.bgZarrSelect.setExclusive(True)
-        # self.bgZarrSelect.buttonPressed.connect(self.onZarrRadiobutton)
 
         tip = 'Generate permanent Zarr of cumulative alignment from TIFFs'
         self.bZarrRegen = QPushButton('Generate')
@@ -1602,46 +1575,6 @@ class AlignmentTab(QWidget):
         v_header.setSectionResizeMode(1, QHeaderView.Stretch)
         h_header.setSectionResizeMode(0, QHeaderView.Stretch)
         # h_header.setSectionResizeMode(1, QHeaderView.Stretch)
-
-        # vbl = VBL(self.tn_table, hw)
-        # vbl.setSpacing(0)
-        # self.tableThumbs.setLayout(vbl)
-
-        ####
-
-        # file_path = os.file_path.join(get_appdir(), 'resources', 'x_reticle.png')
-        #
-        # self.tn_reticle1 = QWidget()
-        # layout = QGridLayout()
-        # layout.setContentsMargins(0,0,0,0)
-        # self.tn_reticle1.setLayout(layout)
-        # self.reticle1 = CorrSignalThumbnail(self, file_path=file_path, extra='reticle')
-        # self.tn_reticle1.layout().addWidget(self.sig0,0,0)
-        # self.tn_reticle1.layout().addWidget(self.reticle1,0,0)
-        #
-        # self.tn_reticle2 = QWidget()
-        # layout = QGridLayout()
-        # layout.setContentsMargins(0,0,0,0)
-        # self.tn_reticle2.setLayout(layout)
-        # self.reticle2 = CorrSignalThumbnail(self, file_path=file_path, extra='reticle')
-        # self.tn_reticle2.layout().addWidget(self.sig1,0,0)
-        # self.tn_reticle2.layout().addWidget(self.reticle2,0,0)
-        #
-        # self.tn_reticle3 = QWidget()
-        # layout = QGridLayout()
-        # layout.setContentsMargins(0,0,0,0)
-        # self.tn_reticle3.setLayout(layout)
-        # self.reticle3 = CorrSignalThumbnail(self, file_path=file_path, extra='reticle')
-        # self.tn_reticle3.layout().addWidget(self.sig2,0,0)
-        # self.tn_reticle3.layout().addWidget(self.reticle3,0,0)
-        #
-        # self.tn_reticle4 = QWidget()
-        # layout = QGridLayout()
-        # layout.setContentsMargins(0,0,0,0)
-        # self.tn_reticle4.setLayout(layout)
-        # self.reticle4 = CorrSignalThumbnail(self, file_path=file_path, extra='reticle')
-        # self.tn_reticle4.layout().addWidget(self.sig3,0,0)
-        # self.tn_reticle4.layout().addWidget(self.reticle4,0,0)
 
         self.tableSigs = QTableWidget()
         self.tableSigs.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -1791,9 +1724,6 @@ class AlignmentTab(QWidget):
         self.match_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         self.we1 = WebEngine(self, ID='tra')
-        # self.webengine1.setStyleSheet("background-color: #000000;")
-        # self.webengine1.page().setBackgroundColor(Qt.transparent)  # 0726+
-        # self.webengine1.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         setWebengineProperties(self.we1)
         self.we1.setMouseTracking(True)
 
@@ -1805,38 +1735,20 @@ class AlignmentTab(QWidget):
 
         self.clTra = ClickLabel(' Transforming ')
         self.clTra.setFocusPolicy(Qt.NoFocus)
-        # self.clTra.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # self.clTra.setMinimumWidth(128)
-        # self.clTra.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         self.clTra.setAlignment(Qt.AlignCenter)
-        # self.clTra.setFixedHeight(16)
         self.clTra.clicked.connect(self.set_transforming)
 
         self.clRef = ClickLabel(' Reference ')
         self.clRef.setFocusPolicy(Qt.NoFocus)
-        # self.clRef.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # self.clRef.setMinimumWidth(128)
-        # self.clRef.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         self.clRef.setAlignment(Qt.AlignCenter)
-        # self.clRef.setFixedHeight(16)
         self.clRef.clicked.connect(self.set_reference)
 
-        # self.wClickHeader = HW(self.clTra, self.clRef)
         self.wClickHeader = HW(self.clRef, self.clTra)
         self.wClickHeader.setFixedHeight(16)
 
         self.vlabTab1 = VerticalLabel('Alignment Editor')
         self.wWebengine1 = HW(self.vlabTab1, VW(self.wClickHeader, w), self.wSldrZoomTab1)
         self.wWebengine1.layout.setSpacing(0)
-
-        # self.glGifPlayer = QGridLayout()
-        # self.glGifPlayer.addWidget(self.gifPlayer, 0, 0)
-        # self.glGifPlayer.setContentsMargins(2,2,2,2)
-        #
-        # self.wGifPlayer = QWidget()
-        # self.wGifPlayer.setStyleSheet("background-color: #808080;")
-        # self.wGifPlayer.setMinimumSize(QSize(128,128))
-        # self.wGifPlayer.setLayout(self.glGifPlayer)
 
         self.labCornerViewer = QLabel(f'i={self.dm.zpos} | Transformed')
         # self.labCornerViewer.setStyleSheet("color: #FFFF66; font-weight: 600; font-size: 12px;")
@@ -1864,14 +1776,12 @@ class AlignmentTab(QWidget):
         self.hwCornerViewer.setFixedHeight(16)
         self.hwCornerViewer.setMaximumWidth(240)
 
-
         self.wWebengine2 = QWidget()
         self.wWebengine2.setFocusPolicy(Qt.NoFocus)
         self.glWebengine2 = GL()
         self.wWebengine2.setLayout(self.glWebengine2)
         self.glWebengine2.addWidget(self.we2, 0, 0, 3, 3)
         self.glWebengine2.addWidget(self.hwCornerViewer, 0, 1, 1, 1)
-
 
         self.twCornerViewer = QTabWidget()
         self.twCornerViewer.setFocusPolicy(Qt.NoFocus)
@@ -2079,7 +1989,7 @@ class AlignmentTab(QWidget):
             self.dm.quadrants = [self.Q1.isClicked, self.Q2.isClicked, self.Q3.isClicked, self.Q4.isClicked]
         self.viewer1.drawSWIMwindow()
 
-    #
+
     # def onTranslate(self):
     #     if (self.lwL.selectedIndexes() == []) and (self.lwR.selectedIndexes() == []):
     #         self.mw.warn('No points are selected in the list')
@@ -2245,8 +2155,6 @@ class AlignmentTab(QWidget):
         # self.mw.bZarrRegen.setEnabled(self.dm.is_aligned())
 
         # self.bPull.setVisible((self.dm.scale != self.dm.coarsest_scale_key()) and self.dm.is_alignable())
-
-
         if self.wTabs.currentIndex() == 1: #1111 This should make a huge difference
             self.gifPlayer.controls2.setVisible(os.path.exists(self.dm.path_cafm_gif()))
             self.gbGrid.setTitle(f'Level {self.dm.lvl()} Grid Alignment Settings')
@@ -2326,10 +2234,8 @@ class AlignmentTab(QWidget):
                 self.cbClobber.setChecked(bool(ss['clobber']))
                 self.leClobber.setText(str(ss['clobber_size']))
                 self.leClobber.setEnabled(self.cbClobber.isChecked())
-
                 if self.teLogs.isVisible():
                     self.refreshLogs()
-
             else:
                 self.swMethod.setCurrentIndex(1)
                 self.bApplyOne.hide()
@@ -2487,36 +2393,6 @@ class AlignmentTab(QWidget):
             if val:
                 if val != 0:
                     self.sldrZoomTab1.setValue(float(val * val))
-
-
-
-    def onSliderZmag(self):
-
-        clr = inspect.stack()[1].function
-        logger.info('clr: %s' % clr)
-        try:
-            val = self.sliderZdisplay.value()
-            if self.dm['state']['current_tab'] == 1:
-                state = copy.deepcopy(self.viewer1.state)
-                state.relative_display_scales = {'z': val}
-                self.viewer1.set_state(state)
-                # state = copy.deepcopy(cfg.stageViewer.state)
-                # state.relative_display_scales = {'z': val}
-                # cfg.viewer1.set_state(state)
-
-            else:
-                # logger.info('val = %d' % val)
-                state = copy.deepcopy(self.viewer0.state)
-                state.relative_display_scales = {'z': val}
-                self.viewer0.set_state(state)
-            self.mw.update()
-        except:
-            print_exception()
-
-
-    @Slot()
-    def async_table_load(self):
-        self.loadTable.emit()
 
 
     def initUI_table(self):
@@ -2997,7 +2873,6 @@ class AlignmentTab(QWidget):
 
         # self.wBC = HW(self.wBrightness, self.wContrast, self.bResetShaders, self.bVolumeRendering)
         self.wBC = HW(self.wBrightness, self.wContrast, self.bResetShaders)
-        # self.wBC.layout.setSpacing(4)
         self.wBC.setMaximumWidth(400)
 
 
@@ -3076,8 +2951,6 @@ Forward key strokes to QWebEngineView:
 new_event = QKeyEvent(QEvent.KeyPress, Qt.Key_R, Qt.KeyboardModifiers(),"r",)
 new_event.artificial = True
 QCoreApplication.postEvent(cfg.pt.viewer0.webengine0.focusProxy(), new_event)
-
-
 
             MB = Qt.MouseButton
             KM = Qt.KeyboardModifier
