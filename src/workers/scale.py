@@ -21,8 +21,8 @@ from concurrent.futures import ThreadPoolExecutor
 import zarr
 import imagecodecs
 import imageio.v3 as iio
-import libtiff
-libtiff.libtiff_ctypes.suppress_warnings()
+# import libtiff
+# libtiff.libtiff_ctypes.suppress_warnings()
 import tqdm
 import numcodecs
 from numcodecs import Blosc
