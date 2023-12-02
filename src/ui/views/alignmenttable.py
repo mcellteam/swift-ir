@@ -222,7 +222,6 @@ class ProjectTable(QWidget):
             self.updateTableDimensions(self.row_height_slider.value())
 
             # self.data.setUpdatesEnabled(True)
-            self.parent.parent.hidePbar()
 
             self.setUpdatesEnabled(True)
 
@@ -595,7 +594,6 @@ class ProjectTable(QWidget):
                     f"index  = {index}\n"
                     f"txt    = {txt}")
         self.dm.save_notes(text=txt, l=index)
-        self.parent.parent.statusBar.showMessage('Note Saved!', 3000)
         self.all_notes[index].update()
 
 

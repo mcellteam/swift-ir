@@ -2939,15 +2939,8 @@ class MainWindow(QMainWindow):
         if self._isOpenProjTab():
             self.pm.initPMviewer()
             self.tell(f"Alignment Manager...")
-        # else:
-
-        # else:
-        #     if hasattr(self.pm, 'viewer'):
-        #         del self.pm.viewer
-
 
         if self._isProjectTab():
-
 
             self.dm = cfg.dm = self.globTabs.currentWidget().dm
             self.pt = cfg.pt = self.globTabs.currentWidget()
@@ -3533,22 +3526,8 @@ class MainWindow(QMainWindow):
             debugMenu.addAction(self.developerConsoleAction)
 
 
-
         '''Help Menu'''
         helpMenu = self.menu.addMenu('Help')
-
-
-        helpPrintExportInstructions = helpMenu.addMenu('Print Export Instructions')
-
-        # action = QAction('Export Zarr Command', self)
-        # action.triggered.connect(self.printExportInstructionsTIFF)
-        # helpPrintExportInstructions.addAction(action)
-        #
-        # action = QAction('Export TIFFs Command', self)
-        # action.triggered.connect(self.printExportInstructionsZarr)
-        # helpPrintExportInstructions.addAction(action)
-
-
 
         menu = helpMenu.addMenu('Keyboard Bindings')
         textbrowser = QTextBrowser(self)
@@ -3623,14 +3602,6 @@ class MainWindow(QMainWindow):
         action.triggered.connect(
             lambda: self.show_html_resource(resource="mcell4-preprint.html", title='MCell4 Pre-print (2023)'))
         researchGroupMenu.addAction(action)
-
-        # self.googleAction = QAction('Google', self)
-        # self.googleAction.triggered.connect(self.tab_google)
-        # helpMenu.addAction(self.googleAction)
-
-        # action = QAction('PyQtGraph Examples', self)
-        # action.triggered.connect(self.pyqtgraph_examples)
-        # helpMenu.addAction(action)
 
         action = QAction('Google', self)
         action.triggered.connect(self.tab_google)
@@ -4856,12 +4827,6 @@ class MainWindow(QMainWindow):
                     self.pt.toggle_ref_tra()
 
 
-        # elif key == Qt.Key_M:
-        #     self.enterExitManAlignMode()
-        # r = 82
-        # m = 77
-        # k = 75
-        # p = 80
         elif key == Qt.Key_K:
             if self._isProjectTab():
                 logger.info('')
@@ -5122,113 +5087,4 @@ class TimerWorker(QObject):
                 self.everySecond.emit(self._countup)
 
         self.finished.emit()
-
-
-
-
-'''
-#indicators css
-
-QGroupBox::indicator:unchecked {
-    image: url(:/images/checkbox_unchecked.png);
-}
-
-https://stackoverflow.com/questions/47206667/collect-all-docked-widgets-and-their-locations
-for dock in self.findChildren(QDockWidget):
-    print(dock.windowTitle())
-
-
-area = self.dockWidgetArea(dock)
-if area == QtCore.Qt.LeftDockWidgetArea:
-    print(dock.windowTitle(), '(Left)')
-elif area == QtCore.Qt.RightDockWidgetArea:
-    print(dock.windowTitle(), '(Right)')
-
-
-
-for i,dock in enumerate(self.findChildren(QDockWidget)):
-    title = dock.windowTitle()
-    area = self.dockWidgetArea(dock)
-    # if title == 'Correlation Signals':
-    if title == 'Head-up Display':
-        if area in (Qt.LeftDockWidgetArea, Qt.RightDockWidgetArea):
-            print(True)
-
-
-
-"Z-stack position"
-
-d = dict()
-def checkbox_changed(self, state):
-    self.ILCheck = (state == Qt.Checked)
-    print(self.ILCheck)
-    d[self.sender()] = self.ILCheck
-    print(d)
-
-
-'''
-
-"""
-FAQs:
-
-Q: What is alignEM?
-A: alignEM is a software tool specialized for registering electron micrographs. It is
-   able to generate level image hierarchies, compute affine transforms, and generate aligned
-   images using multi-image rendering.
-
-Q: Can alignEM be used to register or "align" non-EM images?
-A: Yes, but its forte is aligning EM images which tend to be large, and greyscale. alignEM
-   provides functionality for downscaling and the ability to pass alignment results (affines)
-   from lower level levels to higher ones.
-
-Q: What are scales?
-A: In alignEM a "level" means a downsampled (or decreased resolution) images of images.
-
-Q: Why should data be scaled? Is it okay to align the full resolution images with brute force?
-A: You could, but EM images tend to run large. A more efficient workflow is to:
-   1) generate a hierarchy of downsampled images from the full resolution images
-   2) align the lowest resolution images first
-   3) pass the computed affines to the level of next-highest resolution, and repeat
-      until the full resolution images are in alignment. In these FAQs this is referred to
-      as "climbing the level hierarchy""
-
-Q: Why do SNR values not necessarily increase as we "climb the level hierarchy"?
-A: SNR values returned by SWIM are a relative metric which depend on image resolution. It is
-   therefore most useful when comparing the relative alignment quality of aligned image
-   pairs at the same level.
-
-Q: Why are the selected manual correlation regions not mutually independent? In other words,
-   why does moving or removing an argument to SWIM affect the signal-to-noise ratio and
-   resulting correlation signals of the other selected SWIM regions?
-A:
-
-Q: What is Neuroglancer?
-A: Neuroglancer is an open-source WebGL and typescript-based web application for displaying
-   volumetric data. alignEM uses a Chromium-based API called QtWebEngine together
-   with the Neuroglancer Python API to render large volumetric data efficiently and conveniently
-   within the application window.
-
-Q: What is Zarr?
-A: Zarr is an open-source format for the storage of chunked, compressed, N-dimensional arrays
-   with an interface similar to NumPy. It has a Nature Methods paper:
-   https://www.nature.com/articles/s41592-021-01326-w
-
-Q: Why is alignEM so swift?
-A: For several reasons:
-   1) Time-intensive processes are executed in parallel.
-   2) Data scaling, SWIM alignment, and affine processing functions are all implemented
-      in highly efficient C code written by computer scientist Arthur Wetzel.
-   3) Fast Fourier Transform is a fast algorithm.
-
-Q: How many CPUs or "cores" does alignEM use?
-A: By default, as many cores as the system has available.
-
-Q: What file types are supported?
-A: Currently, only images formatted as TIFF.
-
-Q: Where can I learn more about the principles of Signal Whitening Fourier Transform Image Matching?
-A: https://mmbios.pitt.edu/images/ScientificMeetings/MMBIOS-Aug2014.pdf
-
-
-"""
 

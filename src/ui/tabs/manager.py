@@ -477,6 +477,7 @@ class ManagerTab(QWidget):
         self.leNameAlignment.clear()
         self.leNameImages.clear()
         setattr(self, '_NEW_IMAGES_PATHS', [])
+        self.webengine1.setnull() #1130
 
         if init_viewer:
             # self.updateCombos()
@@ -753,7 +754,8 @@ class ManagerTab(QWidget):
 
                 # self.updateCombos()
                 # self.initPMviewer()  #1118-
-
+                self.resetView()
+                # self.webengine1.setnull()
 
                 self.parent.hud.done()
                 self.parent.tell('The deletion process will continue running in the background.')
@@ -1308,7 +1310,6 @@ def validate_project_selection(path) -> bool:
     return False
 
 
-
 def validate_zarr_selection(path) -> bool:
     # logger.info(f'caller:{inspect.stack()[1].function}')
     # logger.info('Validating selection %level...' % cfg.selected_file)
@@ -1325,8 +1326,6 @@ def set_image_sizes(dm):
             siz = (np.array(dm.image_size(s='s1')) / dm.lvl(s)).astype(int).tolist()
             logger.info(f"Setting size for {s} to {siz}...")
             dm['data']['scales'][s]['image_src_size'] = siz
-
-
 
 
 class ImagesConfig(QWidget):
