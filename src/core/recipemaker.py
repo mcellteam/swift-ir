@@ -22,8 +22,8 @@ import psutil
 
 warnings.filterwarnings("ignore")
 
-import libtiff
-libtiff.libtiff_ctypes.suppress_warnings()
+# import libtiff
+# libtiff.libtiff_ctypes.suppress_warnings()
 
 tl = logging.getLogger('tifffile')
 tl.setLevel(logging.CRITICAL)
