@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import sys
 import copy
 import glob
 import json
@@ -232,7 +233,10 @@ class AlignWorker(QObject):
         _break = 0
         self.initPbar.emit((len(tasks), desc))
         t0 = time.time()
-        ctx = mp.get_context('forkserver')
+        if sys.platform == 'win32':
+            ctx = mp.get_context('spawn')
+        else:
+            ctx = mp.get_context('forkserver')
         n = len(tasks)
         i, results = 0, []
         # with ctx.Pool(processes=self.cpus, maxtasksperchild=1) as pool:
