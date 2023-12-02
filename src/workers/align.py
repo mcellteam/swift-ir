@@ -22,8 +22,8 @@ import numpy as np
 import tqdm
 import zarr
 numcodecs.blosc.use_threads = False
-import libtiff
-libtiff.libtiff_ctypes.suppress_warnings()
+# import libtiff
+# libtiff.libtiff_ctypes.suppress_warnings()
 
 # from src.mp_queue import TaskQueue
 from src.utils.readers import read
