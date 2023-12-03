@@ -99,7 +99,7 @@ class ScaleWorker(QObject):
 
         self.hudMessage.emit(f'Batch multiprocessing {len(self.paths)} images...')
 
-        ctx = mp.get_context('forkserver')
+        # ctx = mp.get_context('forkserver')
         for s, siz in deepcopy(self.scales):
             sv = get_scale_val(s)
             # if s != 's1':
