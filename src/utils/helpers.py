@@ -195,7 +195,7 @@ def delete_recursive(dir, keep_core_dirs=False):
         shutil.rmtree(d, ignore_errors=True, onerror=handleError)
     shutil.rmtree(dir, ignore_errors=True, onerror=handleError)
 
-    # cfg.main_window.hidePbar()
+    # cfg.mw.hidePbar()
 
 
 def update_preferences_model():
@@ -459,6 +459,11 @@ def is_mac() -> bool:
     return platform.system() == 'Darwin'
 
 
+def is_windows() -> bool:
+    '''Checks if the program is running on macOS. Returns a boolean.'''
+    return platform.system() == 'Windows'
+
+
 def is_joel() -> bool:
     '''Checks if the program is running on macOS. Returns a boolean.'''
 
@@ -483,9 +488,10 @@ def get_bindir() -> str:
         bindir = 'bin_darwin'
     elif is_linux():
         bindir = 'bin_linux'
+    elif is_windows():
+        bindir = 'bin_windows'
     else:
         logger.warning(error)
-        cfg.main_window.hud.post(error, logging.ERROR)
     assert len(bindir) > 0
     return bindir
 
@@ -663,7 +669,7 @@ def renew_directory(directory: str, gui=True) -> None:
     if os.path.exists(directory):
         d = os.path.basename(directory)
         if gui:
-            cfg.main_window.hud.post("Overwriting Directory '%s'..." % directory)
+            cfg.mw.hud.post("Overwriting Directory '%s'..." % directory)
         try:
             shutil.rmtree(directory, ignore_errors=True)
         except:
@@ -673,7 +679,7 @@ def renew_directory(directory: str, gui=True) -> None:
         except:
             print_exception()
         if gui:
-            cfg.main_window.hud.done()
+            cfg.mw.hud.done()
 
 
 # def kill_task_queue(task_queue):
@@ -685,18 +691,18 @@ def renew_directory(directory: str, gui=True) -> None:
 
 def show_status_report(results, dt):
     if results[2] > 0:
-        cfg.main_window.hud(f'  Succeeded    = {results[0]}')
+        cfg.mw.hud(f'  Succeeded    = {results[0]}')
         if results[1] > 0:
-            cfg.main_window.warning(f'  Queued       = {results[1]}')
+            cfg.mw.warning(f'  Queued       = {results[1]}')
         else:
-            cfg.main_window.hud(f'  Queued       = {results[1]}')
-        cfg.main_window.err(f'  Failed       = {results[2]}')
-        cfg.main_window.hud(f'  Time Elapsed = {dt:.4g}s')
+            cfg.mw.hud(f'  Queued       = {results[1]}')
+        cfg.mw.err(f'  Failed       = {results[2]}')
+        cfg.mw.hud(f'  Time Elapsed = {dt:.4g}s')
     else:
-        cfg.main_window.hud(f'  Succeeded    = {results[0]}')
-        cfg.main_window.hud(f'  Queued       = {results[1]}')
-        cfg.main_window.hud(f'  Failed       = {results[2]}')
-        cfg.main_window.hud(f'  Time Elapsed = {dt:.4g}s')
+        cfg.mw.hud(f'  Succeeded    = {results[0]}')
+        cfg.mw.hud(f'  Queued       = {results[1]}')
+        cfg.mw.hud(f'  Failed       = {results[2]}')
+        cfg.mw.hud(f'  Time Elapsed = {dt:.4g}s')
 
 
 def get_scale_key(scale_val) -> str:
@@ -855,9 +861,9 @@ def print_exception(extra=''):
 
     if 'MemoryError' in str(exi[0]):
         logger.critical('Memory Error!!')
-        # cfg.main_window.memory()
+        # cfg.mw.memory()
         # try:
-        #     cfg.main_window.mem()
+        #     cfg.mw.mem()
         # except:
         #     print_exception()
 
