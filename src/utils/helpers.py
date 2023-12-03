@@ -489,7 +489,8 @@ def get_bindir() -> str:
     elif is_linux():
         bindir = 'bin_linux'
     elif is_windows():
-        bindir = 'bin_windows'
+        # bindir = 'bin_windows'
+        bindir = 'bin_darwin'
     else:
         logger.warning(error)
     assert len(bindir) > 0
