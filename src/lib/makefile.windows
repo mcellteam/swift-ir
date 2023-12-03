@@ -1,5 +1,7 @@
+#Experimental for compilation with WSL!
+
 FLAGS = -O3 -m64 -msse3
-BINDIR = ./bin_linux/
+BINDIR = ./bin_windows/
 
 all: $(BINDIR)swim $(BINDIR)iavg $(BINDIR)iscale $(BINDIR)mir $(BINDIR)remod 
 
