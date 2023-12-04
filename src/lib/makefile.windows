@@ -3,7 +3,8 @@
 FLAGS = -O3 -m64 -msse3
 BINDIR = ./bin_windows/
 
-all: $(BINDIR)swim $(BINDIR)iavg $(BINDIR)iscale2 $(BINDIR)mir $(BINDIR)remod
+#all: $(BINDIR)swim $(BINDIR)iavg $(BINDIR)iscale2 $(BINDIR)mir $(BINDIR)remod
+all: $(BINDIR)iscale2
 
 #all: test_libs swim iavg iscale mir remod remod_old sxox json_reader.jar ImageAlign.jar run_swift.jar swift_gui.jar swim_lab.jar sha1sum.txt
 
