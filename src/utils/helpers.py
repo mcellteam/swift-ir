@@ -451,17 +451,17 @@ def is_tacc() -> bool:
 
 def is_linux() -> bool:
     '''Checks if the program is running on a Linux OS. Returns a boolean.'''
-    return platform.system() == 'Linux'
+    return platform.system() in ('Linux','linux')
 
 
 def is_mac() -> bool:
     '''Checks if the program is running on macOS. Returns a boolean.'''
-    return platform.system() == 'Darwin'
+    return platform.system() in ('Darwin','darwin')
 
 
 def is_windows() -> bool:
     '''Checks if the program is running on macOS. Returns a boolean.'''
-    return platform.system() == 'Windows'
+    return platform.system() in ('Windows','windows')
 
 
 def is_joel() -> bool:
