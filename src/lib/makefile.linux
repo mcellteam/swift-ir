@@ -3,9 +3,6 @@ BINDIR = ./bin_linux/
 
 all: $(BINDIR)swim $(BINDIR)iavg $(BINDIR)iscale2 $(BINDIR)mir $(BINDIR)remod
 
-#all: test_libs swim iavg iscale2 mir remod remod_old sxox json_reader.jar ImageAlign.jar run_swift.jar swift_gui.jar
-swim_lab.jar sha1sum.txt
-
 $(BINDIR)swim: swim.c swimio.h debug.h makefile
 	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)swim swim.c -ltiff -ljpeg -lpng -lwebp -lfftw3f -lm
 
