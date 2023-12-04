@@ -13,11 +13,11 @@ $(BINDIR)swim: swim.c swimio.h debug.h makefile
 $(BINDIR)iavg: iavg.c swimio.h debug.h makefile
 	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)iavg iavg.c -ljpeg -ltiff -lpng -lwebp
 
-$(BINDIR)iscale: iscale2.c swimio.h debug.h makefile
+$(BINDIR)iscale2: iscale2.c swimio.h debug.h makefile
 	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)iscale2 iscale2.c -ljpeg -ltiff -lpng -lwebp
 
 $(BINDIR)mir: mir.c swimio.h debug.h makefile
-	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)mir mir.c -ljpeg -ltiff -lpng -lwebp
+	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)mir mir.c -ljpeg -ltiff -lpng -lwebp -lm
 
 $(BINDIR)remod: remod.c swimio.h debug.h makefile
 	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)remod remod.c -lfftw3f -ltiff -ljpeg -lpng -lwebp -lm
