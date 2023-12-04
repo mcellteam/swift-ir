@@ -49,8 +49,9 @@ print(f'Python executable: {sys.executable}')
 
 import os
 
-import PyQt5
-dirname = os.path.dirname(PyQt5.__file__)
+import qtpy
+dirname = os.path.dirname(qtpy.__file__)
+
 plugin_path = os.path.join(dirname,'plugins','platforms')
 print(f'Qt plugin path: {plugin_path}')
 os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = plugin_path
@@ -73,8 +74,6 @@ import src.config as cfg
 
 # from qtconsole import __version__ as qcv
 global app
-
-
 
 
 # WHITE_LIST = {'src'}      # Look for these words in the file file_path.
