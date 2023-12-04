@@ -15,7 +15,7 @@ all: $(BINDIR)iscale2
 #	gcc -Wno-implicit -o swim -O3 -m64 -msse3 $(BINDIR)swim swim.c -ltiff -ljpeg -lpng -lfftw3f -lwebp -lm
 
 $(BINDIR)iscale2: iscale2.c swimio.h debug.h makefile
-	gcc -Wno-implicit -O3 -o $(BINDIR)iscale2 iscale.c -ljpeg -ltiff -lpng -lwebp
+	gcc -Wno-implicit -O3 -o $(BINDIR)iscale2 iscale2.c -ljpeg -ltiff -lpng -lwebp
 
 #$(BINDIR)mir: mir.c swimio.h debug.h makefile
 #	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)mir mir.c -ljpeg -ltiff -lpng -lwebp -lm
