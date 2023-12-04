@@ -1,7 +1,8 @@
-all: test_libs swim iavg iscale mir remod remod_old sxox json_reader.jar ImageAlign.jar run_swift.jar swift_gui.jar swim_lab.jar sha1sum.txt
+#all: test_libs swim iavg iscale mir remod remod_old sxox json_reader.jar ImageAlign.jar run_swift.jar swift_gui.jar swim_lab.jar sha1sum.txt
+all: swim iavg iscale mir remod remod_old sxox
 
-test_libs: test_libs.c swimio.h debug.h makefile
-	gcc -Wno-implicit -o test_libs -O3 -m64 -msse3 test_libs.c -ltiff -ljpeg -lpng -lfftw3f -lm
+#test_libs: test_libs.c swimio.h debug.h makefile
+#	gcc -Wno-implicit -o test_libs -O3 -m64 -msse3 test_libs.c -ltiff -ljpeg -lpng -lfftw3f -lm
 
 swim: swim.c swimio.h debug.h makefile
 	gcc -Wno-implicit -o swim -O3 -m64 -msse3 swim.c -ltiff -ljpeg -lpng -lfftw3f -lm
