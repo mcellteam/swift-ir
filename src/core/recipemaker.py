@@ -124,7 +124,10 @@ class align_recipe:
         self.path = self.ss['file_path']
         self.solo = self.ss['solo']
         self.path_ref = self.ss['path_reference']
-        self.configure_logging()
+        # try:
+        #     self.configure_logging()
+        # except:
+        #     print_exception()
         self.method = self.ss['method_opts']['method']
         self._return_afm = True
 
