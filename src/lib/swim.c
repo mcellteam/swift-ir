@@ -25,7 +25,11 @@ int fftw_mode = FFTW_ESTIMATE;	// modes are FFTW_ESTIMATE or FFTW_MEASURE
 typedef	unsigned long long ticks;		// the cycle counter is 64 bits
 static	__inline__ ticks getticks(void) {	// read CPU cycle counter
 	unsigned a, d;
+	a = 0;
+	d = 0;
+#ifndef ARM64
 	asm volatile("rdtsc" : "=a" (a), "=d" (d));
+#endif
 	return ((ticks)a) | (((ticks)d) << 32);
 }
 ticks tstart, targs, tread0, tread1, total_ticks, tinit, tprep0, tprep1;
