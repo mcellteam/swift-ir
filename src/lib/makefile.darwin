@@ -1,9 +1,12 @@
 FLAGS = -O3 -m64 -msse3
 BINDIR = ./bin_darwin/
 
-all: $(BINDIR)swim $(BINDIR)iavg $(BINDIR)iscale $(BINDIR)iscale2 $(BINDIR)mir $(BINDIR)remod 
+all: $(BINDIR) $(BINDIR)swim $(BINDIR)iavg $(BINDIR)iscale $(BINDIR)iscale2 $(BINDIR)mir $(BINDIR)remod 
 
 #all: test_libs swim iavg iscale mir remod remod_old sxox json_reader.jar ImageAlign.jar run_swift.jar swift_gui.jar swim_lab.jar sha1sum.txt
+
+$(BINDIR):
+	mkdir $(BINDIR)
 
 $(BINDIR)swim: swim.c swimio.h debug.h makefile
 	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)swim swim.c -I/opt/local/include -L/opt/local/lib -ltiff -ljpeg -lpng -lfftw3f -lwebp -lm
