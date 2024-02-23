@@ -69,7 +69,11 @@ struct image *inimg, *outimg, outtile;
 typedef unsigned long long ticks; // the cycle counter is 64 bits
 static __inline__ ticks getticks(void) {  // read CPU cycle counter
   unsigned a, d;
+  a = 0;
+  d = 0;
+#ifndef ARM64
   asm volatile ("rdtsc":"=a" (a), "=d"(d));
+#endif
   return ((ticks) a) | (((ticks) d) << 32);
 }
 
