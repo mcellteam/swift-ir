@@ -1133,7 +1133,7 @@ def ensure_even(vals, extra=None):
         try:
             assert vals % 2 == 0
         except:
-            msg = f"Odd window size: {vals}. Adding one pixel to keep things even for SWIM."
+            msg = f"Odd window value: {vals}. Adding one pixel to keep things even for SWIM."
             if extra: msg = f'[{extra}] ' + msg
             logger.warning(msg)
             vals += 1
@@ -1145,7 +1145,7 @@ def ensure_even(vals, extra=None):
             try:
                 assert x % 2 == 0
             except:
-                msg = f"Odd window size: {x}. Adding one pixel to keep things even for SWIM."
+                msg = f"Odd window value: {x}. Adding one pixel to keep things even for SWIM."
                 if extra: msg = f'[{extra}] ' + msg
                 logger.warning(msg)
                 vals[i] += 1

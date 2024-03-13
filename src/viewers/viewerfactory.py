@@ -1030,9 +1030,9 @@ class MAViewer(AbstractEMViewer):
         logger.info(f"----> set_layer ---->")
         with self.txn() as s:
             if self.dm['state']['tra_ref_toggle'] == 'ref':
-                s.position[2] = 1.5
+                s.position[2] = 0.5  # 1.5
             else:
-                s.position[2] = 0.5
+                s.position[2] = 1.5  # 0.5
 
         # neuroglancer.futures.run_on_new_thread(self.drawSWIMwindow)
         self.drawSWIMwindow()
@@ -1097,9 +1097,9 @@ class MAViewer(AbstractEMViewer):
                     requested = floor(self.state.position[2])
                     _role = self.dm['state']['tra_ref_toggle']
                     if floor(requested) < 1:
-                        _newrole = 'tra'
+                        _newrole = 'ref' # 'tra'
                     else:
-                        _newrole = 'ref'
+                        _newrole = 'tra' # 'ref'
                     if _role != _newrole:
                         self.dm['state']['tra_ref_toggle'] = _newrole
                         self.drawSWIMwindow()
@@ -1151,9 +1151,9 @@ class MAViewer(AbstractEMViewer):
         # z = self.dm.zpos + 0.5
         self._blockStateChanged = True
         if self.dm['state']['tra_ref_toggle'] == 'ref':
-            z = 1.5
+            z = 0.5 #1.5
         else:
-            z = 0.5
+            z = 1.5 #0.5
 
         m = self.marker_size
         method = self.dm.current_method
