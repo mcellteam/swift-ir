@@ -1626,7 +1626,7 @@ class MainWindow(QMainWindow):
                 caller = inspect.stack()[1].function
                 if hasattr(self.pt, 'viewer0'):
                     del self.pt.viewer0
-                if hasattr(self.pt, 'viewer0'):
+                if hasattr(self.pt, 'viewer1'):
                     del self.pt.viewer1
                 if hasattr(self.pt, 'transformViewer'):
                     del self.pt.transformViewer
