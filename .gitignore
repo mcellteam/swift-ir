@@ -12,6 +12,7 @@ best.JPG
 newtarg.JPG
 **/source_tracker.py
 .idea/
+src/lib/bin_darwin/*
 
 
 # Environments
