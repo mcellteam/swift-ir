@@ -8,6 +8,7 @@ import logging
 import multiprocessing as mp
 import os
 import re
+import ctypes
 import subprocess as sp
 import time
 import statistics
@@ -520,8 +521,9 @@ def print_example_cafms(dm):
         pass
 
 
-
 class HashableDict(dict):
     def __hash__(self):
+        '''Return a hash of the dictionary. This is used to determine if the dictionary has changed.'''
         # return hash(tuple(str(sorted(self.items()))))
-        return abs(hash(str(sorted(self.items()))))
+        # return abs(hash(str(sorted(self.items()))))
+        return ctypes.c_size_t(hash(str(sorted(self.items())))).value
