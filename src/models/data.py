@@ -16,6 +16,7 @@ import statistics
 import sys
 import time
 import uuid
+import ctypes
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime
@@ -1334,17 +1335,23 @@ class DataModel:
 
 
     def cafmHash(self, s=None, l=None):
-        return abs(hash(str(self.cafm(s=s, l=l))))
-
+        '''Constru'''
+        if s == None: s = self.level
+        if l == None: l = self.zpos    
+        hl = HashableList(self.cafm(s=s, l=l))
+        return hash(hl)
+        # return abs(hash(str(self.cafm(s=s, l=l))))
 
 
     def afm_list(self, s=None, l=None) -> list:
+        '''Returns a list of affine transformation matrices for all sections at the current level'''
         if s == None: s = self.level
         lst = [self.afm(s=s, l=l) for l in range(len(self))]
         return lst
 
 
     def cafm_list(self, s=None, end=None) -> list:
+        '''Returns a list of cumulative affine transformation matrices for all sections at the current level'''
         if s == None: s = self.level
         if end == None:
             end = len(self)
@@ -1355,6 +1362,7 @@ class DataModel:
         return lst
 
     def set_stack_cafm(self, s=None):
+        '''Sets the cumulative affine transformation matrices for all sections at the current level'''
         if s == None: s = self.level
         SetStackCafm(self, scale=s, poly_order=self.poly_order)
         alt_SetStackCafm(self, scale=s, poly_order=self.poly_order)
@@ -1368,6 +1376,7 @@ class DataModel:
     #         self['stack'][i]['levels'][s]['cafm_hash'] = self.cafmHash(s=s, l=i)
 
     def isDefaults(self, s=None, l=None):
+        '''Returns True if the current swim settings are the same as the default settings for the current level'''
         if s == None: s = self.level
         if l == None: l = self.zpos
         _cur = copy.deepcopy(self['stack'][l]['levels'][s]['swim_settings'])
@@ -1379,6 +1388,7 @@ class DataModel:
 
 
     def needsAlignIndexes(self, s=None):
+        '''Returns a list of section indexes that need to be aligned at the current level'''
         if s == None: s = self.level
         #Todo make this not use global
         do = []
@@ -1389,6 +1399,7 @@ class DataModel:
 
 
     def all_comports_indexes(self, s=None):
+        '''Returns a list of section indexes that have both data and cafm comports at the current level'''
         if s == None: s = self.level
         t0 = time.time()
         # answer = []
@@ -1418,6 +1429,7 @@ class DataModel:
 
 
     def needsGenerateIndexes(self, s=None):
+        '''Returns a list of section indexes that need to be generated at the current level'''
         if s == None: s = self.level
         t0 = time.time()
         answer = []
@@ -1439,6 +1451,7 @@ class DataModel:
 
         data_dn_comport = self.needsAlignIndexes()
         if len(data_dn_comport):
+            '''If there are any sections that need to be aligned, add them to the list of sections that need to be generated'''
             sweep = list(range(min(data_dn_comport),len(self)))
             answer = list(set(answer) | set(sweep))
 
@@ -1511,7 +1524,7 @@ class DataModel:
         return downscales
 
     def skipped(self, s=None, l=None) -> bool:
-        '''Called by get_axis_data'''
+        '''Returns True if the current section is skipped at the current level.'''
         if s == None: s = self.level
         if l == None: l = self.zpos
         try:
@@ -1540,7 +1553,7 @@ class DataModel:
         self.signals.swimArgsChanged.emit()
 
     def skips_list(self, level=None) -> list:
-        '''Returns the list of excluded images for a level'''
+        '''Returns a list of section indexes that are skipped at the current level.'''
         if level == None: level = self.level
         indexes, names = [], []
         try:
@@ -1556,6 +1569,7 @@ class DataModel:
             return []
 
     def exclude_indices(self, s=None) -> list:
+        '''Returns a list of section indexes that are excluded at the current level.'''
         if s == None: s = self.level
         indexes = []
         for i in range(len(self)):
@@ -1565,12 +1579,14 @@ class DataModel:
 
 
     def swim_iterations(self, s=None, l=None):
+        '''Returns the number of iterations for the current section and scale level.'''
         if s == None: s = self.level
         if l == None: l = self.zpos
         return self._data['stack'][l]['levels'][s]['swim_settings']['iterations']
 
 
     def set_swim_iterations(self, val, s=None, l=None):
+        '''Sets the number of iterations for the current section and scale level.'''
         if s == None: s = self.level
         if l == None: l = self.zpos
         self._data['stack'][l]['levels'][s]['swim_settings']['iterations'] = val
@@ -1585,15 +1601,16 @@ class DataModel:
 
 
     def ssHash(self, s=None, l=None):
-        '''Returns SWIM preferences as a hashable dictionary'''
+        '''Constructs a hash from the SWIM settings for a given section and scale level.'''
         if s == None: s = self.level
         if l == None: l = self.zpos
         # return abs(hash(HashableDict(self.swim_settings(s=s, l=l))))
-        return abs(hash(self.swim_settings(s=s, l=l)))
+        return hash(self.swim_settings(s=s, l=l))
 
 
 
     def unknownAnswerIndexes(self, s=None):
+        '''Returns a list of indexes for which the SWIM settings are not known.'''
         if s == None: s = self.level
         indexes = []
         for i in range(len(self)):
@@ -1606,6 +1623,7 @@ class DataModel:
 
 
     def zarrCafmHashComports(self, s=None, l=None):
+        '''Returns True if the Zarr CAFM hash and comport data are in agreement.'''
         if s == None: s = self.level
         if l == None: l = self.zpos
         fu = self.first_included()
@@ -1623,6 +1641,7 @@ class DataModel:
         return zarr_cafm_hash == cur_cafm_hash
 
     def aa1x1(self, val):
+        '''Sets the default 1x1 SWIM window for the current section across all scales.'''
         val = ensure_even(val)
         img_w, img_h = self.image_size(s=self.level)
         val_y = ensure_even(int((val / img_w) * img_h))
@@ -1634,6 +1653,7 @@ class DataModel:
         self.signals.swimArgsChanged.emit()
 
     def aa2x2(self, val):
+        '''Sets the default 2x2 SWIM window for the current section across all scales.'''
         val = ensure_even(val)
         img_w, img_h = self.image_size(s=self.level)
         val_y = ensure_even(int((val / img_w) * img_h))
@@ -1645,6 +1665,7 @@ class DataModel:
         self.signals.swimArgsChanged.emit()
 
     def aaQuadrants(self, lst):
+        '''Sets the default SWIM grid quadrants for the current section across all scales.'''
         cfg.mw.tell(f"Setting default SWIM grid quadrants: {lst}")
         self['level_data'][self.level]['defaults']['method_opts']['quadrants'] = lst
         for i in range(len(self)):
@@ -1653,6 +1674,7 @@ class DataModel:
         self.signals.swimArgsChanged.emit()
 
     def aaIters(self, val):
+        '''Sets the default SWIM iterations for the current section across all scales.'''
         cfg.mw.tell(f"Setting default SWIM iterations: {val}")
         self['level_data'][self.level]['defaults']['iterations'] = val
         for i in range(len(self)):
@@ -1660,6 +1682,7 @@ class DataModel:
         self.signals.swimArgsChanged.emit()
 
     def aaWhitening(self, val):
+        '''Sets the default SWIM whitening factor for the current section across all scales.'''
         cfg.mw.tell(f"Setting default SWIM whitening factor: {val}")
         self['level_data'][self.level]['defaults']['whitening'] = val
         for i in range(len(self)):
@@ -1667,6 +1690,7 @@ class DataModel:
         self.signals.swimArgsChanged.emit()
 
     def aaClobber(self, tup):
+        '''Sets the default SWIM clobber for the current section across all scales.'''
         if tup[0]:
             cfg.mw.tell(f"Setting default fixed-pattern noise clobber: {tup[0]}, {tup[1]}")
         else:
@@ -1746,6 +1770,7 @@ class DataModel:
     #         self.signals.swimArgsChanged.emit()
 
     def set_manual_swim_window_dec(self, dec:float, s=None, l=None):
+        '''Sets the SWIM Window for the Current Layer when using Manual Alignment.'''
         if s == None: s = self.level
         if l == None: l = self.zpos
         dec = float(dec)
@@ -2293,9 +2318,18 @@ def ensure_even(vals, extra=None):
 
 
 class HashableDict(dict):
+    ''' A hashable dictionary with an unsigned integer hash value.'''
     def __hash__(self):
+        '''Return a hash of the dictionary. This is used to determine if the dictionary has changed.'''
         # return abs(hash(str(sorted(self.items()))))
-        return abs(hash(str(sorted(self.items()))))
+        return ctypes.c_size_t(hash(str(sorted(self.items())))).value
+
+
+class HashableList(list):
+    ''' A hashable list with an unsigned integer hash value.'''
+    def __hash__(self):
+        '''Return a hash of the list. This is used to determine if the list has changed.'''
+        return ctypes.c_size_t(hash(str(self))).value
 
 
 '''

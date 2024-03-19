@@ -7,6 +7,7 @@ import shutil
 import subprocess as sp
 import sys
 import time
+import ctypes
 from math import floor
 from pathlib import Path
 from datetime import datetime
@@ -517,5 +518,6 @@ def preallocate_zarr(dm, name, group, shape, cname, clevel, chunkshape, dtype, o
 class HashableDict(dict):
     def __hash__(self):
         # return abs(hash(str(sorted(self.items()))))
-        return abs(hash(str(sorted(self.items()))))
+        return ctypes.c_size_t(hash(str(sorted(self.items())))).value
+
 
