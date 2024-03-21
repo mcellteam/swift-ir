@@ -601,7 +601,7 @@ class ManagerTab(QWidget):
         full_scale_size = ImageSize(self._NEW_IMAGES_PATHS[0])
         for sv in scale_vals:
             key = 's%d' % sv
-            siz = tuple((np.array(full_scale_size) / sv).astype(int).tolist())
+            siz = (np.array(full_scale_size) / sv).astype(int).tolist()
             opts['size_zyx'][key] = (count, siz[1], siz[0])
             opts['size_xy'][key] = siz
 

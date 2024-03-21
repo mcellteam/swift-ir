@@ -1316,6 +1316,7 @@ class DataModel:
             return [[[1, 0, 0], [0, 1, 0]]]
 
     def cafm(self, s=None, l=None) -> list:
+        '''Returns the cumulative affine transformation matrix for the current section at the current level'''
         if s == None: s = self.level
         if l == None: l = self.zpos
         try:
@@ -1335,7 +1336,7 @@ class DataModel:
 
 
     def cafmHash(self, s=None, l=None):
-        '''Constru'''
+        '''Returns a hash of the current cumulative affine transformation matrix'''
         if s == None: s = self.level
         if l == None: l = self.zpos    
         hl = HashableList(self.cafm(s=s, l=l))
@@ -1780,9 +1781,9 @@ class DataModel:
         self.signals.swimArgsChanged.emit()
 
 
-    def image_size(self, s=None) -> tuple:
+    def image_size(self, s=None) -> list:
         if s == None: s = self.level
-        return tuple(self['images']['size_xy'][s])
+        return list(self['images']['size_xy'][s])
 
     def size_xy(self, s=None) -> tuple:
         if s == None: s = self.level
@@ -2291,6 +2292,7 @@ def to_even(n):
 
 
 def ensure_even(vals, extra=None):
+    '''Ensures that the input is an even number or a list of even numbers. If not, it is incremented by one.'''
     if isinstance(vals, int) or isinstance(vals, float):
         #integer
         vals = int(vals)

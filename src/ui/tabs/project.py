@@ -1255,10 +1255,11 @@ class AlignmentTab(QWidget):
         # self.labViewerScale = QLabel('Viewer Resolution:')
         self.cbxViewerScale = QComboBox()
         lst = []
-        lst.append('Full Quality %d x %dpx' % (self.dm.image_size(s=self.dm.levels[0])))
+        siz = self.dm.image_size(s=self.dm.levels[0])
+        lst.append(f'Full Quality {siz[0]} x {siz[1]}px')
         for level in self.dm.levels[1:]:
             siz = self.dm.image_size(s=level)
-            lst.append('1/%d Quality %d x %dpx' % (self.dm.lvl(level), siz[0], siz[1]))
+            lst.append(f'1/{self.dm.lvl(level)} Quality {siz[0]} x {siz[1]}px')
         self.cbxViewerScale.addItems(lst)
 
         self.cbxViewerScale.setCurrentIndex(self.dm.levels.index(self.dm['state']['viewer_quality']))
@@ -1270,7 +1271,7 @@ class AlignmentTab(QWidget):
                 level = self.dm.levels[self.cbxViewerScale.currentIndex()]
                 siz = self.dm.image_size(s=level)
                 self.dm['state']['viewer_quality'] = level
-                self.mw.tell('Viewing quality set to 1/%d (%d x %dpx)' % (self.dm.lvl(level), siz[0], siz[1]))
+                self.mw.tell(f'Viewing quality set to 1/{self.dm.lvl(level)} ({siz[0]} x {siz[1]}px)')
                 self.initNeuroglancer()
 
         # self.cbxViewerScale.currentIndexChanged.connect(fn_cmbViewerScale)
