@@ -213,6 +213,7 @@ class Thumbnailer:
                full_size=False,
                dest='',
                ):
+        '''Reduce a list of images to thumbnails.'''
 
         # if dest:
         #     logpath = os.file_path.join(dest, 'logs', 'thumbnails.log')
@@ -326,6 +327,7 @@ class Thumbnailer:
 
 
     def reduce_tuples(self, to_reduce, target_size=cfg.TARGET_THUMBNAIL_SIZE, scale_factor=None):
+        '''Reduce a list of tuples of images to thumbnails.'''
         logger.info(f"-------REDUCING TUPLES--------")
         # logger.info(f"-------REDUCING TUPLES--------\n{pprint(to_reduce)}")
 

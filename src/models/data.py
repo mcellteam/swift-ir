@@ -2271,10 +2271,12 @@ class StripNullFields:
 
 
 def hashstring(text:str):
+    '''Returns a hash of a string. This is used to determine if the string has changed.'''
     hash=0
     for ch in text:
         hash = ( hash*281  ^ ord(ch)*997) & 0xFFFFFFFF
     return hash
+
 
 # def dict_hash(dictionary: Dict[str, Any]) -> str:
 #     """Returns an MD5 hash of a Python dictionary. source:

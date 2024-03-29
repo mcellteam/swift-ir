@@ -800,6 +800,7 @@ class EMViewer(AbstractEMViewer):
 
 
 class TransformViewer(AbstractEMViewer):
+    '''TransformViewer is a subclass of Abstract'''
 
     def __init__(self, **kwags):
         super().__init__(**kwags)
@@ -919,6 +920,7 @@ class TransformViewer(AbstractEMViewer):
 '''
 
 class PMViewer(AbstractEMViewer):
+    ''' Pixel-Matched Viewer'''
 
     def __init__(self, **kwags):
         super().__init__(**kwags)
@@ -933,15 +935,18 @@ class PMViewer(AbstractEMViewer):
                     '''
 
     def initViewer(self):
+        '''Initialize the viewer with the appropriate data and settings.'''
         path = self.path
         # logger.critical(f"INITIALIZING [{self.name}]\nLoading: {path}")
 
         if not Path(path).exists():
+            '''If the path does not exist, set the viewer to null and return.'''
             logger.warning(f"[{self.name}] not found: {path}")
             self.webengine.setnull()
             return
 
         if self.name == 'viewer1':
+            '''If the viewer is viewer1, set the data manager and check if the data is aligned.'''
             self.dm = self.parent.dm
             assert hasattr(self.dm, '_data')
             #Todo
@@ -990,6 +995,7 @@ class PMViewer(AbstractEMViewer):
 
 
 class MAViewer(AbstractEMViewer):
+    ''' Manual-Alignment Viewer '''
 
     def __init__(self, **kwags):
         super().__init__(**kwags)

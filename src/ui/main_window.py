@@ -565,7 +565,7 @@ class MainWindow(QMainWindow):
             self.secSNR.setText('')
 
 
-    def updateMS(self):
+    def updateDwMatches(self):
         if self.dwMatches.isVisible():
             self.setSignalsPixmaps()
             self.setTargKargPixmaps()
@@ -786,6 +786,7 @@ class MainWindow(QMainWindow):
 
 
     def setdw_thumbs(self, state):
+        '''Show or hide the thumbnails dockwidget'''
         logger.debug('')
         # caller = inspect.stack()[1].function
         # logger.info(f"[{caller}]")
@@ -802,8 +803,7 @@ class MainWindow(QMainWindow):
         self.tbbThumbs.setToolTip(tip)
 
         if state:
-            self.setSignalsPixmaps()
-            self.setTargKargPixmaps()
+            self.updateDwThumbs()
             # QApplication.processEvents() #1015-
             h = self.dwThumbs.height() - self.pt.tn_ref_lab.height() - self.pt.tn_tra_lab.height()
             w = int(h / 2 + .5) - 10
@@ -824,8 +824,7 @@ class MainWindow(QMainWindow):
         self.tbbMatches.setToolTip(tip)
 
         if state:
-            self.setSignalsPixmaps()
-            self.setTargKargPixmaps()
+            self.updateDwMatches()
             # QApplication.processEvents() #1015-
             h = self.dwMatches.height() - self.pt.mwTitle.height()
             self.pt.match_widget.setMaximumWidth(int(h /2 + .5) - 4)
@@ -1417,8 +1416,9 @@ class MainWindow(QMainWindow):
         self.statusBar.showMessage('')
 
 
-    def ifDwThumbsIsVisible(self, dm):
+    def updateDwThumbs(self):
         if self.dwThumbs.isVisible():
+            dm=cfg.dm
             self.pt.tn_tra.set_data(path=dm.path_thumb())
             self.pt.tn_tra_lab.setText(f'Transforming Section (Thumbnail)\n'
                                        f'[{dm.zpos}] {dm.name()}')
@@ -1448,8 +1448,8 @@ class MainWindow(QMainWindow):
         '''
         logger.info('')
         if self._isProjectTab():
-            self.updateMS()
-            self.ifDwThumbsIsVisible(cfg.dm)
+            self.updateDwMatches()
+            self.updateDwThumbs()
             self.updateNotes()
             _tab = self.pt.wTabs.currentIndex()
             # if _tab == 0:

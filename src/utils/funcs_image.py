@@ -110,6 +110,7 @@ def ImageSize(file_path):
     size = os.path.getsize(file_path)
 
     with open(file_path, 'rb') as input:
+        '''Determine the image type of fhandle and return its size.'''
         height = -1
         width = -1
         data = input.read(25)

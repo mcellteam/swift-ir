@@ -83,8 +83,8 @@ class AlignmentTab(QWidget):
         self.wTabs.currentChanged.connect(self._onTabChange)
         self._allow_zoom_change = True
         self.dm.signals.positionChanged.connect(self.onPositionChange)
-        self.dm.signals.positionChanged.connect(self.mw.setSignalsPixmaps)
-        self.dm.signals.positionChanged.connect(self.mw.setTargKargPixmaps)
+        self.dm.signals.positionChanged.connect(self.mw.updateDwMatches)
+        self.dm.signals.positionChanged.connect(self.mw.updateDwThumbs)
         self.dm.signals.swimArgsChanged.connect(self.onSwimArgsChanged)
 
         self.mw.cbInclude.setChecked(self.dm.include(l=self.dm.zpos))
