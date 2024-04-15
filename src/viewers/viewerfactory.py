@@ -153,6 +153,11 @@ class AbstractEMViewer(neuroglancer.Viewer):
         self.signals = WorkerSignals()
         self._cs_scale = None
         self.colors = cfg.glob_colors
+        self.color_dictionary = {}
+        for i in range(len(self.dm.quadrants)):
+            self.color_dictionary[self.colors[i]] = 1
+
+
         self._blockStateChanged = False
         actions = [('keyLeft', self._keyLeft),
                    ('keyRight', self._keyRight),
@@ -192,6 +197,9 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
         self.setBackground()
         self.webengine.setFocus()
+
+
+
 
     # def defer_callback(self, callback, *args, **kwargs):
     #     pass
@@ -1169,13 +1177,44 @@ class MAViewer(AbstractEMViewer):
             ww2x2 = tuple(self.dm.size2x2())  # 2x2 window width
             w, h = self.dm.image_size(s=self.dm.level)
             p = getCenterpoints(w, h, ww1x1, ww2x2)
-            colors = self.colors[0:sum(self.dm.quadrants)]
+            colors = self.colors
+            # colors = self.colors[0:sum(self.dm.quadrants)]
+
+            colors_dict = self.color_dictionary
+            # this is to change the color according value to 1 or 0
+            for i in range(len(self.dm.quadrants)):
+                if self.dm.quadrants[i] == 0:
+                    colors_dict[colors[i]] = 0
+                elif self.dm.quadrants[i] == 1:
+                    colors_dict[colors[i]] = 1
+
+
+            colors_dict = self.color_dictionary
+            print("this is colors_dictionary")
+            print(colors_dict)
+
             cps = [x for i, x in enumerate(p) if self.dm.quadrants[i]]
+            print("this is quandrants")
+            print(self.dm.quadrants)
             ww_x = ww2x2[0] - (24 // self.level_val)
             ww_y = ww2x2[1] - (24 // self.level_val)
             for i, pt in enumerate(cps):
-                c = colors[i]
+                # we create a new_colors which only stores the existing colors in the dictionary.
+                new_colors = []
+                for key, item in colors_dict.items():
+                    if item == 1:
+                        new_colors.append(key)
+                # cps and colors should have the same length, so i can be used here
+                c = new_colors[i]
+                print("this is new color")
+                print(new_colors)
+
+                # c = colors[i]
                 d1, d2, d3, d4 = getRect(pt, ww_x, ww_y)
+                print("this is rectangle")
+                print(d1,d2,d3,d4)
+
+
                 id = 'roi%d' % i
                 annotations.extend([
                     ng.LineAnnotation(id=id + '_0', pointA=d1 + (z,), pointB=d2 + (z,), props=[c, m]),
@@ -1245,10 +1284,13 @@ def getCenterpoints(w, h, ww1x1, ww2x2):
     d_x2 = w - d_x1
     d_y1 = ((h - ww1x1[1]) / 2) + (ww2x2[1] / 2)
     d_y2 = h - d_y1
-    p1 = (d_x2, d_y1)
-    p2 = (d_x1, d_y1)
-    p3 = (d_x2, d_y2)
-    p4 = (d_x1, d_y2)
+    # switched between p1 and p2, p3 and p4.
+    # we find the order before is p2,p1,p4,p3 as left to right, up to down
+    # now is p1,p2,p3,p4
+    p1 = (d_x1, d_y1)
+    p2 = (d_x2, d_y1) 
+    p3 = (d_x1, d_y2)
+    p4 = (d_x2, d_y2)
     return p1, p2, p3, p4
 
 
