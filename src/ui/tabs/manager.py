@@ -655,6 +655,7 @@ class ManagerTab(QWidget):
 
 
     def initPMviewer(self, path=None):
+        '''Initialize the PMViewer instances for the current images and alignment paths.'''
         self.setUpdatesEnabled(False)
         self.loadLevelsCombo()
         level = self.comboLevel.currentText()

@@ -808,7 +808,7 @@ class EMViewer(AbstractEMViewer):
 
 
 class TransformViewer(AbstractEMViewer):
-    '''TransformViewer is a subclass of Abstract'''
+    '''Alignment Transform Viewer'''
 
     def __init__(self, **kwags):
         super().__init__(**kwags)
@@ -1138,10 +1138,12 @@ class MAViewer(AbstractEMViewer):
         self.webengine.setFocus()
 
     def swim(self, s):
+        '''Emit the SWIM signal.'''
         logger.debug('[futures] Emitting SWIM signal...')
         self.signals.swimAction.emit()
 
     def add_matchpoint(self, s, id, ignore_pointer=False):
+        '''Add a matchpoint to the viewer.'''
         if self.dm.method() == 'manual':
             logger.debug('')
             # print('\n\n--> adding region selection -->\n')
@@ -1160,6 +1162,7 @@ class MAViewer(AbstractEMViewer):
             neuroglancer.futures.run_on_new_thread(self.drawSWIMwindow)
 
     def drawSWIMwindow(self):
+        '''Draws the SWIM Window Annotations on the viewer.'''
         # caller = inspect.stack()[1].function
         # logger.info(f"----> [{caller}][{self.index}] drawSWIMwindow ---->")
         # z = self.dm.zpos + 0.5

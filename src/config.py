@@ -115,6 +115,7 @@ ignore_pbar = False
 
 # glob_colors = ['#75bbfd', '#e50000', '#fcfc81', '#acc2d9', '#b2996e', '#a8ff04',]
 # glob_colors = ['#ffffe4', '#be013c', '#42d4f4', '#FFFF66', '#b2996e', '#a8ff04',]
+# glob_colors = ['#ffffe4', '#ffe135', '#42d4f4', '#b2996e', '#FFFF66', '#a8ff04',]
 glob_colors = ['#ffffe4', '#ffe135', '#42d4f4', '#e50000', '#FFFF66', '#a8ff04',]
 
 
