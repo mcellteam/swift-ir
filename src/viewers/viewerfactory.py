@@ -154,8 +154,9 @@ class AbstractEMViewer(neuroglancer.Viewer):
         self._cs_scale = None
         self.colors = cfg.glob_colors
         self.color_dictionary = {}
-        for i in range(len(self.dm.quadrants)):
-            self.color_dictionary[self.colors[i]] = 1
+        if self.dm is not None: 
+            for i in range(len(self.dm.quadrants)):
+                self.color_dictionary[self.colors[i]] = 1
 
 
         self._blockStateChanged = False
@@ -1191,14 +1192,7 @@ class MAViewer(AbstractEMViewer):
                 elif self.dm.quadrants[i] == 1:
                     colors_dict[colors[i]] = 1
 
-
-            colors_dict = self.color_dictionary
-            print("this is colors_dictionary")
-            print(colors_dict)
-
             cps = [x for i, x in enumerate(p) if self.dm.quadrants[i]]
-            print("this is quandrants")
-            print(self.dm.quadrants)
             ww_x = ww2x2[0] - (24 // self.level_val)
             ww_y = ww2x2[1] - (24 // self.level_val)
             for i, pt in enumerate(cps):
@@ -1209,14 +1203,9 @@ class MAViewer(AbstractEMViewer):
                         new_colors.append(key)
                 # cps and colors should have the same length, so i can be used here
                 c = new_colors[i]
-                print("this is new color")
-                print(new_colors)
-
+ 
                 # c = colors[i]
                 d1, d2, d3, d4 = getRect(pt, ww_x, ww_y)
-                print("this is rectangle")
-                print(d1,d2,d3,d4)
-
 
                 id = 'roi%d' % i
                 annotations.extend([
