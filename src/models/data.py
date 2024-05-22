@@ -124,7 +124,7 @@ class DataModel:
 
         self._data['modified'] = date_time()
         self['protected'].setdefault('force_reallocate_zarr_flag', False)
-        self['state']['neuroglancer'].setdefault('transformed', True)
+        self['state']['neuroglancer'].setdefault('transformed', False)
         # ident = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
         for i in range(len(self)):
             for level in self.levels:
@@ -1278,6 +1278,7 @@ class DataModel:
     #                     f"\n After : {AFTER}"
     #                     f"\n------------------")
 
+
     def manpoints_mir(self, role, s=None, l=None):
         '''Returns manual correspondence points in MIR format'''
         if s == None: s = self.level
@@ -1288,6 +1289,17 @@ class DataModel:
             print_exception(extra=f"role: {role}, s={s}, l={l}")
 
 
+    def manpoints(self, role, s=None, l=None):
+        '''Returns manual correspondence points in raw format'''
+        if s == None: s = self.level
+        if l == None: l = self.zpos
+        try:
+            return self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']['points']['coords'][role]
+        except:
+            print_exception(extra=f"role: {role}, s={s}, l={l}")
+
+
+
     def afm(self, s=None, l=None) -> list:
         if s == None: s = self.level
         if l == None: l = self.zpos
@@ -1295,7 +1307,7 @@ class DataModel:
             return self['stack'][l]['levels'][s]['mir_afm']
         except Exception as e:
             logger.warning(f"[{l}] afm key not found in result data. Reason: {e.__class__.__name__}")
-            return [[[1, 0, 0], [0, 1, 0]]]
+            return [[1, 0, 0], [0, 1, 0]]
 
     def mir_afm(self, s=None, l=None) -> list:
         if s == None: s = self.level
@@ -1304,7 +1316,7 @@ class DataModel:
             return self['stack'][l]['levels'][s]['mir_afm']
         except Exception as e:
             logger.warning(f"[{l}] mir_afm key not found in result data. Reason: {e.__class__.__name__}")
-            return [[[1, 0, 0], [0, 1, 0]]]
+            return [[1, 0, 0], [0, 1, 0]]
 
     def mir_aim(self, s=None, l=None) -> list:
         if s == None: s = self.level
@@ -1313,7 +1325,7 @@ class DataModel:
             return self['stack'][l]['levels'][s]['mir_aim']
         except Exception as e:
             logger.warning(f"[{l}] mir_aim key not found in result data. Reason: {e.__class__.__name__}")
-            return [[[1, 0, 0], [0, 1, 0]]]
+            return [[1, 0, 0], [0, 1, 0]]
 
     def cafm(self, s=None, l=None) -> list:
         '''Returns the cumulative affine transformation matrix for the current section at the current level'''
@@ -1323,7 +1335,7 @@ class DataModel:
             return self._data['stack'][l]['levels'][s]['cafm']
         except Exception as e:
             logger.warning(f"[{l}] cafm key not found in result data. Reason: {e.__class__.__name__}")
-            return [[[1, 0, 0], [0, 1, 0]]]
+            return [[1, 0, 0], [0, 1, 0]]
 
     def alt_cafm(self, s=None, l=None) -> list:
         if s == None: s = self.level
@@ -1332,7 +1344,7 @@ class DataModel:
             return self._data['stack'][l]['levels'][s]['alt_cafm']
         except Exception as e:
             logger.warning(f"[{l}] alt_cafm key not found in result data. Reason: {e.__class__.__name__}")
-            return [[[1, 0, 0], [0, 1, 0]]]
+            return [[1, 0, 0], [0, 1, 0]]
 
 
     def cafmHash(self, s=None, l=None):
