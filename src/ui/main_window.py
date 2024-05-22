@@ -1419,7 +1419,7 @@ class MainWindow(QMainWindow):
     def updateDwThumbs(self):
         if self.dwThumbs.isVisible():
             dm=cfg.dm
-            self.pt.tn_tra.set_data(path=dm.path_thumb())
+            self.pt.tn_tra.set_data(path=dm.path_thumb_src())
             self.pt.tn_tra_lab.setText(f'Transforming Section (Thumbnail)\n'
                                        f'[{dm.zpos}] {dm.name()}')
             if dm.skipped():
@@ -1433,7 +1433,7 @@ class MainWindow(QMainWindow):
                                            f'[{dm.zpos}] {dm.name_ref()}')
                 if self.pt.tn_tra_overlay.isVisible():
                     self.pt.tn_tra_overlay.hide()
-                self.pt.tn_ref.set_data(path=dm.path_thumb_ref())
+                self.pt.tn_ref.set_data(path=dm.path_thumb_src_ref())
                 self.pt.tn_ref.show()
                 self.pt.tn_ref_lab.show()
 
