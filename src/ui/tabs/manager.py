@@ -617,6 +617,7 @@ class ManagerTab(QWidget):
         self.resetView(init_viewer=True)
 
     def createAlignment(self):
+        '''Create a new alignment for the selected EM stack.'''
         logger.info('')
         self.bPlusAlignment.setEnabled(False)
         root = Path(cfg.preferences['alignments_root'])
@@ -626,28 +627,30 @@ class ManagerTab(QWidget):
         newdir = (root / usertext).with_suffix('')
         info = seriespath / 'info.json'
         _err = 0
-        _msg = None
+        _msg = ''
         if not os.path.isdir(seriespath):
             _err = 1
-            _msg = f"Image Series Not Found: {seriespath}.\nWere the images moved?"
-        elif not info.exists():
+            _msg += f"Image Series Not Found: {seriespath}.\nWere the images moved?\n"
+        if not info.exists():
             _err = 1
-            _msg = f"Image Stack 'info.json' File Is Missing:\n{info}\nWas it moved?"
-        elif os.path.exists(newproject):
+            _msg += f"Image Stack 'info.json' File Is Missing:\n{info}\nWas it moved?\n"
+        if os.path.exists(newproject):
             _err = 1
-            _msg = f"A file with this name already exists: {newproject}"
-        elif os.path.exists(newdir):
+            _msg += f"A file with this name already exists: {newproject}\n"
+        if os.path.exists(newdir):
             _err = 1
-            _msg = f"A directory with this name already exists: {newdir}"
+            _msg += f"A directory with this name already exists: {newdir}\n"
+
         if _err:
             self.parent.warn(_msg)
             self.resetView()
         else:
             info = read('json')(info)
             self.dm = dm = DataModel(file_path=newproject, images_path=seriespath, init=True, images_info=info)
-            DirectoryStructure(dm).initDirectory()
-            AlignmentTab(self.parent, dm)
-            dm.save(silently=True)
+            # DirectoryStructure(dm).initDirectory()
+            self.dm.ds.initDirectory()
+            AlignmentTab(self.parent, self.dm)
+            self.dm.save(silently=True)
         self.bPlusAlignment.setEnabled(True)
         self.resetView()
         logger.info(f"<-- createAlignment")
