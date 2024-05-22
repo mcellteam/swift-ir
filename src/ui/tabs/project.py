@@ -1483,7 +1483,7 @@ class AlignmentTab(QWidget):
         self.wNgAccessories = HW(BoldLabel("  Neuroglancer  "), self.cbxNgExtras)
 
         self.cbTransformed = QCheckBox('Transformed')
-        self.cbTransformed.setChecked(getData('state,neuroglancer,transformed'))
+        # self.cbTransformed.setChecked(getData('state,neuroglancer,transformed'))
         # self.cbTransformed.setStyleSheet("")
 
         def fn_cb_transformed():
@@ -1495,6 +1495,7 @@ class AlignmentTab(QWidget):
                     self.viewer0.set_untransformed()
 
         self.cbTransformed.toggled.connect(fn_cb_transformed)
+        self.cbTransformed.setChecked(getData('state,neuroglancer,transformed'))
 
         tip = 'Generate permanent Zarr of cumulative alignment from TIFFs'
         self.bZarrRegen = QPushButton('Generate')
