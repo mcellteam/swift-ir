@@ -222,19 +222,20 @@ class ThumbnailFast(QLabel):
                         ww = cfg.mw.dm.manual_swim_window_px(s=s, l=l)
                         if self.name in ('reference','reference-data'):
                             if self.name == 'reference-data':
-                                pts = cfg.mw.dm.manpoints_mir('ref', s=s, l=l)
+                                pts = cfg.mw.dm.manpoints('ref', s=s, l=l)
                             else:
-                                pts = cfg.mw.dm.manpoints_mir('ref')
+                                pts = cfg.mw.dm.manpoints('ref')
                         elif self.name in ('transforming', 'transforming-data'):
                             if self.name == 'transforming-data':
-                                pts = cfg.mw.dm.manpoints_mir('base', s=s, l=l)
+                                pts = cfg.mw.dm.manpoints('tra', s=s, l=l)
                             else:
-                                pts = cfg.mw.dm.manpoints_mir('base')
+                                pts = cfg.mw.dm.manpoints('tra')
+                        print('pts: ', str(pts))
                         for i,pt in enumerate(pts):
                             if pt:
                                 qp.setPen(QPen(QColor(cfg.glob_colors[i]), 2, Qt.DotLine))
-                                x = int(pt[0])
-                                y = int(pt[1])
+                                x = int(pt[0]*img_size[0])
+                                y = int(pt[1]*img_size[1])
                                 r = get_rect(sf, x, y, ww, self.r.getCoords())
                                 qp.drawRect(r)
 
