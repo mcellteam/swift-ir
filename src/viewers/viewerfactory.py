@@ -154,9 +154,13 @@ class AbstractEMViewer(neuroglancer.Viewer):
         self._cs_scale = None
         self.colors = cfg.glob_colors
         self.color_dictionary = {}
+        for i in range(4):
+            self.color_dictionary[self.colors[i]] = 1
+        '''
         if self.dm is not None: 
             for i in range(len(self.dm.quadrants)):
                 self.color_dictionary[self.colors[i]] = 1
+        '''
 
 
         self._blockStateChanged = False
@@ -779,14 +783,21 @@ class EMViewer(AbstractEMViewer):
             s.show_ui_controls = getData('state,neuroglancer,show_controls')
 
         _request_transformed = getData('state,neuroglancer,transformed')
+
+        '''
         if not self.dm.is_aligned():
             _request_transformed = setData('state,neuroglancer,transformed', False)
 
         # if self._show_transformed != _request_transformed:
         if _request_transformed:
             self.set_transformed()
+        '''
+        
+        if _request_transformed:
+            self.set_transformed()  
         else:
             self.set_untransformed()
+
         with self.txn() as s:
             s.layout.type = getData('state,neuroglancer,layout')
             s.show_scale_bar = getData('state,neuroglancer,show_scalebar')
