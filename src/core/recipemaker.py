@@ -191,7 +191,7 @@ class align_recipe:
 
         # Example: psta_2x2 = [[256. 768. 256. 768.] [256. 256. 768. 768.]]
 
-        if 'grid' in self.method:
+        if 'grid' in self.method: # Align using ingredients for Grid mode
 
             # from previous 'custom-grid' method
             ww_1x1 = self.ss['method_opts']['size_1x1']
@@ -246,7 +246,7 @@ class align_recipe:
                         psta=psta_2x2,
                         ID='ingredient-2x2-d',
                         last=True)])
-        else:
+        else: # Align using ingredients for Manual mode
             # ww = self.ss['method_opts']['size'] #1025-
             siz = self.ss['img_size']
             ww = ensure_even(self.ss['method_opts']['size'] * siz[0])
@@ -321,12 +321,12 @@ class align_recipe:
         except:
             print_exception(extra=f"Section # {self.index}, afm={self.afm}")
             self.afm = np.array([[1., 0., 0.], [0., 1., 0.]])
-            return
+            return None
 
 
         if (self.path_ref == self.path) or (self.path_ref == ''):
             logger.warning(f'Image #{self.index} Has No Reference!')
-            return
+            return None
 
         if not self.ss['first_index']:
             for i, ingredient in enumerate(self.ingredients):
@@ -633,20 +633,20 @@ class align_ingredient:
             self.clr_indexes = copy.deepcopy(self.recipe.clr_indexes)
         if self.mode == 'MIR':
             self.afm = self.run_manual_mir()
-        else:
+        else:  # Normal 'SWIM' ingredient (i.e. SWIM followed by MIR)
             swim_output = self.run_swim()
             if swim_output == ['']:
                 logger.warning(f"[{self.recipe.index}] SWIM Out is empty "
                                  f"string! Err:\n{self.swim_err_lines}")
                 self.snr = np.zeros(len(self.psta[0]))
-            self.ingest_swim_output(swim_output)
+            self.ingest_swim_output(swim_output) #parse swim output and call mir with result.
 
 
         if self.last:
             if self.recipe.ss['glob_cfg']['keep_signals']:
-                self.crop_match_signals()
+                self.crop_match_signals() # crop central portion of signal images
             if self.recipe.ss['glob_cfg']['keep_matches']:
-                self.reduce_matches()
+                self.reduce_matches() # downscale size of match images
         try:
             np.set_printoptions(linewidth=np.inf)
             np.set_printoptions(formatter={'float': lambda x: "{0:.3g}".format(x)})
@@ -748,6 +748,7 @@ class align_ingredient:
         #     print(f'\nSwimming...\n{self.multi_swim_arg_str()}\n')
         logging.getLogger('recipemaker').debug(
             f'Multi-SWIM Argument String:\n{self.multi_swim_arg_str()}')
+        print(f'Multi-SWIM Argument String:\n{self.multi_swim_arg_str()}')
         arg = "%dx%d" % (self.ww[0], self.ww[1])
         t0 = time.time()
         out, err, rc = run_command(
@@ -857,17 +858,17 @@ class align_ingredient:
                 if (toks[0] == 'AI'):
                     self.mir_aim[0, 0] = float(toks[1])
                     self.mir_aim[0, 1] = float(toks[2])
-                    self.mir_aim[0, 2] = float(toks[3]) #+ self.swim_drift
+                    self.mir_aim[0, 2] = float(toks[3]) + self.swim_drift
                     self.mir_aim[1, 0] = float(toks[4])
                     self.mir_aim[1, 1] = float(toks[5])
-                    self.mir_aim[1, 2] = float(toks[6]) #+ self.swim_drift
+                    self.mir_aim[1, 2] = float(toks[6]) + self.swim_drift
                 if (toks[0] == 'AF'):
                     self.mir_afm[0, 0] = float(toks[1])
                     self.mir_afm[0, 1] = float(toks[2])
-                    self.mir_afm[0, 2] = float(toks[3]) #+ self.swim_drift
+                    self.mir_afm[0, 2] = float(toks[3]) - self.swim_drift
                     self.mir_afm[1, 0] = float(toks[4])
                     self.mir_afm[1, 1] = float(toks[5])
-                    self.mir_afm[1, 2] = float(toks[6]) #+ self.swim_drift
+                    self.mir_afm[1, 2] = float(toks[6]) - self.swim_drift
             self.afm = self.mir_aim
             self.snr = np.array(snr_list)
             return self.afm
@@ -954,6 +955,7 @@ class align_ingredient:
                     os.remove(fn)
             except:
                 print_exception()
+
 
     # def generate_thumbnail(self):
     #     if self.recipe.index == 0:
