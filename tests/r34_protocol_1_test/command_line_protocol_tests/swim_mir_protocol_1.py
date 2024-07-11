@@ -1,6 +1,9 @@
 import os
+import shutil
 import subprocess as sp
 import numpy as np
+from get_image_size import get_image_size
+
 
 
 def swim_input(size, i, f, w, b, t, k, tgt, pt, src, ps, shi):
@@ -56,7 +59,8 @@ def run_swim(size, i, f, w, tgt, pt, src, ps, shi=None,
         _b = f'sig_{idj}.JPG' if b is None else f'{b}_{idj}.JPG'
         _t = f'tar_{idj}.JPG' if t is None else f'{t}_{idj}.JPG'
         _k = f'src_{idj}.JPG' if k is None else f'{k}_{idj}.JPG'
-        _input = swim_input(size, i, f, w, _b, _t, _k, tgt, pt, src, ps, shi)
+        _input = swim_input(size, i, f, w, _b, _t, _k,
+                            tgt, pt, src, ps, shi)
 
     if id == '2x2':
         _input = ''
@@ -65,8 +69,8 @@ def run_swim(size, i, f, w, tgt, pt, src, ps, shi=None,
             _b = f'sig_{idj}.JPG' if b is None else f'{b}_{idj}.JPG'
             _t = f'tar_{idj}.JPG' if t is None else f'{t}_{idj}.JPG'
             _k = f'src_{idj}.JPG' if k is None else f'{k}_{idj}.JPG'
-            _input += swim_input(size, i, f, w, _b, _t, _k, tgt, pt[j], src, ps[j],
-                                 shi) + '\n'
+            _input += swim_input(size, i, f, w, _b, _t, _k,
+                                 tgt, pt[j], src, ps[j], shi) + '\n'
         _input = _input[:-1]
 
     with sp.Popen(com, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE,
@@ -93,43 +97,51 @@ def run_swim(size, i, f, w, tgt, pt, src, ps, shi=None,
         #         'dx': dx, 'dy': dy, 'm0': m0}
 
 
-def mir_input(pt, ps, img_src, img_out):
+def mir_input(pt=None, ps=None, img_src=None, img_out=None, af=None,
+              img_size=None):
 
-    arg = f'F {img_src}\n'
-    for i in range(len(pt)):
-        arg += f'{pt[i][0]} {pt[i][1]} {ps[i][0]} {ps[i][1]}\n'
+    if (pt is not None) and (ps is not None):
+        arg = ''
+        for i in range(len(pt)):
+            arg += f'{pt[i][0]} {pt[i][1]} {ps[i][0]} {ps[i][1]}\n'
+        arg += 'R'
 
-    arg += f'RW {img_out}'
-
-    return arg
+        return arg
+    
+    if (img_src is not None) and (img_out is not None) and (af is not None):
+        arg = f'F {img_src}\n'
+        arg += f'a {af[0]} {af[1]} {af[2]} {af[3]} {af[4]} {af[5]}\n'
+        arg += f'RW {img_out}'
+        
+        return arg
 
 
 def parse_mir_out(arg):
 
     out = arg.split('\n')
-    af = np.array([float(x) for x in out[0].split()[2:]])
-    ai = np.array([float(x) for x in out[1].split()[2:]])
+    af = np.array([float(x) for x in out[0].split()[1:]])
+    ai = np.array([float(x) for x in out[1].split()[1:]])
 
     return af, ai
 
 
-def run_mir(pt, ps, img_src, img_out, log=True):
-            # pt=None, ps=None, img_src=None, img_out=None, af=None, img_size=None, log=True
-    # form 1. pt, ps, img_src=None, img_out=None
-    # form 2. img_src, img_out, af
+def run_mir(pt=None, ps=None, img_src=None, img_out=None, af=None, img_size=None,
+            log=True):
+    # form 1. pt, ps, af=None   --> img_src and img_out are ignored
+    # form 2. img_src, img_out, af!=None  --> pt and ps are ignored
 
     mir = 'mir'
     com = [f'{mir}']
 
-    # if (pt is not None) and (ps is not None):
-    #     # pt and ps must be given together!
-    #     _input = mir_input(pt, ps, img_src, img_out)
+    if (pt is not None) and (ps is not None) and (af is None):
+        # pt and ps must be given together!
+        _input = mir_input(pt=pt, ps=ps)
 
-    # if (img_src is not None) and (img_out is not None) and (af is not None):
-    #     # img_src, img_out, and af must be given together!
-    #     _input = mir_input(img_src, img_out, af)
+    if (img_src is not None) and (img_out is not None) and (af is not None):
+        # img_src, img_out, and af must be given together!
+        _input = mir_input(img_src=img_src, img_out=img_out, af=af)
 
-    _input = mir_input(pt, ps, img_src, img_out)
+    # _input = mir_input(pt, ps, img_src, img_out)
 
     with sp.Popen(com, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE,
                   universal_newlines=True) as proc:
@@ -142,11 +154,13 @@ def run_mir(pt, ps, img_src, img_out, log=True):
         print(f'errs:\n{errs}')
         print(f'proc.returncode: {proc.returncode}')
 
-    # if (pt is not None) and (ps is not None):
-    af, ai = parse_mir_out(outs[:-1]) # remove last '\n'
+    if (pt is not None) and (ps is not None) and (af is None):
+        af, ai = parse_mir_out(outs[:-1]) # remove last '\n'
+        return af, ai
+        # return {'af': af, 'ai': ai}
+    else:
+        return None
 
-    return af, ai
-    # return {'af': af, 'ai': ai}
 
 # Protocol 1 consists of:
 # 1) swim (iters = 3) of 1x1 window to get initial estimate of translation term
@@ -157,41 +171,49 @@ def run_mir(pt, ps, img_src, img_out, log=True):
 # 6) swim (iters = 3) of 2x2 quadrants using shape part of refined AI from step 5
 # 7) mir of result of step 6 to get final AI
 # 8) swim (iters = 1) of 2x2 quadrants using shape part of final AI to get final SNRs
-def protocol_1(img_size, ww, iters, f, w, img_tgt, img_src, b, t, k, log=True):
+#   
+def protocol_1(img_size, ww, iters, f, w, img_tgt, pt, img_src, ps, shi,
+               b, t, k, log=True):
+#form 1: pt and ps are None  --> perform initial alignment at coarsest scale
+#form 2: pt and ps are not None  --> perform alignment at finer scales
 
-    # 1x1 step
 
     # img_size = np.array([1024, 1024])
 
     # ww = np.array([832, 832])
 
-    pt_1 = ps_1 = img_size / 2
+    if (pt is None) and (ps is None):
+        # 1x1 step
+        pt_1 = ps_1 = img_size / 2
 
-    swim_out_1 = run_swim(ww[0], iters, f, w,
-                          img_tgt, pt_1,
-                          img_src, ps_1,
-                          id='1x1', b=b, t=t, k=k, log=log)
+        swim_out_1 = run_swim(ww[0], iters, f, w,
+                            img_tgt, pt_1,
+                            img_src, ps_1, shi,
+                            id='1x1', b=b, t=t, k=k, log=log)
 
-    # 2x2_0
+        # setup for 2x2_0 step
+        off_x = ww[0] / 4
+        off_y = ww[1] / 4
+        off = np.array([[-off_x, -off_y],
+                        [+off_x, -off_y],
+                        [-off_x, +off_y],
+                        [+off_x, +off_y]])
 
-    off_x = ww[0] / 4
-    off_y = ww[1] / 4
-    off = np.array([[-off_x, -off_y],
-                    [+off_x, -off_y],
-                    [-off_x, +off_y],
-                    [+off_x, +off_y]])
+        # off = np.array([[-208.0, -208.0],
+        #                 [+208.0, -208.0],
+        #                 [-208.0, +208.0],
+        #                 [+208.0, +208.0]])
 
-    # off = np.array([[-208.0, -208.0],
-    #                 [+208.0, -208.0],
-    #                 [-208.0, +208.0],
-    #                 [+208.0, +208.0]])
+        pt_2_0 = swim_out_1[1] + off
+        ps_2_0 = swim_out_1[2] + off
 
-    pt_2_0 = swim_out_1[1] + off
-    ps_2_0 = swim_out_1[2] + off
+    else:
+        pt_2_0 = pt
+        ps_2_0 = ps
 
     swim_out_2_0 = run_swim(ww[0]//2, iters, f, w, 
                             img_tgt, pt_2_0,
-                            img_src, ps_2_0,
+                            img_src, ps_2_0, shi,
                             id='2x2', b=b, t=t, k=k, log=log)
 
     ren = f'ren_{k[4:]}.JPG'
@@ -204,7 +226,8 @@ def protocol_1(img_size, ww, iters, f, w, img_tgt, img_src, b, t, k, log=True):
     swim_out_2_1 = run_swim(ww[0]//2, iters, f, w, 
                             img_tgt, swim_out_2_0[1],
                             img_src, swim_out_2_0[2],
-                            mir_out_2_0[1][mask], id='2x2', b=b, t=t, k=k, log=log)
+                            mir_out_2_0[1][mask], id='2x2',
+                            b=b, t=t, k=k, log=log)
 
     mir_out_2_1 = run_mir(swim_out_2_1[1], swim_out_2_1[2],
                           img_src, ren, log=log)
@@ -214,7 +237,8 @@ def protocol_1(img_size, ww, iters, f, w, img_tgt, img_src, b, t, k, log=True):
     swim_out_2_2 = run_swim(ww[0]//2, iters, f, w,
                             img_tgt, swim_out_2_1[1],
                             img_src, swim_out_2_1[2],
-                            mir_out_2_1[1][mask], id='2x2', b=b, t=t, k=k, log=log)
+                            mir_out_2_1[1][mask], id='2x2',
+                            b=b, t=t, k=k, log=log)
 
     mir_out_2_2 = run_mir(swim_out_2_2[1], swim_out_2_2[2],
                           img_src, ren, log=log)
@@ -223,31 +247,168 @@ def protocol_1(img_size, ww, iters, f, w, img_tgt, img_src, b, t, k, log=True):
     swim_out_2_3 = run_swim(ww[0]//2, 1, f, w,
                             img_tgt, swim_out_2_2[1],
                             img_src, swim_out_2_2[2],
-                            mir_out_2_2[1][mask], id='2x2', b=b, t=t, k=k, log=log)
+                            mir_out_2_2[1][mask], id='2x2',
+                            b=b, t=t, k=k, log=log)
+    
+    # return (swim_out_2_3[0], swim_out_2_3[1], swim_out_2_3[2],
+    #         swim_out_2_3[3], mir_out_2_2[0], mir_out_2_2[1])
+
+    return (*swim_out_2_3[:4], *mir_out_2_2)
 
 
 def get_img_stack(dir):
-    # use image library 
-    img_size = np.array([1024, 1024]) # for a rectangular image use something like img_size = np.array([2048, 1024])
+    # use image library
     img_stack = sorted([os.path.join(dir, x) for x in os.listdir(dir)])  # get list of images in dir arg
+    img_size = np.array(get_image_size(img_stack[0]))
+
     return img_size, img_stack
 
+
+class DataModel (dict):
+    # DataModel Schema:
+    # {
+    #     'img_path': img_dir,
+    #     'scale_S': {    # where S is the scale value,   
+    #       'affine_mode': 'init_affine' or 'refine_affine',
+    #       'img_size': [siz_x, siz_y],
+    #       'img_stack': [img_dict_1, ... img_dict_N, ...],
+    #     },
+    # }
+    #
+    # where img_dict_N is:
+    # {
+    #     'img_idx': N,
+    #     'img_tgt': img_tgt,
+    #     'img_src': img_src,
+    #     'include': True or False,
+    #     'alignment_method': 'grid' or 'manual_hint' or 'manual_scrict'
+    #     'ww_1x1': [832, 832],
+    #     'ww_2x2': [416, 416],
+    #     'ww_manual': [ww_x, ww_y],
+    #     'iters': 3,
+    #     'f': 3,
+    #     'w': -0.65,
+    #     'pt_init': [[pt_1_x, pt_1_y], ... [pt_N_x, pt_N_y], ...], or []
+    #     'ps_init': [[ps_1_x, ps_1_y], ... [ps_N_x, ps_N_y], ...], or []
+    #     'shape_inv_init': [shi_0, shi_1, shi_2, shi_3], or []
+    #     'result': {
+    #        'pt': [[pt_1_x, pt_1_y], ... [pt_N_x, pt_N_y], ...],
+    #        'ps': [[ps_1_x, ps_1_y], ... [ps_N_x, ps_N_y], ...],
+    #        'afm': [afm_1, afm_2, ...],
+    #        'cafm': [cafm_1, cafm_2, ...],
+    #        'snr': [snr_1, snr_2, ...],
+    #     }
+    # }
+
+
+    def __init__(self, *args, **kwargs):
+        super(DataModel, self).__init__(*args, **kwargs)
+
+    def update(self, *args, **kwargs):
+        super(DataModel, self).update(*args, **kwargs)
+
+    def __setitem__(self, key, value):
+        super(DataModel, self).__setitem__(key, value)
+
+    def __getitem__(self, key):
+        return super(DataModel, self).__getitem__(key)
+
+    def __delitem__(self, key):
+        super(DataModel, self).__delitem__(key)
+
+    def __str__(self):
+        return super(DataModel, self).__str__()
+
+    def __repr__(self):
+        return super(DataModel, self).__repr__()
+    
 
 if __name__ == '__main__':
 
     # get image stack
-    img_size, img_stack = get_img_stack('../images/s4')
-    tgt_src_indices = [ (i-1, i) for i in range(1, len(img_stack)) ] 
+    img_dir = '../images/'
+    dirs = sorted([os.path.join(img_dir, dir) for dir in os.listdir(img_dir)])[::-1]
+    scale_factors = [ int(dir[dir.rfind('s')+1:]) for dir in dirs ]
 
-    # protocol_1(img_size, np.array([832, 832]), 3, 3, -0.65, img_stack[0], img_stack[1], b=None, t=None, k=None, log=True)
+    project_wws = []
+    project_snrs = []
+    project_pts = []
+    project_pss = []
+    project_shis = []
+    project_afms = []
+    project_cafms = []
 
-    # run protocol_1 for all tgt, src pairs
-    for tgt_idx, src_idx in tgt_src_indices:
-        tgt = img_stack[tgt_idx].split('.')[-2]
-        src = img_stack[src_idx].split('.')[-2]
-        _sig = f'sig_s4_{tgt}_{src}'
-        _tar = f'tar_s4_{tgt}'
-        _src = f'src_s4_{src}'
-        protocol_1(img_size, np.array([832, 832]), 3, 3, -0.65,
-                   img_stack[tgt_idx], img_stack[src_idx],
-                   b=_sig, t=_tar, k=_src, log=True)
+    # for i, dir in enumerate([dirs[0]]):
+    for i, dir in enumerate(dirs):
+        # if i == 0:
+        #     # aligning coarsest scale, begin protocol_1 with 1x1 window
+        #     # initialize data model here:
+        #     # dm = DataModel()
+        #     affine_mode = 'init_affine'
+        # else:
+        #     affine_mode = 'refine_affine'
+            
+        scale_dir = dir[-2:]
+        img_size, img_stack = get_img_stack(dir)
+        tgt_src_indices = [ (j, j+1) for j in range(len(img_stack) - 1) ] 
+
+        # run protocol_1 for all tgt, src pairs
+        snrs = []
+        pts = []
+        pss = []
+        shis = []
+        afms = [np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])]
+        chfms = [np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])]
+
+        _ren = f'ren_{scale_dir}_0.JPG'
+
+        run_mir(img_src=img_stack[0], img_out=_ren,
+                af=np.array([1.0, 0.0, 0.0, 0.0, 1.0, 0.0]))
+
+        for j, (tgt_idx, src_idx) in enumerate(tgt_src_indices):
+            tgt = img_stack[tgt_idx].split('.')[-2]
+            src = img_stack[src_idx].split('.')[-2]
+            _sig = f'sig_{scale_dir}_{tgt_idx}_{src_idx}'
+            _tar = f'tar_{scale_dir}_{tgt_idx}'
+            _src = f'src_{scale_dir}_{src_idx}'
+
+            if i == 0:
+                _ww = np.array([832, 832])
+                _pt = _ps = None
+                _shi = None
+            else:
+                sf = scale_factors[i-1] // scale_factors[i]
+                _ww = sf * project_wws[i-1]
+                _pt = sf * project_pts[-1][j]
+                _ps = sf * project_pss[-1][j]
+                _shi = project_shis[-1][j]
+
+            tmp = protocol_1(img_size=img_size, ww=_ww, iters=3, f=3, w=-0.65,
+                             img_tgt=img_stack[tgt_idx], pt=_pt,
+                             img_src=img_stack[src_idx], ps=_pt, shi=_shi,
+                             b=_sig, t=_tar, k=_src, log=True)
+            
+            snrs.append(tmp[0])
+            pts.append(tmp[1])
+            pss.append(tmp[2])
+            shis.append(tmp[3])
+            afms.append(tmp[4].reshape(2, 3))
+            chfms.append(chfms[-1] @ np.vstack((afms[-1],
+                                                np.array([0.0, 0.0, 1.0]))))
+
+            run_mir(img_src=img_stack[src_idx], img_out=f'ren_{_src[4:]}.JPG',
+                    af=chfms[-1][:2, :].reshape(-1))
+
+        cafms = [x[:2, :] for x in chfms]
+
+        project_wws.append(_ww)
+        project_snrs.append(snrs)
+        project_pts.append(pts)
+        project_pss.append(pss)
+        project_shis.append(shis)
+        project_afms.append(afms)
+        project_cafms.append(cafms)
+
+        print(f'snrs =\n{snrs}')
+        # print(f'afms =\n{afms}')
+
