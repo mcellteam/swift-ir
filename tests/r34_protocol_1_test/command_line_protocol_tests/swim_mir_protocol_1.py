@@ -1,5 +1,5 @@
 import os
-import shutil
+from pickle import dump, load
 import subprocess as sp
 import numpy as np
 from get_image_size import get_image_size
@@ -75,7 +75,7 @@ def run_swim(size, i, f, w, tgt, pt, src, ps, shi=None,
 
     with sp.Popen(com, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE,
                   universal_newlines=True) as proc:
-        outs, errs = proc.communicate(_input) 
+        outs, errs = proc.communicate(_input)
 
     if log:
         print(f'\ncom = {com}')
@@ -107,12 +107,12 @@ def mir_input(pt=None, ps=None, img_src=None, img_out=None, af=None,
         arg += 'R'
 
         return arg
-    
+
     if (img_src is not None) and (img_out is not None) and (af is not None):
         arg = f'F {img_src}\n'
         arg += f'a {af[0]} {af[1]} {af[2]} {af[3]} {af[4]} {af[5]}\n'
         arg += f'RW {img_out}'
-        
+
         return arg
 
 
@@ -165,13 +165,13 @@ def run_mir(pt=None, ps=None, img_src=None, img_out=None, af=None, img_size=None
 # Protocol 1 consists of:
 # 1) swim (iters = 3) of 1x1 window to get initial estimate of translation term
 # 2) swim (iters = 3) of 2x2 window quadrants using initial translation estimate
-# 3) mir of result of step 2 to get AI (affine inverse matrix)  
+# 3) mir of result of step 2 to get AI (affine inverse matrix)
 # 4) swim (iters = 3) of 2x2 quadrants using shape part of AI from step 3
 # 5) mir of result of step 4 to get refined AI
 # 6) swim (iters = 3) of 2x2 quadrants using shape part of refined AI from step 5
 # 7) mir of result of step 6 to get final AI
 # 8) swim (iters = 1) of 2x2 quadrants using shape part of final AI to get final SNRs
-#   
+#
 def protocol_1(img_size, ww, iters, f, w, img_tgt, pt, img_src, ps, shi,
                b, t, k, log=True):
 #form 1: pt and ps are None  --> perform initial alignment at coarsest scale
@@ -211,7 +211,7 @@ def protocol_1(img_size, ww, iters, f, w, img_tgt, pt, img_src, ps, shi,
         pt_2_0 = pt
         ps_2_0 = ps
 
-    swim_out_2_0 = run_swim(ww[0]//2, iters, f, w, 
+    swim_out_2_0 = run_swim(ww[0]//2, iters, f, w,
                             img_tgt, pt_2_0,
                             img_src, ps_2_0, shi,
                             id='2x2', b=b, t=t, k=k, log=log)
@@ -223,7 +223,7 @@ def protocol_1(img_size, ww, iters, f, w, img_tgt, pt, img_src, ps, shi,
     # 2x2_1
 
     mask = [True, True, False, True, True, False]
-    swim_out_2_1 = run_swim(ww[0]//2, iters, f, w, 
+    swim_out_2_1 = run_swim(ww[0]//2, iters, f, w,
                             img_tgt, swim_out_2_0[1],
                             img_src, swim_out_2_0[2],
                             mir_out_2_0[1][mask], id='2x2',
@@ -249,7 +249,7 @@ def protocol_1(img_size, ww, iters, f, w, img_tgt, pt, img_src, ps, shi,
                             img_src, swim_out_2_2[2],
                             mir_out_2_2[1][mask], id='2x2',
                             b=b, t=t, k=k, log=log)
-    
+
     # return (swim_out_2_3[0], swim_out_2_3[1], swim_out_2_3[2],
     #         swim_out_2_3[3], mir_out_2_2[0], mir_out_2_2[1])
 
@@ -264,11 +264,23 @@ def get_img_stack(dir):
     return img_size, img_stack
 
 
+def save_pkl(dm, fn):
+    with open(f'{fn}.pkl', 'wb') as fout:
+        dump(dm, fout)
+
+
+def load_pkl(fn):
+    with open(f'{fn}.pkl', 'rb') as fin:
+        dm = load(fin)
+
+    return dm
+
+
 class DataModel (dict):
     # DataModel Schema:
     # {
     #     'img_path': img_dir,
-    #     'scale_S': {    # where S is the scale value,   
+    #     'scale_S': {    # where S is the scale value,
     #       'affine_mode': 'init_affine' or 'refine_affine',
     #       'img_size': [siz_x, siz_y],
     #       'img_stack': [img_dict_1, ... img_dict_N, ...],
@@ -321,24 +333,19 @@ class DataModel (dict):
 
     def __repr__(self):
         return super(DataModel, self).__repr__()
-    
+
 
 if __name__ == '__main__':
 
+    _log = False
     # get image stack
     img_dir = '../images/'
     dirs = sorted([os.path.join(img_dir, dir) for dir in os.listdir(img_dir)])[::-1]
     scale_factors = [ int(dir[dir.rfind('s')+1:]) for dir in dirs ]
 
-    project_wws = []
-    project_snrs = []
-    project_pts = []
-    project_pss = []
-    project_shis = []
-    project_afms = []
-    project_cafms = []
+    dm = {}
 
-    # for i, dir in enumerate([dirs[0]]):
+    # Loop over scales, e.g. s4, s2, s1
     for i, dir in enumerate(dirs):
         # if i == 0:
         #     # aligning coarsest scale, begin protocol_1 with 1x1 window
@@ -347,67 +354,91 @@ if __name__ == '__main__':
         #     affine_mode = 'init_affine'
         # else:
         #     affine_mode = 'refine_affine'
-            
-        scale_dir = dir[-2:]
-        img_size, img_stack = get_img_stack(dir)
-        tgt_src_indices = [ (j, j+1) for j in range(len(img_stack) - 1) ] 
 
-        # run protocol_1 for all tgt, src pairs
+        scale_dir = 's' + str(scale_factors[i])
+        img_size, img_stack = get_img_stack(dir)
+        tgt_src_indices = [ (j, j+1) for j in range(len(img_stack) - 1) ]
+
+        # Initialize results for this scale
         snrs = []
         pts = []
         pss = []
         shis = []
-        afms = [np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])]
-        chfms = [np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])]
+        afms = [np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])]    # identity matrix for 2x3 affine forward matrix
+        cafms = [np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])]    # identity matrix for 2x3 cumulative affine forward matrix
 
-        _ren = f'ren_{scale_dir}_0.JPG'
-
-        run_mir(img_src=img_stack[0], img_out=_ren,
-                af=np.array([1.0, 0.0, 0.0, 0.0, 1.0, 0.0]))
-
+        if i == 0:
+            # Aligning coarsest scale, begin protocol_1 with 1x1 window
+            sf = 1
+            __ww = np.asarray(0.8125 * img_size, dtype=np.int64) # size of 1x1 window at coarsest scale
+            __pt = None
+            __ps = None
+            __shi = None
+        else:
+            # Aligning finer scales, begin protocol_1 with 2x2 window
+            sf = scale_factors[i-1] // scale_factors[i]    # scale factor for each finer scale
+            __ww = dm['s' + str(scale_factors[i-1])]['ww']    # size of 2x2 window at previous scale
+            __pt = dm['s' + str(scale_factors[i-1])]['pts']    # target points at previous scale
+            __ps = dm['s' + str(scale_factors[i-1])]['pss']    # source points at previous scale
+            __shi = dm['s' + str(scale_factors[i-1])]['shis']    # shape inverse at previous scale
+        
+        # Run protocol_1 for all tgt, src pairs
         for j, (tgt_idx, src_idx) in enumerate(tgt_src_indices):
-            tgt = img_stack[tgt_idx].split('.')[-2]
-            src = img_stack[src_idx].split('.')[-2]
-            _sig = f'sig_{scale_dir}_{tgt_idx}_{src_idx}'
-            _tar = f'tar_{scale_dir}_{tgt_idx}'
-            _src = f'src_{scale_dir}_{src_idx}'
+            img_tgt = img_stack[tgt_idx]
+            img_src = img_stack[src_idx]
+            _sig = f'sig_{scale_dir}_{tgt_idx}_{src_idx}'    # base name for match signal images for this tgt, src pair
+            _tar = f'tar_{scale_dir}_{tgt_idx}'    # base name for target match window images for this tgt, src pair
+            _src = f'src_{scale_dir}_{src_idx}'    # base name for source match window images for this tgt, src pair
 
-            if i == 0:
-                _ww = np.array([832, 832])
-                _pt = _ps = None
-                _shi = None
+            if (__pt is not None) and (__ps is not None) and (__shi is not None):
+                # for finer scales, scale the 2x2 window size, target points, source points, and get shape inverse from previous scale
+                _ww = sf * __ww
+                _pt = sf * __pt[j]
+                _ps = sf * __ps[j]
+                _shi = __shi[j]
             else:
-                sf = scale_factors[i-1] // scale_factors[i]
-                _ww = sf * project_wws[i-1]
-                _pt = sf * project_pts[-1][j]
-                _ps = sf * project_pss[-1][j]
-                _shi = project_shis[-1][j]
+                # for coarsest scale, use the 1x1 window size, and do not scale target points, source points
+                _ww = __ww
+                _pt = __pt
+                _ps = __ps
+                _shi = __shi
 
+            # Run protocol_1 for this tgt, src pair
             tmp = protocol_1(img_size=img_size, ww=_ww, iters=3, f=3, w=-0.65,
-                             img_tgt=img_stack[tgt_idx], pt=_pt,
-                             img_src=img_stack[src_idx], ps=_pt, shi=_shi,
-                             b=_sig, t=_tar, k=_src, log=True)
-            
+                             img_tgt=img_tgt, pt=_pt,
+                             img_src=img_src, ps=_ps, shi=_shi,
+                             b=_sig, t=_tar, k=_src, log=_log)
+
+            # Append results for this tgt, src pair
             snrs.append(tmp[0])
             pts.append(tmp[1])
             pss.append(tmp[2])
             shis.append(tmp[3])
             afms.append(tmp[4].reshape(2, 3))
-            chfms.append(chfms[-1] @ np.vstack((afms[-1],
-                                                np.array([0.0, 0.0, 1.0]))))
 
+        # Run mir for the final cumulative affine matrix for image 0
+        _ren = f'ren_{scale_dir}_0.JPG'
+        run_mir(img_src=img_stack[0], img_out=_ren,
+                af=cafms[0].reshape(-1), log=_log)
+
+        # Run mir for the final cumulative affine matrix for all other images
+        for j in range(len(tgt_src_indices)):
+            chfm = np.vstack((cafms[j], np.array([0.0, 0.0, 1.0])))    # convert 2x3 cumulative affine forward matrix to 3x3 homogeneous matrix
+            hfm = np.vstack((afms[j+1], np.array([0.0, 0.0, 1.0])))    # convert 2x3 affine forward matrix to 3x3 homogeneous matrix
+            chfm = chfm @ hfm    # calculate cumulative affine forward matrix for this image
+            cafms.append(chfm[:2, :])    # convert 3x3 cumulative affine forward matrix to 2x3 cumulative affine forward matrix and append to list
+            src_idx = tgt_src_indices[j][1]    # get source image index
+            _src = f'src_{scale_dir}_{src_idx}'    #  suffix for rendered image
+            # Run mir to generate transformed and aligned image
             run_mir(img_src=img_stack[src_idx], img_out=f'ren_{_src[4:]}.JPG',
-                    af=chfms[-1][:2, :].reshape(-1))
+                    af=cafms[j+1].reshape(-1), log=_log)
 
-        cafms = [x[:2, :] for x in chfms]
 
-        project_wws.append(_ww)
-        project_snrs.append(snrs)
-        project_pts.append(pts)
-        project_pss.append(pss)
-        project_shis.append(shis)
-        project_afms.append(afms)
-        project_cafms.append(cafms)
+        # Append results for this scale to data model
+        dm[scale_dir] = {'img_stack': img_stack, 'img_size': img_size, 'ww': _ww,
+                         'iters' : 3, 'f': 3, 'w': -0.65,
+                         'snrs': snrs, 'pts': pts, 'pss': pss,
+                         'shis': shis, 'afms': afms, 'cafms': cafms}
 
         print(f'snrs =\n{snrs}')
         # print(f'afms =\n{afms}')
