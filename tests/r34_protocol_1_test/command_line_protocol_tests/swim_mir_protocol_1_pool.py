@@ -1,7 +1,10 @@
+from datetime import date
 import os
 from multiprocessing import cpu_count, Pool
 from pickle import dump, load
+from sys import argv
 import subprocess as sp
+from time import perf_counter
 import numpy as np
 from get_image_size import get_image_size
 
@@ -335,8 +338,12 @@ class DataModel (dict):
 if __name__ == '__main__':
 
     _log = False
+
+    n_proc = cpu_count() // 2
+    chunksize = 1
+
     # get image stack
-    img_dir = '../images/'
+    img_dir = argv[1]
     dirs = sorted([os.path.join(img_dir, dir) for dir in os.listdir(img_dir)])[::-1]
     scale_factors = [ int(dir[dir.rfind('s')+1:]) for dir in dirs ]
     _iters = 3
@@ -355,6 +362,10 @@ if __name__ == '__main__':
         # else:
         #     affine_mode = 'refine_affine'
 
+        print(f'\nscale = {scale_factors[i]}\n')
+
+        t0 = perf_counter()
+
         scale_dir = 's' + str(scale_factors[i])
         img_size, img_stack = get_img_stack(dir)
         tgt_src_indices = [ (j, j+1) for j in range(len(img_stack) - 1) ]
@@ -371,7 +382,7 @@ if __name__ == '__main__':
         dm[scale_dir]['pss'] = []
         dm[scale_dir]['shis'] = []
         dm[scale_dir]['afms'] = [np.array([1.0, 0.0, 0.0, 0.0, 1.0, 0.0])]    # 1D-array form of identity matrix for affine forward matrix
-        dm[scale_dir]['cafms'] = [np.array([1.0, 0.0, 0.0, 0.0, 1.0, 0.0])]    # 1D-array form of identity matrix for cumulative affine forward matrix        
+        dm[scale_dir]['cafms'] = [np.array([1.0, 0.0, 0.0, 0.0, 1.0, 0.0])]    # 1D-array form of identity matrix for cumulative affine forward matrix
 
         if i == 0:
             # Aligning coarsest scale, begin protocol_1 with 1x1 window
@@ -388,7 +399,7 @@ if __name__ == '__main__':
             __ps = dm['s' + str(scale_factors[i-1])]['pss']    # source points at previous scale
             __shi = dm['s' + str(scale_factors[i-1])]['shis']    # shape inverse at previous scale
 
-        multiargs= []
+        multiargs = []
         # Run protocol_1 for all tgt, src pairs
         for j, (tgt_idx, src_idx) in enumerate(tgt_src_indices):
             img_tgt = img_stack[tgt_idx]
@@ -417,8 +428,8 @@ if __name__ == '__main__':
                               _sig, _tar, _src, _log))
 
         # Run protocol_1 parallel
-        with Pool(cpu_count() // 2) as p:
-            res = p.starmap(protocol_1, multiargs)
+        with Pool(n_proc) as p:
+            res = p.starmap(protocol_1, multiargs, chunksize=chunksize)
 
         # Run mir for the final cumulative affine matrix for image 0
         _ren = f'ren_{scale_dir}_0.JPG'
@@ -442,4 +453,11 @@ if __name__ == '__main__':
             run_mir(img_src=img_stack[src_idx], img_out=f'ren_{_src[4:]}.JPG',
                     af=dm[scale_dir]['cafms'][j+1], log=_log)
 
-        print(f"snrs =\n{dm[scale_dir]['snrs']}")
+        print(f'time elapsed = {round(perf_counter() - t0, 2)} seconds\n')
+        # print(f"snrs =\n{dm[scale_dir]['snrs']}\n")
+
+    if len(argv) == 2:
+        fout = f"{date.today().strftime('%Y%m%d')}"
+    else:
+        fout = f"{argv[2]}_{date.today().strftime('%Y%m%d')}"
+    save_pkl(dm, fout)
