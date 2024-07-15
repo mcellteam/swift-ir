@@ -1,5 +1,6 @@
 from datetime import date
 import os
+from multiprocessing import cpu_count, Pool
 from pickle import dump, load
 from sys import argv
 import subprocess as sp
@@ -337,6 +338,10 @@ class DataModel (dict):
 if __name__ == '__main__':
 
     _log = False
+
+    n_proc = cpu_count() // 2
+    chunksize = 1
+
     # get image stack
     img_dir = argv[1]
     dirs = sorted([os.path.join(img_dir, dir) for dir in os.listdir(img_dir)])[::-1]
@@ -394,6 +399,7 @@ if __name__ == '__main__':
             __ps = dm['s' + str(scale_factors[i-1])]['pss']    # source points at previous scale
             __shi = dm['s' + str(scale_factors[i-1])]['shis']    # shape inverse at previous scale
 
+        multiargs= []
         # Run protocol_1 for all tgt, src pairs
         for j, (tgt_idx, src_idx) in enumerate(tgt_src_indices):
             img_tgt = img_stack[tgt_idx]
@@ -416,26 +422,27 @@ if __name__ == '__main__':
                 _shi = __shi
 
             dm[scale_dir]['ww'] = _ww
-            # Run protocol_1 for this tgt, src pair
-            res = protocol_1(img_size=img_size, ww=_ww, iters=_iters, f=_f, w=_w,
-                             img_tgt=img_tgt, pt=_pt,
-                             img_src=img_src, ps=_ps, shi=_shi,
-                             b=_sig, t=_tar, k=_src, log=_log)
+            # Create multi-args to be passed to the Pool object for running protocol_1 parallel
+            multiargs.append((img_size, _ww, _iters, _f, _w,
+                              img_tgt, _pt, img_src, _ps, _shi,
+                              _sig, _tar, _src, _log))
 
-            # Append results for this scale to data model
-            dm[scale_dir]['snrs'].append(res[0])
-            dm[scale_dir]['pts'].append(res[1])
-            dm[scale_dir]['pss'].append(res[2])
-            dm[scale_dir]['shis'].append(res[3])
-            dm[scale_dir]['afms'].append(res[4])
+        # Run protocol_1 parallel
+        with Pool(n_proc) as p:
+            res = p.starmap(protocol_1, multiargs, chunksize=chunksize)
 
         # Run mir for the final cumulative affine matrix for image 0
         _ren = f'ren_{scale_dir}_0.JPG'
         run_mir(img_src=img_stack[0], img_out=_ren,
                 af=dm[scale_dir]['cafms'][0], log=_log)
 
-        # Run mir for the final cumulative affine matrix for all other images
+        # Append results for this scale to data model and run mir for the final cumulative affine matrix for all other images
         for j in range(len(tgt_src_indices)):
+            dm[scale_dir]['snrs'].append(res[j][0])
+            dm[scale_dir]['pts'].append(res[j][1])
+            dm[scale_dir]['pss'].append(res[j][2])
+            dm[scale_dir]['shis'].append(res[j][3])
+            dm[scale_dir]['afms'].append(res[j][4])
             chfm = np.array((*dm[scale_dir]['cafms'][j], 0.0, 0.0, 1.0)).reshape(3, -1)    # convert 1D-form of cumulative affine forward matrix to 3x3 homogeneous matrix
             hfm = np.array((*dm[scale_dir]['afms'][j+1], 0.0, 0.0, 1.0)).reshape(3, -1)    # convert 1D-form of affine forward matrix to 3x3 homogeneous matrix
             chfm = chfm @ hfm    # calculate cumulative affine forward matrix for this image
