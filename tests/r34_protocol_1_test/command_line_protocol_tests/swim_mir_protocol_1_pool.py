@@ -11,7 +11,11 @@ from get_image_size import get_image_size
 
 def swim_input(ww, i, f, w, b, t, k, tgt, pt, src, ps, shi):
 
-    arg = f'ww_{ww} -i {i} -f{f} -w {w} -b {b} -t {t} -k {k} ' \
+    if b is not None:
+        btk = f'-b {b} -t {t} -k {k} '
+    else:
+        btk = ''
+    arg = f'ww_{ww} -i {i} -f{f} -w {w} {btk}' \
           f'{tgt} {pt[0]} {pt[1]} {src} {ps[0]} {ps[1]} ' \
           f'{shi[0]} {shi[1]} {shi[2]} {shi[3]}'
 
@@ -60,9 +64,9 @@ def run_swim(ww, i, f, w, tgt, pt, src, ps, shi=None,
 
     if id == '1x1':
         idj = f'{id}_w0'
-        _b = f'sig_{idj}.JPG' if b is None else f'{b}_{idj}.JPG'
-        _t = f'tar_{idj}.JPG' if t is None else f'{t}_{idj}.JPG'
-        _k = f'src_{idj}.JPG' if k is None else f'{k}_{idj}.JPG'
+        _b = f'{b}_{idj}.JPG' if b is not None else b
+        _t = f'{t}_{idj}.JPG' if t is not None else t
+        _k = f'{k}_{idj}.JPG' if k is not None else k
         _input = swim_input(_ww, i, f, w, _b, _t, _k,
                             tgt, pt, src, ps, shi)
 
@@ -70,9 +74,9 @@ def run_swim(ww, i, f, w, tgt, pt, src, ps, shi=None,
         _input = ''
         for j in range(len(pt)):
             idj = f'{id}_w{j}'
-            _b = f'sig_{idj}.JPG' if b is None else f'{b}_{idj}.JPG'
-            _t = f'tar_{idj}.JPG' if t is None else f'{t}_{idj}.JPG'
-            _k = f'src_{idj}.JPG' if k is None else f'{k}_{idj}.JPG'
+            _b = f'{b}_{idj}.JPG' if b is not None else b
+            _t = f'{t}_{idj}.JPG' if t is not None else t
+            _k = f'{k}_{idj}.JPG' if k is not None else k
             _input += swim_input(_ww, i, f, w, _b, _t, _k,
                                  tgt, pt[j], src, ps[j], shi) + '\n'
         _input = _input[:-1]
@@ -131,8 +135,8 @@ def parse_mir_out(arg):
 
 def run_mir(pt=None, ps=None, img_src=None, img_out=None, af=None, img_size=None,
             log=True):
-    # form 1. pt, ps, af=None   --> img_src and img_out are ignored
-    # form 2. img_src, img_out, af!=None  --> pt and ps are ignored
+    # form 1. pt, ps, af=None   --> img_src and img_out are ignored --> calculate af/i only from points
+    # form 2. img_src, img_out, af!=None  --> pt and ps are ignored --> apply af onto src image and render it
 
     mir = 'mir'
     com = [f'{mir}']
@@ -215,46 +219,174 @@ def protocol_1(img_size, ww, iters, f, w, img_tgt, pt, img_src, ps, shi,
         pt_2_0 = pt
         ps_2_0 = ps
 
-    swim_out_2_0 = run_swim(ww//2, iters, f, w,
+    ww_h = ww // 2
+
+    swim_out_2_0 = run_swim(ww_h, iters, f, w,
                             img_tgt, pt_2_0,
                             img_src, ps_2_0, shi,
                             id='2x2', b=b, t=t, k=k, log=log)
 
-    ren = f'ren_{k[4:]}.JPG'
-    mir_out_2_0 = run_mir(swim_out_2_0[1], swim_out_2_0[2],
-                          img_src, ren, log=log)
+    mir_out_2_0 = run_mir(swim_out_2_0[1], swim_out_2_0[2], log=log)
 
     # 2x2_1
 
     mask = [True, True, False, True, True, False]
-    swim_out_2_1 = run_swim(ww//2, iters, f, w,
+    swim_out_2_1 = run_swim(ww_h, iters, f, w,
                             img_tgt, swim_out_2_0[1],
                             img_src, swim_out_2_0[2],
                             mir_out_2_0[1][mask], id='2x2',
                             b=b, t=t, k=k, log=log)
 
-    mir_out_2_1 = run_mir(swim_out_2_1[1], swim_out_2_1[2],
-                          img_src, ren, log=log)
+    mir_out_2_1 = run_mir(swim_out_2_1[1], swim_out_2_1[2], log=log)
 
     # 2x2_2
 
-    swim_out_2_2 = run_swim(ww//2, iters, f, w,
+    swim_out_2_2 = run_swim(ww_h, iters, f, w,
                             img_tgt, swim_out_2_1[1],
                             img_src, swim_out_2_1[2],
                             mir_out_2_1[1][mask], id='2x2',
                             b=b, t=t, k=k, log=log)
 
-    mir_out_2_2 = run_mir(swim_out_2_2[1], swim_out_2_2[2],
-                          img_src, ren, log=log)
+    mir_out_2_2 = run_mir(swim_out_2_2[1], swim_out_2_2[2], log=log)
     # 2x2_3
 
-    swim_out_2_3 = run_swim(ww//2, 1, f, w,
+    swim_out_2_3 = run_swim(ww_h, 1, f, w,
                             img_tgt, swim_out_2_2[1],
                             img_src, swim_out_2_2[2],
                             mir_out_2_2[1][mask], id='2x2',
                             b=b, t=t, k=k, log=log)
 
     return (*swim_out_2_3[:4], *mir_out_2_2)
+
+
+def run_protocol_1(img_dir, res_dir, iter, f, w=-0.65,
+                   save_signals=True, save_render=True, log=False,
+                   n_proc=None, chunksize=1):
+
+    # get image stack
+    dirs = sorted([os.path.join(img_dir, dir) for dir in os.listdir(img_dir)])[::-1]
+    scale_factors = [ int(dir[dir.rfind('s')+1:]) for dir in dirs ]
+    _iter = iter
+    _f = f
+    _w = w
+
+    dm = {}
+
+    # Loop over scales, e.g. s4, s2, s1
+    for i, dir in enumerate(dirs):
+        # if i == 0:
+        #     # aligning coarsest scale, begin protocol_1 with 1x1 window
+        #     # initialize data model here:
+        #     # dm = DataModel()
+        #     affine_mode = 'init_affine'
+        # else:
+        #     affine_mode = 'refine_affine'
+
+        print(f'\nscale = {scale_factors[i]}\n')
+
+        t0 = perf_counter()
+
+        scale_dir = 's' + str(scale_factors[i])
+        img_size, img_stack = get_img_stack(dir)
+        tgt_src_indices = [ (j, j+1) for j in range(len(img_stack) - 1) ]
+
+        # Initialize input and results for this scale
+        dm[scale_dir] = {}
+        dm[scale_dir]['img_stack'] = img_stack
+        dm[scale_dir]['img_size'] = img_size
+        dm[scale_dir]['iter'] = _iter
+        dm[scale_dir]['f'] = _f
+        dm[scale_dir]['w'] = _w
+        dm[scale_dir]['snrs'] = []
+        dm[scale_dir]['pts'] = []
+        dm[scale_dir]['pss'] = []
+        dm[scale_dir]['shis'] = []
+        dm[scale_dir]['afms'] = [np.array([1.0, 0.0, 0.0, 0.0, 1.0, 0.0])]    # 1D-array form of identity matrix for affine forward matrix
+        dm[scale_dir]['cafms'] = [np.array([1.0, 0.0, 0.0, 0.0, 1.0, 0.0])]    # 1D-array form of identity matrix for cumulative affine forward matrix
+
+        if i == 0:
+            # Aligning coarsest scale, begin protocol_1 with 1x1 window
+            sf = 1
+            __ww = np.asarray(0.8125 * img_size, dtype=np.int64) # size of 1x1 window at coarsest scale
+            __pt = None
+            __ps = None
+            __shi = None
+        else:
+            # Aligning finer scales, begin protocol_1 with 2x2 window
+            sf = scale_factors[i-1] // scale_factors[i]    # scale factor for each finer scale
+            __ww = dm['s' + str(scale_factors[i-1])]['ww']    # size of 2x2 window at previous scale
+            __pt = dm['s' + str(scale_factors[i-1])]['pts']    # target points at previous scale
+            __ps = dm['s' + str(scale_factors[i-1])]['pss']    # source points at previous scale
+            __shi = dm['s' + str(scale_factors[i-1])]['shis']    # shape inverse at previous scale
+
+        multiargs = []
+        # Run protocol_1 for all tgt, src pairs
+        for j, (tgt_idx, src_idx) in enumerate(tgt_src_indices):
+            img_tgt = img_stack[tgt_idx]
+            img_src = img_stack[src_idx]
+            if save_signals:
+                _sig = f'{res_dir}/sig_{scale_dir}_{tgt_idx}_{src_idx}'    # base name for match signal images for this tgt, src pair
+                _tgt = f'{res_dir}/tgt_{scale_dir}_{tgt_idx}'    # base name for target match window images for this tgt, src pair
+                _src = f'{res_dir}/src_{scale_dir}_{src_idx}'    # base name for source match window images for this tgt, src pair
+            else:
+                _sig = None
+                _tgt = None
+                _src = None
+
+            if (__pt is not None) and (__ps is not None) and (__shi is not None):
+                # for finer scales, scale the 2x2 window size, target points, source points, and get shape inverse from previous scale
+                _ww = sf * __ww
+                _pt = sf * __pt[j]
+                _ps = sf * __ps[j]
+                _shi = __shi[j]
+            else:
+                # for coarsest scale, use the 1x1 window size, and do not scale target points, source points
+                _ww = __ww
+                _pt = __pt
+                _ps = __ps
+                _shi = __shi
+
+            dm[scale_dir]['ww'] = _ww
+            # Create multi-args to be passed to the Pool object for running protocol_1 parallel
+            multiargs.append((img_size, _ww, _iter, _f, _w,
+                              img_tgt, _pt, img_src, _ps, _shi,
+                              _sig, _tgt, _src, log))
+
+        # Run protocol_1 parallel
+        with Pool(n_proc) as p:
+            res = p.starmap(protocol_1, multiargs, chunksize=chunksize)
+
+        # Run mir for the final cumulative affine matrix for image 0
+        if save_render:
+            _ren = f'{res_dir}/ren_{scale_dir}_0.JPG'
+            run_mir(img_src=img_stack[0], img_out=_ren,
+                    af=dm[scale_dir]['cafms'][0], log=log)
+        else:
+            pass
+
+        # Append results for this scale to data model and run mir for the final cumulative affine matrix for all other images
+        for j in range(len(tgt_src_indices)):
+            dm[scale_dir]['snrs'].append(res[j][0])
+            dm[scale_dir]['pts'].append(res[j][1])
+            dm[scale_dir]['pss'].append(res[j][2])
+            dm[scale_dir]['shis'].append(res[j][3])
+            dm[scale_dir]['afms'].append(res[j][4])
+            chfm = np.array((*dm[scale_dir]['cafms'][j], 0.0, 0.0, 1.0)).reshape(3, -1)    # convert 1D-form of cumulative affine forward matrix to 3x3 homogeneous matrix
+            hfm = np.array((*dm[scale_dir]['afms'][j+1], 0.0, 0.0, 1.0)).reshape(3, -1)    # convert 1D-form of affine forward matrix to 3x3 homogeneous matrix
+            chfm = chfm @ hfm    # calculate cumulative affine forward matrix for this image
+            dm[scale_dir]['cafms'].append(chfm[:2, :].reshape(-1))    # convert 3x3 homogeneous cumulative affine forward matrix to 1D-form of cumulative affine forward matrix and append to list
+            src_idx = tgt_src_indices[j][1]    # get source image index
+            _src = f'src_{scale_dir}_{src_idx}'    #  suffix for rendered image
+            # Run mir to generate transformed and aligned image
+            if save_render:
+                run_mir(img_src=img_stack[src_idx], img_out=f'{res_dir}/ren_{_src[4:]}.JPG',
+                        af=dm[scale_dir]['cafms'][j+1], log=log)
+            else:
+                pass
+
+        print(f'time elapsed = {round(perf_counter() - t0, 2)} seconds\n')
+
+    return dm
 
 
 def get_img_stack(dir):
@@ -308,7 +440,7 @@ def w_(dm, scale):
 
 
 def snrs_(dm, scale):
-    
+
     return dm[f's{scale}']['snrs']
 
 
@@ -335,6 +467,45 @@ def afms_(dm, scale):
 def cafms_(dm, scale):
 
     return dm[f's{scale}']['cafms']
+
+
+if __name__ == '__main__':
+
+    log = False
+
+    if len(argv) < 3:
+        print(f'\nUsage: {argv[0]} img_dir res_dir\n')
+        exit()
+
+    if argv[1][-1] == '/':
+        img_dir = argv[1][:-1]
+    else:
+        img_dir = argv[1]
+
+    if argv[2][-1] == '/':
+        res_dir = argv[2][:-1]
+    else:
+        res_dir = argv[2]
+
+    if os.path.isdir(res_dir):
+        pass
+    else:
+        os.mkdir(res_dir)
+
+    fp = f"{res_dir}/{img_dir[img_dir.rfind('/')+1:]}_{date.today().strftime('%Y%m%d')}.pkl"
+
+    n_proc = cpu_count() // 2
+    chunksize = 1
+
+    _iter = 3
+    _f = 3
+    _w = -0.65
+
+    dm = run_protocol_1(img_dir, res_dir, _iter, _f, w=_w,
+                        save_signals=True, save_render=True,
+                        log=log, n_proc=n_proc, chunksize=chunksize)
+
+    save_pkl(dm, fp)
 
 
 # class DataModel(dict):
@@ -394,146 +565,3 @@ def cafms_(dm, scale):
 
 #     def __repr__(self):
 #         return super(DataModel, self).__repr__()
-
-
-if __name__ == '__main__':
-
-    if len(argv) < 3:
-        print(f'\nUsage: {argv[0]} img_dir res_dir\n')
-        exit()
-
-    if argv[1][-1] == '/':
-        img_dir = argv[1][:-1]
-    else:
-        img_dir = argv[1]
-    
-    if argv[2][-1] == '/':
-        res_dir = argv[2][:-1]
-    else:
-        res_dir = argv[2]
-
-    if os.path.isdir(res_dir):
-        pass
-    else:
-        os.mkdir(res_dir)
-
-    fp = f"{res_dir}/{img_dir[img_dir.rfind('/')+1:]}_{date.today().strftime('%Y%m%d')}.pkl"
-
-    _log = False
-
-    n_proc = cpu_count() // 2
-    chunksize = 1
-
-    # get image stack
-    dirs = sorted([os.path.join(img_dir, dir) for dir in os.listdir(img_dir)])[::-1]
-    scale_factors = [ int(dir[dir.rfind('s')+1:]) for dir in dirs ]
-    _iter = 3
-    _f = 3
-    _w = -0.65
-
-    dm = {}
-
-    # Loop over scales, e.g. s4, s2, s1
-    for i, dir in enumerate(dirs):
-        # if i == 0:
-        #     # aligning coarsest scale, begin protocol_1 with 1x1 window
-        #     # initialize data model here:
-        #     # dm = DataModel()
-        #     affine_mode = 'init_affine'
-        # else:
-        #     affine_mode = 'refine_affine'
-
-        print(f'\nscale = {scale_factors[i]}\n')
-
-        t0 = perf_counter()
-
-        scale_dir = 's' + str(scale_factors[i])
-        img_size, img_stack = get_img_stack(dir)
-        tgt_src_indices = [ (j, j+1) for j in range(len(img_stack) - 1) ]
-
-        # Initialize input and results for this scale
-        dm[scale_dir] = {}
-        dm[scale_dir]['img_stack'] = img_stack
-        dm[scale_dir]['img_size'] = img_size
-        dm[scale_dir]['iter'] = _iter
-        dm[scale_dir]['f'] = _f
-        dm[scale_dir]['w'] = _w
-        dm[scale_dir]['snrs'] = []
-        dm[scale_dir]['pts'] = []
-        dm[scale_dir]['pss'] = []
-        dm[scale_dir]['shis'] = []
-        dm[scale_dir]['afms'] = [np.array([1.0, 0.0, 0.0, 0.0, 1.0, 0.0])]    # 1D-array form of identity matrix for affine forward matrix
-        dm[scale_dir]['cafms'] = [np.array([1.0, 0.0, 0.0, 0.0, 1.0, 0.0])]    # 1D-array form of identity matrix for cumulative affine forward matrix
-
-        if i == 0:
-            # Aligning coarsest scale, begin protocol_1 with 1x1 window
-            sf = 1
-            __ww = np.asarray(0.8125 * img_size, dtype=np.int64) # size of 1x1 window at coarsest scale
-            __pt = None
-            __ps = None
-            __shi = None
-        else:
-            # Aligning finer scales, begin protocol_1 with 2x2 window
-            sf = scale_factors[i-1] // scale_factors[i]    # scale factor for each finer scale
-            __ww = dm['s' + str(scale_factors[i-1])]['ww']    # size of 2x2 window at previous scale
-            __pt = dm['s' + str(scale_factors[i-1])]['pts']    # target points at previous scale
-            __ps = dm['s' + str(scale_factors[i-1])]['pss']    # source points at previous scale
-            __shi = dm['s' + str(scale_factors[i-1])]['shis']    # shape inverse at previous scale
-
-        multiargs = []
-        # Run protocol_1 for all tgt, src pairs
-        for j, (tgt_idx, src_idx) in enumerate(tgt_src_indices):
-            img_tgt = img_stack[tgt_idx]
-            img_src = img_stack[src_idx]
-            _sig = f'{res_dir}/sig_{scale_dir}_{tgt_idx}_{src_idx}'    # base name for match signal images for this tgt, src pair
-            _tar = f'{res_dir}/tar_{scale_dir}_{tgt_idx}'    # base name for target match window images for this tgt, src pair
-            _src = f'{res_dir}/src_{scale_dir}_{src_idx}'    # base name for source match window images for this tgt, src pair
-
-            if (__pt is not None) and (__ps is not None) and (__shi is not None):
-                # for finer scales, scale the 2x2 window size, target points, source points, and get shape inverse from previous scale
-                _ww = sf * __ww
-                _pt = sf * __pt[j]
-                _ps = sf * __ps[j]
-                _shi = __shi[j]
-            else:
-                # for coarsest scale, use the 1x1 window size, and do not scale target points, source points
-                _ww = __ww
-                _pt = __pt
-                _ps = __ps
-                _shi = __shi
-
-            dm[scale_dir]['ww'] = _ww
-            # Create multi-args to be passed to the Pool object for running protocol_1 parallel
-            multiargs.append((img_size, _ww, _iter, _f, _w,
-                              img_tgt, _pt, img_src, _ps, _shi,
-                              _sig, _tar, _src, _log))
-
-        # Run protocol_1 parallel
-        with Pool(n_proc) as p:
-            res = p.starmap(protocol_1, multiargs, chunksize=chunksize)
-
-        # Run mir for the final cumulative affine matrix for image 0
-        _ren = f'{res_dir}/ren_{scale_dir}_0.JPG'
-        run_mir(img_src=img_stack[0], img_out=_ren,
-                af=dm[scale_dir]['cafms'][0], log=_log)
-
-        # Append results for this scale to data model and run mir for the final cumulative affine matrix for all other images
-        for j in range(len(tgt_src_indices)):
-            dm[scale_dir]['snrs'].append(res[j][0])
-            dm[scale_dir]['pts'].append(res[j][1])
-            dm[scale_dir]['pss'].append(res[j][2])
-            dm[scale_dir]['shis'].append(res[j][3])
-            dm[scale_dir]['afms'].append(res[j][4])
-            chfm = np.array((*dm[scale_dir]['cafms'][j], 0.0, 0.0, 1.0)).reshape(3, -1)    # convert 1D-form of cumulative affine forward matrix to 3x3 homogeneous matrix
-            hfm = np.array((*dm[scale_dir]['afms'][j+1], 0.0, 0.0, 1.0)).reshape(3, -1)    # convert 1D-form of affine forward matrix to 3x3 homogeneous matrix
-            chfm = chfm @ hfm    # calculate cumulative affine forward matrix for this image
-            dm[scale_dir]['cafms'].append(chfm[:2, :].reshape(-1))    # convert 3x3 homogeneous cumulative affine forward matrix to 1D-form of cumulative affine forward matrix and append to list
-            src_idx = tgt_src_indices[j][1]    # get source image index
-            _src = f'src_{scale_dir}_{src_idx}'    #  suffix for rendered image
-            # Run mir to generate transformed and aligned image
-            run_mir(img_src=img_stack[src_idx], img_out=f'{res_dir}/ren_{_src[4:]}.JPG',
-                    af=dm[scale_dir]['cafms'][j+1], log=_log)
-
-        print(f'time elapsed = {round(perf_counter() - t0, 2)} seconds\n')
-
-    save_pkl(dm, fp)
