@@ -62,7 +62,6 @@ def run_swim(ww, i, f, w, tgt, pt, src, ps, shi,
     _ww = f'{ww[0]}x{ww[1]}'
     com = [f'{swim}', f'{_ww}']
 
-
     _input = ''
     for j in range(pt.shape[0]):
         idj = f'mp_w{j}' if pt.shape[0] > 1 else f'sp_w{j}'
@@ -91,18 +90,8 @@ def run_swim(ww, i, f, w, tgt, pt, src, ps, shi,
 
 
 def calc_snr(ww, f, w, tgt, pt, src, ps, shi, b=None, t=None, k=None, log=False):
-    
+
     return run_swim(ww, 1, f, w, tgt, pt, src, ps, shi, b, t, k, log=log)[0]
-
-
-# In [65]: calc_snr(ww_(dm, 4)//2, f_(dm, 4), w_(dm, 4), img_stack_(dm, 4)[0], pts_(dm, 4)[0], img_stack_(dm, 4)[1], pss_(dm, 4)[0], shis_(dm, 4)[0])
-# Out[65]: array([24.4173, 24.0982, 28.8103, 30.4117])
-
-# In [69]: np.allclose(np.linalg.inv(afms_(dm, 4)[1][[True, True, False, True, True, False]].reshape(2, -2)).flatten(), shis_(dm, 4)[0])
-# Out[69]: True
-
-# In [102]: np.allclose(shis_(dm, 4)[1].reshape(2, -1) @ shis_(dm, 4)[0].reshape(2, -1), cshi_(dm, 4, 2).reshape(2, 2))
-# Out[102]: True
 
 
 def mir_input(pt=None, ps=None, img_src=None, img_out=None, af=None,
@@ -245,7 +234,7 @@ def protocol_1(img_size, ww, iters, f, w, img_tgt, pt, img_src, ps, shi,
                          img_src, swim_out_2_2[2],
                          mir_out_2_2[1][mask],
                          b=b, t=t, k=k, log=log)
-    
+
     # Return snr from calc_snr, points from step 2_2, af and ai from mir_out_2_2
     return (final_snr, *swim_out_2_2[1:3], *mir_out_2_2)
 
@@ -255,7 +244,8 @@ def run_protocol_1(img_dir, res_dir, iter, f, w=-0.65,
                    n_proc=None, chunksize=1):
 
     # get image stack
-    dirs = sorted([os.path.join(img_dir, dir) for dir in os.listdir(img_dir)])[::-1]
+    dirs = sorted([os.path.join(img_dir, dir) for dir in os.listdir(img_dir)
+                   if dir.startswith('s')], key=lambda x: int(x[x.rfind('s')+1:]))[::-1]
     scale_factors = [ int(dir[dir.rfind('s')+1:]) for dir in dirs ]
     _iter = iter
     _f = f
@@ -272,7 +262,7 @@ def run_protocol_1(img_dir, res_dir, iter, f, w=-0.65,
         scale_dir = 's' + str(scale_factors[scale_idx])
         img_size, img_stack = get_img_stack(dir)
         tgt_src_indices = [ (j, j+1) for j in range(len(img_stack) - 1) ]
-        tgt_src_indices.insert(0, [(None, 0)])  # prepend reference image index None for the 0th image for future use 
+        tgt_src_indices.insert(0, (None, 0))  # prepend reference image index None for the 0th image for future use
 
         # Initialize input and results for this scale
         dm[scale_dir] = {}
@@ -304,18 +294,20 @@ def run_protocol_1(img_dir, res_dir, iter, f, w=-0.65,
             __ps = dm['s' + str(scale_factors[scale_idx - 1])]['pss']    # source points at previous scale
             __ai = dm['s' + str(scale_factors[scale_idx - 1])]['aims']    # affine inverse at previous scale
 
+        zf = len(str(len(img_stack) - 1))
         multiargs = []
         # Run protocol_1 for all tgt, src pairs
-        # for j, (tgt_idx, src_idx) in enumerate(tgt_src_indices):
         for pair_idx in range(1, len(tgt_src_indices)):
             tgt_idx = tgt_src_indices[pair_idx][0]
             src_idx = tgt_src_indices[pair_idx][1]
             img_tgt = img_stack[tgt_idx]
             img_src = img_stack[src_idx]
+            _tgt_idx = str(tgt_idx).zfill(zf)
+            _src_idx = str(src_idx).zfill(zf)
             if save_signals:
-                _sig = f'{res_dir}/sig_{scale_dir}_{tgt_idx}_{src_idx}'    # base name for match signal images for this tgt, src pair
-                _tgt = f'{res_dir}/tgt_{scale_dir}_{tgt_idx}'    # base name for target match window images for this tgt, src pair
-                _src = f'{res_dir}/src_{scale_dir}_{src_idx}'    # base name for source match window images for this tgt, src pair
+                _sig = f'{res_dir}/sig_{scale_dir}_{_tgt_idx}_{_src_idx}'    # base name for match signal images for this tgt, src pair
+                _tgt = f'{res_dir}/tgt_{scale_dir}_{_tgt_idx}'    # base name for target match window images for this tgt, src pair
+                _src = f'{res_dir}/src_{scale_dir}_{_src_idx}'    # base name for source match window images for this tgt, src pair
             else:
                 _sig = None
                 _tgt = None
@@ -346,7 +338,8 @@ def run_protocol_1(img_dir, res_dir, iter, f, w=-0.65,
 
         # Run mir for the final cumulative affine matrix for image 0
         if save_render:
-            _ren = f'{res_dir}/ren_{scale_dir}_0.JPG'
+            tmp = '0'.zfill(zf)
+            _ren = f'{res_dir}/ren_{scale_dir}_{tmp}.JPG'
             run_mir(img_src=img_stack[0], img_out=_ren,
                     af=dm[scale_dir]['cafms'][0], log=log)
         else:
@@ -364,7 +357,8 @@ def run_protocol_1(img_dir, res_dir, iter, f, w=-0.65,
             chfm = chfm @ hfm    # calculate cumulative affine forward matrix for this image
             dm[scale_dir]['cafms'].append(chfm[:2, :].reshape(-1))    # convert 3x3 homogeneous cumulative affine forward matrix to 1D-form of cumulative affine forward matrix and append to list
             src_idx = tgt_src_indices[res_idx + 1][1]    # get source image index
-            _src = f'src_{scale_dir}_{src_idx}'    #  suffix for rendered image
+            _src_idx = f'{src_idx}'.zfill(zf)
+            _src = f'src_{scale_dir}_{_src_idx}'    #  suffix for rendered image
             # Run mir to generate transformed and aligned image
             if save_render:
                 run_mir(img_src=img_stack[src_idx], img_out=f'{res_dir}/ren_{_src[4:]}.JPG',
@@ -465,7 +459,7 @@ def aims_(dm, scale):
 
 
 def him_(dm, scale, i):
-    
+
     aim = aims_(dm, scale)[i]
 
     return np.array([*aim, 0.0, 0.0, 1.0]).reshape(3, -1)

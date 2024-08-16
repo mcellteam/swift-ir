@@ -411,10 +411,11 @@ def BiasFuncs(dm, scale, poly_order=0, bias_funcs=None):
     for i, layer in enumerate(dm()):
         c_afm = np.array(layer['levels'][scale]['alt_cafm'])
 
-        rot = np.arctan(c_afm[1, 0] / c_afm[0, 0])
+        # Decompose the affine matrix into skew, scale, rotation, and translation
+        rot = np.arctan2(c_afm[1, 0], c_afm[0, 0])
         scale_x = np.sqrt(c_afm[0, 0] ** 2 + c_afm[1, 0] ** 2)
         scale_y = (c_afm[1, 1] * np.cos(rot)) - (c_afm[0, 1] * np.sin(rot))
-        skew_x = ((c_afm[0, 1] * np.cos(rot)) + (c_afm[1, 1] * np.sin(rot))) / scale_y
+        skew_x = ((c_afm[0, 1] * np.cos(rot)) + (c_afm[1, 1] * np.sin(rot))) / scale_x
         det = (c_afm[0, 0] * c_afm[1, 1]) - (c_afm[0, 1] * c_afm[1, 0])
 
         skew_x_array[i]  = [i, skew_x]
