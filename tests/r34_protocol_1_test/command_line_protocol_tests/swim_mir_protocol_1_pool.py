@@ -162,14 +162,6 @@ def run_mir(pt=None, ps=None, img_src=None, img_out=None, af=None, img_size=None
         print(f'errs:\n{errs}')
         print(f'proc.returncode: {proc.returncode}')
     
-    '''
-    if (not log) and proc.returncode:
-        print(f'\ncom = {com}')
-        print(f'\ninput:\n{_input}')
-        print(f'\nouts:\n{outs}')
-        print(f'errs:\n{errs}')
-    '''
-
     if (pt is not None) and (ps is not None) and (af is None):
         af, ai = parse_mir_out(outs[:-1]) # remove last '\n'
         return af, ai
@@ -262,7 +254,7 @@ def protocol_1(img_size, ww, iters, w, img_tgt, pt, img_src, ps, shi,
 
 def run_protocol_1(img_dir, res_dir, iter, w=-0.65, f=None,
                    save_render=True, save_signals=True, log=False,
-                   n_proc=None, chunksize=1, ss=None):
+                   n_proc=None, chunksize=1, ss=None, tq=False):
 
     # get image stack
     dirs = sorted([os.path.join(img_dir, dir) for dir in os.listdir(img_dir)
@@ -369,7 +361,10 @@ def run_protocol_1(img_dir, res_dir, iter, w=-0.65, f=None,
         t2 = perf_counter()
         # Run protocol_1 parallel
         with Pool(n_proc) as p:
-            res = p.starmap(protocol_1, tqdm(multiargs), chunksize=chunksize)
+            if not tq:
+                res = p.starmap(protocol_1, multiargs, chunksize=chunksize)
+            else:
+                res = p.starmap(protocol_1, tqdm(multiargs), chunksize=chunksize)
         print(f'        completed in {perf_counter() - t2: .2f} sec')
 
         print('\n    append results to data model ...')
@@ -399,7 +394,10 @@ def run_protocol_1(img_dir, res_dir, iter, w=-0.65, f=None,
                 _ren = f'{res_scale_dir}/{_img_out}_ren_{scale_dir}_{_idx}.JPG'
                 ren_args.append((None, None, _img_src, _ren, dm[scale_dir]['cafms'][i], None, log))
             with Pool(n_proc) as p:
-                p.starmap(run_mir, tqdm(ren_args), chunksize=chunksize)
+                if not tq:
+                    p.starmap(run_mir, ren_args, chunksize=chunksize)
+                else:
+                    p.starmap(run_mir, tqdm(ren_args), chunksize=chunksize)
             print(f'        completed in {perf_counter() - t4: .2f} sec')
 
         print(f'\ntime elapsed = {perf_counter() - t0: .2f} sec\n')
@@ -612,12 +610,12 @@ def bias_mat(cfms, po):
 
 def parse(arg):
 
-    _iter, _w, _f, _s, _p, _c, _r, _g, _l = (3, -0.65, None, None,
-                                             cpu_count(logical=False), 1,
-                                             True, True, False)    # number of physical cores
+    _iter, _w, _f, _s, _p, _c, _r, _g, _l, _t = (3, -0.65, None, None,
+                                                 cpu_count(logical=False), 1,
+                                                 True, True, False, False)    # number of physical cores
     if not arg:
 
-        return _iter, _w, _f, _s, _p, _c, _r, _g, _l
+        return _iter, _w, _f, _s, _p, _c, _r, _g, _l, _t
 
     for x in arg:
         k, v = x[0], x[1:]
@@ -639,10 +637,12 @@ def parse(arg):
             _g = False
         elif k == 'l':    # ll
             _l = True
+        elif k == 't':    # tt
+            _t = True
         else:
             raise ValueError(f'unknown key: {k}')
 
-    return _iter, _w, _f, _s, _p, _c, _r, _g, _l
+    return _iter, _w, _f, _s, _p, _c, _r, _g, _l, _t
 
 
 if __name__ == '__main__':
@@ -650,7 +650,7 @@ if __name__ == '__main__':
 
     if len(argv) < 3:
         print(f'\nUsage: {argv[0]} img_dir res_dir [i3 w-0.65 fNone sNone ' \
-              'pn_proc cchunksize rsave_render gsave_signals llog]\n')
+              'pn_proc cchunksize rsave_render gsave_signals llog ttqdm]\n')
         exit()
 
     if argv[1][-1] == '/':
@@ -669,7 +669,7 @@ if __name__ == '__main__':
     if len(argv) > 3:
         tmp = parse(argv[3:])
 
-    _iter, _w, _f, _s, n_proc, chunksize, save_render, save_signals, log = tmp
+    _iter, _w, _f, _s, n_proc, chunksize, save_render, save_signals, log, tq = tmp
 
     if os.path.isdir(res_dir):
         pass
@@ -680,12 +680,12 @@ if __name__ == '__main__':
 
     print(f'\niter : {_iter}  w : {_w}  f : {_f}  s : {_s}' \
           f'\nn_proc : {n_proc}  chunksize : {chunksize}' \
-          f'\nsave_render : {save_render}  save_signals : {save_signals}  log : {log}\n')
+          f'\nsave_render : {save_render}  save_signals : {save_signals}  log : {log}  tqdm : {tq}\n')
     print(f'running on {n_proc} physical cores')
 
     dm = run_protocol_1(img_dir, res_dir, _iter, w=_w, f=_f,
                         save_render=save_render, save_signals=save_signals,
-                        log=log, n_proc=n_proc, chunksize=chunksize, ss=_s)
+                        log=log, n_proc=n_proc, chunksize=chunksize, ss=_s, tq=tq)
 
     save_pkl(dm, fp)
 
