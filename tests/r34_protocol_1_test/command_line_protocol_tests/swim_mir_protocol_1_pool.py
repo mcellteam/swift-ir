@@ -1,15 +1,19 @@
 from datetime import date
+from cmath import exp as cexp
+from cmath import phase as cpha
 import os
-from multiprocessing import cpu_count, Pool
+from multiprocessing import Pool
+from psutil import cpu_count
 from pickle import dump, load
 from sys import argv
 import subprocess as sp
 from time import perf_counter
 import numpy as np
 from get_image_size import get_image_size
+from tqdm import tqdm
 
 
-def swim_input(ww, i, f, w, b, t, k, tgt, pt, src, ps, shi):
+def swim_input(ww, i, w, f, b, t, k, tgt, pt, src, ps, shi):
 
     if b is not None:
         if (t is not None) and (k is not None):
@@ -18,9 +22,12 @@ def swim_input(ww, i, f, w, b, t, k, tgt, pt, src, ps, shi):
             btk = f'-b {b} '
     else:
         btk = ''
-    arg = f'ww_{ww} -i {i} -f{f} -w {w} {btk}' \
+    arg = f'ww_{ww} -i {i} -w {w} -f{f} {btk}' \
           f'{tgt} {pt[0]} {pt[1]} {src} {ps[0]} {ps[1]} ' \
           f'{shi[0]} {shi[1]} {shi[2]} {shi[3]}'
+    
+    if f is None:
+         arg = arg.replace(' -fNone', '')
 
     return arg
 
@@ -48,8 +55,8 @@ def parse_swim_out(arg):
             np.array(dx), np.array(dy), np.array(m0))
 
 
-def run_swim(ww, i, f, w, tgt, pt, src, ps, shi,
-             b=None, t=None, k=None, log=True):
+def run_swim(ww, i, w, tgt, pt, src, ps, shi,
+             f=None, b=None, t=None, k=None, log=True):
 
     # b, t, and k should be given without JPG extension
     # example of popping arg 'b' but set to some default value if b was not given
@@ -68,7 +75,7 @@ def run_swim(ww, i, f, w, tgt, pt, src, ps, shi,
         _b = f'{b}_{idj}.JPG' if b is not None else b
         _t = f'{t}_{idj}.JPG' if t is not None else t
         _k = f'{k}_{idj}.JPG' if k is not None else k
-        _input += swim_input(_ww, i, f, w, _b, _t, _k,
+        _input += swim_input(_ww, i, w, f, _b, _t, _k,
                              tgt, pt[j], src, ps[j], shi) + '\n'
 
     with sp.Popen(com, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE,
@@ -82,6 +89,12 @@ def run_swim(ww, i, f, w, tgt, pt, src, ps, shi,
         print(f'errs:\n{errs}')
         print(f'proc.returncode: {proc.returncode}')
 
+    if (not log) and proc.returncode:
+        print(f'\ncom = {com}')
+        print(f'\ninput:\n{_input}')
+        print(f'\nouts:\n{outs}')
+        print(f'errs:\n{errs}')
+
     snr, pt, ps, dx, dy, m0 = parse_swim_out(outs[:-1]) # remove last '\n'
 
     return snr, pt, ps, shi, dx, dy, m0
@@ -89,9 +102,9 @@ def run_swim(ww, i, f, w, tgt, pt, src, ps, shi,
     #         'dx': dx, 'dy': dy, 'm0': m0}
 
 
-def calc_snr(ww, f, w, tgt, pt, src, ps, shi, b=None, t=None, k=None, log=False):
+def calc_snr(ww, w, tgt, pt, src, ps, shi, f=None, b=None, t=None, k=None, log=False):
 
-    return run_swim(ww, 1, f, w, tgt, pt, src, ps, shi, b, t, k, log=log)[0]
+    return run_swim(ww, 1, w, tgt, pt, src, ps, shi, f=f, b=b, t=t, k=k, log=log)[0]
 
 
 def mir_input(pt=None, ps=None, img_src=None, img_out=None, af=None,
@@ -148,6 +161,14 @@ def run_mir(pt=None, ps=None, img_src=None, img_out=None, af=None, img_size=None
         print(f'\nouts:\n{outs}')
         print(f'errs:\n{errs}')
         print(f'proc.returncode: {proc.returncode}')
+    
+    '''
+    if (not log) and proc.returncode:
+        print(f'\ncom = {com}')
+        print(f'\ninput:\n{_input}')
+        print(f'\nouts:\n{outs}')
+        print(f'errs:\n{errs}')
+    '''
 
     if (pt is not None) and (ps is not None) and (af is None):
         af, ai = parse_mir_out(outs[:-1]) # remove last '\n'
@@ -167,8 +188,8 @@ def run_mir(pt=None, ps=None, img_src=None, img_out=None, af=None, img_size=None
 # 7) mir of result of step 6 to get final AI
 # 8) swim (iters = 1) of 2x2 quadrants using shape part of final AI to get final SNRs
 #
-def protocol_1(img_size, ww, iters, f, w, img_tgt, pt, img_src, ps, shi,
-               b, t, k, log=True):
+def protocol_1(img_size, ww, iters, w, img_tgt, pt, img_src, ps, shi,
+               f, b, t, k, log=True):
 #form 1: pt and ps are None  --> perform initial alignment at coarsest scale
 #form 2: pt and ps are not None  --> perform alignment at finer scales
 
@@ -177,10 +198,10 @@ def protocol_1(img_size, ww, iters, f, w, img_tgt, pt, img_src, ps, shi,
         pt_1 = img_size.reshape(-1, 2) / 2
         ps_1 = img_size.reshape(-1, 2) / 2
 
-        swim_out_1 = run_swim(ww, iters, f, w,
+        swim_out_1 = run_swim(ww, iters, w,
                               img_tgt, pt_1,
                               img_src, ps_1, shi,
-                              b=b, t=t, k=k, log=log)
+                              f=f, b=b, t=t, k=k, log=log)
 
         # setup for 2x2_0 step
         off_x = ww[0] / 4
@@ -199,49 +220,49 @@ def protocol_1(img_size, ww, iters, f, w, img_tgt, pt, img_src, ps, shi,
 
     ww_h = ww // 2
 
-    swim_out_2_0 = run_swim(ww_h, iters, f, w,
+    swim_out_2_0 = run_swim(ww_h, iters, w,
                             img_tgt, pt_2_0,
                             img_src, ps_2_0, shi,
-                            b=b, t=t, k=k, log=log)
+                            f=f, b=None, t=None, k=None, log=log)
 
-    mir_out_2_0 = run_mir(swim_out_2_0[1], swim_out_2_0[2], log=log)
+    mir_out_2_0 = run_mir(pt=swim_out_2_0[1], ps=swim_out_2_0[2], log=log)
 
     # 2x2_1
 
     mask = [True, True, False, True, True, False]
-    swim_out_2_1 = run_swim(ww_h, iters, f, w,
+    swim_out_2_1 = run_swim(ww_h, iters, w,
                             img_tgt, swim_out_2_0[1],
                             img_src, swim_out_2_0[2],
                             mir_out_2_0[1][mask],
-                            b=b, t=t, k=k, log=log)
+                            f=f, b=None, t=None, k=None, log=log)
 
-    mir_out_2_1 = run_mir(swim_out_2_1[1], swim_out_2_1[2], log=log)
+    mir_out_2_1 = run_mir(pt=swim_out_2_1[1], ps=swim_out_2_1[2], log=log)
 
     # 2x2_2
 
-    swim_out_2_2 = run_swim(ww_h, iters, f, w,
+    swim_out_2_2 = run_swim(ww_h, iters, w,
                             img_tgt, swim_out_2_1[1],
                             img_src, swim_out_2_1[2],
                             mir_out_2_1[1][mask],
-                            b=b, t=t, k=k, log=log)
+                            f=f, b=None, t=None, k=None, log=log)
 
-    mir_out_2_2 = run_mir(swim_out_2_2[1], swim_out_2_2[2], log=log)
+    mir_out_2_2 = run_mir(pt=swim_out_2_2[1], ps=swim_out_2_2[2], log=log)
 
     # 2x2_3
 
-    final_snr = calc_snr(ww_h, f, w,
+    final_snr = calc_snr(ww_h, w,
                          img_tgt, swim_out_2_2[1],
                          img_src, swim_out_2_2[2],
                          mir_out_2_2[1][mask],
-                         b=b, t=t, k=k, log=log)
+                         f=f, b=b, t=t, k=k, log=log)
 
     # Return snr from calc_snr, points from step 2_2, af and ai from mir_out_2_2
     return (final_snr, *swim_out_2_2[1:3], *mir_out_2_2)
 
 
-def run_protocol_1(img_dir, res_dir, iter, f, w=-0.65,
-                   save_signals=True, save_render=True, log=False,
-                   n_proc=None, chunksize=1):
+def run_protocol_1(img_dir, res_dir, iter, w=-0.65, f=None,
+                   save_render=True, save_signals=True, log=False,
+                   n_proc=None, chunksize=1, ss=None):
 
     # get image stack
     dirs = sorted([os.path.join(img_dir, dir) for dir in os.listdir(img_dir)
@@ -254,13 +275,23 @@ def run_protocol_1(img_dir, res_dir, iter, f, w=-0.65,
     dm = {}
 
     # Loop over scales, e.g. s4, s2, s1
-    for scale_idx, dir in enumerate(dirs):
+    _dirs = [d for d in dirs[:ss]]
+    for scale_idx, dir in enumerate(_dirs):
         print(f'\nscale = {scale_factors[scale_idx]}\n')
 
         t0 = perf_counter()
 
+        print('    initializing ...')
+        t1 = perf_counter()
         scale_dir = 's' + str(scale_factors[scale_idx])
+        if save_signals or save_render:
+            res_scale_dir = res_dir + f'/{scale_dir}'
+            if os.path.isdir(res_scale_dir):
+                pass
+            else:
+                os.mkdir(res_scale_dir)
         img_size, img_stack = get_img_stack(dir)
+        print(f'    processing {len(img_stack)} images ...')
         tgt_src_indices = [ (j, j+1) for j in range(len(img_stack) - 1) ]
         tgt_src_indices.insert(0, (None, 0))  # prepend reference image index None for the 0th image for future use
 
@@ -305,9 +336,9 @@ def run_protocol_1(img_dir, res_dir, iter, f, w=-0.65,
             _tgt_idx = str(tgt_idx).zfill(zf)
             _src_idx = str(src_idx).zfill(zf)
             if save_signals:
-                _sig = f'{res_dir}/sig_{scale_dir}_{_tgt_idx}_{_src_idx}'    # base name for match signal images for this tgt, src pair
-                _tgt = f'{res_dir}/tgt_{scale_dir}_{_tgt_idx}'    # base name for target match window images for this tgt, src pair
-                _src = f'{res_dir}/src_{scale_dir}_{_src_idx}'    # base name for source match window images for this tgt, src pair
+                _sig = f'{res_scale_dir}/sig_{scale_dir}_{_tgt_idx}_{_src_idx}'    # base name for match signal images for this tgt, src pair
+                _tgt = f'{res_scale_dir}/tgt_{scale_dir}_{_tgt_idx}'    # base name for target match window images for this tgt, src pair
+                _src = f'{res_scale_dir}/src_{scale_dir}_{_src_idx}'    # base name for source match window images for this tgt, src pair
             else:
                 _sig = None
                 _tgt = None
@@ -328,22 +359,21 @@ def run_protocol_1(img_dir, res_dir, iter, f, w=-0.65,
 
             dm[scale_dir]['ww'] = _ww
             # Create multi-args to be passed to the Pool object for running protocol_1 parallel
-            multiargs.append((img_size, _ww, _iter, _f, _w,
+            multiargs.append((img_size, _ww, _iter, _w,
                               img_tgt, _pt, img_src, _ps, _shi,
-                              _sig, _tgt, _src, log))
+                              _f, _sig, _tgt, _src, log))
 
+        print(f'        completed in {perf_counter() - t1: .2f} sec')
+
+        print('\n    running protocol_1 ...')
+        t2 = perf_counter()
         # Run protocol_1 parallel
         with Pool(n_proc) as p:
-            res = p.starmap(protocol_1, multiargs, chunksize=chunksize)
+            res = p.starmap(protocol_1, tqdm(multiargs), chunksize=chunksize)
+        print(f'        completed in {perf_counter() - t2: .2f} sec')
 
-        # Run mir for the final cumulative affine matrix for image 0
-        if save_render:
-            tmp = '0'.zfill(zf)
-            _ren = f'{res_dir}/ren_{scale_dir}_{tmp}.JPG'
-            run_mir(img_src=img_stack[0], img_out=_ren,
-                    af=dm[scale_dir]['cafms'][0], log=log)
-        else:
-            pass
+        print('\n    append results to data model ...')
+        t3 = perf_counter()
 
         # Append results for this scale to data model and run mir for the final cumulative affine matrix for all other images
         for res_idx in range(len(tgt_src_indices) - 1):
@@ -356,17 +386,23 @@ def run_protocol_1(img_dir, res_dir, iter, f, w=-0.65,
             hfm = np.array((*dm[scale_dir]['afms'][res_idx + 1], 0.0, 0.0, 1.0)).reshape(3, -1)    # convert 1D-form of affine forward matrix to 3x3 homogeneous matrix
             chfm = chfm @ hfm    # calculate cumulative affine forward matrix for this image
             dm[scale_dir]['cafms'].append(chfm[:2, :].reshape(-1))    # convert 3x3 homogeneous cumulative affine forward matrix to 1D-form of cumulative affine forward matrix and append to list
-            src_idx = tgt_src_indices[res_idx + 1][1]    # get source image index
-            _src_idx = f'{src_idx}'.zfill(zf)
-            _src = f'src_{scale_dir}_{_src_idx}'    #  suffix for rendered image
-            # Run mir to generate transformed and aligned image
-            if save_render:
-                run_mir(img_src=img_stack[src_idx], img_out=f'{res_dir}/ren_{_src[4:]}.JPG',
-                        af=dm[scale_dir]['cafms'][res_idx + 1], log=log)
-            else:
-                pass
 
-        print(f'time elapsed = {round(perf_counter() - t0, 2)} seconds\n')
+        print(f'        completed in {perf_counter() - t3: .2f} sec')
+        if save_render:
+            print('\n    rendering images ...')
+            t4 = perf_counter()
+            ren_args = []
+            for i in range(len(img_stack)):
+                _idx = str(i).zfill(zf)
+                _img_src = img_stack[i]
+                _img_out = _img_src[_img_src.rfind('/') + 1: _img_src.rfind('.')]    # base name for rendered images
+                _ren = f'{res_scale_dir}/{_img_out}_ren_{scale_dir}_{_idx}.JPG'
+                ren_args.append((None, None, _img_src, _ren, dm[scale_dir]['cafms'][i], None, log))
+            with Pool(n_proc) as p:
+                p.starmap(run_mir, tqdm(ren_args), chunksize=chunksize)
+            print(f'        completed in {perf_counter() - t4: .2f} sec')
+
+        print(f'\ntime elapsed = {perf_counter() - t0: .2f} sec\n')
 
     return dm
 
@@ -498,12 +534,123 @@ def hp_(arg):
     return np.apply_along_axis(lambda x: np.array([*x, 1.]), arg.ndim - 1, arg)
 
 
+def hm_(arg):
+
+    return np.array([*arg, 0.0, 0.0, 1.0]).reshape(3, -1)
+
+
+def affine_decompose(arg):
+
+    tx = arg[2]
+    ty = arg[5]
+    th = np.arctan2(arg[3], arg[0])
+    sx = np.sqrt(arg[0] ** 2 + arg[3] ** 2)
+    sy = 1 / sx * (arg[0] * arg[4] - arg[1] * arg[3])
+    sh = 1 / sx**2 * (arg[0] * arg[1] + arg[3] * arg[4])
+
+    return tx.item(), ty.item(), th.item(), sx.item(), sy.item(), sh.item()
+
+
+def affine_decompose_matrix(arg):
+
+    tx = arg[2]
+    ty = arg[5]
+    th = np.arctan2(arg[3], arg[0])
+    sx = np.sqrt(arg[0] ** 2 + arg[3] ** 2)
+    sy = 1 / sx * (arg[0] * arg[4] - arg[1] * arg[3])
+    sh = 1 / sx**2 * (arg[0] * arg[1] + arg[3] * arg[4])
+
+    tm = np.array([[1.0, 0.0, tx],
+                   [0.0, 1.0, ty],
+                   [0.0, 0.0, 1.0]])
+
+    rm = 1 / sx * np.array([[arg[0], - arg[3], 0],
+                            [arg[3], arg[0], 0.0],
+                            [0.0, 0.0, sx]])
+
+    scm = np.array([[sx, 0.0, 0.0], [0.0, sy, 0.0], [0.0, 0.0, 1.0]])
+
+    shm = np.array([[1.0, sh, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
+
+    return tm, rm, scm, shm
+
+
+def affine_compose(tx, ty, th, sx, sy, sh):
+
+    return np.array([sx * np.cos(th), sh * sx * np.cos(th) - sy * np.sin(th), tx,
+                     sx * np.sin(th), sh * sx * np.sin(th) + sy * np.cos(th), ty])
+
+
+def angle(arg):
+
+    return cpha(cexp(arg * 1j))
+
+
+def bias_mat(cfms, po):
+
+    adp = [affine_decompose(cfm) for cfm in cfms]
+    pars = list(zip(*adp))
+    pars[2] = [angle(x) for x in pars[2]]
+    x = range(len(pars[0]))
+
+    bias_tx = np.polyfit(x, pars[0], po)
+    bias_ty = np.polyfit(x, pars[1], po)
+    bias_th = np.polyfit(x, pars[2], po)
+    bias_sx = np.polyfit(x, pars[3], po)
+    bias_sy = np.polyfit(x, pars[4], po)
+    bias_sh = np.polyfit(x, pars[5], po)
+
+    res = [affine_compose(pars[0][i] - np.poly1d(bias_tx)(i),
+                          pars[1][i] - np.poly1d(bias_ty)(i),
+                          angle(pars[2][i] - np.poly1d(bias_th)(i)),
+                          pars[3][i] * (1 - np.poly1d(bias_sx)(i)),
+                          pars[4][i] * (1 - np.poly1d(bias_sy)(i)),
+                          pars[5][i] - np.poly1d(bias_sh)(i)) for i in range(len(cfms))]
+
+    return pars, res
+
+
+def parse(arg):
+
+    _iter, _w, _f, _s, _p, _c, _r, _g, _l = (3, -0.65, None, None,
+                                             cpu_count(logical=False), 1,
+                                             True, True, False)    # number of physical cores
+    if not arg:
+
+        return _iter, _w, _f, _s, _p, _c, _r, _g, _l
+
+    for x in arg:
+        k, v = x[0], x[1:]
+        if k == 'i':
+            _iter = int(v)
+        elif k == 'f':
+             _f = int(v)
+        elif k == 'w':
+            _w = float(v)
+        elif k == 's':
+            _s = int(v)
+        elif k == 'p':
+            _p = int(v)
+        elif k == 'c':
+            _c = int(v)
+        elif k == 'r':    # rr
+            _r = False
+        elif k == 'g':    # gg
+            _g = False
+        elif k == 'l':    # ll
+            _l = True
+        else:
+            raise ValueError(f'unknown key: {k}')
+
+    return _iter, _w, _f, _s, _p, _c, _r, _g, _l
+
+
 if __name__ == '__main__':
 
-    log = False
 
     if len(argv) < 3:
-        print(f'\nUsage: {argv[0]} img_dir res_dir\n')
+        print(f'\nUsage: {argv[0]} img_dir res_dir [i3 w-0.65 fNone sNone ' \
+              'pn_proc cchunksize rsave_render gsave_signals llog]\n')
         exit()
 
     if argv[1][-1] == '/':
@@ -516,6 +663,14 @@ if __name__ == '__main__':
     else:
         res_dir = argv[2]
 
+    if len(argv) == 3:
+        tmp = parse('')
+
+    if len(argv) > 3:
+        tmp = parse(argv[3:])
+
+    _iter, _w, _f, _s, n_proc, chunksize, save_render, save_signals, log = tmp
+
     if os.path.isdir(res_dir):
         pass
     else:
@@ -523,16 +678,14 @@ if __name__ == '__main__':
 
     fp = f"{res_dir}/{img_dir[img_dir.rfind('/')+1:]}_{date.today().strftime('%Y%m%d')}.pkl"
 
-    n_proc = cpu_count() // 2
-    chunksize = 1
+    print(f'\niter : {_iter}  w : {_w}  f : {_f}  s : {_s}' \
+          f'\nn_proc : {n_proc}  chunksize : {chunksize}' \
+          f'\nsave_render : {save_render}  save_signals : {save_signals}  log : {log}\n')
+    print(f'running on {n_proc} physical cores')
 
-    _iter = 3
-    _f = 3
-    _w = -0.65
-
-    dm = run_protocol_1(img_dir, res_dir, _iter, _f, w=_w,
-                        save_signals=True, save_render=True,
-                        log=log, n_proc=n_proc, chunksize=chunksize)
+    dm = run_protocol_1(img_dir, res_dir, _iter, w=_w, f=_f,
+                        save_render=save_render, save_signals=save_signals,
+                        log=log, n_proc=n_proc, chunksize=chunksize, ss=_s)
 
     save_pkl(dm, fp)
 
