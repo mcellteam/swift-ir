@@ -283,10 +283,6 @@ def run_protocol_1(img_dir, res_dir, iter, w=-0.65, f=None, u=1, v=1,
         t1 = perf_counter()
         scale_dir = 's' + str(scale_factors[scale_idx])
 
-        if save_signals or save_render:
-            res_scale_dir = res_dir + f'/{scale_dir}'
-            os.makedirs(res_scale_dir, exist_ok=True)
-
         if save_signals:
             sig_dir = f'{res_dir}/{scale_dir}/sig'
             tgt_dir = f'{res_dir}/{scale_dir}/tgt'

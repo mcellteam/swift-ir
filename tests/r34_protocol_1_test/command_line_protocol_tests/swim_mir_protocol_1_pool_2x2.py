@@ -278,10 +278,6 @@ def run_protocol_1(img_dir, res_dir, iter, w=-0.65, f=None,
         t1 = perf_counter()
         scale_dir = 's' + str(scale_factors[scale_idx])
 
-        if save_signals or save_render:
-            res_scale_dir = res_dir + f'/{scale_dir}'
-            os.makedirs(res_scale_dir, exist_ok=True)
-
         if save_signals:
             sig_dir = f'{res_dir}/{scale_dir}/sig'
             tgt_dir = f'{res_dir}/{scale_dir}/tgt'
@@ -336,9 +332,9 @@ def run_protocol_1(img_dir, res_dir, iter, w=-0.65, f=None,
             _tgt_idx = str(tgt_idx).zfill(zf)
             _src_idx = str(src_idx).zfill(zf)
             if save_signals:
-                _sig = f'{res_scale_dir}/sig_{scale_dir}_{_tgt_idx}_{_src_idx}'    # base name for match signal images for this tgt, src pair
-                _tgt = f'{res_scale_dir}/tgt_{scale_dir}_{_tgt_idx}'    # base name for target match window images for this tgt, src pair
-                _src = f'{res_scale_dir}/src_{scale_dir}_{_src_idx}'    # base name for source match window images for this tgt, src pair
+                _sig = f'{sig_dir}/sig_{scale_dir}_{_tgt_idx}_{_src_idx}'    # base name for match signal images for this tgt, src pair
+                _tgt = f'{tgt_dir}/tgt_{scale_dir}_{_tgt_idx}'    # base name for target match window images for this tgt, src pair
+                _src = f'{src_dir}/src_{scale_dir}_{_src_idx}'    # base name for source match window images for this tgt, src pair
             else:
                 _sig = None
                 _tgt = None
@@ -401,7 +397,7 @@ def run_protocol_1(img_dir, res_dir, iter, w=-0.65, f=None,
                 _idx = str(i).zfill(zf)
                 _img_src = img_stack[i]
                 _img_out = _img_src[_img_src.rfind('/') + 1: _img_src.rfind('.')]    # base name for rendered images
-                _ren = f'{res_dir}/{_img_out}_ren_{scale_dir}_{_idx}.JPG'
+                _ren = f'{ren_dir}/{_img_out}_ren_{scale_dir}_{_idx}.JPG'
                 ren_args.append((None, None, _img_src, _ren, dm[scale_dir]['cafms'][i], None, log))
             with Pool(n_proc) as p:
                 if not tq:
