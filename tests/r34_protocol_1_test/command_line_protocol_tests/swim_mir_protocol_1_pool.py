@@ -2,14 +2,15 @@ import argparse
 from datetime import date
 from cmath import exp as cexp
 from cmath import phase as cpha
-import os
+from math import atan2, cos, sin, sqrt
 from multiprocessing import Pool
+import os
 from psutil import cpu_count
 from pickle import dump, load
-from sys import argv
 import subprocess as sp
 from time import perf_counter
 import numpy as np
+from scipy.stats import median_abs_deviation as mad
 from get_image_size import get_image_size
 from tqdm import tqdm
 
@@ -28,7 +29,7 @@ def swim_input(ww, i, w, f, b, t, k, tgt, pt, src, ps, shi):
           f'{shi[0]} {shi[1]} {shi[2]} {shi[3]}'
 
     if f is None:
-         arg = arg.replace(' -fNone', '')
+        arg = arg.replace(' -fNone', '')
 
     return arg
 
@@ -71,8 +72,10 @@ def run_swim(ww, i, w, tgt, pt, src, ps, shi,
     com = [f'{swim}', f'{_ww}']
 
     _input = ''
-    for j in range(pt.shape[0]):
-        idj = f'mp_w{j}' if pt.shape[0] > 1 else f'sp_w{j}'
+    n = pt.shape[0]
+    ln = len(str(n))
+    for j in range(n):
+        idj = f'mp_w{str(j).zfill(ln)}' if pt.shape[0] > 1 else f'sp_w0{j}'
         _b = f'{b}_{idj}.JPG' if b is not None else b
         _t = f'{t}_{idj}.JPG' if t is not None else t
         _k = f'{k}_{idj}.JPG' if k is not None else k
@@ -96,7 +99,7 @@ def run_swim(ww, i, w, tgt, pt, src, ps, shi,
         print(f'\nouts:\n{outs}')
         print(f'errs:\n{errs}')
 
-    snr, pt, ps, dx, dy, m0 = parse_swim_out(outs[:-1]) # remove last '\n'
+    snr, pt, ps, dx, dy, m0 = parse_swim_out(outs[:-1])    # remove last '\n'
 
     return snr, pt, ps, shi, dx, dy, m0
     # return {'snr':snr, 'pt': pt, 'ps': ps, 'shi': shi,
@@ -164,11 +167,23 @@ def run_mir(pt=None, ps=None, img_src=None, img_out=None, af=None, img_size=None
         print(f'proc.returncode: {proc.returncode}')
 
     if (pt is not None) and (ps is not None) and (af is None):
-        af, ai = parse_mir_out(outs[:-1]) # remove last '\n'
+        af, ai = parse_mir_out(outs[:-1])    # remove last '\n'
         return af, ai
         # return {'af': af, 'ai': ai}
     else:
         return None
+
+
+def mzscore(arr):
+
+    return 0.6745 * (arr - np.median(arr)) / mad(arr)
+
+
+def outliers(arr, percentile=5):
+
+    mz = mzscore(arr)
+
+    return mz <= np.percentile(mz, percentile)
 
 
 # Protocol 1 consists of:
@@ -181,7 +196,7 @@ def run_mir(pt=None, ps=None, img_src=None, img_out=None, af=None, img_size=None
 # 7) mir of result of step 6 to get final AI
 # 8) swim (iters = 1) of 2x2 quadrants using shape part of final AI to get final SNRs
 
-def protocol_1(img_size, ww, iters, w, img_tgt, pt, img_src, ps, shi,
+def protocol_1(img_size, ww, iter, w, img_tgt, pt, img_src, ps, shi,
                f, u, v, b, t, k, log=True):
 #form 1: pt and ps are None  --> perform initial alignment at coarsest scale
 #form 2: pt and ps are not None  --> perform alignment at finer scales
@@ -193,7 +208,7 @@ def protocol_1(img_size, ww, iters, w, img_tgt, pt, img_src, ps, shi,
         pt_1 = img_size.reshape(-1, 2) / 2
         ps_1 = img_size.reshape(-1, 2) / 2
 
-        swim_out_1 = run_swim(ww, iters, w,
+        swim_out_1 = run_swim(ww, iter, w,
                               img_tgt, pt_1,
                               img_src, ps_1, shi,
                               f=f, b=b, t=t, k=k, log=log)
@@ -213,10 +228,10 @@ def protocol_1(img_size, ww, iters, w, img_tgt, pt, img_src, ps, shi,
 
         for i in range(u):
 
-            swim_out = run_swim(ww_h, iters, w,
-                                    img_tgt, _pt,
-                                    img_src, _ps, shi,
-                                    f=f, b=None, t=None, k=None, log=log)
+            swim_out = run_swim(ww_h, iter, w,
+                                img_tgt, _pt,
+                                img_src, _ps, shi,
+                                f=f, b=None, t=None, k=None, log=log)
             _pt = swim_out[1]
             _ps = swim_out[2]
 
@@ -238,7 +253,7 @@ def protocol_1(img_size, ww, iters, w, img_tgt, pt, img_src, ps, shi,
 
     for i in range(v):
 
-        swim_out = run_swim(ww_q, iters, w,
+        swim_out = run_swim(ww_q, iter, w,
                             img_tgt, _pt,
                             img_src, _ps,
                             shi,
@@ -255,7 +270,7 @@ def protocol_1(img_size, ww, iters, w, img_tgt, pt, img_src, ps, shi,
                          shi,
                          f=f, b=b, t=t, k=k, log=log)
 
-    return (final_snr, _pt, _ps, *mir_out)
+    return final_snr, _pt, _ps, *mir_out
 
 
 def run_protocol_1(img_dir, res_dir, iter, w=-0.65, f=None, u=1, v=1,
@@ -265,7 +280,7 @@ def run_protocol_1(img_dir, res_dir, iter, w=-0.65, f=None, u=1, v=1,
     # get image stack
     dirs = sorted([os.path.join(img_dir, dir) for dir in os.listdir(img_dir)
                    if dir.startswith('s')], key=lambda x: int(x[x.rfind('s')+1:]))[::-1]
-    scale_factors = [ int(dir[dir.rfind('s')+1:]) for dir in dirs ]
+    scale_factors = [int(dir[dir.rfind('s')+1:]) for dir in dirs]
     _iter = iter
     _f = f
     _w = w
@@ -293,8 +308,8 @@ def run_protocol_1(img_dir, res_dir, iter, w=-0.65, f=None, u=1, v=1,
 
         img_size, img_stack = get_img_stack(dir)
         print(f'    processing {len(img_stack)} images ...')
-        tgt_src_indices = [ (j, j+1) for j in range(len(img_stack) - 1) ]
-        tgt_src_indices.insert(0, (None, 0))  # prepend reference image index None for the 0th image for future use
+        tgt_src_indices = [(j, j+1) for j in range(len(img_stack) - 1)]
+        tgt_src_indices.insert(0, (None, 0))    # prepend reference image index None for the 0th image for future use
 
         # Initialize input and results for this scale
         dm[scale_dir] = {}
@@ -303,9 +318,9 @@ def run_protocol_1(img_dir, res_dir, iter, w=-0.65, f=None, u=1, v=1,
         dm[scale_dir]['iter'] = _iter
         dm[scale_dir]['f'] = _f
         dm[scale_dir]['w'] = _w
-        dm[scale_dir]['snrs'] = [None]
-        dm[scale_dir]['pts'] = [None]
-        dm[scale_dir]['pss'] = [None]
+        dm[scale_dir]['snrs'] = [np.full(16, np.nan)]
+        dm[scale_dir]['pts'] = [np.full((16, 2), np.nan)]
+        dm[scale_dir]['pss'] = [np.full((16, 2), np.nan)]
         dm[scale_dir]['afms'] = [np.array([1.0, 0.0, 0.0, 0.0, 1.0, 0.0])]    # 1D-array form of identity matrix for affine forward matrix
         dm[scale_dir]['aims'] = [np.array([1.0, 0.0, 0.0, 0.0, 1.0, 0.0])]    # 1D-array form of identity matrix for affine inverse matrix
         dm[scale_dir]['cafms'] = [np.array([1.0, 0.0, 0.0, 0.0, 1.0, 0.0])]    # 1D-array form of identity matrix for cumulative affine forward matrix
@@ -314,17 +329,17 @@ def run_protocol_1(img_dir, res_dir, iter, w=-0.65, f=None, u=1, v=1,
         if scale_idx == 0:
             # Aligning coarsest scale, begin protocol_1 with 1x1 window
             sf = 1
-            __ww = np.asarray(0.8125 * img_size, dtype=np.int64) # size of 1x1 window at coarsest scale
+            __ww = np.asarray(0.8125 * img_size, dtype=np.int64)    # size of 1x1 window at coarsest scale
             __pt = None
             __ps = None
             __ai = np.array([1., 0., 0., 0., 1., 0.])
         else:
             # Aligning finer scales, begin protocol_1 with 2x2 window
             sf = scale_factors[scale_idx - 1] // scale_factors[scale_idx]    # scale factor for each finer scale
-            __ww = dm['s' + str(scale_factors[scale_idx - 1])]['ww']    # size of 2x2 window at previous scale
-            __pt = dm['s' + str(scale_factors[scale_idx - 1])]['pts']    # target points at previous scale
-            __ps = dm['s' + str(scale_factors[scale_idx - 1])]['pss']    # source points at previous scale
-            __ai = dm['s' + str(scale_factors[scale_idx - 1])]['aims']    # affine inverse at previous scale
+            __ww = dm['s' + str(scale_factors[scale_idx - 1])]['ww']     # size of 2x2 window at previous scale
+            __pt = dm['s' + str(scale_factors[scale_idx - 1])]['pts']     # target points at previous scale
+            __ps = dm['s' + str(scale_factors[scale_idx - 1])]['pss']     # source points at previous scale
+            __ai = dm['s' + str(scale_factors[scale_idx - 1])]['aims']     # affine inverse at previous scale
 
         zf = len(str(len(img_stack) - 1))
         multiargs = []
@@ -362,7 +377,7 @@ def run_protocol_1(img_dir, res_dir, iter, w=-0.65, f=None, u=1, v=1,
             # Create multi-args to be passed to the Pool object for running protocol_1 parallel
             multiargs.append((img_size, _ww, _iter, _w,
                               img_tgt, _pt, img_src, _ps, _shi,
-                              _f,  u, v, _sig, _tgt, _src,log))
+                              _f,  u, v, _sig, _tgt, _src, log))
 
         print(f'        completed in {perf_counter() - t1: .2f} sec')
 
@@ -392,9 +407,10 @@ def run_protocol_1(img_dir, res_dir, iter, w=-0.65, f=None, u=1, v=1,
             dm[scale_dir]['cafms'].append(chfm[:2, :].reshape(-1))    # convert 3x3 homogeneous cumulative affine forward matrix to 1D-form of cumulative affine forward matrix and append to list
 
         print(f'        completed in {perf_counter() - t3: .2f} sec')
+        t4 = perf_counter()
+
         if save_render:
             print('\n    rendering images ...')
-            t4 = perf_counter()
             ren_dir = f'{res_dir}/{scale_dir}/ren'
             os.makedirs(ren_dir, exist_ok=True)
             ren_args = []
@@ -418,7 +434,7 @@ def run_protocol_1(img_dir, res_dir, iter, w=-0.65, f=None, u=1, v=1,
 
 def get_img_stack(dir):
     # use image library
-    img_stack = sorted([os.path.join(dir, x) for x in os.listdir(dir)])  # get list of images in dir arg
+    img_stack = sorted([os.path.join(dir, x) for x in os.listdir(dir)])    # get list of images in dir arg
     img_size = np.array(get_image_size(img_stack[0]))
 
     return img_size, img_stack
@@ -550,73 +566,25 @@ def hm_(arg):
 
 def affine_decompose(arg):
 
+    th = atan2(arg[3], arg[0])
+    sx = sqrt(arg[0] ** 2 + arg[3] ** 2)
+    sy = 1 / sx * (arg[0] * arg[4] - arg[1] * arg[3])
+    sh = 1 / (sx * sy) * (arg[0] * arg[1] + arg[3] * arg[4])
     tx = arg[2]
     ty = arg[5]
-    th = np.arctan2(arg[3], arg[0])
-    sx = np.sqrt(arg[0] ** 2 + arg[3] ** 2)
-    sy = 1 / sx * (arg[0] * arg[4] - arg[1] * arg[3])
-    sh = 1 / sx**2 * (arg[0] * arg[1] + arg[3] * arg[4])
 
-    return tx.item(), ty.item(), th.item(), sx.item(), sy.item(), sh.item()
+    return th, sx, sy.item(), sh.item(), tx.item(), ty.item()
 
 
-def affine_decompose_matrix(arg):
+def affine_compose(th, sx, sy, sh, tx, ty):
 
-    tx = arg[2]
-    ty = arg[5]
-    th = np.arctan2(arg[3], arg[0])
-    sx = np.sqrt(arg[0] ** 2 + arg[3] ** 2)
-    sy = 1 / sx * (arg[0] * arg[4] - arg[1] * arg[3])
-    sh = 1 / sx**2 * (arg[0] * arg[1] + arg[3] * arg[4])
-
-    tm = np.array([[1.0, 0.0, tx],
-                   [0.0, 1.0, ty],
-                   [0.0, 0.0, 1.0]])
-
-    rm = 1 / sx * np.array([[arg[0], - arg[3], 0],
-                            [arg[3], arg[0], 0.0],
-                            [0.0, 0.0, sx]])
-
-    scm = np.array([[sx, 0.0, 0.0], [0.0, sy, 0.0], [0.0, 0.0, 1.0]])
-
-    shm = np.array([[1.0, sh, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
-
-    return tm, rm, scm, shm
-
-
-def affine_compose(tx, ty, th, sx, sy, sh):
-
-    return np.array([sx * np.cos(th), sh * sx * np.cos(th) - sy * np.sin(th), tx,
-                     sx * np.sin(th), sh * sx * np.sin(th) + sy * np.cos(th), ty])
+    return np.array([sx * cos(th), sy * (sh * cos(th) - sin(th)), tx,
+                     sx * sin(th), sy * (sh * sin(th) + cos(th)), ty])
 
 
 def angle(arg):
 
     return cpha(cexp(arg * 1j))
-
-
-def bias_mat(cfms, po):
-
-    adp = [affine_decompose(cfm) for cfm in cfms]
-    pars = list(zip(*adp))
-    pars[2] = [angle(x) for x in pars[2]]
-    x = range(len(pars[0]))
-
-    bias_tx = np.polyfit(x, pars[0], po)
-    bias_ty = np.polyfit(x, pars[1], po)
-    bias_th = np.polyfit(x, pars[2], po)
-    bias_sx = np.polyfit(x, pars[3], po)
-    bias_sy = np.polyfit(x, pars[4], po)
-    bias_sh = np.polyfit(x, pars[5], po)
-
-    res = [affine_compose(pars[0][i] - np.poly1d(bias_tx)(i),
-                          pars[1][i] - np.poly1d(bias_ty)(i),
-                          angle(pars[2][i] - np.poly1d(bias_th)(i)),
-                          pars[3][i] * (1 - np.poly1d(bias_sx)(i)),
-                          pars[4][i] * (1 - np.poly1d(bias_sy)(i)),
-                          pars[5][i] - np.poly1d(bias_sh)(i)) for i in range(len(cfms))]
-
-    return pars, res
 
 
 if __name__ == '__main__':
@@ -660,61 +628,3 @@ if __name__ == '__main__':
 # hp_src = him @ hp_tgt
 
 #####
-
-# class DataModel(dict):
-#     # DataModel Schema:
-#     # {
-#     #     'img_path': img_dir,
-#     #     'scale_S': {    # where S is the scale value,
-#     #       'affine_mode': 'init_affine' or 'refine_affine',
-#     #       'img_size': [siz_x, siz_y],
-#     #       'img_stack': [img_dict_1, ... img_dict_N, ...],
-#     #     },
-#     # }
-#     #
-#     # where img_dict_N is:
-#     # {
-#     #     'img_idx': N,
-#     #     'img_tgt': img_tgt,
-#     #     'img_src': img_src,
-#     #     'include': True or False,
-#     #     'alignment_method': 'grid' or 'manual_hint' or 'manual_scrict'
-#     #     'ww_1x1': [832, 832],
-#     #     'ww_2x2': [416, 416],
-#     #     'ww_manual': [ww_x, ww_y],
-#     #     'iters': 3,
-#     #     'f': 3,
-#     #     'w': -0.65,
-#     #     'pt_init': [[pt_1_x, pt_1_y], ... [pt_N_x, pt_N_y], ...], or []
-#     #     'ps_init': [[ps_1_x, ps_1_y], ... [ps_N_x, ps_N_y], ...], or []
-#     #     'shape_inv_init': [shi_0, shi_1, shi_2, shi_3], or []
-#     #     'result': {
-#     #        'pt': [[pt_1_x, pt_1_y], ... [pt_N_x, pt_N_y], ...],
-#     #        'ps': [[ps_1_x, ps_1_y], ... [ps_N_x, ps_N_y], ...],
-#     #        'afm': [afm_1, afm_2, ...],
-#     #        'cafm': [cafm_1, cafm_2, ...],
-#     #        'snr': [snr_1, snr_2, ...],
-#     #     }
-#     # }
-
-
-#     def __init__(self, *args, **kwargs):
-#         super(DataModel, self).__init__(*args, **kwargs)
-
-#     def update(self, *args, **kwargs):
-#         super(DataModel, self).update(*args, **kwargs)
-
-#     def __setitem__(self, key, value):
-#         super(DataModel, self).__setitem__(key, value)
-
-#     def __getitem__(self, key):
-#         return super(DataModel, self).__getitem__(key)
-
-#     def __delitem__(self, key):
-#         super(DataModel, self).__delitem__(key)
-
-#     def __str__(self):
-#         return super(DataModel, self).__str__()
-
-#     def __repr__(self):
-#         return super(DataModel, self).__repr__()
