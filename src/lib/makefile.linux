@@ -1,7 +1,7 @@
 FLAGS = -O3 -m64 -msse3
 BINDIR = ./bin_linux/
 
-all: $(BINDIR)swim $(BINDIR)iavg $(BINDIR)iscale $(BINDIR)mir $(BINDIR)remod 
+all: $(BINDIR)swim $(BINDIR)iavg $(BINDIR)iscale $(BINDIR)iscale2 $(BINDIR)mir $(BINDIR)remod 
 
 #all: test_libs swim iavg iscale mir remod remod_old sxox json_reader.jar ImageAlign.jar run_swift.jar swift_gui.jar swim_lab.jar sha1sum.txt
 
@@ -14,6 +14,9 @@ $(BINDIR)iavg: iavg.c swimio.h debug.h makefile
 $(BINDIR)iscale: iscale.c swimio.h debug.h makefile
 	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)iscale iscale.c -ljpeg -ltiff -lpng
 
+$(BINDIR)iscale2: iscale2.c swimio.h debug.h makefile
+	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)iscale2 iscale2.c -ljpeg -ltiff -lpng
+
 $(BINDIR)mir: mir.c swimio.h debug.h makefile
 	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)mir mir.c -ljpeg -ltiff -lpng -lm
 
@@ -23,10 +26,11 @@ $(BINDIR)remod: remod.c swimio.h debug.h makefile
 $(BINDIR)sxox: sxox.c makefile
 	gcc $(FLAGS) -Wno-implicit -o sxox sxox.c -lm
 
-sha1sum.txt: $(BINDIR)swim $(BINDIR)iavg $(BINDIR)iscale $(BINDIR)mir $(BINDIR)remod
+sha1sum.txt: $(BINDIR)swim $(BINDIR)iavg $(BINDIR)iscale $(BINDIR)iscale2 $(BINDIR)mir $(BINDIR)remod
 	sha1sum $(BINDIR)swim > sha1sum.txt
 	sha1sum $(BINDIR)iavg >> sha1sum.txt
 	sha1sum $(BINDIR)iscale >> sha1sum.txt
+	sha1sum $(BINDIR)iscale2 >> sha1sum.txt
 	sha1sum $(BINDIR)mir >> sha1sum.txt
 	sha1sum $(BINDIR)remod >> sha1sum.txt
 

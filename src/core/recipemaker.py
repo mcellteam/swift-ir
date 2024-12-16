@@ -84,19 +84,21 @@ def cached(func):
     return wrapper
 
 
-
 def run_recipe(data):
     '''Assemble and execute an alignment recipe
     :param data: data for one pairwise alignment as Python dictionary.'''
 
     recipe = align_recipe(data)
+
     if data['first_index']:
         recipe.afm = np.array([[1., 0., 0.], [0., 1., 0.]])
     else:
         recipe.assemble_recipe()
         rc = recipe.execute_recipe()
+        
     if data['glob_cfg']['generate_thumbnails']:
         recipe.generate_thumbnail()
+
     try:
         mr = recipe.set_results()
     except:
@@ -109,6 +111,7 @@ def run_recipe(data):
             'index': data['index'],
             'complete': False
         }
+
     return mr
 
 
@@ -188,18 +191,25 @@ class align_recipe:
         pa[0, 0] = int(self.ss['img_size'][0] / 2.0)  # Window Center x
         pa[1, 0] = int(self.ss['img_size'][1] / 2.0)  # Window Center y
         psta_1 = pa
+        pmov_1 = psta_1
 
         # Example: psta_2x2 = [[256. 768. 256. 768.] [256. 256. 768. 768.]]
 
         if 'grid' in self.method: # Align using ingredients for Grid mode
 
+            '''
+            # Disable this section, now done as method presets in data.py
             # from previous 'custom-grid' method
             ww_1x1 = self.ss['method_opts']['size_1x1']
             ww_2x2 = self.ss['method_opts']['size_2x2']
-            x1 = ((self.ss['img_size'][0] - ww_1x1[0]) / 2) + (ww_2x2[0] / 2)
-            x2 = self.ss['img_size'][0] - x1
-            y1 = ((self.ss['img_size'][1] - ww_1x1[1]) / 2) + (ww_2x2[1] / 2)
-            y2 = self.ss['img_size'][1] - y1
+            # x1 = ((self.ss['img_size'][0] - ww_1x1[0]) / 2) + (ww_2x2[0] / 2)
+            # x2 = self.ss['img_size'][0] - x1
+            # y1 = ((self.ss['img_size'][1] - ww_1x1[1]) / 2) + (ww_2x2[1] / 2)
+            # y2 = self.ss['img_size'][1] - y1
+            x1 = (self.ss['img_size'][0] - ww_2x2[0]) / 2
+            x2 = (self.ss['img_size'][0] + ww_2x2[0]) / 2
+            y1 = (self.ss['img_size'][1] - ww_2x2[1]) / 2
+            y2 = (self.ss['img_size'][1] + ww_2x2[1]) / 2
             cps = [(x1, y1), (x2, y1), (x1, y2), (x2, y2)]
             nx, ny = 2, 2
             pa = np.zeros((2, nx * ny))  # Point Array (2x4) points
@@ -207,55 +217,102 @@ class align_recipe:
                 pa[0,i] = int(p[0])
                 pa[1,i] = int(p[1])
             psta_2x2 = pa
-
+            pmov_2x2 = psta_2x2
+            '''
+            ww_1x1 = self.ss['method_opts']['size_1x1']
+            ww_2x2 = self.ss['method_opts']['size_2x2']
+            psta_2x2 = np.array(self.ss['method_opts']['points']['coords']['ref']).T
+            
             if self.ss['is_refinement']:
-                '''Perform affine refinement'''
+                '''Perform affine refin['tra'ement'''           
+                pmov_2x2 = np.array(self.ss['method_opts']['points']['coords']).T
                 self.add_ingredients([
                     align_ingredient(
-                        mode='SWIM-Grid',
+                        recipe=self,
+                        mode='SWIM-MIR',
                         ww=ww_2x2,
                         psta=psta_2x2,
+                        pmov=pmov_2x2,
                         ID='ingredient-2x2-a'),
-                    align_ingredient(
-                        mode='SWIM-Grid',
+                      align_ingredient(
+                        recipe=self,
+                        mode='SWIM-MIR',
                         ww=ww_2x2,
                         psta=psta_2x2,
-                        ID='ingredient-2x2-b',
-                        last=True)])
+                        pmov=None,
+                        ID='ingredient-2x2-b'),
+                     align_ingredient(
+                        recipe=self,
+                        mode='SWIM-MIR',
+                        ww=ww_2x2,
+                        psta=psta_2x2,
+                        pmov=None,
+                        ID='ingredient-2x2-c'),                       
+                     align_ingredient(
+                        recipe=self,
+                        mode='SWIM-SNR',
+                        ww=ww_2x2,
+                        iters=1,
+                        psta=psta_2x2,
+                        pmov=None,
+                        ID='ingredient-2x2-d'),
+                    ])
             else:
-                '''Perform affine initialization'''
+                '''Perform affine initialization'''  # This is done for the coarsest scale
                 self.add_ingredients([
                     align_ingredient(
-                        mode='SWIM-Grid',
+                        recipe=self,
+                        mode='SWIM-MIR',
                         ww=ww_1x1,
                         psta=psta_1,
+                        pmov=pmov_1,
                         ID='ingredient-1x1'),
                     align_ingredient(
-                        mode='SWIM-Grid',
+                        recipe=self,
+                        mode='SWIM-MIR',
                         ww=ww_2x2,
                         psta=psta_2x2,
+                        pmov=None,
                         ID='ingredient-2x2-a'),
-                    align_ingredient(
-                        mode='SWIM-Grid',
+                   align_ingredient(
+                        recipe=self,
+                        mode='SWIM-MIR',
                         ww=ww_2x2,
                         psta=psta_2x2,
+                        pmov=None,
+                        ID='ingredient-2x2-b'),
+                   align_ingredient(
+                        recipe=self,
+                        mode='SWIM-MIR',
+                        ww=ww_2x2,
+                        psta=psta_2x2,
+                        pmov=None,
                         ID='ingredient-2x2-c'),
                     align_ingredient(
-                        mode='SWIM-Grid',
+                        recipe=self,
+                        mode='SWIM-SNR',
                         ww=ww_2x2,
+                        iters=1,
                         psta=psta_2x2,
-                        ID='ingredient-2x2-d',
-                        last=True)])
+                        pmov=None,
+                        ID='ingredient-2x2-d')
+                   ])
         else: # Align using ingredients for Manual mode
-            # ww = self.ss['method_opts']['size'] #1025-
             siz = self.ss['img_size']
-            ww = ensure_even(self.ss['method_opts']['size'] * siz[0])
+            # Convert manual points to pixel units
+            # ww = ensure_even(self.ss['method_opts']['size'] * siz[0])
+            # ww is already in even pixel units
+            ww  = self.ss['method_opts']['size']
             pts = []
+            #FIXME: Make sure coords,tra are in pixel units not fractions
             for pt in self.ss['method_opts']['points']['coords']['tra']:
                 if pt:
                     pts.append(
-                        (ensure_even(pt[0] * siz[0]),
-                        ensure_even(pt[1] * siz[1]))
+                        # Convert to even pixel units
+                        # (ensure_even(pt[0] * siz[0]),
+                        #  ensure_even(pt[1] * siz[1]))
+                        # pt is already in pixel units, don't need to be even
+                        pt
                     )
             man_pmov = np.array([p for p in pts if p]).transpose()
 
@@ -263,8 +320,11 @@ class align_recipe:
             for pt in self.ss['method_opts']['points']['coords']['ref']:
                 if pt:
                     pts.append(
-                        (ensure_even(pt[0] * siz[0]),
-                         ensure_even(pt[1] * siz[1]))
+                        # Convert to even pixel units
+                        # (ensure_even(pt[0] * siz[0]),
+                        #  ensure_even(pt[1] * siz[1]))
+                        # pt is already in pixel units, don't need to be even
+                        pt
                     )
             man_psta = np.array([p for p in pts if p]).transpose()
 
@@ -273,26 +333,45 @@ class align_recipe:
             # if self.method == 'manual_hint':
             self.add_ingredients([
                 align_ingredient(
+                    recipe=self,
                     mode='MIR',
-                    ww=[ww,ww],
+                    ww=[ww, ww],
                     psta=man_psta,
                     pmov=man_pmov),
                 align_ingredient(
-                    mode='SWIM-Manual',
-                    ww=[ww,ww],
+                    recipe=self,
+                    mode='SWIM-MIR',
+                    ww=[ww, ww],
                     psta=man_psta,
-                    pmov=man_pmov,
+                    pmov=None,
                     ID='Manual-a'),
                 align_ingredient(
-                    mode='SWIM-Manual',
-                    ww=[ww,ww],
+                    recipe=self,
+                    mode='SWIM-MIR',
+                    ww=[ww, ww],
                     psta=man_psta,
-                    pmov=man_pmov,
-                    ID='Manual-b',
-                    last=True)])
+                    pmov=None,
+                    ID='Manual-b'),
+                align_ingredient(
+                    recipe=self,
+                    mode='SWIM-MIR',
+                    ww=[ww, ww],
+                    psta=man_psta,
+                    pmov=None,
+                    ID='Manual-c'),
+                align_ingredient(
+                    recipe=self,
+                    mode='SWIM-SNR',
+                    ww=[ww, ww],
+                    iters=1,
+                    psta=man_psta,
+                    pmov=None,
+                    ID='Manual-d')
+                    ])
             # elif self.method == 'manual_strict':
             #     self.add_ingredients([
             #         align_ingredient(
+            #             recipe=self,
             #             mode='MIR',
             #             ww=[ww,ww],
             #             psta=man_psta,
@@ -328,11 +407,14 @@ class align_recipe:
             logger.warning(f'Image #{self.index} Has No Reference!')
             return None
 
+        # Iterate over the list of ingredients
+        # The ingredients are daisy-chained together with the afm of one ingredient being the input afm of the next
+        # Also the final pmov of each ingredient is the input pmov of the next (if pmov of next is initialized to None) 
         if not self.ss['first_index']:
             for i, ingredient in enumerate(self.ingredients):
                 try:
-                    ingredient.afm = self.afm
-                    self.afm, self.snr = ingredient.execute_ingredient()
+                    ingredient.afm = self.afm  # Initialize afm of ingredient with the current value of recipe afm
+                    self.afm, self.snr = ingredient.execute_ingredient()  # Execute the ingredient which will update the recipe afm
                 except:
                     print_exception(extra=f'ERROR ing{i}/{len(self.ingredients)}')
 
@@ -447,8 +529,8 @@ class align_recipe:
         return mr
 
     def add_ingredients(self, ingredients):
-        for ingredient in ingredients:
-            ingredient.recipe = self
+        for idx, ingredient in enumerate(ingredients):
+            ingredient.idx = idx
             self.ingredients.append(ingredient)
 
     def generate_thumbnail(self):
@@ -562,6 +644,8 @@ class align_recipe:
 
 
 class align_ingredient:
+    # The ingredients are designed to be daisy-chained together with the afm of one ingredient being the input afm of the next
+    # The final pmov of each ingredient is the input pmov of the next (if pmov is initialized to None for subsequent ingredients) 
     '''
     Universal class for alignment ingredients of recipes
     1)  If ingredient_mode is 'Manual-' then calculate the afm directly using
@@ -577,13 +661,14 @@ class align_ingredient:
     4) If align_mode is 'check_align' then use swim to check the SNR achieved
         by the supplied afm matrix but do not refine the afm matrix
     '''
-    def __init__(self, mode, ww=None, psta=None, pmov=None, afm=None, rota=None,
-                 ID='', last=False):
-        self.recipe = None
+    def __init__(self, recipe, mode, ww=None, iters=None, psta=None, pmov=None, afm=None, rota=None, ID=''):
+        self.recipe = recipe  # recipe to which this ingredient belongs
+        self.idx = None  # index of this ingredient in the recipe
         self.mode = mode
         self.swim_drift = 0.0
         self.afm = afm
         self.ww = ww
+        self.iters = str(self.recipe.ss['iterations']) if iters is None else str(iters)
         self.psta = psta
         self.pmov = pmov
         self.rota = rota
@@ -593,7 +678,7 @@ class align_ingredient:
         self.threshold = (3.5, 200, 200)
         self.mir_toks = {}
         self.ID = ID
-        self.last = last
+        # self.last = last
         self.matches_filenames = []
 
 
@@ -641,8 +726,8 @@ class align_ingredient:
                 self.snr = np.zeros(len(self.psta[0]))
             self.ingest_swim_output(swim_output) #parse swim output and call mir with result.
 
-
-        if self.last:
+        # if this is the last ingredient in the recipe then check to keep signals and matches
+        if self.idx == self.recipe.ingredients[-1].idx:
             if self.recipe.ss['glob_cfg']['keep_signals']:
                 self.crop_match_signals() # crop central portion of signal images
             if self.recipe.ss['glob_cfg']['keep_matches']:
@@ -658,6 +743,9 @@ class align_ingredient:
 
 
     def get_swim_args(self):
+        # NOTE: We are now using swim signature 5 call arguments, so set up the args to swim accordingly:
+        # FOR EXAMPLE:
+        #       swim {832x832} -i 10 -w -0.65 -f3 -b /path/to/signals/file.tif /path/to/ref/image.tif 512 512 /path/to/moving/image.tif 512 512 afm[0,0] afm[0,1] afm[1,0] afm[1,1]        
 
         if self.recipe.solo:
             print('\nGetting SWIM args...\n')
@@ -670,16 +758,29 @@ class align_ingredient:
         multi_arg_str = ArgString(sep='\n')
         self.ms_paths = []
         m = self.recipe.method
-        iters = str(self.recipe.ss['iterations'])
+        # iters = str(self.recipe.ss['iterations'])
         whiten = str(self.recipe.ss['whitening'])
         use_clobber = self.recipe.ss['clobber']
         clobber_px = self.recipe.ss['clobber_size']
+        # NOTE: we'll use the shape part of afm as the inverse shape matrix for swim
         afm = '%.6f %.6f %.6f %.6f' % (
                 self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
         # afm = '%f %f %f %f' % (
         #     self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
 
-        for i in range(len(self.psta[0])):
+        # NOTE: If self.pmov is not None, then it is already initialized and we can use it as is.
+        #       But if self.pmov is None, then we need to initialize it to the pmov result of the previous ingredient    
+        if self.pmov is None:  
+            _pmov = self.recipe.ingredients[self.idx - 1].pmov  # get pmov result of previous ingredient
+            if _pmov.shape[1] == 1:  #  previous ingredient was a single point from 1x1
+                                     #  so we need broadcast the pmov result from the 1x1 to create the 2x2 pmov points
+                                     #  this is done by adding the offset of the 1x1 pmov to the 2x2 psta points
+                offset = _pmov - self.recipe.ingredients[self.idx - 1].psta  # obtain offset of 1x1 ingredient by subtracting 1x1 pmov from 1x1 psta
+                _pmov = self.psta + offset  # now obtain 2x2 pmov by broadcasting 1x1 offset into 2x2 psta
+            self.pmov = _pmov
+
+
+        for i in range(self.psta.shape[1]):
             # if m == 'grid_custom':
             if m == 'grid':
                 if self.ID != 'ingredient-1x1':
@@ -693,23 +794,30 @@ class align_ingredient:
             b_arg = os.path.join(self.recipe.signals_dir, '%s_%s_%d%s' % (fn, m, ind, suffix))
             self.ms_paths.append(b_arg)
             args = ArgString(sep=' ')
+            # arg for swim window size
             args.append("%dx%d" % (self.ww[0], self.ww[1]))
             if self.recipe.config['verbose_swim']:
                 args.append("-v")
+            # arg for clobbering fixed pattern noise, note no space between -f and clobber_px
             if use_clobber:
                 args.append('-f%d' % clobber_px)
-            args.add_flag(flag='-i', arg=iters)
+            # args for number of internal swim iterations and whitening
+            args.add_flag(flag='-i', arg=self.iters)
             args.add_flag(flag='-w', arg=whiten)
             # if m in ('grid_default', 'grid_custom'):
-            if m == 'grid':
-                self.offx = int(self.psta[0][i] - self.cx)
-                self.offy = int(self.psta[1][i] - self.cy)
-                args.add_flag(flag='-x', arg='%d' % self.offx)
-                args.add_flag(flag='-y', arg='%d' % self.offy)
+            # NOTE: Do not use -x and -y flags for grid_default or grid_custom
+            # if m == 'grid':
+            #     self.offx = int(self.psta[0][i] - self.cx)
+            #     self.offy = int(self.psta[1][i] - self.cy)
+            #     args.add_flag(flag='-x', arg='%d' % self.offx)
+            #     args.add_flag(flag='-y', arg='%d' % self.offy)
+
+            # args to keep match signals and window patch images
             if self.recipe.ss['glob_cfg']['keep_signals']:
                 args.add_flag(flag='-b', arg=b_arg)
             if self.recipe.ss['glob_cfg']['keep_matches']:
-                if self.last:
+                # if this is the last ingredient in the recipe then check to keep signals and matches
+                if self.idx == self.recipe.ingredients[-1].idx:
                     k_arg_name = '%s_%s_k_%d%s' % (fn, m, ind, suffix)
                     k_arg_path = os.path.join(self.recipe.dir_tmp, k_arg_name)
                     args.add_flag(flag='-k', arg=k_arg_path)
@@ -719,21 +827,36 @@ class align_ingredient:
                     args.add_flag(flag='-t', arg=t_arg_path)
                     self.matches_filenames.append(t_arg_path)
             # args.append(self.recipe.ss['extra_kwargs'])
+            # arg for ref image name, a.k.a. tgt image name
             args.append(self.recipe.path_ref)
-            if m == 'manual':
-                args.append('%s %s' % (self.psta[0][i], self.psta[1][i]))
-            else:
-                args.append('%s %s' % (self.cx, self.cy))
+            # arg for psta points
+            args.append('%s %s' % (self.psta[0][i], self.psta[1][i]))
+
+            # NOTE: We are now using swim signature 5 call arguments
+            # if m == 'manual':
+            #     args.append('%s %s' % (self.psta[0][i], self.psta[1][i]))
+            # else:
+            #     args.append('%s %s' % (self.cx, self.cy))
+
+            # arg for transforming image name, a.k.a. src image name
             args.append(self.recipe.path)
-            if m == 'manual':
-                args.append('%s %s' % (self.pmov[0][i], self.pmov[1][i]))
-            else:
-                self.adjust_x = '%.6f' % (self.cx + self.afm[0, 2])
-                self.adjust_y = '%.6f' % (self.cy + self.afm[1, 2])
-                args.append('%s %s' % (self.adjust_x, self.adjust_y))
-            r = self.recipe.initial_rotation
-            if abs(r) > 0:
-                args.append(convert_rotation(r))
+            # arg for pmov points
+            args.append('%s %s' % (self.pmov[0][i], self.pmov[1][i]))
+
+            # NOTE: We are now using swim signature 5 call arguments
+            # if m == 'manual':
+            #     args.append('%s %s' % (self.pmov[0][i], self.pmov[1][i]))
+            # else:
+            #     self.adjust_x = '%.6f' % (self.cx + self.afm[0, 2])
+            #     self.adjust_y = '%.6f' % (self.cy + self.afm[1, 2])
+            #     args.append('%s %s' % (self.adjust_x, self.adjust_y))           
+           
+            # NOTE: Now we can always use the inverse shape matrix to specify an initial rotation if needed
+            # r = self.recipe.initial_rotation
+            # if abs(r) > 0:
+            #     args.append(convert_rotation(r))
+
+            # arg for inverse shape matrix
             args.append(afm)
             multi_arg_str.append(args())
 
@@ -817,6 +940,8 @@ class align_ingredient:
             #       # f"4: {toks[4]}\n"
             #       f"5: {toks[5]}\n"
             #       f"6: {toks[6]}\n")
+            self.pmov = np.array([[float(toks[5])], [float(toks[6])]])
+            '''
             self.dx = float(toks[8])
             self.dy = float(toks[9])
             self.mir_aim = copy.deepcopy(self.afm)
@@ -825,50 +950,68 @@ class align_ingredient:
             self.mir_aim[0, 2] += float(toks[5]) - self.cx
             self.mir_aim[1, 2] += float(toks[6]) - self.cy
             self.afm = self.mir_aim
-            # self.snr = np.array([0.0]) #1107-
             self.snr = np.array([0.0])
-            snr_list.append(float(toks[0][0:-1]))
+            snr_list.append(float(toks[0][:-1]))
+            '''
             return self.afm
 
         else:
-            # loop over SWIM output to build the MIR script:
+            # loop over SWIM output to get final pmov and SNR, and optionally build the MIR script:
 
-            for i,l in enumerate(swim_output):
-                toks = l.replace('(', ' ').replace(')', ' ').strip().split()
-                logger.debug(f"SWIM output tokens, line {i}: {str(toks)}")
-                self.mir_toks[i] = str(toks)
-                mir_toks = [toks[k] for k in [2, 3, 5, 6]]
-                self.mir_script += ' '.join(mir_toks) + '\n'
+            self.pmov = np.zeros_like(self.psta,dtype=np.float32)
+            idx = 0
+            for i in range(self.psta.shape[1]):
+                if self.recipe.method == 'grid' and not self.recipe.ss['method_opts']['quadrants'][i]:
+                    # snr_list.append(np.nan)
+                    continue
+                
+                toks = swim_output[idx].replace('(', ' ').replace(')', ' ').strip().split()
+                logger.debug(f"SWIM output tokens, line {idx}: {str(toks)}")
+
+                if self.mode != 'SWIM-SNR':
+                    self.mir_toks[idx] = str(toks)
+                    mir_toks = [toks[k] for k in [2, 3, 5, 6]] 
+                    self.mir_script += ' '.join(mir_toks) + '\n'
+
                 snr_list.append(float(toks[0][0:-1]))
+                self.pmov[:,i] = np.array([float(toks[5]), float(toks[6])])
+                idx += 1
 
-            self.mir_script += 'R\n'
-            t0 = time.time()
-            out, err, rc = run_command(
-                self.recipe.mir_c,
-                cmd_input=self.mir_script,
-                desc=f'MIR compose affine',
-            )
-            self.t_mir = time.time() - t0
-            self.mir_out_lines = out.strip().split('\n')
-            self.mir_err_lines = err.strip().split('\n')
-            self.mir_aim = np.eye(2, 3, dtype=np.float32)
-            self.mir_afm = np.eye(2, 3, dtype=np.float32)
-            for line in self.mir_out_lines:
-                toks = line.strip().split()
-                if (toks[0] == 'AI'):
-                    self.mir_aim[0, 0] = float(toks[1])
-                    self.mir_aim[0, 1] = float(toks[2])
-                    self.mir_aim[0, 2] = float(toks[3]) + self.swim_drift
-                    self.mir_aim[1, 0] = float(toks[4])
-                    self.mir_aim[1, 1] = float(toks[5])
-                    self.mir_aim[1, 2] = float(toks[6]) + self.swim_drift
-                if (toks[0] == 'AF'):
-                    self.mir_afm[0, 0] = float(toks[1])
-                    self.mir_afm[0, 1] = float(toks[2])
-                    self.mir_afm[0, 2] = float(toks[3]) - self.swim_drift
-                    self.mir_afm[1, 0] = float(toks[4])
-                    self.mir_afm[1, 1] = float(toks[5])
-                    self.mir_afm[1, 2] = float(toks[6]) - self.swim_drift
+            if self.mode != 'SWIM-SNR':
+                self.mir_script += 'R\n'
+
+                t0 = time.time()
+                out, err, rc = run_command(
+                    self.recipe.mir_c,
+                    cmd_input=self.mir_script,
+                    desc=f'MIR compose affine',
+                )
+                self.t_mir = time.time() - t0
+                self.mir_out_lines = out.strip().split('\n')
+                self.mir_err_lines = err.strip().split('\n')
+                self.mir_aim = np.eye(2, 3, dtype=np.float32)
+                self.mir_afm = np.eye(2, 3, dtype=np.float32)
+                for line in self.mir_out_lines:
+                    toks = line.strip().split()
+                    if (toks[0] == 'AI'):
+                        self.mir_aim[0, 0] = float(toks[1])
+                        self.mir_aim[0, 1] = float(toks[2])
+                        self.mir_aim[0, 2] = float(toks[3]) + self.swim_drift
+                        self.mir_aim[1, 0] = float(toks[4])
+                        self.mir_aim[1, 1] = float(toks[5])
+                        self.mir_aim[1, 2] = float(toks[6]) + self.swim_drift
+                    if (toks[0] == 'AF'):
+                        self.mir_afm[0, 0] = float(toks[1])
+                        self.mir_afm[0, 1] = float(toks[2])
+                        self.mir_afm[0, 2] = float(toks[3]) - self.swim_drift
+                        self.mir_afm[1, 0] = float(toks[4])
+                        self.mir_afm[1, 1] = float(toks[5])
+                        self.mir_afm[1, 2] = float(toks[6]) - self.swim_drift
+            else:
+                # In SWIM-SNR mode copy the mir results from the previous ingredient
+                self.mir_afm = self.recipe.ingredients[self.idx - 1].mir_afm
+                self.mir_aim = self.recipe.ingredients[self.idx - 1].mir_aim                
+            # NOTE!!! Here we are using the AIM matrix from MIR as the AFM matrix. We'll fix this later...
             self.afm = self.mir_aim
             self.snr = np.array(snr_list)
             return self.afm
@@ -956,87 +1099,6 @@ class align_ingredient:
             except:
                 print_exception()
 
-
-    # def generate_thumbnail(self):
-    #     if self.recipe.index == 0:
-    #         logger.critical(f"Transforming image 0...")
-    #
-    #     ifp = self.recipe.ss['path_thumb_src']
-    #     ofd = self.recipe.ss['wd']
-    #     fn, ext = os.file_path.splitext(self.recipe.ss['name'])
-    #     ofp = os.file_path.join(ofd, fn + '.thumb' + ext)
-    #
-    #     if self.recipe.index == 0:
-    #         logger.critical(f"\n"
-    #                         f"{ifp}\n"
-    #                         f"{ofp}")
-    #
-    #     if os.file_path.exists(ofp):
-    #         logger.info(f'Cache hit (transformed img, afm): {ofp}')
-    #         return
-    #     os.makedirs(os.file_path.dirname(ofd), exist_ok=True)
-    #
-    #     scale = self.recipe.ss['level']
-    #     tn_scale = self.recipe.ss['thumbnail_scale_factor']
-    #     sf = int(self.recipe.ss['level'][1:]) / tn_scale
-    #     w, h = self.recipe.ss['img_size']
-    #     rect = [0, 0, w * sf, h * sf]  # might need to swap w/h for Zarr
-    #
-    #     # Todo add flag to force regenerate
-    #     os.makedirs(os.file_path.dirname(ofp), exist_ok=True)
-    #     afm = copy.deepcopy(self.afm)
-    #     afm[0][2] *= sf
-    #     afm[1][2] *= sf
-    #
-    #     # cafm_ofp = os.file_path.join(ofd, fn + '.cafm.thumb' + ext)
-    #     # # if not os.file_path.exists(cafm_ofp):
-    #     # os.makedirs(os.file_path.dirname(cafm_ofp), exist_ok=True)
-    #     # cafm = copy.deepcopy(dm.cafm(s=scale, l=i))
-    #     # cafm[0][2] *= sf
-    #     # cafm[1][2] *= sf
-    #     # tasks_cafm.append([ifp, cafm_ofp, rect, cafm, 128])
-    #
-    #     border = 128  # Todo get exact median greyscale value
-    #
-    #     bb_x, bb_y = rect[2], rect[3]
-    #     afm = np.array([afm[0][0], afm[0][1], afm[0][2], afm[1][0], afm[1][1],
-    #                     afm[1][2]], dtype='float64').reshape((-1, 3))
-    #     p1 = applyAffine(afm, (0, 0))  # Transform Origin To Output Space
-    #     p2 = applyAffine(afm, (rect[0], rect[1]))  # Transform BB Lower Left To Output Space
-    #     offset_x, offset_y = p2 - p1  # Offset Is Difference of 'p2' and 'p1'
-    #     a = afm[0][0]
-    #     c = afm[0][1]
-    #     e = afm[0][2] + offset_x
-    #     b = afm[1][0]
-    #     d = afm[1][1]
-    #     f = afm[1][2] + offset_y
-    #     mir_script = \
-    #         'B %d %d 1\n' \
-    #         'Z %g\n' \
-    #         'F %s\n' \
-    #         'A %g %g %g %g %g %g\n' \
-    #         'RW %s\n' \
-    #         'E' % (bb_x, bb_y, border, ifp, a, c, e, b, d, f, ofp)
-    #     # print(f"\n{mir_script}\n")
-    #     o = run_command(self.recipe.mir_c, arg_list=[], cmd_input=mir_script)
-    #
-    #     A = self.recipe.ss['path_thumb_transformed']
-    #     B = self.recipe.ss['path_thumb_src_ref']
-    #     out = self.recipe.ss['path_gif']
-    #     try:
-    #         assert os.file_path.exists(A)
-    #     except AssertionError:
-    #         logger.error(f'Thumbnail image not found: {A}')
-    #         return
-    #     try:
-    #         assert os.file_path.exists(B)
-    #     except AssertionError:
-    #         logger.error(f'Thumbnail image not found: {B}')
-    #         return
-    #
-    #     imA = iio.imread(A)
-    #     imB = iio.imread(B)
-    #     iio.imwrite(out, [imA, imB], format='GIF', duration=1, loop=0)
 
 
 def run_command(cmd, arg_list=(), cmd_input=None, desc=''):

@@ -1768,19 +1768,22 @@ class DataModel:
         '''Returns the SWIM Window for the Current Layer.'''
         if s == None: s = self.level
         if l == None: l = self.zpos
-        return ensure_even(self['stack'][l]['levels'][s]['swim_settings']['method_opts']['size'] * self.image_size()[0])
+        # Convert to even pixels units
+        #return ensure_even(self['stack'][l]['levels'][s]['swim_settings']['method_opts']['size'] * self.image_size()[0])
+        # Already in even pixel units so no need to multiply by image size
+        return self['stack'][l]['levels'][s]['swim_settings']['method_opts']['size']
 
-    # def set_manual_swim_window_px(self, pixels=None, silent=False) -> None:
-    #     '''Sets the SWIM Window for the Current Layer when using Manual Alignment.'''
-    #     logger.info(f'Setting Local SWIM Window to [{pixels}] pixels...')
-    #
-    #     pixels = ensure_even(pixels)
-    #
-    #     dec = float(pixels / self.image_size()[0])
-    #
-    #     self.SS['method_opts']['size'] = dec
-    #     if not silent:
-    #         self.signals.swimArgsChanged.emit()
+
+    def set_manual_swim_window_px(self, pixels:int, s=None, l=None):
+        '''Sets the SWIM Window in units of pixels for the Current Layer when using Manual Alignment.'''
+        assert pixels < self.image_size(s=s)[0]
+        assert pixels > 0
+        if s == None: s = self.level
+        if l == None: l = self.zpos       
+        pixels = ensure_even(pixels)
+        self.SS['method_opts']['size'] = pixels
+        self.signals.swimArgsChanged.emit()
+
 
     def set_manual_swim_window_dec(self, dec:float, s=None, l=None):
         '''Sets the SWIM Window for the Current Layer when using Manual Alignment.'''
@@ -1956,10 +1959,9 @@ class DataModel:
                     'method': 'manual',
                     'mode': 'hint',
                     # 'size': _man_ww,
-                    'size': cfg.DEFAULT_MANUAL_SWIM_WINDOW_PERC,
+                    'size': ensure_even((fullsize * cfg.DEFAULT_MANUAL_SWIM_WINDOW_PERC / factor).tolist()[0]),
                     'points':{
                         'coords': {'tra': [None] * 3, 'ref': [None] * 3},
-
                         # 'ng_coords': {'tra': [], 'ref': []},
                         # 'mir_coords': {'tra': [], 'ref': []},
                         'ng_coords': {'tra': ((None, None), (None, None), (None, None)),
@@ -1977,8 +1979,21 @@ class DataModel:
                     'quadrants': [1,1,1,1],
                     'size_1x1': _1x1,
                     'size_2x2': _2x2,
-                }
+                    'points':{
+                        'coords': {'tra': [None] * 4, 'ref': [None] * 4},
+                    }
+               }
             )
+
+        img_size_coarsest = np.rint(fullsize / int(self.levels[-1][1:]))
+        ww_2x2 = d[self.levels[-1]]['grid']['size_2x2']
+        x1 = (img_size_coarsest[0] - ww_2x2[0]) / 2
+        x2 = (img_size_coarsest[0] + ww_2x2[0]) / 2
+        y1 = (img_size_coarsest[1] - ww_2x2[1]) / 2
+        y2 = (img_size_coarsest[1] + ww_2x2[1]) / 2
+        cps = [(x1, y1), (x2, y1), (x1, y2), (x2, y2)]
+        d[self.levels[-1]]['grid']['points']['coords']['tra'] = cps
+        d[self.levels[-1]]['grid']['points']['coords']['ref'] = cps
 
         return d
 
@@ -1987,7 +2002,7 @@ class DataModel:
         pass
 
 
-    #### Pulls the settings from the previous scale level ####
+    #### Propagate/Pull the settings from the previous scale level ####
     def pullSettings(self, all=True):
         logger.critical("\n\nPulling settings...\n")
         if self.level == self.coarsest_scale_key():
@@ -2049,12 +2064,16 @@ class DataModel:
                     mo['size_1x1'][1] *= sf
                     mo['size_2x2'][0] *= sf
                     mo['size_2x2'][1] *= sf
+                if method == 'manual':
+                    mo['size'] *= sf
                 try:
-                    init_afm = copy.deepcopy(self.afm(s=prev_level, l=i))
+                    # NOTE!!! Here we are using the AIM matrix from MIR, at previous scale, as the Initial AFM matrix. We'll fix this later...
+                    init_afm = copy.deepcopy(self.mir_aim(s=prev_level, l=i))
                 except:
                     print_exception(extra=f'Section #{i}. Using identity instead...')
                     init_afm = np.array([[1., 0., 0.], [0., 1., 0.]]).tolist()
                 try:
+                    # NOTE: Technically not correct to scale the translation terms, but we're only using the shape part in recipemaker so we'll ignore this for now
                     init_afm[0][2] *= sf
                     init_afm[1][2] *= sf
                 except Exception as e:
@@ -2063,6 +2082,13 @@ class DataModel:
                                    f" previous data was missing for index {i}. It will be set to "
                                    f"identity matrix until a valid affine is propagated.")
                 ss['init_afm'] = init_afm
+
+                if i == 0:
+                    continue
+                last_ing_key = sorted([ k for k in self._data['stack'][i]['levels'][prev_level]['results'].keys() if k.startswith('ing') ])[-1]
+                last_ing = self._data['stack'][i]['levels'][prev_level]['results'][last_ing_key]
+                mo['points']['coords']['ref'] = (sf*np.array(last_ing['psta']).T).tolist() 
+                mo['points']['coords']['tra'] = (sf*np.array(last_ing['pmov']).T).tolist()
 
         except Exception as e:
             cfg.mw.warn(f"Unable to propagate settings. Reason: {e.__class__.__name__}")

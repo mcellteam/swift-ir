@@ -274,11 +274,6 @@ def BiasMat(x, bias_funcs):
     poly_order = len(bias_funcs['x']) - 1
     xdot = np.arange(poly_order, 0, -1, dtype='float64')
 
-    p = bias_funcs['skew_x']
-    dp = p[:-1] * xdot
-    fdp = np.poly1d(dp)
-    skew_x_bias = -fdp(x)
-
     p = bias_funcs['scale_x']
     dp = p[:-1] * xdot
     fdp = np.poly1d(dp)
@@ -289,6 +284,11 @@ def BiasMat(x, bias_funcs):
     fdp = np.poly1d(dp)
     scale_y_bias = 1 - fdp(x)  # scale_y is multiplicative
 
+    p = bias_funcs['skew_x']
+    dp = p[:-1] * xdot
+    fdp = np.poly1d(dp)
+    skew_x_bias = -fdp(x)
+   
     p = bias_funcs['rot']
     dp = p[:-1] * xdot
     fdp = np.poly1d(dp)
@@ -304,17 +304,17 @@ def BiasMat(x, bias_funcs):
     fdp = np.poly1d(dp)
     y_bias = -fdp(x)
 
-    # Create skew, level, rot, and tranlation matrices
-    skew_x_bias_mat = np.array([[1.0, skew_x_bias, 0.0], [0.0, 1.0, 0.0]])
+    # Create scale, skew, rot, and translation matrices
     scale_bias_mat = np.array([[scale_x_bias, 0.0, 0.0], [0.0, scale_y_bias, 0.0]])
+    skew_x_bias_mat = np.array([[1.0, skew_x_bias, 0.0], [0.0, 1.0, 0.0]])
     rot_bias_mat = np.array([[np.cos(rot_bias), -np.sin(rot_bias), 0.0], [np.sin(rot_bias), np.cos(rot_bias), 0.0]])
     trans_bias_mat = np.array([[1.0, 0.0, x_bias], [0.0, 1.0, y_bias]])
 
     bias_mat = identityAffine()
 
-    # Compose bias matrix as trans*rot*scale*skew with pre-multiplication (i.e. left action)
-    bias_mat = composeAffine(skew_x_bias_mat, bias_mat)
+    # Compose bias matrix as trans*rot*skew*scale with pre-multiplication (i.e. left action)
     bias_mat = composeAffine(scale_bias_mat, bias_mat)
+    bias_mat = composeAffine(skew_x_bias_mat, bias_mat)
     bias_mat = composeAffine(rot_bias_mat, bias_mat)
     bias_mat = composeAffine(trans_bias_mat, bias_mat)
 
@@ -331,12 +331,6 @@ def alt_BiasMat(x, bias_funcs):
     poly_order = len(bias_funcs['x']) - 1
     xdot = np.arange(poly_order, 0, -1, dtype='float64')
 
-    p = bias_funcs['skew_x']
-    dp = p[:-1] * xdot
-    fdp = np.poly1d(dp)
-    skew_x_bias = -fdp(x)
-
-
     p = bias_funcs['scale_x']
     dp = p[:-1] * xdot
     fdp = np.poly1d(dp)
@@ -346,6 +340,11 @@ def alt_BiasMat(x, bias_funcs):
     dp = p[:-1] * xdot
     fdp = np.poly1d(dp)
     scale_y_bias = 1 - fdp(x)  # scale_y is multiplicative
+
+    p = bias_funcs['skew_x']
+    dp = p[:-1] * xdot
+    fdp = np.poly1d(dp)
+    skew_x_bias = -fdp(x)
 
     p = bias_funcs['rot']
     dp = p[:-1] * xdot
@@ -362,19 +361,20 @@ def alt_BiasMat(x, bias_funcs):
     fdp = np.poly1d(dp)
     y_bias = -fdp(x)
 
-    # Create skew, level, rot, and tranlation matrices
-    skew_x_bias_mat = np.array([[1.0, skew_x_bias, 0.0], [0.0, 1.0, 0.0]])
+    # Create scale, skew, rot, and translation matrices
     scale_bias_mat = np.array([[scale_x_bias, 0.0, 0.0], [0.0, scale_y_bias, 0.0]])
+    skew_x_bias_mat = np.array([[1.0, skew_x_bias, 0.0], [0.0, 1.0, 0.0]])
     rot_bias_mat = np.array([[np.cos(rot_bias), -np.sin(rot_bias), 0.0], [np.sin(rot_bias), np.cos(rot_bias), 0.0]])
     trans_bias_mat = np.array([[1.0, 0.0, x_bias], [0.0, 1.0, y_bias]])
 
     bias_mat = identityAffine()
 
-    # Compose bias matrix as trans*rot*scale*skew with pre-multiplication (i.e. left action)
-    bias_mat = composeAffineR(skew_x_bias_mat, bias_mat)
-    bias_mat = composeAffineR(scale_bias_mat, bias_mat)
-    bias_mat = composeAffineR(rot_bias_mat, bias_mat)
-    bias_mat = composeAffineR(trans_bias_mat, bias_mat)
+    # CHECK CORRECTNESS OF THIS COMMENT:
+    # Compose bias matrix as trans*rot*skew*scale with pre-multiplication (i.e. left action)
+    bias_mat = composeAffine(bias_mat, scale_bias_mat)
+    bias_mat = composeAffine(bias_mat, skew_x_bias_mat)
+    bias_mat = composeAffine(bias_mat, rot_bias_mat)
+    bias_mat = composeAffine(bias_mat, trans_bias_mat)
 
     # logger.info('<<<< BiasMat')
 
@@ -391,9 +391,9 @@ def BiasFuncs(dm, scale, poly_order=0, bias_funcs=None):
     if type(bias_funcs) == type(None):
         init_scalars = True
         bias_funcs = {}
-        bias_funcs['skew_x'] = np.zeros((poly_order + 1))
         bias_funcs['scale_x'] = np.zeros((poly_order + 1))
         bias_funcs['scale_y'] = np.zeros((poly_order + 1))
+        bias_funcs['skew_x'] = np.zeros((poly_order + 1))
         bias_funcs['rot'] = np.zeros((poly_order + 1))
         bias_funcs['x'] = np.zeros((poly_order + 1))
         bias_funcs['y'] = np.zeros((poly_order + 1))
@@ -401,9 +401,9 @@ def BiasFuncs(dm, scale, poly_order=0, bias_funcs=None):
         init_scalars = False
         poly_order = len(bias_funcs['x']) - 1
 
-    skew_x_array = np.zeros((n_tasks, 2))
     scale_x_array = np.zeros((n_tasks, 2))
     scale_y_array = np.zeros((n_tasks, 2))
+    skew_x_array = np.zeros((n_tasks, 2))
     rot_array = np.zeros((n_tasks, 2))
     x_array = np.zeros((n_tasks, 2))
     y_array = np.zeros((n_tasks, 2))
@@ -412,24 +412,23 @@ def BiasFuncs(dm, scale, poly_order=0, bias_funcs=None):
     for i, layer in enumerate(dm()):
         c_afm = np.array(layer['levels'][scale]['alt_cafm'])
 
-        # Decompose the affine matrix into skew, scale, rotation, and translation
+        # Decompose the affine matrix into scale, skew, rotation, and translation
         rot = np.arctan2(c_afm[1, 0], c_afm[0, 0])
+        # scale_x = np.sqrt(c_afm[0, 0] ** 2 + c_afm[1, 0] ** 2)
+        # scale_y = (c_afm[1, 1] * np.cos(rot)) - (c_afm[0, 1] * np.sin(rot))
+        # skew_x = ((c_afm[0, 1] * np.cos(rot)) + (c_afm[1, 1] * np.sin(rot))) / scale_y
+        # calculations that avoid using sin and cos:
         scale_x = np.sqrt(c_afm[0, 0] ** 2 + c_afm[1, 0] ** 2)
-        scale_y = (c_afm[1, 1] * np.cos(rot)) - (c_afm[0, 1] * np.sin(rot))
-        skew_x = ((c_afm[0, 1] * np.cos(rot)) + (c_afm[1, 1] * np.sin(rot))) / scale_x
+        scale_y = ((c_afm[1, 1] * c_afm[0,0]) - (c_afm[0, 1] * c_afm[1, 0])) / scale_x
+        skew_x = ((c_afm[0, 0] * c_afm[0, 1]) + (c_afm[1, 0] * c_afm[1, 1])) / (scale_x * scale_y)
         det = (c_afm[0, 0] * c_afm[1, 1]) - (c_afm[0, 1] * c_afm[1, 0])
 
-        skew_x_array[i]  = [i, skew_x]
         scale_x_array[i] = [i, scale_x]
         scale_y_array[i] = [i, scale_y]
+        skew_x_array[i]  = [i, skew_x]
         rot_array[i]     = [i, rot]
         x_array[i]       = [i, c_afm[0, 2]]
         y_array[i]       = [i, c_afm[1, 2]]
-
-    p = np.polyfit(skew_x_array[:, 0], skew_x_array[:, 1], poly_order)
-    bias_funcs['skew_x'][:-1] += p[:-1]
-    if init_scalars:
-        bias_funcs['skew_x'][poly_order] = p[poly_order]
 
     p = np.polyfit(scale_x_array[:, 0], scale_x_array[:, 1], poly_order)
     bias_funcs['scale_x'][:-1] += p[:-1]
@@ -440,6 +439,11 @@ def BiasFuncs(dm, scale, poly_order=0, bias_funcs=None):
     bias_funcs['scale_y'][:-1] += p[:-1]
     if init_scalars:
         bias_funcs['scale_y'][poly_order] = p[poly_order]
+
+    p = np.polyfit(skew_x_array[:, 0], skew_x_array[:, 1], poly_order)
+    bias_funcs['skew_x'][:-1] += p[:-1]
+    if init_scalars:
+        bias_funcs['skew_x'][poly_order] = p[poly_order]
 
     p = np.polyfit(rot_array[:, 0], rot_array[:, 1], poly_order)
     bias_funcs['rot'][:-1] += p[:-1]
@@ -481,24 +485,24 @@ def ApplyBiasFuncs(align_list):
 
 def InitCafm(bias_funcs):
     '''Get the initial cafm from the constant terms of the bias_funcs'''
-    init_skew_x = -bias_funcs['skew_x'][-1]
     init_scale_x = 1.0 / bias_funcs['scale_x'][-1]
     init_scale_y = 1.0 / bias_funcs['scale_y'][-1]
+    init_skew_x = -bias_funcs['skew_x'][-1]
     init_rot = -bias_funcs['rot'][-1]
     init_x = -bias_funcs['x'][-1]
     init_y = -bias_funcs['y'][-1]
 
-    # Create skew, scale, rot, and translation matrices
-    init_skew_x_mat = np.array([[1.0, init_skew_x, 0.0], [0.0, 1.0, 0.0]])
+    # Create scale, skew, rot, and translation matrices
     init_scale_mat = np.array([[init_scale_x, 0.0, 0.0], [0.0, init_scale_y, 0.0]])
+    init_skew_x_mat = np.array([[1.0, init_skew_x, 0.0], [0.0, 1.0, 0.0]])
     init_rot_mat = np.array([[np.cos(init_rot), -np.sin(init_rot), 0.0], [np.sin(init_rot), np.cos(init_rot), 0.0]])
     init_trans_mat = np.array([[1.0, 0.0, init_x], [0.0, 1.0, init_y]])
 
     c_afm_init = identityAffine()
 
     # Compose bias matrix as trans*rot*scale*skew with pre-multiplication (i.e. left action)
-    c_afm_init = composeAffine(init_skew_x_mat, c_afm_init)
     c_afm_init = composeAffine(init_scale_mat, c_afm_init)
+    c_afm_init = composeAffine(init_skew_x_mat, c_afm_init)
     c_afm_init = composeAffine(init_rot_mat, c_afm_init)
     c_afm_init = composeAffine(init_trans_mat, c_afm_init)
 
@@ -509,26 +513,26 @@ def InitCafm(bias_funcs):
 
 def alt_InitCafm(bias_funcs):
     '''Get the initial cafm from the constant terms of the bias_funcs'''
-    init_skew_x = -bias_funcs['skew_x'][-1]
     init_scale_x = 1.0 / bias_funcs['scale_x'][-1]
     init_scale_y = 1.0 / bias_funcs['scale_y'][-1]
+    init_skew_x = -bias_funcs['skew_x'][-1]
     init_rot = -bias_funcs['rot'][-1]
     init_x = -bias_funcs['x'][-1]
     init_y = -bias_funcs['y'][-1]
 
-    # Create skew, level, rot, and tranlation matrices
-    init_skew_x_mat = np.array([[1.0, init_skew_x, 0.0], [0.0, 1.0, 0.0]])
+    # Create scale, skew, rot, and translation matrices
     init_scale_mat = np.array([[init_scale_x, 0.0, 0.0], [0.0, init_scale_y, 0.0]])
+    init_skew_x_mat = np.array([[1.0, init_skew_x, 0.0], [0.0, 1.0, 0.0]])
     init_rot_mat = np.array([[np.cos(init_rot), -np.sin(init_rot), 0.0], [np.sin(init_rot), np.cos(init_rot), 0.0]])
     init_trans_mat = np.array([[1.0, 0.0, init_x], [0.0, 1.0, init_y]])
 
     c_afm_init = identityAffine()
 
     # Compose bias matrix as trans*rot*scale*skew with pre-multiplication (i.e. left action)
-    c_afm_init = composeAffineR(init_skew_x_mat, c_afm_init)
-    c_afm_init = composeAffineR(init_scale_mat, c_afm_init)
-    c_afm_init = composeAffineR(init_rot_mat, c_afm_init)
-    c_afm_init = composeAffineR(init_trans_mat, c_afm_init)
+    c_afm_init = composeAffine(c_afm_init, init_scale_mat)
+    c_afm_init = composeAffine(c_afm_init, init_skew_x_mat)
+    c_afm_init = composeAffine(c_afm_init, init_rot_mat)
+    c_afm_init = composeAffine(c_afm_init, init_trans_mat)
 
     logger.info('Returning: %s' % format_cafm(c_afm_init))
 
@@ -576,10 +580,10 @@ def alt_SetSingleCafm(dm, scale, index, alt_c_afm, include, bias_mat=None, metho
         logger.warning(f"afm not found for index: {index}")
         mir_afm = identityAffine()
     alt_c_afm = np.array(alt_c_afm)
-    alt_c_afm = composeAffineR(mir_afm, alt_c_afm)
+    alt_c_afm = composeAffine(alt_c_afm, mir_afm)
     # Apply bias_mat if given
     if type(bias_mat) != type(None):
-        alt_c_afm = composeAffineR(bias_mat, alt_c_afm)
+        alt_c_afm = composeAffine(alt_c_afm, bias_mat)
     dm['stack'][index]['levels'][scale]['alt_cafm'] = alt_c_afm.tolist()
     # dm['stack'][index]['levels'][scale]['mir_afm'] = mir_afm.tolist()
     return alt_c_afm

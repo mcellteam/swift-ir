@@ -33,6 +33,7 @@ sha1sum.txt: $(BINDIR)swim $(BINDIR)iavg $(BINDIR)iscale $(BINDIR)mir $(BINDIR)r
 	sha1sum $(BINDIR)swim > sha1sum.txt
 	sha1sum $(BINDIR)iavg >> sha1sum.txt
 	sha1sum $(BINDIR)iscale >> sha1sum.txt
+	sha1sum $(BINDIR)iscale2 >> sha1sum.txt
 	sha1sum $(BINDIR)mir >> sha1sum.txt
 	sha1sum $(BINDIR)remod >> sha1sum.txt
 

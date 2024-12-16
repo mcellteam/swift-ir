@@ -558,13 +558,13 @@ class AlignmentTab(QWidget):
             clr = inspect.stack()[1].function
             if clr == 'main':
                 logger.info('')
-                val = ensure_even(int(self.sliderMatch.value()))
+                val = ensure_even(self.sliderMatch.value())
                 if val != self.sliderMatch.value():
                     self.sliderMatch.setValue(val)
 
-                dec = float(val / self.dm.image_size()[0])
-                # self.dm.set_manual_swim_window_px(dec)
-                self.dm.set_manual_swim_window_dec(dec)
+                #dec = float(val / self.dm.image_size()[0])
+                #self.dm.set_manual_swim_window_dec(dec)
+                self.dm.set_manual_swim_window_px(val)
                 self.leMatch.setText(str(val))
                 self.viewer1.drawSWIMwindow()
 
@@ -591,9 +591,9 @@ class AlignmentTab(QWidget):
             if val != self.sliderMatch.value():
                 self.sliderMatch.setValue(val)
 
-            dec = float(val / self.dm.image_size()[0])
-            # self.dm.set_manual_swim_window_px(val)
-            self.dm.set_manual_swim_window_dec(dec)
+            # dec = float(val / self.dm.image_size()[0])
+            # self.dm.set_manual_swim_window_dec(dec)
+            self.dm.set_manual_swim_window_px(val)
             self.dataUpdateMA()
             self.viewer1.drawSWIMwindow()
             if self.tableThumbs.isVisible():
@@ -2258,14 +2258,20 @@ class AlignmentTab(QWidget):
                 # for i, p in enumerate(self.dm.manpoints_mir('tra')):
                 for i, p in enumerate(self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings']['method_opts']['points']['coords']['tra']):
                     if p:
-                        msg = 'x=%.1f, y=%.1f' % (p[0] * siz[0], p[1] * siz[1])
+                        # Convert fractional coordinates to pixel coordinates
+                        #msg = 'x=%.1f, y=%.1f' % (p[0] * siz[0], p[1] * siz[1])
+                        # Points are already in integer pixel coordinates
+                        msg = 'x=%d, y=%d' % (p[0], p[1])
                         self.lwL.item(i).setText(msg)
                     else:
                         self.lwL.item(i).setText('')
                 for i, p in enumerate(self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings']['method_opts'][
                             'points']['coords']['ref']):
                     if p:
-                        msg = 'x=%.1f, y=%.1f' % (p[0] * siz[0], p[1] * siz[1])
+                        # Convert fractional coordinates to pixel coordinates
+                        #msg = 'x=%.1f, y=%.1f' % (p[0] * siz[0], p[1] * siz[1])
+                        # Points are already in integer pixel coordinates
+                        msg = 'x=%d, y=%d' % (p[0], p[1])
                         self.lwR.item(i).setText(msg)
                     else:
                         self.lwR.item(i).setText('')

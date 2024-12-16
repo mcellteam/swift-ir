@@ -366,7 +366,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
         if afm == None:
             afm = [[1., 0., 0.], [0., 1., 0.]]
         afm = to_tuples(afm)
-        matrix = conv_mat(m=afm, i=i)
+        matrix = conv_mat(m=afm, z=i)
         output_dimensions = {'x': [self.res[0], 'nm'],
                              'y': [self.res[1], 'nm'],
                              'z': [self.res[2], 'nm']}
@@ -444,7 +444,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
     #         # shape = self.tensor.shape
     #         for i in range(len(self.dm)):
     #             name = f"l{i}"
-    #             # matrix = conv_mat(to_tuples(self.dm.alt_cafm(l=i)), i=i)
+    #             # matrix = conv_mat(to_tuples(self.dm.alt_cafm(l=i)), z=i)
     #             afm = self.dm.alt_cafm(l=i)
     #             data = self.tensor[:, :, i:i + 1]
     #             local_volume = self.getLocalVolume(data, self.getCoordinateSpace())
@@ -473,7 +473,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
                     # print(f"[{self.name}] [{i}] afm: {afm}")
                 else:
                     afm = [[1., 0., 0.], [0., 1., 0.]]
-                # matrix = conv_mat(to_tuples(self.dm.alt_cafm(l=i)), i=i)
+                # matrix = conv_mat(to_tuples(self.dm.alt_cafm(l=i)), z=i)
                 data = self.tensor[:, :, i:i + 1]
                 local_volume = self.getLocalVolume(data, self.getCoordinateSpace())
                 transform = self.get_transform(afm=afm, i=i)
@@ -1166,10 +1166,16 @@ class MAViewer(AbstractEMViewer):
             x, y, _ = s.mouse_voxel_coordinates
             frac_x = x / self.tensor.shape[0]
             frac_y = y / self.tensor.shape[1]
+            print('tensor shape:', self.tensor.shape)
             logger.debug(f"decimal x = {frac_x}, decimal y = {frac_y}")
             role = self.dm['state']['tra_ref_toggle']
+            # Store  man swim points in fractional units
+            # self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings']['method_opts']['points']['coords'][
+            #     role][id] = (frac_x, frac_y)
+            # Store manual swim points in pixel units
             self.dm['stack'][self.dm.zpos]['levels'][self.dm.level]['swim_settings']['method_opts']['points']['coords'][
-                role][id] = (frac_x, frac_y)
+                role][id] = (int(x), int(y))
+
             self.signals.ptsChanged.emit()
             neuroglancer.futures.run_on_new_thread(self.drawSWIMwindow)
 
@@ -1233,8 +1239,12 @@ class MAViewer(AbstractEMViewer):
             # z = 1.5
             for i, pt in enumerate(pts):
                 if pt:
-                    x = self.tensor.shape[0] * pt[0]
-                    y = self.tensor.shape[1] * pt[1]
+                    # Convert pt from fractional to pixel units
+                    # x = self.tensor.shape[0] * pt[0]
+                    # y = self.tensor.shape[1] * pt[1]
+                    # Use pt in pixel units directly
+                    x = pt[0]
+                    y = pt[1]
                     d1, d2, d3, d4 = getRect(coords=(x, y), ww_x=ww_x, ww_y=ww_y, )
                     c = self.colors[i]
                     id = 'roi%d' % i
@@ -1309,13 +1319,16 @@ def getRect(coords, ww_x, ww_y):
     return A, B, C, D
 
 
+# Given a 2D affine matrix in 2x3 form, and a Z position
+# construct the 3D affine transformation matrix in 3x4 form for use in neuroglancer.
+# Neuroglancer will convert to 4x4 form for us
 @cache
-def conv_mat(m=None, i=0):
+def conv_mat(m=None, z=0):
     if m == None:
         m = [[1., 0., 0.], [0., 1., 0.]]
-    o = [[.999, 0., 0., 0.],
+    o = [[1., 0., 0., 0.],
          [0., 1., 0., 0.],
-         [0., 0., 1., i]]
+         [0., 0., 1., z]]
     o[0][0] = m[0][0]
     o[0][1] = m[0][1]
     o[0][3] = m[0][2]
