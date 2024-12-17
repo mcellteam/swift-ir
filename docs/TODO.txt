@@ -1,0 +1,34 @@
+Known Issues and TODO list
+
+0@) compare old and new dms to create a better one (future proof dm, is it possible?)
+        a) provide clean API for dm, for users/developers
+        b) abstraction layers that encapulate
+        c) GUI should use this API
+1@) mir_coords and ng_coords not used in dm
+2*) Implement manual strict mode in recipemaker
+3@) clean up AFM-AIM confusion
+4*) transfer/copy points from ref to tra in edit alignment gui
+5*) allow manual entry of points
+6*) allow manual entry of init afm/shi
+6a*) show afm in gui
+6b*) show point value of cursor location in edit alignment gui
+7*@) preserve grid and manual settings in dm for use in gui
+8) Fix Quit App look and feel in gui
+9**TC) After changing scales, SNR graph has wrong scale on Y axis
+10**TC) Fix update of JSON view for points
+11) Result in manual mode has integer points (FIXED)
+12**TC) SNR Result Preview in Edit Alignment does not update in manual mode
+13) Store manual points in pixel units (FIXED)
+14) Allow ignore cache at a specfic scale
+15) Fix behavior of alignment settings in Edit Alignment Tab for user friendliness
+16**,TB,BK) Gray out "Align" button if not propagated yet at finer scale, or remove progagate button altogether.
+        a) remove the propagate button and add proper logic for automatic propagation
+        b) logic based on date-stamp of results at next coarser scale
+        c) if result at next coarser scale exists and is newer than at the current scale then auto-propagation will occur
+           and Align button will be useable.  If not then Align button is grayed and auto-propagation does not occur.
+        d) if swim settings have changed at coarser scale but alignemnent has not yet updated then, the Align button needs
+           to be grayed out at all finer scales.  So need to check hash of results/swim-settings at coarser scale when setting
+           state of Align button.
+17) Allow user to set or auto-adjust font sizes in GUI (too small).
+
+Test on TACC and Linux
