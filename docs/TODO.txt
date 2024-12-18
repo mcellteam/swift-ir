@@ -30,5 +30,8 @@ Known Issues and TODO list
            to be grayed out at all finer scales.  So need to check hash of results/swim-settings at coarser scale when setting
            state of Align button.
 17) Allow user to set or auto-adjust font sizes in GUI (too small).
+18) Newly created emstack should be selected in widget
+19) Numerous race conditions in updates of GUI widgets
+20) Cache hashes are set even when alignment fails -- need to delete hashed directories when alignment fails.
 
 Test on TACC and Linux

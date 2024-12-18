@@ -128,6 +128,7 @@ sha1sum.txt: swim iavg iscale mir remod run_swift.jar swift_gui.jar
 	sha1sum swim > sha1sum.txt
 	sha1sum iavg >> sha1sum.txt
 	sha1sum iscale >> sha1sum.txt
+	sha1sum iscale2 >> sha1sum.txt
 	sha1sum mir >> sha1sum.txt
 	sha1sum remod >> sha1sum.txt
 	sha1sum run_swift.jar >> sha1sum.txt
@@ -139,7 +140,7 @@ rev:
 	git log --pretty=format:"public class revision { static String githash=\"%H on %ad\"; }" HEAD^..HEAD > revision.java
 
 clean:
-	rm -f swim iavg iscale mir remod sxox test_libs
+	rm -f swim iavg iscale iscale2 mir remod sxox test_libs
 	rm -f *.jar
 	rm -f *.class
 	rm -f *.o

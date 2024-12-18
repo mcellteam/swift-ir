@@ -225,7 +225,7 @@ class align_recipe:
             
             if self.ss['is_refinement']:
                 '''Perform affine refin['tra'ement'''           
-                pmov_2x2 = np.array(self.ss['method_opts']['points']['coords']).T
+                pmov_2x2 = np.array(self.ss['method_opts']['points']['coords']['tra']).T
                 self.add_ingredients([
                     align_ingredient(
                         recipe=self,

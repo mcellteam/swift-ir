@@ -6,22 +6,22 @@ all: $(BINDIR)swim $(BINDIR)iavg $(BINDIR)iscale $(BINDIR)iscale2 $(BINDIR)mir $
 #all: test_libs swim iavg iscale mir remod remod_old sxox json_reader.jar ImageAlign.jar run_swift.jar swift_gui.jar swim_lab.jar sha1sum.txt
 
 $(BINDIR)swim: swim.c swimio.h debug.h makefile
-	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)swim swim.c -ltiff -ljpeg -lpng -lfftw3f -lm
+	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)swim swim.c -ltiff -ljpeg -lpng -lfftw3f -lwebp -lm
 
 $(BINDIR)iavg: iavg.c swimio.h debug.h makefile
-	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)iavg iavg.c -ljpeg -ltiff -lpng
+	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)iavg iavg.c -ljpeg -ltiff -lpng -lwebp 
 
 $(BINDIR)iscale: iscale.c swimio.h debug.h makefile
-	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)iscale iscale.c -ljpeg -ltiff -lpng
+	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)iscale iscale.c -ljpeg -ltiff -lpng -lwebp 
 
 $(BINDIR)iscale2: iscale2.c swimio.h debug.h makefile
-	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)iscale2 iscale2.c -ljpeg -ltiff -lpng
+	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)iscale2 iscale2.c -ljpeg -ltiff -lpng -lwebp 
 
 $(BINDIR)mir: mir.c swimio.h debug.h makefile
-	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)mir mir.c -ljpeg -ltiff -lpng -lm
+	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)mir mir.c -ljpeg -ltiff -lpng -lwebp -lm
 
 $(BINDIR)remod: remod.c swimio.h debug.h makefile
-	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)remod remod.c -lfftw3f -ltiff -ljpeg -lpng -lm
+	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)remod remod.c -lfftw3f -ltiff -ljpeg -lpng -lwebp -lm
 
 $(BINDIR)sxox: sxox.c makefile
 	gcc $(FLAGS) -Wno-implicit -o sxox sxox.c -lm
