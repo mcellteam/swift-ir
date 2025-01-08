@@ -195,6 +195,7 @@ class align_recipe:
 
         # Example: psta_2x2 = [[256. 768. 256. 768.] [256. 256. 768. 768.]]
 
+        # Set up 2x2 point and window
         if 'grid' in self.method: # Align using ingredients for Grid mode
 
             '''
@@ -222,7 +223,7 @@ class align_recipe:
             ww_1x1 = self.ss['method_opts']['size_1x1']
             ww_2x2 = self.ss['method_opts']['size_2x2']
             psta_2x2 = np.array(self.ss['method_opts']['points']['coords']['ref']).T
-            
+                        
             if self.ss['is_refinement']:
                 '''Perform affine refin['tra'ement'''           
                 pmov_2x2 = np.array(self.ss['method_opts']['points']['coords']['tra']).T
@@ -473,28 +474,27 @@ class align_recipe:
 
         for i, ing in enumerate(self.ingredients):
             mr['ing%d' % i] = {}
-            try: mr['ing%d' % i]['ww'] = ing.ww
-            except: mr['ing%d' % i]['ww'] = 'null'
-            try: mr['ing%d' % i]['psta'] = ing.psta.tolist()
-            except: mr['ing%d' % i]['psta'] = 'null'
-            try: mr['ing%d' % i]['pmov'] = ing.pmov.tolist()
-            except: mr['ing%d' % i]['pmov'] = 'null'
-            try: mr['ing%d' % i]['adjust_x'] = ing.adjust_x
-            except: mr['ing%d' % i]['adjust_x'] = 'null'
-            try: mr['ing%d' % i]['adjust_y'] = ing.adjust_y
-            except: mr['ing%d' % i]['adjust_y'] = 'null'
-            try: mr['ing%d' % i]['afm'] = ing.afm.tolist()
-            except: mr['ing%d' % i]['afm'] = 'null'
-            try: mr['ing%d' % i]['t_swim'] = ing.t_swim
-            except: mr['ing%d' % i]['t_swim'] = 'null'
-            try: mr['ing%d' % i]['t_mir'] = ing.t_mir
-            except: mr['ing%d' % i]['t_mir'] = 'null'
-            try: mr['ing%d' % i]['afm'] = ing.afm.tolist()
-            except: mr['ing%d' % i]['afm'] = 'null'
-            try: mr['ing%d' % i]['afm'] = ing._afm.tolist()
-            except: mr['ing%d' % i]['afm'] = 'null'
-            try: mr['ing%d' % i]['pos'] = ing.psta.tolist()
-            except: mr['ing%d' % i]['pos'] = 'null'
+            # try:
+            mr['ing%d' % i]['ww'] = ing.ww
+            # except: mr['ing%d' % i]['ww'] = 'null'
+            # try: 
+            mr['ing%d' % i]['psta'] = ing.psta.tolist()
+            # except: mr['ing%d' % i]['psta'] = 'null'
+            # try: 
+            mr['ing%d' % i]['pmov'] = ing.pmov.tolist()
+            # except: mr['ing%d' % i]['pmov'] = 'null'
+            # try: 
+            mr['ing%d' % i]['afm'] = ing.afm.tolist()
+            # except mr['ing%d' % i]['afm'] = 'null'
+            # try: 
+            mr['ing%d' % i]['t_swim'] = ing.t_swim
+            # except: mr['ing%d' % i]['t_swim'] = 'null'
+            # try:
+            mr['ing%d' % i]['t_mir'] = ing.t_mir
+            # except: mr['ing%d' % i]['t_mir'] = 'null'
+            # try: 
+            mr['ing%d' % i]['pos'] = ing.psta.tolist()
+            # except: mr['ing%d' % i]['pos'] = 'null'
 
         # if self.ss['dev_mode']:
         if self.config['dev_mode']:
@@ -680,6 +680,8 @@ class align_ingredient:
         self.ID = ID
         # self.last = last
         self.matches_filenames = []
+        self.t_swim = 0.0
+        self.t_mir = 0.0
 
 
     def __str__(self):
@@ -692,24 +694,6 @@ class align_ingredient:
         return s
 
 
-    # def set_swim_results(self, swim_stdout, swim_stderr):
-    # def set_swim_results(self, swim_stdout):
-    def set_swim_results(self):
-        # toks = swim_stdout.replace('(', ' ').replace(')', ' ').strip().split()
-        toks = self.swim_out_toks()
-        self.snr = float(toks[0][0:-1])
-        self.base_x = float(toks[2])
-        self.base_y = float(toks[3])
-        self.adjust_x = float(toks[5])
-        self.adjust_y = float(toks[6])
-        self.dx = float(toks[8])
-        self.dy = float(toks[9])
-        self.m0 = float(toks[10])
-        self.flags = None
-        if len(toks) > 11:
-            self.flags = toks[11:]  # flags will be str or list of strs
-
-
     def execute_ingredient(self):
         if self.recipe.solo:
             print('\nExecuting ingredient...\n')
@@ -718,7 +702,7 @@ class align_ingredient:
             self.clr_indexes = copy.deepcopy(self.recipe.clr_indexes)
         if self.mode == 'MIR':
             self.afm = self.run_manual_mir()
-        else:  # Normal 'SWIM' ingredient (i.e. SWIM followed by MIR)
+        else:  # Normal 'SWIM' ingredient (i.e. SWIM followed by MIR or SWIM only to get SNR)
             swim_output = self.run_swim()
             if swim_output == ['']:
                 logger.warning(f"[{self.recipe.index}] SWIM Out is empty "
@@ -1008,9 +992,11 @@ class align_ingredient:
                         self.mir_afm[1, 1] = float(toks[5])
                         self.mir_afm[1, 2] = float(toks[6]) - self.swim_drift
             else:
-                # In SWIM-SNR mode copy the mir results from the previous ingredient
+                # In SWIM-SNR mode copy the mir and points results from the previous ingredient
                 self.mir_afm = self.recipe.ingredients[self.idx - 1].mir_afm
-                self.mir_aim = self.recipe.ingredients[self.idx - 1].mir_aim                
+                self.mir_aim = self.recipe.ingredients[self.idx - 1].mir_aim
+                self.psta = self.recipe.ingredients[self.idx - 1].psta
+                self.pmov = self.recipe.ingredients[self.idx - 1].pmov                
             # NOTE!!! Here we are using the AIM matrix from MIR as the AFM matrix. We'll fix this later...
             self.afm = self.mir_aim
             self.snr = np.array(snr_list)

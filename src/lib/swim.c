@@ -86,7 +86,7 @@ fprintf(stderr, "AFFINE afm %g %g %g %g\n", afm[0], afm[1], afm[2], afm[3]);
 			// bilinear within pixel from surrounding pixels
 			ix = xc;
 			iy = yc;
-			if(ix < 0 || iy < 0 || ix >= im->wid || iy >= im->ht) {
+			if(ix < 0 || iy < 0 || ix >= im->wid || iy >= im->ht || ix+1 >= im->wid || iy+1 >= im->ht) {
 				*fpp++ = -1048576.0; // has an exact fp value
 				continue;
 			}
@@ -445,7 +445,7 @@ float find_xyoff(unsigned char *ip, int wid, int ht) {
 	firstx = firsty = -1;
 	lastx = lasty = 1000000;
 	n = ht * wid;
-if(!quiet)
+//if(!quiet)
 //fprintf(stderr, "find_xyoff %p xy %d %d\n", ip, wid, ht);
 	fh = fha;
 	fhc = fhca;

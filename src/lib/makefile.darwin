@@ -1,4 +1,4 @@
-FLAGS = -O3 -m64 -msse3
+FLAGS = -g3 -m64 -msse3
 BINDIR = ./bin_darwin/
 
 all: $(BINDIR) $(BINDIR)swim $(BINDIR)iavg $(BINDIR)iscale $(BINDIR)iscale2 $(BINDIR)mir $(BINDIR)remod 
