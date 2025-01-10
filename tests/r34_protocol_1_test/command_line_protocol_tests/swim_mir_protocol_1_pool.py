@@ -10,6 +10,8 @@ from pickle import dump, load
 import subprocess as sp
 from time import perf_counter
 import numpy as np
+from PIL import Image
+Image.MAX_IMAGE_PIXELS = None
 from scipy.stats import median_abs_deviation as mad
 from get_image_size import get_image_size
 from tqdm import tqdm
@@ -116,7 +118,7 @@ def mir_input(pt=None, ps=None, img_src=None, img_out=None, af=None,
 
     if (pt is not None) and (ps is not None):
         arg = ''
-        for i in range(len(pt)):
+        for i in range(pt.shape[0]):
             arg += f'{pt[i][0]} {pt[i][1]} {ps[i][0]} {ps[i][1]}\n'
         arg += 'R'
 
@@ -186,6 +188,11 @@ def outliers(arr, percentile=5):
     return mz <= np.percentile(mz, percentile)
 
 
+def rmsd(tar, mob):
+
+    return np.sqrt(np.sum(np.square(tar - mob)) / tar.shape[0])
+
+
 # Protocol 1 consists of:
 # 1) swim (iters = 3) of 1x1 window to get initial estimate of translation term
 # 2) swim (iters = 3) of 2x2 window quadrants using initial translation estimate
@@ -214,10 +221,10 @@ def protocol_1(img_size, ww, iter, w, img_tgt, pt, img_src, ps, shi,
                               f=f, b=b, t=t, k=k, log=log)
 
         # setup for 2x2_0 step
-        _off = np.array([[-1, -1],
-                         [1, -1],
-                         [-1, 1],
-                         [1, 1]])
+        _off = np.array([[-1.0, -1.0],
+                         [1.0, -1.0],
+                         [-1.0, 1.0],
+                         [1.0, 1.0]])
 
         off = ww // 4 * _off
 
@@ -273,6 +280,23 @@ def protocol_1(img_size, ww, iter, w, img_tgt, pt, img_src, ps, shi,
     return final_snr, _pt, _ps, *mir_out
 
 
+def collate(arg):
+
+    a0 = arg[0]
+    q = [np.asarray(Image.open(x)) for x in arg]
+    qq = np.block([[*q[:4]], [*q[4:8]], [*q[8:12]], [*q[12:]]])
+    file = a0[a0.rfind('sig'):a0.rfind('_mp')] + '.JPG'
+    # if len(q) == 16:
+    #     qq = np.block([[*q[:4]], [*q[4:8]], [*q[8:12]], [*q[12:]]])
+    #     file = a0[a0.rfind('sig'):a0.rfind('_mp')] + '_4x4.JPG'
+    # if len(q) == 4:
+    #     qq = np.block([[*q[:2]], [*q[2:]]])
+    #     file = a0[a0.rfind('sig'):a0.rfind('_mp')] + '_2x2.JPG'
+
+    path = a0[:a0.rfind('/')] + '_col/' + file
+    Image.fromarray(qq).save(path)
+
+
 def run_protocol_1(img_dir, res_dir, iter, w=-0.65, f=None, u=1, v=1,
                    save_render=True, save_signals=True, log=False,
                    n_proc=None, chunksize=1, s=None, tq=False):
@@ -300,9 +324,11 @@ def run_protocol_1(img_dir, res_dir, iter, w=-0.65, f=None, u=1, v=1,
 
         if save_signals:
             sig_dir = f'{res_dir}/{scale_dir}/sig'
+            col_dir = f'{res_dir}/{scale_dir}/sig_col'
             tgt_dir = f'{res_dir}/{scale_dir}/tgt'
             src_dir = f'{res_dir}/{scale_dir}/src'
             os.makedirs(sig_dir, exist_ok=True)
+            os.makedirs(col_dir, exist_ok=True)
             os.makedirs(tgt_dir, exist_ok=True)
             os.makedirs(src_dir, exist_ok=True)
 
@@ -391,7 +417,7 @@ def run_protocol_1(img_dir, res_dir, iter, w=-0.65, f=None, u=1, v=1,
                 res = p.starmap(protocol_1, tqdm(multiargs), chunksize=chunksize)
         print(f'        completed in {perf_counter() - t2: .2f} sec')
 
-        print('\n    append results to data model ...')
+        print('\n    appending results to data model ...')
         t3 = perf_counter()
 
         # Append results for this scale to data model and run mir for the final cumulative affine matrix for all other images
@@ -407,9 +433,51 @@ def run_protocol_1(img_dir, res_dir, iter, w=-0.65, f=None, u=1, v=1,
             dm[scale_dir]['cafms'].append(chfm[:2, :].reshape(-1))    # convert 3x3 homogeneous cumulative affine forward matrix to 1D-form of cumulative affine forward matrix and append to list
 
         print(f'        completed in {perf_counter() - t3: .2f} sec')
-        t4 = perf_counter()
+
+        if save_signals:
+            print('\n    collating match signals ...')
+            t4 = perf_counter()
+            # tbt = []
+            fbf = sorted([ms for ms in os.listdir(sig_dir) if 'mp' in ms])
+            # for ms in os.listdir(sig_dir):
+            #     if 'mp' in ms:
+            #         if len(ms[ms.rfind('w')+1:-4]) == 1:
+            #             tbt.append(ms)
+            #         else:
+            #             fbf.append(ms)
+            # tbt.sort()
+            # fbf.sort()
+
+            # tbt = [tbt[4 * i: 4 * (i + 1)] for i in range(len(img_stack) - 1)]
+            fbf = [fbf[16 * i: 16 * (i + 1)] for i in range(len(img_stack) - 1)]
+            idx_4x4 = [0, 1, 4, 5,
+                       2, 3, 6, 7,
+                       8, 9, 12, 13,
+                       10, 11, 14, 15]
+            # mss = [[os.path.join(sig_dir, ms[i]) for i in idx] for ms in mss]
+            # tbt = [[os.path.join(sig_dir, __tbt) for __tbt in _tbt] for _tbt in tbt]
+            fbf = [[os.path.join(sig_dir, _fbf[i]) for i in idx_4x4] for _fbf in fbf]
+            # print(f'tbt = {tbt}')
+            # print(f'fbf = {fbf}')
+            # with Pool(n_proc) as p:
+            #     if not tq:
+            #         p.map(collate, mss)
+            #     else:
+            #         p.map(collate, tqdm(mss))
+            # with Pool(n_proc) as p:
+            #     if not tq:
+            #         p.map(collate, tbt)
+            #     else:
+            #         p.map(collate, tqdm(tbt))
+            with Pool(n_proc) as p:
+                if not tq:
+                    p.map(collate, fbf)
+                else:
+                    p.map(collate, tqdm(fbf))
+            print(f'        completed in {perf_counter() - t4: .2f} sec')
 
         if save_render:
+            t5 = perf_counter()
             print('\n    rendering images ...')
             ren_dir = f'{res_dir}/{scale_dir}/ren'
             os.makedirs(ren_dir, exist_ok=True)
@@ -425,7 +493,7 @@ def run_protocol_1(img_dir, res_dir, iter, w=-0.65, f=None, u=1, v=1,
                     p.starmap(run_mir, ren_args, chunksize=chunksize)
                 else:
                     p.starmap(run_mir, tqdm(ren_args), chunksize=chunksize)
-            print(f'        completed in {perf_counter() - t4: .2f} sec')
+            print(f'        completed in {perf_counter() - t5: .2f} sec')
 
         print(f'\ntime elapsed = {perf_counter() - t0: .2f} sec\n')
 
@@ -580,6 +648,24 @@ def affine_compose(th, sx, sy, sh, tx, ty):
 
     return np.array([sx * cos(th), sy * (sh * cos(th) - sin(th)), tx,
                      sx * sin(th), sy * (sh * sin(th) + cos(th)), ty])
+
+
+def affine_decompose_shy(arg):
+
+    th = atan2(-arg[1], arg[4])
+    sy = sqrt(arg[1] ** 2 + arg[4] ** 2)
+    sx = 1 / sy * (arg[0] * arg[4] - arg[1] * arg[3])
+    sh = 1 / (sx * sy) * (arg[0] * arg[1] + arg[3] * arg[4])
+    tx = arg[2]
+    ty = arg[5]
+
+    return th, sx.item(), sy, sh.item(), tx.item(), ty.item()
+
+
+def affine_compose_shy(th, sx, sy, sh, tx, ty):
+
+    return np.array([sx * (cos(th) - sh * sin(th)), - sy * sin(th), tx,
+                     sx * (sin(th) + sh * cos(th)), sy * cos(th), ty])
 
 
 def angle(arg):

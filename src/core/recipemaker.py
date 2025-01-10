@@ -222,11 +222,11 @@ class align_recipe:
             '''
             ww_1x1 = self.ss['method_opts']['size_1x1']
             ww_2x2 = self.ss['method_opts']['size_2x2']
-            psta_2x2 = np.array(self.ss['method_opts']['points']['coords']['ref']).T
+            psta_2x2 = np.array(self.ss['method_opts']['points']['coords']['ref'], dtype=np.float64).T
                         
             if self.ss['is_refinement']:
                 '''Perform affine refin['tra'ement'''           
-                pmov_2x2 = np.array(self.ss['method_opts']['points']['coords']['tra']).T
+                pmov_2x2 = np.array(self.ss['method_opts']['points']['coords']['tra'], dtype=np.float64).T
                 self.add_ingredients([
                     align_ingredient(
                         recipe=self,
@@ -315,7 +315,7 @@ class align_recipe:
                         # pt is already in pixel units, don't need to be even
                         pt
                     )
-            man_pmov = np.array([p for p in pts if p]).transpose()
+            man_pmov = np.array([p for p in pts if p], dtype=np.float64).transpose()
 
             pts = []
             for pt in self.ss['method_opts']['points']['coords']['ref']:
@@ -327,7 +327,7 @@ class align_recipe:
                         # pt is already in pixel units, don't need to be even
                         pt
                     )
-            man_psta = np.array([p for p in pts if p]).transpose()
+            man_psta = np.array([p for p in pts if p], dtype=np.float64).transpose()
 
 
             self.clr_indexes = [i for i,p in enumerate(pts) if p]
@@ -578,7 +578,7 @@ class align_recipe:
 
         bb_x, bb_y = rect[2], rect[3]
         afm = np.array([afm[0][0], afm[0][1], afm[0][2], afm[1][0], afm[1][1],
-                        afm[1][2]], dtype='float64').reshape((-1, 3))
+                        afm[1][2]], dtype=np.float64).reshape((-1, 3))
 
         if os.path.exists(ofp):
             logger.info(f'Cache hit (transformed img, afm): {ofp}')
@@ -747,10 +747,10 @@ class align_ingredient:
         use_clobber = self.recipe.ss['clobber']
         clobber_px = self.recipe.ss['clobber_size']
         # NOTE: we'll use the shape part of afm as the inverse shape matrix for swim
-        afm = '%.6f %.6f %.6f %.6f' % (
-                self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
-        # afm = '%f %f %f %f' % (
-        #     self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
+        # afm = '%.6f %.6f %.6f %.6f' % (
+        #         self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
+        afm = '%f %f %f %f' % (
+            self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
 
         # NOTE: If self.pmov is not None, then it is already initialized and we can use it as is.
         #       But if self.pmov is None, then we need to initialize it to the pmov result of the previous ingredient    
@@ -942,7 +942,7 @@ class align_ingredient:
         else:
             # loop over SWIM output to get final pmov and SNR, and optionally build the MIR script:
 
-            self.pmov = np.zeros_like(self.psta,dtype=np.float32)
+            self.pmov = np.zeros_like(self.psta, dtype=np.float64)
             idx = 0
             for i in range(self.psta.shape[1]):
                 if self.recipe.method == 'grid' and not self.recipe.ss['method_opts']['quadrants'][i]:
@@ -973,8 +973,10 @@ class align_ingredient:
                 self.t_mir = time.time() - t0
                 self.mir_out_lines = out.strip().split('\n')
                 self.mir_err_lines = err.strip().split('\n')
-                self.mir_aim = np.eye(2, 3, dtype=np.float32)
-                self.mir_afm = np.eye(2, 3, dtype=np.float32)
+                # self.mir_aim = np.eye(2, 3, dtype=np.float32)
+                # self.mir_afm = np.eye(2, 3, dtype=np.float32)
+                self.mir_aim = np.eye(2, 3)   # default is dtype=np.float64
+                self.mir_afm = np.eye(2, 3)   # default is dtype=np.float64
                 for line in self.mir_out_lines:
                     toks = line.strip().split()
                     if (toks[0] == 'AI'):
@@ -1025,7 +1027,7 @@ class align_ingredient:
         logging.getLogger('MAlogger').debug(
             f'\n==========\nManual MIR script:\n{mir_script_mp}\n'
             f'stdout >>\n{mir_mp_out_lines}\nstderr >>\n{mir_mp_err_lines}')
-        afm = np.eye(2, 3, dtype=np.float32)
+        afm = np.eye(2, 3)  # default is dtype=np.float64
         self.mir_out_lines = mir_mp_out_lines
         for line in mir_mp_out_lines:
             toks = line.strip().split()

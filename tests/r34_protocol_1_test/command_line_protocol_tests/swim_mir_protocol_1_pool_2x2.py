@@ -2,14 +2,18 @@ import argparse
 from datetime import date
 from cmath import exp as cexp
 from cmath import phase as cpha
-import os
+from math import atan2, cos, sin, sqrt
 from multiprocessing import Pool
+import os
 from psutil import cpu_count
 from pickle import dump, load
 from sys import argv
 import subprocess as sp
 from time import perf_counter
 import numpy as np
+from PIL import Image
+Image.MAX_IMAGE_PIXELS = None
+from scipy.stats import median_abs_deviation as mad
 from get_image_size import get_image_size
 from tqdm import tqdm
 
@@ -28,7 +32,7 @@ def swim_input(ww, i, w, f, b, t, k, tgt, pt, src, ps, shi):
           f'{shi[0]} {shi[1]} {shi[2]} {shi[3]}'
 
     if f is None:
-         arg = arg.replace(' -fNone', '')
+        arg = arg.replace(' -fNone', '')
 
     return arg
 
@@ -197,10 +201,10 @@ def protocol_1(img_size, ww, iters, w, img_tgt, pt, img_src, ps, shi,
                               f=f, b=b, t=t, k=k, log=log)
 
         # setup for 2x2_0 step
-        _off = np.array([[-1, -1],
-                         [1, -1],
-                         [-1, 1],
-                         [1, 1]])
+        _off = np.array([[-1.0, -1.0],
+                         [1.0, -1.0],
+                         [-1.0, 1.0],
+                         [1.0, 1.0]])
 
         off = ww // 4 * _off
 
@@ -251,7 +255,16 @@ def protocol_1(img_size, ww, iters, w, img_tgt, pt, img_src, ps, shi,
 
     # Return snr from calc_snr, points from step 2_2, af and ai from mir_out_2_2
     return (final_snr, *swim_out_2_2[1:3], *mir_out_2_2)
+def collate(arg):
 
+    q = [np.asarray(Image.open(x)) for x in arg]
+    qq = np.block([[*q[:2]], [*q[2:]]])
+
+    a0 = arg[0]
+    file = a0[a0.rfind('sig'):a0.rfind('_mp')] + '.JPG'
+    path = a0[:a0.rfind('/')] + '_col/' + file
+    Image.fromarray(qq).save(path)
+    
 
 def run_protocol_1(img_dir, res_dir, iter, w=-0.65, f=None,
                    save_render=True, save_signals=True, log=False,
@@ -280,9 +293,11 @@ def run_protocol_1(img_dir, res_dir, iter, w=-0.65, f=None,
 
         if save_signals:
             sig_dir = f'{res_dir}/{scale_dir}/sig'
+            col_dir = f'{res_dir}/{scale_dir}/sig_col'
             tgt_dir = f'{res_dir}/{scale_dir}/tgt'
             src_dir = f'{res_dir}/{scale_dir}/src'
             os.makedirs(sig_dir, exist_ok=True)
+            os.makedirs(col_dir, exist_ok=True)
             os.makedirs(tgt_dir, exist_ok=True)
             os.makedirs(src_dir, exist_ok=True)
 
@@ -387,9 +402,27 @@ def run_protocol_1(img_dir, res_dir, iter, w=-0.65, f=None,
             dm[scale_dir]['cafms'].append(chfm[:2, :].reshape(-1))    # convert 3x3 homogeneous cumulative affine forward matrix to 1D-form of cumulative affine forward matrix and append to list
 
         print(f'        completed in {perf_counter() - t3: .2f} sec')
-        if save_render:
-            print('\n    rendering images ...')
+
+        if save_signals:
+            print('\n    collating match signals ...')
             t4 = perf_counter()
+            mss = sorted([ms for ms in os.listdir(sig_dir) if 'mp' in ms])
+            tmp = max(mss)[:-4].split('_')
+            nps, nws = int(tmp[3]), int(tmp[5][1:]) + 1
+            mss = [mss[nws * i: nws * (i + 1)] for i in range(nps)]
+            idx = [0, 1, 
+                   2, 3]
+            mss = [[os.path.join(sig_dir, ms[i]) for i in idx] for ms in mss]
+            with Pool(n_proc) as p:
+                if not tq:
+                    p.map(collate, mss)
+                else:
+                    p.map(collate, tqdm(mss))
+            print(f'        completed in {perf_counter() - t4: .2f} sec')
+
+        if save_render:
+            t5 = perf_counter()
+            print('\n    rendering images ...')
             ren_dir = f'{res_dir}/{scale_dir}/ren'
             os.makedirs(ren_dir, exist_ok=True)
             ren_args = []
@@ -404,7 +437,7 @@ def run_protocol_1(img_dir, res_dir, iter, w=-0.65, f=None,
                     p.starmap(run_mir, ren_args, chunksize=chunksize)
                 else:
                     p.starmap(run_mir, tqdm(ren_args), chunksize=chunksize)
-            print(f'        completed in {perf_counter() - t4: .2f} sec')
+            print(f'        completed in {perf_counter() - t5: .2f} sec')
 
         print(f'\ntime elapsed = {perf_counter() - t0: .2f} sec\n')
 
