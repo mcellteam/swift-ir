@@ -9,22 +9,22 @@ $(BINDIR):
 	mkdir $(BINDIR)
 
 $(BINDIR)swim: swim.c swimio.h debug.h makefile
-	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)swim swim.c -I/opt/homebrew/include -L/opt/homebrew/lib -ltiff -ljpeg -lpng -lfftw3f -lwebp -lm
+	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)swim swim.c -I/opt/local/include -L/opt/local/lib -ltiff -ljpeg -lpng -lfftw3f -lwebp -lm
 
 $(BINDIR)iavg: iavg.c swimio.h debug.h makefile
-	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)iavg iavg.c -I/opt/homebrew/include -L/opt/homebrew/lib -ljpeg -ltiff -lpng -lwebp
+	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)iavg iavg.c -I/opt/local/include -L/opt/local/lib -ljpeg -ltiff -lpng -lwebp
 
 $(BINDIR)iscale: iscale.c swimio.h debug.h makefile
-	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)iscale iscale.c -I/opt/homebrew/include -L/opt/homebrew/lib -ljpeg -ltiff -lpng -lwebp
+	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)iscale iscale.c -I/opt/local/include -L/opt/local/lib -ljpeg -ltiff -lpng -lwebp
 
 $(BINDIR)iscale2: iscale2.c swimio.h debug.h makefile
-	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)iscale2 iscale2.c -I/opt/homebrew/include -L/opt/homebrew/lib -ljpeg -ltiff -lpng -lwebp
+	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)iscale2 iscale2.c -I/opt/local/include -L/opt/local/lib -ljpeg -ltiff -lpng -lwebp
 
 $(BINDIR)mir: mir.c swimio.h debug.h makefile
-	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)mir mir.c -I/opt/homebrew/include -L/opt/homebrew/lib -ljpeg -ltiff -lpng -lwebp -lm
+	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)mir mir.c -I/opt/local/include -L/opt/local/lib -ljpeg -ltiff -lpng -lwebp -lm
 
 $(BINDIR)remod: remod.c swimio.h debug.h makefile
-	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)remod remod.c -I/opt/homebrew/include -L/opt/homebrew/lib -lfftw3f -ltiff -ljpeg -lpng -lwebp -lm
+	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)remod remod.c -I/opt/local/include -L/opt/local/lib -lfftw3f -ltiff -ljpeg -lpng -lwebp -lm
 
 $(BINDIR)sxox: sxox.c makefile
 	gcc $(FLAGS) -Wno-implicit -o sxox sxox.c -lm

@@ -2085,6 +2085,8 @@ class DataModel:
 
                 if i == 0:
                     continue
+                if not self['stack'][i]['levels'][prev_level]['swim_settings']['include']:
+                    continue
                 last_ing_key = sorted([ k for k in self._data['stack'][i]['levels'][prev_level]['results'].keys() if k.startswith('ing') ])[-1]
                 last_ing = self._data['stack'][i]['levels'][prev_level]['results'][last_ing_key]
                 mo['points']['coords']['ref'] = (sf*np.array(last_ing['psta']).T).tolist() 
