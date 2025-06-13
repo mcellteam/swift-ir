@@ -1,4 +1,7 @@
-FLAGS = -g3 -m64 -msse3
+#FLAGS = -g3 -m64 -msse3
+#FLAGS = -O3 -m64 -msse3
+# Flags Required to get binary exact result on arm64 and x86_64:
+FLAGS = -O3 -m64 -msse3 -ffp-contract=off -fno-unsafe-math-optimizations
 BINDIR = ./bin_darwin/
 
 all: $(BINDIR) $(BINDIR)swim $(BINDIR)iavg $(BINDIR)iscale $(BINDIR)iscale2 $(BINDIR)mir $(BINDIR)remod 

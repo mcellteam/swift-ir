@@ -1,8 +1,10 @@
-Known Issues and TODO list
+Known Issues and TODO list for AlignEM-SWiFT branch devel_protol_1
+
+!!! Test on TACC, Linux, Windows, Apple-Silicon
 
 0@) compare old and new dms to create a better one (future proof dm, is it possible?)
         a) provide clean API for dm, for users/developers
-        b) abstraction layers that encapulate
+        b) abstraction layers that encapsulate
         c) GUI should use this API
 1@) mir_coords and ng_coords not used in dm
 2*) Implement manual strict mode in recipemaker
@@ -33,5 +35,12 @@ Known Issues and TODO list
 18) Newly created emstack should be selected in widget
 19) Numerous race conditions in updates of GUI widgets
 20) Cache hashes are set even when alignment fails -- need to delete hashed directories when alignment fails.
+21) Edit alignment settings should apply to current or all images as an option
+22) Match signals sometimes don't show at some scales
+23) Allow change of value in Fixed Pattern Noise Clobber
+24) Fix "Content Sources" UI
+25) Improve Documentation
+26) Refactor Schema from images->scales->results to scales->images->results 
+27) disable bias correction buttons
+28) Apple-Silicon correctness bug, evident in match signals of image 57 in R34 as scale 1.
 
-Test on TACC and Linux
