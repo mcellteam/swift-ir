@@ -42,5 +42,5 @@ Known Issues and TODO list for AlignEM-SWiFT branch devel_protol_1
 25) Improve Documentation
 26) Refactor Schema from images->scales->results to scales->images->results 
 27) disable bias correction buttons
-28) Apple-Silicon correctness bug, evident in match signals of image 57 in R34 as scale 1.
+28) Apple-Silicon correctness bug, evident in match signals of image 57 in R34 as scale 1. (FIXED in commit 9609d3)
 
