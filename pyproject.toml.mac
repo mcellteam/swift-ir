@@ -1,0 +1,26 @@
+[project]
+name = "alignem_swift"
+version = "0.9.0"
+description = "AlignEM-SWiFT is a graphical tool for registering serial section electron micrographs using SWiFT-IR."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "imagecodecs>=2025.3.30",
+    "imageio>=2.37.0",
+    "matplotlib>=3.10.3",
+    "neuroglancer>=2.40.1",
+    "numpy>=2.3.0",
+    "psutil>=7.0.0",
+    "pyqt5>=5.15.11",
+    "pyqtgraph>=0.13.7",
+    "pyqtwebengine>=5.15.7",
+    "pyqtwebengine-qt5",
+    "qtawesome<1.4",
+    "qtconsole>=5.6.1",
+    "qtpy>=2.4.3",
+    "scipy>=1.15.3",
+    "tensorstore>=0.1.75",
+    "tifffile>=2025.6.11",
+    "tqdm>=4.67.1",
+    "zarr==2.18.7",
+]
