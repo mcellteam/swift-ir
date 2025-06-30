@@ -14,7 +14,6 @@ from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 from scipy.stats import median_abs_deviation as mad
 from get_image_size import get_image_size
-from tqdm import tqdm
 
 
 def swim_input(ww, i, w, f, b, t, k, tgt, pt, src, ps, shi):
@@ -286,20 +285,13 @@ def collate(arg):
     q = [np.asarray(Image.open(x)) for x in arg]
     qq = np.block([[*q[:4]], [*q[4:8]], [*q[8:12]], [*q[12:]]])
     file = a0[a0.rfind('sig'):a0.rfind('_mp')] + '.JPG'
-    # if len(q) == 16:
-    #     qq = np.block([[*q[:4]], [*q[4:8]], [*q[8:12]], [*q[12:]]])
-    #     file = a0[a0.rfind('sig'):a0.rfind('_mp')] + '_4x4.JPG'
-    # if len(q) == 4:
-    #     qq = np.block([[*q[:2]], [*q[2:]]])
-    #     file = a0[a0.rfind('sig'):a0.rfind('_mp')] + '_2x2.JPG'
-
     path = a0[:a0.rfind('/')] + '_col/' + file
     Image.fromarray(qq).save(path)
 
 
 def run_protocol_1(img_dir, res_dir, iter, w=-0.65, f=None, u=1, v=1,
                    save_render=True, save_signals=True, log=False,
-                   n_proc=None, chunksize=1, s=None, tq=False):
+                   n_proc=None, chunksize=1, s=None):
 
     # get image stack
     dirs = sorted([os.path.join(img_dir, dir) for dir in os.listdir(img_dir)
@@ -411,10 +403,7 @@ def run_protocol_1(img_dir, res_dir, iter, w=-0.65, f=None, u=1, v=1,
         t2 = perf_counter()
         # Run protocol_1 parallel
         with Pool(n_proc) as p:
-            if not tq:
-                res = p.starmap(protocol_1, multiargs, chunksize=chunksize)
-            else:
-                res = p.starmap(protocol_1, tqdm(multiargs), chunksize=chunksize)
+            res = p.starmap(protocol_1, multiargs, chunksize=chunksize)
         print(f'        completed in {perf_counter() - t2: .2f} sec')
 
         print('\n    appending results to data model ...')
@@ -437,43 +426,16 @@ def run_protocol_1(img_dir, res_dir, iter, w=-0.65, f=None, u=1, v=1,
         if save_signals:
             print('\n    collating match signals ...')
             t4 = perf_counter()
-            # tbt = []
             fbf = sorted([ms for ms in os.listdir(sig_dir) if 'mp' in ms])
-            # for ms in os.listdir(sig_dir):
-            #     if 'mp' in ms:
-            #         if len(ms[ms.rfind('w')+1:-4]) == 1:
-            #             tbt.append(ms)
-            #         else:
-            #             fbf.append(ms)
-            # tbt.sort()
-            # fbf.sort()
-
-            # tbt = [tbt[4 * i: 4 * (i + 1)] for i in range(len(img_stack) - 1)]
             fbf = [fbf[16 * i: 16 * (i + 1)] for i in range(len(img_stack) - 1)]
             idx_4x4 = [0, 1, 4, 5,
                        2, 3, 6, 7,
                        8, 9, 12, 13,
                        10, 11, 14, 15]
-            # mss = [[os.path.join(sig_dir, ms[i]) for i in idx] for ms in mss]
-            # tbt = [[os.path.join(sig_dir, __tbt) for __tbt in _tbt] for _tbt in tbt]
             fbf = [[os.path.join(sig_dir, _fbf[i]) for i in idx_4x4] for _fbf in fbf]
-            # print(f'tbt = {tbt}')
-            # print(f'fbf = {fbf}')
-            # with Pool(n_proc) as p:
-            #     if not tq:
-            #         p.map(collate, mss)
-            #     else:
-            #         p.map(collate, tqdm(mss))
-            # with Pool(n_proc) as p:
-            #     if not tq:
-            #         p.map(collate, tbt)
-            #     else:
-            #         p.map(collate, tqdm(tbt))
+
             with Pool(n_proc) as p:
-                if not tq:
-                    p.map(collate, fbf)
-                else:
-                    p.map(collate, tqdm(fbf))
+                p.map(collate, fbf)
             print(f'        completed in {perf_counter() - t4: .2f} sec')
 
         if save_render:
@@ -489,10 +451,7 @@ def run_protocol_1(img_dir, res_dir, iter, w=-0.65, f=None, u=1, v=1,
                 _ren = f'{ren_dir}/{_img_out}_ren_{scale_dir}_{_idx}.JPG'
                 ren_args.append((None, None, _img_src, _ren, dm[scale_dir]['cafms'][i], None, log))
             with Pool(n_proc) as p:
-                if not tq:
-                    p.starmap(run_mir, ren_args, chunksize=chunksize)
-                else:
-                    p.starmap(run_mir, tqdm(ren_args), chunksize=chunksize)
+                p.starmap(run_mir, ren_args, chunksize=chunksize)
             print(f'        completed in {perf_counter() - t5: .2f} sec')
 
         print(f'\ntime elapsed = {perf_counter() - t0: .2f} sec\n')
@@ -689,7 +648,6 @@ if __name__ == '__main__':
     parser.add_argument('-n', type=int,  default=cpu_count(logical=False), help='number of cores (default: number of physical cores)')
     parser.add_argument('-c', type=int, default=1, help='chunksize for multiprocessing (default: 1)')
     parser.add_argument('-s', type=int, default=None, help='number of scales to process starting from the coarsest (default: None -> all scales)')
-    parser.add_argument('-t', action='store_true', help='use tqdm for progress bar')
     args = parser.parse_args()
 
     os.makedirs(args.res_dir, exist_ok=True)
@@ -698,19 +656,19 @@ if __name__ == '__main__':
 
     print(f'\niter : {args.i}  w : {args.w}  f : {args.f}  s : {args.s}' \
           f'\nn_proc : {args.n}  chunksize : {args.c}' \
-          f'\nsave_render : {args.sr}  save_signals : {args.ss}  2x2 : {args.u}  4x4 : {args.v}  log : {args.l}  tqdm : {args.t}\n')
+          f'\nsave_render : {args.sr}  save_signals : {args.ss}  2x2 : {args.u}  4x4 : {args.v}  log : {args.l}\n')
     print(f'running on {args.n} physical cores')
 
     dm = run_protocol_1(args.img_dir, args.res_dir, args.i, w=args.w, f=args.f, u=args.u, v=args.v,
                         save_render=args.sr, save_signals=args.ss,
-                        log=args.l, n_proc=args.n, chunksize=args.c, s=args.s, tq=args.t)
+                        log=args.l, n_proc=args.n, chunksize=args.c, s=args.s)
 
     save_pkl(dm, fp)
 
 
 #####
 
-# hp_tgt = hfm @ hp_src  # hfm is the homogeneous forward affine matrix, hp_* should be given in the homogeneous form as well.
-# hp_src = him @ hp_tgt
+# hp_tgt = hA @ hp_src  # hA is the homogeneous forward affine matrix, hp_* should be given in the homogeneous form as well.
+# hp_src = hA_i @ hp_tgt  # hA_i is the homogeneous inverse affine matrix.
 
 #####

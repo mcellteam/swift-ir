@@ -7,7 +7,6 @@ from multiprocessing import Pool
 import os
 from psutil import cpu_count
 from pickle import dump, load
-from sys import argv
 import subprocess as sp
 from time import perf_counter
 import numpy as np
@@ -15,7 +14,6 @@ from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 from scipy.stats import median_abs_deviation as mad
 from get_image_size import get_image_size
-from tqdm import tqdm
 
 
 def swim_input(ww, i, w, f, b, t, k, tgt, pt, src, ps, shi):
@@ -255,6 +253,8 @@ def protocol_1(img_size, ww, iters, w, img_tgt, pt, img_src, ps, shi,
 
     # Return snr from calc_snr, points from step 2_2, af and ai from mir_out_2_2
     return (final_snr, *swim_out_2_2[1:3], *mir_out_2_2)
+
+
 def collate(arg):
 
     q = [np.asarray(Image.open(x)) for x in arg]
@@ -268,7 +268,7 @@ def collate(arg):
 
 def run_protocol_1(img_dir, res_dir, iter, w=-0.65, f=None,
                    save_render=True, save_signals=True, log=False,
-                   n_proc=None, chunksize=1, s=None, tq=False):
+                   n_proc=None, chunksize=1, s=None):
 
     # get image stack
     dirs = sorted([os.path.join(img_dir, dir) for dir in os.listdir(img_dir)
@@ -380,10 +380,7 @@ def run_protocol_1(img_dir, res_dir, iter, w=-0.65, f=None,
         t2 = perf_counter()
         # Run protocol_1 parallel
         with Pool(n_proc) as p:
-            if not tq:
-                res = p.starmap(protocol_1, multiargs, chunksize=chunksize)
-            else:
-                res = p.starmap(protocol_1, tqdm(multiargs), chunksize=chunksize)
+            res = p.starmap(protocol_1, multiargs, chunksize=chunksize)
         print(f'        completed in {perf_counter() - t2: .2f} sec')
 
         print('\n    append results to data model ...')
@@ -414,10 +411,7 @@ def run_protocol_1(img_dir, res_dir, iter, w=-0.65, f=None,
                    2, 3]
             mss = [[os.path.join(sig_dir, ms[i]) for i in idx] for ms in mss]
             with Pool(n_proc) as p:
-                if not tq:
-                    p.map(collate, mss)
-                else:
-                    p.map(collate, tqdm(mss))
+                p.map(collate, mss)
             print(f'        completed in {perf_counter() - t4: .2f} sec')
 
         if save_render:
@@ -433,10 +427,7 @@ def run_protocol_1(img_dir, res_dir, iter, w=-0.65, f=None,
                 _ren = f'{ren_dir}/{_img_out}_ren_{scale_dir}_{_idx}.JPG'
                 ren_args.append((None, None, _img_src, _ren, dm[scale_dir]['cafms'][i], None, log))
             with Pool(n_proc) as p:
-                if not tq:
-                    p.starmap(run_mir, ren_args, chunksize=chunksize)
-                else:
-                    p.starmap(run_mir, tqdm(ren_args), chunksize=chunksize)
+                p.starmap(run_mir, ren_args, chunksize=chunksize)
             print(f'        completed in {perf_counter() - t5: .2f} sec')
 
         print(f'\ntime elapsed = {perf_counter() - t0: .2f} sec\n')
@@ -661,7 +652,6 @@ if __name__ == '__main__':
     parser.add_argument('-n', type=int,  default=cpu_count(logical=False), help='number of cores (default: number of physical cores)')
     parser.add_argument('-c', type=int, default=1, help='chunksize for multiprocessing (default: 1)')
     parser.add_argument('-s', type=int, default=None, help='number of scales to process starting from the coarsest (default: None -> all scales)')
-    parser.add_argument('-t', action='store_true', help='use tqdm for progress bar')
     args = parser.parse_args()
 
     os.makedirs(args.res_dir, exist_ok=True)
@@ -670,77 +660,19 @@ if __name__ == '__main__':
 
     print(f'\niter : {args.i}  w : {args.w}  f : {args.f}  s : {args.s}' \
           f'\nn_proc : {args.n}  chunksize : {args.c}' \
-          f'\nsave_render : {args.sr}  save_signals : {args.ss}  log : {args.l}  tqdm : {args.t}\n')
+          f'\nsave_render : {args.sr}  save_signals : {args.ss}  log : {args.l}\n')
     print(f'running on {args.n} physical cores')
 
     dm = run_protocol_1(args.img_dir, args.res_dir, args.i, w=args.w, f=args.f,
                         save_render=args.sr, save_signals=args.ss,
-                        log=args.l, n_proc=args.n, chunksize=args.c, s=args.s, tq=args.t)
+                        log=args.l, n_proc=args.n, chunksize=args.c, s=args.s)
 
     save_pkl(dm, fp)
 
 
 #####
 
-# hp_tgt = hfm @ hp_src  # hfm is the homogeneous forward affine matrix, hp_* should be given in the homogeneous form as well.
-# hp_src = him @ hp_tgt
+# hp_tgt = hA @ hp_src  # hA is the homogeneous forward affine matrix, hp_* should be given in the homogeneous form as well.
+# hp_src = hA_i @ hp_tgt  # hA_i is the homogeneous inverse affine matrix.
 
 #####
-
-# class DataModel(dict):
-#     # DataModel Schema:
-#     # {
-#     #     'img_path': img_dir,
-#     #     'scale_S': {    # where S is the scale value,
-#     #       'affine_mode': 'init_affine' or 'refine_affine',
-#     #       'img_size': [siz_x, siz_y],
-#     #       'img_stack': [img_dict_1, ... img_dict_N, ...],
-#     #     },
-#     # }
-#     #
-#     # where img_dict_N is:
-#     # {
-#     #     'img_idx': N,
-#     #     'img_tgt': img_tgt,
-#     #     'img_src': img_src,
-#     #     'include': True or False,
-#     #     'alignment_method': 'grid' or 'manual_hint' or 'manual_scrict'
-#     #     'ww_1x1': [832, 832],
-#     #     'ww_2x2': [416, 416],
-#     #     'ww_manual': [ww_x, ww_y],
-#     #     'iters': 3,
-#     #     'f': 3,
-#     #     'w': -0.65,
-#     #     'pt_init': [[pt_1_x, pt_1_y], ... [pt_N_x, pt_N_y], ...], or []
-#     #     'ps_init': [[ps_1_x, ps_1_y], ... [ps_N_x, ps_N_y], ...], or []
-#     #     'shape_inv_init': [shi_0, shi_1, shi_2, shi_3], or []
-#     #     'result': {
-#     #        'pt': [[pt_1_x, pt_1_y], ... [pt_N_x, pt_N_y], ...],
-#     #        'ps': [[ps_1_x, ps_1_y], ... [ps_N_x, ps_N_y], ...],
-#     #        'afm': [afm_1, afm_2, ...],
-#     #        'cafm': [cafm_1, cafm_2, ...],
-#     #        'snr': [snr_1, snr_2, ...],
-#     #     }
-#     # }
-
-
-#     def __init__(self, *args, **kwargs):
-#         super(DataModel, self).__init__(*args, **kwargs)
-
-#     def update(self, *args, **kwargs):
-#         super(DataModel, self).update(*args, **kwargs)
-
-#     def __setitem__(self, key, value):
-#         super(DataModel, self).__setitem__(key, value)
-
-#     def __getitem__(self, key):
-#         return super(DataModel, self).__getitem__(key)
-
-#     def __delitem__(self, key):
-#         super(DataModel, self).__delitem__(key)
-
-#     def __str__(self):
-#         return super(DataModel, self).__str__()
-
-#     def __repr__(self):
-#         return super(DataModel, self).__repr__()

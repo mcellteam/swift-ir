@@ -696,8 +696,8 @@ def composeAffine(afm, bfm):
     COMPOSEAFFINE(afm1, afm2) returns the affine generate_thumbnail AFM1 ∘ AFM2
     that applies AFM1 after AFM2.
     Affine matrices must be 2x3 numpy arrays.'''
-    afm = np.vstack((afm, [0,0,1]))
-    bfm = np.vstack((bfm, [0,0,1]))
+    afm = np.vstack((afm, [0., 0., 1.]))
+    bfm = np.vstack((bfm, [0., 0., 1.]))
     fm = np.matmul(afm, bfm)
     # fm = np.matmul(bfm, afm)
     return fm[0:2,:]
@@ -708,8 +708,8 @@ def composeAffineR(afm, bfm):
     COMPOSEAFFINE(afm1, afm2) returns the affine generate_thumbnail AFM1 ∘ AFM2
     that applies AFM1 after AFM2.
     Affine matrices must be 2x3 numpy arrays.'''
-    afm = np.vstack((afm, [0, 0, 1]))
-    bfm = np.vstack((bfm, [0, 0, 1]))
+    afm = np.vstack((afm, [0., 0., 1.]))
+    bfm = np.vstack((bfm, [0., 0., 1.]))
     # fm = np.matmul(afm, bfm)
     fm = np.matmul(bfm, afm)
     return fm[0:2, :]
@@ -725,7 +725,7 @@ def invertAffine(afm):
     '''INVERTAFFINE - Invert affine generate_thumbnail
     INVERTAFFINE(afm), where AFM is a 2x3 affine transformation matrix,
     returns the inverse generate_thumbnail.'''
-    afm = np.vstack((afm, [0,0,1]))
+    afm = np.vstack((afm, [0., 0., 1.]))
     ifm = np.linalg.inv(afm)
     return ifm[0:2,:]
 

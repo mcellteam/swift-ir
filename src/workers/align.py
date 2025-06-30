@@ -215,6 +215,8 @@ class AlignWorker(QObject):
 
         try:
             dm.set_stack_cafm()
+            for i in range(len(dm)):
+                print(f"[{i}] alt_cafm:\n                {self.dm['stack'][i]['levels'][scale]['alt_cafm']}")
         except:
             print_exception()
         dm.save(silently=True)

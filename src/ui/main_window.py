@@ -21,6 +21,7 @@ from collections import OrderedDict
 from pathlib import Path
 
 import psutil
+import numpy as np
 import qtawesome as qta
 from qtpy.QtCore import *
 from qtpy.QtGui import *
@@ -1703,12 +1704,14 @@ class MainWindow(QMainWindow):
         #         for item in sublist:
         #             f.write(str(item) + ',')
         #         f.write('\n')
-        with open(file, 'w', newline='') as f:
-            # writer = csv.writer(f, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-            writer = csv.writer(f)
-            writer.writerows(self.dm.cafm_list())
-            # for c in self.dm.cafm_list():
-            #     writer.writerow(c)
+        # with open(file, 'w', newline='') as f:
+        #     # writer = csv.writer(f, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        #     writer = csv.writer(f)
+        #     writer.writerows(self.dm.alt_cafm_list())
+        #     # for c in self.dm.cafm_list():
+        #     #     writer.writerow(c)
+        tmp = np.array(self.dm.alt_cafm_list())
+        np.save(file, tmp)
         self.tell('Exported: %s' % file)
         self.tell('Cumulative AFMs exported successfully.')
 

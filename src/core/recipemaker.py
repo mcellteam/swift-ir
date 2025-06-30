@@ -187,7 +187,7 @@ class align_recipe:
     def assemble_recipe(self):
 
         # Set up 1x1 point and window
-        pa = np.zeros((2, 1))  # Point Array for one point
+        pa = np.zeros((2, 1))  # numpy array to hold one point as a 2x1 column matrix, float64
         pa[0, 0] = int(self.ss['img_size'][0] / 2.0)  # Window Center x
         pa[1, 0] = int(self.ss['img_size'][1] / 2.0)  # Window Center y
         psta_1 = pa
@@ -224,8 +224,8 @@ class align_recipe:
             ww_2x2 = self.ss['method_opts']['size_2x2']
             psta_2x2 = np.array(self.ss['method_opts']['points']['coords']['ref'], dtype=np.float64).T
                         
-            if self.ss['is_refinement']:
-                '''Perform affine refin['tra'ement'''           
+            if self.ss['is_refinement']:  # This is done at the finer scales after propagating the result from the next coarser scale
+                '''Perform affine refinement'''           
                 pmov_2x2 = np.array(self.ss['method_opts']['points']['coords']['tra'], dtype=np.float64).T
                 self.add_ingredients([
                     align_ingredient(
@@ -718,7 +718,7 @@ class align_ingredient:
                 self.reduce_matches() # downscale size of match images
         try:
             np.set_printoptions(linewidth=np.inf)
-            np.set_printoptions(formatter={'float': lambda x: "{0:.3g}".format(x)})
+            np.set_printoptions(formatter={'float': lambda x: "{0:.15g}".format(x)})
             ing_str = f"[{self.recipe.index}, {self.ID}] | SNR: {self.snr} | AFM: {self.afm}"
             print(ing_str)
         except:
@@ -749,8 +749,11 @@ class align_ingredient:
         # NOTE: we'll use the shape part of afm as the inverse shape matrix for swim
         # afm = '%.6f %.6f %.6f %.6f' % (
         #         self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
-        afm = '%f %f %f %f' % (
-            self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
+        # afm = '%.15g %.15g %.15g %.15g' % (
+        #     self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
+        afm = f'{self.afm[0, 0]} {self.afm[0, 1]} {self.afm[1, 0]} {self.afm[1, 1]}'
+
+
 
         # NOTE: If self.pmov is not None, then it is already initialized and we can use it as is.
         #       But if self.pmov is None, then we need to initialize it to the pmov result of the previous ingredient    

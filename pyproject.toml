@@ -1,35 +1,26 @@
-[tool.poetry]
-name = "alignem"
-version = "0.5.51"
-description = "alignEM is a graphical tool for registering serial section electron micrographs using SWiFT-IR."
-authors = ["Joel Yancey <j.y@ucla.edu>"]
-license = "Mozilla Public License Version 2.0"
+[project]
+name = "alignem_swift"
+version = "0.9.0"
+description = "AlignEM-SWiFT is a graphical tool for registering serial section electron micrographs using SWiFT-IR."
 readme = "README.md"
-packages = [{include = "src"}]
-include = ["alignem.py","tacc_bootstrap","tacc_configure","__init__.py"]
-
-[tool.poetry.dependencies]
-python = "^3.9"
-numpy = "^1.24.3"
-psutil = "^5.9.5"
-Pillow = "^9.5.0"
-zarr = "^2.14.2"
-tensorstore = "^0.1.36"
-tifffile = "^2023.4.12"
-imagecodecs = "^2023.3.16"
-neuroglancer = "^2.36"
-qtconsole = "^5.4.1"
-PyQt5 = "^5.15.9"
-PyQtWebEngine = "^5.15.6"
-QtPy = "^2.3.1"
-QtAwesome = "^1.2.3"
-pyqtgraph = "^0.13.3"
-imageio = "^2.28.0"
-pylibtiff = "^0.5.1"
-
-[tool.poetry.scripts]
-alignem = 'alignem:main'
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires-python = ">=3.11"
+dependencies = [
+    "imagecodecs>=2025.3.30",
+    "imageio>=2.37.0",
+    "matplotlib>=3.10.3",
+    "neuroglancer>=2.40.1",
+    "numpy>=2.3.0",
+    "psutil>=7.0.0",
+    "pyqt5>=5.15.11",
+    "pyqtgraph>=0.13.7",
+    "pyqtwebengine>=5.15.7",
+    "pyqtwebengine-qt5",
+    "qtawesome<1.4",
+    "qtconsole>=5.6.1",
+    "qtpy>=2.4.3",
+    "scipy>=1.15.3",
+    "tensorstore>=0.1.75",
+    "tifffile>=2025.6.11",
+    "tqdm>=4.67.1",
+    "zarr==2.18.7",
+]

@@ -200,7 +200,7 @@ class DataModel:
     def to_file(self):
         path = os.path.join(self.dest(), 'state_' + date_time() + '.swiftir')
         with open(path, 'w') as f:
-            f.write(str(self.to_json()))
+            f.write(self.to_json())
 
     @property
     def title(self):
@@ -1362,6 +1362,16 @@ class DataModel:
         lst = [self.afm(s=s, l=l) for l in range(len(self))]
         return lst
 
+    def alt_cafm_list(self, s=None, end=None) -> list:
+        '''Returns a list of cumulative affine transformation matrices for all sections at the current level'''
+        if s == None: s = self.level
+        if end == None:
+            end = len(self)
+        lst = []
+        for i in range(0,end):
+            if i < end:
+                lst.append(self.alt_cafm(s=s, l=i))
+        return lst
 
     def cafm_list(self, s=None, end=None) -> list:
         '''Returns a list of cumulative affine transformation matrices for all sections at the current level'''
