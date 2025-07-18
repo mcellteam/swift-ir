@@ -94,8 +94,7 @@ def run_recipe(data):
         recipe.afm = np.array([[1., 0., 0.], [0., 1., 0.]])
     else:
         recipe.assemble_recipe()
-        rc = recipe.execute_recipe()
-        
+        rc = recipe.execute_recipe()   
     if data['glob_cfg']['generate_thumbnails']:
         recipe.generate_thumbnail()
 
@@ -627,14 +626,14 @@ class align_recipe:
         # Image not found: /Users/joelyancey/alignem_data/alignments/666/data/35/s4/7910856802294028582/R34CA1-BS12.136.thumb.tif
         # print('writing gif...')
         try:
-            _M = np.zeros(rect[2:])
+            _M = np.zeros(rect[2:][::-1]) # zeroth dimension corresponds to the window height (y)
             _M.fill(128)
-            print(_M.shape)
-
+ 
             imA = iio.imread(pA)
             # _imA[20:][20:] = imA
             imB = iio.imread(pB)
-            _M[20:rect[2]-20, 20:rect[3]-20] = imB
+            #_M[20:rect[2]-20, 20:rect[3]-20] = imB
+            _M[20:rect[3]-20, 20:rect[2]-20] = imB #swap rect[2] and rect[3] here to match imB shape
             iio.imwrite(pA, imA) # monkey patch - fixes metadata
             iio.imwrite(pB, imB)  # monkey patch - fixes metadata
             # iio.imwrite(out, [imA, imB], format='GIF', duration=1, loop=0)

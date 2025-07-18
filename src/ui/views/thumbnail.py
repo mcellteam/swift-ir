@@ -190,27 +190,28 @@ class ThumbnailFast(QLabel):
 
                     if 'grid' in method:
                         regions = cfg.mw.dm.get_grid_custom_regions(s=s, l=l)
-                        ww1x1 = cfg.mw.dm.size1x1(s=s, l=l)
-                        ww2x2 = cfg.mw.dm.size2x2(s=s, l=l)
+                        ww1x1 = tuple(cfg.mw.dm.size1x1(s=s, l=l))
+                        ww2x2 = tuple(cfg.mw.dm.size2x2(s=s, l=l))
 
                         a = [(img_size[0] - ww1x1[0])/2 + ww2x2[0]/2, (img_size[1] - ww1x1[1])/2 + ww2x2[1]/2]
                         b = [img_size[0] - a[0], img_size[1] - a[1]]
 
                         if regions[0]:
                             qp.setPen(QPen(QColor(cfg.glob_colors[0]), 2, Qt.DotLine))
-                            rect = get_rect(sf, a[0], a[1], ww2x2[0], self.r.getCoords())
+                            #rect = get_rect(sf, a[0], a[1], ww2x2[0], self.r.getCoords())
+                            rect = get_rect(sf, a[0], a[1], ww2x2, self.r.getCoords())
                             qp.drawRect(rect)
                         if regions[1]:
                             qp.setPen(QPen(QColor(cfg.glob_colors[1]), 2, Qt.DotLine))
-                            rect = get_rect(sf, b[0], a[1], ww2x2[0], self.r.getCoords())
+                            rect = get_rect(sf, b[0], a[1], ww2x2, self.r.getCoords())
                             qp.drawRect(rect)
                         if regions[2]:
                             qp.setPen(QPen(QColor(cfg.glob_colors[2]), 2, Qt.DotLine))
-                            rect = get_rect(sf, a[0], b[1], ww2x2[0], self.r.getCoords())
+                            rect = get_rect(sf, a[0], b[1], ww2x2, self.r.getCoords())
                             qp.drawRect(rect)
                         if regions[3]:
                             qp.setPen(QPen(QColor(cfg.glob_colors[3]), 2, Qt.DotLine))
-                            rect = get_rect(sf, b[0], b[1], ww2x2[0], self.r.getCoords())
+                            rect = get_rect(sf, b[0], b[1], ww2x2, self.r.getCoords())
                             qp.drawRect(rect)
 
                     elif method == 'manual':
@@ -263,7 +264,7 @@ class ThumbnailFast(QLabel):
 
 @cache
 def get_rect(sf, x, y, ww, coords):
-    rect = QRect(QPoint(int(x*sf), int(y*sf)), QSize(int(ww*sf), int(ww*sf)))
+    rect = QRect(QPoint(int(x*sf), int(y*sf)), QSize(int(ww[0]*sf), int(ww[1]*sf)))
     rect.moveCenter(QPoint(int(x*sf), int(y*sf)) + QPoint(coords[0], coords[1]))
     #0716 + QPoint(coords[0], coords[1]) provides translation correction
     return rect

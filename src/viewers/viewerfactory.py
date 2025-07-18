@@ -1312,10 +1312,10 @@ def getRect(coords, ww_x, ww_y):
     x, y = coords[0], coords[1]
     hw = int(ww_x / 2)  # Half-width
     hh = int(ww_y / 2)  # Half-height
-    A = (x + hh, y - hw)
-    B = (x + hh, y + hw)
-    C = (x - hh, y + hw)
-    D = (x - hh, y - hw)
+    A = (x + hw, y - hh)
+    B = (x + hw, y + hh)
+    C = (x - hw, y + hh)
+    D = (x - hw, y - hh)
     return A, B, C, D
 
 

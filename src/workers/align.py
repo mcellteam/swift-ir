@@ -44,6 +44,7 @@ logging.getLogger('tifffile').propagate = False
 
 
 class AlignWorker(QObject):
+    """Worker thread for alignment tasks."""
     finished = Signal()
     progress = Signal(int)
     initPbar = Signal(tuple) # (# tasks, description)
@@ -84,7 +85,7 @@ class AlignWorker(QObject):
         self._mutex.unlock()
         self.finished.emit()
 
-
+    
     def run(self):
         print(f"====> Running Background Thread ====>")
         self.align()
@@ -93,6 +94,7 @@ class AlignWorker(QObject):
 
 
     def align(self):
+        """Align images at the specified scale level."""
         """Long-running task."""
         logger.critical(f'\n\nAligning (ignore cache? {self.ignore_cache})...\n')
 
@@ -100,9 +102,10 @@ class AlignWorker(QObject):
         dm = self.dm
 
         siz = dm.image_size(scale)
-        are_large = siz[0] > 16000 or siz[1] > 16000
+        # are_large = siz[0] > 16000 or siz[1] > 16000
+        are_large = False
 
-
+        # Set global configuration for the alignment process
         _glob_config = {
             'dev_mode': cfg.DEV_MODE,
             'verbose_swim': cfg.VERBOSE_SWIM,
@@ -215,8 +218,6 @@ class AlignWorker(QObject):
 
         try:
             dm.set_stack_cafm()
-            for i in range(len(dm)):
-                print(f"[{i}] alt_cafm:\n                {self.dm['stack'][i]['levels'][scale]['alt_cafm']}")
         except:
             print_exception()
         dm.save(silently=True)
