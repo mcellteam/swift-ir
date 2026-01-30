@@ -17,16 +17,12 @@ import warnings
 warnings.filterwarnings("ignore")  # Works for supressing tiffile invalid offset warning
 
 import imageio.v3 as iio
-# import imagecodecs
 import numcodecs
 import numpy as np
 import tqdm
 import zarr
 numcodecs.blosc.use_threads = False
-# import libtiff
-# libtiff.libtiff_ctypes.suppress_warnings()
 
-# from src.mp_queue import TaskQueue
 from src.utils.readers import read
 from src.utils.writers import write
 from src.core.recipemaker import run_recipe
@@ -51,7 +47,6 @@ class AlignWorker(QObject):
     hudMessage = Signal(str)
     hudWarning = Signal(str)
 
-    # def __init__(self, scale, file_path, align_indexes, regen_indexes, align, regenerate, renew_od, reallocate_zarr, dm, ht):
     def __init__(self, dm, path, scale, indexes, prev_snr, ignore_cache=False):
         super().__init__()
         logger.info('Initializing...')

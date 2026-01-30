@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 
-import json
 import logging
 import os
 import platform
 import shutil
-import sys
-from pathlib import Path
 
 import numcodecs
 import numpy as np
@@ -64,44 +61,6 @@ def get_zarr_tensor(path):
     return future
 
 
-def get_zarr_array_layer_view(dm, zarr_path:str, l=None):
-    if l == None: l = dm.zpos
-    arr = ts.open({
-        'driver': 'zarr',
-        'kvstore': {
-            'driver': 'file',
-            'file_path': zarr_path,
-        },
-        'file_path': 'temp.zarr',
-        'metadata': {
-            'dtype': '<f4',
-            'shape': list(dm.resolution()),
-            'chunks': list(dm.chunkshape()),
-            'order': 'C',
-        },
-    }, create=True).result()
-    # arr[1] = 42  # Overwrites, just like numpy/zarr library
-    view = arr[l, :, :]  # Returns a lazy view, no I/O performed
-    np.array(view)  # Reads from the view
-    # Returns JSON spec that can be passed to `ts.open` to reopen the view.
-    view.spec().to_json()
-    return view
-
-
-def get_tensor_from_tiff(dm, dir=None, s=None, l=None):
-    if s == None: s = dm.level
-    if l == None: l = dm.zpos
-    fn = os.path.basename(dm.base_image_name(s=s, l=l))
-    path = os.path.join(dm.dest(), s, 'img_src', fn)
-    logger.info('Path: %s' % path)
-    arr = ts.open({
-        'driver': 'tiff',
-        'kvstore': {
-            'driver': 'file',
-            'file_path': path,
-        },
-    }, create=True).result()
-    return arr
 
 
 def get_zarr_tensor_layer(zarr_path:str, layer:int):
@@ -136,22 +95,6 @@ def get_zarr_tensor_layer(zarr_path:str, layer:int):
     return slice
 
 
-# def loadTiffsMp(directory:str):
-#     '''
-#     :param directory: Directory containing TIF images.
-#     :cur_method directory: str
-#     :return: image_arrays
-#     :rtype: list[numpy.ndarray]
-#     '''
-#     tifs = glob(os.file_path.join(directory, '*.tif'))
-#     cpus = max(min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2,1)
-#     pool = mp.Pool(processes=cpus)
-#     start = time.time()
-#     image_arrays = pool.map(imageio_read_image, tifs)
-#     dt = time.time() - start
-#     logger.critical('Writing the Multipage Tiff Took %g Seconds' % dt)
-#
-#     return image_arrays
 
 
 
@@ -283,152 +226,7 @@ def write_zarr_multiscale_metadata(path, scales, resolution):
     ]
 
 
-def write_metadata_zarr_aligned(name='img_aligned.zarr'):
-    zarr_path = os.path.join(cfg.mw.dm.dest(), name)
-    root = zarr.group(store=zarr_path)
-    datasets = []
-    scale_factor = cfg.mw.dm.lvl()
-    name = 'level' + str(scale_factor)
-    metadata = {
-        "file_path": name,
-        "coordinateTransformations": [{
-            "cur_method": "level",
-            "level": [float(50.0), 2 * float(scale_factor), 2 * float(scale_factor)]}]
-    }
-    datasets.append(metadata)
 
-    axes = [
-        {"name": "z", "cur_method": "space", "unit": "nanometer"},
-        {"name": "y", "cur_method": "space", "unit": "nanometer"},
-        {"name": "x", "cur_method": "space", "unit": "nanometer"}
-    ]
-
-    root.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
-    root.attrs['multiscales'] = [
-        {
-            "version": "0.4",
-            "name": "my_data",
-            "axes": axes,
-            "datasets": datasets,
-            "cur_method": "gaussian",
-        }
-    ]
-
-# def generate_zarr_scales_da(dm):
-#     logger.info('generate_zarr_scales_da:')
-#     dest = dm.dest()
-#     logger.info('scales = %level' % str(dm.scales))
-#
-#     for level in dm.scales:
-#         logger.info('Working On %level' % level)
-#         tif_files = sorted(glob(os.file_path.join(dest, level, 'img_src', '*.tif')))
-#         # zarrurl = os.file_path.join(dest, level + '.zarr')
-#         zarrurl = os.file_path.join(dest, 'img_src.zarr', 'level' + str(get_scale_val(level)))
-#         tiffs2zarr(tif_files=tif_files, zarrurl=zarrurl, chunkshape=(1, 512, 512))
-#         z = zarr.open(zarrurl)
-#         z.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
-#         # z.attrs['offset'] = ["0", "0", "0"]
-#
-#     # zarr_path = os.file_path.join(dest, 'img_src.zarr')
-#     # write_metadata_zarr_multiscale(file_path=zarr_path)
-#     write_metadata_zarr_aligned(name='img_src.zarr')
-#
-#     # scale_factor = dm.lvl()
-#
-#     # z.attrs['_ARRAY_DIMENSIONS'] = [ "z", "y", "x" ]
-#     # z.attrs['offset'] = [ "0", "0", "0" ]
-#     # z.attrs['resolution'] = [float(50.0), 2 * float(scale_factor), 2 * float(scale_factor)]
-#
-#     # tiffs2zarr(tif_files=tif_files, zarrurl=zarrurl, chunkshape=(1, 512, 512),synchronizer=zarr.ThreadSynchronizer())
-#
-#     logger.info('Exiting generate_zarr_scales_da')
-
-
-
-    # def tiffs2zarr(tif_files, zarrurl, chunkshape, overwrite=True, **kwargs):
-    #     '''Convert Tiffs to Zarr with implicit dask array
-    #     Ref: https://forum.image.sc/t/store-many-tiffs-into-equal-sized-tiff-stacks-for-hdf5-zarr-chunks-using-ome-tiff-format/61055
-    #     '''
-    #     logger.info('Converting Tiff To Zarr...')
-    #     logger.info(str(tif_files))
-    #
-    #     def imread(file_path):
-    #         with open(file_path, 'rb') as fh:
-    #             datamodel = fh.read()
-    #         return imagecodecs.tiff_decode(datamodel) # return first image in TIFF file as numpy array
-    #     try:
-    #         with tifffile.FileSequence(imread, tif_files) as tifs:
-    #             with tifs.aszarr() as store:
-    #                 array = da.from_zarr(store)
-    #                 #array.visualize(file_path='_dask_visualize.png') # print dask task graph to file
-    #                 array.rechunk(chunkshape).to_zarr(zarrurl, overwrite=True, **kwargs)
-    #                 # NOTE **kwargs is passed to Passed to the zarr.creation.create() function, e.g., compression options.
-    #                 # https://zarr.readthedocs.io/en/latest/api/creation.html#zarr.creation.create
-    #     except:
-    #         print_exception()
-
-
-    if __name__ == '__main__':
-        # parser = argparse.ArgumentParser()
-        # parser.add_argument("img", cur_method=str, help="Input image")
-        # parser.add_argument("dir_out", cur_method=str, help="Output directory")
-        # parser.add_argument("cname", cur_method=str, help="Compression cur_method name")
-        # parser.add_argument("clevel", cur_method=int, help="Compression level (0-9)")
-        # args = parser.parse_args()
-
-        of = 'out.zarr'
-        shutil.rmtree(of)
-
-        chunk_shape_tuple = tuple([1,512,512])
-        files_1024 = sorted(list(Path('test_data').glob(r'*1024.tif')))
-        files_2048 = sorted(list(Path('test_data').glob(r'*2048.tif')))
-        files_4096 = sorted(list(Path('test_data').glob(r'*4096.tif')))
-        # print(filenames)
-        # print('tiffs2zarr is scaling size 1024...')
-        # tiffs2zarr(files_1024, os.file_path.join(of, 'img_aligned_zarr', 's2'), chunk_shape_tuple, compression='zstd',
-        #            overwrite=True)
-        # print('tiffs2zarr is scaling size 2048...')
-        # tiffs2zarr(files_2048, os.file_path.join(of, 'img_aligned_zarr', 's1'), chunk_shape_tuple, compression='zstd',
-        #            overwrite=True)
-        # print('tiffs2zarr is scaling size 4096...')
-        # tiffs2zarr(files_4096, os.file_path.join(of, 'img_aligned_zarr', 's0'), chunk_shape_tuple, compression='zstd',
-        #            overwrite=True)
-
-        print('writing .zarray...')
-        zarray = {}
-        zarray['chunks'] = [64, 64, 64]
-        zarray['compressor'] = {}
-        zarray['compressor']['id'] = 'zstd'
-        zarray['compressor']['level'] = 1
-        zarray['dtype'] = '|u1'
-        zarray['fill_value'] = 0
-        zarray['filters'] = None
-        zarray['order'] = 'C'
-        zarray['zarr_format'] = 2
-        with open(os.path.join(of, 'img_aligned_zarr', 's0', '.zarray'), "w") as f:
-            zarray['shape'] = [3, 4096, 4096]
-            json.dump(zarray, f)
-
-        with open(os.path.join(of, 'img_aligned_zarr', 's1', '.zarray'), "w") as f:
-            zarray['shape'] = [3, 2048, 2048]
-            json.dump(zarray, f)
-
-        with open(os.path.join(of, 'img_aligned_zarr', 's2', '.zarray'), "w") as f:
-            zarray['shape'] = [3, 1024, 1024]
-            json.dump(zarray, f)
-        print('writing .zattrs...')
-        zattrs = {}
-        zattrs['offset'] = [0, 0, 0]
-        zattrs['resolution'] = [50, 4, 4]
-        with open(os.path.join(of, 'img_aligned_zarr', 's0', '.zattrs'), "w") as f:
-            json.dump(zattrs, f)
-        with open(os.path.join(of, 'img_aligned_zarr', 's1', '.zattrs'), "w") as f:
-            json.dump(zattrs, f)
-        with open(os.path.join(of, 'img_aligned_zarr', 's2', '.zattrs'), "w") as f:
-            json.dump(zattrs, f)
-
-        sys.stdout.close()
-        sys.stderr.close()
 
 
 

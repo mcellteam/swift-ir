@@ -22,15 +22,15 @@ def write_json(path: PathLike, data: dict):
             # json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
     except:
         print_exception()
-        logger.warning(f"Unable to read file as JSON: {path_to_str(path)}")
+        logger.warning(f"Unable to write file as JSON: {path_to_str(path)}")
         return None
 
 def write_txt(path: PathLike, data: Any):
     try:
         with open(path_to_str(path), 'w') as f:
-            f.write(f)
+            f.write(data)
     except:
-        logger.warning(f"Unable to read file as TXT: {path_to_str(path)}")
+        logger.warning(f"Unable to write file as TXT: {path_to_str(path)}")
         return None
 
 def register_writer(file_type):

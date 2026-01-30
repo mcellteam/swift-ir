@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 
-# import imagecodecs
 import numcodecs
 numcodecs.blosc.use_threads = False
-#!/usr/bin/env python3
 
 import os
 import time
@@ -13,7 +11,6 @@ from copy import deepcopy
 from pathlib import Path
 
 from os import kill
-# from signal import alarm, signal, SIGALRM, SIGKILL
 from subprocess import PIPE, Popen
 import multiprocessing as mp
 import subprocess as sp
@@ -21,8 +18,6 @@ from concurrent.futures import ThreadPoolExecutor
 import zarr
 import imagecodecs
 import imageio.v3 as iio
-# import libtiff
-# libtiff.libtiff_ctypes.suppress_warnings()
 import tqdm
 import numcodecs
 from numcodecs import Blosc
@@ -376,40 +371,6 @@ def run(task):
         # sp.Popen(task, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
     except Exception as e:
         print("error: %s run(*%r)" % (e, task))
-
-
-#
-# def run2(args, cwd = None, shell = False, kill_tree = True, timeout = -1, env = None):
-#     '''
-#     Run a command with a timeout after which it will be forcibly
-#     killed.
-#     '''
-#     class Alarm(Exception):
-#         pass
-#     def alarm_handler(signum, frame):
-#         raise Alarm
-#     p = Popen(args, shell = shell, cwd = cwd, stdout = PIPE, stderr = PIPE, env = env)
-#     if timeout != -1:
-#         signal(SIGALRM, alarm_handler)
-#         alarm(timeout)
-#     try:
-#         stdout, stderr = p.communicate()
-#         if timeout != -1:
-#             alarm(0)
-#     except Alarm:
-#         pids = [p.pid]
-#         if kill_tree:
-#             pids.extend(get_process_children(p.pid))
-#         for pid in pids:
-#             # process might have died before getting to this line
-#             # so wrap to avoid OSError: no such process
-#             try:
-#                 kill(pid, SIGKILL)
-#             except OSError:
-#                 pass
-#         return -9, '', ''
-#     return p.returncode, stdout, stderr
-
 
 
 def get_process_children(pid):

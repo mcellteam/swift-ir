@@ -51,33 +51,6 @@ class Thumbnailer:
         return dt
 
 
-    # def reduce_aligned(self, dm, indexes, dest, scale):
-    #     print(f'\n######## Reducing Thumbnails: Aligned Images ########\n')
-    #     to_reduce = []
-    #     baseFileNames = self.dm.basefilenames()
-    #     for i, name in enumerate([baseFileNames[i] for i in indexes]):
-    #         ifn = dm.path_aligned(s=scale, l=i)
-    #         ofn = dm.path_thumb(s=scale, l=i)
-    #         if os.file_path.exists(ifn):
-    #             if not os.file_path.exists(ofn):
-    #                 os.makedirs(os.file_path.dirname(ofn), exist_ok=True)
-    #                 to_reduce.append((ifn,ofn))
-    #         else:
-    #             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), ifn)
-    #
-    #     if len(to_reduce):
-    #         pbar_text = f'Reducing {self.dm.level_pretty()} aligned images (count={len(to_reduce)})...'
-    #         if cfg.CancelProcesses:
-    #             cfg.mw.warn('Canceling Tasks: %s' % pbar_text)
-    #         else:
-    #             # dt = self.reduce(src=src, od=od, rmdir=False, prefix='', filenames=files, pbar_text=pbar_text, dest=dest)
-    #             dt = self.reduce_tuples(to_reduce=to_reduce)
-    #             try:
-    #                 self.dm.t_thumbs_aligned = dt
-    #             except:
-    #                 pass
-
-
     def reduce_signals(self, indexes, dest, scale):
 
         print(f'\n######## Reducing Thumbnails: Correlation Signals ########\n')

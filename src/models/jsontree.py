@@ -422,19 +422,6 @@ class JsonModel(QAbstractItemModel):
         self.getIndex(findkeys=keys, expand=False)
         # self.parent.treeview.scrollTo(self.next_treeitem, QAbstractItemView.PositionAtCenter)
 
-    # def jumpToScale(self, level=None):
-    #     if level == None: level = self.dm.level
-    #     keys = ['data', 'scales', level]
-    #     self.getIndex(findkeys=keys, expand=True)
-    #     self.parent.treeview.scrollTo(self.next_treeitem, QAbstractItemView.PositionAtTop)
-
-
-    # def jumpToSection(self, sec, s=None):
-    #     if s == None: s = self.dm.level
-    #     keys = ['data', 'scales', s, 'stack', sec]
-    #     self.getIndex(findkeys=keys, expand=True)
-    #     self.parent.treeview.scrollTo(self.next_treeitem, QAbstractItemView.PositionAtTop)
-
     def jumpToKey(self, keys):
         self.getIndex(findkeys=keys, expand=True)
         self.parent.treeview.scrollTo(self.next_treeitem, QAbstractItemView.PositionAtTop)

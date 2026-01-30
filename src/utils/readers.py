@@ -33,7 +33,7 @@ def read_csv(path: PathLike):
         with open(path_to_str(path), mode='r') as f:
             return list(csv.reader(f))
     except Exception as e:
-        logger.warning(f"Unable to read file as HTML: {path_to_str(path)}. Reason: {e.__class__.__name__}")
+        logger.warning(f"Unable to read file as CSV: {path_to_str(path)}. Reason: {e.__class__.__name__}")
         return None
 
 def read_html(path: PathLike):
@@ -142,16 +142,3 @@ def read(file_type):
         return None
 
 
-'''
-
-VolumeJosef tags
-<tifffile.TiffTag 256 ImageWidth @16777226>,
- <tifffile.TiffTag 257 ImageLength @16777238>,
- <tifffile.TiffTag 258 BitsPerSample @16777250>,
- <tifffile.TiffTag 262 PhotometricInterpretation @16777262>,
- <tifffile.TiffTag 273 StripOffsets @16777274>,
- <tifffile.TiffTag 277 SamplesPerPixel @16777286>,
- <tifffile.TiffTag 279 StripByteCounts @16777298>]
-
-
-'''

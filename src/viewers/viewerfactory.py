@@ -206,9 +206,6 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
 
 
-    # def defer_callback(self, callback, *args, **kwargs):
-    #     pass
-
     def __repr__(self):
         return self.get_viewer_url()
 
@@ -439,28 +436,6 @@ class AbstractEMViewer(neuroglancer.Viewer):
                 opacity=1,
             )
 
-    # def add_transformed_layers(self):
-    #     with self.txn() as s:
-    #         # shape = self.tensor.shape
-    #         for i in range(len(self.dm)):
-    #             name = f"l{i}"
-    #             # matrix = conv_mat(to_tuples(self.dm.alt_cafm(l=i)), z=i)
-    #             afm = self.dm.alt_cafm(l=i)
-    #             data = self.tensor[:, :, i:i + 1]
-    #             local_volume = self.getLocalVolume(data, self.getCoordinateSpace())
-    #             transform = self.get_transform(afm=afm, i=i)
-    #             source = ng.LayerDataSource(
-    #                 url=local_volume,
-    #                 transform=transform, )
-    #             if self.name == 'EMViewer':
-    #                 name = self.dm.base_image_name(l=i)
-    #             else:
-    #                 name = f"layer{i}"
-    #             s.layers.append(
-    #                 name=name,
-    #                 layer=ng.ImageLayer(source=source, shader=self.shader),
-    #                 opacity=1, )
-
     def add_transformation_layers(self, affine=False):
         self._blockStateChanged = True
         self._show_transformed = False
@@ -496,18 +471,6 @@ class AbstractEMViewer(neuroglancer.Viewer):
     @abc.abstractmethod
     def set_layer(self, pos=None):
         raise NotImplementedError
-    # def set_layer(self, pos=None):
-    #
-    #     self._blockStateChanged = True
-    #     if not pos:
-    #         pos = self.dm.zpos
-    #     with self.txn() as s:
-    #         s.voxel_coordinates[2] = pos + 0.5
-    #     # try:
-    #     #     self.LV.invalidate()
-    #     # except:
-    #     #     print_exception()
-    #     self._blockStateChanged = False
 
     def getLocalVolume(self, data, coordinatespace):
         """
@@ -650,13 +613,6 @@ class AbstractEMViewer(neuroglancer.Viewer):
         #New method
         with self.txn() as s:
             s.layers.clear()
-
-    # def clear_layers(self):
-    #     if self.state.layers:
-    #         logger.debug('Clearing viewer layers...')
-    #         state = copy.deepcopy(self.state)
-    #         state.layers.clear()
-    #         self.set_state(state)
 
     def getFrameScale(self, w, h):
         assert hasattr(self, 'tensor')
@@ -1278,18 +1234,6 @@ class MAViewer(AbstractEMViewer):
         # self.webengine0.reload()
         logger.info(f"<---- drawSWIMwindow <----")
         # print("<< drawSWIMwindow", flush=True)
-
-    # def undrawSWIMwindows(self):
-    #     #Fast, ~0.002
-    #     with self.txn() as s:
-    #         if s.layers['SWIM']:
-    #             try:
-    #                 s.layers['SWIM'].annotations = None
-    #             except AttributeError:
-    #                 pass
-
-
-
 
 @cache
 def getCenterpoints(w, h, ww1x1, ww2x2):

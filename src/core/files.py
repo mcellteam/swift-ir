@@ -47,13 +47,6 @@ class DirectoryStructure:
                 Counter({'.tif': 2, '.gif': 4})
 
 
-    def getKey(self, level: str, index: int):
-        return self.data[index][level]
-
-    def getCurKey(self):
-        return self.data[self.dm.zpos][self.dm.level]
-
-
     def initDirectory(self, overwrite=False):
         cfg.mw.hud('Making directory structure...')
         if overwrite:
@@ -176,72 +169,3 @@ class DirectoryWatcher(QObject):
 
 
 
-'''
-
-
-#Example
-p = pathlib.Path("temp/")
-p.mkdir(parents=True, exist_ok=True)
-fn = "test.txt" # I don't know what is your fn
-filepath = p / fn
-with filepath.open("w", encoding ="utf-8") as f:
-    f.write(result)
-
-
-
-# Move a file avoiding race conditions
-# Avoid race conditions with exclusive creation
-
-source = Path("hello.py")
-destination = Path("goodbye.py")
-
-try:
-    with destination.open(mode="xb") as file:
-        file.write(source.read_bytes())
-except FileExistsError:
-    print(f"File {destination} exists already.")
-else:
-    source.unlink()
-
-
-# Count files
->>> from pathlib import Path
->>> from collections import Counter
->>> Counter(file_path.suffix for file_path in Path.cwd().iterdir())
-Counter({'.md': 2, '.txt': 4, '.pdf': 2, '.py': 1})
-
-
-# Find most recently modified file
->>> from pathlib import Path
->>> from datetime import datetime
->>> directory = Path.cwd()
->>> time, file_path = max((f.stat().st_mtime, f) for f in directory.iterdir())
->>> print(datetime.fromtimestamp(time), file_path)
-2023-03-28 19:23:56.977817 /home/gahjelle/realpython/test001.txt
-
-
-
-
-# Walk a directory tree
-root_directory = Path(".")
-for path_object in root_directory.rglob('*'):
-    if path_object.is_file():
-        print(f"hi, I'm a file: {path_object}")
-    elif path_object.is_dir():
-        print(f"hi, I'm a dir: {path_object}")
-
-
-# Symlinking
-destination_path = Path('/home/user/my_folder/my_file.txt')  # Initial file
-symlink_path = Path('my_symlink.txt')                        # Shortcut
-symlink_path.symlink_to(destination_path)                    # creating the symlink
-
-# Check if file exists
-file_path.exists():
-
-
-# Read text file
-file_path = Path('my_folder/my_file.txt')  # creating a file_path object
-content = file_path.read_text()            # reading the file
-
-'''

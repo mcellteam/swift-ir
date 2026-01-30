@@ -29,7 +29,7 @@ import numpy as np
 import zarr
 from qtpy.QtCore import QObject, Signal
 
-from src.utils.funcs_image import ComputeBoundingRect, SetStackCafm, alt_SetStackCafm
+from src.utils.funcs_image import ComputeBoundingRect, SetStackCafm
 from src.models.cache import Cache
 from src.utils.helpers import print_exception, path_to_str
 from src.utils.writers import write
@@ -57,9 +57,6 @@ class ScaleIterator:
         return self
 
 
-class Scale:
-    pass
-
 def date_time():
     return datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
@@ -69,9 +66,6 @@ class Signals(QObject):
     outputSettingsChanged = Signal()
     swimSettingsChanged = Signal()
 
-
-class Level:
-    pass
 
 class DataModel:
 
@@ -385,14 +379,6 @@ class DataModel:
     def scale(self, s):
         self['state']['level'] = s
 
-    # @property
-    # def gif_speed(self):
-    #     return self['state']['gif_speed']
-    #
-    # @gif_speed.setter
-    # def gif_speed(self, s):
-    #     self['state']['gif_speed'] = s
-
     @property
     def images(self):
         '''Returns the original images info for the alignment'''
@@ -445,10 +431,6 @@ class DataModel:
     @poly_order.setter
     def poly_order(self, use):
         self['level_data'][self.level]['output_settings']['polynomial_bias'] = use
-
-    # def whitening(self) -> float:
-    #     '''Returns the Signal Whitening Factor for the Current Layer.'''
-    #     return float(self.SS['whitening'])
 
     @property
     def whitening(self):
@@ -932,23 +914,9 @@ class DataModel:
         if l == None: l = self.zpos
         return self._data['stack'][l]['levels'][s]
 
-    # def first_cafm_false(self):
-    #     for l in range(len(self)):
-    #         if not self.is_zarr_generated(l=l):
-    #             logger.info(f'returning {l}')
-    #             return l
-    #     return None
-
-
     def isRefinement(self, level=None):
         if level == None: level = self.level
         return level != self.coarsest_scale_key()
-
-    # def get_source_img_paths(self):
-    #     imgs = []
-    #     for f in self.filenames():
-    #         imgs.append(os.file_path.join(self.source_path(), os.file_path.basename(f)))
-    #     return imgs
 
     def is_mendenhall(self):
         return self['data']['mendenhall']
@@ -1222,63 +1190,6 @@ class DataModel:
         convert = {'grid': 'Grid Align', 'manual': 'Manual Align'}
         return convert[self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']['method']]
 
-    # def manpoints(self, s=None, l=None):
-    #     '''Returns manual correspondence points in Neuroglancer format'''
-    #     if s == None: s = self.level
-    #     if l == None: l = self.zpos
-    #     return self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']['points']['ng_coords']
-    #
-    # def set_manpoints(self, role, matchpoints, s=None, l=None):
-    #     '''Sets manual correspondence points for a single section at the current level, and applies
-    #      scaling factor then sets the same points for all scale levels above the current level.'''
-    #     if s == None: s = self.scale
-    #     if l == None: l = self.zpos
-    #
-    #     BEFORE = self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']
-    #     logger.critical(f"Writing points to data: {matchpoints}")
-    #     # ex. [(397.7689208984375, 546.7693481445312), (nan, nan), (nan, nan)]
-    #     # lvls  = [x for x in self.lvls() if x <= self.lvl()]
-    #     # scales      = [get_scale_key(x) for x in lvls]
-    #     glob_coords = [None,None,None]
-    #     fac = self.lvl()
-    #     for i,p in enumerate(matchpoints):
-    #         # (774.73145, 667.3542)
-    #         # (None, None)
-    #         if p:
-    #             try:
-    #                 glob_coords[i] = (p[0] * fac, p[1] * fac)
-    #             except:
-    #                 print_exception(extra=f"p: {p}")
-    #
-    #     # set manual points in Neuroglancer coordinate system
-    #     # logger.critical(f"glob coords: {glob_coords}")
-    #     fac = self.lvl(s)
-    #     coords = [None,None,None]
-    #     for i,p in enumerate(glob_coords):
-    #         if p and p[0]:
-    #                 coords[i] = (p[0] / fac, p[1] / fac)
-    #     logger.info(f'Setting manual points for {s}: {coords}')
-    #     # self._data['stack'][z]['levels'][level]['swim_settings']['match_points'][role] = coords
-    #     self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']['points']['ng_coords'][role] = coords
-    #
-    #     # set manual points in MIR coordinate system
-    #     img_width = self.image_size(s=s)[0]
-    #     mir_coords = [None,None,None]
-    #     for i,p in enumerate(coords):
-    #         if p:
-    #             mir_coords[i] = [img_width - p[1], p[0]]
-    #     self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']['points']['mir_coords'][role] = mir_coords
-    #
-    #     self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']['points'].setdefault('coords', {'tra':[None]*3, 'ref':[None]*3})
-    #
-    #     AFTER = self._data['stack'][l]['levels'][s]['swim_settings']['method_opts']
-    #
-    #     logger.critical(f"\n------------------"
-    #                     f"\nBefore : {BEFORE}"
-    #                     f"\n After : {AFTER}"
-    #                     f"\n------------------")
-
-
     def manpoints_mir(self, role, s=None, l=None):
         '''Returns manual correspondence points in MIR format'''
         if s == None: s = self.level
@@ -1388,15 +1299,7 @@ class DataModel:
         '''Sets the cumulative affine transformation matrices for all sections at the current level'''
         if s == None: s = self.level
         SetStackCafm(self, scale=s, poly_order=self.poly_order)
-        alt_SetStackCafm(self, scale=s, poly_order=self.poly_order)
 
-
-    # #Deprecated now registering cafm hash in SetStackCafm
-    # def register_cafm_hashes(self, indexes, s=None):
-    #     logger.info('Registering cafm data...')
-    #     if s == None: s = self.level
-    #     for i in indexes:
-    #         self['stack'][i]['levels'][s]['cafm_hash'] = self.cafmHash(s=s, l=i)
 
     def isDefaults(self, s=None, l=None):
         '''Returns True if the current swim settings are the same as the default settings for the current level'''
@@ -1441,16 +1344,6 @@ class DataModel:
         return answer
 
 
-    # def cafm_comports_indexes(self, s=None):
-    #     if s == None: s = self.level
-    #     # return np.array([self.is_zarr_generated(level=level, z=z) for z in range(0, len(self))]).nonzero()[0].tolist()
-    #     answer = []
-    #     for i in range(len(self)):
-    #         if self['stack'][i]['levels'][s]['cafm_comports']:
-    #             answer.append(i)
-    #     return answer
-
-
     def needsGenerateIndexes(self, s=None):
         '''Returns a list of section indexes that need to be generated at the current level'''
         if s == None: s = self.level
@@ -1480,29 +1373,6 @@ class DataModel:
 
         logger.info(f"dt = {time.time() - t0:.3g}")
         return answer
-
-    # def needsGenerateSavedIndexes(self, s=None):
-    #     if s == None: s = self.level
-    #     t0 = time.time()
-    #     answer = []
-    #     # for i in range(len(self)):
-    #     #     if self.include(s=s, l=i):
-    #     #         if (not self['stack'][i]['levels'][s]['data_comports']) or (not self['stack'][i]['levels'][s]['cafm_comports']):
-    #     #             answer.append(i)
-    #     for i in range(len(self)):
-    #         if self.include(s=s, l=i):
-    #             # if not os.file_path.exists(self.path_aligned(s=s, l=i)):
-    #             if not os.file_path.exists(self.path_aligned_cafm(s=s, l=i)):
-    #                 answer.append(i)
-    #
-    #     data_dn_comport = self.needsAlignIndexes()
-    #     if len(data_dn_comport):
-    #         sweep = list(range(min(data_dn_comport), len(self)))
-    #         answer = list(set(answer) | set(sweep))
-    #
-    #     logger.info(f"dt = {time.time() - t0:.3g}")
-    #     return answer
-
 
     def level_pretty(self, s=None) -> str:
         if not s:
@@ -2328,15 +2198,6 @@ def hashstring(text:str):
     return hash
 
 
-# def dict_hash(dictionary: Dict[str, Any]) -> str:
-#     """Returns an MD5 hash of a Python dictionary. source:
-#     www.doc.ic.ac.uk/~nuric/coding/how-to-hash-a-dictionary-in-python.html"""
-#     dhash = hashlib.md5()
-#     encoded = json.dumps(dictionary, sort_keys=True).encode()
-#     dhash.update(encoded)
-#     return dhash.hexdigest()
-
-
 def to_even(n):
     if (n % 2 != 0):
         return n + 1
@@ -2385,12 +2246,6 @@ class HashableList(list):
         '''Return a hash of the list. This is used to determine if the list has changed.'''
         return ctypes.c_size_t(hash(str(self))).value
 
-
-'''
-except Exception as e:
-    logger.warning(f"[{l}] . Reason: {e.__class__.__name__}")
-
-'''
 
 if __name__ == '__main__':
     data = DataModel()

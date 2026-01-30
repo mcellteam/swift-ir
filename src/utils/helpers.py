@@ -7,10 +7,8 @@ https://gist.github.com/jbms/1ec1192c34ec816c2c517a3b51a8ed6c
 https://programtalk.com/vs4/python/janelia-cosem/fibsem-tools/src/fibsem_tools/io/zarr.py/
 '''
 
-import builtins
 import contextlib
 import getpass
-import html
 import imghdr
 import inspect
 import logging
@@ -24,7 +22,6 @@ import stat
 import subprocess
 import subprocess as sp
 import sys
-import tempfile
 import time
 import traceback
 import tracemalloc
@@ -50,7 +47,7 @@ __all__ = ['dt', 'is_tacc', 'is_linux', 'is_mac', 'create_paged_tiff', 'check_fo
            'get_scale_key', 'get_scale_val', 'print_project_tree',
            'verify_image_file', 'exist_aligned_zarr', 'handleError',
            'count_widgets', 'find_allocated_widgets', 'absFilePaths', 'validate_file', 'hotkey',
-           'caller_name','addLoggingLevel', 'sanitizeSavedPaths', 'recursive_key_values', 'check_macos_isdark_theme',
+           'caller_name','addLoggingLevel', 'recursive_key_values', 'check_macos_isdark_theme',
            'countcalls', 'ensure_even', 'tree', 'path_to_str'
            ]
 
@@ -101,8 +98,6 @@ def run_command(cmd, arg_list=None, cmd_input=None):
     cmd_stdout, cmd_stderr = cmd_proc.communicate(cmd_input)
     return ({'out': cmd_stdout, 'err': cmd_stderr, 'rc': cmd_proc.returncode})
 
-def update_meta():
-    pass
 
 
 
@@ -147,19 +142,6 @@ def count_widgets(name_or_type) -> int:
     return sum(name_or_type in s for s in map(str, QApplication.allWidgets()))
 
 
-def sanitizeSavedPaths():
-    # logger.info("Sanitizing paths...")
-    # paths = cfg.preferences['saved_paths']
-    # n_start = len(paths)
-    # sanitized = []
-    # for file_path in paths:
-    #     if os.file_path.exists(file_path) and os.file_path.isdir(file_path):
-    #         sanitized.append(file_path)
-    # n_end = len(sanitized)
-    # if n_start != n_end:
-    #     logger.warning(f"{n_start - n_end} saved paths were found to be invalid and will be forgotten")
-    # cfg.preferences['saved_paths'] = sanitized
-    pass
 
 def delete_recursive(dir, keep_core_dirs=False):
     # chunks = glob(dir + '/img_aligned.zarr/**/*', recursive=True) + glob(dir + '/img_src.zarr/**/*', recursive=True)
@@ -305,25 +287,6 @@ def isNeuroglancerRunning():
     return ng.server.is_server_running()
 
 
-# def validate_project_selection() -> bool:
-#     # logger.info('Validating selection %level...' % cfg.selected_file)
-#     # called by setSelectionPathText
-#     file_path, extension = os.file_path.splitext(cfg.selected_file)
-#     if extension != '.swiftir':
-#         return False
-#     else:
-#         return True
-#
-# def validate_zarr_selection() -> bool:
-#     logger.info('Validating selection %level...' % cfg.selected_file)
-#     # called by setSelectionPathText
-#     if os.file_path.isdir(cfg.selected_file):
-#         logger.info('Path IS a directory')
-#         if '.zarray' in os.listdir(cfg.selected_file):
-#             logger.info('Directory DOES contain .zarray -> Returning True...')
-#             return True
-#     logger.info('Returning False...')
-#     return False
 
 
 def validate_file(file) -> bool:
@@ -356,18 +319,6 @@ def cleanup_project_list(paths: list) -> list:
     return clean_paths
 
 
-# def get_project_list():
-#     logger.info('>>>> get_project_list >>>>')
-#     try:
-#         # convert_projects_model()
-#         return cfg.preferences['projects']
-#     except:
-#         print_exception()
-#     finally:
-#         logger.info('<<<< get_project_list <<<<')
-
-
-# file = os.file_path.join(os.file_path.expanduser('~'), '.swift_cache')
 
 
 def convert_projects_model():
@@ -511,8 +462,6 @@ def absFilePaths(d):
             yield os.path.abspath(os.path.join(dirpath, f))
 
 
-def absFilePathsList(d):
-    return list(absFilePaths(d))
 
 
 def handleError(func, path, exc_info):
@@ -683,12 +632,6 @@ def renew_directory(directory: str, gui=True) -> None:
             cfg.mw.hud.done()
 
 
-# def kill_task_queue(task_queue):
-#     '''End task queue multiprocessing tasks and delete a task queue object'''
-#     try: task_queue.end_tasks()
-#     except: print_exception()
-#     task_queue.stop()
-#     del task_queue
 
 def show_status_report(results, dt):
     if results[2] > 0:
@@ -945,18 +888,6 @@ def make_absolute(file_path, proj_path):
     return abs_path
 
 
-# def initLogFiles(location):
-#     try:
-#         logpath = os.file_path.join(location, 'logs')
-#         os.makedirs(logpath, exist_ok=True)
-#         open(os.file_path.join(logpath, 'exceptions.log'), 'a').close()
-#         open(os.file_path.join(logpath, 'thumbnails.log'), 'a').close()
-#         open(os.file_path.join(logpath, 'recipemaker.log'), 'a').close()
-#         open(os.file_path.join(logpath, 'swim.log'), 'a').close()
-#         open(os.file_path.join(logpath, 'multiprocessing.log'), 'a').close()
-#     except:
-#         exi = sys.exc_info()
-#         logger.warning(f"[{exi[0]} / {exi[1]}] Initializing log files triggered an exception")
 
 
 def create_project_directories(destination, scales, gui=True) -> None:
@@ -1002,36 +933,8 @@ def print_project_tree() -> None:
         print(path.displayable())
 
 
-def module_debug() -> None:
-    '''Simple helper function to debug available modules.'''
-    import sys, os
-    modulenames = set(sys.modules) & set(globals())
-    allmodules = [sys.modules[name] for name in modulenames]
-    logger.info('========================================================' +
-                '_____________________MODULE DEBUG_______________________' +
-                'script       : ' + str(logger.info(sys.argv[0])) + 'running in   :' +
-                str(os.path.dirname(os.path.realpath(__file__))) + 'sys.pathc    : ' + str(sys.path) +
-                'module names : ' + str(modulenames) + 'allmodules   : ' + str(allmodules) +
-                'In module products sys.file_path[0] = ' + str(sys.path[0]) + '__package__ = ' +
-                str(__package__) + '========================================================')
-
-    # Courtesy of https://github.com/wimglenn
-    import sys
-    try:
-        old_import = builtins.__import__
-
-        def my_import(name, *args, **kwargs):
-            if name not in sys.modules:  logger.info('importing --> {}'.format(name))
-            return old_import(name, *args, **kwargs)
-
-        builtins.__import__ = my_import
-    except:
-        pass
 
 
-def print_scratch(msg):
-    with open('~/Logs/scratchlog', "w") as f:
-        f.write(str(msg))
 
 
 class SwiftirException:
@@ -1131,15 +1034,6 @@ def dict_from_two_lists(keys: list, values: list) -> dict:
 import hashlib
 import json
 
-# def dict_hash(dictionary: Dict[str, Any]) -> str:
-#     """
-#     MD5 hash of a dictionary.
-#     source: https://www.doc.ic.ac.uk/~nuric/coding/how-to-hash-a-dictionary-in-python.html
-#     """
-#     dhash = hashlib.md5()
-#     encoded = json.dumps(dictionary, sort_keys=True).encode()
-#     dhash.update(encoded)
-#     return dhash.hexdigest()
 
 
 # General-purpose solution that can process large files
@@ -1204,47 +1098,6 @@ def ensure_even(vals, extra=None):
     return vals
 
 
-def pprinttable(rows):
-    '''https://stackoverflow.com/questions/5909873/how-can-i-pretty-print-ascii-tables-with-python'''
-    esc = lambda x: html.escape(str(x))
-    sour = "<table border=1>"
-    if len(rows) == 1:
-        for i in range(len(rows[0]._fields)):
-            sour += "<tr><th>%s<td>%s" % (esc(rows[0]._fields[i]), esc(rows[0][i]))
-    else:
-        sour += "<tr>" + "".join(["<th>%s" % esc(x) for x in rows[0]._fields])
-        sour += "".join(["<tr>%s" % "".join(["<td>%s" % esc(y) for y in x]) for x in rows])
-    with tempfile.NamedTemporaryFile(suffix=".html") as f:
-        f.write(sour.encode("utf-8"))
-        f.flush()
-        print(
-            subprocess
-            .Popen(["w3m", "-dump", f.name], stdout=subprocess.PIPE)
-            .communicate()[0].decode("utf-8").strip()
-        )
-    '''
-    EXAMPLES
-    from collections import namedtuple
-    Row = namedtuple('Row',['first','second','third'])
-    data1 = Row(1,2,3)
-    data2 = Row(4,5,6)
-    pprinttable([data1])
-    pprinttable([data1,data2])
-    ┌───────┬─┐
-    │ first │1│
-    ├───────┼─┤
-    │second │2│
-    ├───────┼─┤
-    │ third │3│
-    └───────┴─┘
-    ┌─────┬───────┬─────┐
-    │first│second │third│
-    ├─────┼───────┼─────┤
-    │1    │2      │3    │
-    ├─────┼───────┼─────┤
-    │4    │5      │6    │
-    └─────┴───────┴─────┘
-    '''
 
 
 def tree(directory):
@@ -1254,139 +1107,8 @@ def tree(directory):
         spacer = "    " * depth
         print(f"{spacer}+ {path.name}")
 
-# def load():
-#     try:
-#         with open('datamodel.json', 'r') as f:
-#             self.previewmodel.todos = json.load(f)
-#     except Exception:
-#         pass
-
-#
-# # @delayed
-# def _rmtree_after_delete_files(file_path: str, dependency: Any):
-#     rmtree(file_path)
-#
-#
-# def rmtree_parallel(
-#     file_path: Union[str, Path], branch_depth: int = 1, compute: bool = True
-# ):
-#     branches = glob(os.file_path.join(file_path, *("*",) * branch_depth))
-#     deleter = os.remove
-#     files = list_files_parallel(branches)
-#     deleted_files = bag.from_sequence(files).map(deleter)
-#     result = _rmtree_after_delete_files(file_path, dependency=deleted_files)
-#
-#     if compute:
-#         return result.compute(scheduler="threads")
-#     else:
-#         return result
-#
-# def list_files_parallel(
-#     paths: Union[Sequence[Union[str, Path]], str, Path],
-#     followlinks=False,
-#     compute: bool = True,
-# ):
-#     result = []
-#     delf = delayed(lambda p: list_files(p, followlinks=followlinks))
-#
-#     if isinstance(paths, str) or isinstance(paths, Path):
-#         result = bag.from_delayed([delf(paths)])
-#     elif isinstance(paths, Sequence):
-#         result = bag.from_delayed([delf(p) for p in paths])
-#     else:
-#         raise TypeError(f"Input must be a string or a sequence, not {cur_method(paths)}")
-#
-#     if compute:
-#         return result.compute(scheduler="threads")
-#     else:
-#         return result
-#
-#
-# def list_files(
-#     paths: Union[Sequence[Union[str, Path]], str, Path], followlinks: bool = False):
-#     if isinstance(paths, str) or isinstance(paths, Path):
-#         if os.file_path.isdir(paths):
-#             return list(
-#                 tz.concat(
-#                     (os.file_path.join(dp, f) for f in fn)
-#                     for dp, dn, fn in os.walk(paths, followlinks=followlinks)
-#                 )
-#             )
-#         elif os.file_path.isfile(paths):
-#             return [paths]
-#         else:
-#             raise ValueError(f"Input argument {paths} is not a file_path or a directory")
-#
-#     elif isinstance(paths, Sequence):
-#         sortd = sorted(paths, key=os.file_path.isdir)
-#         files, dirs = tuple(tz.partitionby(os.file_path.isdir, sortd))
-#         return list(tz.concatv(files, *tz.map(list_files, dirs)))
 
 
 
-# def print_dat_files(dm) -> None:
-#     '''Prints the .dat files for the current level, if they exist .'''
-#     bias_data_path = os.file_path.join(dm['data']['destination_path'], dm.level, 'bias_data')
-#     if are_images_imported():
-#         logger.info('Printing .dat Files')
-#         try:
-#             logger.info("_____________________BIAS DATA_____________________")
-#             logger.info("Scale %d____________________________________________" % get_scale_val(dm.level))
-#             with open(os.file_path.join(bias_data_path, 'snr_1.dat'), 'r') as f:
-#                 snr_1 = f.read()
-#                 logger.info('snr_1               : %level' % snr_1)
-#             with open(os.file_path.join(bias_data_path, 'bias_x_1.dat'), 'r') as f:
-#                 bias_x_1 = f.read()
-#                 logger.info('bias_x_1            : %level' % bias_x_1)
-#             with open(os.file_path.join(bias_data_path, 'bias_y_1.dat'), 'r') as f:
-#                 bias_y_1 = f.read()
-#                 logger.info('bias_y_1            : %level' % bias_y_1)
-#             with open(os.file_path.join(bias_data_path, 'bias_rot_1.dat'), 'r') as f:
-#                 bias_rot_1 = f.read()
-#                 logger.info('bias_rot_1          : %level' % bias_rot_1)
-#             with open(os.file_path.join(bias_data_path, 'bias_scale_x_1.dat'), 'r') as f:
-#                 bias_scale_x_1 = f.read()
-#                 logger.info('bias_scale_x_1      : %level' % bias_scale_x_1)
-#             with open(os.file_path.join(bias_data_path, 'bias_scale_y_1.dat'), 'r') as f:
-#                 bias_scale_y_1 = f.read()
-#                 logger.info('bias_scale_y_1      : %level' % bias_scale_y_1)
-#             with open(os.file_path.join(bias_data_path, 'bias_skew_x_1.dat'), 'r') as f:
-#                 bias_skew_x_1 = f.read()
-#                 logger.info('bias_skew_x_1       : %level' % bias_skew_x_1)
-#             with open(os.file_path.join(bias_data_path, 'bias_det_1.dat'), 'r') as f:
-#                 bias_det_1 = f.read()
-#                 logger.info('bias_det_1          : %level' % bias_det_1)
-#             with open(os.file_path.join(bias_data_path, 'afm_1.dat'), 'r') as f:
-#                 afm_1 = f.read()
-#                 logger.info('afm_1               : %level' % afm_1)
-#             with open(os.file_path.join(bias_data_path, 'c_afm_1.dat'), 'r') as f:
-#                 c_afm_1 = f.read()
-#                 logger.info('c_afm_1             : %level' % c_afm_1)
-#         except:
-#             logger.info('Is this level aligned? No .dat files were found at this level.')
-#             pass
 
 
-# t0 = time.time()
-# logger.info('Symbolically linking full scale images...')
-# self.parent.tell('Symbolically linking full scale images...')
-# for img in self._NEW_IMAGES_PATHS:
-#     fn = img
-#     ofn = os.file_path.join(out, 'tiff', 's1', os.file_path.split(fn)[1])
-#     # normalize file_path for different OSs
-#     if os.file_path.abspath(os.file_path.normpath(fn)) != os.file_path.abspath(os.file_path.normpath(ofn)):
-#         try:
-#             os.unlink(ofn)
-#         except:
-#             pass
-#         try:
-#             os.symlink(fn, ofn)
-#         except FileNotFoundError:
-#             # print_exception()
-#             logger.warning(f"File not found: {fn}. Unable to link, copying instead." )
-#             try:
-#                 shutil.copy(fn, ofn)
-#             except:
-#                 logger.warning("Unable to link or copy from " + fn + " to " + ofn)
-# dt = time.time() - t0
-# logger.info(f'Elapsed Time (linking): {dt:.3g} seconds')
