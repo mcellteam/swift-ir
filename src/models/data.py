@@ -29,7 +29,7 @@ import numpy as np
 import zarr
 from qtpy.QtCore import QObject, Signal
 
-from src.utils.funcs_image import ComputeBoundingRect, SetStackCafm
+from src.utils.funcs_image import ComputeBoundingRect, SetStackCafm, alt_SetStackCafm
 from src.models.cache import Cache
 from src.utils.helpers import print_exception, path_to_str
 from src.utils.writers import write
@@ -1299,7 +1299,7 @@ class DataModel:
         '''Sets the cumulative affine transformation matrices for all sections at the current level'''
         if s == None: s = self.level
         SetStackCafm(self, scale=s, poly_order=self.poly_order)
-
+        alt_SetStackCafm(self, scale=s, poly_order=self.poly_order)
 
     def isDefaults(self, s=None, l=None):
         '''Returns True if the current swim settings are the same as the default settings for the current level'''

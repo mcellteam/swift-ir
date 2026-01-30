@@ -482,6 +482,139 @@ def SetStackCafm(dm, scale, poly_order=None):
     return c_afm_init,
 
 
+def alt_BiasMat(x, bias_funcs):
+    logger.debug('BiasMat:')
+
+    poly_order = len(bias_funcs['x']) - 1
+    xdot = np.arange(poly_order, 0, -1, dtype='float64')
+
+    p = bias_funcs['scale_x']
+    dp = p[:-1] * xdot
+    fdp = np.poly1d(dp)
+    scale_x_bias = 1 - fdp(x)  # scale_x is multiplicative
+
+    p = bias_funcs['scale_y']
+    dp = p[:-1] * xdot
+    fdp = np.poly1d(dp)
+    scale_y_bias = 1 - fdp(x)  # scale_y is multiplicative
+
+    p = bias_funcs['skew_x']
+    dp = p[:-1] * xdot
+    fdp = np.poly1d(dp)
+    skew_x_bias = -fdp(x)
+
+    p = bias_funcs['rot']
+    dp = p[:-1] * xdot
+    fdp = np.poly1d(dp)
+    rot_bias = -fdp(x)
+
+    p = bias_funcs['x']
+    dp = p[:-1] * xdot
+    fdp = np.poly1d(dp)
+    x_bias = -fdp(x)
+
+    p = bias_funcs['y']
+    dp = p[:-1] * xdot
+    fdp = np.poly1d(dp)
+    y_bias = -fdp(x)
+
+    # Create scale, skew, rot, and translation matrices
+    scale_bias_mat = np.array([[scale_x_bias, 0.0, 0.0], [0.0, scale_y_bias, 0.0]])
+    skew_x_bias_mat = np.array([[1.0, skew_x_bias, 0.0], [0.0, 1.0, 0.0]])
+    rot_bias_mat = np.array([[np.cos(rot_bias), -np.sin(rot_bias), 0.0], [np.sin(rot_bias), np.cos(rot_bias), 0.0]])
+    trans_bias_mat = np.array([[1.0, 0.0, x_bias], [0.0, 1.0, y_bias]])
+
+    bias_mat = identityAffine()
+
+    # Compose bias matrix as trans*rot*skew*scale with pre-multiplication (i.e. left action)
+    bias_mat = composeAffine(bias_mat, scale_bias_mat)
+    bias_mat = composeAffine(bias_mat, skew_x_bias_mat)
+    bias_mat = composeAffine(bias_mat, rot_bias_mat)
+    bias_mat = composeAffine(bias_mat, trans_bias_mat)
+
+    return bias_mat
+
+
+def alt_InitCafm(bias_funcs):
+    '''Get the initial cafm from the constant terms of the bias_funcs'''
+    init_scale_x = 1.0 / bias_funcs['scale_x'][-1]
+    init_scale_y = 1.0 / bias_funcs['scale_y'][-1]
+    init_skew_x = -bias_funcs['skew_x'][-1]
+    init_rot = -bias_funcs['rot'][-1]
+    init_x = -bias_funcs['x'][-1]
+    init_y = -bias_funcs['y'][-1]
+
+    # Create scale, skew, rot, and translation matrices
+    init_scale_mat = np.array([[init_scale_x, 0.0, 0.0], [0.0, init_scale_y, 0.0]])
+    init_skew_x_mat = np.array([[1.0, init_skew_x, 0.0], [0.0, 1.0, 0.0]])
+    init_rot_mat = np.array([[np.cos(init_rot), -np.sin(init_rot), 0.0], [np.sin(init_rot), np.cos(init_rot), 0.0]])
+    init_trans_mat = np.array([[1.0, 0.0, init_x], [0.0, 1.0, init_y]])
+
+    c_afm_init = identityAffine()
+
+    # Compose bias matrix as trans*rot*scale*skew with pre-multiplication (i.e. left action)
+    c_afm_init = composeAffine(c_afm_init, init_scale_mat)
+    c_afm_init = composeAffine(c_afm_init, init_skew_x_mat)
+    c_afm_init = composeAffine(c_afm_init, init_rot_mat)
+    c_afm_init = composeAffine(c_afm_init, init_trans_mat)
+
+    logger.info('Returning: %s' % format_cafm(c_afm_init))
+
+    return c_afm_init
+
+
+def alt_SetSingleCafm(dm, scale, index, alt_c_afm, include, bias_mat=None, method='grid'):
+    '''Calculate and set the value of the cafm (with optional bias) for a single section data dict'''
+    try:
+        if include:
+            mir_afm = np.array(dm.mir_afm(s=scale, l=index))
+        else:
+            mir_afm = identityAffine()
+    except:
+        logger.warning(f"afm not found for index: {index}")
+        mir_afm = identityAffine()
+    alt_c_afm = np.array(alt_c_afm)
+    alt_c_afm = composeAffine(alt_c_afm, mir_afm)
+    # Apply bias_mat if given
+    if type(bias_mat) != type(None):
+        alt_c_afm = composeAffine(alt_c_afm, bias_mat)
+    dm['stack'][index]['levels'][scale]['alt_cafm'] = alt_c_afm.tolist()
+    return alt_c_afm
+
+
+def alt_SetStackCafm(dm, scale, poly_order=None):
+    '''Calculate cafm across the whole stack with optional bias correction'''
+    caller = inspect.stack()[1].function
+    global _set_stack_calls
+    _set_stack_calls += 1
+    logger.critical(f'[{caller}] Setting Stack CAFM (call # {_set_stack_calls})...')
+
+    use_poly = (poly_order != None)
+    if use_poly:
+        alt_SetStackCafm(dm, scale=scale, poly_order=None)  # first initializeStack Cafms without bias correction
+    bias_mat = None
+    if use_poly:
+        # If null_biases==True, Iteratively determine and null out bias in cafm
+        bias_funcs = BiasFuncs(dm, scale, poly_order=poly_order)
+        c_afm_init = alt_InitCafm(bias_funcs)
+    else:
+        c_afm_init = identityAffine()
+
+    bias_iters = (1, 2)[use_poly]
+    for bi in range(bias_iters):
+        alt_c_afm = c_afm_init
+        for i, d in enumerate(dm()):
+            if use_poly:
+                bias_mat = alt_BiasMat(i, bias_funcs)
+            method = d['levels'][scale]['swim_settings']['method_opts']['method']
+            include = dm['stack'][i]['levels'][scale]['swim_settings']['include']
+            alt_c_afm = alt_SetSingleCafm(dm, scale, i, alt_c_afm, include, bias_mat=bias_mat, method=method)
+
+        if bi < bias_iters - 1:
+            bias_funcs = BiasFuncs(dm, scale, bias_funcs=bias_funcs, poly_order=poly_order)
+
+    cfg.mw.hud.done()
+    return c_afm_init,
 
 
 def hashstring(text:str):
