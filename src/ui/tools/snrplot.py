@@ -442,8 +442,9 @@ class SnrPlot(QWidget):
         if self.dock:
             # self.plotGhostScaleData()
             self.plotSingleScale()
-            self.plot.setLimits(xMin=0, xMax=len(self.dm) + 1, yMin=0, yMax=max(self.dm.snr_list()) + 1)
-            self.plot.enableAutoRange()  #Fixed
+            yMax = max(self.dm.snr_list()) + 1
+            self.plot.setLimits(xMin=0, xMax=len(self.dm) + 1, yMin=0, yMax=yMax)
+            self.plot.setYRange(0, yMax)
 
         else:
             for s in self.dm.levels[::-1]:
