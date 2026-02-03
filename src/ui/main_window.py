@@ -1625,13 +1625,6 @@ class MainWindow(QMainWindow):
         if not self._working:
             if self._isProjectTab():
                 caller = inspect.stack()[1].function
-                if hasattr(self.pt, 'viewer0'):
-                    del self.pt.viewer0
-                if hasattr(self.pt, 'viewer1'):
-                    del self.pt.viewer1
-                if hasattr(self.pt, 'transformViewer'):
-                    del self.pt.transformViewer
-
                 logger.critical(f'[{caller}]')
                 requested = self.dm.scales[self.boxScale.currentIndex()]
                 self.dm.scale = requested

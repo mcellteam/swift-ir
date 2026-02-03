@@ -120,13 +120,17 @@ class AlignmentTab(QWidget):
 
         _tab = self.wTabs.currentIndex()
         if _tab == 0:
-            self.viewer0.set_layer()
+            if hasattr(self, 'viewer0'):
+                self.viewer0.set_layer()
             # self.viewer0.defer_callback(self.viewer0.set_layer)
         elif _tab == 1:
             self.bApplyOne.setText(f"Align Layer {self.dm.zpos}")
-            self.viewer1.initViewer()
-            self.transformViewer.initViewer()
-            self.labCornerViewer.setText(self.transformViewer.title)
+            if hasattr(self, 'viewer1'):
+                self.viewer1.initViewer()
+                QApplication.processEvents()
+            if hasattr(self, 'transformViewer'):
+                self.transformViewer.initViewer()
+                self.labCornerViewer.setText(self.transformViewer.title)
             if self.dm['state']['tra_ref_toggle'] == 'ref':
                 self.set_transforming()
             self.dataUpdateMA()
@@ -272,7 +276,9 @@ class AlignmentTab(QWidget):
         elif index == 1:
             logger.critical('Refreshing editor tab...')
             # self.initNeuroglancer()
-            self.set_transforming()  # 0802+
+            QApplication.processEvents()
+            if hasattr(self, 'viewer1') and hasattr(self, 'transformViewer'):
+                self.set_transforming()  # 0802+
             if self.mw.dwSnr.isVisible():
                 if self.dm.is_aligned():
                     self.dSnr_plot.initSnrPlot()
@@ -338,9 +344,11 @@ class AlignmentTab(QWidget):
 
         self.viewer1.signals.zChanged.connect(lambda x: fn(x))
         self.viewer1.signals.zChanged.connect(self.viewer1.drawSWIMwindow)
+        QApplication.processEvents()
         if hasattr(self,'transformViewer'):
             del self.transformViewer
         self.transformViewer = TransformViewer(parent=self, webengine=self.we2, path='', dm=self.dm, res=res, )
+        QApplication.processEvents()
 
         self.sldrZoomTab1.setValue(self.viewer1.state.cross_section_scale)
 
@@ -365,6 +373,12 @@ class AlignmentTab(QWidget):
                 del self.transformViewer
             if ng.is_server_running():
                 ng.server.stop()
+            QApplication.processEvents()  # Allow server to fully stop
+            # Clear webengines to ensure clean state for new viewers
+            self.we0.setUrl(QUrl('about:blank'))
+            self.we1.setUrl(QUrl('about:blank'))
+            self.we2.setUrl(QUrl('about:blank'))
+            QApplication.processEvents()
 
         QApplication.processEvents() #Critical for viewer1 to take correct size
 
@@ -382,6 +396,7 @@ class AlignmentTab(QWidget):
                 self.initVolumeTab1()
             else:
                 self.viewer1.initViewer()
+                QApplication.processEvents()
                 self.transformViewer.initViewer()
 
         self.mw.hud.done()

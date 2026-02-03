@@ -485,16 +485,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
                 downsampling reduces the volume by 64
             max_downsampled_size (default=128)
         """
-        # return ng.LocalVolume(
-        #     volume_type='image',
-        #     data=data,
-        #     voxel_offset=[0, 0, 0],
-        #     dimensions=coordinatespace,
-        #     downsampling='3d',
-        #     max_downsampling=cfg.max_downsampling,
-        #     max_downsampled_size=cfg.max_downsampled_size,
-        # )
-        self.LV = ng.LocalVolume(
+        return ng.LocalVolume(
             volume_type='image',
             data=data,
             voxel_offset=[0, 0, 0],
@@ -503,7 +494,6 @@ class AbstractEMViewer(neuroglancer.Viewer):
             max_downsampling=cfg.max_downsampling,
             max_downsampled_size=cfg.max_downsampled_size,
         )
-        return self.LV
 
     # async def get_zarr_tensor(file_path):
     def getTensor(self, path):
@@ -805,7 +795,6 @@ class TransformViewer(AbstractEMViewer):
             s.show_layer_list_panel_button = False
             s.show_layer_hover_values = False
             s.viewer_size = [self.webengine.width(), self.webengine.height()]
-        self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
         with self.txn() as s:
             s.layout.type = 'xy'
@@ -815,10 +804,11 @@ class TransformViewer(AbstractEMViewer):
             s.position = [self.tensor.shape[0] / 2, self.tensor.shape[1] / 2, 1.5]
 
         self.initZoom(w=self.webengine.width(), h=self.webengine.height(), adjust=1.15)
+        self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
 
     def initViewer(self):
-        self._blockStateChanged = False
+        self._blockStateChanged = True
         self.clearAllLayers()
         pos = self.dm.zpos
         ref_pos = self.dm.get_ref_index()
@@ -834,6 +824,15 @@ class TransformViewer(AbstractEMViewer):
             self.LV2.invalidate()
         with self.txn() as s:
             afm = self.dm.mir_afm()
+            if ref_pos is not None:
+                self.LV2 = self.getLocalVolume(self.tensor[:, :, ref_pos:ref_pos + 1], self.getCoordinateSpace())
+                transform = self.get_transform(afm=None, i=0)
+                source = ng.LayerDataSource(url=self.LV2, transform=transform, )
+                s.layers.append(
+                    name='reference',
+                    layer=ng.ImageLayer(source=source, shader=self.shader),
+                    opacity=1,
+                )
             self.LV = self.getLocalVolume(self.tensor[:, :, pos:pos + 1], self.getCoordinateSpace())
             transform = self.get_transform(afm=afm, i=1)
             source = ng.LayerDataSource(url=self.LV, transform=transform, )
@@ -842,18 +841,9 @@ class TransformViewer(AbstractEMViewer):
                 layer=ng.ImageLayer(source=source, shader=self.shader),
                 opacity=1,
             )
-            if ref_pos is not None:
-                self.LV2 = self.getLocalVolume(self.tensor[:, :, ref_pos:ref_pos + 1], self.getCoordinateSpace())
-                transform = self.get_transform(afm=None, i=0)
-                source = ng.LayerDataSource(url=self.LV2, transform=transform, )
-                s.layers.append(
-                    name='transforming',
-                    layer=ng.ImageLayer(source=source, shader=self.shader),
-                    opacity=1,
-                )
             s.position = [self.tensor.shape[0] / 2, self.tensor.shape[1] / 2, 1.5]
         self.title = f'[{self.dm.zpos}] SNR: {self.dm.snr():.3g}'
-        self.webengine.reload()
+        self._blockStateChanged = False
 
     @Slot()
     def toggle(self):
@@ -1037,6 +1027,15 @@ class MAViewer(AbstractEMViewer):
         if hasattr(self, 'LV2'):
             self.LV2.invalidate()
         with self.txn() as s:
+            if ref_pos is not None:
+                self.LV2 = self.getLocalVolume(self.tensor[:, :, ref_pos:ref_pos + 1], self.getCoordinateSpace())
+                transform = self.get_transform(afm=None, i=0)
+                source = ng.LayerDataSource(url=self.LV2, transform=transform, )
+                s.layers.append(
+                    name='reference',
+                    layer=ng.ImageLayer(source=source, shader=self.shader),
+                    opacity=1,
+                )
             self.LV = self.getLocalVolume(self.tensor[:, :, pos:pos + 1], self.getCoordinateSpace())
             transform = self.get_transform(afm=None, i=1)
             source = ng.LayerDataSource(url=self.LV, transform=transform, )
@@ -1045,15 +1044,6 @@ class MAViewer(AbstractEMViewer):
                 layer=ng.ImageLayer(source=source, shader=self.shader),
                 opacity=1,
             )
-            if ref_pos is not None:
-                self.LV2 = self.getLocalVolume(self.tensor[:, :, ref_pos:ref_pos + 1], self.getCoordinateSpace())
-                transform = self.get_transform(afm=None, i=0)
-                source = ng.LayerDataSource(url=self.LV2, transform=transform, )
-                s.layers.append(
-                    name='transforming',
-                    layer=ng.ImageLayer(source=source, shader=self.shader),
-                    opacity=1,
-                )
 
         # self.defer_callback(self.drawSWIMwindow)
         self.drawSWIMwindow()
