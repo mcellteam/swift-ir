@@ -901,7 +901,11 @@ class MainWindow(QMainWindow):
         elif self._working == True:
             self.warn('Another Process is Running')
         elif not self.dm.is_alignable():
-            warning_msg = "Another scale must be aligned first!"
+            blocking_scale = self.dm.scale_blocking_alignment()
+            if blocking_scale:
+                warning_msg = f"Scale {self.dm.lvl(s=blocking_scale)} must be aligned first!"
+            else:
+                warning_msg = "Another scale must be aligned first!"
             self.warn(warning_msg)
         else:
             ans = True
@@ -1080,15 +1084,18 @@ class MainWindow(QMainWindow):
     #           align=True, regenerate=True, ignore_bb=False):
         if (not _ignore_cache) and self._isProjectTab():
             _ignore_cache = self.pt.cbIgnoreCache.isChecked()
-        ready = dm['level_data'][dm.scale]['alignment_ready']
-        if not ready:
-            self.warn("Propagate settings before aligning!")
+
+        # Check if coarser scale needs to be aligned first
+        if not dm.is_alignable():
+            self.warn("Align the coarser resolution level first!")
             return
 
-        if dm.level != dm.coarsest_scale_key():
-            if not dm.is_aligned():
-                self.tell("Propagating settings from reduced scale level automatically...")
-                dm.pullSettings()
+        # Auto-propagate settings from coarser scale if needed
+        if dm.needs_propagation():
+            self.tell("Auto-propagating settings from coarser resolution level...")
+            dm.pullSettings()
+            if self._isProjectTab():
+                self.pt.dataUpdateMA()
 
         # DirectoryStructure(dm).initDirectory()
 
@@ -1266,7 +1273,7 @@ class MainWindow(QMainWindow):
 
             # self.ehw
 
-            self.bPropagate.setEnabled((self.dm.scale != self.dm.coarsest_scale_key()) and self.dm.is_alignable())
+            # Propagate button is hidden (auto-propagation is now enabled)
             self.pt.bZarrRegen.setEnabled(self.dm.is_aligned())
 
             try:
@@ -1285,9 +1292,13 @@ class MainWindow(QMainWindow):
             self.leJump.setEnabled(True)
             self.boxScale.setEnabled(True)
 
-            # self.bAlign.setEnabled(self.dm.is_alignable() and self.dm['level_data'][self.dm.scale]['alignment_ready'])
-            # self.bAlign.setEnabled(self.dm.is_alignable())
-            self.bAlign.setEnabled(True)
+            # Disable Align button if coarser scale needs to be aligned first
+            can_align = self.dm.is_alignable()
+            self.bAlign.setEnabled(can_align)
+            if not can_align:
+                self.bAlign.setToolTip("Align the coarser resolution level first")
+            else:
+                self.bAlign.setToolTip("")
             self.updateAlignAllButtonText()
             self.setStatusInfo()
 
@@ -1631,6 +1642,12 @@ class MainWindow(QMainWindow):
 
                 siz = self.dm.image_size()
                 self.tell(f"Viewing Resolution Level {self.dm.lvl()}: {siz[0]}x{siz[1]}px")
+
+                # Auto-propagate settings from coarser scale if needed
+                if self.dm.needs_propagation():
+                    self.tell("Auto-propagating settings from coarser resolution level...")
+                    self.dm.pullSettings()
+                    self.pt.dataUpdateMA()
 
                 if self.dwSnr.isVisible():
                     self.pt.dSnr_plot.initSnrPlot()
@@ -3894,30 +3911,22 @@ class MainWindow(QMainWindow):
         # p.setColor(QPalette.Text, QColor("#141414"))
         # self.bAlign.setPalette(p)
 
+        # Propagate button is hidden - propagation is now automatic
+        # Keeping the widget for potential rollback
         tip = "Propagate all saved SWIM settings from next lowest level."
         tip = '\n'.join(textwrap.wrap(tip, width=35))
         self.bPropagate = QPushButton('Propagate')
         self.bPropagate.setFixedHeight(22)
-        # self.bPropagate.setIcon(qta.icon('fa.level-up'))
         self.bPropagate.setIcon(qta.icon('fa.level-up', color='#380282'))
         self.bPropagate.setLayoutDirection(Qt.RightToLeft)
         self.bPropagate.setToolTip(tip)
         self.bPropagate.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.bPropagate.clicked.connect(lambda: self.dm.pullSettings())
-        # self.bPropagate.clicked.connect(lambda: self.pt.refreshTab())
         self.bPropagate.clicked.connect(lambda: self.pt.dataUpdateMA())
+        self.bPropagate.hide()  # Hidden - auto-propagation is enabled
 
-        # self.bZarrRegen = QPushButton('Transform 3D')
-        # self.bZarrRegen.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.bZarrRegen.clicked.connect(self.regenZarr)
-        # p = self.bZarrRegen.palette()
-        # p.setColor(self.bZarrRegen.backgroundRole(), QColor('#f3f6fb'))
-        # p.setColor(QPalette.Text, QColor("#141414"))
-        # self.bZarrRegen.setPalette(p)
-
-
-        # self.wAlign = HW(QVLine(), self.bAlign, self.bZarrRegen)
-        self.wAlign = HW(QVLine(), self.bAlign, self.bPropagate)
+        # Layout without Propagate button (auto-propagation is enabled)
+        self.wAlign = HW(QVLine(), self.bAlign)
         self.wAlign.layout.setSpacing(4)
 
 

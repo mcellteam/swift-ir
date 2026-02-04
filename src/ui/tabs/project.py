@@ -2257,6 +2257,12 @@ class AlignmentTab(QWidget):
                 if self.teLogs.isVisible():
                     self.refreshLogs()
             else:
+                # Update placeholder message to show which scale needs alignment
+                blocking_scale = self.dm.scale_blocking_alignment()
+                if blocking_scale:
+                    self.labPlaceholder.setText(f"Scale {self.dm.lvl(s=blocking_scale)} must be aligned first.")
+                else:
+                    self.labPlaceholder.setText("This resolution level must be aligned first.")
                 self.swMethod.setCurrentIndex(1)
                 self.bApplyOne.hide()
                 self.checkboxes.hide()

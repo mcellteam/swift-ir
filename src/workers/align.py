@@ -208,6 +208,8 @@ class AlignWorker(QObject):
         if not self.dm['level_data'][scale]['aligned']:
             self.dm['level_data'][scale]['initial_snr'] = self.dm.snr_list()
             self.dm['level_data'][scale]['aligned'] = True
+        # Clear stale flag - results are now fresh after alignment
+        self.dm['level_data'][scale]['results_stale'] = False
 
         dm.ht.pickle()
 

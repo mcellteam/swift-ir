@@ -674,16 +674,89 @@ class DataModel:
             cur_level = self.level
             coarsest_scale = levels[-1]
             if cur_level == coarsest_scale:
-                # logger.info("is current level alignable? returning True")
                 return True
             cur_scale_index = levels.index(cur_level)
             next_coarsest_scale_key = levels[cur_scale_index + 1]
             if not self.is_aligned(s=next_coarsest_scale_key):
                 return False
-            else:
-                return True
+            # Check if the coarser scale needs re-propagation from even coarser scale
+            if self.needs_propagation(s=next_coarsest_scale_key):
+                return False
+            # Check if the coarser scale's results are stale (needs re-alignment after propagation)
+            if self['level_data'][next_coarsest_scale_key].get('results_stale', False):
+                return False
+            return True
         except:
             print_exception()
+
+    def scale_blocking_alignment(self) -> str:
+        """Returns the scale key that must be aligned before the current scale can be aligned.
+        Returns None if current scale is alignable."""
+        try:
+            levels = self.levels
+            cur_level = self.level
+            coarsest_scale = levels[-1]
+            if cur_level == coarsest_scale:
+                return None  # Coarsest scale is always alignable
+
+            # Walk from current scale toward coarser scales to find the blocking one
+            cur_scale_index = levels.index(cur_level)
+            for i in range(cur_scale_index + 1, len(levels)):
+                check_scale = levels[i]
+                coarser_scale = levels[i + 1] if i + 1 < len(levels) else None
+
+                # Check if this scale is not aligned
+                if not self.is_aligned(s=check_scale):
+                    return check_scale
+
+                # Check if this scale needs propagation from even coarser scale
+                if coarser_scale and self.needs_propagation(s=check_scale):
+                    return check_scale
+
+                # Check if this scale's results are stale
+                if self['level_data'][check_scale].get('results_stale', False):
+                    return check_scale
+
+                # This scale is OK, check the next coarser one
+            return None
+        except:
+            print_exception()
+            return None
+
+    def results_hash(self, s=None) -> int:
+        """Compute hash of alignment results at scale s for change detection."""
+        if s is None:
+            s = self.level
+        if not self.is_aligned(s=s):
+            return 0
+        # Hash the mir_aim values which are the key propagated data
+        hash_data = []
+        for i in range(len(self)):
+            aim = self.mir_aim(s=s, l=i)
+            if aim:
+                hash_data.append(tuple(tuple(row) for row in aim))
+        return hash(tuple(hash_data))
+
+    def needs_propagation(self, s=None) -> bool:
+        """Check if scale s needs propagation from coarser scale."""
+        if s is None:
+            s = self.level
+        if s == self.coarsest_scale_key():
+            return False  # Coarsest scale has nothing to propagate from
+
+        # Get coarser scale
+        levels = self.levels
+        coarser = levels[levels.index(s) + 1]
+
+        # Check if coarser scale is aligned (required for propagation)
+        if not self.is_aligned(s=coarser):
+            return False  # Coarser scale not aligned yet
+
+        # Check if propagation has occurred and is still valid
+        stored_hash = self['level_data'][s].get('propagated_from_hash', 0)
+        current_hash = self.results_hash(s=coarser)
+
+        return stored_hash != current_hash
 
     def is_aligned_and_generated(self, s=None) -> bool:
         if s == None: s = self.level
@@ -1975,7 +2048,14 @@ class DataModel:
         except Exception as e:
             cfg.mw.warn(f"Unable to propagate settings. Reason: {e.__class__.__name__}")
         else:
+            # Store hash of coarser scale results for change detection
+            coarser_hash = self.results_hash(s=prev_level)
+            self['level_data'][cur_level]['propagated_from_hash'] = coarser_hash
             self['level_data'][cur_level]['alignment_ready'] = True
+            # Mark results as stale if this scale was previously aligned
+            # (results were computed with old settings, need re-alignment)
+            if self.is_aligned(s=cur_level):
+                self['level_data'][cur_level]['results_stale'] = True
             cfg.mw.hud.done()
 
 
@@ -2097,6 +2177,8 @@ class DataModel:
                 initial_snr=None,
                 aligned=False,
                 alignment_ready=(level == self.coarsest_scale_key()),
+                propagated_from_hash=0,
+                results_stale=False,
                 output_settings={
                     'bounding_box': {
                         'use': False,
