@@ -711,9 +711,14 @@ class ManagerTab(QWidget):
             if self.comboImages.currentText():
                 path = Path(self.comboImages.currentText()) / 'zarr' / level
                 if path.exists():
-                    self.viewer0.initViewer()
-                    if self.comboTransformed.currentText():
+                    if hasattr(self, 'viewer0'):
+                        self.viewer0.path = str(path)  # Update path before reinit
+                        self.viewer0.initViewer()
+                        QApplication.processEvents()  # Allow viewer0 to fully update
+                    if self.comboTransformed.currentText() and hasattr(self, 'viewer1'):
+                        self.viewer1.path = str(path)  # Update path before reinit
                         self.viewer1.initViewer()
+                        QApplication.processEvents()  # Allow viewer1 to fully update
             self.setUpdatesEnabled(True)
         except:
             print_exception()
@@ -883,6 +888,7 @@ class ManagerTab(QWidget):
         if caller == 'main':
             self.webengine0.setnull()
             self.webengine1.setnull()
+            QApplication.processEvents()  # Allow webengines to clear
             if self.comboImages.currentText():
                 path = self.comboImages.currentText()
                 info_path = os.path.join(path, 'info.json')
@@ -894,6 +900,7 @@ class ManagerTab(QWidget):
                 except:
                     print_exception()
                 self.loadAlignmentCombo()
+                QApplication.processEvents()  # Process pending events before viewer update
                 self.updatePMViewers()
 
     def onComboTransformed(self):
@@ -908,14 +915,24 @@ class ManagerTab(QWidget):
 
             self.wNameAlignment.hide()
             self.leNameAlignment.clear()
-            if self.comboTransformed.currentText():
+            if self.comboTransformed.currentText() and hasattr(self, 'viewer1'):
+                self.webengine1.setnull()
+                QApplication.processEvents()  # Allow webengine to clear
+                # Update path in case level changed
+                level = self.comboLevel.currentText()
+                path = Path(self.comboImages.currentText()) / 'zarr' / level
+                self.viewer1.path = str(path)
                 self.viewer1.initViewer()
+                QApplication.processEvents()  # Allow viewer to fully update
 
 
     def onComboLevel(self):
         caller = inspect.stack()[1].function
         if caller == 'main':
             self._level = self.comboLevel.currentText()
+            self.webengine0.setnull()
+            self.webengine1.setnull()
+            QApplication.processEvents()  # Allow webengines to clear
             self.updatePMViewers()
 
     # def onSelectAlignmentCombo(self):

@@ -920,6 +920,9 @@ class PMViewer(AbstractEMViewer):
             #     self.webengine.setnull()
             #     return
 
+        # Clear existing layers before adding new ones (prevents layer accumulation on reinit)
+        with self.txn() as s:
+            s.layers.clear()
 
         try:
             # zarr.open(self.raw_path, mode='r')
@@ -941,15 +944,13 @@ class PMViewer(AbstractEMViewer):
                 return
         else:
             # self.add_transformation_layers(affine=False)
-            self.add_im_layer('layer', self.tensor[:,:,:])
+            self.add_im_layer('source', self.tensor[:,:,:])
 
         with self.txn() as s:
             s.layout.type = 'xy'
             s.show_default_annotations = True
             s.show_axis_lines = True
             s.show_scale_bar = False
-            if self.name == 'viewer0':
-                s.layers['source'] = ng.ImageLayer(source=self.vol_source)
             # _layer_groups = [ng.LayerGroupViewer(layout='xy', layers=['source'])]
             # s.layout = ng.row_layout(_layer_groups)
         with self.config_state.txn() as s:
