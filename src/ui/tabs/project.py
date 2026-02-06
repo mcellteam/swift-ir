@@ -308,7 +308,8 @@ class AlignmentTab(QWidget):
     def initVolumeTab0(self):
         path = self.dm.path_zarr_raw()
         res = copy.deepcopy(self.dm.resolution(s=self.dm.level))
-        self.viewer0 = EMViewer(parent=self, webengine=self.we0, path=path, dm=self.dm, res=res)
+        # Skip initial layer creation - will be done after webengine loads via delayed call
+        self.viewer0 = EMViewer(parent=self, webengine=self.we0, path=path, dm=self.dm, res=res, skip_initial_layers=True)
         self.viewer0.signals.layoutChanged.connect(lambda: setData('state,neuroglancer,layout', self.viewer0.state.layout.type))
         self.viewer0.signals.layoutChanged.connect(lambda: self.cbxNgLayout.setCurrentText(self.viewer0.state.layout.type))
         self.viewer0.signals.arrowLeft.connect(self.layer_left)
@@ -322,6 +323,15 @@ class AlignmentTab(QWidget):
         # self.viewer0.signals.zoomChanged.connect(lambda x: self.sldrZoomTab0.setValue(x)) #debug #1129 was on
 
         self.sldrZoomTab1.setValue(self.viewer0.state.cross_section_scale)
+
+        # Create layers after webengine/JavaScript is fully loaded
+        def delayed_layer_creation():
+            if hasattr(self, 'viewer0'):
+                if getData('state,neuroglancer,transformed'):
+                    self.viewer0.set_transformed()
+                else:
+                    self.viewer0.set_untransformed()
+        QTimer.singleShot(1000, delayed_layer_creation)  # 1000ms delay
 
     def initVolumeTab1(self):
         path = os.path.join(self.dm['info']['images_path'], 'zarr', self.dm.level)

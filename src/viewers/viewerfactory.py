@@ -80,6 +80,7 @@ import tensorstore as ts
 import zarr
 # from neuroglancer import ScreenshotSaver
 from qtpy.QtCore import QObject, Signal, QUrl, Slot
+from qtpy.QtWidgets import QApplication
 
 import neuroglancer as ng
 ng.server.debug = True
@@ -164,6 +165,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
 
         self._blockStateChanged = False
+        self._local_volumes = []  # Store LocalVolume objects to prevent garbage collection
         actions = [('keyLeft', self._keyLeft),
                    ('keyRight', self._keyRight),
                    ('keyUp', self._keyUp),
@@ -338,17 +340,30 @@ class AbstractEMViewer(neuroglancer.Viewer):
             scales=self.res,
         )
 
+    def _layer_has_source(self, state, i):
+        """Check if layer i has the expected source structure for transform assignment."""
+        try:
+            if i >= len(state.layers):
+                return False
+            layer = state.layers[i]
+            if layer is None or layer.layer is None:
+                return False
+            source = layer.layer.source
+            if source is None or len(source) == 0:
+                return False
+            return True
+        except (AttributeError, TypeError, IndexError):
+            return False
+
     def transform(self, i=None):
         if i == None:
             i = self.dm.zpos
-        # try:
-        #     val = self.state.to_json()['layers'][index]['source']['transform']['matrix']
-        #     return val
-        # except Exception as e:
-        #     print(e)
-        #     logger.warning(f'No transform for layer index {index}')
         with self.txn() as s:
-            return s.layers[i].layer.source[0].transform
+            if self._layer_has_source(s, i):
+                return s.layers[i].layer.source[0].transform
+            else:
+                log.warning(f"[{self.name}] Layer {i} not ready for transform retrieval")
+                return None
 
     def set_transform(self, i, transform):
         self._blockStateChanged = True
@@ -377,57 +392,94 @@ class AbstractEMViewer(neuroglancer.Viewer):
         if afm == None:
             afm = [[1., 0., 0.], [0., 1., 0.]]
         transform = self.get_transform(afm=afm, i=i)
-        with self.txn() as s:
-            s.layers[i].layer.source[0].transform = transform
+        try:
+            with self.txn() as s:
+                if self._layer_has_source(s, i):
+                    s.layers[i].layer.source[0].transform = transform
+                else:
+                    log.warning(f"[{self.name}] Layer {i} not ready for transform assignment")
+        except Exception as e:
+            log.warning(f"[{self.name}] Error setting affine for layer {i}: {e}")
         self._blockStateChanged = False
 
     def set_affines(self, items):
         # for testing...
         # items = zip(range(len(cfg.dm)), [a]*len(cfg.dm))
         self._blockStateChanged = True
-        with self.txn() as s:
-            for item in items:
-                s.layers[item[0]].layer.source[0].transform = self.get_transform(afm=item[1], i=item[0])
+        try:
+            with self.txn() as s:
+                for item in items:
+                    if self._layer_has_source(s, item[0]):
+                        s.layers[item[0]].layer.source[0].transform = self.get_transform(afm=item[1], i=item[0])
+                    else:
+                        log.warning(f"[{self.name}] Layer {item[0]} not ready for transform assignment")
+        except Exception as e:
+            log.warning(f"[{self.name}] Error setting affines: {e}")
         self._blockStateChanged = False
 
     def set_all_affines(self, vals):
         # for testing...
         # items = zip(range(len(cfg.dm)), [a]*len(cfg.dm))
         self._blockStateChanged = True
-        assert len(vals) == len(self.dm)
-        with self.txn() as s:
-            for i, afm in enumerate(vals):
-                s.layers[i].layer.source[0].transform = self.get_transform(afm=afm, i=i)
+        if len(vals) != len(self.dm):
+            log.warning(f"[{self.name}] Affine count mismatch: {len(vals)} vs {len(self.dm)}")
+            self._blockStateChanged = False
+            return
+        # Pre-flight check: verify layers exist before attempting modifications
+        if len(self.state.layers) < len(vals):
+            log.warning(f"[{self.name}] Not enough layers ({len(self.state.layers)}) for {len(vals)} transforms, skipping")
+            self._blockStateChanged = False
+            return
+        try:
+            with self.txn() as s:
+                for i, afm in enumerate(vals):
+                    if self._layer_has_source(s, i):
+                        s.layers[i].layer.source[0].transform = self.get_transform(afm=afm, i=i)
+                    else:
+                        log.warning(f"[{self.name}] Layer {i} not ready for transform assignment")
+        except Exception as e:
+            log.warning(f"[{self.name}] Error setting all affines: {e}")
         self._blockStateChanged = False
 
     def set_untransformed(self):
-        # for testing...
-        # items = zip(range(len(cfg.dm)), [a]*len(cfg.dm))
-        setData('state,neuroglancer,transformed', False)
-        self._blockStateChanged = True
-        self._show_transformed = True
-        afm = [[1., 0., 0.], [0., 1., 0.]]
-        with self.txn() as s:
-            for i in range(len(self.dm)):
-                s.layers[i].layer.source[0].transform = self.get_transform(afm=afm, i=i)
-        self._blockStateChanged = False
+        # Recreate layers with identity transforms
+        # Uses atomic clear+add to avoid referencedGeneration errors
+        try:
+            setData('state,neuroglancer,transformed', False)
+        except AttributeError:
+            pass  # No data model available (e.g., Alignment Manager without project)
+        self._show_transformed = False
+        self.add_transformation_layers(affine=False, clear_first=True)
 
     def set_transformed(self):
-        # for testing...
-        # items = zip(range(len(cfg.dm)), [a]*len(cfg.dm))
-        setData('state,neuroglancer,transformed', True)
-        self._blockStateChanged = True
+        # Recreate layers with affine transforms
+        # Uses atomic clear+add to avoid referencedGeneration errors
+        try:
+            setData('state,neuroglancer,transformed', True)
+        except AttributeError:
+            pass  # No data model available (e.g., Alignment Manager without project)
         self._show_transformed = True
-        afms = [self.dm.alt_cafm(l=i) for i in range(len(self.dm))]
-        self.set_all_affines(afms)
-        self._blockStateChanged = False
+        self.add_transformation_layers(affine=True, clear_first=True)
 
 
-    def add_im_layer(self, name, data, afm=None, i=None):
+    def add_im_layer(self, name, data, afm=None, i=None, clear_first=False):
         if i == None:
             i = 0
+
+        # Store old LocalVolumes to invalidate AFTER the transaction commits
+        old_volumes = []
+        if clear_first and hasattr(self, '_local_volumes'):
+            old_volumes = self._local_volumes
+            self._local_volumes = []
+
         with self.txn() as s:
+            # Clear and add in a single atomic transaction to avoid race conditions
+            if clear_first:
+                s.layers.clear()
+
             self.LV = self.getLocalVolume(data, self.getCoordinateSpace())
+            if hasattr(self, '_local_volumes'):
+                self._local_volumes.append(self.LV)  # Prevent garbage collection
             transform = self.get_transform(afm=afm, i=i)
             source = ng.LayerDataSource(url=self.LV, transform=transform,)
             s.layers.append(
@@ -436,10 +488,32 @@ class AbstractEMViewer(neuroglancer.Viewer):
                 opacity=1,
             )
 
-    def add_transformation_layers(self, affine=False):
+        # Allow Qt event loop to process - gives JavaScript time to handle state change
+        QApplication.processEvents()
+
+        # Invalidate old LocalVolume objects AFTER the transaction commits
+        for lv in old_volumes:
+            try:
+                lv.invalidate()
+            except Exception:
+                pass
+
+    def add_transformation_layers(self, affine=False, clear_first=True):
         self._blockStateChanged = True
         self._show_transformed = False
+
+        # Store old LocalVolumes to invalidate AFTER the transaction commits
+        old_volumes = []
+        if hasattr(self, '_local_volumes'):
+            old_volumes = self._local_volumes
+        self._local_volumes = []
+
         with self.txn() as s:
+            # Clear and add in a single atomic transaction to avoid race conditions
+            # that cause referencedGeneration errors in JavaScript WebWorker
+            if clear_first:
+                s.layers.clear()
+
             # shape = self.tensor.shape
             _range = self.tensor.shape[2]
             for i in range(_range):
@@ -451,6 +525,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
                 # matrix = conv_mat(to_tuples(self.dm.alt_cafm(l=i)), z=i)
                 data = self.tensor[:, :, i:i + 1]
                 local_volume = self.getLocalVolume(data, self.getCoordinateSpace())
+                self._local_volumes.append(local_volume)  # Prevent garbage collection
                 transform = self.get_transform(afm=afm, i=i)
                 source = ng.LayerDataSource(url=local_volume, transform=transform, )
                 if self.name == 'EMViewer':
@@ -464,6 +539,18 @@ class AbstractEMViewer(neuroglancer.Viewer):
                     opacity=1.0,
                     # blend='additive',
                 )
+
+        # Allow Qt event loop to process - gives JavaScript time to handle state change
+        QApplication.processEvents()
+
+        # Invalidate old LocalVolume objects AFTER the transaction commits
+        # This ensures JavaScript has the new state before we clean up old volumes
+        for lv in old_volumes:
+            try:
+                lv.invalidate()
+            except Exception:
+                pass
+
         self._blockStateChanged = False
 
 
@@ -601,8 +688,23 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
     def clearAllLayers(self):
         #New method
+        # Store old LocalVolumes to invalidate AFTER the transaction commits
+        old_volumes = []
+        if hasattr(self, '_local_volumes'):
+            old_volumes = self._local_volumes
+            self._local_volumes = []
         with self.txn() as s:
             s.layers.clear()
+
+        # Allow Qt event loop to process - gives JavaScript time to handle state change
+        QApplication.processEvents()
+
+        # Invalidate old LocalVolume objects AFTER the transaction commits
+        for lv in old_volumes:
+            try:
+                lv.invalidate()
+            except Exception:
+                pass
 
     def getFrameScale(self, w, h):
         assert hasattr(self, 'tensor')
@@ -638,7 +740,7 @@ class AbstractEMViewer(neuroglancer.Viewer):
 
 class EMViewer(AbstractEMViewer):
 
-    def __init__(self, **kwags):
+    def __init__(self, skip_initial_layers=False, **kwags):
         super().__init__(**kwags)
         # self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
         # self.view = view
@@ -647,17 +749,26 @@ class EMViewer(AbstractEMViewer):
         print(self.shader)
         self._mats = [None] * len(self.dm)
         self.created = datetime.datetime.now()
+        self._layers_initialized = False  # Track whether layers have been initialized
         try:
             # zarr.open(self.path, mode='r')
             self.tensor = self.getTensor(self.path).result()[ts.d[:].label["x", "y", "z"]]
         except AssertionError:
             logger.warning(f"Data not found: {self.path}")
             return
-        try:
-            self.add_transformation_layers()
-        except:
-            print_exception()
-        self.initViewer()
+
+        if not skip_initial_layers:
+            try:
+                # Create layers with the correct transform from the start
+                _request_transformed = getData('state,neuroglancer,transformed')
+                self.add_transformation_layers(affine=_request_transformed)
+                self._layers_initialized = True
+            except:
+                print_exception()
+            self.initViewer(skip_transform_update=True)  # Skip transform update since layers already have correct transform
+        else:
+            # Skip layer creation - will be done later via delayed call
+            self.initViewer(skip_transform_update=True)
 
         self.set_brightness()
         self.set_contrast()
@@ -720,7 +831,7 @@ class EMViewer(AbstractEMViewer):
 
 
     # async def initViewer(self, nglayout=None):
-    def initViewer(self):
+    def initViewer(self, skip_transform_update=False):
         clr = inspect.stack()[1].function
         logger.critical(f'[{clr}] [{self.name}] Initializing Viewer...')
         self._blockStateChanged = True
@@ -730,19 +841,10 @@ class EMViewer(AbstractEMViewer):
 
         _request_transformed = getData('state,neuroglancer,transformed')
 
-        '''
-        if not self.dm.is_aligned():
-            _request_transformed = setData('state,neuroglancer,transformed', False)
-
-        # if self._show_transformed != _request_transformed:
-        if _request_transformed:
-            self.set_transformed()
-        '''
-        
-        if _request_transformed:
-            self.set_transformed()  
-        else:
-            self.set_untransformed()
+        # Only update transforms if not skipped (during initial construction, layers already have correct transforms)
+        if not skip_transform_update:
+            # Use atomic clear+add to avoid referencedGeneration errors
+            self.add_transformation_layers(affine=_request_transformed, clear_first=True)
 
         with self.txn() as s:
             s.layout.type = getData('state,neuroglancer,layout')
@@ -809,20 +911,14 @@ class TransformViewer(AbstractEMViewer):
 
     def initViewer(self):
         self._blockStateChanged = True
-        self.clearAllLayers()
         pos = self.dm.zpos
         ref_pos = self.dm.get_ref_index()
-        # afm = self.dm.mir_afm()
-        # data = self.tensor[:, :, pos:pos + 1]
-        # self.add_im_layer('transforming', data, afm, i=1)
-        # if ref_pos is not None:
-        #     data = self.tensor[:, :, ref_pos:ref_pos + 1]
-        #     self.add_im_layer('reference', data, i=0)
-        if hasattr(self,'LV'):
-            self.LV.invalidate()
-        if hasattr(self, 'LV2'):
-            self.LV2.invalidate()
+        # Store old LocalVolumes to invalidate AFTER the transaction commits
+        old_LV = getattr(self, 'LV', None)
+        old_LV2 = getattr(self, 'LV2', None)
+        # Clear and add in a single atomic transaction to avoid referencedGeneration errors
         with self.txn() as s:
+            s.layers.clear()  # Clear inside the transaction for atomic operation
             afm = self.dm.mir_afm()
             if ref_pos is not None:
                 self.LV2 = self.getLocalVolume(self.tensor[:, :, ref_pos:ref_pos + 1], self.getCoordinateSpace())
@@ -842,6 +938,21 @@ class TransformViewer(AbstractEMViewer):
                 opacity=1,
             )
             s.position = [self.tensor.shape[0] / 2, self.tensor.shape[1] / 2, 1.5]
+
+        # Allow Qt event loop to process - gives JavaScript time to handle state change
+        QApplication.processEvents()
+
+        # Invalidate old LocalVolume objects AFTER the transaction commits
+        if old_LV is not None:
+            try:
+                old_LV.invalidate()
+            except Exception:
+                pass
+        if old_LV2 is not None:
+            try:
+                old_LV2.invalidate()
+            except Exception:
+                pass
         self.title = f'[{self.dm.zpos}] SNR: {self.dm.snr():.3g}'
         self._blockStateChanged = False
 
@@ -900,7 +1011,7 @@ class PMViewer(AbstractEMViewer):
                     void main() { emitRGB(color * (toNormalized(getDataValue()) + brightness) * exp(contrast));}
                     '''
 
-    def initViewer(self):
+    def initViewer(self, skip_layers=False):
         '''Initialize the viewer with the appropriate data and settings.'''
         path = self.path
         # logger.critical(f"INITIALIZING [{self.name}]\nLoading: {path}")
@@ -920,9 +1031,8 @@ class PMViewer(AbstractEMViewer):
             #     self.webengine.setnull()
             #     return
 
-        # Clear existing layers before adding new ones (prevents layer accumulation on reinit)
-        with self.txn() as s:
-            s.layers.clear()
+        # Note: Removed navigation to 'about:blank' as it may cause WebSocket reconnection issues
+        # that trigger referencedGeneration errors in JavaScript
 
         try:
             # zarr.open(self.raw_path, mode='r')
@@ -933,18 +1043,20 @@ class PMViewer(AbstractEMViewer):
             print_exception()
             return
 
-        if self.name == 'viewer1':
-            if self.dm is not None:
-                #Todo fix
-                # if self.dm.is_aligned():
-                # self.add_transformation_layers(affine=True)
-                self.add_transformation_layers(affine=False)
+        if not skip_layers:
+            if self.name == 'viewer1':
+                if self.dm is not None:
+                    #Todo fix
+                    # if self.dm.is_aligned():
+                    # self.add_transformation_layers(affine=True)
+                    # Use atomic clear+add to avoid referencedGeneration errors
+                    self.add_transformation_layers(affine=False, clear_first=True)
+                else:
+                    # self.webengine.setnull()
+                    return
             else:
-                # self.webengine.setnull()
-                return
-        else:
-            # self.add_transformation_layers(affine=False)
-            self.add_im_layer('source', self.tensor[:,:,:])
+                # Use atomic clear+add to avoid referencedGeneration errors
+                self.add_im_layer('source', self.tensor[:,:,:], clear_first=True)
 
         with self.txn() as s:
             s.layout.type = 'xy'
@@ -1019,15 +1131,14 @@ class MAViewer(AbstractEMViewer):
     def initViewer(self):
         logger.debug('')
         self._blockStateChanged = True
-        self.clearAllLayers()
         pos = self.dm.zpos
         ref_pos = self.dm.get_ref_index()
-        # afm = self.dm.mir_afm()
-        if hasattr(self, 'LV'):
-            self.LV.invalidate()
-        if hasattr(self, 'LV2'):
-            self.LV2.invalidate()
+        # Store old LocalVolumes to invalidate AFTER the transaction commits
+        old_LV = getattr(self, 'LV', None)
+        old_LV2 = getattr(self, 'LV2', None)
+        # Clear and add in a single atomic transaction to avoid referencedGeneration errors
         with self.txn() as s:
+            s.layers.clear()  # Clear inside the transaction for atomic operation
             if ref_pos is not None:
                 self.LV2 = self.getLocalVolume(self.tensor[:, :, ref_pos:ref_pos + 1], self.getCoordinateSpace())
                 transform = self.get_transform(afm=None, i=0)
@@ -1046,6 +1157,20 @@ class MAViewer(AbstractEMViewer):
                 opacity=1,
             )
 
+        # Allow Qt event loop to process - gives JavaScript time to handle state change
+        QApplication.processEvents()
+
+        # Invalidate old LocalVolume objects AFTER the transaction commits
+        if old_LV is not None:
+            try:
+                old_LV.invalidate()
+            except Exception:
+                pass
+        if old_LV2 is not None:
+            try:
+                old_LV2.invalidate()
+            except Exception:
+                pass
         # self.defer_callback(self.drawSWIMwindow)
         self.drawSWIMwindow()
         self._blockStateChanged = False

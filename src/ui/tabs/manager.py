@@ -708,18 +708,32 @@ class ManagerTab(QWidget):
         try:
             self.setUpdatesEnabled(False)
             level = self.comboLevel.currentText()
+            # Track which viewers were initialized for delayed callback
+            viewer0_initialized = False
+            viewer1_initialized = False
             if self.comboImages.currentText():
                 path = Path(self.comboImages.currentText()) / 'zarr' / level
                 if path.exists():
                     if hasattr(self, 'viewer0'):
                         self.viewer0.path = str(path)  # Update path before reinit
-                        self.viewer0.initViewer()
+                        self.viewer0.initViewer(skip_layers=True)  # Skip layers - will be created after delay
+                        viewer0_initialized = True
                         QApplication.processEvents()  # Allow viewer0 to fully update
                     if self.comboTransformed.currentText() and hasattr(self, 'viewer1'):
                         self.viewer1.path = str(path)  # Update path before reinit
-                        self.viewer1.initViewer()
+                        self.viewer1.initViewer(skip_layers=True)  # Skip layers - will be created after delay
+                        viewer1_initialized = True
                         QApplication.processEvents()  # Allow viewer1 to fully update
             self.setUpdatesEnabled(True)
+
+            # Create layers after delay to ensure webengine/JavaScript is fully loaded
+            # Only update viewers that were actually initialized
+            def delayed_layer_creation():
+                if viewer0_initialized and hasattr(self, 'viewer0') and self.viewer0.tensor is not None:
+                    self.viewer0.set_untransformed()
+                if viewer1_initialized and hasattr(self, 'viewer1') and self.viewer1.tensor is not None:
+                    self.viewer1.set_untransformed()
+            QTimer.singleShot(1000, delayed_layer_creation)  # 1000ms delay
         except:
             print_exception()
 
@@ -922,8 +936,14 @@ class ManagerTab(QWidget):
                 level = self.comboLevel.currentText()
                 path = Path(self.comboImages.currentText()) / 'zarr' / level
                 self.viewer1.path = str(path)
-                self.viewer1.initViewer()
+                self.viewer1.initViewer(skip_layers=True)  # Skip layers - will be created after delay
                 QApplication.processEvents()  # Allow viewer to fully update
+
+                # Create layers after delay to ensure webengine/JavaScript is fully loaded
+                def delayed_layer_creation():
+                    if hasattr(self, 'viewer1') and self.viewer1.tensor is not None:
+                        self.viewer1.set_untransformed()
+                QTimer.singleShot(1000, delayed_layer_creation)
 
 
     def onComboLevel(self):
