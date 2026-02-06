@@ -733,7 +733,7 @@ class ManagerTab(QWidget):
                     self.viewer0.set_untransformed()
                 if viewer1_initialized and hasattr(self, 'viewer1') and self.viewer1.tensor is not None:
                     self.viewer1.set_untransformed()
-            QTimer.singleShot(1000, delayed_layer_creation)  # 1000ms delay
+            QTimer.singleShot(500, delayed_layer_creation)  # 500ms delay
         except:
             print_exception()
 
@@ -943,7 +943,7 @@ class ManagerTab(QWidget):
                 def delayed_layer_creation():
                     if hasattr(self, 'viewer1') and self.viewer1.tensor is not None:
                         self.viewer1.set_untransformed()
-                QTimer.singleShot(1000, delayed_layer_creation)
+                QTimer.singleShot(500, delayed_layer_creation)
 
 
     def onComboLevel(self):

@@ -331,7 +331,7 @@ class AlignmentTab(QWidget):
                     self.viewer0.set_transformed()
                 else:
                     self.viewer0.set_untransformed()
-        QTimer.singleShot(1000, delayed_layer_creation)  # 1000ms delay
+        QTimer.singleShot(500, delayed_layer_creation)  # 500ms delay
 
     def initVolumeTab1(self):
         path = os.path.join(self.dm['info']['images_path'], 'zarr', self.dm.level)
