@@ -52,3 +52,59 @@ Salk Institute → SDSC → CENIC → Internet2 → GitHub
 ```
 
 General internet speed is fine (60 MB/s to Cloudflare). The bottleneck is specific to GitHub's core servers (140.82.116.x) via Internet2 peering.
+
+## Neuroglancer Lessons Learned (2026-02-11)
+
+### The referencedGeneration Error
+
+When using multiple `ng.LocalVolume` objects (one per slice) with transformation layers in neuroglancer embedded in Qt WebEngine, a JavaScript error occurs: `Cannot set property 'referencedGeneration' of undefined`. This is a race condition in neuroglancer's SharedObject management.
+
+### What We Tried (and Failed)
+
+These approaches did NOT fix the issue for small datasets:
+- Creating layers before/after URL is set
+- Various delays (500ms, 1000ms, 2000ms, 3000ms)
+- Using `setOnLoadCallback` mechanism
+- Refreshing URL after adding layers
+- Hiding source layer after delay
+- Making source layer semi-transparent
+- JavaScript injection to trigger navigation/redraw
+- Python position changes via `viewer.txn()`
+
+### Key Discovery
+
+- **Large datasets (200+ slices) work reliably** with multiple LocalVolumes and transformation layers
+- **Small datasets (<50 slices) fail** with the referencedGeneration error
+- User observed that pressing "." and "," (neuroglancer slice navigation keys) after the blank viewer appeared would make images display correctly - this suggested a timing/initialization issue in neuroglancer's WebGL/WebSocket handling
+
+### Working Solution
+
+Size-based approach in `src/ui/tabs/manager.py` and `src/viewers/viewerfactory.py`:
+
+1. **Small datasets (<50 slices)**: Pre-compute affine transforms in Python using `scipy.ndimage.affine_transform()`, then display with a single LocalVolume. This avoids the multi-LocalVolume race condition entirely.
+
+2. **Large datasets (≥50 slices)**: Use neuroglancer's native transformation layers (multiple LocalVolumes with per-layer affine transforms). These work reliably for larger datasets.
+
+### Memory Management
+
+When switching between tabs that create/destroy neuroglancer viewers:
+- Call `LocalVolume.invalidate()` on all LocalVolume objects
+- Clear `self.tensor = None` to release numpy array memory
+- Use delayed cleanup (1 second via QTimer) to allow pending JavaScript operations to complete
+- Don't accumulate old LocalVolumes in lists (memory leak)
+
+### Code Patterns
+
+Use the `BlockStateChanges` context manager for safe state change blocking:
+```python
+with self.block_state_changes():
+    with self.txn() as s:
+        # modifications here won't trigger on_state_changed callback
+```
+
+Use `WebEngine.setOnLoadCallback()` for operations that need the page fully loaded:
+```python
+def add_layers():
+    viewer.add_im_layer('source', data)
+    webengine.setUrl(QUrl(viewer.get_viewer_url()))
+webengine.setOnLoadCallback(add_layers)
