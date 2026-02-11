@@ -76,10 +76,11 @@ from pathlib import Path
 
 import numcodecs
 import numpy as np
+from scipy import ndimage
 import tensorstore as ts
 import zarr
 # from neuroglancer import ScreenshotSaver
-from qtpy.QtCore import QObject, Signal, QUrl, Slot
+from qtpy.QtCore import QObject, Signal, QUrl, Slot, QTimer
 from qtpy.QtWidgets import QApplication
 
 import neuroglancer as ng
@@ -130,6 +131,27 @@ class WorkerSignals(QObject):
     tellMainwindow = Signal(str)
     warnMainwindow = Signal(str)
     errMainwindow = Signal(str)
+
+
+class BlockStateChanges:
+    """Context manager for safely blocking state change callbacks.
+
+    Ensures _blockStateChanged is always reset to False, even if an exception occurs.
+
+    Usage:
+        with self.block_state_changes():
+            # ... do work that should not trigger state change callbacks ...
+    """
+    def __init__(self, viewer):
+        self.viewer = viewer
+
+    def __enter__(self):
+        self.viewer._blockStateChanged = True
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.viewer._blockStateChanged = False
+        return False  # Don't suppress exceptions
 
 
 class AbstractEMViewer(neuroglancer.Viewer):
@@ -221,6 +243,41 @@ class AbstractEMViewer(neuroglancer.Viewer):
         except:
             logger.warning(f"[caller unknown] ({self.created}) {self.name} deleted, caller unknown")
 
+        # Clean up LocalVolumes to free memory
+        self._cleanup_local_volumes()
+
+    def _cleanup_local_volumes(self):
+        """Invalidate and clear all LocalVolume references to free memory."""
+        # Invalidate current LocalVolumes
+        if hasattr(self, '_local_volumes'):
+            for lv in self._local_volumes:
+                try:
+                    lv.invalidate()
+                except Exception:
+                    pass
+            self._local_volumes = []
+
+        # Clear any old LocalVolumes that were kept alive
+        if hasattr(self, '_old_local_volumes'):
+            for lv in self._old_local_volumes:
+                try:
+                    lv.invalidate()
+                except Exception:
+                    pass
+            self._old_local_volumes = []
+
+        # Clear single LV reference if exists
+        if hasattr(self, 'LV'):
+            try:
+                self.LV.invalidate()
+            except Exception:
+                pass
+            self.LV = None
+
+        # Clear tensor reference to free memory
+        if hasattr(self, 'tensor'):
+            self.tensor = None
+
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         clr = inspect.stack()[1].function
@@ -228,6 +285,17 @@ class AbstractEMViewer(neuroglancer.Viewer):
                        f"\nexc_type      : {exc_type}"
                        f"\nexc_value     : {exc_value}"
                        f"\nexc_traceback : {exc_traceback}")
+
+    def block_state_changes(self):
+        """Return a context manager that blocks state change callbacks.
+
+        Ensures _blockStateChanged is always reset to False, even if an exception occurs.
+
+        Usage:
+            with self.block_state_changes():
+                # ... modifications that should not trigger callbacks ...
+        """
+        return BlockStateChanges(self)
 
     @abc.abstractmethod
     def initViewer(self):
@@ -366,11 +434,9 @@ class AbstractEMViewer(neuroglancer.Viewer):
                 return None
 
     def set_transform(self, i, transform):
-        self._blockStateChanged = True
-        with self.txn() as s:
-            pass
-
-        self._blockStateChanged = False
+        with self.block_state_changes():
+            with self.txn() as s:
+                pass
 
     def get_transform(self, afm=None, i=None):
         if i == None:
@@ -386,60 +452,55 @@ class AbstractEMViewer(neuroglancer.Viewer):
             {'matrix': matrix, 'outputDimensions': output_dimensions})
 
     def set_affine(self, afm=None, i=None):
-        self._blockStateChanged = True
-        if i == None:
-            i = self.dm.zpos
-        if afm == None:
-            afm = [[1., 0., 0.], [0., 1., 0.]]
-        transform = self.get_transform(afm=afm, i=i)
-        try:
-            with self.txn() as s:
-                if self._layer_has_source(s, i):
-                    s.layers[i].layer.source[0].transform = transform
-                else:
-                    log.warning(f"[{self.name}] Layer {i} not ready for transform assignment")
-        except Exception as e:
-            log.warning(f"[{self.name}] Error setting affine for layer {i}: {e}")
-        self._blockStateChanged = False
+        with self.block_state_changes():
+            if i == None:
+                i = self.dm.zpos
+            if afm == None:
+                afm = [[1., 0., 0.], [0., 1., 0.]]
+            transform = self.get_transform(afm=afm, i=i)
+            try:
+                with self.txn() as s:
+                    if self._layer_has_source(s, i):
+                        s.layers[i].layer.source[0].transform = transform
+                    else:
+                        log.warning(f"[{self.name}] Layer {i} not ready for transform assignment")
+            except Exception as e:
+                log.warning(f"[{self.name}] Error setting affine for layer {i}: {e}")
 
     def set_affines(self, items):
         # for testing...
         # items = zip(range(len(cfg.dm)), [a]*len(cfg.dm))
-        self._blockStateChanged = True
-        try:
-            with self.txn() as s:
-                for item in items:
-                    if self._layer_has_source(s, item[0]):
-                        s.layers[item[0]].layer.source[0].transform = self.get_transform(afm=item[1], i=item[0])
-                    else:
-                        log.warning(f"[{self.name}] Layer {item[0]} not ready for transform assignment")
-        except Exception as e:
-            log.warning(f"[{self.name}] Error setting affines: {e}")
-        self._blockStateChanged = False
+        with self.block_state_changes():
+            try:
+                with self.txn() as s:
+                    for item in items:
+                        if self._layer_has_source(s, item[0]):
+                            s.layers[item[0]].layer.source[0].transform = self.get_transform(afm=item[1], i=item[0])
+                        else:
+                            log.warning(f"[{self.name}] Layer {item[0]} not ready for transform assignment")
+            except Exception as e:
+                log.warning(f"[{self.name}] Error setting affines: {e}")
 
     def set_all_affines(self, vals):
         # for testing...
         # items = zip(range(len(cfg.dm)), [a]*len(cfg.dm))
-        self._blockStateChanged = True
-        if len(vals) != len(self.dm):
-            log.warning(f"[{self.name}] Affine count mismatch: {len(vals)} vs {len(self.dm)}")
-            self._blockStateChanged = False
-            return
-        # Pre-flight check: verify layers exist before attempting modifications
-        if len(self.state.layers) < len(vals):
-            log.warning(f"[{self.name}] Not enough layers ({len(self.state.layers)}) for {len(vals)} transforms, skipping")
-            self._blockStateChanged = False
-            return
-        try:
-            with self.txn() as s:
-                for i, afm in enumerate(vals):
-                    if self._layer_has_source(s, i):
-                        s.layers[i].layer.source[0].transform = self.get_transform(afm=afm, i=i)
-                    else:
-                        log.warning(f"[{self.name}] Layer {i} not ready for transform assignment")
-        except Exception as e:
-            log.warning(f"[{self.name}] Error setting all affines: {e}")
-        self._blockStateChanged = False
+        with self.block_state_changes():
+            if len(vals) != len(self.dm):
+                log.warning(f"[{self.name}] Affine count mismatch: {len(vals)} vs {len(self.dm)}")
+                return
+            # Pre-flight check: verify layers exist before attempting modifications
+            if len(self.state.layers) < len(vals):
+                log.warning(f"[{self.name}] Not enough layers ({len(self.state.layers)}) for {len(vals)} transforms, skipping")
+                return
+            try:
+                with self.txn() as s:
+                    for i, afm in enumerate(vals):
+                        if self._layer_has_source(s, i):
+                            s.layers[i].layer.source[0].transform = self.get_transform(afm=afm, i=i)
+                        else:
+                            log.warning(f"[{self.name}] Layer {i} not ready for transform assignment")
+            except Exception as e:
+                log.warning(f"[{self.name}] Error setting all affines: {e}")
 
     def set_untransformed(self):
         # Recreate layers with identity transforms
@@ -498,60 +559,113 @@ class AbstractEMViewer(neuroglancer.Viewer):
             except Exception:
                 pass
 
-    def add_transformation_layers(self, affine=False, clear_first=True):
-        self._blockStateChanged = True
-        self._show_transformed = False
+    def add_pretransformed_layer(self, clear_first=True):
+        """Create a single layer with pre-transformed images (transforms applied in Python).
 
+        This uses a single LocalVolume which is more reliable than multiple LocalVolumes
+        with neuroglancer transforms.
+        """
+        if self.dm is None:
+            logger.warning(f"[{self.name}] add_pretransformed_layer: no data model")
+            return
+
+        logger.debug(f"[{self.name}] add_pretransformed_layer: shape={self.tensor.shape}")
+
+        # Pre-apply affine transforms to each slice
+        shape = self.tensor.shape
+        transformed = np.zeros_like(self.tensor)
+
+        for i in range(shape[2]):
+            # Get the affine matrix for this slice
+            afm = self.dm.alt_cafm(l=i)
+            if afm is None:
+                afm = [[1, 0, 0], [0, 1, 0]]
+
+            # Convert to scipy affine matrix format (2x3 -> 3x3 for 2D transform)
+            # afm is [[a, b, tx], [c, d, ty]] in row-major format
+            # scipy uses [[a, b], [c, d]] matrix and separate offset [tx, ty]
+            matrix = np.array([[afm[0][0], afm[0][1]],
+                               [afm[1][0], afm[1][1]]])
+            offset = np.array([afm[0][2], afm[1][2]])
+
+            # Get the slice and apply transform
+            slice_data = np.array(self.tensor[:, :, i])
+            # Note: scipy affine_transform uses inverse mapping, so we invert
+            try:
+                inv_matrix = np.linalg.inv(matrix)
+                inv_offset = -inv_matrix @ offset
+                transformed_slice = ndimage.affine_transform(
+                    slice_data, inv_matrix, offset=inv_offset, order=1, mode='constant', cval=0
+                )
+                transformed[:, :, i] = transformed_slice
+            except Exception as e:
+                logger.warning(f"[{self.name}] Transform failed for slice {i}: {e}")
+                transformed[:, :, i] = slice_data
+
+        # Use add_im_layer with the pre-transformed data
+        self.add_im_layer('transformed', transformed, clear_first=clear_first)
+        logger.debug(f"[{self.name}] add_pretransformed_layer: done")
+
+    def add_transformation_layers(self, affine=False, clear_first=True):
         # Store old LocalVolumes to invalidate AFTER the transaction commits
         old_volumes = []
         if hasattr(self, '_local_volumes'):
             old_volumes = self._local_volumes
         self._local_volumes = []
 
-        with self.txn() as s:
-            # Clear and add in a single atomic transaction to avoid race conditions
-            # that cause referencedGeneration errors in JavaScript WebWorker
-            if clear_first:
-                s.layers.clear()
+        logger.debug(f"[{self.name}] add_transformation_layers: affine={affine}, shape={self.tensor.shape}")
 
-            # shape = self.tensor.shape
-            _range = self.tensor.shape[2]
-            for i in range(_range):
-                if affine:
-                    afm = self.dm.alt_cafm(l=i)
-                    # print(f"[{self.name}] [{i}] afm: {afm}")
-                else:
-                    afm = [[1., 0., 0.], [0., 1., 0.]]
-                # matrix = conv_mat(to_tuples(self.dm.alt_cafm(l=i)), z=i)
-                data = self.tensor[:, :, i:i + 1]
-                local_volume = self.getLocalVolume(data, self.getCoordinateSpace())
-                self._local_volumes.append(local_volume)  # Prevent garbage collection
-                transform = self.get_transform(afm=afm, i=i)
-                source = ng.LayerDataSource(url=local_volume, transform=transform, )
-                if self.name == 'EMViewer':
-                    name = self.dm.base_image_name(l=i)
-                else:
-                    name = f"layer{i}"
-                s.layers.append(
-                    name=name,
-                    tab='source',
-                    layer=ng.ImageLayer(source=source, shader=self.shader,),
-                    opacity=1.0,
-                    # blend='additive',
-                )
+        with self.block_state_changes():
+            self._show_transformed = False
+
+            with self.txn() as s:
+                # Clear and add in a single atomic transaction to avoid race conditions
+                # that cause referencedGeneration errors in JavaScript WebWorker
+                if clear_first:
+                    s.layers.clear()
+
+                # shape = self.tensor.shape
+                _range = self.tensor.shape[2]
+                for i in range(_range):
+                    if affine:
+                        afm = self.dm.alt_cafm(l=i)
+                        # print(f"[{self.name}] [{i}] afm: {afm}")
+                    else:
+                        afm = [[1., 0., 0.], [0., 1., 0.]]
+                    # matrix = conv_mat(to_tuples(self.dm.alt_cafm(l=i)), z=i)
+                    data = self.tensor[:, :, i:i + 1]
+                    local_volume = self.getLocalVolume(data, self.getCoordinateSpace())
+                    self._local_volumes.append(local_volume)  # Prevent garbage collection
+
+                    transform = self.get_transform(afm=afm, i=i)
+                    source = ng.LayerDataSource(url=local_volume, transform=transform, )
+                    if self.name == 'EMViewer':
+                        name = self.dm.base_image_name(l=i)
+                    else:
+                        name = f"layer{i}"
+                    s.layers.append(
+                        name=name,
+                        tab='source',
+                        layer=ng.ImageLayer(source=source, shader=self.shader,),
+                        opacity=1.0,
+                        # blend='additive',
+                    )
+
+        logger.debug(f"[{self.name}] add_transformation_layers: created {len(self._local_volumes)} layers")
 
         # Allow Qt event loop to process - gives JavaScript time to handle state change
         QApplication.processEvents()
 
-        # Invalidate old LocalVolume objects AFTER the transaction commits
-        # This ensures JavaScript has the new state before we clean up old volumes
-        for lv in old_volumes:
-            try:
-                lv.invalidate()
-            except Exception:
-                pass
-
-        self._blockStateChanged = False
+        # Invalidate old LocalVolumes after a short delay to free memory
+        # (delay allows any pending JavaScript operations to complete)
+        if old_volumes:
+            def cleanup_old_volumes():
+                for lv in old_volumes:
+                    try:
+                        lv.invalidate()
+                    except Exception:
+                        pass
+            QTimer.singleShot(1000, cleanup_old_volumes)
 
 
 
@@ -623,10 +737,9 @@ class AbstractEMViewer(neuroglancer.Viewer):
     def set_zoom(self, val):
         # caller = inspect.stack()[1].function
         logger.info(f'Setting zoom to {val}...')
-        self._blockStateChanged = True
-        with self.txn() as s:
-            s.crossSectionScale = val
-        self._blockStateChanged = False
+        with self.block_state_changes():
+            with self.txn() as s:
+                s.crossSectionScale = val
 
     def set_brightness(self, val=None):
 
@@ -746,7 +859,6 @@ class EMViewer(AbstractEMViewer):
         # self.view = view
         self.name = 'EMViewer'
         self.shader = self.dm['rendering']['shader']
-        print(self.shader)
         self._mats = [None] * len(self.dm)
         self.created = datetime.datetime.now()
         self._layers_initialized = False  # Track whether layers have been initialized
@@ -783,50 +895,42 @@ class EMViewer(AbstractEMViewer):
 
     @Slot()
     def set_layer(self, pos=None):
-
-        self._blockStateChanged = True
-        if not pos:
-            pos = self.dm.zpos
-        with self.txn() as s:
-            # s.voxel_coordinates[2] = pos + 0.5
-            s.position[2] = pos + 0.5
-        # try:
-        #     self.LV.invalidate()
-        # except:
-        #     print_exception()
-        self._blockStateChanged = False
+        with self.block_state_changes():
+            if not pos:
+                pos = self.dm.zpos
+            with self.txn() as s:
+                # s.voxel_coordinates[2] = pos + 0.5
+                s.position[2] = pos + 0.5
+            # try:
+            #     self.LV.invalidate()
+            # except:
+            #     print_exception()
 
     def on_state_changed(self):
+        # Guard against recursive calls - if already processing, skip
+        if self._blockStateChanged:
+            return
 
-        if 1:
-            if not self._blockStateChanged:
-                # clr = inspect.stack()[1].function
-                # logger.info(f'[{self.created}] [{clr}] [{self.name}]')
-                self._blockStateChanged = True
+        with self.block_state_changes():
+            _css = self.state.cross_section_scale
+            if not isinstance(_css, type(None)):
+                val = (_css, _css * 250000000)[_css < .001]
+                if round(val, 2) != round(getData('state,neuroglancer,zoom'), 2):
+                    if getData('state,neuroglancer,zoom') != val:
+                        logger.info(f'emitting zoomChanged! [{val:.4f}]')
+                        setData('state,neuroglancer,zoom', val)
+                        self.signals.zoomChanged.emit(val)
 
-                _css = self.state.cross_section_scale
-                if not isinstance(_css, type(None)):
-                    val = (_css, _css * 250000000)[_css < .001]
-                    if round(val, 2) != round(getData('state,neuroglancer,zoom'), 2):
-                        if getData('state,neuroglancer,zoom') != val:
-                            logger.info(f'emitting zoomChanged! [{val:.4f}]')
-                            setData('state,neuroglancer,zoom', val)
-                            self.signals.zoomChanged.emit(val)
+            if isinstance(self.state.position, np.ndarray):
+                requested = int(self.state.position[2])
+                if requested != self.dm.zpos:
+                    logger.info(f'Changing index to {self.dm.zpos}')
+                    # with self.txn() as s:
+                    #     s.selected_layer.layer = self.dm.base_image_name()
+                    self.dm.zpos = requested
 
-                if isinstance(self.state.position, np.ndarray):
-                    requested = int(self.state.position[2])
-                    if requested != self.dm.zpos:
-                        logger.info(f'Changing index to {self.dm.zpos}')
-                        # with self.txn() as s:
-                        #     s.selected_layer.layer = self.dm.base_image_name()
-                        self.dm.zpos = requested
-
-                if self.state.layout.type != getData('state,neuroglancer,layout'):
-                    self.signals.layoutChanged.emit()
-
-                self._blockStateChanged = False
-            # else:
-            #     logger.info('State change signal blocked!')
+            if self.state.layout.type != getData('state,neuroglancer,layout'):
+                self.signals.layoutChanged.emit()
 
 
 
@@ -834,37 +938,36 @@ class EMViewer(AbstractEMViewer):
     def initViewer(self, skip_transform_update=False):
         clr = inspect.stack()[1].function
         logger.critical(f'[{clr}] [{self.name}] Initializing Viewer...')
-        self._blockStateChanged = True
 
-        with self.config_state.txn() as s:
-            s.show_ui_controls = getData('state,neuroglancer,show_controls')
+        with self.block_state_changes():
+            with self.config_state.txn() as s:
+                s.show_ui_controls = getData('state,neuroglancer,show_controls')
 
-        _request_transformed = getData('state,neuroglancer,transformed')
+            _request_transformed = getData('state,neuroglancer,transformed')
 
-        # Only update transforms if not skipped (during initial construction, layers already have correct transforms)
-        if not skip_transform_update:
-            # Use atomic clear+add to avoid referencedGeneration errors
-            self.add_transformation_layers(affine=_request_transformed, clear_first=True)
+            # Only update transforms if not skipped (during initial construction, layers already have correct transforms)
+            if not skip_transform_update:
+                # Use atomic clear+add to avoid referencedGeneration errors
+                self.add_transformation_layers(affine=_request_transformed, clear_first=True)
 
-        with self.txn() as s:
-            s.layout.type = getData('state,neuroglancer,layout')
-            s.show_scale_bar = getData('state,neuroglancer,show_scalebar')
-            s.show_axis_lines = getData('state,neuroglancer,show_axes')
-            s.show_default_annotations = getData('state,neuroglancer,show_bounds')
-            s.projection_orientation = [0.6299939155578613, 0.10509441047906876, 0.1297515481710434, 0.75843745470047]
-            s.position = [self.tensor.shape[0] / 2, self.tensor.shape[1] / 2, self.dm.zpos + 0.5]
-            # s.layout.cross_sections["a"] = ng.CrossSection()
-            s.show_slices = True
-            # s.layout = ng.row_layout(
-            #     [
-            #         neuroglancer.LayerGroupViewer(
-            #             layout="3d",
-            #             layers=[f"f{i}" for i in range(len(self.dm))],
-            #
-            #         ),
-            #     ]
-            # )
-        self._blockStateChanged = False
+            with self.txn() as s:
+                s.layout.type = getData('state,neuroglancer,layout')
+                s.show_scale_bar = getData('state,neuroglancer,show_scalebar')
+                s.show_axis_lines = getData('state,neuroglancer,show_axes')
+                s.show_default_annotations = getData('state,neuroglancer,show_bounds')
+                s.projection_orientation = [0.6299939155578613, 0.10509441047906876, 0.1297515481710434, 0.75843745470047]
+                s.position = [self.tensor.shape[0] / 2, self.tensor.shape[1] / 2, self.dm.zpos + 0.5]
+                # s.layout.cross_sections["a"] = ng.CrossSection()
+                s.show_slices = True
+                # s.layout = ng.row_layout(
+                #     [
+                #         neuroglancer.LayerGroupViewer(
+                #             layout="3d",
+                #             layers=[f"f{i}" for i in range(len(self.dm))],
+                #
+                #         ),
+                #     ]
+                # )
 
 
 class TransformViewer(AbstractEMViewer):
@@ -910,51 +1013,50 @@ class TransformViewer(AbstractEMViewer):
 
 
     def initViewer(self):
-        self._blockStateChanged = True
-        pos = self.dm.zpos
-        ref_pos = self.dm.get_ref_index()
-        # Store old LocalVolumes to invalidate AFTER the transaction commits
-        old_LV = getattr(self, 'LV', None)
-        old_LV2 = getattr(self, 'LV2', None)
-        # Clear and add in a single atomic transaction to avoid referencedGeneration errors
-        with self.txn() as s:
-            s.layers.clear()  # Clear inside the transaction for atomic operation
-            afm = self.dm.mir_afm()
-            if ref_pos is not None:
-                self.LV2 = self.getLocalVolume(self.tensor[:, :, ref_pos:ref_pos + 1], self.getCoordinateSpace())
-                transform = self.get_transform(afm=None, i=0)
-                source = ng.LayerDataSource(url=self.LV2, transform=transform, )
+        with self.block_state_changes():
+            pos = self.dm.zpos
+            ref_pos = self.dm.get_ref_index()
+            # Store old LocalVolumes to invalidate AFTER the transaction commits
+            old_LV = getattr(self, 'LV', None)
+            old_LV2 = getattr(self, 'LV2', None)
+            # Clear and add in a single atomic transaction to avoid referencedGeneration errors
+            with self.txn() as s:
+                s.layers.clear()  # Clear inside the transaction for atomic operation
+                afm = self.dm.mir_afm()
+                if ref_pos is not None:
+                    self.LV2 = self.getLocalVolume(self.tensor[:, :, ref_pos:ref_pos + 1], self.getCoordinateSpace())
+                    transform = self.get_transform(afm=None, i=0)
+                    source = ng.LayerDataSource(url=self.LV2, transform=transform, )
+                    s.layers.append(
+                        name='reference',
+                        layer=ng.ImageLayer(source=source, shader=self.shader),
+                        opacity=1,
+                    )
+                self.LV = self.getLocalVolume(self.tensor[:, :, pos:pos + 1], self.getCoordinateSpace())
+                transform = self.get_transform(afm=afm, i=1)
+                source = ng.LayerDataSource(url=self.LV, transform=transform, )
                 s.layers.append(
-                    name='reference',
+                    name='transforming',
                     layer=ng.ImageLayer(source=source, shader=self.shader),
                     opacity=1,
                 )
-            self.LV = self.getLocalVolume(self.tensor[:, :, pos:pos + 1], self.getCoordinateSpace())
-            transform = self.get_transform(afm=afm, i=1)
-            source = ng.LayerDataSource(url=self.LV, transform=transform, )
-            s.layers.append(
-                name='transforming',
-                layer=ng.ImageLayer(source=source, shader=self.shader),
-                opacity=1,
-            )
-            s.position = [self.tensor.shape[0] / 2, self.tensor.shape[1] / 2, 1.5]
+                s.position = [self.tensor.shape[0] / 2, self.tensor.shape[1] / 2, 1.5]
 
-        # Allow Qt event loop to process - gives JavaScript time to handle state change
-        QApplication.processEvents()
+            # Allow Qt event loop to process - gives JavaScript time to handle state change
+            QApplication.processEvents()
 
-        # Invalidate old LocalVolume objects AFTER the transaction commits
-        if old_LV is not None:
-            try:
-                old_LV.invalidate()
-            except Exception:
-                pass
-        if old_LV2 is not None:
-            try:
-                old_LV2.invalidate()
-            except Exception:
-                pass
-        self.title = f'[{self.dm.zpos}] SNR: {self.dm.snr():.3g}'
-        self._blockStateChanged = False
+            # Invalidate old LocalVolume objects AFTER the transaction commits
+            if old_LV is not None:
+                try:
+                    old_LV.invalidate()
+                except Exception:
+                    pass
+            if old_LV2 is not None:
+                try:
+                    old_LV2.invalidate()
+                except Exception:
+                    pass
+            self.title = f'[{self.dm.zpos}] SNR: {self.dm.snr():.3g}'
 
     @Slot()
     def toggle(self):
@@ -1001,8 +1103,6 @@ class PMViewer(AbstractEMViewer):
 
     def __init__(self, **kwags):
         super().__init__(**kwags)
-        # self.name = 'PMViewer'
-        print(kwags)
         self.name = self.extra_data['name']
         self.shader = '''
                     #uicontrol vec3 color color(default="white")
@@ -1011,8 +1111,14 @@ class PMViewer(AbstractEMViewer):
                     void main() { emitRGB(color * (toNormalized(getDataValue()) + brightness) * exp(contrast));}
                     '''
 
-    def initViewer(self, skip_layers=False):
-        '''Initialize the viewer with the appropriate data and settings.'''
+    def initViewer(self, skip_layers=False, use_transformation_layers=False, affine=True):
+        '''Initialize the viewer with the appropriate data and settings.
+
+        Args:
+            skip_layers: If True, skip layer creation (layers will be added via callback)
+            use_transformation_layers: If True, create per-slice transformation layers instead of single layer
+            affine: If True and use_transformation_layers=True, apply alignment transforms to layers
+        '''
         path = self.path
         # logger.critical(f"INITIALIZING [{self.name}]\nLoading: {path}")
 
@@ -1037,25 +1143,22 @@ class PMViewer(AbstractEMViewer):
         try:
             # zarr.open(self.raw_path, mode='r')
             self.tensor = self.getTensor(str(path)).result()
-            self.vol_source = self.getLocalVolume(self.tensor[:, :, :], self.getCoordinateSpace())
+            # Only create vol_source if we're going to use it immediately (not skip_layers)
+            # Otherwise, the delayed layer creation will create its own LocalVolume
         except:
             logger.warning(f"[{self.name}] Could not open Zarr: {path}")
             print_exception()
             return
 
         if not skip_layers:
-            if self.name == 'viewer1':
+            if self.name == 'viewer1' and use_transformation_layers:
+                # Create transformation layers BEFORE setting URL (like EMViewer does)
+                # This avoids the referencedGeneration errors caused by URL refresh
                 if self.dm is not None:
-                    #Todo fix
-                    # if self.dm.is_aligned():
-                    # self.add_transformation_layers(affine=True)
-                    # Use atomic clear+add to avoid referencedGeneration errors
-                    self.add_transformation_layers(affine=False, clear_first=True)
+                    self.add_transformation_layers(affine=affine, clear_first=True)
                 else:
-                    # self.webengine.setnull()
                     return
             else:
-                # Use atomic clear+add to avoid referencedGeneration errors
                 self.add_im_layer('source', self.tensor[:,:,:], clear_first=True)
 
         with self.txn() as s:
@@ -1063,14 +1166,26 @@ class PMViewer(AbstractEMViewer):
             s.show_default_annotations = True
             s.show_axis_lines = True
             s.show_scale_bar = False
+            # Set position to center on the data
+            s.position = [self.tensor.shape[0] / 2, self.tensor.shape[1] / 2, self.tensor.shape[2] / 2]
             # _layer_groups = [ng.LayerGroupViewer(layout='xy', layers=['source'])]
             # s.layout = ng.row_layout(_layer_groups)
         with self.config_state.txn() as s:
             s.show_ui_controls = False
+
+        # Allow LocalVolumes to fully register with neuroglancer server before loading URL
+        QApplication.processEvents()
+
+        # Set URL immediately like EMViewer does (no delay)
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
+        # Register shared_state callback AFTER URL is set (matching EMViewer pattern)
+        self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
+
     def on_state_changed(self):
-        pass
+        # Guard against recursive calls
+        if self._blockStateChanged:
+            return
 
 
 class MAViewer(AbstractEMViewer):
@@ -1111,18 +1226,17 @@ class MAViewer(AbstractEMViewer):
 
 
     def set_layer(self):
-        self._blockStateChanged = True
         logger.info(f"----> set_layer ---->")
-        with self.txn() as s:
-            if self.dm['state']['tra_ref_toggle'] == 'ref':
-                s.position[2] = 0.5  # 1.5
-            else:
-                s.position[2] = 1.5  # 0.5
+        with self.block_state_changes():
+            with self.txn() as s:
+                if self.dm['state']['tra_ref_toggle'] == 'ref':
+                    s.position[2] = 0.5  # 1.5
+                else:
+                    s.position[2] = 1.5  # 0.5
 
-        # neuroglancer.futures.run_on_new_thread(self.drawSWIMwindow)
-        self.drawSWIMwindow()
+            # neuroglancer.futures.run_on_new_thread(self.drawSWIMwindow)
+            self.drawSWIMwindow()
         logger.info(f"<---- set_layer <----")
-        self._blockStateChanged = False
 
     def applyTransformation(self):
         afm = self.dm.mir_afm()
@@ -1130,79 +1244,76 @@ class MAViewer(AbstractEMViewer):
 
     def initViewer(self):
         logger.debug('')
-        self._blockStateChanged = True
-        pos = self.dm.zpos
-        ref_pos = self.dm.get_ref_index()
-        # Store old LocalVolumes to invalidate AFTER the transaction commits
-        old_LV = getattr(self, 'LV', None)
-        old_LV2 = getattr(self, 'LV2', None)
-        # Clear and add in a single atomic transaction to avoid referencedGeneration errors
-        with self.txn() as s:
-            s.layers.clear()  # Clear inside the transaction for atomic operation
-            if ref_pos is not None:
-                self.LV2 = self.getLocalVolume(self.tensor[:, :, ref_pos:ref_pos + 1], self.getCoordinateSpace())
-                transform = self.get_transform(afm=None, i=0)
-                source = ng.LayerDataSource(url=self.LV2, transform=transform, )
+        with self.block_state_changes():
+            pos = self.dm.zpos
+            ref_pos = self.dm.get_ref_index()
+            # Store old LocalVolumes to invalidate AFTER the transaction commits
+            old_LV = getattr(self, 'LV', None)
+            old_LV2 = getattr(self, 'LV2', None)
+            # Clear and add in a single atomic transaction to avoid referencedGeneration errors
+            with self.txn() as s:
+                s.layers.clear()  # Clear inside the transaction for atomic operation
+                if ref_pos is not None:
+                    self.LV2 = self.getLocalVolume(self.tensor[:, :, ref_pos:ref_pos + 1], self.getCoordinateSpace())
+                    transform = self.get_transform(afm=None, i=0)
+                    source = ng.LayerDataSource(url=self.LV2, transform=transform, )
+                    s.layers.append(
+                        name='reference',
+                        layer=ng.ImageLayer(source=source, shader=self.shader),
+                        opacity=1,
+                    )
+                self.LV = self.getLocalVolume(self.tensor[:, :, pos:pos + 1], self.getCoordinateSpace())
+                transform = self.get_transform(afm=None, i=1)
+                source = ng.LayerDataSource(url=self.LV, transform=transform, )
                 s.layers.append(
-                    name='reference',
+                    name='transforming',
                     layer=ng.ImageLayer(source=source, shader=self.shader),
                     opacity=1,
                 )
-            self.LV = self.getLocalVolume(self.tensor[:, :, pos:pos + 1], self.getCoordinateSpace())
-            transform = self.get_transform(afm=None, i=1)
-            source = ng.LayerDataSource(url=self.LV, transform=transform, )
-            s.layers.append(
-                name='transforming',
-                layer=ng.ImageLayer(source=source, shader=self.shader),
-                opacity=1,
-            )
 
-        # Allow Qt event loop to process - gives JavaScript time to handle state change
-        QApplication.processEvents()
+            # Allow Qt event loop to process - gives JavaScript time to handle state change
+            QApplication.processEvents()
 
-        # Invalidate old LocalVolume objects AFTER the transaction commits
-        if old_LV is not None:
-            try:
-                old_LV.invalidate()
-            except Exception:
-                pass
-        if old_LV2 is not None:
-            try:
-                old_LV2.invalidate()
-            except Exception:
-                pass
-        # self.defer_callback(self.drawSWIMwindow)
-        self.drawSWIMwindow()
-        self._blockStateChanged = False
+            # Invalidate old LocalVolume objects AFTER the transaction commits
+            if old_LV is not None:
+                try:
+                    old_LV.invalidate()
+                except Exception:
+                    pass
+            if old_LV2 is not None:
+                try:
+                    old_LV2.invalidate()
+                except Exception:
+                    pass
+            # self.defer_callback(self.drawSWIMwindow)
+            self.drawSWIMwindow()
 
     def on_state_changed(self):
         logger.info('----> STATE CHANGE ---->')
-        if 1:
-            if not self._blockStateChanged:
-                logger.info(f'')
+        # Guard against recursive calls - if already processing, skip
+        if self._blockStateChanged:
+            logger.info('<---- STATE CHANGE (blocked) <----')
+            return
 
-                self._blockStateChanged = True
+        with self.block_state_changes():
+            if self.state.cross_section_scale:
+                val = (self.state.cross_section_scale, self.state.cross_section_scale * 250000000)[
+                    self.state.cross_section_scale < .001]
+                if round(val, 2) != round(getData('state,neuroglancer,zoom'), 2):
+                    if getData('state,neuroglancer,zoom') != val:
+                        logger.debug(f'emitting zoomChanged! val = {val:.4f}')
+                        setData('state,neuroglancer,zoom', val)
+                        self.signals.zoomChanged.emit(val)
 
-                if self.state.cross_section_scale:
-                    val = (self.state.cross_section_scale, self.state.cross_section_scale * 250000000)[
-                        self.state.cross_section_scale < .001]
-                    if round(val, 2) != round(getData('state,neuroglancer,zoom'), 2):
-                        if getData('state,neuroglancer,zoom') != val:
-                            logger.debug(f'emitting zoomChanged! val = {val:.4f}')
-                            setData('state,neuroglancer,zoom', val)
-                            self.signals.zoomChanged.emit(val)
-                if 1:
-                    requested = floor(self.state.position[2])
-                    _role = self.dm['state']['tra_ref_toggle']
-                    if floor(requested) < 1:
-                        _newrole = 'ref' # 'tra'
-                    else:
-                        _newrole = 'tra' # 'ref'
-                    if _role != _newrole:
-                        self.dm['state']['tra_ref_toggle'] = _newrole
-                        self.drawSWIMwindow()
-
-                self._blockStateChanged = False
+            requested = floor(self.state.position[2])
+            _role = self.dm['state']['tra_ref_toggle']
+            if floor(requested) < 1:
+                _newrole = 'ref' # 'tra'
+            else:
+                _newrole = 'tra' # 'ref'
+            if _role != _newrole:
+                self.dm['state']['tra_ref_toggle'] = _newrole
+                self.drawSWIMwindow()
 
         logger.info('<---- STATE CHANGE <----')
 
@@ -1256,97 +1367,96 @@ class MAViewer(AbstractEMViewer):
         # caller = inspect.stack()[1].function
         # logger.info(f"----> [{caller}][{self.index}] drawSWIMwindow ---->")
         # z = self.dm.zpos + 0.5
-        self._blockStateChanged = True
-        if self.dm['state']['tra_ref_toggle'] == 'ref':
-            z = 0.5 #1.5
-        else:
-            z = 1.5 #0.5
+        with self.block_state_changes():
+            if self.dm['state']['tra_ref_toggle'] == 'ref':
+                z = 0.5 #1.5
+            else:
+                z = 1.5 #0.5
 
-        m = self.marker_size
-        method = self.dm.current_method
-        annotations = []
-        if method == 'grid':
-            ww1x1 = tuple(self.dm.size1x1())  # full window width
-            ww2x2 = tuple(self.dm.size2x2())  # 2x2 window width
-            w, h = self.dm.image_size(s=self.dm.level)
-            p = getCenterpoints(w, h, ww1x1, ww2x2)
-            colors = self.colors
-            # colors = self.colors[0:sum(self.dm.quadrants)]
+            m = self.marker_size
+            method = self.dm.current_method
+            annotations = []
+            if method == 'grid':
+                ww1x1 = tuple(self.dm.size1x1())  # full window width
+                ww2x2 = tuple(self.dm.size2x2())  # 2x2 window width
+                w, h = self.dm.image_size(s=self.dm.level)
+                p = getCenterpoints(w, h, ww1x1, ww2x2)
+                colors = self.colors
+                # colors = self.colors[0:sum(self.dm.quadrants)]
 
-            colors_dict = self.color_dictionary
-            # this is to change the color according value to 1 or 0
-            for i in range(len(self.dm.quadrants)):
-                if self.dm.quadrants[i] == 0:
-                    colors_dict[colors[i]] = 0
-                elif self.dm.quadrants[i] == 1:
-                    colors_dict[colors[i]] = 1
+                colors_dict = self.color_dictionary
+                # this is to change the color according value to 1 or 0
+                for i in range(len(self.dm.quadrants)):
+                    if self.dm.quadrants[i] == 0:
+                        colors_dict[colors[i]] = 0
+                    elif self.dm.quadrants[i] == 1:
+                        colors_dict[colors[i]] = 1
 
-            cps = [x for i, x in enumerate(p) if self.dm.quadrants[i]]
-            ww_x = ww2x2[0] - (24 // self.level_val)
-            ww_y = ww2x2[1] - (24 // self.level_val)
-            for i, pt in enumerate(cps):
-                # we create a new_colors which only stores the existing colors in the dictionary.
-                new_colors = []
-                for key, item in colors_dict.items():
-                    if item == 1:
-                        new_colors.append(key)
-                # cps and colors should have the same length, so i can be used here
-                c = new_colors[i]
- 
-                # c = colors[i]
-                d1, d2, d3, d4 = getRect(pt, ww_x, ww_y)
+                cps = [x for i, x in enumerate(p) if self.dm.quadrants[i]]
+                ww_x = ww2x2[0] - (24 // self.level_val)
+                ww_y = ww2x2[1] - (24 // self.level_val)
+                for i, pt in enumerate(cps):
+                    # we create a new_colors which only stores the existing colors in the dictionary.
+                    new_colors = []
+                    for key, item in colors_dict.items():
+                        if item == 1:
+                            new_colors.append(key)
+                    # cps and colors should have the same length, so i can be used here
+                    c = new_colors[i]
 
-                id = 'roi%d' % i
-                annotations.extend([
-                    ng.LineAnnotation(id=id + '_0', pointA=d1 + (z,), pointB=d2 + (z,), props=[c, m]),
-                    ng.LineAnnotation(id=id + '_1', pointA=d2 + (z,), pointB=d3 + (z,), props=[c, m]),
-                    ng.LineAnnotation(id=id + '_2', pointA=d3 + (z,), pointB=d4 + (z,), props=[c, m]),
-                    ng.LineAnnotation(id=id + '_3', pointA=d4 + (z,), pointB=d1 + (z,), props=[c, m])])
-            # cfg.mw.setFocus()
+                    # c = colors[i]
+                    d1, d2, d3, d4 = getRect(pt, ww_x, ww_y)
 
-        elif method == 'manual':
-            ww_x = ww_y = self.dm.manual_swim_window_px()
-            role = self.dm['state']['tra_ref_toggle']
-            pts = self.dm.swim_settings()['method_opts']['points']['coords'][role]
-            # z = 1.5
-            for i, pt in enumerate(pts):
-                if pt:
-                    # Convert pt from fractional to pixel units
-                    # x = self.tensor.shape[0] * pt[0]
-                    # y = self.tensor.shape[1] * pt[1]
-                    # Use pt in pixel units directly
-                    x = pt[0]
-                    y = pt[1]
-                    d1, d2, d3, d4 = getRect(coords=(x, y), ww_x=ww_x, ww_y=ww_y, )
-                    c = self.colors[i]
                     id = 'roi%d' % i
                     annotations.extend([
-                        ng.LineAnnotation(id=id + '%d0', pointA=d1 + (z,), pointB=d2 + (z,), props=[c, m]),
-                        ng.LineAnnotation(id=id + '%d1', pointA=d2 + (z,), pointB=d3 + (z,), props=[c, m]),
-                        ng.LineAnnotation(id=id + '%d2', pointA=d3 + (z,), pointB=d4 + (z,), props=[c, m]),
-                        ng.LineAnnotation(id=id + '%d3', pointA=d4 + (z,), pointB=d1 + (z,), props=[c, m])])
+                        ng.LineAnnotation(id=id + '_0', pointA=d1 + (z,), pointB=d2 + (z,), props=[c, m]),
+                        ng.LineAnnotation(id=id + '_1', pointA=d2 + (z,), pointB=d3 + (z,), props=[c, m]),
+                        ng.LineAnnotation(id=id + '_2', pointA=d3 + (z,), pointB=d4 + (z,), props=[c, m]),
+                        ng.LineAnnotation(id=id + '_3', pointA=d4 + (z,), pointB=d1 + (z,), props=[c, m])])
+                # cfg.mw.setFocus()
 
-            self.webengine.setFocus()
+            elif method == 'manual':
+                ww_x = ww_y = self.dm.manual_swim_window_px()
+                role = self.dm['state']['tra_ref_toggle']
+                pts = self.dm.swim_settings()['method_opts']['points']['coords'][role]
+                # z = 1.5
+                for i, pt in enumerate(pts):
+                    if pt:
+                        # Convert pt from fractional to pixel units
+                        # x = self.tensor.shape[0] * pt[0]
+                        # y = self.tensor.shape[1] * pt[1]
+                        # Use pt in pixel units directly
+                        x = pt[0]
+                        y = pt[1]
+                        d1, d2, d3, d4 = getRect(coords=(x, y), ww_x=ww_x, ww_y=ww_y, )
+                        c = self.colors[i]
+                        id = 'roi%d' % i
+                        annotations.extend([
+                            ng.LineAnnotation(id=id + '%d0', pointA=d1 + (z,), pointB=d2 + (z,), props=[c, m]),
+                            ng.LineAnnotation(id=id + '%d1', pointA=d2 + (z,), pointB=d3 + (z,), props=[c, m]),
+                            ng.LineAnnotation(id=id + '%d2', pointA=d3 + (z,), pointB=d4 + (z,), props=[c, m]),
+                            ng.LineAnnotation(id=id + '%d3', pointA=d4 + (z,), pointB=d1 + (z,), props=[c, m])])
 
-        self.new_annotations = ng.LocalAnnotationLayer(
-            annotations=annotations,
-            dimensions=self.coordinate_space,
-            annotationColor='blue',
-            annotation_properties=[
-                ng.AnnotationPropertySpec(id='color', type='rgb', default='#ffff66', ),
-                ng.AnnotationPropertySpec(id='size', type='float32', default=1, )
-            ],
-            shader='''void main() {setColor(prop_color()); setPointMarkerSize(prop_size());}''',
-        )
+                self.webengine.setFocus()
 
-        with self.txn() as s:
-            if s.layers['SWIM']:
-                try:
-                    s.layers['SWIM'].annotations = None
-                except AttributeError:
-                    pass
-            s.layers['SWIM'] = self.new_annotations
-        self._blockStateChanged = False
+            self.new_annotations = ng.LocalAnnotationLayer(
+                annotations=annotations,
+                dimensions=self.coordinate_space,
+                annotationColor='blue',
+                annotation_properties=[
+                    ng.AnnotationPropertySpec(id='color', type='rgb', default='#ffff66', ),
+                    ng.AnnotationPropertySpec(id='size', type='float32', default=1, )
+                ],
+                shader='''void main() {setColor(prop_color()); setPointMarkerSize(prop_size());}''',
+            )
+
+            with self.txn() as s:
+                if s.layers['SWIM']:
+                    try:
+                        s.layers['SWIM'].annotations = None
+                    except AttributeError:
+                        pass
+                s.layers['SWIM'] = self.new_annotations
         # self.webengine0.reload()
         logger.info(f"<---- drawSWIMwindow <----")
         # print("<< drawSWIMwindow", flush=True)

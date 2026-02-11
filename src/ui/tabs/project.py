@@ -82,9 +82,9 @@ class AlignmentTab(QWidget):
 
         self.wTabs.currentChanged.connect(self._onTabChange)
         self._allow_zoom_change = True
-        self.dm.signals.positionChanged.connect(self.onPositionChange)
-        self.dm.signals.positionChanged.connect(self.mw.updateDwMatches)
-        self.dm.signals.positionChanged.connect(self.mw.updateDwThumbs)
+        self._position_change_in_progress = False  # Guard against re-entrant position changes
+        # Consolidate all position change handlers into one to prevent cascading updates
+        self.dm.signals.positionChanged.connect(self._onPositionChangeConsolidated)
         self.dm.signals.swimArgsChanged.connect(self.onSwimArgsChanged)
 
         self.mw.cbInclude.setChecked(self.dm.include(l=self.dm.zpos))
@@ -112,6 +112,27 @@ class AlignmentTab(QWidget):
         self.mw.cbInclude.setChecked(self.dm.include())
 
 
+    def _onPositionChangeConsolidated(self):
+        """Consolidated handler for position changes.
+
+        Combines onPositionChange, updateDwMatches, and updateDwThumbs into a single
+        coordinated handler to prevent cascading updates and re-entrancy issues.
+        """
+        # Guard against re-entrant calls (e.g., if viewer state change triggers position update)
+        if self._position_change_in_progress:
+            return
+        self._position_change_in_progress = True
+
+        try:
+            # 1. First, do the main position change handling
+            self.onPositionChange()
+
+            # 2. Then update the dock widgets (these don't trigger further updates)
+            self.mw.updateDwMatches()
+            self.mw.updateDwThumbs()
+        finally:
+            self._position_change_in_progress = False
+
     def onPositionChange(self):
         print("positionChanged!", flush=True)
 
@@ -127,7 +148,7 @@ class AlignmentTab(QWidget):
             self.bApplyOne.setText(f"Align Layer {self.dm.zpos}")
             if hasattr(self, 'viewer1'):
                 self.viewer1.initViewer()
-                QApplication.processEvents()
+                # Removed processEvents() - let all updates complete first
             if hasattr(self, 'transformViewer'):
                 self.transformViewer.initViewer()
                 self.labCornerViewer.setText(self.transformViewer.title)

@@ -18,6 +18,7 @@ from pprint import pformat
 
 import numpy as np
 import qtawesome as qta
+import tensorstore as ts
 from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWebEngineWidgets import *
@@ -708,32 +709,73 @@ class ManagerTab(QWidget):
         try:
             self.setUpdatesEnabled(False)
             level = self.comboLevel.currentText()
-            # Track which viewers were initialized for delayed callback
-            viewer0_initialized = False
-            viewer1_initialized = False
             if self.comboImages.currentText():
                 path = Path(self.comboImages.currentText()) / 'zarr' / level
                 if path.exists():
                     if hasattr(self, 'viewer0'):
                         self.viewer0.path = str(path)  # Update path before reinit
-                        self.viewer0.initViewer(skip_layers=True)  # Skip layers - will be created after delay
-                        viewer0_initialized = True
+                        # Use delayed layer creation to avoid GL texture errors
+                        # that occur when layers are created before WebSocket is ready
+                        def create_viewer0_layers():
+                            if hasattr(self, 'viewer0') and self.viewer0.tensor is not None:
+                                self.viewer0.add_im_layer('source', self.viewer0.tensor[:,:,:], clear_first=True)
+                                # Validate layer was created
+                                if len(self.viewer0.state.layers) != 1:
+                                    raise RuntimeError(f"Expected 1 layer, got {len(self.viewer0.state.layers)}")
+                                # Force browser to reload with updated state containing layers
+                                self.webengine0.setUrl(QUrl(self.viewer0.get_viewer_url()))
+                        self.webengine0.setOnLoadCallback(create_viewer0_layers)
+                        self.viewer0.initViewer(skip_layers=True)
                         QApplication.processEvents()  # Allow viewer0 to fully update
+
                     if self.comboTransformed.currentText() and hasattr(self, 'viewer1'):
-                        self.viewer1.path = str(path)  # Update path before reinit
-                        self.viewer1.initViewer(skip_layers=True)  # Skip layers - will be created after delay
-                        viewer1_initialized = True
+                        # Recreate viewer1 fresh to avoid neuroglancer state conflicts
+                        try:
+                            resolution = self._images_info['resolution'][level]
+                        except:
+                            resolution = [8, 8, 50]
+
+                        # Clear webengine BEFORE deleting old viewer to prevent JS errors
+                        self.webengine1.setnull()
+                        QApplication.processEvents()
+
+                        # Follow EMViewer pattern: load page first with NO layers,
+                        # then add transformation layers AFTER page is loaded
+                        old_viewer = self.viewer1
+                        self.viewer1 = PMViewer(
+                            parent=self,
+                            webengine=self.webengine1,
+                            path=str(path),
+                            res=resolution,
+                            extra_data={'name': 'viewer1', 'dm': self.dm})
+                        self.viewer1.dm = self.dm  # Set dm before initViewer
+                        self.viewer1.signals.arrowLeft.connect(self.parent.layer_left)
+                        self.viewer1.signals.arrowRight.connect(self.parent.layer_right)
+                        self.viewer1.signals.arrowUp.connect(self.parent.incrementZoomIn)
+                        self.viewer1.signals.arrowDown.connect(self.parent.incrementZoomOut)
+                        # Clean up old viewer after webengine is cleared
+                        del old_viewer
+
+                        # Use different approach based on dataset size:
+                        # - Small datasets (<50 slices): pre-transform in Python, single LocalVolume
+                        # - Large datasets: use transformation layers (works reliably)
+                        self.viewer1.initViewer(skip_layers=True, use_transformation_layers=False)
+
+                        def add_layers():
+                            if hasattr(self, 'viewer1') and self.viewer1.tensor is not None:
+                                num_slices = self.viewer1.tensor.shape[2]
+                                if num_slices < 50:
+                                    # Small dataset: pre-transform (fast, single LocalVolume)
+                                    self.viewer1.add_pretransformed_layer(clear_first=True)
+                                else:
+                                    # Large dataset: use transformation layers
+                                    self.viewer1.add_transformation_layers(affine=True, clear_first=True)
+                                # Refresh URL to load with new state
+                                self.webengine1.setUrl(QUrl(self.viewer1.get_viewer_url()))
+                        self.webengine1.setOnLoadCallback(add_layers)
+
                         QApplication.processEvents()  # Allow viewer1 to fully update
             self.setUpdatesEnabled(True)
-
-            # Create layers after delay to ensure webengine/JavaScript is fully loaded
-            # Only update viewers that were actually initialized
-            def delayed_layer_creation():
-                if viewer0_initialized and hasattr(self, 'viewer0') and self.viewer0.tensor is not None:
-                    self.viewer0.set_untransformed()
-                if viewer1_initialized and hasattr(self, 'viewer1') and self.viewer1.tensor is not None:
-                    self.viewer1.set_untransformed()
-            QTimer.singleShot(500, delayed_layer_creation)  # 500ms delay
         except:
             print_exception()
 
@@ -919,7 +961,7 @@ class ManagerTab(QWidget):
 
     def onComboTransformed(self):
         caller = inspect.stack()[1].function
-        logger.critical(f"[{caller}]")
+        logger.info(f"[{caller}]")
         if caller == 'main':
             try:
                 self.dm = DataModel(data=read('json')(self.comboTransformed.currentText()), readonly=True)
@@ -930,20 +972,59 @@ class ManagerTab(QWidget):
             self.wNameAlignment.hide()
             self.leNameAlignment.clear()
             if self.comboTransformed.currentText() and hasattr(self, 'viewer1'):
-                self.webengine1.setnull()
-                QApplication.processEvents()  # Allow webengine to clear
+                # Don't call setnull() - it disrupts WebSocket connection
                 # Update path in case level changed
                 level = self.comboLevel.currentText()
                 path = Path(self.comboImages.currentText()) / 'zarr' / level
                 self.viewer1.path = str(path)
-                self.viewer1.initViewer(skip_layers=True)  # Skip layers - will be created after delay
-                QApplication.processEvents()  # Allow viewer to fully update
 
-                # Create layers after delay to ensure webengine/JavaScript is fully loaded
-                def delayed_layer_creation():
+                # Recreate viewer1 fresh to avoid neuroglancer state conflicts
+                try:
+                    resolution = self._images_info['resolution'][level]
+                except:
+                    resolution = [8, 8, 50]
+
+                # Clear webengine BEFORE deleting old viewer to prevent JS errors
+                # when accessing deleted SharedObjects
+                self.webengine1.setnull()
+                QApplication.processEvents()
+
+                # Follow EMViewer pattern: load page first with NO layers,
+                # then add transformation layers AFTER page is loaded
+                old_viewer = self.viewer1
+                self.viewer1 = PMViewer(
+                    parent=self,
+                    webengine=self.webengine1,
+                    path=str(path),
+                    res=resolution,
+                    extra_data={'name': 'viewer1', 'dm': self.dm})
+                self.viewer1.dm = self.dm  # Set dm before initViewer
+                self.viewer1.signals.arrowLeft.connect(self.parent.layer_left)
+                self.viewer1.signals.arrowRight.connect(self.parent.layer_right)
+                self.viewer1.signals.arrowUp.connect(self.parent.incrementZoomIn)
+                self.viewer1.signals.arrowDown.connect(self.parent.incrementZoomOut)
+                # Clean up old viewer after webengine is cleared
+                del old_viewer
+
+                # Use different approach based on dataset size:
+                # - Small datasets (<50 slices): pre-transform in Python, single LocalVolume
+                # - Large datasets: use transformation layers (works reliably)
+                self.viewer1.initViewer(skip_layers=True, use_transformation_layers=False)
+
+                def add_layers():
                     if hasattr(self, 'viewer1') and self.viewer1.tensor is not None:
-                        self.viewer1.set_untransformed()
-                QTimer.singleShot(500, delayed_layer_creation)
+                        num_slices = self.viewer1.tensor.shape[2]
+                        if num_slices < 50:
+                            # Small dataset: pre-transform (fast, single LocalVolume)
+                            self.viewer1.add_pretransformed_layer(clear_first=True)
+                        else:
+                            # Large dataset: use transformation layers
+                            self.viewer1.add_transformation_layers(affine=True, clear_first=True)
+                        # Refresh URL to load with new state
+                        self.webengine1.setUrl(QUrl(self.viewer1.get_viewer_url()))
+                self.webengine1.setOnLoadCallback(add_layers)
+
+                QApplication.processEvents()
 
 
     def onComboLevel(self):
@@ -1603,16 +1684,69 @@ class WebEngine(QWebEngineView):
         self.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
         self.settings().setAttribute(QWebEngineSettings.JavascriptCanOpenWindows, False)
         self.settings().setAttribute(QWebEngineSettings.AutoLoadImages, True)
-        # self.loadFinished.connect(self.on_load_finish)
         self.ID = ID
         self.grabGesture(Qt.PinchGesture, Qt.DontStartGestureOnChildren)
-        # self.setnull()
-        # self.setMinimumSize(QSize(200,200))
         self.setnull()
 
+        # Callback to run when page finishes loading
+        self._on_load_callback = None
+        self.loadFinished.connect(self._on_load_finished)
 
-        # self.page().loadFinished.connect(lambda: self.page().runJavaScript(self.injectOnLoadFinish()))
-        # self.urlChanged.connect(self._on_url_change)
+    def _on_load_finished(self, ok):
+        """Called when webengine finishes loading a page."""
+        current_url = self.url().toString()
+        has_callback = self._on_load_callback is not None
+        # Temporarily INFO for debugging intermittent viewer1 failure
+        logger.info(f"[{self.ID}] loadFinished: ok={ok}, hasCallback={has_callback}, url={current_url[:60]}...")
+        if ok and has_callback:
+            # Only trigger callback for neuroglancer URLs, not HTML content from setnull()
+            if current_url.startswith('http://127.0.0.1') or current_url.startswith('http://localhost'):
+                logger.info(f"[{self.ID}] Scheduling layer creation callback")
+                callback = self._on_load_callback
+                self._on_load_callback = None  # Clear callback so it only runs once
+                # Schedule callback with retry logic
+                self._scheduleCallbackWithRetry(callback, attempt=1)
+            else:
+                logger.info(f"[{self.ID}] URL is not neuroglancer, not triggering callback")
+
+    def _scheduleCallbackWithRetry(self, callback, attempt=1, max_attempts=3):
+        """Schedule a callback with retry logic for robustness.
+
+        Both viewers need delayed layer creation to avoid GL texture errors and
+        referencedGeneration errors. The neuroglancer WebSocket must be fully
+        connected before layers can be added safely.
+
+        Args:
+            callback: The function to call (typically adds layers to the viewer)
+            attempt: Current attempt number (1-based)
+            max_attempts: Maximum retry attempts before giving up
+        """
+        # Progressive delays: 500ms, 1000ms, 2000ms
+        # Start with 500ms which is typically enough for WebSocket connection
+        delay = 500 * attempt
+        logger.info(f"[{self.ID}] Scheduling callback attempt {attempt} with {delay}ms delay")
+
+        def try_callback():
+            logger.info(f"[{self.ID}] Executing callback attempt {attempt}")
+            try:
+                callback()
+                logger.info(f"[{self.ID}] Layer creation succeeded on attempt {attempt}")
+            except Exception as e:
+                if attempt < max_attempts:
+                    logger.warning(f"[{self.ID}] Layer creation failed on attempt {attempt}, retrying: {e}")
+                    self._scheduleCallbackWithRetry(callback, attempt + 1, max_attempts)
+                else:
+                    logger.error(f"[{self.ID}] Layer creation failed after {max_attempts} attempts: {e}")
+
+        QTimer.singleShot(delay, try_callback)
+
+    def setOnLoadCallback(self, callback):
+        """Register a callback to run after the next page load completes.
+
+        The callback will be executed after the page loads with retry logic
+        to handle cases where the neuroglancer WebSocket isn't immediately ready.
+        """
+        self._on_load_callback = callback
 
     def injectOnLoadFinish(self):
         script = """
@@ -1630,6 +1764,8 @@ class WebEngine(QWebEngineView):
         self.setHtml(self.createHTML(text))
 
     def setnull(self):
+        # Clear any pending callback so the HTML load doesn't trigger it
+        self._on_load_callback = None
         self.setText('Neuroglancer: No Data.')
         caller = inspect.stack()[1].function
         logger.info(f"[{caller}] Null view set")
