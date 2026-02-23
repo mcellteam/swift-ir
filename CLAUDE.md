@@ -137,7 +137,7 @@ Key signal hubs:
 
 3. **`dm.zpos` setter guard** (`data.py:308`): `if pos != self.zpos` prevents emitting `positionChanged` when the position hasn't actually changed. This breaks the slider→zpos→slider loop.
 
-4. **`inspect.stack()[1].function == 'main'` guard**: Used in ~6 combo/slider handlers to distinguish user-initiated changes from programmatic ones. Fragile but functional.
+4. **`inspect.stack()` guards — REMOVED** (2026-02-23): Previously used in ~20 handlers to distinguish user-initiated from programmatic changes. All removed and replaced with proper `blockSignals()` at call sites or eliminated entirely (for user-only signals). See "inspect.stack() Guard Removal" section below.
 
 ### Issues Found and Fixed (2026-02-23)
 
@@ -202,7 +202,7 @@ The three background workers (`_alignworker`, `_zarrworker`, `_scaleworker`) eac
 3. **Avoid `QApplication.processEvents()` inside signal handlers** — it creates re-entrancy. If unavoidable, use `QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)` and add a boolean re-entrancy guard with `try/finally`.
 4. **When recreating viewers, delete the old viewer AFTER clearing its webengine** — prevents JavaScript errors from accessing deleted SharedObjects.
 5. **Consolidate multiple connections to the same signal** into a single handler when they should execute as a unit.
-6. **The `inspect.stack()` guard pattern is fragile** — prefer `blockSignals()` or explicit boolean flags instead.
+6. **Never use `inspect.stack()` for signal/slot guards** — all such guards were removed. Use `blockSignals()` at programmatic call sites or rely on user-only signals (`activated`, `textActivated`, `triggered`, `sliderReleased`, `returnPressed`, `textEdited`, `buttonClicked`).
 7. **When adding `blockSignals()`, audit ALL connections on that signal** — blocking suppresses every connected slot, not just the one you're targeting. E.g., `sldrZpos.valueChanged` also updated `leJump`; blocking it required adding an explicit `leJump.setText()` call.
 8. **Prefer `widget.repaint()` over `processEvents()`** when the goal is just to update the display — `repaint()` paints a single widget immediately without processing the event queue.
 9. **Re-entrancy guard pattern** — for methods that call `processEvents()`, use a boolean flag with `try/finally`:
@@ -226,12 +226,12 @@ Investigated 4 additional potential signal/slot issues. Analysis of Qt signal se
 |---|---|---|---|
 | 1 | Missing `blockSignals` on `cbxViewerScale`/`cbxNgLayout` | **False positive** | `cbxViewerScale` signal is commented out; `cbxNgLayout` uses `activated` (user-only, not emitted by programmatic changes) |
 | 2 | Missing `blockSignals` on QAction colorActions | **False positive** | `setChecked()` emits `toggled`, not `triggered`; no `toggled` connections exist on these actions |
-| 3 | Missing `blockSignals` on manager.py combos | **Partially real** | `comboImages`/`comboTransformed` use `textActivated` (user-only, safe); only `comboLevel` uses `currentIndexChanged` (fires on `clear()`/`addItems()`/`setCurrentIndex()`). Mitigated by `inspect.stack()` guard in `onComboLevel`, but fragile per rule #6 |
+| 3 | Missing `blockSignals` on manager.py combos | **Partially real** | `comboImages`/`comboTransformed` use `textActivated` (user-only, safe); only `comboLevel` uses `currentIndexChanged` (fires on `clear()`/`addItems()`/`setCurrentIndex()`). Fixed by `blockSignals` in `loadLevelsCombo()` |
 | 4 | Repeated signal connections on viewer1 | **False positive for accumulation** | New viewer = new `WorkerSignals` QObject = fresh connections. Old viewer cleaned up by `del`. But 4-line connection block duplicated in 3 places |
 
 #### Fixes Applied
 
-1. **`loadLevelsCombo()` — added `blockSignals()`**: Wraps the `comboLevel.clear()` / `addItems()` / `setCurrentIndex()` sequence in `blockSignals(True/False)` to prevent spurious `currentIndexChanged` emissions. The `inspect.stack()` guard in `onComboLevel` remains as a secondary defense.
+1. **`loadLevelsCombo()` — added `blockSignals()`**: Wraps the `comboLevel.clear()` / `addItems()` / `setCurrentIndex()` sequence in `blockSignals(True/False)` to prevent spurious `currentIndexChanged` emissions. The `inspect.stack()` guard in `onComboLevel` has been removed since `blockSignals` provides the proper protection.
 
 2. **Extracted `_connectViewerSignals()` helper**: The identical 4-line arrow key signal connection block (arrowLeft/Right/Up/Down) appeared in 3 places in `manager.py`. Extracted to `_connectViewerSignals(viewer)` method and replaced all 3 occurrences.
 
@@ -243,3 +243,57 @@ Investigated 4 additional potential signal/slot issues. Analysis of Qt signal se
 | `QComboBox.currentIndexChanged` | Yes | Fires on `clear()`, `addItems()`, `setCurrentIndex()` |
 | `QAction.triggered` | No | User-only; safe without `blockSignals` |
 | `QAction.toggled` | Yes | Fires on `setChecked()` |
+| `QSlider.sliderReleased` | No | User-only; safe without `blockSignals` |
+| `QSlider.valueChanged` | Yes | Fires on `setValue()` |
+| `QLineEdit.returnPressed` / `textEdited` | No | User-only; safe without `blockSignals` |
+| `QLineEdit.selectionChanged` | No | User-only; safe without `blockSignals` |
+| `QButtonGroup.buttonClicked` | No | User-only; safe without `blockSignals` |
+| `QCheckBox.stateChanged` / `toggled` | Yes | Fires on `setChecked()` |
+| `QTabWidget.currentChanged` | Yes | Fires on `setCurrentIndex()` |
+
+### inspect.stack() Guard Removal (2026-02-23)
+
+Removed all `inspect.stack()[1].function == 'main'` guards (~20 active instances) and the `import inspect` from both `manager.py` and `project.py`. The pattern was fragile (broke silently if call chains were refactored) and has been replaced with proper Qt patterns.
+
+#### Category A: Logging-only (removed caller tracing)
+
+These only used `inspect.stack()` for log messages. Simplified the log lines.
+
+| File | Function |
+|---|---|
+| `manager.py` | `updateCombos`, `validate_project_selection`, `WebEngine.setnull` |
+| `project.py` | `_onTabChange`, `refreshTab`, `initNeuroglancer`, `fn_leMatch`, `set_transforming`, `_updatePointLists`, `slotUpdateZoomSlider` |
+
+#### Category B: User-only signals (guard was dead logic)
+
+These handlers are connected to signals that never fire on programmatic changes. The guard was unnecessary — removed it, kept the body.
+
+| File | Function | Signal |
+|---|---|---|
+| `manager.py` | `onComboSelectEmstack` | `textActivated` |
+| `manager.py` | `onComboTransformed` | `textActivated` |
+| `project.py` | `fn` (bgManualRBs) | `buttonClicked` |
+| `project.py` | `fn` (leSwimWindow) | `returnPressed` + `selectionChanged` |
+| `project.py` | `fn_cmbViewerScale` | Signal commented out (dead code) |
+| `project.py` | `onNgLayoutCombobox` | `activated` |
+| `project.py` | `setZoomSlider` | Dead code (never called) |
+| `project.py` | `onZoomSlider` | `sliderReleased` |
+| `project.py` | `fn_brightness_control` | `sliderReleased` + `textEdited` |
+| `project.py` | `fn_contrast_control` | `sliderReleased` + `textEdited` |
+
+#### Category C: Added blockSignals at call sites
+
+These handlers are connected to signals that fire on programmatic changes. Added `blockSignals(True/False)` at the programmatic call sites, then removed the guard.
+
+| Function | Signal | New blockSignals location |
+|---|---|---|
+| `onComboLevel` (manager.py) | `currentIndexChanged` | Already had `blockSignals` in `loadLevelsCombo()` — just removed guard |
+| `onIncludeExcludeToggle` | `stateChanged` | Already had `blockSignals` in `onPositionChange`/`onSwimArgsChanged` — just removed guard |
+| `onDefaultsCheckbox` | `toggled` | Already had `blockSignals` in `onSwimArgsChanged`/`dataUpdateMA` — just removed guard |
+| `fn_method_select` | `currentChanged` | Added `blockSignals` around `twMethod.setCurrentIndex()` in `dataUpdateMA()` (2 sites) |
+| `fn_cb_transformed` | `toggled` | Added `blockSignals` around `cbTransformed.setChecked()` after `connect()` |
+| `cb_itemChanged` | `model().itemChanged` | No active programmatic triggers — just removed guard |
+| `onBiasChanged` | `currentIndexChanged` | No active programmatic triggers (all call sites commented out) — just removed guard |
+| `fn_sliderMatch` | `valueChanged` | Added `blockSignals` around internal `sliderMatch.setValue()` to prevent self-triggering |
+| `fn_slider1x1` | `valueChanged` | Added `blockSignals` around `slider1x1.setValue()` and `slider2x2.setValue()` cross-calls |
+| `fn_slider2x2` | `valueChanged` | Added `blockSignals` around `slider2x2.setValue()` self-correction |

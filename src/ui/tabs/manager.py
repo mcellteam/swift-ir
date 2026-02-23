@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import copy
-import inspect
 import json
 import logging
 import os
@@ -870,8 +869,6 @@ class ManagerTab(QWidget):
 
     def updateCombos(self):
         '''Loading this combobox triggers the loading of the alignment and scales comboboxes'''
-        caller = inspect.stack()[1].function
-        # logger.critical(f"{caller}")
         shown = [self.comboImages.itemText(i) for i in range(self.comboImages.count())]
         known = self._watchImages.known
         if sorted(shown) == sorted(known):
@@ -947,98 +944,92 @@ class ManagerTab(QWidget):
 
     def onComboSelectEmstack(self):
         logger.info('')
-        caller = inspect.stack()[1].function
-        if caller == 'main':
-            self.webengine0.setnull()
-            self.webengine1.setnull()
-            QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)  # Allow webengines to clear
-            if self.comboImages.currentText():
-                path = self.comboImages.currentText()
-                info_path = os.path.join(path, 'info.json')
-                self._images_info = read('json')(info_path)
-                self.resetView()
-                cfg.preferences['images_combo_text'] = path
-                try:
-                    self.loadLevelsCombo() #Important load the scale levels combo before initializing viewers
-                except:
-                    print_exception()
-                self.loadAlignmentCombo()
-                QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)  # Process pending events before viewer update
-                self.updatePMViewers()
+        self.webengine0.setnull()
+        self.webengine1.setnull()
+        QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)  # Allow webengines to clear
+        if self.comboImages.currentText():
+            path = self.comboImages.currentText()
+            info_path = os.path.join(path, 'info.json')
+            self._images_info = read('json')(info_path)
+            self.resetView()
+            cfg.preferences['images_combo_text'] = path
+            try:
+                self.loadLevelsCombo() #Important load the scale levels combo before initializing viewers
+            except:
+                print_exception()
+            self.loadAlignmentCombo()
+            QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)  # Process pending events before viewer update
+            self.updatePMViewers()
 
     def onComboTransformed(self):
-        caller = inspect.stack()[1].function
-        logger.info(f"[{caller}]")
-        if caller == 'main':
+        logger.info('')
+        try:
+            self.dm = DataModel(data=read('json')(self.comboTransformed.currentText()), readonly=True)
+        except:
+            self.dm = None
+            print_exception()
+
+        self.wNameAlignment.hide()
+        self.leNameAlignment.clear()
+        if self.comboTransformed.currentText() and hasattr(self, 'viewer1'):
+            # Don't call setnull() - it disrupts WebSocket connection
+            # Update path in case level changed
+            level = self.comboLevel.currentText()
+            path = Path(self.comboImages.currentText()) / 'zarr' / level
+            self.viewer1.path = str(path)
+
+            # Recreate viewer1 fresh to avoid neuroglancer state conflicts
             try:
-                self.dm = DataModel(data=read('json')(self.comboTransformed.currentText()), readonly=True)
+                resolution = self._images_info['resolution'][level]
             except:
-                self.dm = None
-                print_exception()
+                resolution = [8, 8, 50]
 
-            self.wNameAlignment.hide()
-            self.leNameAlignment.clear()
-            if self.comboTransformed.currentText() and hasattr(self, 'viewer1'):
-                # Don't call setnull() - it disrupts WebSocket connection
-                # Update path in case level changed
-                level = self.comboLevel.currentText()
-                path = Path(self.comboImages.currentText()) / 'zarr' / level
-                self.viewer1.path = str(path)
+            # Clear webengine BEFORE deleting old viewer to prevent JS errors
+            # when accessing deleted SharedObjects
+            self.webengine1.setnull()
+            QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)
 
-                # Recreate viewer1 fresh to avoid neuroglancer state conflicts
-                try:
-                    resolution = self._images_info['resolution'][level]
-                except:
-                    resolution = [8, 8, 50]
+            # Follow EMViewer pattern: load page first with NO layers,
+            # then add transformation layers AFTER page is loaded
+            old_viewer = self.viewer1
+            self.viewer1 = PMViewer(
+                parent=self,
+                webengine=self.webengine1,
+                path=str(path),
+                res=resolution,
+                extra_data={'name': 'viewer1', 'dm': self.dm})
+            self.viewer1.dm = self.dm  # Set dm before initViewer
+            self._connectViewerSignals(self.viewer1)
+            # Clean up old viewer after webengine is cleared
+            del old_viewer
 
-                # Clear webengine BEFORE deleting old viewer to prevent JS errors
-                # when accessing deleted SharedObjects
-                self.webengine1.setnull()
-                QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)
+            # Use different approach based on dataset size:
+            # - Small datasets (<50 slices): pre-transform in Python, single LocalVolume
+            # - Large datasets: use transformation layers (works reliably)
+            self.viewer1.initViewer(skip_layers=True, use_transformation_layers=False)
 
-                # Follow EMViewer pattern: load page first with NO layers,
-                # then add transformation layers AFTER page is loaded
-                old_viewer = self.viewer1
-                self.viewer1 = PMViewer(
-                    parent=self,
-                    webengine=self.webengine1,
-                    path=str(path),
-                    res=resolution,
-                    extra_data={'name': 'viewer1', 'dm': self.dm})
-                self.viewer1.dm = self.dm  # Set dm before initViewer
-                self._connectViewerSignals(self.viewer1)
-                # Clean up old viewer after webengine is cleared
-                del old_viewer
+            def add_layers():
+                if hasattr(self, 'viewer1') and self.viewer1.tensor is not None:
+                    num_slices = self.viewer1.tensor.shape[2]
+                    if num_slices < 50:
+                        # Small dataset: pre-transform (fast, single LocalVolume)
+                        self.viewer1.add_pretransformed_layer(clear_first=True)
+                    else:
+                        # Large dataset: use transformation layers
+                        self.viewer1.add_transformation_layers(affine=True, clear_first=True)
+                    # Refresh URL to load with new state
+                    self.webengine1.setUrl(QUrl(self.viewer1.get_viewer_url()))
+            self.webengine1.setOnLoadCallback(add_layers)
 
-                # Use different approach based on dataset size:
-                # - Small datasets (<50 slices): pre-transform in Python, single LocalVolume
-                # - Large datasets: use transformation layers (works reliably)
-                self.viewer1.initViewer(skip_layers=True, use_transformation_layers=False)
-
-                def add_layers():
-                    if hasattr(self, 'viewer1') and self.viewer1.tensor is not None:
-                        num_slices = self.viewer1.tensor.shape[2]
-                        if num_slices < 50:
-                            # Small dataset: pre-transform (fast, single LocalVolume)
-                            self.viewer1.add_pretransformed_layer(clear_first=True)
-                        else:
-                            # Large dataset: use transformation layers
-                            self.viewer1.add_transformation_layers(affine=True, clear_first=True)
-                        # Refresh URL to load with new state
-                        self.webengine1.setUrl(QUrl(self.viewer1.get_viewer_url()))
-                self.webengine1.setOnLoadCallback(add_layers)
-
-                QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)
+            QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)
 
 
     def onComboLevel(self):
-        caller = inspect.stack()[1].function
-        if caller == 'main':
-            self._level = self.comboLevel.currentText()
-            self.webengine0.setnull()
-            self.webengine1.setnull()
-            QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)  # Allow webengines to clear
-            self.updatePMViewers()
+        self._level = self.comboLevel.currentText()
+        self.webengine0.setnull()
+        self.webengine1.setnull()
+        QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)  # Allow webengines to clear
+        self.updatePMViewers()
 
     # def onSelectAlignmentCombo(self):
     #     caller = inspect.stack()[1].function
@@ -1429,8 +1420,7 @@ def validate_tiff_folder(path) -> bool:
 
 
 def validate_project_selection(path) -> bool:
-    clr = inspect.stack()[1].function
-    logger.info(f'[{clr}] Validating selection {path}...')
+    logger.info(f'Validating selection {path}...')
     if Path(path).suffix in ('.align'):
         return True
     return False
@@ -1771,8 +1761,7 @@ class WebEngine(QWebEngineView):
         # Clear any pending callback so the HTML load doesn't trigger it
         self._on_load_callback = None
         self.setText('Neuroglancer: No Data.')
-        caller = inspect.stack()[1].function
-        logger.info(f"[{caller}] Null view set")
+        logger.info("Null view set")
 
     def loadRandom(self):
         script = """
