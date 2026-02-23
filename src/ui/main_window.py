@@ -329,7 +329,7 @@ class MainWindow(QMainWindow):
         if console:
             hudlogger.info(f"[HUD] {message}")
         self.hud.post(message, level=logging.INFO)
-        QApplication.processEvents()
+        self.hud.repaint()  # Force HUD to paint immediately without processing full event queue
         self.update()
 
     def warn(self, message):

@@ -7,7 +7,7 @@ import os
 import time
 
 import qtawesome as qta
-from qtpy.QtCore import Qt, QRect, Signal, QEvent
+from qtpy.QtCore import Qt, QRect, Signal, QEvent, QEventLoop
 from qtpy.QtGui import QPainter, QPixmap, QImage
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QAbstractItemView, QApplication, \
     QTableWidget, QTableWidgetItem, QSlider, QLabel, QPushButton, QFrame, QAction, QMenu, \
@@ -580,7 +580,7 @@ class ProjectTable(QWidget):
         for r in self.getSelectedRows():
             self.dm.zpos = r
             self.parent.parent.alignOne(dm=self.dm)
-            QApplication.processEvents()
+            QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)
             # if self.parent.wTabs.currentIndex() == 0:
             #     self.parent.viewer.set_layer()
             # elif self.parent.wTabs.currentIndex() == 1:

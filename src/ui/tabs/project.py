@@ -65,6 +65,7 @@ class AlignmentTab(QWidget):
         # self.webengine0.setStyleSheet('background-color: #222222;')
         self.we0.setMouseTracking(True)
         self._initNG_calls = 0
+        self._initializing_neuroglancer = False  # Re-entrancy guard for initNeuroglancer
         self.wTable = QWidget()
         self.wTreeview = QWidget()
         self.initShader()
@@ -310,7 +311,7 @@ class AlignmentTab(QWidget):
         elif index == 1:
             logger.critical('Refreshing editor tab...')
             # self.initNeuroglancer()
-            QApplication.processEvents()
+            QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)
             if hasattr(self, 'viewer1') and hasattr(self, 'transformViewer'):
                 self.set_transforming()  # 0802+
             if self.mw.dwSnr.isVisible():
@@ -386,11 +387,11 @@ class AlignmentTab(QWidget):
 
         self.viewer1.signals.zChanged.connect(lambda x: fn(x))
         self.viewer1.signals.zChanged.connect(self.viewer1.drawSWIMwindow)
-        QApplication.processEvents()
+        QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)
         if hasattr(self,'transformViewer'):
             del self.transformViewer
         self.transformViewer = TransformViewer(parent=self, webengine=self.we2, path='', dm=self.dm, res=res, )
-        QApplication.processEvents()
+        QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)
 
         self.sldrZoomTab1.setValue(self.viewer1.state.cross_section_scale)
 
@@ -406,43 +407,52 @@ class AlignmentTab(QWidget):
             logger.warning(f"[{clr}] Unable to initialize Neuroglancer at this time, busy working!")
             return
 
-        if force:
-            if hasattr(self, 'viewer0'):
-                del self.viewer0
-            if hasattr(self, 'viewer1'):
-                del self.viewer1
-            if hasattr(self, 'transformViewer'):
-                del self.transformViewer
-            if ng.is_server_running():
-                ng.server.stop()
-            QApplication.processEvents()  # Allow server to fully stop
-            # Clear webengines to ensure clean state for new viewers
-            self.we0.setUrl(QUrl('about:blank'))
-            self.we1.setUrl(QUrl('about:blank'))
-            self.we2.setUrl(QUrl('about:blank'))
-            QApplication.processEvents()
+        # Re-entrancy guard: prevent processEvents() from triggering nested initNeuroglancer
+        if self._initializing_neuroglancer:
+            logger.warning(f"[{clr}] initNeuroglancer already in progress, skipping re-entrant call")
+            return
+        self._initializing_neuroglancer = True
 
-        QApplication.processEvents() #Critical for viewer1 to take correct size
+        try:
+            if force:
+                if hasattr(self, 'viewer0'):
+                    del self.viewer0
+                if hasattr(self, 'viewer1'):
+                    del self.viewer1
+                if hasattr(self, 'transformViewer'):
+                    del self.transformViewer
+                if ng.is_server_running():
+                    ng.server.stop()
+                # Clear webengines to ensure clean state for new viewers
+                self.we0.setUrl(QUrl('about:blank'))
+                self.we1.setUrl(QUrl('about:blank'))
+                self.we2.setUrl(QUrl('about:blank'))
 
-        _tab = self.wTabs.currentIndex()
-        if _tab == 0:
-            # self.cbxNgLayout.setCurrentText(getData('state,neuroglancer,layout'))
-            if force or not hasattr(self, 'viewer0'):
-                self.initVolumeTab0()
-            else:
-                self.viewer0.initViewer()
-        elif _tab == 1:
-            self.gifPlayer.set(start=False)
-            # self.webengine1.setUrl(QUrl("http://localhost:8888/"))
-            if force or not hasattr(self,'viewer1'):
-                self.initVolumeTab1()
-            else:
-                self.viewer1.initViewer()
-                QApplication.processEvents()
-                self.transformViewer.initViewer()
+            # Single processEvents call — allows server stop, webengine blanking,
+            # and layout sizing to all complete before viewer creation
+            QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)
 
-        self.mw.hud.done()
-        logger.info(f"<<<< initNeuroglancer")
+            _tab = self.wTabs.currentIndex()
+            if _tab == 0:
+                # self.cbxNgLayout.setCurrentText(getData('state,neuroglancer,layout'))
+                if force or not hasattr(self, 'viewer0'):
+                    self.initVolumeTab0()
+                else:
+                    self.viewer0.initViewer()
+            elif _tab == 1:
+                self.gifPlayer.set(start=False)
+                # self.webengine1.setUrl(QUrl("http://localhost:8888/"))
+                if force or not hasattr(self,'viewer1'):
+                    self.initVolumeTab1()
+                else:
+                    self.viewer1.initViewer()
+                    QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)
+                    self.transformViewer.initViewer()
+
+            self.mw.hud.done()
+            logger.info(f"<<<< initNeuroglancer")
+        finally:
+            self._initializing_neuroglancer = False
 
     @Slot()
     def layer_left(self):

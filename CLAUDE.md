@@ -162,14 +162,24 @@ When `onPositionChange()` called `self.mw.sldrZpos.setValue(self.dm.zpos)`, the 
 
 Removed/commented ~10 debug `print()` lambdas connected to signals (`arrowLeft`, `arrowRight`, keyboard shortcuts, list widgets, group boxes, file browser, webengine load, zarrworker finished, SNR checkboxes). Converted 3 high-frequency `print(flush=True)` calls in signal handlers to `logger.debug()`.
 
+#### 4. `QApplication.processEvents()` Re-entrancy (~25 active calls) — FIXED
+**Files**: `project.py`, `manager.py`, `main_window.py`, `alignmenttable.py`
+
+`processEvents()` dispatches all pending events synchronously. When called from within a signal handler, it can trigger other handlers before the current one finishes — causing re-entrant execution, partial state updates, and crashes.
+
+**Categorized analysis and fixes:**
+
+- **`viewerfactory.py` (6 calls) — LOW RISK → LEFT AS-IS**: Lines 553, 657, 813, 1046, 1178, 1279. All in viewer methods after neuroglancer transactions, giving JavaScript/WebSocket time to process state changes. Protected by `BlockStateChanges` context manager and not on hot signal chains.
+
+- **`main_window.py` `tell()` (1 call) — MEDIUM RISK → FIXED**: Replaced `processEvents()` with `self.hud.repaint()` to force only the HUD widget to repaint without processing the full event queue.
+
+- **`project.py` (7 calls) — HIGH RISK → FIXED**: `initNeuroglancer()` alone had 4 sequential calls. Added `_initializing_neuroglancer` re-entrancy guard flag with `try/finally`. Consolidated 4 sequential calls down to 1. Changed all calls to `ExcludeUserInputEvents`.
+
+- **`manager.py` (9 calls) — MEDIUM-HIGH RISK → FIXED**: `updatePMViewers()` had 3 sequential calls. Added `_updating_viewers` re-entrancy guard flag with `try/finally`. Changed all calls to `ExcludeUserInputEvents` (except line 1167 after modal dialog — safe as-is).
+
+- **`alignmenttable.py` (1 call) — HIGH RISK → FIXED**: `alignHighlighted()` loop changed to `ExcludeUserInputEvents` to allow paint/timer events but prevent user actions from modifying state mid-loop.
+
 ### Remaining Issues (Not Yet Fixed)
-
-#### `QApplication.processEvents()` Re-entrancy (~30 calls)
-**Files**: Throughout `viewerfactory.py`, `project.py`, `manager.py`
-
-Each `processEvents()` call can dispatch pending signals, triggering slots mid-operation. Particularly risky inside `initNeuroglancer()`, `updatePMViewers()`, and viewer initialization code where state is being modified.
-
-**Guideline**: Avoid `processEvents()` inside signal handlers. Where needed for neuroglancer WebSocket timing, document the reason and ensure re-entrancy guards are in place.
 
 #### Worker `finished` Signal Cascades
 **File**: `src/ui/main_window.py:1067-1077, 1147-1165`
@@ -189,8 +199,19 @@ The `_alignworker.finished` signal has ~13 connected slots including `initNeurog
 
 1. **Never call `add_changed_callback()` in a method that gets called multiple times** — use `__init__` or track/remove old callbacks.
 2. **Use `blockSignals(True/False)` when setting widget values programmatically** to prevent wasteful signal round-trips.
-3. **Avoid `QApplication.processEvents()` inside signal handlers** — it creates re-entrancy. If unavoidable, ensure guards are in place.
+3. **Avoid `QApplication.processEvents()` inside signal handlers** — it creates re-entrancy. If unavoidable, use `QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)` and add a boolean re-entrancy guard with `try/finally`.
 4. **When recreating viewers, delete the old viewer AFTER clearing its webengine** — prevents JavaScript errors from accessing deleted SharedObjects.
 5. **Consolidate multiple connections to the same signal** into a single handler when they should execute as a unit.
 6. **The `inspect.stack()` guard pattern is fragile** — prefer `blockSignals()` or explicit boolean flags instead.
 7. **When adding `blockSignals()`, audit ALL connections on that signal** — blocking suppresses every connected slot, not just the one you're targeting. E.g., `sldrZpos.valueChanged` also updated `leJump`; blocking it required adding an explicit `leJump.setText()` call.
+8. **Prefer `widget.repaint()` over `processEvents()`** when the goal is just to update the display — `repaint()` paints a single widget immediately without processing the event queue.
+9. **Re-entrancy guard pattern** — for methods that call `processEvents()`, use a boolean flag with `try/finally`:
+```python
+if self._guard_flag:
+    return
+self._guard_flag = True
+try:
+    # ... code with processEvents() ...
+finally:
+    self._guard_flag = False
+```

@@ -64,6 +64,7 @@ class ManagerTab(QWidget):
         # self._fsWatcher = FsWatcher(extension='.align')
         self.filebrowser.navigateTo(os.path.expanduser('~'))
         self._images_info = {}
+        self._updating_viewers = False  # Re-entrancy guard for updatePMViewers
         # self._selected_series = None #Todo
         # self._selected_alignment = None #Todo
         self.setAttribute(Qt.WA_TranslucentBackground)
@@ -706,6 +707,11 @@ class ManagerTab(QWidget):
 
     def updatePMViewers(self):
         logger.info('')
+        # Re-entrancy guard: prevent processEvents() from triggering nested viewer updates
+        if self._updating_viewers:
+            logger.warning("updatePMViewers already in progress, skipping re-entrant call")
+            return
+        self._updating_viewers = True
         try:
             self.setUpdatesEnabled(False)
             level = self.comboLevel.currentText()
@@ -726,7 +732,7 @@ class ManagerTab(QWidget):
                                 self.webengine0.setUrl(QUrl(self.viewer0.get_viewer_url()))
                         self.webengine0.setOnLoadCallback(create_viewer0_layers)
                         self.viewer0.initViewer(skip_layers=True)
-                        QApplication.processEvents()  # Allow viewer0 to fully update
+                        QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)
 
                     if self.comboTransformed.currentText() and hasattr(self, 'viewer1'):
                         # Recreate viewer1 fresh to avoid neuroglancer state conflicts
@@ -737,7 +743,7 @@ class ManagerTab(QWidget):
 
                         # Clear webengine BEFORE deleting old viewer to prevent JS errors
                         self.webengine1.setnull()
-                        QApplication.processEvents()
+                        QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)
 
                         # Follow EMViewer pattern: load page first with NO layers,
                         # then add transformation layers AFTER page is loaded
@@ -774,10 +780,12 @@ class ManagerTab(QWidget):
                                 self.webengine1.setUrl(QUrl(self.viewer1.get_viewer_url()))
                         self.webengine1.setOnLoadCallback(add_layers)
 
-                        QApplication.processEvents()  # Allow viewer1 to fully update
+                        QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)
             self.setUpdatesEnabled(True)
         except:
             print_exception()
+        finally:
+            self._updating_viewers = False
 
 
 
@@ -944,7 +952,7 @@ class ManagerTab(QWidget):
         if caller == 'main':
             self.webengine0.setnull()
             self.webengine1.setnull()
-            QApplication.processEvents()  # Allow webengines to clear
+            QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)  # Allow webengines to clear
             if self.comboImages.currentText():
                 path = self.comboImages.currentText()
                 info_path = os.path.join(path, 'info.json')
@@ -956,7 +964,7 @@ class ManagerTab(QWidget):
                 except:
                     print_exception()
                 self.loadAlignmentCombo()
-                QApplication.processEvents()  # Process pending events before viewer update
+                QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)  # Process pending events before viewer update
                 self.updatePMViewers()
 
     def onComboTransformed(self):
@@ -987,7 +995,7 @@ class ManagerTab(QWidget):
                 # Clear webengine BEFORE deleting old viewer to prevent JS errors
                 # when accessing deleted SharedObjects
                 self.webengine1.setnull()
-                QApplication.processEvents()
+                QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)
 
                 # Follow EMViewer pattern: load page first with NO layers,
                 # then add transformation layers AFTER page is loaded
@@ -1024,7 +1032,7 @@ class ManagerTab(QWidget):
                         self.webengine1.setUrl(QUrl(self.viewer1.get_viewer_url()))
                 self.webengine1.setOnLoadCallback(add_layers)
 
-                QApplication.processEvents()
+                QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)
 
 
     def onComboLevel(self):
@@ -1033,7 +1041,7 @@ class ManagerTab(QWidget):
             self._level = self.comboLevel.currentText()
             self.webengine0.setnull()
             self.webengine1.setnull()
-            QApplication.processEvents()  # Allow webengines to clear
+            QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)  # Allow webengines to clear
             self.updatePMViewers()
 
     # def onSelectAlignmentCombo(self):
