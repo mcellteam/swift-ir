@@ -1025,6 +1025,10 @@ class MainWindow(QMainWindow):
     def regenZarr(self, dm):
         logger.info("")
 
+        if self._working:
+            self.warn('Another Process is Already Running')
+            return
+
         #Todo build out pre-generate checks
         # _err_indexes = dm.unknownSavedAnswerIndexes()
         # if len(_err_indexes) > 0:
@@ -1039,6 +1043,7 @@ class MainWindow(QMainWindow):
             _ignore_cache = self.pt.cbIgnoreCache.isChecked()
 
         self.ensureWorkersKilled()
+        self._working = True
 
         self.resetPbar((-1, "Preparing worker thread..."))
 
@@ -1058,20 +1063,16 @@ class MainWindow(QMainWindow):
                 self._zarrworker.progress.connect(self.setPbar)
                 self._zarrworker.initPbar.connect(self.resetPbar)
                 self._zarrworker.hudMessage.connect(self.tell)
-                # self._zarrworker.hudMessage.connect(lambda x: self.tell(x, console=False))
                 self._zarrworker.hudWarning.connect(self.warn)
                 self._zarrworker.finished.connect(self._zarrThread.quit)
-                self._zarrworker.finished.connect(lambda: dm.save(silently=True))
-                self._zarrworker.finished.connect(self.hidePbar)
-                self._zarrworker.finished.connect(self.dataUpdateWidgets)
-                self._zarrworker.finished.connect(lambda: self.pt.bZarrRegen.setEnabled(True))
-                self._zarrworker.finished.connect(lambda: dm.setZarrMade(True))
-                self._zarrworker.finished.connect(lambda: self.pt.rbZarrTransformed.setChecked(True))
-                self._zarrworker.finished.connect(lambda: self.pt.updateTab0UI())
-                self._zarrworker.finished.connect(lambda: self.pt.initNeuroglancer())
-                # self._zarrworker.finished.connect(lambda: print('Finished'))
-                self._zarrworker.finished.connect(lambda: self.tell(f'<span style="color: #FFFF66;"><b>**** All Processes Complete ****</b></span>'))
+                self._zarrworker.finished.connect(self._onZarrComplete)
                 self._zarrThread.start()  # Step 6: Start the thread
+            else:
+                self._working = False
+                self.hidePbar()
+        else:
+            self._working = False
+            self.hidePbar()
 
 
     @Slot()
@@ -1101,11 +1102,12 @@ class MainWindow(QMainWindow):
         scale = dm.scale
         # self.shutdownNeuroglancer() #1120-
 
-        if self._working == True:
+        if self._working:
             self.warn('Another Process is Already Running')
             return
 
         self.ensureWorkersKilled()
+        self._working = True
 
         self.resetPbar((-1, "Preparing worker thread..."))
 
@@ -1141,31 +1143,13 @@ class MainWindow(QMainWindow):
         self._alignworker.moveToThread(self._alignThread)  # Step 4: Move worker to the thread
 
         self._alignworker.finished.connect(self._alignThread.quit)
-        # self._alignworker.finished.connect(dm.set_stack_cafm) #1118+
-        # self._alignworker.finished.connect(dm.save)
-        self._alignworker.finished.connect(lambda: self.dm.save(silently=True))
-        self._alignworker.finished.connect(self.hidePbar)
-        self._alignworker.finished.connect(self.dataUpdateWidgets)
-        # self._alignworker.finished.connect(self.onAlignmentEnd)
-        self._alignworker.finished.connect(lambda: self.pt.gifPlayer.set())
-        if self.pt.wTabs.currentIndex() == 2:
-            self._alignworker.finished.connect(lambda: self.pt.snr_plot.initSnrPlot())
-
-        self._alignworker.finished.connect(lambda: self.pt.dSnr_plot.initSnrPlot())
-        self._alignworker.finished.connect(self.updateEnabledButtons)
-        self._alignworker.finished.connect(lambda: self.pt.updateTab0UI())
-        # self._alignworker.finished.connect(lambda: self.pt.initNeuroglancer(init_all=True))
-        self._alignworker.finished.connect(lambda: self.pt.initNeuroglancer())
-        self._alignworker.finished.connect(lambda: self.bAlign.setEnabled(True))
-
-        self._alignworker.finished.connect(lambda: setattr(self, '_working', False))
-        # self._alignworker.finished.connect(lambda: self.tell(f'<span style="color: #FFFF66;"><b>**** All Processes Complete ****</b></span>'))
+        self._alignworker.finished.connect(self._onAlignmentComplete)
         self._alignThread.start()  # Step 6: Start the thread
 
 
     @Slot()
     def autoscaleImages(self, src, out, opts):
-        if self._working == True:
+        if self._working:
             self.warn('Another Process is Already Running')
             return
         logger.info('\n\nAutoscaling...\n')
@@ -1174,8 +1158,8 @@ class MainWindow(QMainWindow):
         scale_keys = opts['levels']
         scales = zip(scale_keys[::-1], [opts['size_xy'][s] for s in scale_keys[::-1]])
         self.ensureWorkersKilled()
+        self._working = True
 
-        # self.shutdownNeuroglancer() #1111-
         self.resetPbar((-1, "Preparing worker thread..."))
 
         self._scaleworker = ScaleWorker(src=src, out=out, scales=scales, opts=opts)
@@ -1183,15 +1167,7 @@ class MainWindow(QMainWindow):
         self._scaleThread.finished.connect(self._scaleThread.deleteLater)
         self._scaleworker.finished.connect(self._scaleThread.quit)
         self._scaleworker.moveToThread(self._scaleThread)  # Step 4: Move worker to the thread
-        self._scaleworker.finished.connect(self._scaleworker.deleteLater)
-        self._scaleworker.finished.connect(self.hidePbar)
-        self._scaleworker.finished.connect(self._refresh)
-        self._scaleworker.finished.connect(lambda: self.pm.bCreateImages.setEnabled(True))
-        def fn():
-            self.saveUserPreferences()
-            self.pm.resetView(init_viewer=True)
-        self._scaleworker.finished.connect(fn)
-        self._scaleworker.finished.connect(lambda: self.tell(f'<span style="color: #FFFF66;"><b>**** All Processes Complete ****</b></span>'))
+        self._scaleworker.finished.connect(self._onScaleComplete)
         self._scaleworker.progress.connect(self.setPbar)
         self._scaleworker.initPbar.connect(self.resetPbar)
         self._scaleworker.hudMessage.connect(self.tell)
@@ -1216,6 +1192,41 @@ class MainWindow(QMainWindow):
             except:
                 print_exception()
 
+    def _onAlignmentComplete(self):
+        self._working = False
+        self.dm.save(silently=True)
+        self.hidePbar()
+        self.dataUpdateWidgets()
+        self.pt.gifPlayer.set()
+        if self.pt.wTabs.currentIndex() == 2:
+            self.pt.snr_plot.initSnrPlot()
+        self.pt.dSnr_plot.initSnrPlot()
+        self.updateEnabledButtons()
+        self.pt.updateTab0UI()
+        self.pt.initNeuroglancer()
+        self.bAlign.setEnabled(True)
+
+    def _onZarrComplete(self):
+        self._working = False
+        self.dm.save(silently=True)
+        self.hidePbar()
+        self.dataUpdateWidgets()
+        self.pt.bZarrRegen.setEnabled(True)
+        self.dm.setZarrMade(True)
+        self.pt.rbZarrTransformed.setChecked(True)
+        self.pt.updateTab0UI()
+        self.pt.initNeuroglancer()
+        self.tell(f'<span style="color: #FFFF66;"><b>**** All Processes Complete ****</b></span>')
+
+    def _onScaleComplete(self):
+        self._working = False
+        self._scaleworker.deleteLater()
+        self.hidePbar()
+        self._refresh()
+        self.pm.bCreateImages.setEnabled(True)
+        self.saveUserPreferences()
+        self.pm.resetView(init_viewer=True)
+        self.tell(f'<span style="color: #FFFF66;"><b>**** All Processes Complete ****</b></span>')
 
     def enableAllButtons(self):
         self.bAlign.setEnabled(True)

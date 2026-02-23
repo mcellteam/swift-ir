@@ -127,7 +127,7 @@ Key signal hubs:
 - `DataModel.signals.positionChanged` — drives all position-dependent UI updates
 - `DataModel.signals.swimArgsChanged` — drives alignment parameter UI updates
 - `WorkerSignals` on each viewer — arrow keys, zoom, layout, state changes
-- `_alignworker.finished` / `_zarrworker.finished` — 12-13 slots each, big cascades
+- `_alignworker.finished` / `_zarrworker.finished` / `_scaleworker.finished` — consolidated into single handlers (`_onAlignmentComplete`, `_onZarrComplete`, `_onScaleComplete`)
 
 ### Existing Safeguards (Good Patterns)
 
@@ -179,12 +179,12 @@ Removed/commented ~10 debug `print()` lambdas connected to signals (`arrowLeft`,
 
 - **`alignmenttable.py` (1 call) — HIGH RISK → FIXED**: `alignHighlighted()` loop changed to `ExcludeUserInputEvents` to allow paint/timer events but prevent user actions from modifying state mid-loop.
 
-### Remaining Issues (Not Yet Fixed)
+#### 5. Worker `finished` Signal Cascades — FIXED
+**File**: `src/ui/main_window.py`
 
-#### Worker `finished` Signal Cascades
-**File**: `src/ui/main_window.py:1067-1077, 1147-1165`
+The three background workers (`_alignworker`, `_zarrworker`, `_scaleworker`) each connected 7-10 individual slots to their `finished` signal via separate `.connect()` calls. The `_working` flag was initialized to `False` but never set to `True`, making all 8 guard conditions ineffective.
 
-The `_alignworker.finished` signal has ~13 connected slots including `initNeuroglancer()`, `updateTab0UI()`, `dataUpdateWidgets()`. Each fires sequentially and may trigger its own sub-cascades. Not a bug but adds unpredictability.
+**Fix**: Consolidated each worker's cascade into a single handler method (`_onAlignmentComplete`, `_onZarrComplete`, `_onScaleComplete`). Each handler sets `_working = False` first (so `initNeuroglancer()` and `_refresh()` aren't blocked), then performs all completion actions in explicit order. Added `self._working = True` in `regenZarr()`, `align()`, and `autoscaleImages()` before worker start. Added `_working` guard to `regenZarr()` (previously unprotected). SNR plot tab check is now evaluated at completion time instead of connection time.
 
 ### Signal Connection Map (Key Files)
 
