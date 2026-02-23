@@ -321,7 +321,6 @@ class SnrPlot(QWidget):
                         self.checkboxes_hlayout.addWidget(self._snr_checkboxes[s],
                                                           alignment=Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
                         self._snr_checkboxes[s].setChecked(True)
-                        self._snr_checkboxes[s].clicked.connect(lambda: print('cb clicked!'))
                         self._snr_checkboxes[s].clicked.connect(self.plotData)
                         self._snr_checkboxes[s].setStatusTip('On/Off SNR Plot %s' % self.dm.level_pretty(s=s))
                         self._snr_checkboxes[s].setStyleSheet(

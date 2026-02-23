@@ -1104,6 +1104,7 @@ class PMViewer(AbstractEMViewer):
     def __init__(self, **kwags):
         super().__init__(**kwags)
         self.name = self.extra_data['name']
+        self._state_callback_registered = False
         self.shader = '''
                     #uicontrol vec3 color color(default="white")
                     #uicontrol float brightness slider(min=-1, max=1, step=0.01)
@@ -1180,7 +1181,10 @@ class PMViewer(AbstractEMViewer):
         self.webengine.setUrl(QUrl(self.get_viewer_url()))
 
         # Register shared_state callback AFTER URL is set (matching EMViewer pattern)
-        self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
+        # Only register once — initViewer() can be called multiple times but we must not accumulate callbacks
+        if not self._state_callback_registered:
+            self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
+            self._state_callback_registered = True
 
     def on_state_changed(self):
         # Guard against recursive calls

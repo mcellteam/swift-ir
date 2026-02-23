@@ -184,13 +184,9 @@ class MainWindow(QMainWindow):
 
         self._shortcutArrowLeft = QShortcut(QKeySequence(Qt.Key_Left), self)
         self._shortcutArrowLeft.activated.connect(self.layer_left)
-        self._shortcutArrowLeft.activated.connect(lambda: print("Left arrow pressed!"))
-        # self._shortcutArrowLeft.setKey(QKeySequence(Qt.Key_Left))
         self._shortcutArrowLeft.setContext(Qt.WidgetShortcut)
         self._shortcutArrowRight = QShortcut(QKeySequence(Qt.Key_Right), self)
         self._shortcutArrowRight.activated.connect(self.layer_right)
-        self._shortcutArrowRight.activated.connect(lambda: print("Right arrow pressed!"))
-        # self._shortcutArrowRight.setKey(QKeySequence(Qt.Key_Right))
         self._shortcutArrowRight.setContext(Qt.WidgetShortcut)
 
         self._mutex = QMutex()
@@ -1073,7 +1069,7 @@ class MainWindow(QMainWindow):
                 self._zarrworker.finished.connect(lambda: self.pt.rbZarrTransformed.setChecked(True))
                 self._zarrworker.finished.connect(lambda: self.pt.updateTab0UI())
                 self._zarrworker.finished.connect(lambda: self.pt.initNeuroglancer())
-                self._zarrworker.finished.connect(lambda: print('Finished'))
+                # self._zarrworker.finished.connect(lambda: print('Finished'))
                 self._zarrworker.finished.connect(lambda: self.tell(f'<span style="color: #FFFF66;"><b>**** All Processes Complete ****</b></span>'))
                 self._zarrThread.start()  # Step 6: Start the thread
 
@@ -1325,9 +1321,11 @@ class MainWindow(QMainWindow):
             self.bLeftArrow.setEnabled(False)
             self.bRightArrow.setEnabled(False)
             self.cbInclude.setEnabled(False)
+            self.sldrZpos.blockSignals(True)
             self.sldrZpos.setRange(0, 1)
             self.sldrZpos.setValue(0)
             self.sldrZpos.setEnabled(False)
+            self.sldrZpos.blockSignals(False)
             self.bPlayback.setEnabled(False)
             self.sbFPS.setEnabled(False)
             self.wToggleExclude.setEnabled(False)
@@ -1398,8 +1396,12 @@ class MainWindow(QMainWindow):
         logger.info(f'[{caller}]')
         if self._isProjectTab():
             self.leJump.setText(str(self.dm.zpos))
+            self.sldrZpos.blockSignals(True)
             self.sldrZpos.setValue(self.dm.zpos)
+            self.sldrZpos.blockSignals(False)
+            self.cbInclude.blockSignals(True)
             self.cbInclude.setChecked(not self.dm.skipped())
+            self.cbInclude.blockSignals(False)
             self.bLeftArrow.setEnabled(self.dm.zpos > 0)
             self.bRightArrow.setEnabled(self.dm.zpos < len(self.dm) - 1)
             if self.dwSnr.isVisible():
@@ -1561,13 +1563,17 @@ class MainWindow(QMainWindow):
             if self._isProjectTab() or self._isZarrTab():
                 # logger.info('')
                 self.leJump.setValidator(QIntValidator(0, len(self.dm) - 1))
+                self.sldrZpos.blockSignals(True)
                 self.sldrZpos.setRange(0, len(self.dm) - 1)
                 self.sldrZpos.setValue(self.dm.zpos)
+                self.sldrZpos.blockSignals(False)
                 self.updateSlidrZpos()
                 self.update()
             else:
                 self.leJump.clear()
+                self.sldrZpos.blockSignals(True)
                 self.sldrZpos.setValue(0)
+                self.sldrZpos.blockSignals(False)
                 self.sldrZpos.setRange(0, 0)
         except:
             print_exception()
@@ -2967,7 +2973,9 @@ class MainWindow(QMainWindow):
             # self.updateLowest8widget()
             [b.setEnabled(True) for b in self._lower_tb_buttons]
 
+            self.cbInclude.blockSignals(True)
             self.cbInclude.setChecked(self.dm.include())
+            self.cbInclude.blockSignals(False)
 
             # self.pt.dataUpdateMA()
             self.dwThumbs.setWidget(self.pt.tableThumbs)

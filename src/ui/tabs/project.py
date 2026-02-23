@@ -60,7 +60,7 @@ class AlignmentTab(QWidget):
         self.we0 = WebEngine(self, ID='viewer')
         self.we0.setStyleSheet("background-color: #000000;")
         self.we0.setFocusPolicy(Qt.NoFocus)
-        self.we0.loadFinished.connect(lambda: print('Web engine load finished!'))
+        # self.we0.loadFinished.connect(lambda: print('Web engine load finished!'))
         setWebengineProperties(self.we0)
         # self.webengine0.setStyleSheet('background-color: #222222;')
         self.we0.setMouseTracking(True)
@@ -100,16 +100,20 @@ class AlignmentTab(QWidget):
         self.mw.tell(msg)
 
     def onSwimArgsChanged(self):
-        print("swimArgsChanged signal received...", flush=True)
+        logger.debug("swimArgsChanged signal received")
         _tab = self.wTabs.currentIndex()
         if _tab == 1:
             self.mw.updateAlignAllButtonText()
             self.updateAaButtons()
+            self.cbDefaults.blockSignals(True)
             self.cbDefaults.setChecked(self.dm.isDefaults())
+            self.cbDefaults.blockSignals(False)
             self.dataUpdateMA()
         if _tab == 2:
             self.snr_plot.plotData()
+        self.mw.cbInclude.blockSignals(True)
         self.mw.cbInclude.setChecked(self.dm.include())
+        self.mw.cbInclude.blockSignals(False)
 
 
     def _onPositionChangeConsolidated(self):
@@ -134,10 +138,19 @@ class AlignmentTab(QWidget):
             self._position_change_in_progress = False
 
     def onPositionChange(self):
-        print("positionChanged!", flush=True)
+        logger.debug("positionChanged")
 
+        # Block signals during programmatic updates to prevent wasteful round-trips
+        # (slider.valueChanged would otherwise re-trigger dm.zpos setter)
+        # Note: must also update leJump here since sldrZpos.valueChanged no longer fires
+        self.mw.sldrZpos.blockSignals(True)
         self.mw.sldrZpos.setValue(self.dm.zpos)
+        self.mw.sldrZpos.blockSignals(False)
+        self.mw.leJump.setText(str(self.dm.zpos))
+
+        self.mw.cbInclude.blockSignals(True)
         self.mw.cbInclude.setChecked(self.dm.include(l=self.dm.zpos))
+        self.mw.cbInclude.blockSignals(False)
 
         _tab = self.wTabs.currentIndex()
         if _tab == 0:
@@ -196,7 +209,7 @@ class AlignmentTab(QWidget):
                     self.aaButtons[5].setEnabled(def_mo['quadrants'] != mo['quadrants'])
                 except:
                     print_exception()
-        print('<<', flush=True)
+        logger.debug('updateAaButtons done')
 
     def load_data_from_treeview(self):
         self.dm = DataModel(self.mdlTreeview.to_json())
@@ -335,8 +348,6 @@ class AlignmentTab(QWidget):
         self.viewer0.signals.layoutChanged.connect(lambda: self.cbxNgLayout.setCurrentText(self.viewer0.state.layout.type))
         self.viewer0.signals.arrowLeft.connect(self.layer_left)
         self.viewer0.signals.arrowRight.connect(self.layer_right)
-        self.viewer0.signals.arrowLeft.connect(lambda: print(f"arrow left!"))
-        self.viewer0.signals.arrowRight.connect(lambda: print(f"arrow right!"))
         self.viewer0.signals.arrowUp.connect(lambda: self.viewer0.set_zoom(self.viewer0.zoom() * 0.9))
         self.viewer0.signals.arrowDown.connect(lambda: self.viewer0.set_zoom(self.viewer0.zoom() * 1.1))
         self.viewer0.signals.zoomChanged.connect(lambda x: self.slot_zoom_changed(x))  # Critical updates the lineedit
@@ -964,7 +975,7 @@ class AlignmentTab(QWidget):
 
         self.lwR = ListWidget()
         self.lwR.setItemDelegate(ItemDelegate())
-        self.lwR.clicked.connect(lambda: print("lwR clicked!"))
+        # self.lwR.clicked.connect(lambda: print("lwR clicked!"))
         self.lwR.setFocusPolicy(Qt.NoFocus)
         # self.lwR.setFocusPolicy(Qt.NoFocus)
         delegate = ListItemDelegate()
@@ -987,7 +998,7 @@ class AlignmentTab(QWidget):
         self.lwR.itemClicked.connect(fn_point_selected)
 
         self.lwL = ListWidget()
-        self.lwL.clicked.connect(lambda: print("lwL clicked!"))
+        # self.lwL.clicked.connect(lambda: print("lwL clicked!"))
         self.lwL.setFocusPolicy(Qt.NoFocus)
         # self.lwL.setFocusPolicy(Qt.NoFocus)
         delegate = ListItemDelegate()
@@ -1066,7 +1077,7 @@ class AlignmentTab(QWidget):
 
         self.gbR = GroupBox()
         self.gbR.setProperty('current', False)
-        self.gbR.clicked.connect(lambda: print("gbL clicked!"))
+        # self.gbR.clicked.connect(lambda: print("gbL clicked!"))
         self.gbR.setStyleSheet(style)
 
         def fn():
@@ -1080,7 +1091,7 @@ class AlignmentTab(QWidget):
 
         self.gbL = GroupBox()
         self.gbL.setProperty('current', True)
-        self.gbL.clicked.connect(lambda: print("gbR clicked!"))
+        # self.gbL.clicked.connect(lambda: print("gbR clicked!"))
         self.gbL.setStyleSheet(style)
 
         def fn():
@@ -2231,14 +2242,18 @@ class AlignmentTab(QWidget):
                     min_dim = self.dm.image_size()[0]
                     self.le1x1.setValidator(QIntValidator(128, min_dim))
                     self.le1x1.setText(str(siz1x1[0]))
+                    self.slider1x1.blockSignals(True)
                     self.slider1x1.setMaximum(int(min_dim))
                     self.slider1x1.setValue(int(siz1x1[0]))
+                    self.slider1x1.blockSignals(False)
 
                     siz2x2 = ss['method_opts']['size_2x2']
                     self.le2x2.setValidator(QIntValidator(64, int(min_dim / 2)))
                     self.le2x2.setText(str(siz2x2[0]))
+                    self.slider2x2.blockSignals(True)
                     self.slider2x2.setMaximum(int(min_dim / 2))
                     self.slider2x2.setValue(siz2x2[0])
+                    self.slider2x2.blockSignals(False)
 
                     use = ss['method_opts']['quadrants']
                     self.Q1.setActivated(use[0])
@@ -2257,12 +2272,16 @@ class AlignmentTab(QWidget):
                     val = self.dm.manual_swim_window_px()
                     self.leMatch.setValidator(QIntValidator(64, img_w))
                     self.leMatch.setText(str(val))  # Todo
+                    self.sliderMatch.blockSignals(True)
                     self.sliderMatch.setMaximum(img_w)
                     self.sliderMatch.setValue(val)  # Todo
+                    self.sliderMatch.blockSignals(False)
 
                 self.updateAaButtons()
 
+                self.cbDefaults.blockSignals(True)
                 self.cbDefaults.setChecked(self.dm.isDefaults())
+                self.cbDefaults.blockSignals(False)
 
                 self.bTransform.setEnabled(self.dm.is_aligned())
                 # self.bApplyOne.setEnabled(self.dm.is_aligned() and not os.file_path.exists(self.dm.path_aligned()))
@@ -2270,7 +2289,9 @@ class AlignmentTab(QWidget):
                 self.clTra.setText(f' [{self.dm.zpos}] {self.dm.name()} (Transforming)')
 
                 _skipped = self.dm.skipped()
+                self.cbBB.blockSignals(True)
                 self.cbBB.setChecked(_skipped)
+                self.cbBB.blockSignals(False)
                 if _skipped:
                     self.clTra.setText(f' [{self.dm.zpos}] {self.dm.name()} (Transforming)')
                     self.clRef.setText(f' --')
@@ -2282,7 +2303,9 @@ class AlignmentTab(QWidget):
 
                 self.leWhitening.setText(str(ss['whitening']))
                 self.leIterations.setText(str(ss['iterations']))
+                self.cbClobber.blockSignals(True)
                 self.cbClobber.setChecked(bool(ss['clobber']))
+                self.cbClobber.blockSignals(False)
                 self.leClobber.setText(str(ss['clobber_size']))
                 self.leClobber.setEnabled(self.cbClobber.isChecked())
                 if self.teLogs.isVisible():

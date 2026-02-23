@@ -108,3 +108,89 @@ def add_layers():
     viewer.add_im_layer('source', data)
     webengine.setUrl(QUrl(viewer.get_viewer_url()))
 webengine.setOnLoadCallback(add_layers)
+```
+
+## Signal/Slot UI Debugging (2026-02-23)
+
+### Architecture Overview
+
+The central signal chain for position changes:
+```
+User action (slider, arrow key, neuroglancer click)
+    → dm.zpos setter (data.py:302)
+        → positionChanged.emit() (data.py:311)
+            → _onPositionChangeConsolidated (project.py:115)
+                → onPositionChange → updates slider, viewers, dock widgets
+```
+
+Key signal hubs:
+- `DataModel.signals.positionChanged` — drives all position-dependent UI updates
+- `DataModel.signals.swimArgsChanged` — drives alignment parameter UI updates
+- `WorkerSignals` on each viewer — arrow keys, zoom, layout, state changes
+- `_alignworker.finished` / `_zarrworker.finished` — 12-13 slots each, big cascades
+
+### Existing Safeguards (Good Patterns)
+
+1. **`BlockStateChanges` context manager** (`viewerfactory.py:136`): Prevents re-entrant `on_state_changed()` callbacks in all viewer types. Always use this when modifying neuroglancer state programmatically.
+
+2. **`_position_change_in_progress` guard** (`project.py:85`): Prevents re-entrant position change handling. The consolidated handler (`_onPositionChangeConsolidated`) wraps `onPositionChange` + `updateDwMatches` + `updateDwThumbs` in a single guarded call.
+
+3. **`dm.zpos` setter guard** (`data.py:308`): `if pos != self.zpos` prevents emitting `positionChanged` when the position hasn't actually changed. This breaks the slider→zpos→slider loop.
+
+4. **`inspect.stack()[1].function == 'main'` guard**: Used in ~6 combo/slider handlers to distinguish user-initiated changes from programmatic ones. Fragile but functional.
+
+### Issues Found and Fixed (2026-02-23)
+
+#### 1. `shared_state.add_changed_callback` Accumulation — FIXED
+**File**: `src/viewers/viewerfactory.py` (PMViewer)
+
+`PMViewer.initViewer()` called `self.shared_state.add_changed_callback(...)` every time. Unlike EMViewer/MAViewer (which only add the callback in `__init__`), PMViewer added it in `initViewer()`, which is called repeatedly from `updatePMViewers()` on tab switches, combo changes, and scale changes. Callbacks accumulated without cleanup.
+
+**Fix**: Added `_state_callback_registered` flag in `PMViewer.__init__()`, guarding the `add_changed_callback()` call in `initViewer()` so it only registers once per viewer instance.
+
+#### 2. No `blockSignals()` on Programmatic Widget Updates — FIXED
+**Files**: `src/ui/tabs/project.py`, `src/ui/main_window.py`
+
+When `onPositionChange()` called `self.mw.sldrZpos.setValue(self.dm.zpos)`, the slider emitted `valueChanged`, which called `setattr(self.dm, 'zpos', ...)` again. The `dm.zpos` setter guard prevented infinite recursion, but the round-trip was wasteful.
+
+**Fix**: Added `blockSignals(True/False)` around all programmatic `setValue`/`setChecked` calls for: `sldrZpos`, `cbInclude`, `cbDefaults`, `slider1x1`, `slider2x2`, `sliderMatch`, `cbBB`, `cbClobber`. Affected methods: `onPositionChange`, `onSwimArgsChanged`, `dataUpdateMA`, `updateSlidrZpos`, `reload_zpos_slider_and_lineedit`, `_onGlobTabChange`, `disableControlPanel`.
+
+**Gotcha**: `sldrZpos.valueChanged` had a side-effect connection (`leJump.setText(...)`) that was also suppressed by `blockSignals`. Fixed by adding explicit `self.mw.leJump.setText(str(self.dm.zpos))` in `onPositionChange()` after the blocked slider update.
+
+#### 3. Debug Print Lambdas Connected to Signals — FIXED
+**Files**: `project.py`, `main_window.py`, `snrplot.py`, `filebrowser.py`
+
+Removed/commented ~10 debug `print()` lambdas connected to signals (`arrowLeft`, `arrowRight`, keyboard shortcuts, list widgets, group boxes, file browser, webengine load, zarrworker finished, SNR checkboxes). Converted 3 high-frequency `print(flush=True)` calls in signal handlers to `logger.debug()`.
+
+### Remaining Issues (Not Yet Fixed)
+
+#### `QApplication.processEvents()` Re-entrancy (~30 calls)
+**Files**: Throughout `viewerfactory.py`, `project.py`, `manager.py`
+
+Each `processEvents()` call can dispatch pending signals, triggering slots mid-operation. Particularly risky inside `initNeuroglancer()`, `updatePMViewers()`, and viewer initialization code where state is being modified.
+
+**Guideline**: Avoid `processEvents()` inside signal handlers. Where needed for neuroglancer WebSocket timing, document the reason and ensure re-entrancy guards are in place.
+
+#### Worker `finished` Signal Cascades
+**File**: `src/ui/main_window.py:1067-1077, 1147-1165`
+
+The `_alignworker.finished` signal has ~13 connected slots including `initNeuroglancer()`, `updateTab0UI()`, `dataUpdateWidgets()`. Each fires sequentially and may trigger its own sub-cascades. Not a bug but adds unpredictability.
+
+### Signal Connection Map (Key Files)
+
+| File | Signal Connections | Notes |
+|---|---|---|
+| `main_window.py` | ~80 | Toolbar, menu, shortcuts, workers |
+| `project.py` (AlignmentTab) | ~90 | Viewer signals, sliders, checkboxes, buttons |
+| `manager.py` (ManagerTab) | ~40 | File watchers, combos, viewer signals |
+| `viewerfactory.py` | ~5 per viewer | Neuroglancer shared_state callbacks |
+
+### Rules for Future Signal/Slot Work
+
+1. **Never call `add_changed_callback()` in a method that gets called multiple times** — use `__init__` or track/remove old callbacks.
+2. **Use `blockSignals(True/False)` when setting widget values programmatically** to prevent wasteful signal round-trips.
+3. **Avoid `QApplication.processEvents()` inside signal handlers** — it creates re-entrancy. If unavoidable, ensure guards are in place.
+4. **When recreating viewers, delete the old viewer AFTER clearing its webengine** — prevents JavaScript errors from accessing deleted SharedObjects.
+5. **Consolidate multiple connections to the same signal** into a single handler when they should execute as a unit.
+6. **The `inspect.stack()` guard pattern is fragile** — prefer `blockSignals()` or explicit boolean flags instead.
+7. **When adding `blockSignals()`, audit ALL connections on that signal** — blocking suppresses every connected slot, not just the one you're targeting. E.g., `sldrZpos.valueChanged` also updated `leJump`; blocking it required adding an explicit `leJump.setText()` call.
