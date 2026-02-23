@@ -215,3 +215,31 @@ try:
 finally:
     self._guard_flag = False
 ```
+
+### Follow-up Signal/Slot Audit (2026-02-23)
+
+Investigated 4 additional potential signal/slot issues. Analysis of Qt signal semantics revealed 2 false positives and 2 minor improvements:
+
+#### Issues Investigated
+
+| # | Claim | Verdict | Reason |
+|---|---|---|---|
+| 1 | Missing `blockSignals` on `cbxViewerScale`/`cbxNgLayout` | **False positive** | `cbxViewerScale` signal is commented out; `cbxNgLayout` uses `activated` (user-only, not emitted by programmatic changes) |
+| 2 | Missing `blockSignals` on QAction colorActions | **False positive** | `setChecked()` emits `toggled`, not `triggered`; no `toggled` connections exist on these actions |
+| 3 | Missing `blockSignals` on manager.py combos | **Partially real** | `comboImages`/`comboTransformed` use `textActivated` (user-only, safe); only `comboLevel` uses `currentIndexChanged` (fires on `clear()`/`addItems()`/`setCurrentIndex()`). Mitigated by `inspect.stack()` guard in `onComboLevel`, but fragile per rule #6 |
+| 4 | Repeated signal connections on viewer1 | **False positive for accumulation** | New viewer = new `WorkerSignals` QObject = fresh connections. Old viewer cleaned up by `del`. But 4-line connection block duplicated in 3 places |
+
+#### Fixes Applied
+
+1. **`loadLevelsCombo()` — added `blockSignals()`**: Wraps the `comboLevel.clear()` / `addItems()` / `setCurrentIndex()` sequence in `blockSignals(True/False)` to prevent spurious `currentIndexChanged` emissions. The `inspect.stack()` guard in `onComboLevel` remains as a secondary defense.
+
+2. **Extracted `_connectViewerSignals()` helper**: The identical 4-line arrow key signal connection block (arrowLeft/Right/Up/Down) appeared in 3 places in `manager.py`. Extracted to `_connectViewerSignals(viewer)` method and replaced all 3 occurrences.
+
+#### Qt Signal Semantics Reference
+
+| Signal | Emitted by programmatic changes? | Notes |
+|---|---|---|
+| `QComboBox.activated` / `textActivated` | No | User-only; safe without `blockSignals` |
+| `QComboBox.currentIndexChanged` | Yes | Fires on `clear()`, `addItems()`, `setCurrentIndex()` |
+| `QAction.triggered` | No | User-only; safe without `blockSignals` |
+| `QAction.toggled` | Yes | Fires on `setChecked()` |

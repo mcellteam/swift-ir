@@ -659,6 +659,12 @@ class ManagerTab(QWidget):
 
 
 
+    def _connectViewerSignals(self, viewer):
+        viewer.signals.arrowLeft.connect(self.parent.layer_left)
+        viewer.signals.arrowRight.connect(self.parent.layer_right)
+        viewer.signals.arrowUp.connect(self.parent.incrementZoomIn)
+        viewer.signals.arrowDown.connect(self.parent.incrementZoomOut)
+
     def initPMviewer(self, path=None):
         '''Initialize the PMViewer instances for the current images and alignment paths.'''
         self.setUpdatesEnabled(False)
@@ -680,10 +686,7 @@ class ManagerTab(QWidget):
                 path=path,
                 res=resolution,
                 extra_data={'name': 'viewer0', 'dm': None})
-            self.viewer0.signals.arrowLeft.connect(self.parent.layer_left)
-            self.viewer0.signals.arrowRight.connect(self.parent.layer_right)
-            self.viewer0.signals.arrowUp.connect(self.parent.incrementZoomIn)
-            self.viewer0.signals.arrowDown.connect(self.parent.incrementZoomOut)
+            self._connectViewerSignals(self.viewer0)
         except:
             print_exception()
 
@@ -695,10 +698,7 @@ class ManagerTab(QWidget):
                 path=path,
                 res=resolution,
                 extra_data={'name': 'viewer1', 'dm': None})
-            self.viewer1.signals.arrowLeft.connect(self.parent.layer_left)
-            self.viewer1.signals.arrowRight.connect(self.parent.layer_right)
-            self.viewer1.signals.arrowUp.connect(self.parent.incrementZoomIn)
-            self.viewer1.signals.arrowDown.connect(self.parent.incrementZoomOut)
+            self._connectViewerSignals(self.viewer1)
         except:
             print_exception()
 
@@ -755,10 +755,7 @@ class ManagerTab(QWidget):
                             res=resolution,
                             extra_data={'name': 'viewer1', 'dm': self.dm})
                         self.viewer1.dm = self.dm  # Set dm before initViewer
-                        self.viewer1.signals.arrowLeft.connect(self.parent.layer_left)
-                        self.viewer1.signals.arrowRight.connect(self.parent.layer_right)
-                        self.viewer1.signals.arrowUp.connect(self.parent.incrementZoomIn)
-                        self.viewer1.signals.arrowDown.connect(self.parent.incrementZoomOut)
+                        self._connectViewerSignals(self.viewer1)
                         # Clean up old viewer after webengine is cleared
                         del old_viewer
 
@@ -938,12 +935,14 @@ class ManagerTab(QWidget):
 
     def loadLevelsCombo(self):
         # logger.info('')
+        self.comboLevel.blockSignals(True)
         self.comboLevel.clear()
         if self._images_info:
             if type(self._images_info) == dict:
                 if 'levels' in self._images_info:
                     self.comboLevel.addItems(self._images_info['levels'])
                     self.comboLevel.setCurrentIndex(self.comboLevel.count() - 1)
+        self.comboLevel.blockSignals(False)
 
 
     def onComboSelectEmstack(self):
@@ -1007,10 +1006,7 @@ class ManagerTab(QWidget):
                     res=resolution,
                     extra_data={'name': 'viewer1', 'dm': self.dm})
                 self.viewer1.dm = self.dm  # Set dm before initViewer
-                self.viewer1.signals.arrowLeft.connect(self.parent.layer_left)
-                self.viewer1.signals.arrowRight.connect(self.parent.layer_right)
-                self.viewer1.signals.arrowUp.connect(self.parent.incrementZoomIn)
-                self.viewer1.signals.arrowDown.connect(self.parent.incrementZoomOut)
+                self._connectViewerSignals(self.viewer1)
                 # Clean up old viewer after webengine is cleared
                 del old_viewer
 
