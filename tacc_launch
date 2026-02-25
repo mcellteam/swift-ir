@@ -6,6 +6,8 @@ echo "Loading modules for software OpenGL rendering..."
 module purge
 ml intel/19.1.1
 ml swr/21.2.5
+ml impi/19.0.9
+ml fftw3/3.3.10
 
 echo "Setting environment variables..."
 export OMP_NUM_THREADS=1
