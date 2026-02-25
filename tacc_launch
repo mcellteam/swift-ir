@@ -1,0 +1,15 @@
+#!/bin/bash
+# Lightweight TACC launch script for alignEM using uv
+# Usage: source tacc_launch
+
+echo "Loading modules for software OpenGL rendering..."
+module purge
+ml intel/19.1.1
+ml swr/21.2.5
+
+echo "Setting environment variables..."
+export OMP_NUM_THREADS=1
+export MKL_NUM_THREADS=1
+
+echo "Launching alignEM via uv..."
+uv run alignEM.py "$@"

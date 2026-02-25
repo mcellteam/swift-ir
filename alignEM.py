@@ -313,7 +313,8 @@ if __name__ == "__main__":
 
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--enable-logging --log-level=3' # suppress JS warnings
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=0'
-    os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --no-sandbox --num-raster-threads=%s ' \
+    os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --no-sandbox --ignore-gpu-blocklist ' \
+                                               '--num-raster-threads=%s ' \
                                                '--enable-logging --log-level=3' % \
                                               cfg.QTWEBENGINE_RASTER_THREADS
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = f'--disable-web-security --no-sandbox --num-raster-threads={cfg.QTWEBENGINE_RASTER_THREADS}'
