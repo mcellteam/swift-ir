@@ -31,6 +31,35 @@ The .git directory was reduced from 2.9 GB to 633 MB by removing large binary an
 - Python 3 with pip-installed `git-filter-repo`
 - GitHub CLI (`gh`) installed via MacPorts
 
+## TACC (Lonestar6) Launch Requirements (2026-02-25)
+
+TACC runs RHEL8 without hardware GPU on compute nodes. The following TACC modules **must** be loaded before launching alignEM to provide software OpenGL (for neuroglancer WebGL):
+
+```bash
+module purge
+ml intel/19.1.1      # Intel compiler runtime libraries
+ml swr/21.2.5        # Mesa OpenSWR software rasterizer (provides OpenGL 4.5 via CPU)
+ml impi/19.0.9       # Intel MPI runtime
+ml fftw3/3.3.10      # FFTW libraries
+```
+
+Without these modules (especially `swr/21.2.5`), neuroglancer viewers show "Error: WebGL not supported."
+
+### Launch with uv
+
+Use the `tacc_launch` script which loads modules and runs via `uv`:
+```bash
+source tacc_launch
+```
+
+### Chromium GPU Blocklist
+
+Even with SWR loaded, Chromium may blacklist software renderers for WebGL. `alignEM.py` sets `--ignore-gpu-blocklist` in `QTWEBENGINE_CHROMIUM_FLAGS` to prevent this. Combined with `MESA_GL_VERSION_OVERRIDE=4.5` (also set in `alignEM.py`), this allows WebGL on software OpenGL implementations.
+
+### Legacy conda launch
+
+The old `tacc_bootstrap` and `tacc_develop` scripts activate a conda environment (`alignTACC1024`) instead of using `uv`. They load the same four modules.
+
 ## Network Configuration (Salk Institute)
 
 This machine is on the Salk Institute network, routed through SDSC (San Diego Supercomputer Center) and Internet2 (academic backbone).
