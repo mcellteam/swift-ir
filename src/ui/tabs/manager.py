@@ -280,9 +280,9 @@ class ManagerTab(QWidget):
         corral_dir = '/corral-repl/projects/NeuroNex-3DEM/projects/3dem-1076/Projects_AlignEM'
 
         if is_tacc():
-            urls.append(QUrl.fromLocalFile(os.getenv('SCRATCH')))
-            urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
-            urls.append(QUrl.fromLocalFile(os.getenv('HOME')))
+            for var in ('SCRATCH', 'WORK', 'HOME'):
+                if os.getenv(var):
+                    urls.append(QUrl.fromLocalFile(os.getenv(var)))
             urls.append(QUrl.fromLocalFile(corral_dir))
 
         else:
@@ -895,6 +895,15 @@ class ManagerTab(QWidget):
 
         self.loadLevelsCombo()
         self.loadAlignmentCombo()
+        # Load alignment data model if a remembered alignment is selected
+        if self.comboTransformed.currentText():
+            try:
+                self.dm = DataModel(data=read('json')(self.comboTransformed.currentText()), readonly=True)
+            except:
+                self.dm = None
+                print_exception()
+        QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)
+        self.updatePMViewers()
 
 
     def loadAlignmentCombo(self):
@@ -963,6 +972,7 @@ class ManagerTab(QWidget):
 
     def onComboTransformed(self):
         logger.info('')
+        cfg.preferences['alignment_combo_text'] = self.comboTransformed.currentText()
         try:
             self.dm = DataModel(data=read('json')(self.comboTransformed.currentText()), readonly=True)
         except:
@@ -1158,7 +1168,7 @@ class ManagerTab(QWidget):
         delegate.mapping = getSideBarPlacesImportImages()
         sidebar.setItemDelegate(delegate)
 
-        if self.iid_dialog.exec_() == QDialog.Accepted:
+        if self.iid_dialog.exec() == QDialog.Accepted:
             QApplication.processEvents()
             filenames = self.iid_dialog.selectedFiles()
             self._NEW_IMAGES_PATHS = natural_sort(filenames)
@@ -1235,7 +1245,7 @@ class ManagerTab(QWidget):
                     msgbox.setIcon(QMessageBox.Critical)
                     msgbox.setMaximumWidth(350)
                     msgbox.setDefaultButton(QMessageBox.Cancel)
-                    reply = msgbox.exec_()
+                    reply = msgbox.exec()
                     if reply == QMessageBox.Cancel:
                         self.parent.tell('Canceling Delete Project Permanently Instruction...')
                         return
@@ -1340,10 +1350,12 @@ def getSideBarPlacesProjectName():
 
     places = {
         QUrl.fromLocalFile(os.getenv('HOME')): 'Home (' + str(os.getenv('HOME')) + ')',
-        QUrl.fromLocalFile(os.getenv('WORK')): 'Work (' + str(os.getenv('WORK')) + ')',
-        QUrl.fromLocalFile(os.getenv('SCRATCH')): 'Scratch (' + str(os.getenv('SCRATCH')) + ')',
-        QUrl.fromLocalFile(corral_projects_dir): 'Projects_AlignEM',
     }
+    if os.getenv('WORK'):
+        places[QUrl.fromLocalFile(os.getenv('WORK'))] = 'Work (' + os.getenv('WORK') + ')'
+    if os.getenv('SCRATCH'):
+        places[QUrl.fromLocalFile(os.getenv('SCRATCH'))] = 'Scratch (' + os.getenv('SCRATCH') + ')'
+    places[QUrl.fromLocalFile(corral_projects_dir)] = 'Projects_AlignEM'
     if os.path.exists('/Volumes'):
         places[QUrl.fromLocalFile('/Volumes')] = '/Volumes'
     if is_joel():
@@ -1358,10 +1370,12 @@ def getSideBarPlacesImportImages():
 
     places = {
         QUrl.fromLocalFile(os.getenv('HOME')): 'Home (' + str(os.getenv('HOME')) + ')',
-        QUrl.fromLocalFile(os.getenv('WORK')): 'Work (' + str(os.getenv('WORK')) + ')',
-        QUrl.fromLocalFile(os.getenv('SCRATCH')): 'Scratch (' + str(os.getenv('SCRATCH')) + ')',
-        QUrl.fromLocalFile(corral_images_dir): 'EM_Series',
     }
+    if os.getenv('WORK'):
+        places[QUrl.fromLocalFile(os.getenv('WORK'))] = 'Work (' + os.getenv('WORK') + ')'
+    if os.getenv('SCRATCH'):
+        places[QUrl.fromLocalFile(os.getenv('SCRATCH'))] = 'Scratch (' + os.getenv('SCRATCH') + ')'
+    places[QUrl.fromLocalFile(corral_images_dir)] = 'EM_Series'
     if os.path.exists('/Volumes'):
         places[QUrl.fromLocalFile('/Volumes')] = '/Volumes'
     if is_joel():
@@ -1513,12 +1527,12 @@ class ImagesConfig(QWidget):
         self.leResX.setValidator(QIntValidator())
         self.leResY.setValidator(QIntValidator())
         self.leResZ.setValidator(QIntValidator())
-        l1 = QLabel("x:").setAlignment(Qt.AlignRight)
-        # l1.setAlignment(Qt.AlignRight)
-        l2 = QLabel("y:").setAlignment(Qt.AlignRight)
-        # l2.setAlignment(Qt.AlignRight)
-        l3 = QLabel("z:").setAlignment(Qt.AlignRight)
-        # l3.setAlignment(Qt.AlignRight)
+        l1 = QLabel("x:")
+        l1.setAlignment(Qt.AlignRight)
+        l2 = QLabel("y:")
+        l2.setAlignment(Qt.AlignRight)
+        l3 = QLabel("z:")
+        l3.setAlignment(Qt.AlignRight)
         few = [HW(l1, self.leResX), HW(l2, self.leResY), HW(l3, self.leResZ)]
         for one in few:
             one.layout.setAlignment(Qt.AlignHCenter)
@@ -1622,7 +1636,7 @@ class ScaledPixmapLabel(QLabel):
         self.setScaledContents(True)
 
     def paintEvent(self, event):
-        if self.pixmap():
+        if self.pixmap() and not self.pixmap().isNull():
             pm = self.pixmap()
             try:
                 originalRatio = pm.width() / pm.height()
@@ -1633,6 +1647,7 @@ class ScaledPixmapLabel(QLabel):
                     rect = QRect(0, 0, pm.width(), pm.height())
                     rect.moveCenter(self.rect().center())
                     qp.drawPixmap(rect, pm)
+                    qp.end()
                     return
             except ZeroDivisionError:
                 # logger.warning('Cannot divide by zero')
@@ -1671,7 +1686,6 @@ class WebEngine(QWebEngineView):
     # use .settings() to access settings
     def __init__(self, ID):
         QWebEngineView.__init__(self)
-        self.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
         self.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
         self.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
         self.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)

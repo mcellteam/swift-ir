@@ -2,7 +2,7 @@
 
 - Repository: git@github.com:mcellteam/swift-ir
 - Main branch: development
-- Current branch: devel_claude
+- Current branch: devel_claude_pyside6
 
 ## Git History Cleanup (2026-01-28)
 
@@ -138,6 +138,96 @@ def add_layers():
     webengine.setUrl(QUrl(viewer.get_viewer_url()))
 webengine.setOnLoadCallback(add_layers)
 ```
+
+## PyQt5 to PySide6 Migration (2026-02-26)
+
+Migrated from PyQt5 to PySide6. The `qtpy` abstraction layer (used in all 34 source files under `src/`) handled most API differences automatically, including ~150+ unscoped enum usages. Direct PyQt5 references only existed in 2 files.
+
+### Dependency Changes
+
+**`pyproject.toml`**: Removed `pyqt5>=5.15.11`, `pyqtwebengine>=5.15.7`, `pyqtwebengine-qt5`. Added `PySide6>=6.7.0` (bundles all Qt modules including WebEngine). Libraries `qtpy`, `pyqtgraph`, `qtconsole`, `qtawesome` are all PySide6-compatible and unchanged.
+
+### Files Changed (21 files, ~200 lines)
+
+| File | Changes |
+|---|---|
+| `pyproject.toml` | PyQt5 → PySide6 dependency |
+| `alignEM.py` | Plugin path, env vars, `AA_UseDesktopOpenGL` removal, `--use-angle=gl` (macOS), shutdown cleanup |
+| `src/resources/icons_rc.py` | `from PyQt5 import QtCore` → `from qtpy import QtCore` |
+| `src/ui/main_window.py` | `exec_()`, `PluginsEnabled` removal, `QImageReader.setAllocationLimit(0)`, `hud.update()`, QPainter, init guards |
+| `src/ui/tabs/manager.py` | `exec_()`, `PluginsEnabled`, `QUrl.fromLocalFile(None)` guards, `QLabel.setAlignment` chaining, QPainter, alignment combo persistence |
+| `src/ui/tabs/project.py` | `setCheckState` enums, `Qt.KeyboardModifier`, `PluginsEnabled`, `exec_()`, `super()` fix, init guards, QPainter |
+| `src/models/jsontree.py` | `QModelIndex.child()` removal, `self.parent` → `self._parent_widget` |
+| `src/ui/views/thumbnail.py` | `drawLines` → `drawLine`, `QFont.Weight` enum, `pixmap().fill()` semantics, QPainter lifecycle |
+| `src/ui/widgets/clickable.py` | QPainter `end()`, double-self fix |
+| `src/ui/views/alignmenttable.py` | `exec_()`, QPainter |
+| `src/viewers/viewerfactory.py` | Graceful dm-None handling, log message fix |
+| 8 other files | `exec_()` → `exec()` |
+| `tacc_launch`, `tacc_bootstrap` | `QT_API=pyside6` |
+
+### PySide6 Compatibility Issues Found
+
+These are the key behavioral differences between PyQt5 and PySide6 that required code changes:
+
+#### 1. Strict type checking — `None` rejected for typed parameters
+PySide6 raises `TypeError` where PyQt5 silently accepted `None`. Example: `QUrl.fromLocalFile(None)` crashes. Guard with `if os.getenv('VAR'):` checks.
+
+#### 2. `exec_()` alias removed
+PySide6 only provides `exec()`. Changed in 10 files (12 call sites).
+
+#### 3. `QModelIndex.child()` removed in Qt6
+Replace `index.child(row, col)` with `model.index(row, col, parent_index)`.
+
+#### 4. `QObject.parent()` method shadowing
+Storing `self.parent = widget` on a QObject subclass shadows the C++ `parent()` method. PySide6 calls `parent()` internally and gets the stored widget instead. Rename to `self._parent_widget`.
+
+#### 5. Integer enums rejected — scoped enums required
+`setCheckState(2)` → `setCheckState(Qt.CheckState.Checked)`, `QFont.setWeight(10)` → `setWeight(QFont.Weight.Thin)`, `Qt.KeyboardModifiers()` → `Qt.KeyboardModifier(0)`.
+
+#### 6. QPainter must be explicitly ended
+PySide6 crashes (`QBackingStore::endPaint()`) if QPainter is not ended before `paintEvent` returns. PyQt5 handled this silently via destructor. Fix: always call `qp.end()` in a `try/finally` block. Also: never call `setPixmap()` or `repaint()` while a QPainter is active.
+
+#### 7. `QLabel.pixmap()` returns a copy
+In PyQt5, `self.pixmap()` returns a reference to the internal pixmap. In PySide6, it returns a copy. So `self.pixmap().fill(color)` fills a temporary and has no visible effect. Fix: create a new `QPixmap`, fill it, then `setPixmap()`.
+
+#### 8. `QLabel.setAlignment()` returns `None`
+Chaining `QLabel("x:").setAlignment(Qt.AlignRight)` assigns `None` to the variable. Split into two lines.
+
+#### 9. `super()` class argument validation
+`super(QListWidget, self).__init__()` where class is actually a subclass of `QListWidget` fails in PySide6. Use `super().__init__()`.
+
+#### 10. Signals fire during widget construction
+PySide6 emits `visibilityChanged`, `currentChanged`, etc. during widget setup before all attributes exist. Guard with `if not hasattr(self, 'attr'): return`.
+
+#### 11. Qt6 API removals
+- `QWebEngineSettings.PluginsEnabled` — removed (NPAPI dead). Delete the lines.
+- `Qt.AA_UseDesktopOpenGL` — removed (desktop GL is default in Qt6). Delete.
+- `QApplication.exec_()` — see #2.
+
+#### 12. Metal ANGLE backend on macOS
+Qt6 WebEngine uses Metal by default on macOS, causing XPC connection errors. Fix: add `--use-angle=gl` to `QTWEBENGINE_CHROMIUM_FLAGS` (macOS only, via `sys.platform == 'darwin'` check).
+
+#### 13. `widget.repaint()` can crash during active paint cycle
+PySide6 is stricter about synchronous `repaint()` during signal cascades. Use `widget.update()` (async) instead.
+
+### Shutdown Cleanup
+
+PySide6/Shiboken destroys C++ objects in unpredictable order during garbage collection, causing segfaults on exit. Fix in `alignEM.py`:
+```python
+_app = QApplication.instance()
+ret = _app.exec()
+del cfg.mw          # Explicitly destroy main window
+cfg.main_window = None
+del _app            # Then destroy QApplication
+sys.exit(ret)
+```
+
+### Alignment Combo Persistence
+
+Added persistence for the most recently selected alignment file in the Alignment Manager:
+- `onComboTransformed()` saves `cfg.preferences['alignment_combo_text']` when user selects an alignment
+- `loadAlignmentCombo()` restores the combo text from preferences on startup
+- `updateCombos()` loads the DataModel and calls `updatePMViewers()` to display both viewers
 
 ## Signal/Slot UI Debugging (2026-02-23)
 

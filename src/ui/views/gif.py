@@ -266,4 +266,4 @@ if __name__ == "__main__":
     player = GifPlayer(path)
     # player = GifPlayer2("bla bla", file_path)
     player.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())

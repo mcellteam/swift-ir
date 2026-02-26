@@ -329,7 +329,7 @@ class MainWindow(QMainWindow):
         if console:
             hudlogger.info(f"[HUD] {message}")
         self.hud.post(message, level=logging.INFO)
-        self.hud.repaint()  # Force HUD to paint immediately without processing full event queue
+        self.hud.update()  # Schedule repaint; repaint() can crash PySide6 if called during active paint cycle
         self.update()
 
     def warn(self, message):
@@ -351,8 +351,7 @@ class MainWindow(QMainWindow):
 
     def initImageAllocations(self):
         logger.info('')
-        # if qtpy.PYSIDE6:
-        #     QImageReader.setAllocationLimit(0)  # PySide6 only
+        QImageReader.setAllocationLimit(0)
         os.environ['QT_IMAGEIO_MAXALLOC'] = "1_000_000_000_000_000_000"
         from PIL import Image
         Image.MAX_IMAGE_PIXELS = 1_000_000_000_000
@@ -366,7 +365,6 @@ class MainWindow(QMainWindow):
         logger.info('')
 
         self._html_resource = WebEngine(ID='_html_resource')
-        self._html_resource.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
         self._html_resource.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
         self._html_resource.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
         self._html_resource.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
@@ -725,6 +723,8 @@ class MainWindow(QMainWindow):
 
     def callbackDwVisibilityChanged(self):
         logger.debug('')
+        if not hasattr(self, 'dwSnr'):
+            return
         # caller = inspect.stack()[1].function
         # logger.info(f'[{caller}] [{caller_name()}] {self.dwPython.isVisible()} {self.dw_hud.isVisible()} {self.dwNotes.isVisible()}')
         self.tbbPython.setChecked(self.dwPython.isVisible())
@@ -1503,7 +1503,7 @@ class MainWindow(QMainWindow):
         dlg.setTextValue(str(cfg.DEFAULT_PLAYBACK_SPEED))
         dlg.setLabelText('Set Playback Speed\n(frames per second)...')
         dlg.resize(200, 120)
-        ok = dlg.exec_()
+        ok = dlg.exec()
         if ok:
             new_speed = float(dlg.textValue())
             cfg.DEFAULT_PLAYBACK_SPEED = new_speed
@@ -1962,7 +1962,6 @@ class MainWindow(QMainWindow):
     def url_resource(self, url, title):
         webengine = QWebEngineView()
         webengine.setUrl(QUrl(url))
-        webengine.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
         webengine.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
         webengine.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
         webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
@@ -4044,7 +4043,7 @@ class MainWindow(QMainWindow):
 
         self.dwMatches = DockWidget('Matches & Match Signals', self)
         self.dwMatches.visibilityChanged.connect(self.callbackDwVisibilityChanged)
-        self.dwMatches.visibilityChanged.connect(lambda: self.pt.matchPlayTimer.stop())
+        self.dwMatches.visibilityChanged.connect(lambda: self.pt.matchPlayTimer.stop() if self.pt else None)
         self.dwMatches.setFeatures(QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetClosable)
         self.dwMatches.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea)
         self.dwMatches.setObjectName('Dock Widget Thumbnails')
@@ -5027,6 +5026,7 @@ class MarqueeLabel(QLabel):
                 self.px = -self.textLength
         painter.drawText(int(self.px), int(self.py + self.fontPointSize), self.text())
         painter.translate(self.px, 0)
+        painter.end()
 
     def speed(self):
         return self._speed

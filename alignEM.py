@@ -49,11 +49,8 @@ print(f'Python executable: {sys.executable}')
 
 import os
 
-import PyQt5
-dirname = os.path.dirname(PyQt5.__file__)
-plugin_path = os.path.join(dirname,'plugins','platforms')
-print(f'Qt plugin path: {plugin_path}')
-os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = plugin_path
+import PySide6
+print(f'PySide6 version: {PySide6.__version__}')
 
 import subprocess as sp
 import logging, argparse
@@ -277,7 +274,7 @@ def main():
     # if cfg.PROFILING_MODE:
     #     sys.setprofile(tracefunc)
 
-    QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseDesktopOpenGL) #0226-
+    # AA_UseDesktopOpenGL removed in Qt6 (desktop OpenGL is the default)
 
     initialize_user_preferences() # calls update_preferences_model()
     convert_projects_model()
@@ -292,14 +289,22 @@ def main():
     logger.info('Showing application window')
     cfg.mw.show()
 
-    sys.exit(app.exec())
+    _app = QApplication.instance()
+    ret = _app.exec()
+    # Explicitly delete the main window before Python's GC runs to prevent
+    # PySide6 segfaults from C++ objects being destroyed in wrong order
+    del cfg.mw
+    cfg.main_window = None
+    del _app
+    sys.exit(ret)
 
 
 if __name__ == "__main__":
     print('__main__:')
     print('Configuring environment variables...')
 
-    os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt5'
+    os.environ['QT_API'] = 'pyside6'
+    os.environ['PYQTGRAPH_QT_LIB'] = 'PySide6'
     os.environ["BLOSC_NTHREADS"] = "1"
     os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
     # logger.info('Setting OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES')
@@ -313,10 +318,12 @@ if __name__ == "__main__":
 
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--enable-logging --log-level=3' # suppress JS warnings
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=0'
-    os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --no-sandbox --ignore-gpu-blocklist ' \
-                                               '--num-raster-threads=%s ' \
-                                               '--enable-logging --log-level=3' % \
-                                              cfg.QTWEBENGINE_RASTER_THREADS
+    _chromium_flags = '--disable-web-security --no-sandbox --ignore-gpu-blocklist ' \
+                      '--num-raster-threads=%s ' \
+                      '--enable-logging --log-level=3' % cfg.QTWEBENGINE_RASTER_THREADS
+    if sys.platform == 'darwin':
+        _chromium_flags += ' --use-angle=gl'  # Avoid Metal ANGLE XPC errors on macOS
+    os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = _chromium_flags
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = f'--disable-web-security --no-sandbox --num-raster-threads={cfg.QTWEBENGINE_RASTER_THREADS}'
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --no-sandbox'
     os.environ['OPENBLAS_NUM_THREADS'] = '1'

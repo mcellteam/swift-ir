@@ -218,14 +218,14 @@ class AlignmentTab(QWidget):
         logger.info('')
         self.bZarrRegen.setEnabled(self.dm.is_aligned())
         m = self.cbxNgExtras.model()
-        if self.dm['state']['neuroglancer']['show_controls']: m.item(1).setCheckState(2)
-        else: m.item(1).setCheckState(0)
-        if self.dm['state']['neuroglancer']['show_bounds']: m.item(2).setCheckState(2)
-        else: m.item(2).setCheckState(0)
-        if self.dm['state']['neuroglancer']['show_axes']: m.item(3).setCheckState(2)
-        else: m.item(3).setCheckState(0)
-        if self.dm['state']['neuroglancer']['show_scalebar']: m.item(4).setCheckState(2)
-        else: m.item(4).setCheckState(0)
+        if self.dm['state']['neuroglancer']['show_controls']: m.item(1).setCheckState(Qt.CheckState.Checked)
+        else: m.item(1).setCheckState(Qt.CheckState.Unchecked)
+        if self.dm['state']['neuroglancer']['show_bounds']: m.item(2).setCheckState(Qt.CheckState.Checked)
+        else: m.item(2).setCheckState(Qt.CheckState.Unchecked)
+        if self.dm['state']['neuroglancer']['show_axes']: m.item(3).setCheckState(Qt.CheckState.Checked)
+        else: m.item(3).setCheckState(Qt.CheckState.Unchecked)
+        if self.dm['state']['neuroglancer']['show_scalebar']: m.item(4).setCheckState(Qt.CheckState.Checked)
+        else: m.item(4).setCheckState(Qt.CheckState.Unchecked)
         isAligned = self.dm.is_aligned()
         self.cbBB.setChecked(self.dm.output_settings()['bounding_box']['has'])
 
@@ -964,8 +964,9 @@ class AlignmentTab(QWidget):
                 mo = self.dm['level_data'][s]['method_presets']['manual']  # Todo ...not similar to this
                 self.dm['stack'][l]['levels'][s]['swim_settings']['method_opts'] = copy.deepcopy(mo)
             self.dataUpdateMA() #1019+ #Critical
-            self.viewer1.drawSWIMwindow()  # 1019+
-            self.we1.setFocus()
+            if hasattr(self, 'viewer1'):
+                self.viewer1.drawSWIMwindow()  # 1019+
+                self.we1.setFocus()
 
 
         class ItemDelegate(QStyledItemDelegate):
@@ -1525,7 +1526,8 @@ class AlignmentTab(QWidget):
             self.dm['state']['neuroglancer']['show_bounds'] = self.cbxNgExtras.itemChecked(2)
             self.dm['state']['neuroglancer']['show_axes'] = self.cbxNgExtras.itemChecked(3)
             self.dm['state']['neuroglancer']['show_scalebar'] = self.cbxNgExtras.itemChecked(4)
-            self.viewer0.updateDisplayExtras()
+            if hasattr(self, 'viewer0'):
+                self.viewer0.updateDisplayExtras()
             self.mw.saveUserPreferences(silent=True)
 
         self.cbxNgExtras.model().itemChanged.connect(cb_itemChanged)
@@ -2203,6 +2205,8 @@ class AlignmentTab(QWidget):
         # self.mw.bZarrRegen.setEnabled(self.dm.is_aligned())
 
         # self.bPull.setVisible((self.dm.scale != self.dm.coarsest_scale_key()) and self.dm.is_alignable())
+        if not hasattr(self, 'wTabs'):
+            return
         if self.wTabs.currentIndex() == 1: #1111 This should make a huge difference
             self.gifPlayer.controls2.setVisible(os.path.exists(self.dm.path_cafm_gif()))
             self.gbGrid.setTitle(f'Level {self.dm.lvl()} Grid Alignment Settings')
@@ -2389,7 +2393,7 @@ class AlignmentTab(QWidget):
             self.deleteAllPtsAction0 = QAction('Clear All Regions')
             self.deleteAllPtsAction0.triggered.connect(self.deleteAllMp)
             menu.addAction(self.deleteAllPtsAction0)
-            if menu.exec_(event.globalPos()):
+            if menu.exec(event.globalPos()):
                 item = source.itemAt(event.pos())
             return True
         elif event.type() == QEvent.ContextMenu and source is self.lwL:
@@ -2403,7 +2407,7 @@ class AlignmentTab(QWidget):
             self.deleteAllPtsAction1 = QAction('Clear All Regions')
             self.deleteAllPtsAction1.triggered.connect(self.deleteAllMp)
             menu.addAction(self.deleteAllPtsAction1)
-            if menu.exec_(event.globalPos()):
+            if menu.exec(event.globalPos()):
                 item = source.itemAt(event.pos())
             return True
         return super().eventFilter(source, event)
@@ -2980,7 +2984,7 @@ class ScaledPixmapLabel(QLabel):
         self.setScaledContents(True)
 
     def paintEvent(self, event):
-        if self.pixmap():
+        if self.pixmap() and not self.pixmap().isNull():
             pm = self.pixmap()
             try:
                 originalRatio = pm.width() / pm.height()
@@ -2991,6 +2995,7 @@ class ScaledPixmapLabel(QLabel):
                     rect = QRect(0, 0, pm.width(), pm.height())
                     rect.moveCenter(self.rect().center())
                     qp.drawPixmap(rect, pm)
+                    qp.end()
                     return
             except ZeroDivisionError:
                 print_exception()
@@ -3038,7 +3043,7 @@ class ForwardKeyEvent(QObject):
     def eventFilter(self, obj, event):
         if self.m_sender is obj and event.type() == QEvent.KeyPress:
             new_event = QKeyEvent(
-                QEvent.KeyPress, 65, Qt.KeyboardModifiers(),"r",)
+                QEvent.KeyPress, 65, Qt.KeyboardModifier(0),"r",)
             new_event.artificial = True
             QCoreApplication.postEvent(self.m_receiver.focusProxy(), new_event)
             return True
@@ -3120,6 +3125,7 @@ class Rect(QWidget):
         br = QBrush(QColor(100, 10, 10, 40))
         qp.setBrush(br)
         qp.drawRect(QRect(self.begin, self.end))
+        qp.end()
 
     def mousePressEvent(self, event):
         self.clicked.emit()
@@ -3192,12 +3198,11 @@ class CheckableComboBox(QComboBox):
         item = self.model().item(self.count()-1,0)
         if self.count() > 1:
             item.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
-            # item.setCheckState(Qt.Unchecked)
-            item.setCheckState(0)
+            item.setCheckState(Qt.CheckState.Unchecked)
 
     def itemChecked(self, index):
         item = self.model().item(index,0)
-        return item.checkState() == Qt.Checked
+        return item.checkState() == Qt.CheckState.Checked
 
 
 class WarningNotice(QWidget):
@@ -3291,7 +3296,7 @@ class ClickLabel(QLabel):
 
 class ListWidget(QListWidget):
     def __init__(self,):
-        super(QListWidget, self).__init__()
+        super().__init__()
         self.setFocusPolicy(Qt.NoFocus)
 
     def sizeHint(self):
@@ -3329,7 +3334,6 @@ class BoldLabel(QLabel):
 
 
 def setWebengineProperties(webengine):
-    webengine.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
     webengine.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True) #Turning this off block neuroglancer, expectedly
     webengine.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
     webengine.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
@@ -3363,4 +3367,4 @@ if __name__ == '__main__':
     pt = AlignmentTab()
     main_window.setCentralWidget(pt)
     main_window.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())

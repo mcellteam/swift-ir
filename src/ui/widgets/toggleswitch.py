@@ -304,4 +304,4 @@ if __name__ == '__main__':
     ts = ToggleSwitch()
     main_window.setCentralWidget(ts)
     main_window.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())

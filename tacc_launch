@@ -10,6 +10,7 @@ ml impi/19.0.9
 ml fftw3/3.3.10
 
 echo "Setting environment variables..."
+export QT_API=pyside6
 export OMP_NUM_THREADS=1
 export MKL_NUM_THREADS=1
 

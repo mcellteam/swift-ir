@@ -5,10 +5,10 @@ https://doc.qt.io/qtforpython/examples/example_widgets_itemviews_jsonmodel.html
 
 item = self.parent.mdlTreeview.itemData(self.parent.mdlTreeview.index(2,0)); print(item)
 
-a = self.parent.treeview.model().index(1, 0)
+a = self._parent_widget.treeview.model().index(1, 0)
 b = a.child(0,0) # a is QModelIndex
 self.parent.mdlTreeview.itemData(b) #b is QModelIndex
-self.parent.treeview.setCurrentIndex(b) # select the item programmatically
+self._parent_widget.treeview.setCurrentIndex(b) # select the item programmatically
 
 # returns the item count (8 here)
 self.parent.mdlTreeview._rootItem.childCount()
@@ -182,7 +182,7 @@ class JsonModel(QAbstractItemModel):
 
     def __init__(self, parent, dm=None):
         super().__init__(parent)
-        self.parent = parent
+        self._parent_widget = parent
         self.dm = dm
         self._rootItem = TreeItem()
         self._headers = ("key", "value")
@@ -363,7 +363,7 @@ class JsonModel(QAbstractItemModel):
     def collapseIndex(self, s=None, l=None):
         if s == None: s = self.dm.level
         if l == None: l = self.dm.zpos
-        # self.parent.treeview.collapseAll()
+        # self._parent_widget.treeview.collapseAll()
         self.collapseAll()
         keys = ['data', 'scales', s, 'stack', l]
         self.getIndex(findkeys=keys, jump=False, collapse=True)
@@ -380,7 +380,7 @@ class JsonModel(QAbstractItemModel):
             self.lst = [self.index(i, 0).data() for i in range(self.count)]
         else:
             self.count = self.rowCount(treeitem)
-            self.lst = [treeitem.child(i,0).data() for i in range(self.count)]
+            self.lst = [self.index(i, 0, treeitem).data() for i in range(self.count)]
 
         self.idx = self.lst.index(findkeys[0])
         # print('found key %level in %level at images_path %d...' % (str(findkeys), str(self.lst), self.idx))
@@ -390,20 +390,20 @@ class JsonModel(QAbstractItemModel):
         if isRoot:
             next_treeitem = self.index(self.idx, 0)  # b is QModelIndex
         else:
-            next_treeitem = treeitem.child(self.idx, 0)
+            next_treeitem = self.index(self.idx, 0, treeitem)
 
         self.next_treeitem = next_treeitem
 
         if findkeys == []:
             # print('Returning: %level' % str(next_treeitem))
             if jump:
-                self.parent.treeview.setCurrentIndex(next_treeitem)
+                self._parent_widget.treeview.setCurrentIndex(next_treeitem)
             if expand:
-                self.parent.treeview.expandRecursively(next_treeitem)
+                self._parent_widget.treeview.expandRecursively(next_treeitem)
             # if collapse:
-            #     # self.parent.treeview.collapse(next_treeitem)
-            #     previous_index = self.parent.treeview.pr
-            #     self.parent.treeview.collapse(next_treeitem)
+            #     # self._parent_widget.treeview.collapse(next_treeitem)
+            #     previous_index = self._parent_widget.treeview.pr
+            #     self._parent_widget.treeview.collapse(next_treeitem)
 
             return next_treeitem
 
@@ -414,17 +414,17 @@ class JsonModel(QAbstractItemModel):
     def jumpToLayer(self, s=None, l=None):
         if s == None: s = self.dm.level
         if l == None: l = self.dm.zpos
-        # self.parent.treeview.collapseAll()
+        # self._parent_widget.treeview.collapseAll()
         keys = ['stack', l, 'levels', s]
         # if z !=0:
         #     self.collapseIndex(z=z - 1)
         # self.getIndex(findkeys=keys, expand=True)
         self.getIndex(findkeys=keys, expand=False)
-        # self.parent.treeview.scrollTo(self.next_treeitem, QAbstractItemView.PositionAtCenter)
+        # self._parent_widget.treeview.scrollTo(self.next_treeitem, QAbstractItemView.PositionAtCenter)
 
     def jumpToKey(self, keys):
         self.getIndex(findkeys=keys, expand=True)
-        self.parent.treeview.scrollTo(self.next_treeitem, QAbstractItemView.PositionAtTop)
+        self._parent_widget.treeview.scrollTo(self.next_treeitem, QAbstractItemView.PositionAtTop)
 
 
 

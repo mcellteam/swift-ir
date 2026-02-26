@@ -622,7 +622,7 @@ class ProjectTable(QWidget):
                 alignedSelectedRangeAction.triggered.connect(self.alignHighlighted)
                 menu.addAction(alignedSelectedRangeAction)
 
-            menu.exec_(event.globalPos())
+            menu.exec(event.globalPos())
             return True
         return super().eventFilter(source, event)
 
@@ -687,7 +687,7 @@ class ScaledPixmapLabel(QLabel):
         self.setScaledContents(True)
 
     def paintEvent(self, event):
-        if self.pixmap():
+        if self.pixmap() and not self.pixmap().isNull():
             pm = self.pixmap()
             try:
                 originalRatio = pm.width() / pm.height()
@@ -698,6 +698,7 @@ class ScaledPixmapLabel(QLabel):
                     rect = QRect(0, 0, pm.width(), pm.height())
                     rect.moveCenter(self.rect().center())
                     qp.drawPixmap(rect, pm)
+                    qp.end()
                     return
             except ZeroDivisionError:
                 # logger.warning('Cannot divide by zero')

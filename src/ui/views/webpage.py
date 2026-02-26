@@ -121,4 +121,4 @@ if __name__ == '__main__':
     webpage.show()
 
     # view.show()
-    app.exec_()
+    app.exec()

@@ -18,6 +18,7 @@ class ClickablePicButton(QAbstractButton):
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.drawPixmap(event.rect(), self.pixmap)
+        painter.end()
 
     def sizeHint(self):
         return self.pixmap.size()
@@ -25,7 +26,7 @@ class ClickablePicButton(QAbstractButton):
 class ClickableLabel(QLabel):
     clicked = Signal()
     def mouseReleaseEvent(self, event):
-        super(ClickableLabel, self).mouseReleaseEvent(self, event)
+        super(ClickableLabel, self).mouseReleaseEvent(event)
         if event.button() == Qt.LeftButton and event.pos() in self.rect():
             self.clicked.emit()
 
@@ -33,4 +34,5 @@ class ClickableLabel(QLabel):
         super().paintEvent(e)
         qp = QPainter(self)
         qp.drawPixmap(100, 100, QPixmap("resources/button_ng.png"))
+        qp.end()
 

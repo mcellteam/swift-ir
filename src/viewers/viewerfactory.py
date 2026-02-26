@@ -924,9 +924,7 @@ class EMViewer(AbstractEMViewer):
             if isinstance(self.state.position, np.ndarray):
                 requested = int(self.state.position[2])
                 if requested != self.dm.zpos:
-                    logger.info(f'Changing index to {self.dm.zpos}')
-                    # with self.txn() as s:
-                    #     s.selected_layer.layer = self.dm.base_image_name()
+                    logger.info(f'Changing index from {self.dm.zpos} to {requested}')
                     self.dm.zpos = requested
 
             if self.state.layout.type != getData('state,neuroglancer,layout'):
@@ -1132,7 +1130,10 @@ class PMViewer(AbstractEMViewer):
         if self.name == 'viewer1':
             '''If the viewer is viewer1, set the data manager and check if the data is aligned.'''
             self.dm = self.parent.dm
-            assert hasattr(self.dm, '_data')
+            if self.dm is None or not hasattr(self.dm, '_data'):
+                logger.warning(f"[{self.name}] data manager not ready")
+                self.webengine.setnull()
+                return
             #Todo
             # if not self.dm.is_aligned(s=self.parent.):
             #     self.webengine.setnull()

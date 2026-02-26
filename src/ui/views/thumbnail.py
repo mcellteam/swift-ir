@@ -122,22 +122,16 @@ class ThumbnailFast(QLabel):
 
     def set_no_image(self):
         self._noImage = 1
-        # try:
-        #     self.pixmap().fill(QColor('#141414'))
-        # except:
-        #     # print_exception()
-        #     logger.warning('Unable to set no image...')
-        # finally:
-        #     self.update()
-        self.pixmap().fill(QColor('#dadada'))
+        pixmap = QPixmap(self.pixmap().size())
+        pixmap.fill(QColor('#dadada'))
+        self.setPixmap(pixmap)
         self.update()
 
 
     def paintEvent(self, event):
-        if self.pixmap():
+        if self.pixmap() and not self.pixmap().isNull():
+            qp = QPainter(self)
             try:
-
-                qp = QPainter(self)
 
                 # pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation)
@@ -163,7 +157,7 @@ class ThumbnailFast(QLabel):
 
                 if self._noImage:
                     try:
-                        self.pixmap().fill(QColor('#dadada'))
+                        qp.fillRect(self.r, QColor('#dadada'))
                         font = QFont()
                         size = max(min(int(11 * (max(pm.height(), 1) / 80)), 14), 5)
                         font.setPointSize(size)
@@ -251,7 +245,12 @@ class ThumbnailFast(QLabel):
             except:
                 # logger.warning('Cannot divide by zero')
                 print_exception()
-                self.set_no_image()
+                self._noImage = 1  # Flag for next repaint; can't call set_no_image() with active painter
+            finally:
+                qp.end()
+            if self._noImage:
+                self.update()  # Schedule repaint now that painter is ended
+            return
         super().paintEvent(event)
 
     # def sizeHint(self):
@@ -367,12 +366,9 @@ class CorrSignalThumbnail(QLabel):
     def paintEvent(self, event):
         # logger.info(f"[{caller_name()}]")
 
-        if self.pixmap():
+        if self.pixmap() and not self.pixmap().isNull():
+            qp = QPainter(self)
             try:
-                # originalRatio = pm.width() / pm.height()
-                # currentRatio = self.width() / self.height()level
-                # if originalRatio != currentRatio:
-                qp = QPainter(self)
                 # pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 pm = self.pixmap().scaled(self.size() - QSize(4, 4), Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 self.r = QRect(0, 0, pm.width(), pm.height())
@@ -399,7 +395,7 @@ class CorrSignalThumbnail(QLabel):
                     qp.drawRect(0,0,20,20)
 
                 if self._noImage or self.extra == 'reticle':
-                    self.pixmap().fill(QColor('#dadada'))
+                    qp.fillRect(self.r, QColor('#dadada'))
                     font = QFont()
                     size = max(min(int(11 * (max(pm.height(), 1) / 120)), 13), 5)
                     font.setPointSize(size)
@@ -418,10 +414,10 @@ class CorrSignalThumbnail(QLabel):
                     # x = 12
                     x = int((pm.width() / 10) + .5)
 
-                    qp.drawLines(p1, cp + QPoint(-x, -x),
-                                 p2, cp + QPoint(x, -x),
-                                 p3, cp + QPoint(-x, x),
-                                 p4, cp + QPoint(x, x))
+                    qp.drawLine(p1, cp + QPoint(-x, -x))
+                    qp.drawLine(p2, cp + QPoint(x, -x))
+                    qp.drawLine(p3, cp + QPoint(-x, x))
+                    qp.drawLine(p4, cp + QPoint(x, x))
 
                     qp.setPen(QPen(QColor('#fd411e'), 1, Qt.SolidLine))
 
@@ -439,7 +435,7 @@ class CorrSignalThumbnail(QLabel):
                     font.setFamily('Tahoma')
                     fsize = max(int(pm.height() / 10 + 0.5), 5)
                     font.setPointSize(fsize)
-                    font.setWeight(10)
+                    font.setWeight(QFont.Weight.Thin)
                     qp.setFont(font)
                     # qp.setPen(QColor('#d0342c'))
                     qp.setPen(QColor('#fd411e'))
@@ -471,6 +467,9 @@ class CorrSignalThumbnail(QLabel):
             except:
                 # logger.warning('Cannot divide by zero')
                 print_exception()
+            finally:
+                qp.end()
+            return
         super().paintEvent(event)
 
 
@@ -500,7 +499,9 @@ class CorrSignalThumbnail(QLabel):
         # self.snr = None #0826-
         self.snr = 0.0
         self._noImage = 1
-        self.pixmap().fill(QColor('#dadada'))
+        pixmap = QPixmap(self.pixmap().size())
+        pixmap.fill(QColor('#dadada'))
+        self.setPixmap(pixmap)
         self.update()
 
 

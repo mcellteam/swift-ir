@@ -146,7 +146,7 @@ class FileBrowser(QWidget):
         #     menu.addAction(self.tr("Edit object/container"))
         # elif level == 2:
         #     menu.addAction(self.tr("Edit object"))
-        menu.exec_(self.treeview.viewport().mapToGlobal(position))
+        menu.exec(self.treeview.viewport().mapToGlobal(position))
 
     def setRootLastKnownRoot(self):
         self._root = cfg.preferences['current_filebrowser_root']
@@ -577,7 +577,7 @@ class FileBrowser(QWidget):
         msgbox.setIcon(QMessageBox.Critical)
         msgbox.setMaximumWidth(350)
         msgbox.setDefaultButton(QMessageBox.Cancel)
-        reply = msgbox.exec_()
+        reply = msgbox.exec()
         if reply == QMessageBox.Cancel:
             cfg.mw.tell('Canceling delete...')
             return
@@ -666,4 +666,4 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     main = FileBrowser()
     main.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())

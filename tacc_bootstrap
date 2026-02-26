@@ -120,8 +120,8 @@ echo "Unsetting MESA_DEBUG..."
 unset MESA_DEBUG
 echo "Unsetting QT_API..."
 unset QT_API
-echo "Setting QT API environment flag QT_API=pyqt5..."
-export QT_API=pyqt5
+echo "Setting QT API environment flag QT_API=pyside6..."
+export QT_API=pyside6
 echo "Increasing LIBTIFF_STRILE_ARRAY_MAX_RESIZE_COUNT by 1000x to prevent libtiff from blocking excessive memory usage..."
 export LIBTIFF_STRILE_ARRAY_MAX_RESIZE_COUNT=1000000000
 

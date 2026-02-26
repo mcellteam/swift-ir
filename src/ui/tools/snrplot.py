@@ -813,4 +813,4 @@ if __name__ == '__main__':
     plot = SnrPlot()
     main_window.setCentralWidget(plot)
     main_window.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
