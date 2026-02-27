@@ -321,10 +321,8 @@ if __name__ == "__main__":
     _chromium_flags = '--disable-web-security --no-sandbox --ignore-gpu-blocklist ' \
                       '--num-raster-threads=%s ' \
                       '--enable-logging --log-level=3' % cfg.QTWEBENGINE_RASTER_THREADS
-    if sys.platform == 'darwin':
-        _chromium_flags += ' --use-angle=gl'  # Avoid Metal ANGLE XPC errors on macOS
-    elif sys.platform == 'linux':
-        _chromium_flags += ' --use-angle=swiftshader'  # Use bundled SwiftShader for WebGL (Mesa SWR lacks EGL)
+    if sys.platform != 'win32':
+        _chromium_flags += ' --use-angle=gl'  # macOS: avoid Metal XPC errors; Linux: use Mesa EGL+GL
     os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = _chromium_flags
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = f'--disable-web-security --no-sandbox --num-raster-threads={cfg.QTWEBENGINE_RASTER_THREADS}'
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --no-sandbox'

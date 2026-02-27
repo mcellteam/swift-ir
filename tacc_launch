@@ -16,6 +16,12 @@ export QSG_RHI_BACKEND=opengl
 export OMP_NUM_THREADS=1
 export MKL_NUM_THREADS=1
 
+# The SWR module sets SWR_LD_LIBRARY_PATH (not LD_LIBRARY_PATH).
+# Chromium's GPU process needs Mesa's GL/EGL libs in LD_LIBRARY_PATH.
+if [ -n "$TACC_SWR_LIB" ]; then
+    export LD_LIBRARY_PATH="${TACC_SWR_LIB}:${TACC_SWR_DIR}/lib64:${LD_LIBRARY_PATH:-}"
+fi
+
 # Qt6 (PySide6) requires libxcb-cursor.so.0 for the xcb platform plugin.
 # RHEL8 doesn't always have this installed. Check and install locally if needed.
 _xcb_cursor_found=0
