@@ -26,8 +26,21 @@ fi
 export LD_LIBRARY_PATH="$HOME/.local/lib:${LD_LIBRARY_PATH:-}"
 
 # Tell libglvnd's EGL dispatch where to find Mesa's EGL vendor implementation.
-# Without this, libEGL.so.1 won't find libEGL_mesa.so.0 (no system ICD JSON on TACC).
-export __EGL_VENDOR_LIBRARY_FILENAMES="$HOME/.local/lib/libEGL_mesa.so.0"
+# libglvnd uses JSON ICD files to locate vendor .so's. Since we install RPMs
+# without system paths, we create the ICD file manually.
+_EGL_VENDOR_DIR="$HOME/.local/share/glvnd/egl_vendor.d"
+if [ ! -f "$_EGL_VENDOR_DIR/50_mesa.json" ]; then
+    mkdir -p "$_EGL_VENDOR_DIR"
+    cat > "$_EGL_VENDOR_DIR/50_mesa.json" <<'EJSON'
+{
+    "file_format_version" : "1.0.0",
+    "ICD" : {
+        "library_path" : "libEGL_mesa.so.0"
+    }
+}
+EJSON
+fi
+export __EGL_VENDOR_LIBRARY_FILENAMES="$_EGL_VENDOR_DIR/50_mesa.json"
 
 # ---------- Auto-install missing libraries into ~/.local/lib ----------
 _LOCAL_LIB="$HOME/.local/lib"
