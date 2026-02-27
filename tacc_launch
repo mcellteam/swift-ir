@@ -22,40 +22,57 @@ if [ -n "$TACC_SWR_LIB" ]; then
     export LD_LIBRARY_PATH="${TACC_SWR_LIB}:${TACC_SWR_DIR}/lib64:${LD_LIBRARY_PATH:-}"
 fi
 
-# Qt6 (PySide6) requires libxcb-cursor.so.0 for the xcb platform plugin.
-# RHEL8 doesn't always have this installed. Check and install locally if needed.
-_xcb_cursor_found=0
-if ldconfig -p 2>/dev/null | grep -q libxcb-cursor; then
-    _xcb_cursor_found=1
-elif [ -f "$HOME/.local/lib/libxcb-cursor.so.0" ]; then
-    export LD_LIBRARY_PATH="$HOME/.local/lib:${LD_LIBRARY_PATH:-}"
-    _xcb_cursor_found=1
-fi
+# Ensure ~/.local/lib is in LD_LIBRARY_PATH (for locally installed libs below)
+export LD_LIBRARY_PATH="$HOME/.local/lib:${LD_LIBRARY_PATH:-}"
 
-if [ "$_xcb_cursor_found" -eq 0 ]; then
-    echo ""
-    echo "Installing libxcb-cursor.so.0 (required by Qt6/PySide6)..."
-    mkdir -p "$HOME/.local/lib"
-    _tmpdir=$(mktemp -d)
+# ---------- Auto-install missing libraries into ~/.local/lib ----------
+_LOCAL_LIB="$HOME/.local/lib"
+mkdir -p "$_LOCAL_LIB"
+
+# Helper: extract .so files from an RPM into ~/.local/lib
+_install_rpm() {
+    local url="$1" label="$2"
+    echo "Installing ${label}..."
+    local _tmpdir=$(mktemp -d)
     (
         cd "$_tmpdir" &&
-        curl -sLO https://dl.rockylinux.org/pub/rocky/9/AppStream/x86_64/os/Packages/x/xcb-util-cursor-0.1.4-3.el9.x86_64.rpm &&
-        rpm2cpio xcb-util-cursor-0.1.4-3.el9.x86_64.rpm | cpio -idm 2>/dev/null &&
-        cp usr/lib64/libxcb-cursor.so* "$HOME/.local/lib/"
+        curl -sLO "$url" &&
+        rpm2cpio *.rpm | cpio -idm 2>/dev/null &&
+        find . -name "*.so*" -exec cp -n {} "$_LOCAL_LIB/" \;
     )
     rm -rf "$_tmpdir"
+}
 
-    if [ -f "$HOME/.local/lib/libxcb-cursor.so.0" ]; then
-        echo "Installed libxcb-cursor.so.0 to $HOME/.local/lib/"
-        export LD_LIBRARY_PATH="$HOME/.local/lib:${LD_LIBRARY_PATH:-}"
-    else
-        echo "ERROR: Failed to install libxcb-cursor.so.0 automatically."
-        echo "Ask TACC admins to install 'xcb-util-cursor' or install manually:"
-        echo "  sudo dnf install xcb-util-cursor"
-        return 1
-    fi
+# 1. libxcb-cursor.so.0 — required by Qt6 xcb platform plugin (not in RHEL8)
+if ! ldconfig -p 2>/dev/null | grep -q libxcb-cursor && [ ! -f "$_LOCAL_LIB/libxcb-cursor.so.0" ]; then
+    _install_rpm \
+        "https://dl.rockylinux.org/pub/rocky/9/AppStream/x86_64/os/Packages/x/xcb-util-cursor-0.1.4-3.el9.x86_64.rpm" \
+        "libxcb-cursor (Qt6 xcb plugin)"
 fi
-unset _xcb_cursor_found
+
+# 2. libEGL.so.1 — required by Chromium ANGLE for WebGL (TACC SWR has no EGL)
+if [ ! -f "$_LOCAL_LIB/libEGL.so.1" ] && ! ldconfig -p 2>/dev/null | grep -q "libEGL.so.1"; then
+    _install_rpm \
+        "https://dl.rockylinux.org/pub/rocky/8/AppStream/x86_64/os/Packages/m/mesa-libEGL-23.1.4-4.el8_10.x86_64.rpm" \
+        "mesa-libEGL (WebGL/ANGLE)"
+fi
+
+# 3. libGLdispatch.so.0 / libOpenGL.so.0 — EGL dependency
+if [ ! -f "$_LOCAL_LIB/libGLdispatch.so.0" ] && ! ldconfig -p 2>/dev/null | grep -q "libGLdispatch.so.0"; then
+    _install_rpm \
+        "https://dl.rockylinux.org/pub/rocky/8/AppStream/x86_64/os/Packages/m/mesa-libGL-23.1.4-4.el8_10.x86_64.rpm" \
+        "mesa-libGL (EGL dependency)"
+fi
+
+# Verify critical libraries
+_missing=""
+[ ! -f "$_LOCAL_LIB/libxcb-cursor.so.0" ] && ! ldconfig -p 2>/dev/null | grep -q libxcb-cursor && _missing="$_missing libxcb-cursor.so.0"
+[ ! -f "$_LOCAL_LIB/libEGL.so.1" ] && ! ldconfig -p 2>/dev/null | grep -q "libEGL.so.1" && _missing="$_missing libEGL.so.1"
+if [ -n "$_missing" ]; then
+    echo "WARNING: Missing libraries:$_missing"
+    echo "WebGL may not work. Check network access to dl.rockylinux.org."
+fi
+unset _LOCAL_LIB _missing
 
 echo "Launching alignEM via uv..."
 uv run alignEM.py "$@"
