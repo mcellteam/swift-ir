@@ -14,5 +14,40 @@ export QT_API=pyside6
 export OMP_NUM_THREADS=1
 export MKL_NUM_THREADS=1
 
+# Qt6 (PySide6) requires libxcb-cursor.so.0 for the xcb platform plugin.
+# RHEL8 doesn't always have this installed. Check and install locally if needed.
+_xcb_cursor_found=0
+if ldconfig -p 2>/dev/null | grep -q libxcb-cursor; then
+    _xcb_cursor_found=1
+elif [ -f "$HOME/.local/lib/libxcb-cursor.so.0" ]; then
+    export LD_LIBRARY_PATH="$HOME/.local/lib:${LD_LIBRARY_PATH:-}"
+    _xcb_cursor_found=1
+fi
+
+if [ "$_xcb_cursor_found" -eq 0 ]; then
+    echo ""
+    echo "Installing libxcb-cursor.so.0 (required by Qt6/PySide6)..."
+    mkdir -p "$HOME/.local/lib"
+    _tmpdir=$(mktemp -d)
+    (
+        cd "$_tmpdir" &&
+        curl -sLO https://rpmfind.net/linux/centos/8-stream/AppStream/x86_64/os/Packages/xcb-util-cursor-0.1.3-3.el8.x86_64.rpm &&
+        rpm2cpio xcb-util-cursor-0.1.3-3.el8.x86_64.rpm | cpio -idm 2>/dev/null &&
+        cp usr/lib64/libxcb-cursor.so* "$HOME/.local/lib/"
+    )
+    rm -rf "$_tmpdir"
+
+    if [ -f "$HOME/.local/lib/libxcb-cursor.so.0" ]; then
+        echo "Installed libxcb-cursor.so.0 to $HOME/.local/lib/"
+        export LD_LIBRARY_PATH="$HOME/.local/lib:${LD_LIBRARY_PATH:-}"
+    else
+        echo "ERROR: Failed to install libxcb-cursor.so.0 automatically."
+        echo "Ask TACC admins to install 'xcb-util-cursor' or install manually:"
+        echo "  sudo dnf install xcb-util-cursor"
+        return 1
+    fi
+fi
+unset _xcb_cursor_found
+
 echo "Launching alignEM via uv..."
 uv run alignEM.py "$@"
