@@ -11,6 +11,8 @@ ml fftw3/3.3.10
 
 echo "Setting environment variables..."
 export QT_API=pyside6
+export QT_QUICK_BACKEND=software
+export QSG_RHI_BACKEND=opengl
 export OMP_NUM_THREADS=1
 export MKL_NUM_THREADS=1
 
