@@ -114,6 +114,47 @@ export LIBGL_DRIVERS_PATH="$_LOCAL_LIB:/usr/lib64/dri${LIBGL_DRIVERS_PATH:+:$LIB
 # Force software rendering (no hardware GPU on TACC compute nodes)
 export LIBGL_ALWAYS_SOFTWARE=1
 
+# ---------- EGL surfaceless override for VNC (no X11 DRI) ----------
+# Qt WebEngine's Chromium calls eglGetPlatformDisplay(EGL_PLATFORM_X11, ...),
+# which fails on VNC because Xvnc has no DRI support. We confirmed that
+# eglGetPlatformDisplay(EGL_PLATFORM_SURFACELESS_MESA, ...) works with
+# swrast_dri.so. This LD_PRELOAD wrapper redirects all EGL platform
+# display requests to use surfaceless instead.
+_EGL_OVERRIDE="$HOME/.local/lib/egl_surfaceless.so"
+if [ ! -f "$_EGL_OVERRIDE" ]; then
+    echo "Compiling EGL surfaceless override..."
+    _src=$(mktemp /tmp/egl_surfaceless.XXXXXX.c)
+    cat > "$_src" << 'CSRC'
+#define _GNU_SOURCE
+#include <dlfcn.h>
+#include <stdint.h>
+typedef void* EGLDisplay;
+typedef unsigned int EGLenum;
+typedef intptr_t EGLAttrib;
+#define EGL_PLATFORM_SURFACELESS_MESA 0x31DD
+typedef EGLDisplay (*pfn)(EGLenum, void*, const EGLAttrib*);
+static pfn real_get_platform_display(void) {
+    return (pfn)dlsym(RTLD_NEXT, "eglGetPlatformDisplay");
+}
+EGLDisplay eglGetPlatformDisplay(EGLenum platform, void *native_display,
+                                  const EGLAttrib *attrib_list) {
+    return real_get_platform_display()(EGL_PLATFORM_SURFACELESS_MESA, (void*)0, (void*)0);
+}
+EGLDisplay eglGetDisplay(void *display_id) {
+    return real_get_platform_display()(EGL_PLATFORM_SURFACELESS_MESA, (void*)0, (void*)0);
+}
+CSRC
+    gcc -shared -fPIC -o "$_EGL_OVERRIDE" "$_src" -ldl 2>/dev/null && \
+        echo "EGL override compiled OK" || \
+        echo "WARNING: Failed to compile EGL override (gcc not available?)"
+    rm -f "$_src"
+fi
+if [ -f "$_EGL_OVERRIDE" ]; then
+    export LD_PRELOAD="${_EGL_OVERRIDE}${LD_PRELOAD:+:$LD_PRELOAD}"
+fi
+# Force Qt to use GLX (not EGL) so the override only affects Chromium
+export QT_XCB_GL_INTEGRATION=xcb_glx
+
 # Verify critical libraries
 _missing=""
 [ ! -f "$_LOCAL_LIB/libxcb-cursor.so.0" ] && ! ldconfig -p 2>/dev/null | grep -q libxcb-cursor && _missing="$_missing libxcb-cursor.so.0"
