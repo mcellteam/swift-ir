@@ -88,10 +88,38 @@ if [ ! -f "$_LOCAL_LIB/libGLdispatch.so.0" ] && ! ldconfig -p 2>/dev/null | grep
         "libglvnd (GL dispatch)"
 fi
 
+# 5. libgbm.so.1 — buffer management (required by Mesa EGL to create displays)
+if [ ! -f "$_LOCAL_LIB/libgbm.so.1" ] && ! ldconfig -p 2>/dev/null | grep -q "libgbm.so.1"; then
+    _install_rpm \
+        "https://dl.rockylinux.org/pub/rocky/8/AppStream/x86_64/os/Packages/m/mesa-libgbm-23.1.4-4.el8_10.x86_64.rpm" \
+        "mesa-libgbm (EGL buffer mgmt)"
+fi
+
+# 6. libdrm.so.2 — DRM library (dependency of libgbm)
+if [ ! -f "$_LOCAL_LIB/libdrm.so.2" ] && ! ldconfig -p 2>/dev/null | grep -q "libdrm.so.2"; then
+    _install_rpm \
+        "https://dl.rockylinux.org/pub/rocky/8/AppStream/x86_64/os/Packages/l/libdrm-2.4.115-2.el8.x86_64.rpm" \
+        "libdrm (DRM library)"
+fi
+
+# 7. swrast_dri.so — Mesa software rasterizer DRI driver (required by Mesa EGL)
+if [ ! -f "$_LOCAL_LIB/swrast_dri.so" ] && [ ! -f "/usr/lib64/dri/swrast_dri.so" ]; then
+    _install_rpm \
+        "https://dl.rockylinux.org/pub/rocky/8/AppStream/x86_64/os/Packages/m/mesa-dri-drivers-23.1.4-4.el8_10.x86_64.rpm" \
+        "mesa-dri-drivers (software rasterizer)"
+fi
+
+# Tell Mesa where to find DRI drivers (swrast_dri.so) since they're not in /usr/lib64/dri/
+export LIBGL_DRIVERS_PATH="$_LOCAL_LIB${LIBGL_DRIVERS_PATH:+:$LIBGL_DRIVERS_PATH}"
+# Force software rendering (no hardware GPU on TACC compute nodes)
+export LIBGL_ALWAYS_SOFTWARE=1
+
 # Verify critical libraries
 _missing=""
 [ ! -f "$_LOCAL_LIB/libxcb-cursor.so.0" ] && ! ldconfig -p 2>/dev/null | grep -q libxcb-cursor && _missing="$_missing libxcb-cursor.so.0"
 [ ! -f "$_LOCAL_LIB/libEGL.so.1" ] && ! ldconfig -p 2>/dev/null | grep -q "libEGL.so.1" && _missing="$_missing libEGL.so.1"
+[ ! -f "$_LOCAL_LIB/libgbm.so.1" ] && ! ldconfig -p 2>/dev/null | grep -q "libgbm.so.1" && _missing="$_missing libgbm.so.1"
+[ ! -f "$_LOCAL_LIB/swrast_dri.so" ] && [ ! -f "/usr/lib64/dri/swrast_dri.so" ] && _missing="$_missing swrast_dri.so"
 if [ -n "$_missing" ]; then
     echo "WARNING: Missing libraries:$_missing"
     echo "WebGL may not work. Check network access to dl.rockylinux.org."
