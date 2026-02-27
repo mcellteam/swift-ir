@@ -110,7 +110,7 @@ if [ ! -f "$_LOCAL_LIB/swrast_dri.so" ] && [ ! -f "/usr/lib64/dri/swrast_dri.so"
 fi
 
 # Tell Mesa where to find DRI drivers (swrast_dri.so) since they're not in /usr/lib64/dri/
-export LIBGL_DRIVERS_PATH="$_LOCAL_LIB${LIBGL_DRIVERS_PATH:+:$LIBGL_DRIVERS_PATH}"
+export LIBGL_DRIVERS_PATH="$_LOCAL_LIB:/usr/lib64/dri${LIBGL_DRIVERS_PATH:+:$LIBGL_DRIVERS_PATH}"
 # Force software rendering (no hardware GPU on TACC compute nodes)
 export LIBGL_ALWAYS_SOFTWARE=1
 
