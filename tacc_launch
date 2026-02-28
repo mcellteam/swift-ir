@@ -121,27 +121,52 @@ export LIBGL_ALWAYS_SOFTWARE=1
 # swrast_dri.so. This LD_PRELOAD wrapper redirects all EGL platform
 # display requests to use surfaceless instead.
 _EGL_OVERRIDE="$HOME/.local/lib/egl_surfaceless.so"
+rm -f "$_EGL_OVERRIDE"  # Force recompile (updated source)
 if [ ! -f "$_EGL_OVERRIDE" ]; then
     echo "Compiling EGL surfaceless override..."
     _src=$(mktemp /tmp/egl_surfaceless.XXXXXX.c)
     cat > "$_src" << 'CSRC'
+/* EGL surfaceless override for TACC VNC (no X11 DRI support).
+ *
+ * Chromium loads EGL via dlopen/dlsym, which bypasses normal LD_PRELOAD
+ * symbol interposition. We must intercept dlsym() itself so that when
+ * Chromium calls dlsym(handle, "eglGetPlatformDisplay"), it gets our
+ * wrapper that forces EGL_PLATFORM_SURFACELESS_MESA.
+ */
 #define _GNU_SOURCE
 #include <dlfcn.h>
+#include <string.h>
 #include <stdint.h>
+
 typedef void* EGLDisplay;
 typedef unsigned int EGLenum;
 typedef intptr_t EGLAttrib;
 #define EGL_PLATFORM_SURFACELESS_MESA 0x31DD
-typedef EGLDisplay (*pfn)(EGLenum, void*, const EGLAttrib*);
-static pfn real_get_platform_display(void) {
-    return (pfn)dlsym(RTLD_NEXT, "eglGetPlatformDisplay");
+
+extern void *__libc_dlsym(void *, const char *);
+
+static EGLDisplay my_eglGetPlatformDisplay(EGLenum platform,
+        void *native_display, const EGLAttrib *attrib_list) {
+    typedef EGLDisplay (*fn_t)(EGLenum, void*, const EGLAttrib*);
+    void *egl = dlopen("libEGL.so.1", RTLD_LAZY | RTLD_NOLOAD);
+    if (!egl) egl = dlopen("libEGL.so.1", RTLD_LAZY);
+    fn_t real_fn = (fn_t)__libc_dlsym(egl, "eglGetPlatformDisplay");
+    return real_fn(EGL_PLATFORM_SURFACELESS_MESA, (void*)0, (void*)0);
 }
-EGLDisplay eglGetPlatformDisplay(EGLenum platform, void *native_display,
-                                  const EGLAttrib *attrib_list) {
-    return real_get_platform_display()(EGL_PLATFORM_SURFACELESS_MESA, (void*)0, (void*)0);
+
+static EGLDisplay my_eglGetDisplay(void *display_id) {
+    return my_eglGetPlatformDisplay(0, (void*)0, (void*)0);
 }
-EGLDisplay eglGetDisplay(void *display_id) {
-    return real_get_platform_display()(EGL_PLATFORM_SURFACELESS_MESA, (void*)0, (void*)0);
+
+/* Intercept dlsym: redirect EGL display function lookups to our wrappers */
+void *dlsym(void *handle, const char *name) {
+    if (name) {
+        if (strcmp(name, "eglGetPlatformDisplay") == 0)
+            return (void*)my_eglGetPlatformDisplay;
+        if (strcmp(name, "eglGetDisplay") == 0)
+            return (void*)my_eglGetDisplay;
+    }
+    return __libc_dlsym(handle, name);
 }
 CSRC
     gcc -shared -fPIC -o "$_EGL_OVERRIDE" "$_src" -ldl 2>/dev/null && \
