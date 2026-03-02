@@ -131,23 +131,34 @@ export LIBGL_ALWAYS_SOFTWARE=1
 if [ -f "$_LOCAL_LIB/libEGL.so.1" ] && [ ! -L "$_LOCAL_LIB/libEGL.so.1" ] && \
    [ ! -f "$_LOCAL_LIB/libEGL_real.so.1" ]; then
     mv "$_LOCAL_LIB/libEGL.so.1" "$_LOCAL_LIB/libEGL_real.so.1"
-    # Also move the versioned file if it exists
     [ -f "$_LOCAL_LIB/libEGL.so.1.1.0" ] && \
         mv "$_LOCAL_LIB/libEGL.so.1.1.0" "$_LOCAL_LIB/libEGL_real.so.1.1.0"
+    # Patch the SONAME from "libEGL.so.1" to "libEGL_r.so" (same byte length)
+    # so dlopen can load both the wrapper and real lib without SONAME conflict.
+    python3 -c "
+import sys; p=sys.argv[1]; d=open(p,'rb').read()
+d=d.replace(b'libEGL.so.1\x00', b'libEGL_r.so\x00', 1)
+open(p,'wb').write(d)
+" "$_LOCAL_LIB/libEGL_real.so.1" && echo "Patched libEGL SONAME OK"
 fi
 
 _EGL_WRAPPER="$_LOCAL_LIB/libEGL.so.1"
 # Recompile if wrapper doesn't exist or real lib was just renamed
-if [ -f "$_LOCAL_LIB/libEGL_real.so.1" ] && \
-   { [ ! -f "$_EGL_WRAPPER" ] || [ ! -L "$_EGL_WRAPPER" -a ! -s "$_EGL_WRAPPER" ] ; }; then
+if [ -f "$_LOCAL_LIB/libEGL_real.so.1" ] && [ ! -f "$_EGL_WRAPPER" ]; then
     echo "Compiling EGL surfaceless wrapper..."
     _src=$(mktemp /tmp/egl_wrapper.XXXXXX.c)
     cat > "$_src" << 'CSRC'
 /*
  * EGL wrapper that forces surfaceless platform for TACC VNC.
- * Loaded by Chromium via dlopen("libEGL.so.1") since it's first in LD_LIBRARY_PATH.
- * Forwards all EGL calls to the real libEGL (libEGL_real.so.1) via eglGetProcAddress,
- * but overrides display creation to use EGL_PLATFORM_SURFACELESS_MESA.
+ *
+ * Problem: Chromium calls eglGetPlatformDisplay(EGL_PLATFORM_X11) which
+ * fails on VNC (no DRI). Surfaceless EGL works with swrast_dri.so.
+ *
+ * Strategy: This library is installed as libEGL.so.1. It loads the real
+ * libglvnd EGL (renamed to libEGL_real.so.1, SONAME patched to libEGL_r.so)
+ * with RTLD_GLOBAL so all its symbols (eglInitialize, eglQueryString, etc.)
+ * are available to Qt and other libraries. We only override eglGetDisplay,
+ * eglGetPlatformDisplay, and eglGetProcAddress.
  */
 #define _GNU_SOURCE
 #include <dlfcn.h>
@@ -163,18 +174,21 @@ typedef intptr_t     EGLAttrib;
 typedef EGLDisplay (*pfn_eglGetPlatformDisplay)(EGLenum, void*, const EGLAttrib*);
 typedef void*      (*pfn_eglGetProcAddress)(const char*);
 
-static void *real_egl_handle = NULL;
 static pfn_eglGetPlatformDisplay real_getPlatformDisplay = NULL;
 static pfn_eglGetProcAddress     real_getProcAddress = NULL;
 
 __attribute__((constructor))
 static void wrapper_init(void) {
-    real_egl_handle = dlopen("libEGL_real.so.1", RTLD_LAZY);
-    if (real_egl_handle) {
+    /* Load real libEGL with RTLD_GLOBAL so all its exported symbols
+       (eglInitialize, eglQueryString, etc.) are available globally.
+       The real lib's SONAME was patched to "libEGL_r.so" to avoid
+       conflicting with this wrapper's "libEGL.so.1" filename. */
+    void *h = dlopen("libEGL_real.so.1", RTLD_LAZY | RTLD_GLOBAL);
+    if (h) {
         real_getPlatformDisplay = (pfn_eglGetPlatformDisplay)
-            dlsym(real_egl_handle, "eglGetPlatformDisplay");
+            dlsym(h, "eglGetPlatformDisplay");
         real_getProcAddress = (pfn_eglGetProcAddress)
-            dlsym(real_egl_handle, "eglGetProcAddress");
+            dlsym(h, "eglGetProcAddress");
     }
 }
 
