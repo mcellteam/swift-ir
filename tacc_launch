@@ -149,16 +149,12 @@ if [ -f "$_LOCAL_LIB/libEGL_real.so.1" ] && [ ! -f "$_EGL_WRAPPER" ]; then
     _src=$(mktemp /tmp/egl_wrapper.XXXXXX.c)
     cat > "$_src" << 'CSRC'
 /*
- * EGL wrapper that forces surfaceless platform for TACC VNC.
+ * EGL surfaceless wrapper for TACC VNC — replaces libEGL.so.1
  *
- * Problem: Chromium calls eglGetPlatformDisplay(EGL_PLATFORM_X11) which
- * fails on VNC (no DRI). Surfaceless EGL works with swrast_dri.so.
- *
- * Strategy: This library is installed as libEGL.so.1. It loads the real
- * libglvnd EGL (renamed to libEGL_real.so.1, SONAME patched to libEGL_r.so)
- * with RTLD_GLOBAL so all its symbols (eglInitialize, eglQueryString, etc.)
- * are available to Qt and other libraries. We only override eglGetDisplay,
- * eglGetPlatformDisplay, and eglGetProcAddress.
+ * Exports ALL EGL functions so Qt (libQt6Gui.so.6) can resolve symbols.
+ * Overrides eglGetDisplay/eglGetPlatformDisplay to force surfaceless.
+ * All other functions forward to the real libEGL (libEGL_real.so.1,
+ * SONAME patched to libEGL_r.so to avoid conflict).
  */
 #define _GNU_SOURCE
 #include <dlfcn.h>
@@ -166,49 +162,44 @@ if [ -f "$_LOCAL_LIB/libEGL_real.so.1" ] && [ ! -f "$_EGL_WRAPPER" ]; then
 #include <stdint.h>
 
 typedef void*        EGLDisplay;
+typedef void*        EGLSurface;
+typedef void*        EGLContext;
+typedef void*        EGLConfig;
 typedef unsigned int EGLenum;
 typedef intptr_t     EGLAttrib;
+typedef int          EGLBoolean;
+typedef int32_t      EGLint;
 
 #define EGL_PLATFORM_SURFACELESS_MESA 0x31DD
 
-typedef EGLDisplay (*pfn_eglGetPlatformDisplay)(EGLenum, void*, const EGLAttrib*);
-typedef void*      (*pfn_eglGetProcAddress)(const char*);
-
-static pfn_eglGetPlatformDisplay real_getPlatformDisplay = NULL;
-static pfn_eglGetProcAddress     real_getProcAddress = NULL;
-
-__attribute__((constructor))
-static void wrapper_init(void) {
-    /* Load real libEGL with RTLD_GLOBAL so all its exported symbols
-       (eglInitialize, eglQueryString, etc.) are available globally.
-       The real lib's SONAME was patched to "libEGL_r.so" to avoid
-       conflicting with this wrapper's "libEGL.so.1" filename. */
-    void *h = dlopen("libEGL_real.so.1", RTLD_LAZY | RTLD_GLOBAL);
-    if (h) {
-        real_getPlatformDisplay = (pfn_eglGetPlatformDisplay)
-            dlsym(h, "eglGetPlatformDisplay");
-        real_getProcAddress = (pfn_eglGetProcAddress)
-            dlsym(h, "eglGetProcAddress");
-    }
+/* Lazy-load the real libEGL and return a function pointer */
+static void *_r(const char *name) {
+    static void *h = NULL;
+    if (!h) h = dlopen("libEGL_real.so.1", RTLD_LAZY);
+    return h ? dlsym(h, name) : NULL;
 }
 
-/* Override: always use surfaceless platform */
+/* Forwarding macro: exports symbol, delegates to real lib */
+#define FWD(ret, name, params, args) \
+    ret name params { \
+        typedef ret (*_t) params; \
+        _t _f = (_t)_r(#name); \
+        return _f ? _f args : (ret)0; \
+    }
+
+/* === Overridden functions === */
+
 EGLDisplay eglGetPlatformDisplay(EGLenum platform, void *native_display,
                                   const EGLAttrib *attrib_list) {
-    if (real_getPlatformDisplay)
-        return real_getPlatformDisplay(
-            EGL_PLATFORM_SURFACELESS_MESA, (void*)0, (void*)0);
-    return (void*)0;
+    typedef EGLDisplay (*F)(EGLenum, void*, const EGLAttrib*);
+    F f = (F)_r("eglGetPlatformDisplay");
+    return f ? f(EGL_PLATFORM_SURFACELESS_MESA, (void*)0, (void*)0) : (void*)0;
 }
 
 EGLDisplay eglGetDisplay(void *display_id) {
     return eglGetPlatformDisplay(0, (void*)0, (void*)0);
 }
 
-/*
- * Forward eglGetProcAddress to the real library, but intercept lookups
- * for display functions so Chromium always gets our surfaceless overrides.
- */
 void* eglGetProcAddress(const char *name) {
     if (name) {
         if (strcmp(name, "eglGetPlatformDisplay") == 0)
@@ -218,10 +209,53 @@ void* eglGetProcAddress(const char *name) {
         if (strcmp(name, "eglGetProcAddress") == 0)
             return (void*)eglGetProcAddress;
     }
-    if (real_getProcAddress)
-        return real_getProcAddress(name);
-    return (void*)0;
+    typedef void* (*F)(const char*);
+    F f = (F)_r("eglGetProcAddress");
+    return f ? f(name) : NULL;
 }
+
+/* === Forwarded EGL 1.0-1.5 functions === */
+
+FWD(EGLBoolean,  eglInitialize, (EGLDisplay d, EGLint *a, EGLint *b), (d,a,b))
+FWD(EGLBoolean,  eglTerminate, (EGLDisplay d), (d))
+FWD(const char*,  eglQueryString, (EGLDisplay d, EGLint n), (d,n))
+FWD(EGLint,       eglGetError, (void), ())
+FWD(EGLBoolean,  eglGetConfigs, (EGLDisplay d, EGLConfig *c, EGLint s, EGLint *n), (d,c,s,n))
+FWD(EGLBoolean,  eglChooseConfig, (EGLDisplay d, const EGLint *a, EGLConfig *c, EGLint s, EGLint *n), (d,a,c,s,n))
+FWD(EGLBoolean,  eglGetConfigAttrib, (EGLDisplay d, EGLConfig c, EGLint a, EGLint *v), (d,c,a,v))
+FWD(EGLSurface,  eglCreateWindowSurface, (EGLDisplay d, EGLConfig c, void *w, const EGLint *a), (d,c,w,a))
+FWD(EGLSurface,  eglCreatePbufferSurface, (EGLDisplay d, EGLConfig c, const EGLint *a), (d,c,a))
+FWD(EGLSurface,  eglCreatePixmapSurface, (EGLDisplay d, EGLConfig c, void *p, const EGLint *a), (d,c,p,a))
+FWD(EGLBoolean,  eglDestroySurface, (EGLDisplay d, EGLSurface s), (d,s))
+FWD(EGLBoolean,  eglQuerySurface, (EGLDisplay d, EGLSurface s, EGLint a, EGLint *v), (d,s,a,v))
+FWD(EGLContext,  eglCreateContext, (EGLDisplay d, EGLConfig c, EGLContext sh, const EGLint *a), (d,c,sh,a))
+FWD(EGLBoolean,  eglDestroyContext, (EGLDisplay d, EGLContext c), (d,c))
+FWD(EGLBoolean,  eglMakeCurrent, (EGLDisplay d, EGLSurface dr, EGLSurface rd, EGLContext c), (d,dr,rd,c))
+FWD(EGLContext,  eglGetCurrentContext, (void), ())
+FWD(EGLSurface,  eglGetCurrentSurface, (EGLint w), (w))
+FWD(EGLDisplay,  eglGetCurrentDisplay, (void), ())
+FWD(EGLBoolean,  eglSwapBuffers, (EGLDisplay d, EGLSurface s), (d,s))
+FWD(EGLBoolean,  eglCopyBuffers, (EGLDisplay d, EGLSurface s, void *t), (d,s,t))
+FWD(EGLBoolean,  eglWaitGL, (void), ())
+FWD(EGLBoolean,  eglWaitNative, (EGLint e), (e))
+FWD(EGLBoolean,  eglSurfaceAttrib, (EGLDisplay d, EGLSurface s, EGLint a, EGLint v), (d,s,a,v))
+FWD(EGLBoolean,  eglBindTexImage, (EGLDisplay d, EGLSurface s, EGLint b), (d,s,b))
+FWD(EGLBoolean,  eglReleaseTexImage, (EGLDisplay d, EGLSurface s, EGLint b), (d,s,b))
+FWD(EGLBoolean,  eglSwapInterval, (EGLDisplay d, EGLint i), (d,i))
+FWD(EGLBoolean,  eglBindAPI, (EGLenum a), (a))
+FWD(EGLenum,     eglQueryAPI, (void), ())
+FWD(EGLSurface,  eglCreatePbufferFromClientBuffer, (EGLDisplay d, EGLenum t, void *b, EGLConfig c, const EGLint *a), (d,t,b,c,a))
+FWD(EGLBoolean,  eglReleaseThread, (void), ())
+FWD(EGLBoolean,  eglWaitClient, (void), ())
+FWD(EGLSurface,  eglCreatePlatformWindowSurface, (EGLDisplay d, EGLConfig c, void *w, const EGLAttrib *a), (d,c,w,a))
+FWD(EGLSurface,  eglCreatePlatformPixmapSurface, (EGLDisplay d, EGLConfig c, void *p, const EGLAttrib *a), (d,c,p,a))
+FWD(void*,       eglCreateSync, (EGLDisplay d, EGLenum t, const EGLAttrib *a), (d,t,a))
+FWD(EGLBoolean,  eglDestroySync, (EGLDisplay d, void *s), (d,s))
+FWD(EGLint,       eglClientWaitSync, (EGLDisplay d, void *s, EGLint f, uint64_t t), (d,s,f,t))
+FWD(EGLBoolean,  eglGetSyncAttrib, (EGLDisplay d, void *s, EGLint a, EGLAttrib *v), (d,s,a,v))
+FWD(void*,       eglCreateImage, (EGLDisplay d, EGLContext c, EGLenum t, void *b, const EGLAttrib *a), (d,c,t,b,a))
+FWD(EGLBoolean,  eglDestroyImage, (EGLDisplay d, void *i), (d,i))
+FWD(EGLBoolean,  eglWaitSync, (EGLDisplay d, void *s, EGLint f), (d,s,f))
 CSRC
     gcc -shared -fPIC -Wl,-soname,libEGL_wrapper.so.1 \
         -o "$_EGL_WRAPPER" "$_src" -ldl 2>/dev/null && \
