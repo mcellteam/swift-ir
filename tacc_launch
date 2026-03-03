@@ -2,11 +2,10 @@
 # Lightweight TACC launch script for alignEM using uv
 # Usage: source tacc_launch
 
-echo "Loading modules for software OpenGL rendering..."
+echo "Loading modules..."
 module purge
-ml intel/19.1.1
-ml swr/21.2.5
-ml impi/19.0.9
+ml intel/24.0
+ml impi/21.11
 ml fftw3/3.3.10
 
 echo "Setting environment variables..."

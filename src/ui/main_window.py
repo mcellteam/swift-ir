@@ -202,7 +202,7 @@ class MainWindow(QMainWindow):
     def initSizeAndPos(self, width, height):
         self.resize(width, height)
         qr = self.frameGeometry()
-        c = QDesktopWidget().availableGeometry().center()
+        c = QGuiApplication.primaryScreen().availableGeometry().center()
         qr.moveCenter(c)
         self.move(qr.topLeft())
 
