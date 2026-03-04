@@ -35,7 +35,7 @@ requires-dist = [
     { name = "imagecodecs", specifier = ">=2025.3.30" },
     { name = "imageio", specifier = ">=2.37.0" },
     { name = "matplotlib", specifier = ">=3.10.3" },
-    { name = "neuroglancer", specifier = ">=2.40.1" },
+    { name = "neuroglancer", specifier = ">=2.41.2" },
     { name = "numpy", specifier = ">=2.3.0" },
     { name = "psutil", specifier = ">=7.0.0" },
     { name = "pyqtgraph", specifier = ">=0.13.7" },
@@ -718,7 +718,7 @@ wheels = [
 
 [[package]]
 name = "neuroglancer"
-version = "2.40.1"
+version = "2.41.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "atomicwrites" },
@@ -729,12 +729,12 @@ dependencies = [
     { name = "requests" },
     { name = "tornado" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/fe/68/600011755c7873d69431c2662bf631414e417d283b8cc7976dfa66178800/neuroglancer-2.40.1.tar.gz", hash = "sha256:ba21309827810d669a2f76e7b814a123aafeb61b7cb07b2de11a9663ad902fdc", size = 3640302, upload-time = "2024-07-23T20:24:34.827Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/3d/8f/0d592fe1f0433c4c6428c5023b38c96b398c9f605091c096dcd92f8198c9/neuroglancer-2.41.2.tar.gz", hash = "sha256:2c519da54169d141053e14940115f4b4cbdf88d24a9114cd3ae236ea62f16216", size = 4824993, upload-time = "2025-09-23T20:01:23.776Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/59/52/3890bdc3345a1885a6eac6d4b982124d4820c11b706ce179b76c26b3eaea/neuroglancer-2.40.1-cp39-abi3-macosx_10_9_x86_64.whl", hash = "sha256:73b214772263005e2531dab6051ed1f4d5cd4c4f1c6eb181b9baf704ecb6f3f3", size = 3649794, upload-time = "2024-07-23T20:24:25.667Z" },
-    { url = "https://files.pythonhosted.org/packages/a7/37/214037aec09f43e1854173fc338eb5f20f2b2f6d57ccf9dfc9f4032b1567/neuroglancer-2.40.1-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:7466279b2cad28465edc727b994949599d2f0ece9ca22cee05bfa30c1d63a1ac", size = 3644923, upload-time = "2024-07-23T20:24:28.251Z" },
-    { url = "https://files.pythonhosted.org/packages/2f/a2/e0e01c70d7a6804eb00faeb901af341ca5518b9d58c444c133d300c48b83/neuroglancer-2.40.1-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b5cb9583b1668aad49c092bb047d6e74959bb3b5b343d5a624f084d82f3ede60", size = 5138950, upload-time = "2024-07-23T20:24:29.989Z" },
-    { url = "https://files.pythonhosted.org/packages/23/d9/29ae513f60f0d972789453f14b22753d9becc303f0ad7e797cf6b4878580/neuroglancer-2.40.1-cp39-abi3-win_amd64.whl", hash = "sha256:dc70a9dcd438c763515a2ca36135d10a49bd3261ac3fcf0b9183c03411554295", size = 3622988, upload-time = "2024-07-23T20:24:31.834Z" },
+    { url = "https://files.pythonhosted.org/packages/79/04/f0669059db552d2e99d2e56f19260088822baf578e1172b055ac2ea5b227/neuroglancer-2.41.2-cp310-abi3-macosx_10_9_x86_64.whl", hash = "sha256:39602ba0c3146384c9c4ff78e36c2154c5fb72f07ffefaec24946e64aea5c5b9", size = 4467803, upload-time = "2025-09-23T20:01:18.368Z" },
+    { url = "https://files.pythonhosted.org/packages/fd/31/aeeb597e920204d970f0b304a0bff6cd1d37a60919466ddd21aae4fb7a71/neuroglancer-2.41.2-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:ef17138bc2b53556ed5026049127eb1b607c7d6ad7e6b8700d7ef7deab36938e", size = 4463039, upload-time = "2025-09-23T20:01:20.099Z" },
+    { url = "https://files.pythonhosted.org/packages/aa/05/8a699e19dc5f3549042cac25aa378240c9850ef453ff63609a91d256748b/neuroglancer-2.41.2-cp310-abi3-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:fbfab095d4e11c103c6beb4109aaa6f6bd910cf187e406bc181e53a66721a08b", size = 5984442, upload-time = "2025-09-23T20:01:21.39Z" },
+    { url = "https://files.pythonhosted.org/packages/d1/9c/a80447cd627af8cec3263ddb5591aa58dd85ec73b4cfd051eeea2fe2f883/neuroglancer-2.41.2-cp310-abi3-win_amd64.whl", hash = "sha256:7d26c83429b753969fc19b52ec49da34cd14369ec7aeba49d104b3e0514e5cd1", size = 4437158, upload-time = "2025-09-23T20:01:22.6Z" },
 ]
 
 [[package]]
