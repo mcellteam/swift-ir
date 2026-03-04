@@ -588,6 +588,48 @@ class ProjectTable(QWidget):
 
     # btn.clicked.connect(lambda state, x=zpos: self.jump_to_manual(x))
 
+    def replaceImage(self, row):
+        from qtpy.QtWidgets import QFileDialog, QMessageBox
+        from src.utils.funcs_image import ImageSize
+
+        old_name = self.dm.name(l=row)
+
+        path, _ = QFileDialog.getOpenFileName(
+            self, f'Select replacement for [{row}] {old_name}',
+            '', 'Images (*.tif *.tiff)')
+        if not path:
+            return
+
+        new_size = ImageSize(path)
+        old_size = tuple(self.dm.images['size_xy']['s1'])
+        if new_size != old_size:
+            QMessageBox.warning(self, 'Dimension Mismatch',
+                f'New image is {new_size[0]}x{new_size[1]} but stack expects '
+                f'{old_size[0]}x{old_size[1]}.\nReplacement image must have '
+                f'the same dimensions.')
+            return
+
+        aligned_warning = ''
+        if self.dm.is_aligned():
+            aligned_warning = ('\n\nThe stack has been aligned. Alignment results '
+                'for this section and its neighbors will be invalidated.')
+        reply = QMessageBox.question(self, 'Replace Image',
+            f'Replace [{row}] {old_name} with:\n{os.path.basename(path)}?'
+            f'{aligned_warning}',
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if reply != QMessageBox.Yes:
+            return
+
+        ok, msg = self.dm.replace_image(row, path)
+
+        if ok:
+            self.set_row_data(row)
+            cfg.mw.hud(f'Replaced image [{row}]: {old_name} -> {os.path.basename(path)}')
+            if hasattr(cfg.mw, 'pt') and cfg.mw.pt:
+                cfg.mw.pt.initNeuroglancer(force=True)
+        else:
+            QMessageBox.warning(self, 'Replace Failed', msg)
+
     def setNotes(self, index, txt):
         caller = inspect.stack()[1].function
         logger.info(f"\ncaller = {caller}\n"
@@ -604,9 +646,10 @@ class ProjectTable(QWidget):
             menu = QMenu()
 
             if self.getNumRowsSelected() == 1:
-                # file_path = self.getSelectedProjects()[0]
-
-                pass
+                row = self.getSelectedRows()[0]
+                replaceAction = QAction(f'Replace Image [{row}] {self.dm.name(l=row)}...')
+                replaceAction.triggered.connect(lambda: self.replaceImage(row))
+                menu.addAction(replaceAction)
 
             # if self.getNumRowsSelected() > 1:
             if self.dm.is_aligned():

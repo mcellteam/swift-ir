@@ -329,6 +329,61 @@ def imread(filename):
     return imagecodecs.tiff_decode(data)
 
 
+def replace_single_image(emstack_path, index, old_name, new_source_path, info):
+    """Replace a single image in an emstack on disk.
+
+    Overwrites scaled TIFFs, zarr slices, and thumbnail for the image
+    at the given index. The new image is stored under the old filename.
+
+    Args:
+        emstack_path: Path to the .emstack directory
+        index: Z-index of the image being replaced
+        old_name: Original filename (e.g., 'image_003.tif')
+        new_source_path: Absolute path to the new source TIFF
+        info: The emstack info.json dict (for scale_factors, thumbnail_scale_factor)
+    """
+    from src.utils.helpers import get_bindir
+    iscale2_c = os.path.join(Path(os.path.realpath(__file__)).parent.absolute(),
+                             '../lib', get_bindir(), 'iscale2')
+
+    for sv in info['scale_factors']:
+        scale_arg = '+%d' % sv
+        tiff_output = os.path.join(emstack_path, 'tiff', 's%d' % sv, old_name)
+        of_arg = 'of=%s' % tiff_output
+        cmd = [iscale2_c, scale_arg, of_arg, new_source_path]
+        logger.info(f"Scaling s{sv}: {cmd}")
+        proc = sp.Popen(cmd, bufsize=-1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE,
+                        universal_newlines=True)
+        out, err = proc.communicate()
+        if proc.returncode != 0:
+            logger.warning(f"iscale2 failed for s{sv}: {err}")
+
+        zarr_path = os.path.join(emstack_path, 'zarr', 's%d' % sv)
+        if os.path.isdir(zarr_path):
+            store = zarr.open(zarr_path)
+            im = imread(tiff_output)
+            try:
+                store[:, :, index] = im.transpose()
+            except ValueError:
+                logger.warning(f'ValueError writing zarr slice [{index}] at s{sv}')
+
+    thumb_sf = info.get('thumbnail_scale_factor')
+    if thumb_sf:
+        thumb_output = os.path.join(emstack_path, 'thumbs', old_name)
+        cmd = [iscale2_c, '+%d' % thumb_sf, 'of=%s' % thumb_output, new_source_path]
+        logger.info(f"Generating thumbnail: {cmd}")
+        proc = sp.Popen(cmd, bufsize=-1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE,
+                        universal_newlines=True)
+        proc.communicate()
+
+    info_path = os.path.join(emstack_path, 'info.json')
+    if os.path.exists(info_path):
+        import json
+        with open(info_path, 'r') as f:
+            disk_info = json.load(f)
+        disk_info['paths'][index] = new_source_path
+        with open(info_path, 'w') as f:
+            json.dump(disk_info, f, indent=2)
 
 
 

@@ -427,3 +427,49 @@ The clobber "size" line edit (`leClobber`) passed its value as a string to `dm.s
 ```python
 self.leClobber.textEdited.connect(lambda: self.dm.set_clobber_px(x=int(self.leClobber.text())) if self.leClobber.text() else None)
 ```
+
+## Replace Image in Emstack (2026-03-04)
+
+Added the ability to replace a single image in an existing emstack without rebuilding the entire stack and alignment from scratch. Accessible via right-click context menu in the alignment Table tab.
+
+### Constraints
+
+- **Same dimensions required**: The replacement image must match the original image's width and height. This avoids cascading updates to `size_xy`, `size_zyx`, swim windows, and zarr array shapes.
+- **Synchronous operation**: Rescaling a single image across a few levels is fast (seconds), so no background worker is needed.
+- **Old filename preserved on disk**: The new image is copied into the emstack under the original filename, so all path references in the DataModel remain valid. The new source path is recorded in `info.json`'s `paths[]` for provenance.
+
+### Files Changed
+
+| File | Changes |
+|---|---|
+| `src/workers/scale.py` | New `replace_single_image()` module-level function |
+| `src/models/data.py` | New `_reset_section_results()` and `replace_image()` methods on `DataModel` |
+| `src/ui/views/alignmenttable.py` | "Replace Image..." context menu action + `replaceImage()` handler |
+
+### How It Works
+
+1. **UI** (`alignmenttable.py`): Right-click a single row in the Table tab → "Replace Image [N] filename..." → file dialog (TIFF only) → dimension validation → confirmation dialog (with warning if stack is already aligned) → executes replacement.
+
+2. **Orchestration** (`data.py:replace_image()`):
+   - Validates new image dimensions match `images['size_xy']['s1']`
+   - Reads emstack `info.json` for `scale_factors` and `thumbnail_scale_factor`
+   - Calls `replace_single_image()` for on-disk updates
+   - Updates in-memory `images['paths'][index]`
+   - Finds affected sections: the replaced index + any section whose `reference_index` points to it
+   - Invalidates hash table cache entries (`ht.remove()`) for affected sections so `needsAlignIndexes()` correctly flags them for re-alignment
+   - If aligned: resets alignment results (`_reset_section_results()`) for affected sections and recomputes cumulative affines (`set_stack_cafm()`)
+   - Saves and emits `positionChanged` to refresh viewers
+
+3. **Disk updates** (`scale.py:replace_single_image()`):
+   - Runs `iscale2` to rescale the new source image at each scale level → `tiff/s{N}/{old_name}`
+   - Updates the corresponding zarr slice (`store[:, :, index] = im.transpose()`) at each level
+   - Regenerates the thumbnail via `iscale2` at `thumbnail_scale_factor`
+   - Updates `info.json` `paths[index]` on disk
+
+### Cache Invalidation Strategy
+
+After replacement, cache entries are removed (not just invalidated) for:
+- The replaced section at all levels
+- Any section at any level whose `swim_settings['reference_index']` points to the replaced index (typically the next section, but can skip further if sections are excluded)
+
+This ensures `needsAlignIndexes()` returns these sections, prompting the user to re-align them.

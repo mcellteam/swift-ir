@@ -1374,6 +1374,72 @@ class DataModel:
         SetStackCafm(self, scale=s, poly_order=self.poly_order)
         alt_SetStackCafm(self, scale=s, poly_order=self.poly_order)
 
+    def _reset_section_results(self, index, s=None):
+        '''Resets alignment results for a single section to identity values.'''
+        if s is None: s = self.level
+        identity = [[1., 0., 0.], [0., 1., 0.]]
+        sec = self['stack'][index]['levels'][s]
+        sec['cafm'] = identity
+        sec['cafm_inv'] = identity
+        sec['results'] = {
+            'snr': 0.0, 'snr_std_deviation': 0.0,
+            'snr_mean': 0.0, 'affine_matrix': identity,
+        }
+        for key in ('mir_afm', 'mir_aim', 'affine_matrix', 'snr', 'alt_cafm'):
+            sec.pop(key, None)
+
+    def replace_image(self, index, new_source_path):
+        '''Replace a single image in the stack. Returns (success: bool, message: str).'''
+        from src.utils.funcs_image import ImageSize
+        from src.workers.scale import replace_single_image
+
+        # Validate dimensions
+        new_size = ImageSize(new_source_path)
+        old_size = tuple(self.images['size_xy']['s1'])
+        if new_size != old_size:
+            return (False, f'Dimension mismatch: new image is {new_size[0]}x{new_size[1]} '
+                          f'but stack expects {old_size[0]}x{old_size[1]}.')
+
+        old_name = self.name(s='s1', l=index)
+
+        # Read emstack info.json for scale_factors / thumbnail_scale_factor
+        info_path = os.path.join(self.images_path, 'info.json')
+        with open(info_path, 'r') as f:
+            info = json.load(f)
+
+        # Update files on disk (scaled TIFFs, zarr slices, thumbnail, info.json paths)
+        replace_single_image(self.images_path, index, old_name, new_source_path, info)
+
+        # Update in-memory paths
+        self['images']['paths'][index] = new_source_path
+
+        # Determine affected sections: the replaced one + any section referencing it
+        affected = {index}
+        for j in range(len(self)):
+            for s in self.levels:
+                ref_idx = self.get_ref_index(s=s, l=j)
+                if ref_idx == index:
+                    affected.add(j)
+
+        # Invalidate cache for affected sections at all levels
+        for j in affected:
+            for s in self.levels:
+                try:
+                    self.ht.remove(self.swim_settings(s=s, l=j))
+                except KeyError:
+                    pass
+
+        # Reset alignment results for affected sections if aligned
+        for s in self.levels:
+            if self.is_aligned(s=s):
+                for j in affected:
+                    self._reset_section_results(j, s=s)
+                self.set_stack_cafm(s=s)
+
+        self.save()
+        self.signals.positionChanged.emit(self.zpos)
+        return (True, f'Replaced image at index {index}')
+
     def isDefaults(self, s=None, l=None):
         '''Returns True if the current swim settings are the same as the default settings for the current level'''
         if s == None: s = self.level
