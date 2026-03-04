@@ -416,3 +416,14 @@ These handlers are connected to signals that fire on programmatic changes. Added
 | `fn_sliderMatch` | `valueChanged` | Added `blockSignals` around internal `sliderMatch.setValue()` to prevent self-triggering |
 | `fn_slider1x1` | `valueChanged` | Added `blockSignals` around `slider1x1.setValue()` and `slider2x2.setValue()` cross-calls |
 | `fn_slider2x2` | `valueChanged` | Added `blockSignals` around `slider2x2.setValue()` self-correction |
+
+## Bug Fix: Clobber Size Field Ignored (2026-03-04)
+
+**File**: `src/ui/tabs/project.py`, line 873
+
+The clobber "size" line edit (`leClobber`) passed its value as a string to `dm.set_clobber_px()`, which guards with `isinstance(x, int)`. The string silently failed the check, so edits to the clobber size were never stored in the data model — the "Apply to All" button stayed disabled and alignments used the old value.
+
+**Fix**: Convert to `int()` in the `textEdited` lambda, with an empty-string guard (since `textEdited` fires on every keystroke):
+```python
+self.leClobber.textEdited.connect(lambda: self.dm.set_clobber_px(x=int(self.leClobber.text())) if self.leClobber.text() else None)
+```
