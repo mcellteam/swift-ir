@@ -473,3 +473,58 @@ After replacement, cache entries are removed (not just invalidated) for:
 - Any section at any level whose `swim_settings['reference_index']` points to the replaced index (typically the next section, but can skip further if sections are excluded)
 
 This ensures `needsAlignIndexes()` returns these sections, prompting the user to re-align them.
+
+## Memory-Aware Worker Parallelism (2026-03-05)
+
+Replaced the fixed `physical_cores - 2` worker count with a memory-aware computation that prevents RAM exhaustion and thrashing when aligning large images (e.g., 300 images at 24k×24k).
+
+### Problem
+
+The old `get_core_count()` used `psutil.cpu_count(logical=False) - 2` workers regardless of image size, scale, or available RAM. For 24k×24k images at scale s1, each swim subprocess allocates ~4.6 GB (window buffers + source images). With 14 workers that demands ~64 GB — fine on 128 GB machines but causes severe thrashing on 64 GB systems.
+
+### swim Memory Model (from swim.c analysis)
+
+swim.c allocates per invocation:
+- 4 float buffers: 16 × W × H bytes (window size)
+- 4 FFT complex buffers: ~16 × W × H bytes
+- 3 image structs: 3 × W × H bytes
+- 2 full source images via `read_img()`: 2 × img_w × img_h bytes
+
+Total: **35 × W × H + 2 × img_w × img_h** bytes, where W,H = swim window dimensions.
+
+### Recipe-Aware Window Sizing
+
+The alignment recipe uses different window sizes depending on the scale:
+- **Coarsest scale** (`is_refinement=False`): 1×1 ingredient uses `size_1x1` (81.25% of image), then 2×2 ingredients use `size_2x2` (half of that). Peak = `size_1x1`.
+- **Finer scales** (`is_refinement=True`): Only 2×2 ingredients are used. Peak = `size_2x2`.
+
+For 24k×24k images: at s1 the peak window is 9750² (2×2 only), not 19500² (1×1).
+
+### New Functions
+
+**`src/utils/helpers.py`**:
+
+- **`estimate_swim_memory(img_size, max_window)`**: Returns estimated bytes per alignment worker (Python overhead + swim subprocess memory).
+- **`compute_worker_count(n_tasks, per_worker_bytes, use_threads=False)`**: Returns optimal worker count, capped at `min(physical_cores - 2, available_RAM × 0.80 / per_worker, n_tasks, TACC_MAX_CPUS)`.
+
+### Files Changed
+
+| File | Changes |
+|---|---|
+| `src/utils/helpers.py` | New `estimate_swim_memory()` and `compute_worker_count()` functions |
+| `src/workers/align.py` | Scans tasks for max window size, uses memory-aware count. HUD shows window size and GB/worker |
+| `src/workers/generate.py` | Memory-aware count for both run_mir and convert_zarr_block phases |
+| `src/workers/scale.py` | Memory-aware count for both iscale2 TIFF reduction and zarr conversion phases |
+
+### How It Works
+
+1. **AlignWorker** (`align.py`): After building the task list, scans all tasks' `method_opts` for the actual largest window size (respecting `is_refinement`). Passes this to `estimate_swim_memory()` and `compute_worker_count()`.
+
+2. **ZarrWorker** (`generate.py`): Estimates per-worker memory for the `run_mir` phase (input image + bounding box output) and `convert_zarr_block` phase (TIFF read + zarr write) separately.
+
+3. **ScaleWorker** (`scale.py`): Estimates per-thread memory for `iscale2` (source image + scaled output) and zarr conversion (2× scaled image). Uses `use_threads=True` since ThreadPoolExecutor shares the Python process.
+
+### Backward Compatibility
+
+- `get_core_count()` preserved in helpers.py (referenced by TACC UI widget in `main_window.py:2260`)
+- `SCALE_1_CORES_LIMIT` and `SCALE_2_CORES_LIMIT` kept in `config.py` (UI references) but no longer used by workers

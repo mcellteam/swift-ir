@@ -24,7 +24,7 @@ numcodecs.blosc.use_threads = False
 
 from qtpy.QtCore import Signal, QObject, QMutex
 
-from src.utils.helpers import get_bindir, print_exception, get_core_count
+from src.utils.helpers import get_bindir, print_exception, compute_worker_count
 from src.utils.funcs_image import ImageSize
 from src.core.thumbnailer import Thumbnailer
 from src.utils.swiftir import applyAffine
@@ -144,7 +144,12 @@ class ZarrWorker(QObject):
             else:
                 logger.info(f'Cache hit (transformed image): {ofp}')
 
-        self.cpus = get_core_count(dm, len(tasks))
+        # mir reads input image + writes transformed output at bounding box size
+        img_w, img_h = dm.image_size()
+        bb_w, bb_h = rect[2], rect[3]
+        _OVERHEAD = 150 * 1024 * 1024
+        per_worker_mir = _OVERHEAD + img_w * img_h + 2 * bb_w * bb_h
+        self.cpus = compute_worker_count(len(tasks), per_worker_mir)
 
         desc = f"Generate Cumulative Transformation Images"
         t, *_ = self.run_multiprocessing(run_mir, tasks, desc)
@@ -224,6 +229,9 @@ class ZarrWorker(QObject):
             if ng.is_server_running():
                 logger.info('Stopping Neuroglancer...')
                 ng.server.stop()
+            # Each worker reads transformed TIFF + writes to zarr
+            per_worker_zarr = _OVERHEAD + 2 * bb_w * bb_h
+            self.cpus = compute_worker_count(len(tasks), per_worker_zarr)
             desc = f"Copy-convert to Zarr"
             # t, *_ = self.run_multiprocessing(convert_zarr, tasks, desc)
             t, *_ = self.run_multiprocessing(convert_zarr_block, tasks, desc)
