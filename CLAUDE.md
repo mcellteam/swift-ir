@@ -528,3 +528,7 @@ For 24k×24k images: at s1 the peak window is 9750² (2×2 only), not 19500² (1
 
 - `get_core_count()` preserved in helpers.py (referenced by TACC UI widget in `main_window.py:2260`)
 - `SCALE_1_CORES_LIMIT` and `SCALE_2_CORES_LIMIT` kept in `config.py` (UI references) but no longer used by workers
+
+### Bug Fix: zip Iterator Exhaustion in ScaleWorker (2026-03-05)
+
+`main_window.py:1159` passes `scales` as a `zip()` iterator to `ScaleWorker.__init__()`. The new `max(self.scales, ...)` call in `run()` consumed the entire iterator, leaving all subsequent `for s, siz in deepcopy(self.scales):` loops empty — no TIFFs were generated and thumbnails failed with `FileNotFoundError`. Fixed by materializing with `list(scales)` in `__init__`.
