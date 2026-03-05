@@ -277,8 +277,6 @@ def main():
     # if cfg.PROFILING_MODE:
     #     sys.setprofile(tracefunc)
 
-    QApplication.setAttribute(Qt.AA_UseDesktopOpenGL) #0226-
-
     initialize_user_preferences() # calls update_preferences_model()
     convert_projects_model()
     # configure_project_paths()
@@ -314,6 +312,7 @@ if __name__ == "__main__":
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--enable-logging --log-level=3' # suppress JS warnings
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=0'
     os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --no-sandbox --num-raster-threads=%s ' \
+                                               '--enable-webgl-software-rendering ' \
                                                '--enable-logging --log-level=3' % \
                                               cfg.QTWEBENGINE_RASTER_THREADS
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = f'--disable-web-security --no-sandbox --num-raster-threads={cfg.QTWEBENGINE_RASTER_THREADS}'
@@ -332,6 +331,7 @@ if __name__ == "__main__":
 
     # os.putenv("QT_QPA_PLATFORM", "offscreen")
     print('Initializing QApplication...')
+    QCoreApplication.setAttribute(Qt.AA_UseDesktopOpenGL)
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
     font = QFont("Tahoma")
