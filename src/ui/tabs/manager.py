@@ -1596,6 +1596,8 @@ class WebEngine(QWebEngineView):
     # use .settings() to access settings
     def __init__(self, ID):
         QWebEngineView.__init__(self)
+        from src.ui.views.webengine import FilteredWebEnginePage
+        self.setPage(FilteredWebEnginePage(self))
         self.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
         self.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
         self.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
