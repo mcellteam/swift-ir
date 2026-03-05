@@ -427,7 +427,7 @@ class ManagerTab(QWidget):
         self.gbWebengine1.setContentsMargins(0, 0, 0, 0)
 
 
-        self.vsplitter = QSplitter(Qt.Orientation.Vertical)
+        self.vsplitter = QSplitter(Qt.Vertical)
         self.vsplitter.setOpaqueResize(False)
         self.vsplitter.addWidget(self.gbWebengine0)
         self.vsplitter.addWidget(self.gbWebengine1)

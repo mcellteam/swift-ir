@@ -277,7 +277,7 @@ def main():
     # if cfg.PROFILING_MODE:
     #     sys.setprofile(tracefunc)
 
-    QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseDesktopOpenGL) #0226-
+    QApplication.setAttribute(Qt.AA_UseDesktopOpenGL) #0226-
 
     initialize_user_preferences() # calls update_preferences_model()
     convert_projects_model()

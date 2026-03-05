@@ -6,7 +6,7 @@ PULL="1"
 FORCE="0"
 
 
-echo "fb30_joel version of this script"
+echo "devel_claude_pyqt5_ls6 version of this script"
 
 echo "Parsing cli arguments..."
 for i in "$@"; do
@@ -93,7 +93,7 @@ export MKL_NUM_THREADS=1
 echo "Checking out git branch..."
 cd $WORK/swift-ir
 git fetch
-git checkout remotes/origin/fb30_joel
+git checkout devel_claude_pyqt5_ls6
 echo "Pulling changes..."
 git pull
 #echo "Most recent commit:"

@@ -43,7 +43,7 @@ class FileBrowser(QWidget):
         self.model.rootPathChanged.connect(lambda newpath: print(f"rootPathChanged: {newpath}!"))
         self.model.setReadOnly(False)
         self.model.setFilter(QDir.AllEntries | QDir.Hidden)
-        self.model.sort(0, Qt.SortOrder.AscendingOrder)
+        self.model.sort(0, Qt.AscendingOrder)
         # self.model.setFilter(QDir.Files)
         # self.model.setFilter(QDir.NoDotAndDotDot)
         self.treeview.setModel(self.model)

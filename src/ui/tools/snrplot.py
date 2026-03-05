@@ -175,7 +175,7 @@ class SnrPlot(QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.addWidget(self.view, 0, 0, 2, 2)
         self.layout.addWidget(self.checkboxes_widget, 0, 1, 1, 1,
-                              alignment=Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
+                              alignment=Qt.AlignRight | Qt.AlignTop)
         self.layout.setRowStretch(0,0)
         self.layout.setRowStretch(1,1)
         self.setLayout(self.layout)
@@ -319,7 +319,7 @@ class SnrPlot(QWidget):
                         self._snr_checkboxes[s] = QCheckBox()
                         self._snr_checkboxes[s].setText(self.dm.level_pretty(s=s))
                         self.checkboxes_hlayout.addWidget(self._snr_checkboxes[s],
-                                                          alignment=Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
+                                                          alignment=Qt.AlignRight | Qt.AlignTop)
                         self._snr_checkboxes[s].setChecked(True)
                         self._snr_checkboxes[s].clicked.connect(lambda: print('cb clicked!'))
                         self._snr_checkboxes[s].clicked.connect(self.plotData)
@@ -780,12 +780,12 @@ class CustomViewBox(pg.ViewBox):
 
     ## reimplement right-click to zoom out
     def mouseClickEvent(self, ev):
-        if ev.button() == Qt.MouseButton.RightButton:
+        if ev.button() == Qt.RightButton:
             self.autoRange()
 
     ## reimplement mouseDragEvent to disable continuous axis zoom
     def mouseDragEvent(self, ev, axis=None):
-        if axis is not None and ev.button() == Qt.MouseButton.RightButton:
+        if axis is not None and ev.button() == Qt.RightButton:
             ev.ignore()
         else:
             pg.ViewBox.mouseDragEvent(self, ev, axis=axis)

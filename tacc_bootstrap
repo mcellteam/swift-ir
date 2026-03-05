@@ -14,7 +14,7 @@ DEBUG="0"
 PULL="1"
 FORCE="0"
 
-echo "fb30_joel version of this script"
+echo "devel_claude_pyqt5_ls6 version of this script"
 
 
 echo "Parsing cli arguments..."
@@ -88,9 +88,8 @@ fi
 echo "Changing directory to swift-ir..."
 cd $WORK/swift-ir
 
-echo "Checking out development_ng branch..."
-git checkout development_ng
-#git fetch remotes/origin/fb30_joel
+echo "Checking out devel_claude_pyqt5_ls6 branch..."
+git checkout devel_claude_pyqt5_ls6
 git pull
 
 echo "Purging modules..."

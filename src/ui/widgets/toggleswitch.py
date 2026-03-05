@@ -39,7 +39,7 @@ class ToggleSwitch(QCheckBox):
                  fontSize=11):
 
         super().__init__(parent)
-        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # focus don't steal focus from zoompanwidget
+        self.setFocusPolicy(Qt.NoFocus)  # focus don't steal focus from zoompanwidget
         self._bar_brush = QBrush(bar_color)
         self._bar_checked_brush = QBrush(QColor(checked_color).lighter())
         self._handle_brush = QBrush(handle_color)

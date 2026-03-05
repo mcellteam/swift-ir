@@ -448,7 +448,7 @@ class AlignmentTab(QWidget):
         self._overlayLab.hide()
 
         # self.hud_overlay = HeadupDisplay(self.mw.app, overlay=True)
-        # self.hud_overlay.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+        # self.hud_overlay.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         # self.hud_overlay.set_theme_overlay()
 
 
@@ -459,7 +459,7 @@ class AlignmentTab(QWidget):
         self.detailsSNR.setWordWrap(True)
         self.detailsSNR.hide()
 
-        self.sldrZoomTab1 = DoubleSlider(Qt.Orientation.Vertical, self)
+        self.sldrZoomTab1 = DoubleSlider(Qt.Vertical, self)
         self.sldrZoomTab1.setFocusPolicy(Qt.NoFocus)
         self.sldrZoomTab1.setMouseTracking(True)
         # self.sldrZoomTab1.setInvertedAppearance(True)
@@ -479,7 +479,7 @@ class AlignmentTab(QWidget):
         self.wSldrZoomTab1.addWidget(self.sldrZoomTab1)
         self.wSldrZoomTab1.addWidget(vlab)
 
-        # self.sliderZdisplay = DoubleSlider(Qt.Orientation.Vertical, self)
+        # self.sliderZdisplay = DoubleSlider(Qt.Vertical, self)
         # self.sliderZdisplay.setFocusPolicy(Qt.NoFocus)
         # self.sliderZdisplay.setMaximum(20)
         # self.sliderZdisplay.setMinimum(1)
@@ -597,8 +597,8 @@ class AlignmentTab(QWidget):
                     self.tn_ref.update()
                     self.tn_tra.update()
 
-        # self.sliderMatch = DoubleSlider(Qt.Orientation.Horizontal, self)
-        self.sliderMatch = QSlider(Qt.Orientation.Horizontal, self)
+        # self.sliderMatch = DoubleSlider(Qt.Horizontal, self)
+        self.sliderMatch = QSlider(Qt.Horizontal, self)
         self.sliderMatch.setFocusPolicy(Qt.NoFocus)
         self.sliderMatch.setMinimum(64)
         self.sliderMatch.setToolTip(tip)
@@ -647,7 +647,7 @@ class AlignmentTab(QWidget):
                     self.tn_ref.update()
                     self.tn_tra.update()
 
-        self.slider1x1 = QSlider(Qt.Orientation.Horizontal, self)
+        self.slider1x1 = QSlider(Qt.Horizontal, self)
         self.slider1x1.setFocusPolicy(Qt.NoFocus)
         self.slider1x1.setMinimum(64)
         self.slider1x1.setToolTip(tip)
@@ -683,7 +683,7 @@ class AlignmentTab(QWidget):
                     self.tn_ref.update()
                     self.tn_tra.update()
 
-        self.slider2x2 = QSlider(Qt.Orientation.Horizontal, self)
+        self.slider2x2 = QSlider(Qt.Horizontal, self)
         self.slider2x2.setFocusPolicy(Qt.NoFocus)
         self.slider2x2.setToolTip(tip)
         self.slider2x2.valueChanged.connect(fn_slider2x2)
@@ -1526,7 +1526,7 @@ class AlignmentTab(QWidget):
         self.bZarrRegen = QPushButton('Generate')
         self.bZarrRegen.setFixedSize(QSize(42,15))
         self.bZarrRegen.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        self.bZarrRegen.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.bZarrRegen.setFocusPolicy(Qt.NoFocus)
         self.bZarrRegen.clicked.connect(lambda: self.bZarrRegen.setEnabled(False))
         self.bZarrRegen.clicked.connect(lambda: self.mw.regenZarr(self.dm))
 
@@ -1853,7 +1853,7 @@ class AlignmentTab(QWidget):
         self.vwRightPanel = VW(self.checkboxes, self.swMethod)
         self.vwRightPanel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        self.columnSplitter = QSplitter(Qt.Orientation.Vertical)
+        self.columnSplitter = QSplitter(Qt.Vertical)
         self.columnSplitter.addWidget(self.vwRightPanel)
         self.columnSplitter.addWidget(self.twCornerViewer)
         self.columnSplitter.setCollapsible(0, False)
@@ -1861,7 +1861,7 @@ class AlignmentTab(QWidget):
         self.columnSplitter.setStretchFactor(0, 1)
         self.columnSplitter.setStretchFactor(1, 2)
 
-        self.wTab1 = QSplitter(Qt.Orientation.Horizontal)
+        self.wTab1 = QSplitter(Qt.Horizontal)
         self.wTab1.addWidget(self.wWebengine1)
         self.wTab1.addWidget(self.columnSplitter)
         self.wTab1.setCollapsible(0, False)
@@ -2698,7 +2698,7 @@ class AlignmentTab(QWidget):
         self.cbxBias.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.cbxBias.addItems(['None', 'poly 0°', 'poly 1°', 'poly 2°', 'poly 3°', 'poly 4°'])
         self.cbxBias.currentIndexChanged.connect(self.onBiasChanged)
-        self.cbxBias.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.cbxBias.setFocusPolicy(Qt.NoFocus)
         self.cbxBias.setFixedWidth(58)
         self.cbxBias.lineEdit()
 
@@ -2789,7 +2789,7 @@ class AlignmentTab(QWidget):
         self.twInfoOverlay.setFixedSize(QSize(380, 300))
         self.twInfoOverlay.hide()
 
-        self.sldrZoomTab0 = DoubleSlider(Qt.Orientation.Vertical, self)
+        self.sldrZoomTab0 = DoubleSlider(Qt.Vertical, self)
         self.sldrZoomTab0.setFocusPolicy(Qt.NoFocus)
         self.sldrZoomTab0.setMouseTracking(True)
         # self.sldrZoomTab1.setInvertedAppearance(True)
@@ -2877,7 +2877,7 @@ class AlignmentTab(QWidget):
         self.leBrightness.textEdited.connect(
             lambda: self.sldBrightness.setValue(int(self.leBrightness.text())))
         self.leBrightness.textEdited.connect(self.fn_brightness_control)
-        self.sldBrightness = QSlider(Qt.Orientation.Horizontal, self)
+        self.sldBrightness = QSlider(Qt.Horizontal, self)
         # self.sldBrightness.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # self.sldBrightness.setFixedWidth(150)
         self.sldBrightness.setMouseTracking(False)
@@ -2898,7 +2898,7 @@ class AlignmentTab(QWidget):
         self.leContrast.textEdited.connect(
             lambda: self.sldContrast.setValue(int(self.leContrast.text())))
         self.leContrast.textEdited.connect(self.fn_contrast_control)
-        self.sldContrast = QSlider(Qt.Orientation.Horizontal, self)
+        self.sldContrast = QSlider(Qt.Horizontal, self)
         # self.sldContrast.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # self.sldContrast.setFixedWidth(150)
         self.sldContrast.setMouseTracking(False)
@@ -2990,7 +2990,7 @@ class ExpandingHWidget(QWidget):
 
 '''
 Forward key strokes to QWebEngineView:
-new_event = QKeyEvent(QEvent.KeyPress, Qt.Key_R, Qt.KeyboardModifiers(),"r",)
+new_event = QKeyEvent(QEvent.KeyPress, Qt.Key_R, Qt.NoModifier,"r",)
 new_event.artificial = True
 QCoreApplication.postEvent(cfg.pt.viewer0.webengine0.focusProxy(), new_event)
 
@@ -3001,7 +3001,7 @@ QCoreApplication.postEvent(cfg.pt.viewer0.webengine0.focusProxy(), new_event)
             angdel = QPoint(int(10), int(10))
             btns = MB.NoButton
             mods = KM.NoModifier
-            phase = Qt.ScrollPhase.NoScrollPhase
+            phase = Qt.NoScrollPhase
             inverted = False
             scroll_event = QWheelEvent(pos, pos, pixdel, angdel, btns, mods, phase, inverted)
             
@@ -3018,7 +3018,7 @@ class ForwardKeyEvent(QObject):
     def eventFilter(self, obj, event):
         if self.m_sender is obj and event.type() == QEvent.KeyPress:
             new_event = QKeyEvent(
-                QEvent.KeyPress, 65, Qt.KeyboardModifiers(),"r",)
+                QEvent.KeyPress, 65, Qt.NoModifier,"r",)
             new_event.artificial = True
             QCoreApplication.postEvent(self.m_receiver.focusProxy(), new_event)
             return True
@@ -3042,7 +3042,7 @@ class WebEngine(QWebEngineView):
     #     QCoreApplication.postEvent(self.focusProxy(), new_event)
     # 
     # def rotate(self):
-    #     new_event = QKeyEvent(QEvent.KeyPress, Qt.Key_R, Qt.KeyboardModifiers(), "r", )
+    #     new_event = QKeyEvent(QEvent.KeyPress, Qt.Key_R, Qt.NoModifier, "r", )
     #     new_event.artificial = True
     #     QCoreApplication.postEvent(self.focusProxy(), new_event)
 
@@ -3193,7 +3193,7 @@ class WarningNotice(QWidget):
         self.layout.setSpacing(4)
         self.setAutoFillBackground(True)
         self.setAttribute(Qt.WA_StyledBackground, True)
-        self.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+        self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
 
         p = self.palette()
         p.setColor(self.backgroundRole(), QColor('#ffcccb'))
@@ -3214,7 +3214,7 @@ class WarningNotice(QWidget):
 
         if fixbutton:
             self.fixbutton = QPushButton('Fix All')
-            # self.fixbutton.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+            # self.fixbutton.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
             self.fixbutton.setFixedSize(QSize(36, 16))
             self.layout.addWidget(self.fixbutton)
 

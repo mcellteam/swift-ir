@@ -2261,7 +2261,7 @@ class MainWindow(QMainWindow):
         self.le_qtwebengine_raster_threads.returnPressed.connect(update_raster_threads)
 
         self.cb_recipe_logging = QCheckBox()
-        self.cb_recipe_logging.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.cb_recipe_logging.setFocusPolicy(Qt.NoFocus)
         def update_recipe_logging():
             logger.info('')
             b = self.cb_recipe_logging.isChecked()
@@ -2271,7 +2271,7 @@ class MainWindow(QMainWindow):
         self.cb_recipe_logging.toggled.connect(update_recipe_logging)
 
         self.cb_verbose_swim = QCheckBox()
-        self.cb_verbose_swim.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.cb_verbose_swim.setFocusPolicy(Qt.NoFocus)
         def update_swim_verbosity():
             logger.info('')
             b = self.cb_verbose_swim.isChecked()
@@ -2281,7 +2281,7 @@ class MainWindow(QMainWindow):
         self.cb_verbose_swim.toggled.connect(update_swim_verbosity)
 
         self.cb_dev_mode = QCheckBox()
-        self.cb_dev_mode.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.cb_dev_mode.setFocusPolicy(Qt.NoFocus)
         def update_dev_mode():
             logger.info('')
             b = self.cb_dev_mode.isChecked()
@@ -2291,7 +2291,7 @@ class MainWindow(QMainWindow):
         self.cb_dev_mode.toggled.connect(update_dev_mode)
 
         self.cb_use_pool = QCheckBox()
-        self.cb_use_pool.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.cb_use_pool.setFocusPolicy(Qt.NoFocus)
         def update_mp_mode():
             logger.info('')
             b = self.cb_use_pool.isChecked()
@@ -2343,7 +2343,7 @@ class MainWindow(QMainWindow):
         logger.info('')
 
         # self.exitButton = QPushButton()
-        # self.exitButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # self.exitButton.setFocusPolicy(Qt.NoFocus)
         # # self.exitButton.setFixedSize(QSize(15,15))
         # # self.exitButton.setIconSize(QSize(12,12))
         # self.exitButton.setFixedSize(QSize(16, 16))
@@ -2354,7 +2354,7 @@ class MainWindow(QMainWindow):
         # # self.exitButton.setStyleSheet(button_gradient_style)
         #
         # self.minimizeButton = QPushButton()
-        # self.minimizeButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # self.minimizeButton.setFocusPolicy(Qt.NoFocus)
         # self.minimizeButton.setFixedSize(QSize(16, 16))
         # self.minimizeButton.setIconSize(QSize(14, 14))
         # # self.minimizeButton.setIcon(qta.icon('fa.window-minimize'))
@@ -2427,7 +2427,7 @@ class MainWindow(QMainWindow):
         self.tbb3demdata.setIcon(icon)
 
         # self.workbenchButton = QPushButton('3DEM Workbench')
-        # self.workbenchButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # self.workbenchButton.setFocusPolicy(Qt.NoFocus)
         # self.workbenchButton.setFont(f)
         # self.workbenchButton.setFixedHeight(18)
         # self.workbenchButton.setIconSize(QSize(16, 16))
@@ -2564,14 +2564,14 @@ class MainWindow(QMainWindow):
         # self.tbbProjects.setMenu(projectsMenu)
         # self.tbbProjects.setPopupMode(QToolButton.InstantPopup)
         self.tbbProjects.pressed.connect(fn_projectmanager)
-        self.tbbProjects.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.tbbProjects.setFocusPolicy(Qt.NoFocus)
         # self.tbbProjects.setIcon(qta.icon("fa.folder"))
         # self.tbbProjects.setIcon(qta.icon("fa.database"))
         self.tbbProjects.setIcon(qta.icon("mdi.folder-upload-outline"))
 
         self.tbbMenu = QToolButton()
         self.tbbMenu.setMenu(self.menu)
-        self.tbbMenu.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.tbbMenu.setFocusPolicy(Qt.NoFocus)
         self.tbbMenu.setPopupMode(QToolButton.InstantPopup)
         # self.tbbMenu.setToolTip(f"Menu")
         # self.tbbMenu.clicked.connect(fn_glossary)
@@ -2579,7 +2579,7 @@ class MainWindow(QMainWindow):
 
         # self.tbbTestThread = QToolButton()
         # self.tbbTestThread.pressed.connect(self.runLongTask)
-        # self.tbbTestThread.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # self.tbbTestThread.setFocusPolicy(Qt.NoFocus)
 
         self.tbbStats = QToolButton()
         menu = QMenu()
@@ -2607,7 +2607,7 @@ class MainWindow(QMainWindow):
         menu = QMenu()
         menu.setFocusPolicy(Qt.NoFocus)
         self.tbbAdvanced.setMenu(menu)
-        self.tbbAdvanced.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.tbbAdvanced.setFocusPolicy(Qt.NoFocus)
         self.tbbAdvanced.setPopupMode(QToolButton.InstantPopup)
         action = QWidgetAction(self)
         action.setDefaultWidget(self.wAdvanced)
@@ -2623,7 +2623,7 @@ class MainWindow(QMainWindow):
         # menu.addAction(action)
 
         self.tbbOverlay = QToolButton()
-        self.tbbOverlay.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.tbbOverlay.setFocusPolicy(Qt.NoFocus)
 
         tip = f"Show Information Overlay"
         tip = '\n'.join(textwrap.wrap(tip, width=35))
@@ -2671,7 +2671,7 @@ class MainWindow(QMainWindow):
             # b.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
             # b.setLayoutDirection(Qt.RightToLeft)
             b.setIconSize(QSize(16,16))
-            b.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            b.setFocusPolicy(Qt.NoFocus)
             b.setStyleSheet("QToolButton { text-align: right; margin-left: 4px;}")
 
         # self.bExport = QPushButton('Export ')
@@ -3750,7 +3750,7 @@ class MainWindow(QMainWindow):
         tip = """Sections marked for exclusion will not be aligned or used by SWIM in any way (like a dropped getFrameScale)."""
         tip = '\n'.join(textwrap.wrap(tip, width=35))
         self.cbInclude = ToggleSwitch()
-        self.cbInclude.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.cbInclude.setFocusPolicy(Qt.NoFocus)
         self.cbInclude.setToolTip(tip)
         # self.cbInclude.setEnabled(False)
         # self.cbInclude.toggled.connect(self._callbk_skipChanged)
@@ -3763,7 +3763,7 @@ class MainWindow(QMainWindow):
         tip = 'Go To Previous Section.'
         tip = '\n'.join(textwrap.wrap(tip, width=35))
         self.bLeftArrow = QPushButton()
-        self.bLeftArrow.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.bLeftArrow.setFocusPolicy(Qt.NoFocus)
         self.bLeftArrow.setToolTip(tip)
         self.bLeftArrow.clicked.connect(self.layer_left)
         self.bLeftArrow.setFixedSize(QSize(18, 18))
@@ -3773,7 +3773,7 @@ class MainWindow(QMainWindow):
         tip = 'Go To Next Section.'
         tip = '\n'.join(textwrap.wrap(tip, width=35))
         self.bRightArrow = QPushButton()
-        self.bRightArrow.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.bRightArrow.setFocusPolicy(Qt.NoFocus)
         self.bRightArrow.setToolTip(tip)
         self.bRightArrow.clicked.connect(self.layer_right)
         self.bRightArrow.setFixedSize(QSize(18, 18))
@@ -3784,7 +3784,7 @@ class MainWindow(QMainWindow):
         tip = '\n'.join(textwrap.wrap(tip, width=35))
         self.bArrowDown = QPushButton()
         self.bArrowDown.setEnabled(False)
-        self.bArrowDown.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.bArrowDown.setFocusPolicy(Qt.NoFocus)
         self.bArrowDown.setToolTip(tip)
         self.bArrowDown.clicked.connect(self.scale_down)
         self.bArrowDown.setFixedSize(QSize(18, 18))
@@ -3794,7 +3794,7 @@ class MainWindow(QMainWindow):
         tip = '\n'.join(textwrap.wrap(tip, width=35))
         self.bArrowUp = QPushButton()
         self.bArrowUp.setEnabled(False)
-        self.bArrowUp.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.bArrowUp.setFocusPolicy(Qt.NoFocus)
         self.bArrowUp.setToolTip(tip)
         self.bArrowUp.clicked.connect(self.scale_up)
         self.bArrowUp.setFixedSize(QSize(18, 18))
@@ -3803,7 +3803,7 @@ class MainWindow(QMainWindow):
         self.wUpDownArrows = HW(self.bArrowDown, self.bArrowUp)
         self.wUpDownArrows.layout.setAlignment(Qt.AlignCenter)
 
-        self.sldrZpos = QSlider(Qt.Orientation.Horizontal, self)
+        self.sldrZpos = QSlider(Qt.Horizontal, self)
         self.sldrZpos.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.sldrZpos.setFocusPolicy(Qt.StrongFocus)
 
@@ -3872,7 +3872,7 @@ class MainWindow(QMainWindow):
 
         self.boxScale = QComboBox(self)
         self.boxScale.setFixedSize(QSize(132, 16))
-        self.boxScale.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.boxScale.setFocusPolicy(Qt.NoFocus)
 
         self.boxScale.currentTextChanged.connect(self.onScaleChange)
 
@@ -3904,7 +3904,7 @@ class MainWindow(QMainWindow):
         self.bAlign = QPushButton('Align')
         self.bAlign.setFixedHeight(22)
         self.bAlign.setToolTip(tip)
-        self.bAlign.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.bAlign.setFocusPolicy(Qt.NoFocus)
         self.bAlign.clicked.connect(self.alignAll)
         # p = self.bAlign.palette()
         # p.setColor(self.bAlign.backgroundRole(), QColor('#f3f6fb'))
@@ -3920,7 +3920,7 @@ class MainWindow(QMainWindow):
         self.bPropagate.setIcon(qta.icon('fa.level-up', color='#380282'))
         self.bPropagate.setLayoutDirection(Qt.RightToLeft)
         self.bPropagate.setToolTip(tip)
-        self.bPropagate.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.bPropagate.setFocusPolicy(Qt.NoFocus)
         self.bPropagate.clicked.connect(lambda: self.dm.pullSettings())
         self.bPropagate.clicked.connect(lambda: self.pt.dataUpdateMA())
         self.bPropagate.hide()  # Hidden - auto-propagation is enabled
@@ -3946,7 +3946,7 @@ class MainWindow(QMainWindow):
         self.cbxBias.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.cbxBias.addItems(['None', 'poly 0°', 'poly 1°', 'poly 2°', 'poly 3°', 'poly 4°'])
         self.cbxBias.currentIndexChanged.connect(self._valueChangedPolyOrder)
-        self.cbxBias.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.cbxBias.setFocusPolicy(Qt.NoFocus)
         self.cbxBias.setFixedSize(QSize(74, 12))
         self.cbxBias.lineEdit()
 
@@ -4097,12 +4097,12 @@ class MainWindow(QMainWindow):
         self.user = getpass.getuser()
         self.tell(f'Hello {self.user}. Please report any issues or bugs to joel@salk.edu.')
 
-        baseline = Qt.AlignmentFlag.AlignBaseline
-        vcenter = Qt.AlignmentFlag.AlignVCenter
-        hcenter = Qt.AlignmentFlag.AlignHCenter
-        center = Qt.AlignmentFlag.AlignCenter
-        left = Qt.AlignmentFlag.AlignLeft
-        right = Qt.AlignmentFlag.AlignRight
+        baseline = Qt.AlignBaseline
+        vcenter = Qt.AlignVCenter
+        hcenter = Qt.AlignHCenter
+        center = Qt.AlignCenter
+        left = Qt.AlignLeft
+        right = Qt.AlignRight
 
         self._processMonitorWidget = QWidget()
         lab = QLabel('Process Monitor')
@@ -4210,7 +4210,7 @@ class MainWindow(QMainWindow):
         self.globTabs.setTabBarAutoHide(True)
         self.globTabs.setTabShape(QTabWidget.Triangular)
         self.globTabs.tabBar().setExpanding(True)
-        self.globTabs.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.globTabs.setFocusPolicy(Qt.NoFocus)
         self.globTabs.setUsesScrollButtons(True)
         self.globTabs.setContentsMargins(0, 0, 0, 0)
         self.globTabs.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -4364,14 +4364,14 @@ class MainWindow(QMainWindow):
 
         buttonBrowserBack = QPushButton()
         buttonBrowserBack.setToolTip('Go Back')
-        buttonBrowserBack.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        buttonBrowserBack.setFocusPolicy(Qt.NoFocus)
         buttonBrowserBack.clicked.connect(browser_backward)
         buttonBrowserBack.setFixedSize(QSize(20, 20))
         buttonBrowserBack.setIcon(qta.icon('fa.arrow-left'))
 
         buttonBrowserForward = QPushButton()
         buttonBrowserForward.setToolTip('Go Forward')
-        buttonBrowserForward.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        buttonBrowserForward.setFocusPolicy(Qt.NoFocus)
         buttonBrowserForward.clicked.connect(browser_forward)
         buttonBrowserForward.setFixedSize(QSize(20, 20))
         buttonBrowserForward.setIcon(qta.icon('fa.arrow-right'))
@@ -4384,19 +4384,19 @@ class MainWindow(QMainWindow):
 
         buttonBrowserCopy = QPushButton('Copy')
         buttonBrowserCopy.setToolTip('Copy Text')
-        buttonBrowserCopy.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        buttonBrowserCopy.setFocusPolicy(Qt.NoFocus)
         buttonBrowserCopy.clicked.connect(browser_copy)
         buttonBrowserCopy.setFixedSize(QSize(50, 20))
 
         buttonBrowserPaste = QPushButton('Paste')
         buttonBrowserPaste.setToolTip('Paste Text')
-        buttonBrowserPaste.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        buttonBrowserPaste.setFocusPolicy(Qt.NoFocus)
         buttonBrowserPaste.clicked.connect(browser_paste)
         buttonBrowserPaste.setFixedSize(QSize(50, 20))
 
         button3demCommunity = QPushButton('3DEM Community Data')
         button3demCommunity.setToolTip('Vist the 3DEM Community Workbench')
-        button3demCommunity.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        button3demCommunity.setFocusPolicy(Qt.NoFocus)
         button3demCommunity.clicked.connect(self.browser_3dem_community)
         button3demCommunity.setFixedSize(QSize(120, 20))
 
@@ -4418,10 +4418,10 @@ class MainWindow(QMainWindow):
         browser_controls_widget.setLayout(hbl)
 
         vbl = VBL()
-        vbl.addWidget(browser_controls_widget, alignment=Qt.AlignmentFlag.AlignLeft)
+        vbl.addWidget(browser_controls_widget, alignment=Qt.AlignLeft)
         vbl.addWidget(self.browser_web)
         hbl = HBL()
-        hbl.addWidget(self._buttonExitBrowserWeb, alignment=Qt.AlignmentFlag.AlignLeft)
+        hbl.addWidget(self._buttonExitBrowserWeb, alignment=Qt.AlignLeft)
         hbl.addWidget(w)
         browser_bottom_controls = QWidget()
         browser_bottom_controls.setFixedHeight(20)
@@ -4435,7 +4435,7 @@ class MainWindow(QMainWindow):
         # self.addToolBar(Qt.LeftToolBarArea, self.toolbar)
         self.addToolBar(Qt.TopToolBarArea, self.toolbar)
         # self.addToolBar(Qt.BottomToolBarArea, self.wCpanel)
-        self.globTabsAndCpanel.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.globTabsAndCpanel.setFocusPolicy(Qt.NoFocus)
 
         self.teInfoOverlay = QTextEdit()
         self.teInfoOverlay.setStyleSheet("background-color: #f3f6fb")
@@ -4561,7 +4561,7 @@ class MainWindow(QMainWindow):
         # self.pythonConsole = PythonConsole()
         self.pythonConsole = PythonConsoleWidget()
         self.pythonConsole.pyconsole.set_color_none()
-        self.pythonConsole.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.pythonConsole.setFocusPolicy(Qt.StrongFocus)
         self.dwPython.setWidget(self.pythonConsole)
         if self._python_backend == 'pyqtgraph':
             import pyqtgraph.console
@@ -4571,7 +4571,7 @@ class MainWindow(QMainWindow):
             # self.pythonConsole = PythonConsole()
             self.pythonConsole = PythonConsoleWidget()
             self.pythonConsole.pyconsole.set_color_none()
-            self.pythonConsole.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+            self.pythonConsole.setFocusPolicy(Qt.StrongFocus)
         self.dwPython.setWidget(self.pythonConsole)
 
 
@@ -4611,7 +4611,7 @@ class MainWindow(QMainWindow):
         # self.pbar.setFixedHeight(13)
         # self.bStopPbar.setFixedSize(36, 12)
         # self.bStopPbar.setIconSize(QSize(11, 11))
-        self.pbar.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.pbar.setFocusPolicy(Qt.NoFocus)
         self.pbar.setTextVisible(True)
         # self.bStopPbar.setStyleSheet("font-size: 8px;")
         self.pbar.setMaximumWidth(320)

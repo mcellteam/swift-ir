@@ -1,0 +1,28 @@
+#!/bin/bash
+# Launch AlignEM on Lonestar6 @ TACC using uv
+#
+# Usage:
+#   cd $WORK/swift-ir
+#   source tacc_launch
+
+# Purge any existing modules to start clean
+module purge
+
+# Load required modules
+ml intel/19.1.1
+ml swr/21.2.5
+ml impi/19.0.9
+ml fftw3/3.3.10
+
+# Environment variables
+export QT_API=pyqt5
+export BLOSC_NTHREADS=1
+export OPENBLAS_NUM_THREADS=1
+export OMP_NUM_THREADS=1
+export MKL_NUM_THREADS=1
+export LIBTIFF_STRILE_ARRAY_MAX_RESIZE_COUNT=1000000000
+unset MESA_DEBUG
+
+# Launch
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+uv run python3 "$SCRIPT_DIR/alignEM.py"
