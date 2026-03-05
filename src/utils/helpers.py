@@ -76,6 +76,80 @@ def get_core_count(dm, n_tasks):
     return cpus
 
 
+# --- Memory-aware worker count ---
+#
+# swim.c allocates per invocation:
+#   4 float buffers:       4 x W x H x 4 bytes = 16 x W x H
+#   4 FFT complex buffers: 4 x (W*H/2+1) x 8  ~ 16 x W x H
+#   3 image structs:       3 x W x H x 1       =  3 x W x H
+#   2 full source images:  2 x img_w x img_h x 1
+#
+# Where W, H = swim window dimensions (command-line arg).
+_SWIM_BYTES_PER_WINDOW_PIXEL = 35   # 16 + 16 + 3
+_PYTHON_WORKER_OVERHEAD = 150 * 1024 * 1024  # 150 MB for forkserver child process
+
+
+def estimate_swim_memory(img_size, max_window):
+    """Estimate peak memory in bytes per alignment worker process.
+
+    Args:
+        img_size: [width, height] of images at the operating scale.
+        max_window: [width, height] of the largest swim window used in any
+                    ingredient of the recipe (size_1x1 at the coarsest scale,
+                    size_2x2 at refinement scales).
+    Returns:
+        Estimated bytes per worker (Python process + swim subprocess).
+    """
+    w, h = max_window[0], max_window[1]
+    swim_mem = _SWIM_BYTES_PER_WINDOW_PIXEL * w * h
+    image_mem = 2 * img_size[0] * img_size[1]
+    return _PYTHON_WORKER_OVERHEAD + swim_mem + image_mem
+
+
+def compute_worker_count(n_tasks, per_worker_bytes, use_threads=False):
+    """Compute optimal number of parallel workers.
+
+    Caps at the minimum of:
+      1. Physical cores minus 2 (headroom for UI and OS)
+      2. Available RAM x 0.80 / per_worker_bytes
+      3. Number of tasks
+      4. TACC_MAX_CPUS (if running on TACC)
+
+    Args:
+        n_tasks: number of work items to process.
+        per_worker_bytes: estimated peak memory per worker in bytes.
+        use_threads: if True, skip the Python process overhead portion of the
+                     RAM budget (threads share a single process).
+    Returns:
+        Worker count (>= 1).
+    """
+    if n_tasks <= 0:
+        return 1
+
+    phys_cores = psutil.cpu_count(logical=False)
+    max_by_cpu = max(phys_cores - 2, 1)
+
+    available = psutil.virtual_memory().available
+    usable = int(available * 0.80)
+    max_by_ram = max(usable // max(per_worker_bytes, 1), 1)
+
+    cpus = min(max_by_cpu, max_by_ram, n_tasks)
+
+    if is_tacc():
+        cpus = min(cpus, cfg.TACC_MAX_CPUS)
+
+    cpus = max(cpus, 1)
+
+    logger.info(
+        f"Worker count: {cpus}  "
+        f"(phys_cores={phys_cores}, max_by_cpu={max_by_cpu}, max_by_ram={max_by_ram}, "
+        f"tasks={n_tasks}, per_worker={per_worker_bytes / (1024**2):.0f} MB, "
+        f"available_ram={available / (1024**3):.1f} GB)"
+    )
+
+    return cpus
+
+
 @contextlib.contextmanager
 def dt(ident='timer'):
     import time

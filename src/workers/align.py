@@ -26,7 +26,7 @@ numcodecs.blosc.use_threads = False
 from src.utils.readers import read
 from src.utils.writers import write
 from src.core.recipemaker import run_recipe
-from src.utils.helpers import print_exception, get_core_count
+from src.utils.helpers import print_exception, compute_worker_count, estimate_swim_memory
 import src.config as cfg
 
 from qtpy.QtCore import Signal, QObject, QMutex
@@ -176,9 +176,32 @@ class AlignWorker(QObject):
         _prev_snr = dm.indexes_to_snr_list(range(len(dm)))
 
 
-        self.cpus = get_core_count(dm, len(tasks))
+        # Memory-aware worker count: find the largest swim window across tasks
+        img_size = dm.image_size(s=scale)
+        max_window = [0, 0]
+        for t in tasks:
+            mo = t['method_opts']
+            method = mo['method']
+            if method == 'grid':
+                if not t.get('is_refinement', False):
+                    # Coarsest scale uses 1x1 ingredient (largest window)
+                    w, h = mo['size_1x1']
+                    max_window = [max(max_window[0], w), max(max_window[1], h)]
+                # All scales use 2x2 ingredient
+                w, h = mo['size_2x2']
+                max_window = [max(max_window[0], w), max(max_window[1], h)]
+            elif method == 'manual':
+                s = mo['size']
+                max_window = [max(max_window[0], s), max(max_window[1], s)]
+        if max_window[0] > 0:
+            per_worker = estimate_swim_memory(img_size, max_window)
+        else:
+            per_worker = 1
+        self.cpus = compute_worker_count(len(tasks), per_worker)
 
-        self.hudMessage.emit(f'Computing {len(tasks)} tasks, {self.cpus} CPUs')
+        self.hudMessage.emit(f'Computing {len(tasks)} tasks, {self.cpus} CPUs '
+                             f'(window {max_window[0]}x{max_window[1]}, '
+                             f'{per_worker / (1024**3):.1f} GB/worker)')
 
         desc = f"Compute Alignment"
         dt, succ, fail, results = self.run_multiprocessing(run_recipe, tasks, desc)

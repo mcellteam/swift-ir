@@ -416,3 +416,115 @@ These handlers are connected to signals that fire on programmatic changes. Added
 | `fn_sliderMatch` | `valueChanged` | Added `blockSignals` around internal `sliderMatch.setValue()` to prevent self-triggering |
 | `fn_slider1x1` | `valueChanged` | Added `blockSignals` around `slider1x1.setValue()` and `slider2x2.setValue()` cross-calls |
 | `fn_slider2x2` | `valueChanged` | Added `blockSignals` around `slider2x2.setValue()` self-correction |
+
+## Bug Fix: Clobber Size Field Ignored (2026-03-04)
+
+**File**: `src/ui/tabs/project.py`, line 873
+
+The clobber "size" line edit (`leClobber`) passed its value as a string to `dm.set_clobber_px()`, which guards with `isinstance(x, int)`. The string silently failed the check, so edits to the clobber size were never stored in the data model — the "Apply to All" button stayed disabled and alignments used the old value.
+
+**Fix**: Convert to `int()` in the `textEdited` lambda, with an empty-string guard (since `textEdited` fires on every keystroke):
+```python
+self.leClobber.textEdited.connect(lambda: self.dm.set_clobber_px(x=int(self.leClobber.text())) if self.leClobber.text() else None)
+```
+
+## Replace Image in Emstack (2026-03-04)
+
+Added the ability to replace a single image in an existing emstack without rebuilding the entire stack and alignment from scratch. Accessible via right-click context menu in the alignment Table tab.
+
+### Constraints
+
+- **Same dimensions required**: The replacement image must match the original image's width and height. This avoids cascading updates to `size_xy`, `size_zyx`, swim windows, and zarr array shapes.
+- **Synchronous operation**: Rescaling a single image across a few levels is fast (seconds), so no background worker is needed.
+- **Old filename preserved on disk**: The new image is copied into the emstack under the original filename, so all path references in the DataModel remain valid. The new source path is recorded in `info.json`'s `paths[]` for provenance.
+
+### Files Changed
+
+| File | Changes |
+|---|---|
+| `src/workers/scale.py` | New `replace_single_image()` module-level function |
+| `src/models/data.py` | New `_reset_section_results()` and `replace_image()` methods on `DataModel` |
+| `src/ui/views/alignmenttable.py` | "Replace Image..." context menu action + `replaceImage()` handler |
+
+### How It Works
+
+1. **UI** (`alignmenttable.py`): Right-click a single row in the Table tab → "Replace Image [N] filename..." → file dialog (TIFF only) → dimension validation → confirmation dialog (with warning if stack is already aligned) → executes replacement.
+
+2. **Orchestration** (`data.py:replace_image()`):
+   - Validates new image dimensions match `images['size_xy']['s1']`
+   - Reads emstack `info.json` for `scale_factors` and `thumbnail_scale_factor`
+   - Calls `replace_single_image()` for on-disk updates
+   - Updates in-memory `images['paths'][index]`
+   - Finds affected sections: the replaced index + any section whose `reference_index` points to it
+   - Invalidates hash table cache entries (`ht.remove()`) for affected sections so `needsAlignIndexes()` correctly flags them for re-alignment
+   - If aligned: resets alignment results (`_reset_section_results()`) for affected sections and recomputes cumulative affines (`set_stack_cafm()`)
+   - Saves and emits `positionChanged` to refresh viewers
+
+3. **Disk updates** (`scale.py:replace_single_image()`):
+   - Runs `iscale2` to rescale the new source image at each scale level → `tiff/s{N}/{old_name}`
+   - Updates the corresponding zarr slice (`store[:, :, index] = im.transpose()`) at each level
+   - Regenerates the thumbnail via `iscale2` at `thumbnail_scale_factor`
+   - Updates `info.json` `paths[index]` on disk
+
+### Cache Invalidation Strategy
+
+After replacement, cache entries are removed (not just invalidated) for:
+- The replaced section at all levels
+- Any section at any level whose `swim_settings['reference_index']` points to the replaced index (typically the next section, but can skip further if sections are excluded)
+
+This ensures `needsAlignIndexes()` returns these sections, prompting the user to re-align them.
+
+## Memory-Aware Worker Parallelism (2026-03-05)
+
+Replaced the fixed `physical_cores - 2` worker count with a memory-aware computation that prevents RAM exhaustion and thrashing when aligning large images (e.g., 300 images at 24k×24k).
+
+### Problem
+
+The old `get_core_count()` used `psutil.cpu_count(logical=False) - 2` workers regardless of image size, scale, or available RAM. For 24k×24k images at scale s1, each swim subprocess allocates ~4.6 GB (window buffers + source images). With 14 workers that demands ~64 GB — fine on 128 GB machines but causes severe thrashing on 64 GB systems.
+
+### swim Memory Model (from swim.c analysis)
+
+swim.c allocates per invocation:
+- 4 float buffers: 16 × W × H bytes (window size)
+- 4 FFT complex buffers: ~16 × W × H bytes
+- 3 image structs: 3 × W × H bytes
+- 2 full source images via `read_img()`: 2 × img_w × img_h bytes
+
+Total: **35 × W × H + 2 × img_w × img_h** bytes, where W,H = swim window dimensions.
+
+### Recipe-Aware Window Sizing
+
+The alignment recipe uses different window sizes depending on the scale:
+- **Coarsest scale** (`is_refinement=False`): 1×1 ingredient uses `size_1x1` (81.25% of image), then 2×2 ingredients use `size_2x2` (half of that). Peak = `size_1x1`.
+- **Finer scales** (`is_refinement=True`): Only 2×2 ingredients are used. Peak = `size_2x2`.
+
+For 24k×24k images: at s1 the peak window is 9750² (2×2 only), not 19500² (1×1).
+
+### New Functions
+
+**`src/utils/helpers.py`**:
+
+- **`estimate_swim_memory(img_size, max_window)`**: Returns estimated bytes per alignment worker (Python overhead + swim subprocess memory).
+- **`compute_worker_count(n_tasks, per_worker_bytes, use_threads=False)`**: Returns optimal worker count, capped at `min(physical_cores - 2, available_RAM × 0.80 / per_worker, n_tasks, TACC_MAX_CPUS)`.
+
+### Files Changed
+
+| File | Changes |
+|---|---|
+| `src/utils/helpers.py` | New `estimate_swim_memory()` and `compute_worker_count()` functions |
+| `src/workers/align.py` | Scans tasks for max window size, uses memory-aware count. HUD shows window size and GB/worker |
+| `src/workers/generate.py` | Memory-aware count for both run_mir and convert_zarr_block phases |
+| `src/workers/scale.py` | Memory-aware count for both iscale2 TIFF reduction and zarr conversion phases |
+
+### How It Works
+
+1. **AlignWorker** (`align.py`): After building the task list, scans all tasks' `method_opts` for the actual largest window size (respecting `is_refinement`). Passes this to `estimate_swim_memory()` and `compute_worker_count()`.
+
+2. **ZarrWorker** (`generate.py`): Estimates per-worker memory for the `run_mir` phase (input image + bounding box output) and `convert_zarr_block` phase (TIFF read + zarr write) separately.
+
+3. **ScaleWorker** (`scale.py`): Estimates per-thread memory for `iscale2` (source image + scaled output) and zarr conversion (2× scaled image). Uses `use_threads=True` since ThreadPoolExecutor shares the Python process.
+
+### Backward Compatibility
+
+- `get_core_count()` preserved in helpers.py (referenced by TACC UI widget in `main_window.py:2260`)
+- `SCALE_1_CORES_LIMIT` and `SCALE_2_CORES_LIMIT` kept in `config.py` (UI references) but no longer used by workers

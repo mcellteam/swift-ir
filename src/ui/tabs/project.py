@@ -870,7 +870,7 @@ class AlignmentTab(QWidget):
         self.leClobber.setAlignment(Qt.AlignCenter)
         self.leClobber.setValidator(QIntValidator(1,16))
         self.leClobber.setFixedSize(QSize(24,16))
-        self.leClobber.textEdited.connect(lambda: self.dm.set_clobber_px(x=self.leClobber.text()))
+        self.leClobber.textEdited.connect(lambda: self.dm.set_clobber_px(x=int(self.leClobber.text())) if self.leClobber.text() else None)
         self.wClobber = HW(self.cbClobber, QLabel('size (pixels): '), self.leClobber)
         self.wClobber.layout.setAlignment(Qt.AlignLeft)
         self.wClobber.setMaximumWidth(104)

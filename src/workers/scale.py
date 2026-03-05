@@ -5,7 +5,6 @@ numcodecs.blosc.use_threads = False
 
 import os
 import time
-import psutil
 import logging
 from copy import deepcopy
 from pathlib import Path
@@ -26,13 +25,11 @@ numcodecs.blosc.use_threads = False
 import numpy as np
 
 from src.core.thumbnailer import Thumbnailer
-from src.utils.helpers import print_exception, get_bindir, get_scale_val, path_to_str
+from src.utils.helpers import print_exception, get_bindir, get_scale_val, path_to_str, compute_worker_count
 # from src.funcs_zarr import preallocate_zarr
 from src.utils.funcs_zarr import remove_zarr
 from src.utils.readers import read
 from src.utils.writers import write
-import src.config as cfg
-
 from qtpy.QtCore import Signal, QObject, QMutex
 
 __all__ = ['ScaleWorker']
@@ -94,6 +91,10 @@ class ScaleWorker(QObject):
 
         self.hudMessage.emit(f'Batch multiprocessing {len(self.paths)} images...')
 
+        # Source image size (full resolution) for memory estimation.
+        # iscale2 always reads the original source image regardless of target scale.
+        src_size = max(self.scales, key=lambda x: x[1][0] * x[1][1])[1]
+
         # ctx = mp.get_context('forkserver')
         for s, siz in deepcopy(self.scales):
             sv = get_scale_val(s)
@@ -114,7 +115,9 @@ class ScaleWorker(QObject):
                 self.initPbar.emit((len(tasks), desc))
                 t = time.time()
 
-                cpus = min(psutil.cpu_count(logical=False) - 2, cfg.TACC_MAX_CPUS, len(tasks))
+                # iscale2 subprocess: reads source image + writes scaled output
+                per_thread = src_size[0] * src_size[1] + siz[0] * siz[1] + 50 * 1024 * 1024
+                cpus = compute_worker_count(len(tasks), per_thread, use_threads=True)
                 logger.info(f"# Threads: {cpus}")
                 with ThreadPoolExecutor(max_workers=cpus) as pool:
                     for i, result in enumerate(tqdm.tqdm(pool.map(run, tasks),
@@ -218,7 +221,9 @@ class ScaleWorker(QObject):
             self.initPbar.emit((len(tasks), desc))
             all_results = []
             i = 0
-            cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS, len(tasks))
+            # Each thread reads TIFF at this scale + writes to zarr
+            per_thread_zarr = 2 * x * y + 50 * 1024 * 1024
+            cpus = compute_worker_count(len(tasks), per_thread_zarr, use_threads=True)
             # with ctx.Pool(processes=104, maxtasksperchild=1) as pool:
             logger.info(f"# Threads: {cpus}")
             # with ctx.Pool(processes=cpus, maxtasksperchild=1) as pool:
@@ -329,6 +334,61 @@ def imread(filename):
     return imagecodecs.tiff_decode(data)
 
 
+def replace_single_image(emstack_path, index, old_name, new_source_path, info):
+    """Replace a single image in an emstack on disk.
+
+    Overwrites scaled TIFFs, zarr slices, and thumbnail for the image
+    at the given index. The new image is stored under the old filename.
+
+    Args:
+        emstack_path: Path to the .emstack directory
+        index: Z-index of the image being replaced
+        old_name: Original filename (e.g., 'image_003.tif')
+        new_source_path: Absolute path to the new source TIFF
+        info: The emstack info.json dict (for scale_factors, thumbnail_scale_factor)
+    """
+    from src.utils.helpers import get_bindir
+    iscale2_c = os.path.join(Path(os.path.realpath(__file__)).parent.absolute(),
+                             '../lib', get_bindir(), 'iscale2')
+
+    for sv in info['scale_factors']:
+        scale_arg = '+%d' % sv
+        tiff_output = os.path.join(emstack_path, 'tiff', 's%d' % sv, old_name)
+        of_arg = 'of=%s' % tiff_output
+        cmd = [iscale2_c, scale_arg, of_arg, new_source_path]
+        logger.info(f"Scaling s{sv}: {cmd}")
+        proc = sp.Popen(cmd, bufsize=-1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE,
+                        universal_newlines=True)
+        out, err = proc.communicate()
+        if proc.returncode != 0:
+            logger.warning(f"iscale2 failed for s{sv}: {err}")
+
+        zarr_path = os.path.join(emstack_path, 'zarr', 's%d' % sv)
+        if os.path.isdir(zarr_path):
+            store = zarr.open(zarr_path)
+            im = imread(tiff_output)
+            try:
+                store[:, :, index] = im.transpose()
+            except ValueError:
+                logger.warning(f'ValueError writing zarr slice [{index}] at s{sv}')
+
+    thumb_sf = info.get('thumbnail_scale_factor')
+    if thumb_sf:
+        thumb_output = os.path.join(emstack_path, 'thumbs', old_name)
+        cmd = [iscale2_c, '+%d' % thumb_sf, 'of=%s' % thumb_output, new_source_path]
+        logger.info(f"Generating thumbnail: {cmd}")
+        proc = sp.Popen(cmd, bufsize=-1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE,
+                        universal_newlines=True)
+        proc.communicate()
+
+    info_path = os.path.join(emstack_path, 'info.json')
+    if os.path.exists(info_path):
+        import json
+        with open(info_path, 'r') as f:
+            disk_info = json.load(f)
+        disk_info['paths'][index] = new_source_path
+        with open(info_path, 'w') as f:
+            json.dump(disk_info, f, indent=2)
 
 
 
