@@ -1438,12 +1438,12 @@ class ImagesConfig(QWidget):
         self.leResX.setValidator(QIntValidator())
         self.leResY.setValidator(QIntValidator())
         self.leResZ.setValidator(QIntValidator())
-        l1 = QLabel("x:").setAlignment(Qt.AlignRight)
-        # l1.setAlignment(Qt.AlignRight)
-        l2 = QLabel("y:").setAlignment(Qt.AlignRight)
-        # l2.setAlignment(Qt.AlignRight)
-        l3 = QLabel("z:").setAlignment(Qt.AlignRight)
-        # l3.setAlignment(Qt.AlignRight)
+        l1 = QLabel("x:")
+        l1.setAlignment(Qt.AlignRight)
+        l2 = QLabel("y:")
+        l2.setAlignment(Qt.AlignRight)
+        l3 = QLabel("z:")
+        l3.setAlignment(Qt.AlignRight)
         few = [HW(l1, self.leResX), HW(l2, self.leResY), HW(l3, self.leResZ)]
         for one in few:
             one.layout.setAlignment(Qt.AlignHCenter)

@@ -300,6 +300,7 @@ if __name__ == "__main__":
     os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt5'
     os.environ["BLOSC_NTHREADS"] = "1"
     os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
+    os.environ['PYDEVD_DISABLE_FILE_VALIDATION'] = '1'
     # logger.info('Setting OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES')
     # logger.info('Setting QTWEBENGINE_CHROMIUM_FLAGS')
     os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'

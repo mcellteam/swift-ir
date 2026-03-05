@@ -3544,14 +3544,14 @@ class MainWindow(QMainWindow):
 
         menu = helpMenu.addMenu('Keyboard Bindings')
         textbrowser = QTextBrowser(self)
-        textbrowser.setSource(QUrl('src/resources/KeyboardCommands.html'))
+        textbrowser.setSource(QUrl.fromLocalFile(os.path.join(os.path.dirname(__file__), '..', 'resources', 'html', 'KeyboardCommands.html')))
         action = QWidgetAction(self)
         action.setDefaultWidget(textbrowser)
         menu.addAction(action)
 
         menu = helpMenu.addMenu('SWiFT-IR Components')
         textbrowser = QTextBrowser(self)
-        textbrowser.setSource(QUrl('src/resources/swiftir_components.html'))
+        textbrowser.setSource(QUrl.fromLocalFile(os.path.join(os.path.dirname(__file__), '..', 'resources', 'html', 'swiftir_components.html')))
         action = QWidgetAction(self)
         action.setDefaultWidget(textbrowser)
         menu.addAction(action)

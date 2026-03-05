@@ -1,8 +1,8 @@
 # Project: SWiFT-IR
 
 - Repository: git@github.com:mcellteam/swift-ir
-- Main branch: development
-- Current branch: devel_claude
+- Main branch: devel_protocol_1
+- Current branch: devel_claude_pyqt5_ls6
 
 ## Git History Cleanup (2026-01-28)
 
@@ -52,3 +52,54 @@ Salk Institute → SDSC → CENIC → Internet2 → GitHub
 ```
 
 General internet speed is fine (60 MB/s to Cloudflare). The bottleneck is specific to GitHub's core servers (140.82.116.x) via Internet2 peering.
+
+## Qt / PyQt5
+
+This branch uses PyQt5 (not PySide6). All Qt imports go through `qtpy` with `QT_API=pyqt5`.
+
+### Enum style
+Use PyQt5 old-style flat enums everywhere:
+- `Qt.AlignLeft` not `Qt.AlignmentFlag.AlignLeft`
+- `Qt.NoFocus` not `Qt.FocusPolicy.NoFocus`
+- `Qt.Vertical` not `Qt.Orientation.Vertical`
+- `QSizePolicy.Minimum` not `QSizePolicy.Policy.Minimum`
+
+### Important
+- `Qt.AA_UseDesktopOpenGL` must be set BEFORE `QApplication()` is created
+- `QLabel("x:").setAlignment(...)` returns `None` — never chain these; assign label first, then call setAlignment
+
+## TACC Lonestar6 (LS6) Deployment
+
+### Launch
+```bash
+cd $WORK/swift-ir
+source tacc_launch
+```
+
+### Dependencies
+Managed by `uv` via `pyproject.toml` — no conda. `uv run` creates/uses `.venv` automatically.
+
+### Required modules
+```
+ml intel/19.1.1 swr/21.2.5 impi/19.0.9 fftw3/3.3.10
+```
+
+### WebGL through SWR
+QtWebEngine's Chromium needs these flags to render WebGL via the SWR software rasterizer:
+```
+--ignore-gpu-blocklist --enable-webgl-software-rendering --use-gl=desktop
+```
+Without these, neuroglancer fails with "WebGL not supported".
+
+### Environment variables (set by tacc_launch)
+```
+QT_API=pyqt5
+BLOSC_NTHREADS=1
+OPENBLAS_NUM_THREADS=1
+OMP_NUM_THREADS=1
+MKL_NUM_THREADS=1
+LIBTIFF_STRILE_ARRAY_MAX_RESIZE_COUNT=1000000000
+```
+
+### Platform binaries
+Pre-compiled SWiFT-IR C executables (swim, mir, iavg, iscale2, remod) are in `src/lib/bin_tacc/`.
