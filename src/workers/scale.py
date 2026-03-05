@@ -52,7 +52,7 @@ class ScaleWorker(QObject):
         self.src = src
         self.out = out
         self.opts = opts
-        self.scales = scales
+        self.scales = list(scales)
         self.paths = self.opts['paths']
         self.result = None
         self._mutex = QMutex()
