@@ -63,10 +63,35 @@ Use PyQt5 old-style flat enums everywhere:
 - `Qt.NoFocus` not `Qt.FocusPolicy.NoFocus`
 - `Qt.Vertical` not `Qt.Orientation.Vertical`
 - `QSizePolicy.Minimum` not `QSizePolicy.Policy.Minimum`
+- `Qt.AscendingOrder` not `Qt.SortOrder.AscendingOrder`
+- `Qt.StrongFocus` not `Qt.FocusPolicy.StrongFocus`
+- `Qt.LeftButton` not `Qt.MouseButton.LeftButton`
+- `QScrollerProperties.OvershootAlwaysOff` not `QScrollerProperties.OvershootPolicy.OvershootAlwaysOff`
 
 ### Important
-- `Qt.AA_UseDesktopOpenGL` must be set BEFORE `QApplication()` is created
-- `QLabel("x:").setAlignment(...)` returns `None` — never chain these; assign label first, then call setAlignment
+- `Qt.AA_UseDesktopOpenGL` must be set BEFORE `QApplication()` is created (in `__main__`, not `main()`)
+- `QLabel("x:").setAlignment(...)` returns `None` — never chain widget creation with method calls; assign first, then call methods
+- `src/resources/icons_rc.py` has a direct `from PyQt5 import QtCore` import (not through qtpy) — leave as-is
+
+### Files modified for PyQt5 enum port
+98 enum replacements across 10 files:
+- `src/ui/main_window.py` — 41 replacements (FocusPolicy, AlignmentFlag, Orientation, StrongFocus)
+- `src/ui/tabs/project.py` — 20 replacements (Orientation, FocusPolicy, SizePolicy, ScrollPhase, KeyboardModifiers)
+- `src/ui/tabs/webbrowser.py` — 19 replacements (FocusPolicy, AlignmentFlag)
+- `src/ui/tabs/manager.py` — 5 replacements (Orientation, null widget fix)
+- `src/ui/tools/snrplot.py` — 4 replacements (AlignmentFlag, MouseButton)
+- `src/ui/layouts/layouts.py` — 2 replacements (Orientation)
+- `src/ui/views/filebrowser.py` — 1 replacement (SortOrder)
+- `src/ui/widgets/toggleswitch.py` — 1 replacement (FocusPolicy)
+- `src/ui/widgets/vertlabel.py` — 3 replacements (AlignmentFlag)
+- `alignEM.py` — 1 replacement (ApplicationAttribute)
+
+### WebEngine JS console filtering
+`FilteredWebEnginePage` in `src/ui/views/webengine.py` suppresses known SWR/software-renderer noise from QtWebEngine's JS console. Applied to both WebEngine classes:
+- `src/ui/views/webengine.py` — used by project/alignment tab neuroglancer viewers
+- `src/ui/tabs/manager.py` — used by Alignment Manager tab viewers
+
+To suppress additional messages, add substrings to `_JS_SUPPRESS` in `src/ui/views/webengine.py`.
 
 ## TACC Lonestar6 (LS6) Deployment
 
@@ -75,21 +100,29 @@ Use PyQt5 old-style flat enums everywhere:
 cd $WORK/swift-ir
 source tacc_launch
 ```
+Uses `uv run` to launch — no conda activation needed.
 
 ### Dependencies
-Managed by `uv` via `pyproject.toml` — no conda. `uv run` creates/uses `.venv` automatically.
+Managed by `uv` via `pyproject.toml`. `uv run` creates/uses `.venv` automatically.
 
 ### Required modules
 ```
 ml intel/19.1.1 swr/21.2.5 impi/19.0.9 fftw3/3.3.10
 ```
+- `intel/19.1.1` — Intel compilers and runtime
+- `swr/21.2.5` — Mesa Software Rasterizer (provides OpenGL on nodes without GPUs)
+- `impi/19.0.9` — Intel MPI
+- `fftw3/3.3.10` — FFT library used by SWiFT-IR C binaries
 
 ### WebGL through SWR
-QtWebEngine's Chromium needs these flags to render WebGL via the SWR software rasterizer:
+QtWebEngine's Chromium needs these flags (set in `alignEM.py`) to render WebGL via the SWR software rasterizer:
 ```
 --ignore-gpu-blocklist --enable-webgl-software-rendering --use-gl=desktop
 ```
-Without these, neuroglancer fails with "WebGL not supported".
+Without `--ignore-gpu-blocklist`, Chromium blocklists SWR and neuroglancer fails with "WebGL not supported". The `--use-gl=desktop` flag tells Chromium to use the system's desktop OpenGL (provided by SWR) rather than its built-in ANGLE/SwiftShader.
+
+### Chromium log suppression
+Chromium logging is set to `--enable-logging --log-level=3` (fatal only) in `alignEM.py` to suppress verbose GPU process warnings. The `FilteredWebEnginePage` class handles remaining JS-level SWR noise.
 
 ### Environment variables (set by tacc_launch)
 ```
@@ -100,6 +133,10 @@ OMP_NUM_THREADS=1
 MKL_NUM_THREADS=1
 LIBTIFF_STRILE_ARRAY_MAX_RESIZE_COUNT=1000000000
 ```
+`MESA_DEBUG` is explicitly unset to suppress Mesa debug output.
 
 ### Platform binaries
 Pre-compiled SWiFT-IR C executables (swim, mir, iavg, iscale2, remod) are in `src/lib/bin_tacc/`.
+
+### Access
+LS6 is accessed via DCV (Desktop Cloud Visualization) sessions for GUI work. Performance through DCV is acceptable for neuroglancer viewing.
