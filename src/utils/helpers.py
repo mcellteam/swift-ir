@@ -86,7 +86,8 @@ def get_core_count(dm, n_tasks):
 #
 # Where W, H = swim window dimensions (command-line arg).
 _SWIM_BYTES_PER_WINDOW_PIXEL = 35   # 16 + 16 + 3
-_PYTHON_WORKER_OVERHEAD = 150 * 1024 * 1024  # 150 MB for forkserver child process
+_PYTHON_WORKER_OVERHEAD = 250 * 1024 * 1024  # 250 MB for forkserver child process
+                                              # (Python + numpy/scipy imports + recipe state)
 
 
 def estimate_swim_memory(img_size, max_window):
@@ -111,7 +112,7 @@ def compute_worker_count(n_tasks, per_worker_bytes, use_threads=False):
 
     Caps at the minimum of:
       1. Physical cores minus 2 (headroom for UI and OS)
-      2. Available RAM x 0.80 / per_worker_bytes
+      2. Available RAM x 0.70 / per_worker_bytes
       3. Number of tasks
       4. TACC_MAX_CPUS (if running on TACC)
 
@@ -130,7 +131,7 @@ def compute_worker_count(n_tasks, per_worker_bytes, use_threads=False):
     max_by_cpu = max(phys_cores - 2, 1)
 
     available = psutil.virtual_memory().available
-    usable = int(available * 0.80)
+    usable = int(available * 0.70)
     max_by_ram = max(usable // max(per_worker_bytes, 1), 1)
 
     cpus = min(max_by_cpu, max_by_ram, n_tasks)

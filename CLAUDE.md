@@ -505,7 +505,7 @@ For 24k×24k images: at s1 the peak window is 9750² (2×2 only), not 19500² (1
 **`src/utils/helpers.py`**:
 
 - **`estimate_swim_memory(img_size, max_window)`**: Returns estimated bytes per alignment worker (Python overhead + swim subprocess memory).
-- **`compute_worker_count(n_tasks, per_worker_bytes, use_threads=False)`**: Returns optimal worker count, capped at `min(physical_cores - 2, available_RAM × 0.80 / per_worker, n_tasks, TACC_MAX_CPUS)`.
+- **`compute_worker_count(n_tasks, per_worker_bytes, use_threads=False)`**: Returns optimal worker count, capped at `min(physical_cores - 2, available_RAM × 0.70 / per_worker, n_tasks, TACC_MAX_CPUS)`.
 
 ### Files Changed
 
