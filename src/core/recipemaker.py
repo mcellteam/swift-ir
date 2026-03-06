@@ -707,7 +707,8 @@ class align_ingredient:
                 logger.warning(f"[{self.recipe.index}] SWIM Out is empty "
                                  f"string! Err:\n{self.swim_err_lines}")
                 self.snr = np.zeros(len(self.psta[0]))
-            self.ingest_swim_output(swim_output) #parse swim output and call mir with result.
+            else:
+                self.ingest_swim_output(swim_output) #parse swim output and call mir with result.
 
         # if this is the last ingredient in the recipe then check to keep signals and matches
         if self.idx == self.recipe.ingredients[-1].idx:
