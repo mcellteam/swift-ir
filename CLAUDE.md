@@ -486,11 +486,11 @@ The old `get_core_count()` used `psutil.cpu_count(logical=False) - 2` workers re
 
 swim.c allocates per invocation:
 - 4 float buffers: 16 × W × H bytes (window size)
-- 4 FFT complex buffers: ~16 × W × H bytes
+- 4 FFT complex buffers: ~32 × W × H bytes (`sizeof(fftw_complex)` = 16 bytes, not `sizeof(fftwf_complex)` = 8)
 - 3 image structs: 3 × W × H bytes
 - 2 full source images via `read_img()`: 2 × img_w × img_h bytes
 
-Total: **35 × W × H + 2 × img_w × img_h** bytes, where W,H = swim window dimensions.
+Total: **51 × W × H + 2 × img_w × img_h** bytes, where W,H = swim window dimensions.
 
 ### Recipe-Aware Window Sizing
 
