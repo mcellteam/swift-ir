@@ -615,7 +615,9 @@ class ManagerTab(QWidget):
         # QApplication.processEvents()
         self.parent.autoscaleImages(src, out, opts)
         cfg.preferences['images_combo_text'] = out
-        self.resetView(init_viewer=True)
+        # Don't resetView here — keep viewer blank while the background
+        # worker creates the emstack.  _onScaleComplete calls
+        # resetView(init_viewer=True) when finished.
 
     def createAlignment(self):
         '''Create a new alignment for the selected EM stack.'''
@@ -903,7 +905,10 @@ class ManagerTab(QWidget):
                 self.dm = None
                 print_exception()
         QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)
-        self.updatePMViewers()
+        # Don't try to load viewers while the scale worker is building the emstack —
+        # the zarr doesn't exist yet and tensorstore will raise ValueError.
+        if not self.parent._working:
+            self.updatePMViewers()
 
 
     def loadAlignmentCombo(self):
@@ -1108,6 +1113,8 @@ class ManagerTab(QWidget):
         ))])
         self.gbCreateImages.setVisible(not isShown)
         self.wSelectEmstack.hide()
+        if not isShown:
+            self.webengine0.setnull()
         if self.gbCreateImages.isVisible():
             self.wEmStackProperties.leResX.setText(str(cfg.DEFAULT_RESX))
             self.wEmStackProperties.leResY.setText(str(cfg.DEFAULT_RESY))

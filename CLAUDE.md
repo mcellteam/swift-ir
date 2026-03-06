@@ -532,3 +532,19 @@ For 24k×24k images: at s1 the peak window is 9750² (2×2 only), not 19500² (1
 ### Bug Fix: zip Iterator Exhaustion in ScaleWorker (2026-03-05)
 
 `main_window.py:1159` passes `scales` as a `zip()` iterator to `ScaleWorker.__init__()`. The new `max(self.scales, ...)` call in `run()` consumed the entire iterator, leaving all subsequent `for s, siz in deepcopy(self.scales):` loops empty — no TIFFs were generated and thumbnails failed with `FileNotFoundError`. Fixed by materializing with `list(scales)` in `__init__`.
+
+## Emstack Creation UI Fixes (2026-03-06)
+
+### Viewer Shows Stale Content During Creation
+
+When clicking "+" to create a new emstack, the viewer continued showing the previous stack's content. Three fixes:
+
+1. **Blank viewer on "+" click** (`manager.py:onPlusEmstack`): Added `self.webengine0.setnull()` when the create panel opens.
+
+2. **Don't exit create panel prematurely** (`manager.py:confirmCreateImages`): Removed the immediate `resetView(init_viewer=True)` call after launching the background worker. The viewer stays blank until `_onScaleComplete` calls `resetView(init_viewer=True)` when the worker finishes.
+
+3. **Skip viewer init while worker is active** (`manager.py:updateCombos`): The `QFileSystemWatcher` fires when the new `.emstack` directory is created, triggering `updateCombos()` → `updatePMViewers()` which tried to open the incomplete zarr. Added `self.parent._working` guard to skip `updatePMViewers()` during background work.
+
+### Thumbnails Not Generated (fire-and-forget Popen)
+
+`thumbnailer.py:run_subprocess()` used `sp.Popen()` which spawns iscale2 and returns immediately without waiting. The `pool.map` completed instantly (~300k it/s), then the metadata rewrite loop failed with `FileNotFoundError` because iscale2 hadn't finished writing yet. Fixed by replacing `sp.Popen()` with `sp.run()` which waits for completion.
