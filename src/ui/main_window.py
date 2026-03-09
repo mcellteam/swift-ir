@@ -4115,7 +4115,7 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_hud)
 
         self.user = getpass.getuser()
-        self.tell(f'Hello {self.user}. Please report any issues or bugs to joel@salk.edu.')
+        self.tell(f'Hello {self.user}. Please report any issues or bugs to bartol@salk.edu or bkaynak@salk.edu')
 
         baseline = Qt.AlignmentFlag.AlignBaseline
         vcenter = Qt.AlignmentFlag.AlignVCenter

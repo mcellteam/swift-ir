@@ -5,7 +5,8 @@ description = "AlignEM-SWiFT is a graphical tool for registering serial section 
 readme = "README.md"
 license = "MPL-2.0"
 authors = [
-    {name = "Joel Yancey", email = "joelgyancey@ucla.edu"}
+    {name = "Tom Bartol", email = "bartol@salk.edu"},
+    {name = "Burak Kaynak", email = "bkaynak@salk.edu"}
 ]
 requires-python = ">=3.11"
 dependencies = [
