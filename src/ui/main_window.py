@@ -2817,6 +2817,8 @@ class MainWindow(QMainWindow):
 
         # Allows catching of window maximized/unmaximized events
         if event.type() == QEvent.WindowStateChange:
+            if not hasattr(self, 'fullScreenAction'):
+                return
             print("(!) Window State Change!")
             if event.oldState() and Qt.WindowMinimized:
                 logger.info("(!) window un-maximized")
