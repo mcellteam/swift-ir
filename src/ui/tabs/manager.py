@@ -26,12 +26,10 @@ from qtpy.QtWidgets import *
 import src.config as cfg
 from src.models.data import DataModel
 from src.utils.funcs_image import ImageSize
-from src.utils.helpers import print_exception, natural_sort, is_tacc, is_joel, hotkey
+from src.utils.helpers import print_exception, natural_sort, is_tacc, is_joel, hotkey, derive_search_paths
 from src.ui.dialogs.importimages import ImportImagesDialog
-from src.ui.views.filebrowser import FileBrowser
-from src.ui.layouts.layouts import HBL, VBL, HW, VW, HSplitter
+from src.ui.layouts.layouts import HBL, VBL, HW, VW
 from src.ui.widgets.vertlabel import VerticalLabel
-from src.ui.tabs.zarr import ZarrTab
 from src.ui.tabs.project import AlignmentTab
 from src.viewers.viewerfactory import PMViewer
 from src.utils.readers import read
@@ -51,8 +49,6 @@ class ManagerTab(QWidget):
         super().__init__(**kwargs)
         self.parent = parent
         self.setMinimumHeight(100)
-        self.filebrowser = FileBrowser(parent=self)
-        self.filebrowser.setContentsMargins(2,2,2,2)
         self.dm = None
         self._level = None
         self._watchImages = DirectoryWatcher(suffixes=['.emstack', '.images'], preferences=cfg.preferences,
@@ -60,24 +56,15 @@ class ManagerTab(QWidget):
         self._watchImages.fsChanged.connect(self.updateCombos)
         self._watchAlignments = DirectoryWatcher(suffixes=['.alignment', '.align'], preferences=cfg.preferences, key='alignments_search_paths')
         self._watchAlignments.fsChanged.connect(self.loadAlignmentCombo)
-        # self._fsWatcher = FsWatcher(extension='.align')
-        self.filebrowser.navigateTo(os.path.expanduser('~'))
         self._images_info = {}
         self._updating_viewers = False  # Re-entrancy guard for updatePMViewers
-        # self._selected_series = None #Todo
-        # self._selected_alignment = None #Todo
         self.setAttribute(Qt.WA_TranslucentBackground)
-
 
         self._updateWatchPaths()
         self.initUI()
         self._NEW_IMAGES_PATHS = []
-        # self.installEventFilter(self)
-
-        self.filebrowser.setRootLastKnownRoot()
 
         self.resetView()
-        # self.refresh()
 
         self._selecting_emstack = False
 
@@ -339,12 +326,7 @@ class ManagerTab(QWidget):
         self.bCancel.setCursor(QCursor(Qt.PointingHandCursor))
         self.bCancel.setFixedSize(QSize(18, 18))
         self.bCancel.setIcon(qta.icon('fa.close', color='#161c20'))
-        self.bCancel.clicked.connect(lambda: setattr(self, '_NEW_IMAGES_PATHS', []))
-        self.bCancel.clicked.connect(lambda: self.leNameImages.clear())
-        self.bCancel.clicked.connect(lambda: self.gbCreateImages.hide())
-        self.bCancel.clicked.connect(lambda: self.iid_dialog.hide())
-        self.bCancel.clicked.connect(lambda: self.vwEmStackProperties.hide())
-        self.bCancel.clicked.connect(lambda: self.wSelectEmstack.show())
+        self.bCancel.clicked.connect(self._onCancelCreate)
 
 
         self.bCreateImages = QPushButton("Create")
@@ -357,6 +339,22 @@ class ManagerTab(QWidget):
         # self.wNameEmStack.setStyleSheet("QLabel {color: #f3f6fb;} ")
         self.wNameEmStack.layout.setSpacing(2)
         self.wNameEmStack.layout.setContentsMargins(0, 0, 0, 0)
+
+        # Content root selector (where the emstack will be created)
+        self.comboContentRoot = QComboBox()
+        self.comboContentRoot.setFixedHeight(18)
+        self.comboContentRoot.setToolTip("Select content root (alignem_data directory)")
+        self._populateContentRootCombo()
+
+        self.bBrowseContentRoot = QPushButton("Browse...")
+        self.bBrowseContentRoot.setFixedSize(QSize(60, 18))
+        self.bBrowseContentRoot.setCursor(QCursor(Qt.PointingHandCursor))
+        self.bBrowseContentRoot.setToolTip("Choose a new content root directory")
+        self.bBrowseContentRoot.clicked.connect(self._onBrowseContentRoot)
+
+        self.wContentRoot = HW(QLabel('Content Root:'), self.comboContentRoot, self.bBrowseContentRoot)
+        self.wContentRoot.layout.setSpacing(4)
+        self.wContentRoot.layout.setContentsMargins(0, 0, 0, 0)
 
         bs = [self.bSelect, self.bCreateImages]
         for b in bs:
@@ -383,7 +381,7 @@ class ManagerTab(QWidget):
         # self.wMiddle = HW(ExpandingHWidget(self), self.labImgCount)
         # vbl = VBL(self.wNameEmStack, self.wMiddle, self.wEmStackProperties)
         # vbl = VBL(self.wNameEmStack, self.wMiddle, self.vwEmStackProperties)
-        vbl = VBL(self.wNameEmStack, self.vwEmStackProperties)
+        vbl = VBL(self.wContentRoot, self.wNameEmStack, self.vwEmStackProperties)
         # vbl.setSpacing(4)
         self.gbCreateImages = QGroupBox()
         self.gbCreateImages.setLayout(vbl)
@@ -440,21 +438,10 @@ class ManagerTab(QWidget):
         # self.vlPM = VerticalLabel('Alignment Manager')
         # self.wManager = HW(self.vlPM, self.vsplitter)
 
-        self.hsplitter = HSplitter()
-        self.hsplitter.setOpaqueResize(False)
-        self.hsplitter.addWidget(self.vsplitter)
-        self.hsplitter.addWidget(self.filebrowser)
-        self.hsplitter.setSizes([int(cfg.WIDTH * (8 / 10)), int(cfg.WIDTH * (2 / 10))])
-        self.hsplitter.setStretchFactor(0, 1)
-        self.hsplitter.setStretchFactor(1, 1)
-        self.hsplitter.setCollapsible(0, False)
-        self.hsplitter.setCollapsible(1, False)
-
         self.vbl_main = VBL()
         self.vbl_main.setSpacing(0)
-        self._vw = VW()
 
-        self.vbl_main.addWidget(self.hsplitter)
+        self.vbl_main.addWidget(self.vsplitter)
 
         self.setLayout(self.vbl_main)
 
@@ -531,7 +518,14 @@ class ManagerTab(QWidget):
         if not name.endswith('.emstack'):
             name += '.emstack'
 
-        out = os.path.join(cfg.preferences['images_root'], name)
+        # Use the selected content root
+        selected_root = self.comboContentRoot.currentText()
+        images_dir = os.path.join(selected_root, 'images')
+        os.makedirs(images_dir, exist_ok=True)
+        out = os.path.join(images_dir, name)
+
+        # Add this root to content_roots if it's new
+        self._addContentRoot(selected_root)
         im_siz = ImageSize(self._NEW_IMAGES_PATHS[0])
         im_config_opts = self.wEmStackProperties.getSettings(im_siz=im_siz)
         logpath = os.path.join(out, 'logs')
@@ -613,8 +607,11 @@ class ManagerTab(QWidget):
         write('json')(p, opts)
         self.update()
         # QApplication.processEvents()
-        self.parent.autoscaleImages(src, out, opts)
         cfg.preferences['images_combo_text'] = out
+        # Blank the viewer before starting the background worker —
+        # _syncContentRoots / updateCombos may have reloaded old data
+        self.webengine0.setnull()
+        self.parent.autoscaleImages(src, out, opts)
         # Don't resetView here — keep viewer blank while the background
         # worker creates the emstack.  _onScaleComplete calls
         # resetView(init_viewer=True) when finished.
@@ -623,7 +620,8 @@ class ManagerTab(QWidget):
         '''Create a new alignment for the selected EM stack.'''
         logger.info('')
         self.bPlusAlignment.setEnabled(False)
-        root = Path(cfg.preferences['alignments_root'])
+        # Find the content root that contains the selected emstack
+        root = Path(self._getAlignmentsRootForEmstack(self.comboImages.currentText()))
         seriespath = Path(self.comboImages.currentText())
         usertext = self.leNameAlignment.text()
         newproject = (root / usertext).with_suffix('.align')
@@ -865,9 +863,60 @@ class ManagerTab(QWidget):
 
 
     def _updateWatchPaths(self):
-        [self._watchImages.watch(sp) for sp in cfg.preferences['images_search_paths']]
-        [self._watchAlignments.watch(sp) for sp in cfg.preferences['alignments_search_paths']]
+        # Clear old watches before adding current ones to avoid stale paths
+        self._watchImages.clearWatches()
+        self._watchAlignments.clearWatches()
+        for sp in cfg.preferences['images_search_paths']:
+            if os.path.isdir(sp):
+                self._watchImages.watch(sp)
+        for sp in cfg.preferences['alignments_search_paths']:
+            if os.path.isdir(sp):
+                self._watchAlignments.watch(sp)
 
+    def _populateContentRootCombo(self):
+        '''Populate the content root combo from preferences.'''
+        if hasattr(self, 'comboContentRoot'):
+            self.comboContentRoot.clear()
+            for root in cfg.preferences.get('content_roots', []):
+                self.comboContentRoot.addItem(root)
+
+    def _onBrowseContentRoot(self):
+        '''Browse for a new content root directory.'''
+        start_dir = self.comboContentRoot.currentText() or os.path.expanduser('~')
+        chosen = QFileDialog.getExistingDirectory(self, "Select Content Root Directory", start_dir)
+        if not chosen:
+            return
+        # Ensure it ends with alignem_data
+        if not chosen.endswith('alignem_data'):
+            chosen = os.path.join(chosen, 'alignem_data')
+        self._addContentRoot(chosen)
+        self.comboContentRoot.setCurrentText(chosen)
+
+    def _addContentRoot(self, root):
+        '''Add a content root to preferences and sync watchers.'''
+        if root not in cfg.preferences['content_roots']:
+            cfg.preferences['content_roots'].append(root)
+            os.makedirs(os.path.join(root, 'images'), exist_ok=True)
+            os.makedirs(os.path.join(root, 'alignments'), exist_ok=True)
+            self._syncContentRoots()
+            self._populateContentRootCombo()
+
+    def _syncContentRoots(self):
+        '''Derive search paths from content_roots, update watchers.'''
+        cfg.preferences['images_search_paths'] = derive_search_paths(cfg.preferences['content_roots'], 'images')
+        cfg.preferences['alignments_search_paths'] = derive_search_paths(cfg.preferences['content_roots'], 'alignments')
+        self._updateWatchPaths()
+        self.parent.saveUserPreferences(silent=True)
+
+    def _getAlignmentsRootForEmstack(self, emstack_path):
+        '''Find the alignments directory in the same content root as the given emstack.'''
+        emstack_path = str(emstack_path)
+        for root in cfg.preferences.get('content_roots', []):
+            images_dir = os.path.join(root, 'images')
+            if emstack_path.startswith(images_dir):
+                return os.path.join(root, 'alignments')
+        # Fallback to default
+        return cfg.preferences['alignments_root']
 
     def updateCombos(self):
         '''Loading this combobox triggers the loading of the alignment and scales comboboxes'''
@@ -1063,12 +1112,8 @@ class ManagerTab(QWidget):
 
     def openAlignment(self, file_path, images_path=None):
         if not file_path:
-            file_path = Path(self.selectionReadout.text())
-        if validate_zarr_selection(file_path):
-            logger.info('Opening Zarr...')
-            self.open_zarr_selected()
             return
-        elif validate_project_selection(file_path):
+        if validate_project_selection(file_path):
 
             logger.info(f"\nfile_path       : {file_path}"
                         f"\nimages_location : {images_path}")
@@ -1104,6 +1149,22 @@ class ManagerTab(QWidget):
         self.vwEmStackProperties.hide()
         self.update()
 
+    def _onCancelCreate(self):
+        self._NEW_IMAGES_PATHS = []
+        self.leNameImages.clear()
+        self.gbCreateImages.hide()
+        self.iid_dialog.hide()
+        self.vwEmStackProperties.hide()
+        self.wSelectEmstack.show()
+        # Clear combo selections and blank both viewers
+        self.comboImages.setCurrentIndex(-1)
+        cfg.preferences['images_combo_text'] = None
+        self.webengine0.setnull()
+        self.comboTransformed.clear()
+        self.comboTransformed.setPlaceholderText("")
+        cfg.preferences['alignment_combo_text'] = None
+        self.webengine1.setnull()
+
     def onPlusEmstack(self):
         self.setUpdatesEnabled(False)
         isShown = self.gbCreateImages.isVisible()
@@ -1115,6 +1176,10 @@ class ManagerTab(QWidget):
         self.wSelectEmstack.hide()
         if not isShown:
             self.webengine0.setnull()
+            # Clear alignments panel — no emstack selected during creation
+            self.comboTransformed.clear()
+            self.comboTransformed.setPlaceholderText("")
+            self.webengine1.setnull()
         if self.gbCreateImages.isVisible():
             self.wEmStackProperties.leResX.setText(str(cfg.DEFAULT_RESX))
             self.wEmStackProperties.leResY.setText(str(cfg.DEFAULT_RESY))
@@ -1205,129 +1270,6 @@ class ManagerTab(QWidget):
         self.updateImportImagesUI()
         logger.info(f"<<<< selectImages <<<<")
 
-
-
-    def open_zarr_selected(self):
-        path = Path(self.filebrowser.selection)
-        logger.info(f"Opening Zarr {path}...")
-        try:
-            with open(path / '.zarray') as j:
-                self.zarray = json.load(j)
-        except:
-            print_exception()
-            return
-        tab = ZarrTab(self, path=path)
-        self.parent.addGlobTab(tab, path.name)
-        self.parent._setLastTab()
-
-
-    def deleteContextMethod(self):
-        logger.info('')
-        selected_projects = self.getSelectedProjects()
-        self.delete_projects(project_files=selected_projects)
-
-    # def openContextMethod(self):
-    #     logger.info('')
-    #     self.openAlignment()
-
-
-    def delete_projects(self, project_files=None):
-        logger.info('')
-        if project_files == None:
-            project_files = [self.selectionReadout.text()]
-
-        for project_file in project_files:
-            if project_file:
-                if validate_project_selection(project_file):
-                    project = Path(project_file).with_suffix('')
-                    self.parent.tell("Delete this project? %s" % project_file)
-                    txt = "Are you sure you want to PERMANENTLY DELETE " \
-                          "the following project?\n\n" \
-                          "Project: %s" % project_file
-                    msgbox = QMessageBox(QMessageBox.Warning,
-                                         'Confirm Delete Project',
-                                         txt,
-                                         buttons=QMessageBox.Cancel | QMessageBox.Yes
-                                         )
-                    msgbox.setIcon(QMessageBox.Critical)
-                    msgbox.setMaximumWidth(350)
-                    msgbox.setDefaultButton(QMessageBox.Cancel)
-                    reply = msgbox.exec()
-                    if reply == QMessageBox.Cancel:
-                        self.parent.tell('Canceling Delete Project Permanently Instruction...')
-                        return
-                    if reply == QMessageBox.Ok:
-                        logger.info('Deleting file %s...' % project_file)
-                        self.parent.tell('Reclaiming Disk Space. Deleting Project File %s...' % project_file)
-
-                    self.parent.tell(f'Deleting project file {project_file}...')
-
-                    try:
-                        os.remove(project_file)
-                    except:
-                        print_exception()
-                    # else:
-                    #     self.parent.hud.done()
-
-                    # configure_project_paths()
-                    # self.user_projects.set_data()
-
-                    self.parent.tell(f'Deleting: {project}...')
-                    try:
-                        run_subprocess(["rm","-rf", project])
-                    except:
-                        self.parent.warn('An Error Was Encountered During Deletion of the Project Directory')
-                        print_exception()
-                    else:
-                        self.parent.hud.done()
-
-                    # self.parent.tell('Wrapping up...')
-                    # configure_project_paths()
-                    # if self.parent.globTabs.currentWidget().__class__.__name__ == 'ManagerTab':
-                    #     try:
-                    #         self.user_projects.set_data()
-                    #     except:
-                    #         logger.warning('There was a problem updating the project list')
-                    #         print_exception()
-
-                    self.parent.tell('Deletion Complete!')
-                    logger.info('Deletion tasks finished')
-                else:
-                    logger.warning('(!) Invalid target for deletion: %s' % project_file)
-
-    # def keyPressEvent(self, event):
-    #     key = event.key()
-    #     print(key)
-    #
-    #     if key == Qt.Key_Enter:
-    #         print("Enter pressed!")
-
-    # def eventFilter(self, source, event):
-    #     if event.type() == QEvent.ContextMenu:
-    #         logger.info('')
-    #         menu = QMenu()
-    #
-    #         openContextAction = QAction('Open')
-    #         openContextAction.triggered.connect(self.openContextMethod)
-    #         menu.addAction(openContextAction)
-    #
-    #         deleteContextAction = QAction('Delete')
-    #         deleteContextAction.triggered.connect(self.deleteContextMethod)
-    #         menu.addAction(deleteContextAction)
-    #
-    #         # if self.getNumRowsSelected() == 1:
-    #         #     # copyPathAction = QAction('Copy Path')
-    #         #     # file_path = self.getSelectedProjects()[0]
-    #         #     file_path = self.getSelectedProjects()[0]
-    #         #     copyPathAction = QAction(f"Copy Path '{self.getSelectedProjects()[0]}'")
-    #         #     logger.info(f"Added to Clipboard: {QApplication.clipboard().text()}")
-    #         #     menu.addAction(copyPathAction)
-    #
-    #
-    #
-    #         menu.exec_(event.globalPos())
-    #         return True
-    #     return super().eventFilter(source, event)
 
 
     def keyPressEvent(self, event):
@@ -1446,15 +1388,6 @@ def validate_project_selection(path) -> bool:
         return True
     return False
 
-
-def validate_zarr_selection(path) -> bool:
-    # logger.info(f'caller:{inspect.stack()[1].function}')
-    # logger.info('Validating selection %level...' % cfg.selected_file)
-    # called by setSelectionPathText
-    if Path(path).is_dir():
-        if '.zarray' in Path(path).glob('**/*'):
-            return True
-    return False
 
 
 def set_image_sizes(dm):

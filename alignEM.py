@@ -63,7 +63,7 @@ from qtpy.QtWidgets import QApplication
 # import tensorstore as ts
 from src.ui.main_window import MainWindow
 from src.utils.helpers import check_for_binaries, initialize_user_preferences, \
-    is_tacc, is_joel, is_mac, print_exception, register_login, convert_projects_model, addLoggingLevel, \
+    is_tacc, is_joel, is_mac, print_exception, register_login, addLoggingLevel, \
     check_macos_isdark_theme
 
 import src.config as cfg
@@ -277,8 +277,6 @@ def main():
     # AA_UseDesktopOpenGL removed in Qt6 (desktop OpenGL is the default)
 
     initialize_user_preferences() # calls update_preferences_model()
-    convert_projects_model()
-    # configure_project_paths()
 
     # app = QApplication([])
     # app = QApplication(sys.argv)

@@ -127,6 +127,8 @@ class DirectoryWatcher(QObject):
 
 
     def _loadSearchPaths(self):
+        # Re-read from preferences each time (list reference may have been replaced)
+        self._searchPaths = self._preferences[self._key]
         for path in self._searchPaths:
             self.watch(path)
 
@@ -153,8 +155,9 @@ class DirectoryWatcher(QObject):
         self._watcher.addPath(path)
 
     def clearWatches(self):
-        print('Clearing watch paths...')
-        self._watcher.removePaths(self.watched)
+        paths = self.watched
+        if paths:
+            self._watcher.removePaths(paths)
 
     def onDirChanged(self, path):
         self._updateKnown()

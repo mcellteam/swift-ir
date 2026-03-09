@@ -48,7 +48,7 @@ __all__ = ['dt', 'is_tacc', 'is_linux', 'is_mac', 'create_paged_tiff', 'check_fo
            'verify_image_file', 'exist_aligned_zarr', 'handleError',
            'count_widgets', 'find_allocated_widgets', 'absFilePaths', 'validate_file', 'hotkey',
            'caller_name','addLoggingLevel', 'recursive_key_values', 'check_macos_isdark_theme',
-           'countcalls', 'ensure_even', 'tree', 'path_to_str'
+           'countcalls', 'ensure_even', 'tree', 'path_to_str', 'derive_search_paths'
            ]
 
 logger = logging.getLogger(__name__)
@@ -256,6 +256,16 @@ def delete_recursive(dir, keep_core_dirs=False):
     # cfg.mw.hidePbar()
 
 
+def derive_search_paths(content_roots, subdir):
+    '''Derive search paths from content_roots list for a given subdir ('images' or 'alignments').'''
+    paths = []
+    for root in content_roots:
+        p = os.path.join(root, subdir)
+        if p not in paths:
+            paths.append(p)
+    return paths
+
+
 def update_preferences_model():
     # caller = inspect.stack()[1].function
     logger.info(f'Updating user preferences model...')
@@ -286,8 +296,6 @@ def update_preferences_model():
     cfg.preferences['neuroglancer'].setdefault('SHOW_HUD_OVERLAY', True)
     cfg.preferences['neuroglancer'].setdefault('NEUTRAL_CONTRAST_MODE', False)
 
-    cfg.preferences.setdefault('locations', [])
-    cfg.preferences.setdefault('alignments', [])
     cfg.preferences.setdefault('gif_speed', 50)
 
     cfg.preferences.setdefault('images_combo_text', None)
@@ -295,31 +303,31 @@ def update_preferences_model():
     cfg.preferences.setdefault('notes', {})
     cfg.preferences['notes'].setdefault('global_notes', '')
 
-    cfg.preferences.setdefault('content_root', DEFAULT_CONTENT_ROOT)
-    if not os.path.isdir(DEFAULT_CONTENT_ROOT):
-        logger.info(f"Making content root directory: {DEFAULT_CONTENT_ROOT}")
-        os.makedirs(DEFAULT_CONTENT_ROOT, exist_ok=True)
+    # --- content_roots: list of alignem_data directories ---
+    # Migrate from old single content_root to content_roots list
+    cfg.preferences.setdefault('content_roots', [DEFAULT_CONTENT_ROOT])
+    if DEFAULT_CONTENT_ROOT not in cfg.preferences['content_roots']:
+        cfg.preferences['content_roots'].insert(0, DEFAULT_CONTENT_ROOT)
+    # Migrate old content_root if it differs from default and isn't already listed
+    old_root = cfg.preferences.get('content_root')
+    if old_root and old_root not in cfg.preferences['content_roots']:
+        cfg.preferences['content_roots'].append(old_root)
 
-    p = os.path.join(DEFAULT_CONTENT_ROOT, 'images')
-    cfg.preferences.setdefault('images_root', p)
-    if not os.path.isdir(p):
-        logger.info(f"Making default alignments directory: {p}")
-        os.makedirs(p, exist_ok=True)
+    # Remove legacy keys from old .swiftrc files
+    for key in ('locations', 'alignments', 'content_root', 'saved_paths',
+                'current_filebrowser_root', 'previous_filebrowser_root', 'projects'):
+        cfg.preferences.pop(key, None)
 
-    p = os.path.join(DEFAULT_CONTENT_ROOT, 'alignments')
-    cfg.preferences.setdefault('alignments_root', p)
-    if not os.path.isdir(p):
-        os.makedirs(p, exist_ok=True)
+    # Ensure all content roots and their subdirs exist
+    for root in cfg.preferences['content_roots']:
+        os.makedirs(os.path.join(root, 'images'), exist_ok=True)
+        os.makedirs(os.path.join(root, 'alignments'), exist_ok=True)
 
-    cfg.preferences.setdefault('images_search_paths', [os.path.join(DEFAULT_CONTENT_ROOT, 'images')])
-    cfg.preferences.setdefault('alignments_search_paths', [os.path.join(DEFAULT_CONTENT_ROOT, 'alignments')])
-    cfg.preferences.setdefault('current_filebrowser_root', DEFAULT_CONTENT_ROOT)
-    cfg.preferences.setdefault('previous_filebrowser_root', DEFAULT_CONTENT_ROOT)
-
-    cfg.preferences.setdefault('saved_paths', [
-        os.path.join(DEFAULT_CONTENT_ROOT, 'images'),
-        os.path.join(DEFAULT_CONTENT_ROOT, 'alignments'),
-    ])
+    # Derive runtime-only keys from content_roots (not persisted to .swiftrc)
+    cfg.preferences['images_root'] = os.path.join(cfg.preferences['content_roots'][0], 'images')
+    cfg.preferences['alignments_root'] = os.path.join(cfg.preferences['content_roots'][0], 'alignments')
+    cfg.preferences['images_search_paths'] = derive_search_paths(cfg.preferences['content_roots'], 'images')
+    cfg.preferences['alignments_search_paths'] = derive_search_paths(cfg.preferences['content_roots'], 'alignments')
 
 
 
@@ -341,11 +349,12 @@ def initialize_user_preferences():
         update_preferences_model()
     except:
         print_exception()
-    '''save user preferences to file'''
+    # Save user preferences to file (strip runtime-only keys)
+    _runtime_keys = ('images_root', 'alignments_root', 'images_search_paths', 'alignments_search_paths')
     try:
-        f = open(userpreferencespath, 'w')
-        json.dump(cfg.preferences, f, indent=2)
-        f.close()
+        to_save = {k: v for k, v in cfg.preferences.items() if k not in _runtime_keys}
+        with open(userpreferencespath, 'w') as f:
+            json.dump(to_save, f, indent=2)
     except:
         print_exception()
         logger.warning(f'Unable to save current user preferences')
@@ -375,68 +384,6 @@ def validate_file(file) -> bool:
     else:
         return True
 
-
-def cleanup_project_list(paths: list) -> list:
-    # logger.info(f'paths: {paths}')
-    paths = list(dict.fromkeys(paths))  # remove duplicates
-    paths = [x for x in paths if x != '']
-    clean_paths = []
-    for path in paths:
-        project_dir = os.path.splitext(path)[0]
-        if os.path.exists(path):
-            if os.path.isdir(project_dir):
-                if validate_file(path):
-                    clean_paths.append(path)
-    diff = list(set(paths) - set(clean_paths))
-    if diff:
-        txt = f'Some projects were not found and will be removed from the project cache:\n{diff}'
-        logger.warning(txt)
-    # logger.info(f'clean_paths: {clean_paths}')
-    return clean_paths
-
-
-
-
-def convert_projects_model():
-    userprojectspath = os.path.join(os.path.expanduser('~'), '.swift_cache')
-    if os.path.exists(userprojectspath):
-        with open(userprojectspath, 'r') as f:
-            logger.warning('Converting projects model...')
-            projectpaths = [line.rstrip() for line in f]
-
-            logger.critical(f"Projects found in old file: {projectpaths}")
-            cfg.preferences['projects'] = projectpaths
-            # cfg.mw.saveUserPreferences()
-            try:
-                os.remove(userprojectspath)
-            except:
-                print_exception()
-
-
-def configure_project_paths():
-    # caller = inspect.stack()[1].function
-    # logger.info('')
-    # userprojectspath = os.file_path.join(os.file_path.expanduser('~'), '.swift_cache')
-    # if not os.file_path.exists(userprojectspath):
-    #     open(userprojectspath, 'a').close()
-    try:
-        # with open(userprojectspath, 'r') as f:
-        #     lines = f.readlines()
-        # paths = [line.rstrip() for line in lines]
-        # convert_projects_model()
-        paths = cfg.preferences['projects']
-        logger.critical(f'paths: {paths}')
-        cleanpaths = cleanup_project_list(paths)
-        logger.critical(f'cleanpaths: {cleanpaths}')
-        # with open(userprojectspath, 'w') as f:
-        #     for p in cleanpaths:
-        #         f.write(f"{p}\n")
-        cfg.preferences['projects'] = cleanpaths
-        if cleanpaths:
-            logger.info('alignEM knows about the following projects:\n\n'
-                        '  %s\n' % '\n  '.join(cleanpaths))
-    except:
-        print_exception()
 
 
 def check_for_binaries():

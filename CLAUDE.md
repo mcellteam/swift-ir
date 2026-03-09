@@ -548,3 +548,60 @@ When clicking "+" to create a new emstack, the viewer continued showing the prev
 ### Thumbnails Not Generated (fire-and-forget Popen)
 
 `thumbnailer.py:run_subprocess()` used `sp.Popen()` which spawns iscale2 and returns immediately without waiting. The `pool.map` completed instantly (~300k it/s), then the metadata rewrite loop failed with `FileNotFoundError` because iscale2 hadn't finished writing yet. Fixed by replacing `sp.Popen()` with `sp.run()` which waits for completion.
+
+## Content Roots and Preferences Cleanup (2026-03-09)
+
+### Content Roots Architecture
+
+Replaced the old single `content_root` + manual search path configuration with a `content_roots` list — an ordered list of `alignem_data` directories. Each root contains `images/` and `alignments/` subdirectories, which are inferred automatically (not user-configurable).
+
+**Key design:**
+- `content_roots` is the single source of truth, persisted in `~/.swiftrc`
+- `images_root`, `alignments_root`, `images_search_paths`, `alignments_search_paths` are derived at runtime from `content_roots` and NOT persisted
+- The default root is `~/alignem_data` (or `$SCRATCH/alignem_data` on TACC)
+- New roots are added via a combo + "Browse..." button in the emstack creation panel
+- The browse dialog auto-appends `alignem_data` to the selected path if not already present
+
+### Files Changed
+
+| File | Changes |
+|---|---|
+| `src/utils/helpers.py` | New `derive_search_paths()` function; `content_roots` list with migration from old `content_root`; strip legacy keys on load; strip runtime keys on save; removed dead `cleanup_project_list()`, `convert_projects_model()`, `configure_project_paths()` |
+| `src/core/files.py` | `DirectoryWatcher._loadSearchPaths()` re-reads from preferences each time (fixes stale reference); `clearWatches()` cleaned up |
+| `src/ui/tabs/manager.py` | Content root combo + browse button in creation panel; `_addContentRoot()`, `_syncContentRoots()`, `_getAlignmentsRootForEmstack()` helpers; `_updateWatchPaths()` clears old watches; `_onCancelCreate()` properly resets both panels; removed Panel 3 (FileBrowser) and all dead code (`open_zarr_selected`, `deleteContextMethod`, `delete_projects`, `validate_zarr_selection`); removed `FileBrowser`, `ZarrTab`, `HSplitter` imports |
+| `src/ui/main_window.py` | `saveUserPreferences()` strips runtime-only keys before writing; `_onScaleComplete()` calls `updateCombos()` so new emstack appears in combo; `_RUNTIME_ONLY_KEYS` class constant |
+| `alignEM.py` | Removed `convert_projects_model` import and call |
+
+### .swiftrc Schema (Clean)
+
+**Persisted keys:**
+
+| Key | Purpose |
+|---|---|
+| `neuroglancer` | Viewer display settings |
+| `gif_speed` | GIF playback speed |
+| `images_combo_text` | Last selected emstack path |
+| `alignment_combo_text` | Last selected alignment path |
+| `notes` | Global notes dictionary |
+| `content_roots` | List of `alignem_data` directory paths |
+| `last_alignment_opened` | Auto-load on restart |
+
+**Runtime-only keys** (derived from `content_roots`, not saved):
+
+| Key | Derivation |
+|---|---|
+| `images_root` | `content_roots[0] + '/images'` |
+| `alignments_root` | `content_roots[0] + '/alignments'` |
+| `images_search_paths` | `[root + '/images' for root in content_roots]` |
+| `alignments_search_paths` | `[root + '/alignments' for root in content_roots]` |
+
+**Removed keys** (stripped from old files on load):
+`locations`, `alignments`, `content_root`, `saved_paths`, `current_filebrowser_root`, `previous_filebrowser_root`, `projects`
+
+### Panel 3 (File Browser) Removal
+
+The File Browser panel and its "Set Content Sources" UI have been fully removed from the Alignment Manager tab. Content root management is now integrated into the emstack creation panel. The `filebrowser.py` file remains on disk but is no longer imported anywhere.
+
+### Alignment Creation Uses Matching Content Root
+
+When creating an alignment, `_getAlignmentsRootForEmstack()` finds the content root that contains the selected emstack's `images/` directory and uses its `alignments/` directory. This ensures emstacks and their alignments stay in the same content root. Falls back to `alignments_root` (first content root) if no match is found.
