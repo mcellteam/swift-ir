@@ -1225,6 +1225,7 @@ class MainWindow(QMainWindow):
         self._refresh()
         self.pm.bCreateImages.setEnabled(True)
         self.saveUserPreferences()
+        self.pm.updateCombos()
         self.pm.resetView(init_viewer=True)
         self.tell(f'<span style="color: #FFFF66;"><b>**** All Processes Complete ****</b></span>')
 
@@ -1762,20 +1763,22 @@ class MainWindow(QMainWindow):
                 logger.info('Cannot open detached neuroglancer view')
 
 
+    # Keys derived at runtime from content_roots — not persisted to .swiftrc
+    _RUNTIME_ONLY_KEYS = ('images_root', 'alignments_root', 'images_search_paths', 'alignments_search_paths')
+
     def saveUserPreferences(self, silent=False):
         if not silent:
             logger.info('Saving User Preferences...')
         self.settings.setValue("geometry", self.saveGeometry())
         self.settings.setValue("windowState", self.saveState())
-        # if self._isProjectTab():
-        #     self.preferences.setValue("hsplitter_tn_ngSizes", self.pt.splitter_ngPlusSideControls.saveState())
         userpreferencespath = os.path.join(os.path.expanduser('~'), '.swiftrc')
         if not os.path.exists(userpreferencespath):
             open(userpreferencespath, 'a').close()
         try:
-            f = open(userpreferencespath, 'w')
-            json.dump(cfg.preferences, f, indent=2)
-            f.close()
+            # Strip runtime-only keys before saving
+            to_save = {k: v for k, v in cfg.preferences.items() if k not in self._RUNTIME_ONLY_KEYS}
+            with open(userpreferencespath, 'w') as f:
+                json.dump(to_save, f, indent=2)
         except:
             self.warn(f'Unable to save current user preferences. Using defaults instead.')
 
