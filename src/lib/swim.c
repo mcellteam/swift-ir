@@ -1384,12 +1384,12 @@ tinit -= getticks();
 			revlut[i] = 255-i;  // build reverse lookup table
 		/* Allocate FFTW complex buffers for forward/inverse transforms */
 		fft_result0 = (fftwf_complex*)
-			fftwf_malloc(sizeof(fftw_complex) * (size/2+1));
+			fftwf_malloc(sizeof(fftwf_complex) * (size/2+1));
 		fft_result1 = (fftwf_complex*)
-			fftwf_malloc(sizeof(fftw_complex) * (size/2+1));
+			fftwf_malloc(sizeof(fftwf_complex) * (size/2+1));
 		fft_comb = (fftwf_complex*)
-			fftwf_malloc(sizeof(fftw_complex) * (size/2+1));
-		ifft_comb = fftwf_malloc(sizeof(fftw_complex) * (size/2+1));
+			fftwf_malloc(sizeof(fftwf_complex) * (size/2+1));
+		ifft_comb = fftwf_malloc(sizeof(fftwf_complex) * (size/2+1));
 		/* Create FFTW plans (r2c = real-to-complex, c2r = complex-to-real)
 		 * Uses 1-D FFT over the entire flattened 2-D array for speed */
 		forward_plan0 = fftwf_plan_dft_r2c_1d(
