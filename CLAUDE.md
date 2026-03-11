@@ -673,3 +673,13 @@ After quitting and reopening the app, the alignment result cache failed to find 
 1. **Never use Python's `hash()` for values that persist across sessions.** Use `hashlib` (SHA-256, etc.) for any hash stored to disk.
 2. **Never store numpy types in data structures that will be serialized.** Convert to plain Python types (`float()`, `int()`, `list()`) before storing. JSON round-trips lose numpy types silently, breaking equality comparisons.
 3. **`ssHash()` is used in file paths** — the hash of swim_settings determines the data directory name for signal/match files. Any change to the hash function requires migrating existing directories.
+
+## Match Signal Display on Project Open (2026-03-11)
+
+**Problem**: After opening a saved project, the match signal panel intermittently showed "No Image" / "No Signal" for the restored position. Navigating away and back displayed them correctly.
+
+**Root cause**: `_onGlobTabChange()` in `main_window.py` set up the match dock widget (`dwMatches.setWidget(match_widget)`) but never called `updateDwMatches()`. The match display only populated when `positionChanged` fired — but the saved position was already loaded (no change = no signal emission). The intermittency came from neuroglancer's `on_state_changed` callback sometimes accidentally triggering a position change during viewer initialization.
+
+**Fix**: Added `self.updateDwMatches()` call in `_onGlobTabChange()` after the dock widget is set up (`main_window.py:3004`).
+
+**Rule**: When setting up dock widget content during tab switches, always explicitly populate the display — don't rely on signals that may or may not fire during initialization.
