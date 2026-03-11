@@ -766,6 +766,7 @@ class ManagerTab(QWidget):
                         def add_layers():
                             if hasattr(self, 'viewer1') and self.viewer1.tensor is not None:
                                 self.viewer1.add_transformation_layers(affine=True, clear_first=True)
+                                self.viewer1.center_on_transformed()
                                 # Refresh URL to load with new state
                                 self.webengine1.setUrl(QUrl(self.viewer1.get_viewer_url()))
                         self.webengine1.setOnLoadCallback(add_layers)
@@ -1069,6 +1070,7 @@ class ManagerTab(QWidget):
             def add_layers():
                 if hasattr(self, 'viewer1') and self.viewer1.tensor is not None:
                     self.viewer1.add_transformation_layers(affine=True, clear_first=True)
+                    self.viewer1.center_on_transformed()
                     # Refresh URL to load with new state
                     self.webengine1.setUrl(QUrl(self.viewer1.get_viewer_url()))
             self.webengine1.setOnLoadCallback(add_layers)

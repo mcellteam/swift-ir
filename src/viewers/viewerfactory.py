@@ -1190,6 +1190,27 @@ class PMViewer(AbstractEMViewer):
             self.shared_state.add_changed_callback(lambda: self.defer_callback(self.on_state_changed))
             self._state_callback_registered = True
 
+    def center_on_transformed(self):
+        """Set viewer position to the center of the transformed content for the mid slice.
+
+        When transformation layers are used, affine transforms shift content away
+        from the raw tensor center. This computes where the image center lands in
+        output coordinates and positions the viewer there.
+        """
+        if self.dm is None or self.tensor is None:
+            return
+        z_mid = self.tensor.shape[2] // 2
+        afm = self.dm.alt_cafm(l=z_mid)
+        # afm = [[a, b, tx], [c, d, ty]]
+        # output = afm * local_center
+        cx = self.tensor.shape[0] / 2
+        cy = self.tensor.shape[1] / 2
+        out_x = afm[0][0] * cx + afm[0][1] * cy + afm[0][2]
+        out_y = afm[1][0] * cx + afm[1][1] * cy + afm[1][2]
+        with self.block_state_changes():
+            with self.txn() as s:
+                s.position = [out_x, out_y, z_mid + 0.5]
+
     def on_state_changed(self):
         # Guard against recursive calls
         if self._blockStateChanged:
