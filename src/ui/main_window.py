@@ -3001,6 +3001,7 @@ class MainWindow(QMainWindow):
                 self.pt.dSnr_plot.initSnrPlot()
             # self.bExport.setVisible(self.dm.is_zarr_generated())
             self.updateEnabledButtons()
+            self.updateDwMatches()
         else:
             self.statusBar.clearMessage()
             self.dwThumbs.setWidget(NullWidget())
