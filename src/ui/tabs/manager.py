@@ -765,13 +765,7 @@ class ManagerTab(QWidget):
 
                         def add_layers():
                             if hasattr(self, 'viewer1') and self.viewer1.tensor is not None:
-                                num_slices = self.viewer1.tensor.shape[2]
-                                if num_slices < 50:
-                                    # Small dataset: pre-transform (fast, single LocalVolume)
-                                    self.viewer1.add_pretransformed_layer(clear_first=True)
-                                else:
-                                    # Large dataset: use transformation layers
-                                    self.viewer1.add_transformation_layers(affine=True, clear_first=True)
+                                self.viewer1.add_transformation_layers(affine=True, clear_first=True)
                                 # Refresh URL to load with new state
                                 self.webengine1.setUrl(QUrl(self.viewer1.get_viewer_url()))
                         self.webengine1.setOnLoadCallback(add_layers)
@@ -1074,13 +1068,7 @@ class ManagerTab(QWidget):
 
             def add_layers():
                 if hasattr(self, 'viewer1') and self.viewer1.tensor is not None:
-                    num_slices = self.viewer1.tensor.shape[2]
-                    if num_slices < 50:
-                        # Small dataset: pre-transform (fast, single LocalVolume)
-                        self.viewer1.add_pretransformed_layer(clear_first=True)
-                    else:
-                        # Large dataset: use transformation layers
-                        self.viewer1.add_transformation_layers(affine=True, clear_first=True)
+                    self.viewer1.add_transformation_layers(affine=True, clear_first=True)
                     # Refresh URL to load with new state
                     self.webengine1.setUrl(QUrl(self.viewer1.get_viewer_url()))
             self.webengine1.setOnLoadCallback(add_layers)
@@ -1634,30 +1622,31 @@ class WebEngine(QWebEngineView):
         self.settings().setAttribute(QWebEngineSettings.AutoLoadImages, True)
         self.ID = ID
         self.grabGesture(Qt.PinchGesture, Qt.DontStartGestureOnChildren)
-        self.setnull()
 
         # Callback to run when page finishes loading
         self._on_load_callback = None
+        self._callback_generation = 0  # Generation counter to invalidate stale timer callbacks
+        self.setnull()
         self.loadFinished.connect(self._on_load_finished)
 
     def _on_load_finished(self, ok):
         """Called when webengine finishes loading a page."""
         current_url = self.url().toString()
         has_callback = self._on_load_callback is not None
-        # Temporarily INFO for debugging intermittent viewer1 failure
-        logger.info(f"[{self.ID}] loadFinished: ok={ok}, hasCallback={has_callback}, url={current_url[:60]}...")
+        logger.info(f"[{self.ID}] loadFinished: ok={ok}, hasCallback={has_callback}, gen={self._callback_generation}, url={current_url[:60]}...")
         if ok and has_callback:
             # Only trigger callback for neuroglancer URLs, not HTML content from setnull()
             if current_url.startswith('http://127.0.0.1') or current_url.startswith('http://localhost'):
-                logger.info(f"[{self.ID}] Scheduling layer creation callback")
+                logger.info(f"[{self.ID}] Scheduling layer creation callback (gen={self._callback_generation})")
                 callback = self._on_load_callback
+                generation = self._callback_generation  # Capture current generation
                 self._on_load_callback = None  # Clear callback so it only runs once
-                # Schedule callback with retry logic
-                self._scheduleCallbackWithRetry(callback, attempt=1)
+                # Schedule callback with retry logic, passing generation to detect stale timers
+                self._scheduleCallbackWithRetry(callback, generation, attempt=1)
             else:
                 logger.info(f"[{self.ID}] URL is not neuroglancer, not triggering callback")
 
-    def _scheduleCallbackWithRetry(self, callback, attempt=1, max_attempts=3):
+    def _scheduleCallbackWithRetry(self, callback, generation, attempt=1, max_attempts=3):
         """Schedule a callback with retry logic for robustness.
 
         Both viewers need delayed layer creation to avoid GL texture errors and
@@ -1666,23 +1655,28 @@ class WebEngine(QWebEngineView):
 
         Args:
             callback: The function to call (typically adds layers to the viewer)
+            generation: The callback generation when this was scheduled
             attempt: Current attempt number (1-based)
             max_attempts: Maximum retry attempts before giving up
         """
         # Progressive delays: 500ms, 1000ms, 2000ms
         # Start with 500ms which is typically enough for WebSocket connection
         delay = 500 * attempt
-        logger.info(f"[{self.ID}] Scheduling callback attempt {attempt} with {delay}ms delay")
+        logger.info(f"[{self.ID}] Scheduling callback attempt {attempt} gen={generation} with {delay}ms delay")
 
         def try_callback():
-            logger.info(f"[{self.ID}] Executing callback attempt {attempt}")
+            # Check if this callback is stale (a newer viewer setup has occurred)
+            if generation != self._callback_generation:
+                logger.warning(f"[{self.ID}] Skipping stale callback (gen={generation}, current={self._callback_generation})")
+                return
+            logger.info(f"[{self.ID}] Executing callback attempt {attempt} gen={generation}")
             try:
                 callback()
                 logger.info(f"[{self.ID}] Layer creation succeeded on attempt {attempt}")
             except Exception as e:
                 if attempt < max_attempts:
                     logger.warning(f"[{self.ID}] Layer creation failed on attempt {attempt}, retrying: {e}")
-                    self._scheduleCallbackWithRetry(callback, attempt + 1, max_attempts)
+                    self._scheduleCallbackWithRetry(callback, generation, attempt + 1, max_attempts)
                 else:
                     logger.error(f"[{self.ID}] Layer creation failed after {max_attempts} attempts: {e}")
 
@@ -1693,7 +1687,10 @@ class WebEngine(QWebEngineView):
 
         The callback will be executed after the page loads with retry logic
         to handle cases where the neuroglancer WebSocket isn't immediately ready.
+        Increments the generation counter so any previously scheduled timer
+        callbacks are invalidated (they check generation before executing).
         """
+        self._callback_generation += 1
         self._on_load_callback = callback
 
     def injectOnLoadFinish(self):
@@ -1713,9 +1710,10 @@ class WebEngine(QWebEngineView):
 
     def setnull(self):
         # Clear any pending callback so the HTML load doesn't trigger it
+        self._callback_generation += 1  # Invalidate any pending timer callbacks
         self._on_load_callback = None
         self.setText('Neuroglancer: No Data.')
-        logger.info("Null view set")
+        logger.info(f"[{self.ID}] Null view set (gen={self._callback_generation})")
 
     def loadRandom(self):
         script = """

@@ -605,3 +605,23 @@ The File Browser panel and its "Set Content Sources" UI have been fully removed 
 ### Alignment Creation Uses Matching Content Root
 
 When creating an alignment, `_getAlignmentsRootForEmstack()` finds the content root that contains the selected emstack's `images/` directory and uses its `alignments/` directory. This ensures emstacks and their alignments stay in the same content root. Falls back to `alignments_root` (first content root) if no match is found.
+
+## Alignment Manager Viewer Fixes (2026-03-11)
+
+### Double-Image Bug in Alignment Preview
+
+The Alignment Manager's viewer1 (aligned preview) sometimes displayed two images on top of each other instead of one. Two fixes applied:
+
+#### 1. Z-Position Voxel Boundary Fix (`viewerfactory.py`)
+
+**Root cause**: `PMViewer.initViewer()` set the z-position to `tensor.shape[2] / 2`, which for even slice counts lands exactly on an integer voxel boundary. With `add_transformation_layers` (one LocalVolume per slice), neuroglancer renders both the voxel ending at that boundary and the voxel starting there, producing two overlapping images with two bounding box frames.
+
+**Fix**: Changed to `tensor.shape[2] // 2 + 0.5` to land at voxel centers, matching the `EMViewer.set_layer` pattern (`pos + 0.5`).
+
+**Rule**: Always use `+ 0.5` offset for z-positions when using per-slice transformation layers. Integer z values fall on voxel boundaries in neuroglancer.
+
+#### 2. Stale Timer Callback Prevention (`manager.py` WebEngine class)
+
+**Problem**: The delayed layer creation mechanism (`setOnLoadCallback` → `loadFinished` → 500ms QTimer) could leave orphaned timer callbacks. When a new viewer setup occurred before an old timer fired, `setnull()` cleared `_on_load_callback` but could not cancel the already-scheduled QTimer. The stale timer would then execute on the new viewer.
+
+**Fix**: Added a `_callback_generation` counter to the `WebEngine` class. Each call to `setOnLoadCallback()` or `setnull()` increments the counter. When a timer fires, it checks if its captured generation matches the current generation — if not, the callback is stale and is skipped. Log message: `"Skipping stale callback (gen=X, current=Y)"`.
