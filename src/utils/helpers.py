@@ -315,7 +315,8 @@ def update_preferences_model():
 
     # Remove legacy keys from old .swiftrc files
     for key in ('locations', 'alignments', 'content_root', 'saved_paths',
-                'current_filebrowser_root', 'previous_filebrowser_root', 'projects'):
+                'current_filebrowser_root', 'previous_filebrowser_root', 'projects',
+                'last_alignment_opened'):
         cfg.preferences.pop(key, None)
 
     # Ensure all content roots and their subdirs exist

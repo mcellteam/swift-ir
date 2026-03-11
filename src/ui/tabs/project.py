@@ -47,7 +47,7 @@ class AlignmentTab(QWidget):
     def __init__(self, parent, dm=None):
         super().__init__(parent)
         logger.info('Initializing AlignmentTab...')
-        cfg.preferences['last_alignment_opened'] = dm.data_file_path
+        cfg.preferences['alignment_combo_text'] = dm.data_file_path
         # self.signals = Signals()
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.mw = parent
