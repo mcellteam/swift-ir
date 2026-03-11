@@ -1168,8 +1168,11 @@ class PMViewer(AbstractEMViewer):
             s.show_default_annotations = True
             s.show_axis_lines = True
             s.show_scale_bar = False
-            # Set position to center on the data
-            s.position = [self.tensor.shape[0] / 2, self.tensor.shape[1] / 2, self.tensor.shape[2] / 2]
+            # Set position to center on the data, using integer + 0.5 for z
+            # to land at voxel centers (matching EMViewer.set_layer pattern).
+            # Integer z values fall on voxel boundaries, causing neuroglancer
+            # to render two adjacent slices simultaneously.
+            s.position = [self.tensor.shape[0] / 2, self.tensor.shape[1] / 2, self.tensor.shape[2] // 2 + 0.5]
             # _layer_groups = [ng.LayerGroupViewer(layout='xy', layers=['source'])]
             # s.layout = ng.row_layout(_layer_groups)
         with self.config_state.txn() as s:
