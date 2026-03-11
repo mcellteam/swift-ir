@@ -80,13 +80,13 @@ def get_core_count(dm, n_tasks):
 #
 # swim.c allocates per invocation:
 #   4 float buffers:       4 x W x H x 4 bytes = 16 x W x H
-#   4 FFT complex buffers: 4 x (W*H/2+1) x 16 ~ 32 x W x H
-#       (sizeof(fftw_complex) = 16 bytes, not sizeof(fftwf_complex) = 8)
+#   4 FFT complex buffers: 4 x (W*H/2+1) x 8  ~ 16 x W x H
+#       (sizeof(fftwf_complex) = 8 bytes, single-precision)
 #   3 image structs:       3 x W x H x 1       =  3 x W x H
 #   2 full source images:  2 x img_w x img_h x 1
 #
 # Where W, H = swim window dimensions (command-line arg).
-_SWIM_BYTES_PER_WINDOW_PIXEL = 51   # 16 + 32 + 3
+_SWIM_BYTES_PER_WINDOW_PIXEL = 35   # 16 (float bufs) + 16 (FFT bufs) + 3 (images)
 _PYTHON_WORKER_OVERHEAD = 250 * 1024 * 1024  # 250 MB for forkserver child process
                                               # (Python + numpy/scipy imports + recipe state)
 
