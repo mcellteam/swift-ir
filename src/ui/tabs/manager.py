@@ -1123,7 +1123,7 @@ class ManagerTab(QWidget):
                 file_path=file_path,
                 images_path=images_path,
             )
-            cfg.preferences['last_alignment_opened'] = dm.data_file_path
+            cfg.preferences['alignment_combo_text'] = dm.data_file_path
             self.parent.saveUserPreferences(silent=True)
             dm.save(silently=True)
             AlignmentTab(self.parent, dm)

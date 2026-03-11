@@ -625,3 +625,12 @@ The Alignment Manager's viewer1 (aligned preview) sometimes displayed two images
 **Problem**: The delayed layer creation mechanism (`setOnLoadCallback` → `loadFinished` → 500ms QTimer) could leave orphaned timer callbacks. When a new viewer setup occurred before an old timer fired, `setnull()` cleared `_on_load_callback` but could not cancel the already-scheduled QTimer. The stale timer would then execute on the new viewer.
 
 **Fix**: Added a `_callback_generation` counter to the `WebEngine` class. Each call to `setOnLoadCallback()` or `setnull()` increments the counter. When a timer fires, it checks if its captured generation matches the current generation — if not, the callback is stale and is skipped. Log message: `"Skipping stale callback (gen=X, current=Y)"`.
+
+### Preference Unification: `last_alignment_opened` → `alignment_combo_text`
+
+**Problem**: Two preference keys tracked the last-opened alignment: `last_alignment_opened` (written by `project.py:AlignmentTab.__init__` and `manager.py:openAlignment`) and `alignment_combo_text` (written by `manager.py:onComboTransformed` and read by `loadAlignmentCombo()`). The `last_alignment_opened` key was dead code — written in 2 places but never read. When the user opened an alignment from the Project tab, only `last_alignment_opened` was updated, leaving `alignment_combo_text` stale. On restart, `loadAlignmentCombo()` tried to restore from the stale `alignment_combo_text`, failed to match, and the viewer showed "Neuroglancer: No Data".
+
+**Fix**: Unified to `alignment_combo_text` as the single key:
+- `project.py:50`: `AlignmentTab.__init__` now writes `alignment_combo_text`
+- `manager.py:1126`: `openAlignment()` now writes `alignment_combo_text`
+- `helpers.py:317-319`: `last_alignment_opened` added to legacy key stripping list (removed from old `.swiftrc` files on load)
