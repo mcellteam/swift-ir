@@ -17,6 +17,7 @@ import sys
 import time
 import uuid
 import ctypes
+import hashlib
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime
@@ -106,7 +107,51 @@ class DataModel:
     def loadHashTable(self):
         logger.info('')
         self.ht = cfg.ht = Cache(self)
+        self._migrate_data_dirs()
 
+
+    def _migrate_data_dirs(self):
+        """Recovery fallback: rename data directories when old→new hash mapping was lost.
+
+        This handles the case where the cache was already migrated (old hash values
+        lost) but directories weren't renamed. Only safe when exactly one hash
+        directory exists per section/level — if multiple exist, we can't determine
+        which corresponds to the current swim_settings (hash is not invertible).
+
+        The primary migration path is Cache._migrate_hash_keys() + _rename_data_dirs(),
+        which uses precise old→new hash mappings from the cache entries.
+        """
+        data_dir = os.path.join(self.data_dir_path, 'data')
+        if not os.path.isdir(data_dir):
+            return
+        n_renamed = 0
+        n_skipped = 0
+        for i in range(len(self)):
+            for level in self.levels:
+                expected_hash = str(self.ssHash(s=level, l=i))
+                level_dir = os.path.join(data_dir, str(i), level)
+                if not os.path.isdir(level_dir):
+                    continue
+                expected_path = os.path.join(level_dir, expected_hash)
+                if os.path.isdir(expected_path):
+                    continue  # Already correct
+                # Collect all hash directories
+                subdirs = [d for d in os.listdir(level_dir)
+                           if os.path.isdir(os.path.join(level_dir, d))]
+                if len(subdirs) == 1:
+                    old_path = os.path.join(level_dir, subdirs[0])
+                    try:
+                        os.rename(old_path, expected_path)
+                        n_renamed += 1
+                    except OSError as e:
+                        logger.warning(f'Failed to rename {old_path} -> {expected_path}: {e}')
+                elif len(subdirs) > 1:
+                    n_skipped += 1
+        if n_renamed > 0:
+            logger.info(f'Recovered {n_renamed} data directories to deterministic hash names')
+        if n_skipped > 0:
+            logger.warning(f'Skipped {n_skipped} sections with multiple hash directories '
+                         f'(re-alignment needed to regenerate signal files)')
 
     def _upgradeDatamodel(self):
         logger.info('Upgrading data model...')
@@ -2006,11 +2051,11 @@ class DataModel:
 
         img_size_coarsest = np.rint(fullsize / int(self.levels[-1][1:]))
         ww_2x2 = d[self.levels[-1]]['grid']['size_2x2']
-        x1 = (img_size_coarsest[0] - ww_2x2[0]) / 2
-        x2 = (img_size_coarsest[0] + ww_2x2[0]) / 2
-        y1 = (img_size_coarsest[1] - ww_2x2[1]) / 2
-        y2 = (img_size_coarsest[1] + ww_2x2[1]) / 2
-        cps = [(x1, y1), (x2, y1), (x1, y2), (x2, y2)]
+        x1 = float((img_size_coarsest[0] - ww_2x2[0]) / 2)
+        x2 = float((img_size_coarsest[0] + ww_2x2[0]) / 2)
+        y1 = float((img_size_coarsest[1] - ww_2x2[1]) / 2)
+        y2 = float((img_size_coarsest[1] + ww_2x2[1]) / 2)
+        cps = [[x1, y1], [x2, y1], [x1, y2], [x2, y2]]
         d[self.levels[-1]]['grid']['points']['coords']['tra'] = cps
         d[self.levels[-1]]['grid']['points']['coords']['ref'] = cps
 
@@ -2380,19 +2425,40 @@ def ensure_even(vals, extra=None):
     return vals
 
 
+def _normalize(obj):
+    '''Recursively convert numpy types and tuples to plain Python types.
+
+    Ensures consistent str() representations for hashing, regardless of
+    whether data came from numpy computation or JSON deserialization.
+    '''
+    import numpy as np
+    if isinstance(obj, dict):
+        return {k: _normalize(v) for k, v in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return [_normalize(v) for v in obj]
+    elif isinstance(obj, (np.integer,)):
+        return int(obj)
+    elif isinstance(obj, (np.floating,)):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return _normalize(obj.tolist())
+    return obj
+
+
 class HashableDict(dict):
-    ''' A hashable dictionary with an unsigned integer hash value.'''
+    ''' A hashable dictionary with a deterministic unsigned integer hash value.'''
     def __hash__(self):
-        '''Return a hash of the dictionary. This is used to determine if the dictionary has changed.'''
-        # return abs(hash(str(sorted(self.items()))))
-        return ctypes.c_size_t(hash(str(sorted(self.items())))).value
+        '''Return a deterministic hash of the dictionary, stable across Python sessions.'''
+        s = str(sorted(_normalize(self).items())).encode('utf-8')
+        return int(hashlib.sha256(s).hexdigest(), 16) % (2**64)
 
 
 class HashableList(list):
-    ''' A hashable list with an unsigned integer hash value.'''
+    ''' A hashable list with a deterministic unsigned integer hash value.'''
     def __hash__(self):
-        '''Return a hash of the list. This is used to determine if the list has changed.'''
-        return ctypes.c_size_t(hash(str(self))).value
+        '''Return a deterministic hash of the list, stable across Python sessions.'''
+        s = str(_normalize(self)).encode('utf-8')
+        return int(hashlib.sha256(s).hexdigest(), 16) % (2**64)
 
 
 if __name__ == '__main__':

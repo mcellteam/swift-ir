@@ -634,3 +634,42 @@ The Alignment Manager's viewer1 (aligned preview) sometimes displayed two images
 - `project.py:50`: `AlignmentTab.__init__` now writes `alignment_combo_text`
 - `manager.py:1126`: `openAlignment()` now writes `alignment_combo_text`
 - `helpers.py:317-319`: `last_alignment_opened` added to legacy key stripping list (removed from old `.swiftrc` files on load)
+
+## Deterministic Cache Hashing Fix (2026-03-11)
+
+### Problem
+
+After quitting and reopening the app, the alignment result cache failed to find any previously computed results. The match signal panel showed "No Image" / "No Signal" for every section, and clicking "Align" re-ran all tasks instead of recognizing cached results via swim_settings hash lookup.
+
+### Root Causes (Two Issues)
+
+1. **PYTHONHASHSEED randomization**: `HashableDict.__hash__()` used Python's `hash(str(...))` which is randomized per process. Cache keys changed on restart, causing universal cache misses.
+
+2. **numpy type mismatch**: `getMethodPresets()` (`data.py:2008-2014`) computed grid coordinates with numpy operations, producing `(np.float64(304.0), np.float64(304.0))` tuples. These were stored in the cache pickle with numpy types. When the same swim_settings were loaded from JSON (which round-trips to `[304.0, 304.0]` plain float lists), both `str()` representations and `==` comparisons differed, so cache lookups failed even within the same session.
+
+### Fix
+
+1. **Deterministic hashing** (`data.py:HashableDict.__hash__`, `HashableList.__hash__`): Replaced `ctypes.c_size_t(hash(str(...))).value` with `int(hashlib.sha256(s).hexdigest(), 16) % (2**64)`. SHA-256 is deterministic across sessions, platforms, and Python versions.
+
+2. **Type normalization** (`data.py:_normalize()`): Recursive function that converts numpy scalars → Python float/int, tuples → lists, numpy arrays → lists. Used in `HashableDict.__hash__()` before computing the hash string, ensuring consistent hashes regardless of data source.
+
+3. **Source fix** (`data.py:getMethodPresets()`): Grid coordinates now explicitly use `float()` and `[]` lists instead of numpy float64 tuples, preventing the type mismatch at the source.
+
+4. **Cache migration** (`cache.py:_migrate_hash_keys()`): On `unpickle()`, normalizes all cached keys (removing numpy types) and re-keys the dict with deterministic hashes. Saves the migrated cache immediately so migration only happens once.
+
+5. **Data directory migration** (two-phase):
+   - **Primary** (`cache.py:_rename_data_dirs()`): Runs atomically with cache re-keying, using precise `old_hash → new_hash` mappings from the cache entries. Correctly handles multiple hash directories per section (from alignments with different swim_settings), since each old hash maps to exactly one swim_settings → one new hash.
+   - **Recovery fallback** (`data.py:_migrate_data_dirs()`): For cases where the cache was already migrated but directories weren't renamed. Only renames single-directory sections (safe). Skips multi-directory sections with a warning (hash is not invertible — can't determine which directory matches which swim_settings).
+
+### Files Changed
+
+| File | Changes |
+|---|---|
+| `src/models/data.py` | `_normalize()`, `_migrate_data_dirs()`; `HashableDict.__hash__`/`HashableList.__hash__`: SHA-256 + normalization; `getMethodPresets()`: plain Python types for grid coords |
+| `src/models/cache.py` | `_migrate_hash_keys()` method; called from `unpickle()` after loading old cache |
+
+### Rules
+
+1. **Never use Python's `hash()` for values that persist across sessions.** Use `hashlib` (SHA-256, etc.) for any hash stored to disk.
+2. **Never store numpy types in data structures that will be serialized.** Convert to plain Python types (`float()`, `int()`, `list()`) before storing. JSON round-trips lose numpy types silently, breaking equality comparisons.
+3. **`ssHash()` is used in file paths** — the hash of swim_settings determines the data directory name for signal/match files. Any change to the hash function requires migrating existing directories.
