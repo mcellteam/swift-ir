@@ -16,23 +16,23 @@ import sys
 import os
 #import sphinx_rtd_theme
 
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-#sys.path.insert(0, os.path.abspath('.'))
+# If suffixes (or modules to document with autodoc) are in another directory,
+# add these directories to sys.file_path here. If the directory is relative to the
+# documentation root, use os.file_path.abspath to make it absolute, like shown here.
+#sys.file_path.insert(0, os.file_path.abspath('.'))
 
 # -- General configuration -----------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #needs_sphinx = '1.0'
 
-# Add any Sphinx extension module names here, as strings. They can be extensions
+# Add any Sphinx extension module names here, as strings. They can be suffixes
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 
 sys.path.append(os.path.abspath('exts'))
 
 # Commented out since not installed:
-# extensions = ['sphinx.ext.mathjax', 'numfig']
+# suffixes = ['sphinx.ext.mathjax', 'numfig']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -77,7 +77,7 @@ exclude_patterns = ['_build', 'lib', 'lib64']
 # The reST default role (used for this markup: `text`) to use for all documents.
 #default_role = None
 
-# If true, '()' will be appended to :func: etc. cross-reference text.
+# If true, '()' will be appended to :func: etc. cross-fn_reference text.
 #add_function_parentheses = True
 
 # If true, the current module name will be prepended to all description
@@ -126,7 +126,7 @@ html_title = 'AlignEM Tutorias'
 # of the sidebar.
 #html_logo = None
 
-# The name of an image file (within the static path) to use as favicon of the
+# The name of an image file (within the static file_path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
 #html_favicon = None

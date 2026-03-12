@@ -1,9 +1,15 @@
-FLAGS = -O3 -m64 -msse3
+#FLAGS = -g3 -m64 -msse3
+#FLAGS = -O3 -m64 -msse3
+# Flags Required to get binary exact result on arm64 and x86_64:
+FLAGS = -O3 -m64 -msse3 -ffp-contract=off -fno-unsafe-math-optimizations
 BINDIR = ./bin_darwin/
 
-all: $(BINDIR)swim $(BINDIR)iavg $(BINDIR)iscale $(BINDIR)iscale2 $(BINDIR)mir $(BINDIR)remod 
+all: $(BINDIR) $(BINDIR)swim $(BINDIR)iavg $(BINDIR)iscale $(BINDIR)iscale2 $(BINDIR)mir $(BINDIR)remod 
 
-#all: test_libs swim iavg iscale mir remod remod_old sxox json_parser.jar ImageAlign.jar run_swift.jar swift_gui.jar swim_lab.jar sha1sum.txt
+#all: test_libs swim iavg iscale mir remod remod_old sxox json_reader.jar ImageAlign.jar run_swift.jar swift_gui.jar swim_lab.jar sha1sum.txt
+
+$(BINDIR):
+	mkdir $(BINDIR)
 
 $(BINDIR)swim: swim.c swimio.h debug.h makefile
 	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)swim swim.c -I/opt/local/include -L/opt/local/lib -ltiff -ljpeg -lpng -lfftw3f -lwebp -lm
@@ -30,6 +36,7 @@ sha1sum.txt: $(BINDIR)swim $(BINDIR)iavg $(BINDIR)iscale $(BINDIR)mir $(BINDIR)r
 	sha1sum $(BINDIR)swim > sha1sum.txt
 	sha1sum $(BINDIR)iavg >> sha1sum.txt
 	sha1sum $(BINDIR)iscale >> sha1sum.txt
+	sha1sum $(BINDIR)iscale2 >> sha1sum.txt
 	sha1sum $(BINDIR)mir >> sha1sum.txt
 	sha1sum $(BINDIR)remod >> sha1sum.txt
 

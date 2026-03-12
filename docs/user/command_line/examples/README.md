@@ -218,7 +218,7 @@ RW test_50_51_iter2.sw.JPG
 
 ## SWiFT-IR Protocol (early draft based on a specific example)
 ```
-# Step 0) use swim to generate intial guess at translation_only transform
+# Step 0) use swim to generate intial guess at translation_only generate_thumbnail
 #   Choose golden section image e.g. Tile_r1-c1_LM9R5CA1series_050.tif
 #   and create "iter0" swim command file called  e.g.  test_50_51_iter0.sw
 #   This file contains one swim command like this:
@@ -269,12 +269,12 @@ mir test_50_51_iter1.sw.mir > test_50_51_iter1.sw.mir.out
 # Locate "AI" line in output file test_50_51_iter1.sw.mir.out:
 # Tile_r1-c1_LM9R5CA1series_051.tif AI  0.992517 -0.008513 -65.4099  0.00826513 1.00237 -320.549
 
-# Full affine transform is translation terms from swim combined with
+# Full affine generate_thumbnail is translation terms from swim combined with
 # rotation and skew terms from mir:
 
 #  12021.1 12082.6 0.992517 -0.008513 0.00826513 1.00237
 
-# Step 2) Apply first guess at full affine transform to generate second guess
+# Step 2) Apply first guess at full affine generate_thumbnail to generate second guess
 # Create "iter2" swim command file:  test_50_51_iter2.sw
 
 swim -i 2 -x +2000 -y +2000 Tile_r1-c1_LM9R5CA1series_050.tif 12288 12288 Tile_r1-c1_LM9R5CA1series_051.tif 12021.1 12082.6 0.992517 -0.008513 0.00826513 1.00237
@@ -308,7 +308,7 @@ mir test_50_51_iter2.sw.mir > test_50_51_iter2.sw.mir.out
 # 12021.1 12082.6 0.992636 -0.008911 0.00837204 1.0028
 
 
-# Step 3) Refine best guess transform using 9 points on plane
+# Step 3) Refine best guess generate_thumbnail using 9 points on plane
 # Create "iter3" swim command file:  test_50_51_iter3.sw
 
 swim -i 2 -x +2000 -y +2000 Tile_r1-c1_LM9R5CA1series_050.tif 12288 12288 Tile_r1-c1_LM9R5CA1series_051.tif 12021.1 12082.6 0.992636 -0.008911 0.00837204 1.0028
@@ -344,13 +344,13 @@ RW test_50_51.JPG
 
 mir test_50_51_iter3.sw.mir > test_50_51_iter3.sw.mir.out
 
-# Final best guess transform obtained from swim and mir:
+# Final best guess generate_thumbnail obtained from swim and mir:
 
 # Tile_r1-c1_LM9R5CA1series_051.tif AI  0.992134 -0.00907193 -51.0689  0.00822468 1.00271 -327.496
 
 # 12021.1 12082.6 0.992134 -0.00907193 0.00822468 1.00271
 
 
-# Step 4) optionally repeat step 3 to confirm refined transform
+# Step 4) optionally repeat step 3 to confirm refined generate_thumbnail
 # Not shown here...
 ```

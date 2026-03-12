@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <style>
+    body {font-family: sans-serif;}
+    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>This is alignEM</title>
+</head>
+<body>
+    <h3>Alignment Features</h3>
+    <ul>
+        <li>Automatic playback at variable frames-per-second</li>
+        <li>Interactive SNR plot</li>
+        <li>Project dictionary/JSON "tree" view</li>
+        <li>Project data "table" view</li>
+        <li>Zarr reading+writing (open source)</li>
+        <li>Neuroglancer volumetric data viewer (Google, open source)</li>
+        <li>Process monitor ("HUD")</li>
+        <li>Python console</li>
+        <li>Thumbnails</li>
+            <ul>
+                <li>original images</li>
+                <li>correlation signal images</li>
+                <li>aligned images</li>
+            </ul>
+        <li>Project progress tracking</li>
+        <li>Rescaling...</li>
+        <li>Rescaling functionality</li>
+        <li>Alignment history preserved</li>
+        <li>Immediately reveal change in SNR</li>
+        <li>Superimpose SNR plots across all scales</li>
+        <li>View correlation signals w/ corresponding regional SNR value</li>
+        <li>Match-point alignment implemented in Neuroglancer</li>
+        <li>Per-section notetaking</li>
+        <li>Auto-generate ON/OFF switch</li>
+    </ul>
+    <h3>Neuroglancer/Visualization</h3>
+        <ul>
+            <li>Detachable/"pop-out" viewer</li>
+            <li>Layout options:</li>
+                <ul>
+                    <li>"Stack" - aligned or unaligned only</li>
+                    <li>"Comparison" - reference vs. working [vs. aligned]</li>
+                </ul>
+            <li>Sliders for:</li>
+                <ul>
+                    <li>Section #</li>
+                    <li>Zoom Level</li>
+                    <li>Z-magnification</li>
+                </ul>
+            <li>Full TensorStore integration (open source)</li>
+            <li>SNR Plot synchropnized mini-Neuroglancers</li>
+            <li>Toggle ON/OFF scale bar, panel borders, UI overlays</li>
+            <li>Experimental volumetric viewer</li>
+        </ul>
+    <h3>Data Management</h3>
+        <ul>
+            <li>Three compression options</li>
+                <ul>
+                    <li>Zstd</li>
+                    <li>Gzip</li>
+                    <li>No compression</li>
+                </ul>
+            <li>Unsaved changes always tracked</li>
+            <li>Export AFMs/CAFM to .csv...</li>
+            <li>Save user preferences between sessions</li>
+            <li>Built-in file manager and project cacher</li>
+                <ul>
+                    <li>Import project</li>
+                    <li>Open project</li>
+                    <li>Forget project</li>
+                    <li>Delete project</li>
+                    <li>File browser</li>
+                </ul>
+            <li>Object-oriented Data Model</li>
+            <li>Gracefully handle multiple projects simultaneously (tabs!)</li>
+            <li>Experimental Re-chunking (works but slow/non-parallel)</li>
+        </ul>
+
+    <h3>TACC</h3>
+        <ul>
+            <li>Quickly access $WORK,$SCRATCH</li>
+
+        </ul>
+
+
+
+</body>
+</html>

@@ -69,7 +69,11 @@ struct image *inimg, *outimg, outtile;
 typedef unsigned long long ticks; // the cycle counter is 64 bits
 static __inline__ ticks getticks(void) {  // read CPU cycle counter
   unsigned a, d;
+  a = 0;
+  d = 0;
+#ifndef ARM64
   asm volatile ("rdtsc":"=a" (a), "=d"(d));
+#endif
   return ((ticks) a) | (((ticks) d) << 32);
 }
 
@@ -129,6 +133,10 @@ long npix;                      // keep track of output pixel count as FYI stat
 int verbose = 0;
 int skipval = -1;
 
+// Render one horizontal scanline [x0..x1] at row y into the output image.
+// Applies the current affine transform mf[][] to map output pixels back to
+// input image coordinates, then samples using nearest/bilinear/cubic (iflag).
+// Handles all bpp combinations (1,2,3) and optional reverse-video via lut[].
 void hline(int y, int x0, int x1) {
   int i, x, ix, iy, V;
   double y1, tf, df, tx, ty;
@@ -246,7 +254,9 @@ void hline(int y, int x0, int x1) {
       double f0, f1, f2, f3, frx, fry;
       ix = tx;
       iy = ty;
-      if (ix < 0 || iy < 0 || ix >= iwid || iy >= iht)
+      // FIX(mir-C1#17): tightened bounds from >= iwid/iht to >= iwid-1/iht-1
+      //   to prevent OOB reads at ix+1/iy+1 in bilinear interpolation
+      if (ix < 0 || iy < 0 || ix >= iwid - 1 || iy >= iht - 1)
         continue;
       frx = tx - ix;
       fry = ty - iy;
@@ -297,13 +307,19 @@ void hline(int y, int x0, int x1) {
     V = f1 + 0.5 * fry * (f2 - f0 + fry * (2.0 * f0 - 5.0 * f1 + 4.0 * f2 - f3 + fry * (3.0 * (f1 - f2) + f3 - f0)));
     if (V == 0)
       continue;
+    // FIX(mir-C1#18): clamp V to [0,255] before lut access — cubic interpolation
+    //   can produce values outside this range, causing lut[V+128] underflow
+    if (V < 0) V = 0;
+    if (V > 255) V = 255;
     oip[x] = lut[V + 128];
   }
   hl_ticks += getticks();
 }
 
+// Render a rectangle by calling hline() for each row. If backp is active,
+// writes the back-fill buffer to a PGM file after rendering.
 void hrect(int minx, int miny, int maxx, int maxy) {
-  int y, ignore;
+  int y;
   //fprintf(stderr, "hrect  %d %d  %d %d\n", minx, miny, maxx, maxy);
   hr_ticks -= getticks();
   for (y = miny; y <= maxy; y++)
@@ -315,23 +331,30 @@ void hrect(int minx, int miny, int maxx, int maxy) {
     fd = creat(backname, 0666);
     //fprintf(stderr, "*** backname <%s> %d\n", backname, fd);
     sprintf(hdr, "P5\n%d %d\n255\n", iwid, iht);
-    if (fd) {
-      ignore = write(fd, hdr, strlen(hdr));
-      ignore = write(fd, backp, iwid * iht);
+    // FIX(mir-C1#15): changed from if(fd) — fd==0 is valid (stdin's descriptor)
+    // FIX(mir-C1#16): cast write() returns to (void) to suppress compiler warnings
+    if (fd >= 0) {
+      (void)write(fd, hdr, strlen(hdr));
+      (void)write(fd, backp, iwid * iht);
       close(fd);
     }
   }
   //fprintf(stderr, "hrect done\n");
 }
 // Art's old Pitt IS2780 graphics class 2D elementary matrix arith with Stu
+// 3x3 matrix stored as flat array: [a0 a1 a2 | a3 a4 a5 | a6 a7 a8]
 float mdet(float *a) {
+	// FIX(mir-C3#3): corrected 3x3 determinant formula (cofactor expansion along row 0)
+	//   old formula used wrong indices and produced incorrect results
 	float d =
-	a[1]*a[5] - a[2]*a[4] - a[3]*a[1] + a[3]*a[2] + a[0]*a[4] - a[0]*a[5];
+	a[0]*(a[4]*a[8] - a[5]*a[7]) - a[1]*(a[3]*a[8] - a[5]*a[6]) + a[2]*(a[3]*a[7] - a[4]*a[6]);
 	return(d);
 }
 
+// FIX(mir-C1#3): removed dead code `d = mdet(a), rd = 1/d` — the determinant
+//   was computed but never used (minv computes adjugate; mznorm normalizes),
+//   and the division caused div-by-zero when det==0
 void minv(float *v, float *a) {
-	float d = mdet(a), rd = 1/d;
 	v[0] = (a[4]*a[8]-a[5]*a[7]);
 	v[1] = -(a[1]*a[8]-a[2]*a[7]);
 	v[2] = (a[1]*a[5]-a[2]*a[4]);
@@ -343,9 +366,16 @@ void minv(float *v, float *a) {
 	v[8] = (a[0]*a[4]-a[1]*a[3]);
 }
 
+// Normalize 3x3 matrix by dividing all elements by i[8] (homogeneous normalization)
 void mznorm(float *o, float *i) {
-	float s = 1./i[8];
 	int j;
+	// FIX(mir-C1#4): guard against division by zero when i[8]==0
+	if (i[8] == 0) {
+		for(j = 0; j < 9; j++)
+			o[j] = i[j];
+		return;
+	}
+	float s = 1./i[8];
 	for(j = 0; j < 9; j++)
 		o[j] = i[j] * s;
 }
@@ -385,8 +415,9 @@ struct quad {
         float x3, y3;
 };
 
-/* assumes regular orientation and integer rectangular output */
-// irregular in to rectangular out
+// Map pixels from a source quad (qp0) in image ip0 into a destination quad (qp1)
+// in image ip1 using bilinear interpolation. Assumes the destination quad is
+// axis-aligned rectangular; the source quad can be irregular (for warping).
 void qmap(struct image *ip0, struct quad *qp0, struct image *ip1, struct quad *qp1) {
 	unsigned char *op;
 	int i, j, sx, sy, x, y, nx, ny, v;
@@ -397,6 +428,9 @@ void qmap(struct image *ip0, struct quad *qp0, struct image *ip1, struct quad *q
 	//op = ip1->pp + qp1->y0*ip1->ydelta + qp1->x0; // NOT with floats!
 	sx = qp1->x0;	// integer start x
 	sy = qp1->y0;	// integer start y
+	// FIX(mir-C1#2): initialize x,y before fprintf below uses them
+	x = sx;
+	y = sy;
 fprintf(stderr, "xy  %g %g ... %d %d\n", qp1->x0, qp1->y0, x, y);
 	op = ip1->pp + sy*ip1->ydelta + sx;
 fprintf(stderr, "qp0\n");
@@ -477,10 +511,12 @@ fprintf(stderr, "%lld/%d = %g/pix\n", micros1-micros0, i,
 //if(++calls >= 3) exit(1);
 }
 
+// Render a quad (4-vertex polygon) by bilinear mapping from input to output image
+// FIX(mir-C1#1): removed dead outer `oip = obase + y * owid * obpp` that used
+//   uninitialized y — the inner loop declares its own properly-initialized oip
 void dquad(float *v0, float *v1, float *v2, float *v3) {
 	int x, y;
 	struct quad inq, outq;
-	unsigned char *p, *oip = obase + y * (long)owid * obpp;
   fprintf(stderr, "dquad %d: %g %g  %g %g  %g %g  %g %g\n", quadval,
   v0[0], v0[1], v1[0], v1[1], v2[0], v2[1], v3[0], v3[1]);
   fprintf(stderr, "\t%g %g  %g %g  %g %g  %g %g\n",
@@ -514,6 +550,10 @@ void dquad(float *v0, float *v1, float *v2, float *v3) {
 	quadval++;
 }
 
+// Render a triangle defined by 3 vertices, each with (out_x, out_y, in_x, in_y).
+// Computes the affine transform from output to input coordinates using 3x3
+// matrix math (minv + mmul + mznorm), then rasterizes via scanline hline() calls.
+// Vertices are sorted by y-coordinate and the triangle is split into top/bottom halves.
 void dtri(float *v0, float *v1, float *v2) {
   float *tp, x0, y0, x1, y1;
   float tx0, tx1, ty0, ty1;
@@ -618,6 +658,9 @@ void dtri(float *v0, float *v1, float *v2) {
   tri_ticks += getticks();
 }
 
+// Initialize the 512-entry lookup table for pixel value mapping.
+// Input values are offset by +128 to allow negative indices from cubic interp.
+// With rv (reverse video), values are inverted: lut[v+128] = 255 - v.
 void set_lut() {
   int i, v;
   for (i = 0; i < 512; i++) {
@@ -639,9 +682,14 @@ static double vstack[STSIZE];
 static int sp, prec[256];
 static double var[26];
 
+// Execute a binary operation on the expression evaluator stack.
+// Stack layout: [... operand_left op operand_right] at positions sp-3, sp-2, sp-1
 void doop(int op) {
   // fprintf(stderr, "doop sp %d - pstack %c %c %c\n",
   // sp, pstack[sp-3], pstack[sp-2], pstack[sp-1]);
+  // FIX(mir-C1#5): guard against stack underflow — need at least 3 slots
+  if (sp < 3)
+    return;
   if (pstack[sp - 1] == 'V') {
     // fprintf(stderr, "lookup sp-1 %c\t", (int)vstack[sp-1]);
     vstack[sp - 1] = var[(int)vstack[sp - 1] - 'a'];
@@ -667,10 +715,14 @@ void doop(int op) {
     vstack[sp - 3] = vstack[sp - 3] * vstack[sp - 1];
     break;
   case '/':
-    vstack[sp - 3] = vstack[sp - 3] / vstack[sp - 1];
+    // FIX(mir-C1#6): guard against division by zero
+    if (vstack[sp - 1] != 0)
+      vstack[sp - 3] = vstack[sp - 3] / vstack[sp - 1];
     break;
   case '%':
-    vstack[sp - 3] = (long)vstack[sp - 3] % (long)vstack[sp - 1];
+    // FIX(mir-C1#6): guard against modulo by zero
+    if ((long)vstack[sp - 1] != 0)
+      vstack[sp - 3] = (long)vstack[sp - 3] % (long)vstack[sp - 1];
     break;
   case '^':
     vstack[sp - 3] = pow(vstack[sp - 3], vstack[sp - 1]);
@@ -686,9 +738,11 @@ void doop(int op) {
   sp -= 2;                      /* used 3 slots to make 1 */
 }
 
+// Reduce the expression stack back to the matching '(' sentinel
 void reducepar() {
   // fprintf(stderr, "reducepar sp %d\n", sp);
-  while (pstack[sp - 2] != '(')
+  // FIX(mir-C1#8): added sp >= 3 guard to prevent underflow if no matching '('
+  while (sp >= 3 && pstack[sp - 2] != '(')
     doop(pstack[sp - 2]);
   sp--;                         /* account for the ( slot */
   // fprintf(stderr, "final pstack %c\n", pstack[sp]);
@@ -700,6 +754,11 @@ void reducepar() {
   vstack[sp - 1] = vstack[sp];  /* move the value down one */
 }
 
+// Simple recursive-descent expression evaluator with variables (a-z).
+// Supports: +, -, *, /, %, ^, =, parentheses, decimal numbers.
+// Used by 'O' command and vertex parsing to allow arithmetic in input scripts.
+// FIX(mir-C1#7): all sp++ increments now guarded with sp < STSIZE to prevent
+//   stack overflow (STSIZE=15)
 double eval_expr(char *s) {
   char *p = s;
   int i, unary = 1;
@@ -721,12 +780,15 @@ double eval_expr(char *s) {
     // }
     // fprintf(stderr, "c %d <%c>\n", c, c);
     if (isalpha(c)) {
-      pstack[sp] = 'V';
-      vstack[sp] = c;
-      // fprintf(stderr, "stacked var %c\n", c);
-      sp++;
+      if (sp < STSIZE) {
+        pstack[sp] = 'V';
+        vstack[sp] = c;
+        // fprintf(stderr, "stacked var %c\n", c);
+        sp++;
+      }
     }
     if (isdigit(c) || c == '.') {
+      if (sp >= STSIZE) continue;
       pstack[sp] = '#';         /* stack its type */
       if (c != '.') {
         vstack[sp] = c - '0';   /* and value */
@@ -753,10 +815,11 @@ double eval_expr(char *s) {
       if (unary < 1)
         vstack[sp] = -vstack[sp];
       // fprintf(stderr, "final # %g\n", vstack[sp]);
-      sp++;
+      if (sp < STSIZE) sp++;
       unary = 1;
-    } else if (c == '(')
-      pstack[sp++] = '(';       /* stack type - no value */
+    } else if (c == '(') {
+      if (sp < STSIZE) pstack[sp++] = '(';       /* stack type - no value */
+    }
     else if (c == ')' || (c == 0 && sp > 1) || (c == ';' && sp > 1))
       reducepar();              /* reduce back to a '(' */
     else if (prec[c] == 2 && pstack[sp - 1] == '(') {
@@ -770,7 +833,7 @@ double eval_expr(char *s) {
       if (sp > 3)               /* do a high prec stacked op */
         if (prec[pstack[sp - 2]] >= prec[c])
           doop(pstack[sp - 2]);
-      pstack[sp++] = c;         /* stack the new op */
+      if (sp < STSIZE) pstack[sp++] = c;         /* stack the new op */
       c = *p;
       if (c == '-') {
         unary = -unary;
@@ -945,7 +1008,16 @@ int main(int argc, char *argv[]) {
   if (verbose)
     print_args("End of argument processing loop:", argc, argv);
 
-  // ?
+  // Main command loop — reads single-character commands from stdin:
+  //   B: set output Buffer dimensions    F: read input File
+  //   Z: Zero (clear) output buffer      D: set Directory prefix
+  //   R: Render via bounding-box rect    W: Write output file
+  //   a/A: set affine (inverse/forward)  G: set Global transform
+  //   S: set Scale multipliers           O: set Offsets (with expressions)
+  //   V: toggle reVerse video            I: set Interpolation level
+  //   X: eXchange input/output order     T/Q: Triangle/Quad index lists
+  //   #: comment to EOL                  E/EOF: Exit
+  //   Numeric lines: vertex data (out_x out_y in_x in_y)
   for (;;) {
     if (prompt)
       printf("Enter a MIR command (? for help) > ");
@@ -1009,7 +1081,9 @@ int main(int argc, char *argv[]) {
                  &oscalex, &oscaley, &iscalex, &iscaley);
       fprintf(stderr, "scales %g %g  %g %g\n", oscalex, oscaley, iscalex, iscaley);
       continue;
-    case 'O':                  // offsets
+    case 'O':                  // offsets: ooffx ooffy ioffx ioffy (supports expressions)
+      // FIX(mir-C1#19): tokenizer while loops now check for '\0' and '\n'
+      //   to prevent running past end of string
 #ifdef	OLD
       sv = scanf("%f %f %f %f\n", // same order as verts
                  &ooffx, &ooffy, &ioffx, &ioffy);
@@ -1024,21 +1098,21 @@ int main(int argc, char *argv[]) {
         while (*p == ' ')
           p++;
         e0 = p;
-        while (*p != ' ')
+        while (*p && *p != ' ' && *p != '\n')
           p++;
-        *p++ = 0;
+        if (*p) *p++ = 0;
         e1 = p;
-        while (*p != ' ')
+        while (*p && *p != ' ' && *p != '\n')
           p++;
-        *p++ = 0;
+        if (*p) *p++ = 0;
         e2 = p;
-        while (*p != ' ')
+        while (*p && *p != ' ' && *p != '\n')
           p++;
-        *p++ = 0;
+        if (*p) *p++ = 0;
         e3 = p;
-        while (*p != '\n')
+        while (*p && *p != '\n')
           p++;
-        *p++ = 0;
+        *p = 0;
         //fprintf(stderr, "exprs <%s> <%s> <%s> <%s>\n", e0, e1, e2, e3);
         ooffx = eval_expr(e0);
         ooffy = eval_expr(e1);
@@ -1074,7 +1148,8 @@ int main(int argc, char *argv[]) {
       continue;
     case 'D':                  // directory prefix for all input file names
       getchar();                // skip space
-      if (scanf("%s\n", prefix) != 1)
+      // FIX(mir-C1#13): width-limited scanf to prevent buffer overflow on 1024-byte prefix
+      if (scanf("%1023s\n", prefix) != 1)
         exit(1);
       //if(!fgets(prefix, STRLENS, stdin))
       //fgets(prefix, STRLENS, stdin);
@@ -1160,8 +1235,13 @@ int main(int argc, char *argv[]) {
             //fprintf(stderr, "suff <%s>\n", p);
             strcpy(p, "bak.pgm");
             //fprintf(stderr, "back <%s> 0x%lx\n", backname, backp);
-            if (!backp) {
-              int i;
+            // FIX(mir-C2#4): free old backp before reallocating — previously only
+            //   allocated once and leaked when image dimensions changed
+            if (backp) {
+              free(backp);
+              backp = NULL;
+            }
+            {
               backp = (unsigned char *)malloc(iwid * iht);
               //  fprintf(stderr, "new %d=%dx%d backp 0x%lx\n", iwid*iht, iwid, iht, backp);
             }
@@ -1452,7 +1532,8 @@ tx, ty, tilename, outimg->ydelta, outimg->pp, thistwid, thistht);
 		fprintf(stderr, "unknown mode char <%c>\n", i);
         break;
       }
-      i = scanf("%s %s %s %s\n", str0, str1, str2, str3);
+      // FIX(mir-C1#14): width-limited scanf to prevent buffer overflow on 500-byte strings
+      i = scanf("%499s %499s %499s %499s\n", str0, str1, str2, str3);
       if(verbose) fprintf(stderr, "i %d <%s> <%s> <%s> <%s>\n",
 		i, str0, str1, str2, str3);
       if (exchange) {
@@ -1537,7 +1618,8 @@ fprintf(stderr, "ntris %d\n", ntris);
 if(doquads) {
 fprintf(stderr, "in doquads\n");
     qup = &quad[0][0];
-    ntris = 0;
+    // FIX(mir-C3#1): was `ntris = 0` — should reset nquads, not ntris
+    nquads = 0;
     for (;;) {
       //fprintf(stderr, "quadloop nquads %d\n", nquads);
       i = getchar();
@@ -1558,6 +1640,9 @@ fprintf(stderr, "in doquads\n");
     }
 fprintf(stderr, "nquads %d\n", nquads);
 }
+// FIX(mir-C3#2): moved bounds reset before BOTH tri and quad loops — was after
+//   tri loop, which clobbered tri-computed bounds before quad loop could merge them
+oxmin = 1000000; oxmax = 0; oymin = 1000000; oymax = 0;
     for (i = 0; i < ntris; i++) {
 fprintf(stderr, "%d: %d %d %d\n", i, tri[i][0], tri[i][1], tri[i][2]);
       for (j = 0; j < 3; j++) {
@@ -1573,7 +1658,6 @@ fprintf(stderr, "%d: %d %d %d\n", i, tri[i][0], tri[i][1], tri[i][2]);
           oymax = y;
       }
     }
-oxmin = 1000000; oxmax = 0; oymin = 1000000; oymax = 0;
     for (i = 0; i < nquads; i++) {
 fprintf(stderr, "q  %d: %d %d %d %d\n", i,
 quad[i][0], quad[i][1], quad[i][2], quad[i][3]);
@@ -1638,15 +1722,31 @@ if(verbose) fprintf(stderr, "ndraw %d\n", ndraw);
     fprintf(stderr, "tri_ticks %llu\n", tri_ticks);
     fprintf(stderr, "aff_ticks %llu\n", aff_ticks);
   }
+  // FIX(mir-C2#1,#2,#3): free all heap allocations before exit
+  if (outimg) {
+    free(outimg->pp);
+    free(outimg);
+  }
+  if (inimg) {
+    free(inimg->pp);
+    free(inimg);
+  }
+  if (backp)
+    free(backp);
 	exit(0);
 }
 
 #define MAX 1000                // XXX Jan 2016 was 100 but 10000 failed
 #define MINVAL 0.0001
 
+// Solve least-squares affine transform from point correspondences via
+// Gaussian elimination on an augmented normal-equation matrix.
+// Iteratively rejects worst-fitting points until RMS < ethresh or npts <= leastpts.
 void affine(int inpts, float *v, float ethresh, int leastpts) {
-  float aug[MAX][MAX];          // augmented co-efficient matrix
-  float solution[MAX];          // simultaneous equation soln
+  // FIX(mir-C1#9): was float aug[MAX][MAX] (MAX=1000) = 4MB on stack;
+  //   only 3 equations x 5 columns are used, so reduced to [5][7]
+  float aug[5][7];              // augmented co-efficient matrix (3 eqn x 5 cols + margin)
+  float solution[5];            // simultaneous equation soln
   int i, j, k, neqn, rowlen, temp, minus, maxei, npts;
   float temporary, r, ad0, ad1, det;
   float dx, dy, e, maxe, err, rms;
@@ -1663,6 +1763,9 @@ void affine(int inpts, float *v, float ethresh, int leastpts) {
   neqn = 3;
   rowlen = 5;
 
+  // FIX(mir-C1#12): clamp inpts to MAX to prevent reject[]/rindex[] overflow
+  if (inpts > MAX)
+    inpts = MAX;
   for (i = 0; i < inpts; i++)
     reject[i] = 0;
   nreject = 0;
@@ -1753,7 +1856,8 @@ fprintf(stderr, "ne %d  j %d  temp %d  aug %g\n", neqn, j, i, aug[temp][j]);
         aug[temp][k] = temporary;
       }
     }
-    // row operations to form required diagonal matrix
+    // FIX(mir-C1#10): skip row operations when pivot is zero to prevent div-by-zero
+    if (aug[j][j] == 0) continue;
     for (i = 0; i < neqn; i++)
       if (i != j) {
         r = aug[i][j];
@@ -1762,15 +1866,16 @@ fprintf(stderr, "ne %d  j %d  temp %d  aug %g\n", neqn, j, i, aug[temp][j]);
       }
   }
 
+  // FIX(mir-C1#10): guard all final divisions by diagonal elements
   for (i = 0; i < neqn; i++)
-    solution[i] = aug[i][neqn] / aug[i][i];
+    solution[i] = aug[i][i] != 0 ? aug[i][neqn] / aug[i][i] : 0;
 
-  mf[0][0] = aug[0][3] / aug[0][0];
-  mf[0][1] = aug[1][3] / aug[1][1];
-  mf[0][2] = aug[2][3] / aug[2][2];
-  mf[1][0] = aug[0][4] / aug[0][0];
-  mf[1][1] = aug[1][4] / aug[1][1];
-  mf[1][2] = aug[2][4] / aug[2][2];
+  mf[0][0] = aug[0][0] != 0 ? aug[0][3] / aug[0][0] : 0;
+  mf[0][1] = aug[1][1] != 0 ? aug[1][3] / aug[1][1] : 0;
+  mf[0][2] = aug[2][2] != 0 ? aug[2][3] / aug[2][2] : 0;
+  mf[1][0] = aug[0][0] != 0 ? aug[0][4] / aug[0][0] : 0;
+  mf[1][1] = aug[1][1] != 0 ? aug[1][4] / aug[1][1] : 0;
+  mf[1][2] = aug[2][2] != 0 ? aug[2][4] / aug[2][2] : 0;
   ad0 = aug[0][0] * aug[1][1] - aug[0][1] * aug[1][0];
   ad1 = aug[0][3] * aug[1][4] - aug[0][4] * aug[1][3];
   x00 = 0 * mf[0][0] + 0 * mf[0][1] + mf[0][2];
@@ -1811,15 +1916,19 @@ fprintf(stderr, "ne %d  j %d  temp %d  aug %g\n", neqn, j, i, aug[temp][j]);
   aff_ticks += getticks();
   fprintf(stderr, "\txtile %g %g %g\n", mf[0][0], mf[0][1], mf[0][2]);
   fprintf(stderr, "\tytile %g %g %g\n", mf[1][0], mf[1][1], mf[1][2]);
-  fprintf(stderr, "\tnewa %g\n", atan((mf[0][1] - mf[1][0]) / (mf[0][0] + mf[1][1])) * 180 / M_PI);
+  // FIX(mir-C1#11): replaced atan(a/b) with atan2(a,b) to prevent div-by-zero
+  //   when mf[0][0]+mf[1][1]==0
+  fprintf(stderr, "\tnewa %g\n", atan2(mf[0][1] - mf[1][0], mf[0][0] + mf[1][1]) * 180 / M_PI);
   fprintf(stderr, "\txout %g %g %g\n", mi[0][0], mi[0][1], mi[0][2]);
   fprintf(stderr, "\tyout %g %g %g\n", mi[1][0], mi[1][1], mi[1][2]);
-  fprintf(stderr, "\tolda %g\n", atan((mi[0][1] - mi[1][0]) / (mi[0][0] + mi[1][1])) * 180 / M_PI);
+  fprintf(stderr, "\tolda %g\n", atan2(mi[0][1] - mi[1][0], mi[0][0] + mi[1][1]) * 180 / M_PI);
   fprintf(stderr, "rms %g  npts %d\n", sqrt(err / npts), npts);
   printf("%s AF  %g %g %g  %g %g %g\n", fname, mi[0][0], mi[0][1], mi[0][2], mi[1][0], mi[1][1], mi[1][2]);
   printf("%s AI  %g %g %g  %g %g %g\n", fname, mf[0][0], mf[0][1], mf[0][2], mf[1][0], mf[1][1], mf[1][2]);
 }
 
+// Compute the inverse of a 2x3 affine matrix: mi = mf^(-1)
+// Uses the 2x2 sub-determinant for the linear part, then back-substitutes translation.
 void affine_inverse(float *mi, float *mf) {
   float det = mf[0] * mf[3 + 1] - mf[1] * mf[3 + 0];
   if(verbose) fprintf(stderr, "det %g -> sc %g\n", det, sqrt(1 / det));

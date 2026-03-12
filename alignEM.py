@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
+
 """
-AlignEM-SWiFT - A software tool for image alignment that is under active development.
+alignEM - A software tool for image alignment that is under active development.
 
 This is free and unencumbered software released into the public domain.
 
@@ -27,115 +28,115 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 For more information, please refer to [http://unlicense.org]
 
-QtPy provides cross-compatibility for PySide2, PySide6, PyQt5, PyQt6
-
-Environment variable QT_API can take the following values:
-    pyqt5 (to use PyQt5).
-    pyside2 (to use PySide2).
-    pyqt6 (to use PyQt6).
-    pyside6 (to use PySide6).
-
-To output a string of Mypy CLI args that will reflect the currently selected src API:
-$ qtpy mypy-args
-
-~ ❯ pip show alignem
-Name: alignEM
-Version: 0.0.1
-Summary: AlignEM-SWIFT is a graphical tool for aligning serial section electron micrographs using SWiFT-IR.
-Home-page: https://github.com/mcellteam/swift-ir/tree/development_ng
-Author: Joel Yancey,
-Author-email: Joel Yancey <joelgyancey@ucla.edu>, Tom Bartol <bartol@salk.edu>, Arthur Wetzel <awetzel@psc.edu>
-License: Mozilla Public License Version 2.0
-Location: /Users/joelyancey/miniconda3/envs/test_alignem/lib/python3.9/site-packages
-Requires: imagecodecs, neuroglancer, numpy, opencv-python-headless, pillow, psutil, PyQt5, pyqtgraph,
-pyqtwebengine, qtawesome, qtconsole, qtpy, tifffile, tqdm, zarr
-Required-by:
-
-
-NOTES
-https://github.com/nexpy/nexpy/issues/398
-
 """
-import os
-import json
-import platform
-import threading
-import cProfile
-import pstats
-import qtpy
-# os.environ['QT_API'] = 'pyqt5'
-os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt5'
-# os.environ["BLOSC_NOLOCK"] = "1"
-os.environ["BLOSC_NTHREADS"] = "1"
-import sys, signal, logging, argparse
-import faulthandler
 
+print('alignEM:')
+import os, sys, inspect
+
+# if not getpass.getuser() in ('joelyancey', 'joely', 'jyancey', 'tmbartol', 'tbartol', 'bartol', 'ama8447', 'aalario'):
+# if not getpass.getuser() in ('joelyancey', 'joely', 'jyancey', 'tmbartol', 'tbartol', 'bartol'):
+#     print("Please do not use this version of alignEM yet, thank you. Bye!")
+#     sys.exit()
+
+hashseed = os.getenv('PYTHONHASHSEED')
+if not hashseed:
+    os.environ['PYTHONHASHSEED'] = '0'
+    os.execv(sys.executable, [sys.executable] + sys.argv)
+
+
+print(f'\nEnvironment activated successfully. alignEM will launch shortly...\n')
+print(f'Python executable: {sys.executable}')
+
+import os
+
+import PySide6
+print(f'PySide6 version: {PySide6.__version__}')
+
+import subprocess as sp
+import logging, argparse
+import faulthandler
 from qtpy import QtCore
 from qtpy.QtCore import QCoreApplication, Qt
+from qtpy.QtGui import QFont
 from qtpy.QtWidgets import QApplication
+
+# import tensorstore as ts
 from src.ui.main_window import MainWindow
-from src.utils.add_logging_level import addLoggingLevel
-from src.helpers import check_for_binaries, configure_project_paths, initialize_user_preferences
+from src.utils.helpers import check_for_binaries, initialize_user_preferences, \
+    is_tacc, is_joel, is_mac, print_exception, register_login, addLoggingLevel, \
+    check_macos_isdark_theme
+
 import src.config as cfg
-from qtconsole import __version__ as qcv
+
+# from qtconsole import __version__ as qcv
+global app
 
 
-WHITE_LIST = {'src'}      # Look for these words in the file path.
-EXCLUSIONS = {'<'}          # Ignore <listcomp>, etc. in the function name.
 
 
-def tracefunc(frame, event, arg):
-    # https://stackoverflow.com/questions/8315389/how-do-i-print-functions-as-they-are-called
-    if event == "call":
-        tracefunc.stack_level += 1
+# WHITE_LIST = {'src'}      # Look for these words in the file file_path.
+# EXCLUSIONS = {'<'}          # Ignore <listcomp>, etc. in the function name.
 
-        unique_id = frame.f_code.co_filename + str(frame.f_lineno)
-        if unique_id in tracefunc.memorized:
-            return
+# def tracefunc(getFrameScale, event, arg):
+#     # https://stackoverflow.com/questions/8315389/how-do-i-print-functions-as-they-are-called
+#     if event == "call":
+#         tracefunc.stack_level += 1
+#
+#         unique_id = getFrameScale.f_code.co_filename + str(getFrameScale.f_lineno)
+#         if unique_id in tracefunc.memorized:
+#             return
+#
+#         # Part of file_path MUST be in white list.
+#         if any(x in getFrameScale.f_code.co_filename for x in WHITE_LIST) \
+#                 and \
+#                 not any(x in getFrameScale.f_code.co_name for x in EXCLUSIONS):
+#
+#             if 'self' in getFrameScale.f_locals:
+#                 class_name = getFrameScale.f_locals['self'].__class__.__name__
+#                 func_name = class_name + '.' + getFrameScale.f_code.co_name
+#             else:
+#                 func_name = getFrameScale.f_code.co_name
+#
+#             func_name = '{name:->{indent}level}()'.format(indent=tracefunc.stack_level * 2, name=func_name)
+#             txt = '{: <40} # {}, {}'.format(
+#                 func_name, getFrameScale.f_code.co_filename, getFrameScale.f_lineno)
+#             print(txt)
+#
+#             tracefunc.memorized.add(unique_id)
+#
+#     elif event == "return":
+#         tracefunc.stack_level -= 1
+#
+#
+# tracefunc.memorized = set()
+# tracefunc.stack_level = 0
 
-        # Part of filename MUST be in white list.
-        if any(x in frame.f_code.co_filename for x in WHITE_LIST) \
-                and \
-                not any(x in frame.f_code.co_name for x in EXCLUSIONS):
-
-            if 'self' in frame.f_locals:
-                class_name = frame.f_locals['self'].__class__.__name__
-                func_name = class_name + '.' + frame.f_code.co_name
-            else:
-                func_name = frame.f_code.co_name
-
-            func_name = '{name:->{indent}s}()'.format(indent=tracefunc.stack_level * 2, name=func_name)
-            txt = '{: <40} # {}, {}'.format(
-                func_name, frame.f_code.co_filename, frame.f_lineno)
-            print(txt)
-
-            tracefunc.memorized.add(unique_id)
-
-    elif event == "return":
-        tracefunc.stack_level -= 1
-
-
-tracefunc.memorized = set()
-tracefunc.stack_level = 0
 
 
 
 class CustomFormatter(logging.Formatter):
-
+    # ANSI color codess
     grey = "\x1b[38;20m"
     yellow = "\x1b[33;20m"
     red = "\x1b[31;20m"
     bold_red = "\x1b[31;1m"
-    # blue = "\x1b[1;34m"
+    purp = "\x1b[38;5;25m"
+    blue = "\x1b[1;34m"
+    debug_blue = '\x1b[38;5;57m'
+    cyan = "\x1b[36m"
+    # blue = "\x1b[44m"
     reset = "\x1b[0m"
     format = '%(asctime)s %(levelname)s [%(module)s.%(funcName)s:%(lineno)d] %(message)s'
     format2 = '%(asctime)s [%(module)s.%(funcName)s:%(lineno)d] %(message)s'
     FORMATS = {
-        logging.DEBUG: grey + format + reset,
+        # logging.DEBUG: grey + format + reset,
+        logging.DEBUG: red + format + reset,
         logging.INFO: grey + format + reset,
         logging.WARNING: yellow + format + reset,
-        logging.ERROR: red + format + reset,
-        logging.CRITICAL: bold_red + format2 + reset,
+        logging.ERROR: bold_red + format + reset,
+        # logging.CRITICAL: bold_red + format2 + reset,
+        # logging.CRITICAL: cyan + format2 + reset,
+        logging.CRITICAL: purp + format2 + reset,
     }
     def format(self, record):
         log_fmt = self.FORMATS.get(record.levelno)
@@ -144,42 +145,63 @@ class CustomFormatter(logging.Formatter):
 
 
 def main():
-    logger = logging.getLogger()
+
+    # logger = logging.getLogger() # reference to root logger
+    logger = logging.getLogger('root') # reference to root logger
+    if is_joel():
+        # logger.setLevel(logging.DEBUG)
+        logging.root.setLevel(logging.DEBUG)
+    else:
+        # logger.setLevel(logging.INFO)
+        logging.root.setLevel(logging.INFO)
+
+    logger.info('')
     # logger = logging.getLogger(__name__)
     # logging.propagate = False  # stops message propogation to the root handler
     # fh = logging.FileHandler('messages.log')
     # logger.addHandler(fh)
     # logger.info('Running ' + __file__ + '.__main__()')
-    # logger.critical('start cwd: %s' % os.getcwd())
-    # logger.critical('directory of this script: %s' % os.path.dirname(__file__))
-    # # os.chdir(os.path.dirname(__file__))
-    # logger.critical('new cwd: %s' % os.getcwd())
+    # logger.critical('start cwd: %level' % os.getcwd())
+    # logger.critical('directory of this script: %level' % os.file_path.dirname(__file__))
+    # # os.chdir(os.file_path.dirname(__file__))
+    # logger.critical('new cwd: %level' % os.getcwd())
 
+    logger.info('Setting Qt.AA_ShareOpenGLContexts')
+    # QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) #1015- # must be set before QCoreApplication is created. #2230-
+    # QCoreApplication.setAttribute(Qt.AA_UseOpenGLES) #1015-
+
+    QCoreApplication.setApplicationName("alignEM")
 
     addLoggingLevel('VERSIONCHECK', logging.DEBUG + 5)
     logging.getLogger('init').setLevel("VERSIONCHECK")
-    logging.getLogger('init').versioncheck('alignEM-SWiFT         : %s' % cfg.VERSION)
+    logging.getLogger('init').versioncheck('alignEM               : %s' % cfg.VERSION)
     logging.getLogger('init').versioncheck('environment           : %s' % sys.version)
     logging.getLogger('init').versioncheck('QtCore.__version__    : %s' % QtCore.__version__)
-    logging.getLogger('init').versioncheck('qtpy.PYQT_VERSION     : %s' % qtpy.PYQT_VERSION)
-    logging.getLogger('init').versioncheck('qtpy.PYSIDE_VERSION   : %s' % qtpy.PYSIDE_VERSION)
-    logging.getLogger('init').versioncheck('Jupyter QtConsole     : %s' % qcv)
+    # logging.getLogger('init').versioncheck('qtpy.PYQT_VERSION     : %s' % qtpy.PYQT_VERSION)
+    # logging.getLogger('init').versioncheck('qtpy.PYSIDE_VERSION   : %s' % qtpy.PYSIDE_VERSION)
+    # logging.getLogger('init').versioncheck('Jupyter QtConsole     : %s' % qcv)
+
+
+
+    logger.debug('\n\nIf this message is seen then the logging level is set to logging.DEBUG\n')
 
     check_for_binaries()
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--api', default='pyqt5', help='Python-Qt API (pyqt6|pyqt5|pyside6|pyside2)')
+    # parser.add_argument('--api', default='pyqt5', help='Python-Qt API (pyqt6|pyqt5|pyside6|pyside2)')
     parser.add_argument('--debug', action='store_true', help='Debug Mode')
     parser.add_argument('--debug_mp', action='store_true', help='Set python multiprocessing debug level to DEBUG')
-    parser.add_argument('--loglevel', type=int, default=cfg.LOG_LEVEL, help='Logging Level (1-5)')
+    parser.add_argument('--loglevel', type=int, default=1, help='Logging Level (0-4)')
     # parser.add_argument('--no_tensorstore', action='store_true', help='Does not use Tensorstore if True')
     parser.add_argument('--headless', action='store_true', help='Do not embed the neuroglancer browser if True')
     parser.add_argument('--no_splash', action='store_true', help='Do not start up with a splash screen')
     parser.add_argument('--dummy', action='store_true', help='Start the application using a dummy project')
     parser.add_argument('--profile', action='store_true', help='Profile performance of memory and multiprocessing')
     args = parser.parse_args()
-    os.environ['QT_API'] = args.api  # This env setting is ingested by qtpy
-    # os.environ['PYQTGRAPH_QT_LIB'] = args.api #do not set!
+
+    # os.environ["PYTHONWARNINGS"] = 'ignore'
+    logging.getLogger('asyncio').disabled = True
+    logging.getLogger('tornado.access').disabled = True
 
     if logger.hasHandlers():  logger.handlers.clear() #orig
     ch = logging.StreamHandler()
@@ -193,31 +215,100 @@ def main():
     else:
         logger.setLevel(LOGLEVELS[args.loglevel])
     if args.debug_mp:
-        cfg.DEBUG_MP = True
+        cfg.DEBUG_MP = 1
     # if args.no_tensorstore: cfg.USE_TENSORSTORE = False
     if args.headless:  cfg.HEADLESS = True
     if args.no_splash: cfg.NO_SPLASH = True
-    if args.dummy: cfg.DUMMY = True
     if args.profile:
         cfg.PROFILING_MODE = True
 
 
+    if is_tacc():
+        try:
+            register_login()
+        except:
+            print_exception()
+        try:
+            bashrc = os.path.join(os.getenv('HOME'), '.bashrc')
+
+            try:
+                appendme = """\nalias alignem='source $WORK/swift-ir/tacc_bootstrap'"""
+                check_str = """alias alignem="""
+                with open(bashrc, "r") as f:
+                    found = any(check_str in x for x in f)
+                logger.info(f"Quick launch alias 'alignem' found? {found}")
+                if not found:
+                    logger.critical("Adding quick launch alias 'alignem'...")
+                    with open(bashrc, "a+") as f:
+                        f.write(appendme)
+                    logger.info("Sourcing bashrc...")
+                    sp.call(['source', '$HOME/.bashrc'])
+            except:
+                print_exception()
+
+            try:
+                appendme = """\nalias alignemdev='source $WORK/swift-ir/tacc_develop'"""
+                check_str = """alias alignemdev="""
+                with open(bashrc, "r") as f:
+                    found = any(check_str in x for x in f)
+                logger.info(f"Quick launch alias 'alignemdev' found? {found}")
+                if not found:
+                    logger.critical("Adding quick launch alias 'alignemdev'...")
+                    with open(bashrc, "a+") as f:
+                        f.write(appendme)
+                    logger.info("Sourcing bashrc...")
+                    sp.call(['source', '$HOME/.bashrc'])
+            except:
+                print_exception()
+        except:
+            print_exception()
+
+
     # https://doc.qt.io/qtforpython-5/PySide2/QtCore/Qt.html
-    QCoreApplication.setAttribute(Qt.AA_UseOpenGLES)
     # Forces the usage of OpenGL ES 2.0 or higher on platforms that
     # use dynamic loading of the OpenGL implementation.
 
     if cfg.FAULT_HANDLER:
         faulthandler.enable(file=sys.stderr, all_threads=True)
 
-    if cfg.PROFILING_MODE:
-        sys.setprofile(tracefunc)
+    # if cfg.PROFILING_MODE:
+    #     sys.setprofile(tracefunc)
 
-    # os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
+    # AA_UseDesktopOpenGL removed in Qt6 (desktop OpenGL is the default)
+
+    initialize_user_preferences() # calls update_preferences_model()
+
+    # app = QApplication([])
+    # app = QApplication(sys.argv)
+    #
+    # app.setStyle('Fusion') | Fusion/Breeze/Oxygen/Windows
+    cfg.mw = cfg.main_window = MainWindow()
+
+    logger.info('Showing application window')
+    cfg.mw.show()
+
+    _app = QApplication.instance()
+    ret = _app.exec()
+    # Explicitly delete the main window before Python's GC runs to prevent
+    # PySide6 segfaults from C++ objects being destroyed in wrong order
+    del cfg.mw
+    cfg.main_window = None
+    del _app
+    sys.exit(ret)
+
+
+if __name__ == "__main__":
+    print('__main__:')
+    print('Configuring environment variables...')
+
+    os.environ['QT_API'] = 'pyside6'
+    os.environ['PYQTGRAPH_QT_LIB'] = 'PySide6'
+    os.environ["BLOSC_NTHREADS"] = "1"
+    os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
     # logger.info('Setting OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES')
     # logger.info('Setting QTWEBENGINE_CHROMIUM_FLAGS')
-    # os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
-    os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
+    os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
+    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
 
     # ***************
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--no-sandbox -disable-web-security --enable-logging'
@@ -225,43 +316,44 @@ def main():
 
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--enable-logging --log-level=3' # suppress JS warnings
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --enable-logging --log-level=0'
-    # os.environ['OPENBLAS_NUM_THREADS'] = '1'
+    _chromium_flags = '--disable-web-security --no-sandbox --ignore-gpu-blocklist ' \
+                      '--num-raster-threads=%s ' \
+                      '--enable-logging --log-level=3' % cfg.QTWEBENGINE_RASTER_THREADS
+    if sys.platform == 'darwin':
+        _chromium_flags += ' --use-angle=gl'  # Avoid Metal ANGLE XPC errors on macOS
+    os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = _chromium_flags
+    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = f'--disable-web-security --no-sandbox --num-raster-threads={cfg.QTWEBENGINE_RASTER_THREADS}'
+    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --no-sandbox'
+    os.environ['OPENBLAS_NUM_THREADS'] = '1'
     # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
-
-    if qtpy.QT5:
-        logger.info('Setting Qt.AA_EnableHighDpiScaling')
-        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
-        logger.info('Setting Qt.AA_UseHighDpiPixmaps')
-        QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
-
-    # 2230-
-    # logger.info('Setting Qt.AA_ShareOpenGLContexts')
-    # QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created. #2230-
-    # QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseDesktopOpenGL)
-
-    initialize_user_preferences()
-    # configure_project_paths()
-
-    app = QApplication([])
-    # app.setStyle('Fusion')
-    # app.setStyle('Breeze')
-    # app.setStyle('Oxygen')
-    app.setStyle('Windows')
-    cfg.main_window = cfg.mw = MainWindow()
-
-    logger.info('Showing AlignEM-SWiFT...')
-    cfg.main_window.show()
-
-    sys.exit(app.exec())
-
-    # stats = pstats.Stats(profiler).sort_stats('ncalls')
-    # stats.print_stats()
-
-    # sys.exit(app.exec())
+    os.environ['LIBTIFF_STRILE_ARRAY_MAX_RESIZE_COUNT'] = '1000000000'
+    os.environ['PYTHONHASHSEED'] = '1'
 
 
-if __name__ == "__main__":
+    # os.environ['QT_SCALE_FACTOR'] = '1' # scale the entire application
+    # os.environ["QT_ENABLE_HIGHDPI_SCALING"] = '1' #1015-
+    # os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = '1'
 
+    # os.environ["QT_DEBUG_PLUGINS"] = "1" ##
+
+    # os.putenv("QT_QPA_PLATFORM", "offscreen")
+    print('Initializing QApplication...')
+    app = QApplication(sys.argv)
+    app.setStyle('Fusion')
+    font = QFont("Tahoma")
+    # font = QFont("Consolas")
+    # font.setHintingPreference(QFont.HintingPreference.PreferNoHinting)
+    # font.setStyleStrategy(QFont.PreferAntialias)
+    font.setPointSize(10)
+    app.setFont(font)
+
+    if is_mac():
+        if check_macos_isdark_theme():
+            print('macOS is in DARK mode')
+        else:
+            print('macOS is in LIGHT mode')
+
+    print('Entering main()...')
     main()
 
 

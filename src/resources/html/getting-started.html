@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+   <title>alignEM FAQ</title>
+    <meta charset="utf-8">
+    <style>
+        h3 { color: #161c20; }
+    </style>
+</head>
+<body style="font-family: Calibri, sans-serif;">
+
+<h3><u>Strategies for Alignment:</u></h3>
+<b>Depth First Strategy</b>
+Start by aligning the coarsest scale with 'Align All'. Navigate to the "Lowest 8 SNR" panel of the tabbed widget in the
+tool bar. Start with the lowest SNR alignment. Select 'Manual Align' and then select three matching regions. Do this for each of the 8 worst alignments. Then, select 'Align All' and review the improved alignment. Repeat until the alignment is good.<br/><br/>
+<img src="file:src/resources/low-8.png" alt="low-8-widget" style="height:100px;">
+<br/><br/>
+
+<b>Breadth First Strategy</b>
+Start by aligning the coarsest scale with 'Align All'. Navigate to the 'SNR Plot' project tab. Starting from the left,
+find the first poor SNR data point and click on it to jump to it. Select "Manual Align" in the control panel and proceed to fix the alignment using one of the manual intervention methods. Use the 'Align & Regenerate' function to immediately align and regenerateAll the alignment for that section alone. Repeat until this section is well-aligned. Return to the SNR plot and repeat until each of the poor alignments are fixed with certainty. When this is complete, regenerateAll the entire alignment with the "Regenerate Images" button in the control panel to propagate the cumulative affine.<br/><br/>
+<img src="file:src/resources/snr-plot.png" alt="snr-plot-widget" style="height:200px;">
+<br/><br/>
+
+<h3><u>Tips for Getting Started:</u></h3>
+<ul>
+    <li><b>Fix misalignments at the coarsest scale</b> – The most efficient workflow is to work through any and all alignment issues at the coarsest scale of images before proceeding to align higher scales. Good alignment at one scale generally leads to similar alignment--but with greater refinement--at higher scales. Usually there is no benefit to manually intervening and adjusting the alignment at multiple scale levels, and doing so is inefficient.<br/><br/></li>
+    <li><b>'Refresh' Often</b> – Refresh fixes many issues, and is most useful in cases where Neuroglancer is not rendering data properly or behaving as expected. Refresh not only refreshes Neuroglancer, Refresh also updates several other UI views in the event that any become out of sync. Use refresh as liberally as you would in a web browser. It is harmless, close to instantaneous, and does not alter any data or the state of your project in any way. It merely refreshes the user interface views including Neuroglancer viewers, browsers, tree views, table views, list views, and the SNR plot.<br/><br/></li>
+    <li><b>'Align All' Before Anything Else</b> – For each scale it is necessary to run Align All (which uses the
+        settings in the control panel and Default Grid alignment strategy) before other functionality becomes available. The enabled/disabled state of UI controls prevents users from accessing such additional functionality prior to running Align All at least once.<br/><br/></li>
+    <li><b>'Align All' As Needed</b> – Align All ensures that the scale being working on is in a state where the
+        cumulative affine is fully propagated through the image stack. Note that Align All means "align all images of the current scale". However, it is also possible to align all scales automatically using the menu option: <b>Align > Align All Scales</b>. In this case the affine transformation is refined during each successive scale level up to and including the full scale images.<br/><br/></li>
+    <li><b>Grid Default might misfire</b> - The default alignment method is termed "Grid Default". It is a robust SWIM-based alignment method whose parameters can be adjusted using the control panel settings under <b>Default SWIM Settings</b>. For a list of the options to correct misalignment, see Glossary section <b><i>Correcting Misalignment</i></b>.<br/><br/>
+
+</ul>
+
+<h3><u>TACC Tips:</u></h3>
+<ul>
+    <li><b>$SCRATCH >> $WORK</b> – Create projects on $SCRATCH it is ~2x faster $WORK<br/><br/></li>
+
+</ul>
+
+</body>
+</html>

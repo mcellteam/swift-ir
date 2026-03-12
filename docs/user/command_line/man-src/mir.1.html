@@ -60,10 +60,10 @@ Exit the program.
 <span class="strong"><strong>F</strong></span> <span class="emphasis"><em>name</em></span>
 </span></dt><dd>
 Read a new file. Any number of spaces and tab characters may
-    appear between the “F” and the filename. The filename may not contain
+    appear between the “F” and the path. The path may not contain
     any spaces. The actual file loaded is determined by concatenating the
-    filename to the current directory prefix (without inserting a slash or
-    anything else). The program aborts if no filename is given, but quietly
+    path to the current directory prefix (without inserting a slash or
+    anything else). The program aborts if no path is given, but quietly
     substitutes a 1x1 image if the file cannot be read. If this is the first
     image read, the size of the output image is set by the size of the image
     loaded (unless explicitly given by a <span class="strong"><strong>B</strong></span> command or <span class="strong"><strong>-B</strong></span> option).
@@ -103,7 +103,7 @@ Toggle reverse video.
 <span class="strong"><strong>W</strong></span> <span class="emphasis"><em>name</em></span>
 </span></dt><dd>
 Write output image. Any number of spaces and tab characters may
-    appear between the “W” and the filename. The filename may not contain
+    appear between the “W” and the path. The path may not contain
     any spaces. The “directory prefix” is not used. If tiling is enabled
     (by specifying nonzero <span class="emphasis"><em>w</em></span><sub>tile</sub> and <span class="emphasis"><em>h</em></span><sub>tile</sub>_ to the <span class="strong"><strong>B</strong></span> command),
     the <span class="emphasis"><em>name</em></span> must contain two <code class="literal">%i</code> place holders for <code class="literal">sprintf</code> to insert
@@ -172,7 +172,7 @@ Output width and height in pixels. The numbers are
 </span></dt><dd>
 Save overlap images for later intensity correction.
     Filename is constructed as <span class="emphasis"><em>input</em></span>.back.pgm, where <span class="emphasis"><em>input</em></span> is the
-    source filename with a three letter extension removed.
+    source path with a three letter extension removed.
 </dd><dt><span class="term">
 <span class="strong"><strong>-g</strong></span>
 </span></dt><dd>

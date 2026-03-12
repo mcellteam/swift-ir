@@ -1,0 +1,18 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="icons">
+        <file alias='3dem-icon.png'>icons/3dem-icon.png</file>
+        <file alias='checkmark.png'>icons/checkmark.png</file>
+        <file alias='close-tab-light.png'>icons/close-tab-light.png</file>
+        <file alias='close-tab-dark.png'>icons/close-tab-dark.png</file>
+        <file alias='em-guy.png'>icons/em-guy.png</file>
+        <file alias='notepad.png'>icons/notepad.png</file>
+        <file alias='python.png'>icons/python.png</file>
+        <file alias='tacc-logo.png'>icons/tacc-logo.png</file>
+        <file alias='tacc-logo2.png'>icons/tacc-logo2.png</file>
+        <file alias='down-right.png'>icons/down-right.png</file>
+        <file alias='key1.png'>icons/key1.png</file>
+        <file alias='key2.png'>icons/key2.png</file>
+        <file alias='key3.png'>icons/key3.png</file>
+    </qresource>
+</RCC>
