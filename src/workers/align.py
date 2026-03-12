@@ -197,11 +197,15 @@ class AlignWorker(QObject):
             per_worker = estimate_swim_memory(img_size, max_window)
         else:
             per_worker = 1
-        self.cpus = compute_worker_count(len(tasks), per_worker)
+        self.cpus, info = compute_worker_count(len(tasks), per_worker)
 
-        self.hudMessage.emit(f'Computing {len(tasks)} tasks, {self.cpus} CPUs '
-                             f'(window {max_window[0]}x{max_window[1]}, '
-                             f'{per_worker / (1024**3):.1f} GB/worker)')
+        self.hudMessage.emit(
+            f'{info["n_tasks"]} tasks, {info["cpus"]} workers '
+            f'(window {max_window[0]}x{max_window[1]}, '
+            f'{info["per_worker_mb"]:.0f} MB/worker, '
+            f'{info["available_gb"]:.1f}/{info["total_gb"]:.0f} GB RAM, '
+            f'{info["phys_cores"]} cores, limited by {info["limiting_factor"]})'
+        )
 
         desc = f"Compute Alignment"
         dt, succ, fail, results = self.run_multiprocessing(run_recipe, tasks, desc)
