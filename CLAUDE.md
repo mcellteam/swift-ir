@@ -524,9 +524,9 @@ For 24k×24k images: at s1 the peak window is 9750² (2×2 only), not 19500² (1
 
 2. **ZarrWorker** (`generate.py`): Estimates per-worker memory for the `run_mir` phase (input image + bounding box output) and `convert_zarr_block` phase (TIFF read + zarr write) separately.
 
-3. **ScaleWorker** (`scale.py`): Two phases with different parallelism strategies:
-   - **TIFF reduction**: `ThreadPoolExecutor` launching `iscale2` subprocesses (threads just wait on external processes, GIL irrelevant).
-   - **Zarr conversion**: `multiprocessing.Pool` with `forkserver` context. Each worker reads a TIFF and writes to zarr in its own process with its own GIL, enabling true CPU parallelism. Safe because `chunk_z=1` in the emstack zarr layout means each image maps to independent chunks (no read-modify-write contention).
+3. **ScaleWorker** (`scale.py`): Both phases use `multiprocessing.Pool` with `forkserver` context:
+   - **TIFF reduction**: Each worker runs an `iscale2` subprocess via `sp.Popen` + `communicate()`.
+   - **Zarr conversion**: Each worker reads a TIFF and writes to zarr. Safe because `chunk_z=1` in the emstack zarr layout means each image maps to independent chunks (no read-modify-write contention).
 
 ### Backward Compatibility
 
