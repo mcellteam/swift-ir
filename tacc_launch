@@ -12,6 +12,7 @@ echo "Setting environment variables..."
 export QT_API=pyside6
 export OMP_NUM_THREADS=1
 export MKL_NUM_THREADS=1
+export ALIGNEM_DISABLE_GPU_COMPOSITING=1
 
 # Qt6 (PySide6) requires libxcb-cursor.so.0 for the xcb platform plugin.
 # RHEL8 doesn't always have this installed. Check and install locally if needed.

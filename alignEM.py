@@ -321,8 +321,8 @@ if __name__ == "__main__":
                       '--enable-logging --log-level=3' % cfg.QTWEBENGINE_RASTER_THREADS
     if sys.platform == 'darwin':
         _chromium_flags += ' --use-angle=gl'  # Avoid Metal ANGLE XPC errors on macOS
-    elif sys.platform == 'linux':
-        _chromium_flags += ' --disable-gpu-compositing'  # Avoid Vulkan compositor on software renderers (llvmpipe)
+    if os.environ.get('ALIGNEM_DISABLE_GPU_COMPOSITING'):
+        _chromium_flags += ' --disable-gpu-compositing'  # Software renderers (TACC llvmpipe/SWR)
     os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = _chromium_flags
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = f'--disable-web-security --no-sandbox --num-raster-threads={cfg.QTWEBENGINE_RASTER_THREADS}'
     # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --no-sandbox'
