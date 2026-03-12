@@ -13,6 +13,7 @@ echo "Setting environment variables..."
 export QT_API=pyside6
 export OMP_NUM_THREADS=1
 export MKL_NUM_THREADS=1
+export ALIGNEM_DISABLE_GPU_COMPOSITING=1
 
 echo "Launching alignEM via uv..."
 uv run alignEM.py "$@"
