@@ -1051,15 +1051,15 @@ class align_ingredient:
         src = self.recipe.dir_tmp
         od = self.recipe.matches_dir
         #Special handling since they are variable in # and never 1:1 with project files
-        fn, ext = os.path.splitext(self.recipe.ss['file_path'])
+        basename = os.path.basename(self.recipe.ss['file_path'])
+        fn, ext = os.path.splitext(basename)
         method = self.recipe.method
-        od_pattern = os.path.join(od, '%s_%s_[tk]_%d%s'
-                                      's' % (fn, method, self.recipe.index, ext))
+        od_pattern = os.path.join(od, '%s_%s_[tk]_*%s' % (fn, method, ext))
 
         tnLogger.info(f"\nsrc         = {src}\n"
                           f"fn          = {fn}\n"
                           f"od          = {od}\n"
-                          f"method      = {od}\n"
+                          f"method      = {method}\n"
                           f"od_pattern  = {od_pattern}")
 
         for tn in glob.glob(od_pattern):

@@ -80,7 +80,11 @@ class ThumbnailFast(QLabel):
         self._noImage = 0
         self.path = path
         try:
-            self.setPixmap(QPixmap.fromImage(QImage(path)))
+            img = QImage(path)
+            if img.isNull():
+                self.set_no_image()
+                return
+            self.setPixmap(QPixmap.fromImage(img))
         except:
             print_exception(extra=f'WARNING path={self.path}')
             self.set_no_image()
@@ -483,7 +487,11 @@ class CorrSignalThumbnail(QLabel):
             # self.setPixmap(QPixmap(self.file_path))
             # self.label.setText('%.3f' % self.snr)
             if os.path.exists(path):
-                self.setPixmap(QPixmap.fromImage(QImage(path)))
+                img = QImage(path)
+                if img.isNull():
+                    self.set_no_image()
+                    return
+                self.setPixmap(QPixmap.fromImage(img))
                 self.siz = ImageSize(self.path)
             else:
                 self.set_no_image()
