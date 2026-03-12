@@ -769,7 +769,8 @@ class DataModel:
             return None
 
     def results_hash(self, s=None) -> int:
-        """Compute hash of alignment results at scale s for change detection."""
+        """Compute hash of alignment results at scale s for change detection.
+        Uses deterministic SHA-256 hashing so the hash is consistent across sessions."""
         if s is None:
             s = self.level
         if not self.is_aligned(s=s):
@@ -780,7 +781,8 @@ class DataModel:
             aim = self.mir_aim(s=s, l=i)
             if aim:
                 hash_data.append(tuple(tuple(row) for row in aim))
-        return hash(tuple(hash_data))
+        s_repr = repr(tuple(hash_data)).encode('utf-8')
+        return int(hashlib.sha256(s_repr).hexdigest(), 16) % (2**64)
 
     def needs_propagation(self, s=None) -> bool:
         """Check if scale s needs propagation from coarser scale."""
@@ -2090,6 +2092,8 @@ class DataModel:
         mp = self['level_data'][cur_level]['method_presets'] # method presets, cur level
         mp.update(copy.deepcopy(self['level_data'][prev_level]['method_presets']))
         mp['grid']['size_1x1'][0] *= sf
+        mp['grid']['size_1x1'][1] *= sf
+        mp['grid']['size_2x2'][0] *= sf
         mp['grid']['size_2x2'][1] *= sf
         mp['manual'] = copy.deepcopy(self['level_data'][prev_level]['method_presets']['manual'])
         # mp['manual']['size'] *= sf
@@ -2100,14 +2104,24 @@ class DataModel:
         defaults['method_opts']['size_1x1'][1] *= sf
         defaults['method_opts']['size_2x2'][0] *= sf
         defaults['method_opts']['size_2x2'][1] *= sf
+        # Scale grid coordinates in defaults so applyDefaults() doesn't write coarsest-scale coords
+        try:
+            def_coords = defaults['method_opts']['points']['coords']
+            for role in ('ref', 'tra'):
+                if def_coords.get(role) and any(c is not None for c in def_coords[role]):
+                    def_coords[role] = [[c * sf for c in pt] if pt is not None else None
+                                        for pt in def_coords[role]]
+        except (KeyError, TypeError):
+            pass  # defaults may not have grid coords (e.g., manual method)
 
 
         if all:
             indexes = list(range(len(self)))
         else:
             indexes = [self.zpos]
-        try:
-            for i in indexes:
+        _propagation_ok = True
+        for i in indexes:
+            try:
                 prev_settings = copy.deepcopy(self._data['stack'][i]['levels'][prev_level]['swim_settings'])
                 prev_settings.pop('level')
                 prev_settings.pop('init_afm')
@@ -2115,8 +2129,6 @@ class DataModel:
                 prev_settings.pop('is_refinement')
                 self['stack'][i]['levels'][cur_level]['swim_settings'] = prev_settings
                 ss = self['stack'][i]['levels'][cur_level]['swim_settings']
-                # ss = copy.deepcopy(prev_settings)
-                # d['levels'][cur_level]['swim_settings']['img_size'] = self['images']['size_xy'][cur_level]
 
                 ss['level'] = cur_level
                 ss['img_size'] = self.image_size(cur_level)
@@ -2128,6 +2140,16 @@ class DataModel:
                     mo['size_1x1'][1] *= sf
                     mo['size_2x2'][0] *= sf
                     mo['size_2x2'][1] *= sf
+                    # Scale coordinates copied from prev_level as baseline
+                    # (will be overwritten with result-based coords below if available)
+                    try:
+                        for role in ('ref', 'tra'):
+                            pts = mo['points']['coords'][role]
+                            if pts and any(p is not None for p in pts):
+                                mo['points']['coords'][role] = [[c * sf for c in pt] if pt is not None else None
+                                                                 for pt in pts]
+                    except (KeyError, TypeError):
+                        pass
                 if method == 'manual':
                     mo['size'] *= sf
                 try:
@@ -2151,23 +2173,29 @@ class DataModel:
                     continue
                 if not self['stack'][i]['levels'][prev_level]['swim_settings']['include']:
                     continue
-                last_ing_key = sorted([ k for k in self._data['stack'][i]['levels'][prev_level]['results'].keys() if k.startswith('ing') ])[-1]
-                last_ing = self._data['stack'][i]['levels'][prev_level]['results'][last_ing_key]
-                mo['points']['coords']['ref'] = (sf*np.array(last_ing['psta']).T).tolist() 
-                mo['points']['coords']['tra'] = (sf*np.array(last_ing['pmov']).T).tolist()
-
-        except Exception as e:
-            cfg.mw.warn(f"Unable to propagate settings. Reason: {e.__class__.__name__}")
-        else:
-            # Store hash of coarser scale results for change detection
-            coarser_hash = self.results_hash(s=prev_level)
-            self['level_data'][cur_level]['propagated_from_hash'] = coarser_hash
-            self['level_data'][cur_level]['alignment_ready'] = True
-            # Mark results as stale if this scale was previously aligned
-            # (results were computed with old settings, need re-alignment)
-            if self.is_aligned(s=cur_level):
-                self['level_data'][cur_level]['results_stale'] = True
-            cfg.mw.hud.done()
+                # Update coordinates from alignment results (more accurate than scaled prev-level coords)
+                ing_keys = sorted([k for k in self._data['stack'][i]['levels'][prev_level]['results'].keys() if k.startswith('ing')])
+                if ing_keys:
+                    last_ing = self._data['stack'][i]['levels'][prev_level]['results'][ing_keys[-1]]
+                    mo['points']['coords']['ref'] = (sf*np.array(last_ing['psta']).T).tolist()
+                    mo['points']['coords']['tra'] = (sf*np.array(last_ing['pmov']).T).tolist()
+                else:
+                    logger.warning(f"[{i}] No ingredient results at {prev_level}; using scaled prev-level coords")
+            except Exception as e:
+                print_exception(extra=f'Section #{i} during pullSettings {prev_level} -> {cur_level}')
+                logger.warning(f"[{i}] Failed to propagate settings: {e.__class__.__name__}: {e}")
+                _propagation_ok = False
+        if not _propagation_ok:
+            cfg.mw.warn(f"Some sections failed during propagation from {prev_level} to {cur_level}. Check console.")
+        # Always store hash to prevent infinite re-propagation on restart
+        coarser_hash = self.results_hash(s=prev_level)
+        self['level_data'][cur_level]['propagated_from_hash'] = coarser_hash
+        self['level_data'][cur_level]['alignment_ready'] = True
+        # Mark results as stale if this scale was previously aligned
+        # (results were computed with old settings, need re-alignment)
+        if self.is_aligned(s=cur_level):
+            self['level_data'][cur_level]['results_stale'] = True
+        cfg.mw.hud.done()
 
 
     def initializeStack(self, data_location, images_location, images_info):

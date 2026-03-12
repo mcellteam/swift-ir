@@ -687,3 +687,39 @@ After quitting and reopening the app, the alignment result cache failed to find 
 **Fix**: Added `self.updateDwMatches()` call in `_onGlobTabChange()` after the dock widget is set up (`main_window.py:3004`).
 
 **Rule**: When setting up dock widget content during tab switches, always explicitly populate the display — don't rely on signals that may or may not fire during initialization.
+
+## Scale Propagation Fix (2026-03-12)
+
+### Problem
+
+After re-aligning with "ignore cache", certain sections (e.g., section 1) at finer scales (e.g., s1) had grid coordinates stuck at the coarsest-scale values (e.g., 304 instead of 1216 for 4096×4096 images). This caused swim windows to extend beyond image boundaries, producing gray-padded match signal thumbnails.
+
+### Root Causes (Multiple Interacting Bugs)
+
+1. **`results_hash()` used Python's `hash()`** (`data.py:771`): Non-deterministic across sessions due to `PYTHONHASHSEED`. After every app restart, `needs_propagation()` returned True (stored hash ≠ current hash), triggering spurious `pullSettings()` calls.
+
+2. **`pullSettings()` outer try/except wrapped the entire loop** (`data.py:2111-2162`): If any section failed the coordinate update (e.g., missing `ing*` keys in results), the `IndexError` from `sorted([])[-1]` was caught by the outer except, aborting the ENTIRE loop. Sections processed before the failure had their swim_settings replaced with prev_level values but coordinates unscaled. Sections after the failure were never processed.
+
+3. **Coordinates from prev_level were never scaled as baseline** (`data.py:2118`): `pullSettings()` copied prev_level's swim_settings (including prev_level's coordinates) to cur_level, then scaled window sizes but NOT coordinates. The coordinate update from results (lines 2156-2157) was the ONLY place coordinates got scaled. If it failed, coordinates remained at prev_level's scale.
+
+4. **Defaults retained coarsest-level coordinates** (`data.py:2099-2104`): When copying prev_level defaults to cur_level, only window sizes were scaled — `points.coords` was not. If `applyDefaults()` was called, it would write coarsest-scale coordinates.
+
+5. **`method_presets` partial scaling bug** (`data.py:2094-2095`): Only scaled `size_1x1[0]` and `size_2x2[1]` instead of both dimensions of both sizes.
+
+### Fix
+
+| Change | Location | Description |
+|---|---|---|
+| Deterministic `results_hash()` | `data.py:771-785` | SHA-256 instead of `hash()` — consistent across sessions |
+| Per-section try/except | `data.py:2123-2187` | Each section has its own try/except; failure for one section doesn't abort others |
+| Baseline coord scaling | `data.py:2143-2152` | After copying prev_level coords, immediately scale by sf as fallback |
+| Graceful missing results | `data.py:2177-2183` | Check if `ing_keys` is empty instead of crashing on `sorted([])[-1]` |
+| Defaults coord scaling | `data.py:2107-2115` | Scale `points.coords` in defaults alongside window sizes |
+| `method_presets` full scaling | `data.py:2094-2097` | Scale both dimensions of both `size_1x1` and `size_2x2` |
+| Always store hash | `data.py:2190-2198` | Store `propagated_from_hash` even on partial failure to prevent infinite re-propagation |
+
+### Rules
+
+1. **Always scale ALL numeric fields when propagating between scales** — window sizes, coordinates, and any other pixel-valued parameters. Missing a scaling operation creates silent bugs that only manifest at certain scales.
+2. **Never wrap a per-item loop in a single try/except** — if items are independent, each should have its own error handling so one failure doesn't cascade.
+3. **Provide fallback values before attempting the preferred update** — scale coordinates from prev_level first, then overwrite with result-based coordinates if available. This way, partial failures still produce reasonable values.

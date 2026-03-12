@@ -561,6 +561,8 @@ class MainWindow(QMainWindow):
 
 
     def updateDwMatches(self):
+        if self._working:
+            return  # Don't read match files while alignment workers are writing them
         if self.dwMatches.isVisible():
             self.setSignalsPixmaps()
             self.setTargKargPixmaps()
