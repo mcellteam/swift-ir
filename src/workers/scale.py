@@ -14,7 +14,6 @@ from os import kill
 from subprocess import PIPE, Popen
 import multiprocessing as mp
 import subprocess as sp
-from concurrent.futures import ThreadPoolExecutor
 import zarr
 import imagecodecs
 import imageio.v3 as iio
@@ -117,14 +116,21 @@ class ScaleWorker(QObject):
                 t = time.time()
 
                 # iscale2 subprocess: reads source image + writes scaled output
-                per_thread = src_size[0] * src_size[1] + siz[0] * siz[1] + 50 * 1024 * 1024
-                cpus = compute_worker_count(len(tasks), per_thread, use_threads=True)
-                logger.info(f"# Threads: {cpus}")
-                with ThreadPoolExecutor(max_workers=cpus) as pool:
-                    for i, result in enumerate(tqdm.tqdm(pool.map(run, tasks),
-                                                         total=len(tasks),
-                                                         desc=desc, position=0,
-                                                         leave=True)):
+                # Each iscale2 process is independent — use multiprocessing for full parallelism
+                _ISCALE2_OVERHEAD = 100 * 1024 * 1024  # subprocess overhead
+                per_worker = _ISCALE2_OVERHEAD + src_size[0] * src_size[1] + siz[0] * siz[1]
+                cpus = compute_worker_count(len(tasks), per_worker)
+                logger.info(f"# Workers (iscale2): {cpus}")
+                if sys.platform == 'win32':
+                    ctx = mp.get_context('spawn')
+                else:
+                    ctx = mp.get_context('forkserver')
+                with ctx.Pool(processes=cpus) as pool:
+                    for i, result in enumerate(tqdm.tqdm(
+                            pool.imap_unordered(run, tasks),
+                            total=len(tasks),
+                            desc=desc, position=0,
+                            leave=True)):
                         self.progress.emit(i)
                         if not self.running():
                             break
@@ -396,20 +402,18 @@ class Command(object):
 
 
 def run(task):
-    """Call run(), catch exceptions."""
+    """Run an iscale2 subprocess task. Returns 0 on success, 1 on error."""
     try:
-        #Critical bufsize=-1... allows blocking for reduction tasks
         cmd_proc = sp.Popen(task, bufsize=-1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
-        out, err = cmd_proc.communicate() #1107+
+        out, err = cmd_proc.communicate()
         if out:
             print(f"STDOUT: {out}")
         if err:
             print(f"STDERR: {err}")
-        cmd_proc.wait()
-
-        # sp.Popen(task, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
+        return cmd_proc.returncode or 0
     except Exception as e:
         print("error: %s run(*%r)" % (e, task))
+        return 1
 
 
 def get_process_children(pid):
