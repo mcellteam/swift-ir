@@ -507,7 +507,7 @@ For 24k×24k images: at s1 the peak window is 9750² (2×2 only), not 19500² (1
 **`src/utils/helpers.py`**:
 
 - **`estimate_swim_memory(img_size, max_window)`**: Returns estimated bytes per alignment worker (Python overhead + swim subprocess memory).
-- **`compute_worker_count(n_tasks, per_worker_bytes, use_threads=False)`**: Returns optimal worker count, capped at `min(physical_cores - 2, available_RAM × 0.70 / per_worker, n_tasks, TACC_MAX_CPUS)`.
+- **`compute_worker_count(n_tasks, per_worker_bytes, use_threads=False)`**: Returns `(cpus, info)` tuple. `cpus` is the optimal worker count, capped at `min(physical_cores - 2, available_RAM × 0.70 / per_worker, n_tasks, TACC_MAX_CPUS)`. `info` is a dict with breakdown details (`n_tasks`, `cpus`, `phys_cores`, `max_by_cpu`, `max_by_ram`, `per_worker_mb`, `available_gb`, `usable_gb`, `total_gb`, `limiting_factor`) for verbose HUD and terminal output. All 5 worker phases emit a `hudMessage` showing tasks, workers, MB/worker, available/total RAM, cores, and the limiting factor.
 
 ### Files Changed
 

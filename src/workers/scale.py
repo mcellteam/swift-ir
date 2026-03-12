@@ -119,8 +119,13 @@ class ScaleWorker(QObject):
                 # Each iscale2 process is independent — use multiprocessing for full parallelism
                 _ISCALE2_OVERHEAD = 100 * 1024 * 1024  # subprocess overhead
                 per_worker = _ISCALE2_OVERHEAD + src_size[0] * src_size[1] + siz[0] * siz[1]
-                cpus = compute_worker_count(len(tasks), per_worker)
-                logger.info(f"# Workers (iscale2): {cpus}")
+                cpus, info = compute_worker_count(len(tasks), per_worker)
+                self.hudMessage.emit(
+                    f'Reducing {s}: {info["n_tasks"]} tasks, {info["cpus"]} workers '
+                    f'({info["per_worker_mb"]:.0f} MB/worker, '
+                    f'{info["available_gb"]:.1f}/{info["total_gb"]:.0f} GB RAM, '
+                    f'{info["phys_cores"]} cores, limited by {info["limiting_factor"]})'
+                )
                 if sys.platform == 'win32':
                     ctx = mp.get_context('spawn')
                 else:
@@ -232,8 +237,13 @@ class ScaleWorker(QObject):
             # chunk_z=1 ensures each image maps to independent chunks (no contention)
             _ZARR_OVERHEAD = 250 * 1024 * 1024  # forkserver child process
             per_worker_zarr = _ZARR_OVERHEAD + 2 * x * y
-            cpus = compute_worker_count(len(tasks), per_worker_zarr)
-            logger.info(f"# Workers (zarr): {cpus}")
+            cpus, info = compute_worker_count(len(tasks), per_worker_zarr)
+            self.hudMessage.emit(
+                f'Converting {s} to Zarr: {info["n_tasks"]} tasks, {info["cpus"]} workers '
+                f'({info["per_worker_mb"]:.0f} MB/worker, '
+                f'{info["available_gb"]:.1f}/{info["total_gb"]:.0f} GB RAM, '
+                f'{info["phys_cores"]} cores, limited by {info["limiting_factor"]})'
+            )
             if sys.platform == 'win32':
                 ctx = mp.get_context('spawn')
             else:

@@ -123,15 +123,20 @@ def compute_worker_count(n_tasks, per_worker_bytes, use_threads=False):
         use_threads: if True, skip the Python process overhead portion of the
                      RAM budget (threads share a single process).
     Returns:
-        Worker count (>= 1).
+        (cpus, info) tuple where cpus is the worker count (>= 1) and info is
+        a dict with the breakdown details for logging/display.
     """
     if n_tasks <= 0:
-        return 1
+        info = {'cpus': 1, 'n_tasks': 0, 'phys_cores': 0, 'max_by_cpu': 0,
+                'max_by_ram': 0, 'per_worker_mb': 0, 'available_gb': 0,
+                'usable_gb': 0, 'total_gb': 0, 'limiting_factor': 'no tasks'}
+        return 1, info
 
     phys_cores = psutil.cpu_count(logical=False)
     max_by_cpu = max(phys_cores - 2, 1)
 
     available = psutil.virtual_memory().available
+    total = psutil.virtual_memory().total
     usable = int(available * 0.70)
     max_by_ram = max(usable // max(per_worker_bytes, 1), 1)
 
@@ -142,14 +147,39 @@ def compute_worker_count(n_tasks, per_worker_bytes, use_threads=False):
 
     cpus = max(cpus, 1)
 
+    # Determine what's limiting the worker count
+    if cpus == n_tasks:
+        limiting = 'tasks'
+    elif cpus == max_by_ram:
+        limiting = 'RAM'
+    elif cpus == max_by_cpu:
+        limiting = 'CPUs'
+    elif is_tacc() and cpus == cfg.TACC_MAX_CPUS:
+        limiting = 'TACC limit'
+    else:
+        limiting = '—'
+
+    info = {
+        'cpus': cpus,
+        'n_tasks': n_tasks,
+        'phys_cores': phys_cores,
+        'max_by_cpu': max_by_cpu,
+        'max_by_ram': max_by_ram,
+        'per_worker_mb': per_worker_bytes / (1024**2),
+        'available_gb': available / (1024**3),
+        'usable_gb': usable / (1024**3),
+        'total_gb': total / (1024**3),
+        'limiting_factor': limiting,
+    }
+
     logger.info(
         f"Worker count: {cpus}  "
         f"(phys_cores={phys_cores}, max_by_cpu={max_by_cpu}, max_by_ram={max_by_ram}, "
         f"tasks={n_tasks}, per_worker={per_worker_bytes / (1024**2):.0f} MB, "
-        f"available_ram={available / (1024**3):.1f} GB)"
+        f"available_ram={available / (1024**3):.1f} GB, limited_by={limiting})"
     )
 
-    return cpus
+    return cpus, info
 
 
 @contextlib.contextmanager

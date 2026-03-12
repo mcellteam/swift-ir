@@ -149,7 +149,14 @@ class ZarrWorker(QObject):
         bb_w, bb_h = rect[2], rect[3]
         _OVERHEAD = 150 * 1024 * 1024
         per_worker_mir = _OVERHEAD + img_w * img_h + 2 * bb_w * bb_h
-        self.cpus = compute_worker_count(len(tasks), per_worker_mir)
+        self.cpus, info = compute_worker_count(len(tasks), per_worker_mir)
+
+        self.hudMessage.emit(
+            f'{info["n_tasks"]} tasks, {info["cpus"]} workers '
+            f'({info["per_worker_mb"]:.0f} MB/worker, '
+            f'{info["available_gb"]:.1f}/{info["total_gb"]:.0f} GB RAM, '
+            f'{info["phys_cores"]} cores, limited by {info["limiting_factor"]})'
+        )
 
         desc = f"Generate Cumulative Transformation Images"
         t, *_ = self.run_multiprocessing(run_mir, tasks, desc)
@@ -231,7 +238,13 @@ class ZarrWorker(QObject):
                 ng.server.stop()
             # Each worker reads transformed TIFF + writes to zarr
             per_worker_zarr = _OVERHEAD + 2 * bb_w * bb_h
-            self.cpus = compute_worker_count(len(tasks), per_worker_zarr)
+            self.cpus, info = compute_worker_count(len(tasks), per_worker_zarr)
+            self.hudMessage.emit(
+                f'{info["n_tasks"]} tasks, {info["cpus"]} workers '
+                f'({info["per_worker_mb"]:.0f} MB/worker, '
+                f'{info["available_gb"]:.1f}/{info["total_gb"]:.0f} GB RAM, '
+                f'{info["phys_cores"]} cores, limited by {info["limiting_factor"]})'
+            )
             desc = f"Copy-convert to Zarr"
             # t, *_ = self.run_multiprocessing(convert_zarr, tasks, desc)
             t, *_ = self.run_multiprocessing(convert_zarr_block, tasks, desc)
