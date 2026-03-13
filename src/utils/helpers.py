@@ -349,16 +349,28 @@ def update_preferences_model():
                 'last_alignment_opened'):
         cfg.preferences.pop(key, None)
 
-    # Ensure all content roots and their subdirs exist
+    # Ensure all content roots and their subdirs exist (skip roots whose parent is inaccessible)
+    accessible_roots = []
     for root in cfg.preferences['content_roots']:
-        os.makedirs(os.path.join(root, 'images'), exist_ok=True)
-        os.makedirs(os.path.join(root, 'alignments'), exist_ok=True)
+        try:
+            os.makedirs(os.path.join(root, 'images'), exist_ok=True)
+            os.makedirs(os.path.join(root, 'alignments'), exist_ok=True)
+            accessible_roots.append(root)
+        except OSError:
+            logger.warning(f"Content root inaccessible, skipping: {root}")
 
-    # Derive runtime-only keys from content_roots (not persisted to .swiftrc)
-    cfg.preferences['images_root'] = os.path.join(cfg.preferences['content_roots'][0], 'images')
-    cfg.preferences['alignments_root'] = os.path.join(cfg.preferences['content_roots'][0], 'alignments')
-    cfg.preferences['images_search_paths'] = derive_search_paths(cfg.preferences['content_roots'], 'images')
-    cfg.preferences['alignments_search_paths'] = derive_search_paths(cfg.preferences['content_roots'], 'alignments')
+    # Fall back to default content root if none are accessible
+    if not accessible_roots:
+        logger.warning("No content roots accessible, creating default")
+        os.makedirs(os.path.join(DEFAULT_CONTENT_ROOT, 'images'), exist_ok=True)
+        os.makedirs(os.path.join(DEFAULT_CONTENT_ROOT, 'alignments'), exist_ok=True)
+        accessible_roots = [DEFAULT_CONTENT_ROOT]
+
+    # Derive runtime-only keys from accessible roots (not persisted to .swiftrc)
+    cfg.preferences['images_root'] = os.path.join(accessible_roots[0], 'images')
+    cfg.preferences['alignments_root'] = os.path.join(accessible_roots[0], 'alignments')
+    cfg.preferences['images_search_paths'] = derive_search_paths(accessible_roots, 'images')
+    cfg.preferences['alignments_search_paths'] = derive_search_paths(accessible_roots, 'alignments')
 
 
 
@@ -380,6 +392,21 @@ def initialize_user_preferences():
         update_preferences_model()
     except:
         print_exception()
+    # Guarantee runtime keys exist even if update_preferences_model() failed
+    if 'images_search_paths' not in cfg.preferences:
+        if '.tacc.utexas.edu' in platform.node():
+            _default = os.path.join(os.getenv('SCRATCH', ''), 'alignem_data')
+        else:
+            _default = os.path.join(os.path.expanduser('~'), 'alignem_data')
+        try:
+            os.makedirs(os.path.join(_default, 'images'), exist_ok=True)
+            os.makedirs(os.path.join(_default, 'alignments'), exist_ok=True)
+        except OSError:
+            logger.warning(f"Cannot create default content root: {_default}")
+        cfg.preferences['images_root'] = os.path.join(_default, 'images')
+        cfg.preferences['alignments_root'] = os.path.join(_default, 'alignments')
+        cfg.preferences['images_search_paths'] = [os.path.join(_default, 'images')]
+        cfg.preferences['alignments_search_paths'] = [os.path.join(_default, 'alignments')]
     # Save user preferences to file (strip runtime-only keys)
     _runtime_keys = ('images_root', 'alignments_root', 'images_search_paths', 'alignments_search_paths')
     try:

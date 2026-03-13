@@ -723,3 +723,28 @@ After re-aligning with "ignore cache", certain sections (e.g., section 1) at fin
 1. **Always scale ALL numeric fields when propagating between scales** — window sizes, coordinates, and any other pixel-valued parameters. Missing a scaling operation creates silent bugs that only manifest at certain scales.
 2. **Never wrap a per-item loop in a single try/except** — if items are independent, each should have its own error handling so one failure doesn't cascade.
 3. **Provide fallback values before attempting the preferred update** — scale coordinates from prev_level first, then overwrite with result-based coordinates if available. This way, partial failures still produce reasonable values.
+
+## Inaccessible Content Roots Startup Fix (2026-03-13)
+
+### Problem
+
+When all `content_roots` in `~/.swiftrc` pointed to inaccessible filesystems (e.g., `~/alignem_data` is a symlink to an unmounted volume), the app crashed on startup with `KeyError: 'images_search_paths'`.
+
+### Root Causes (Three Layers)
+
+1. **`update_preferences_model()` called `os.makedirs()` on inaccessible roots**: The `makedirs` loop had no error handling — a single `FileNotFoundError` (from a dangling symlink or unmounted filesystem) aborted the entire function before runtime keys (`images_search_paths`, `alignments_search_paths`, etc.) were set.
+
+2. **`initialize_user_preferences()` swallowed the exception**: The bare `except` around `update_preferences_model()` caught the error and called `print_exception()`, but continued without the runtime keys. `DirectoryWatcher.__init__()` then hit `KeyError: 'images_search_paths'`.
+
+3. **Fallback `makedirs` also failed**: The initial fix added a fallback in `initialize_user_preferences()` to create the default content root, but `os.makedirs('~/alignem_data/images')` also fails when `~/alignem_data` is a dangling symlink.
+
+### Fix
+
+| Location | Change |
+|---|---|
+| `helpers.py:update_preferences_model()` | Per-root try/except around `makedirs`; inaccessible roots are skipped with a warning. If no roots are accessible, falls back to creating `DEFAULT_CONTENT_ROOT`. Runtime keys derived from `accessible_roots` list only. |
+| `helpers.py:initialize_user_preferences()` | After `update_preferences_model()`, guarantees runtime keys exist. If still missing, sets them from defaults with `makedirs` wrapped in try/except (handles dangling symlinks). |
+
+### Rule
+
+**Never let filesystem I/O prevent runtime keys from being set.** Wrap `os.makedirs()` for user-configured paths in try/except and always set the runtime-derived keys, even if the directories don't exist on disk. The app should start and let the user navigate to an accessible location.
