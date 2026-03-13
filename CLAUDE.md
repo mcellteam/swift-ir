@@ -688,6 +688,37 @@ After quitting and reopening the app, the alignment result cache failed to find 
 
 **Rule**: When setting up dock widget content during tab switches, always explicitly populate the display — don't rely on signals that may or may not fire during initialization.
 
+## Swim Settings Corruption on Project Open (2026-03-13)
+
+### Problem
+
+After saving and quitting at z > 0 and a finer scale (e.g., s1), reopening the project showed "No Image" / "No Signal" in the match signal panel. Navigating away and back sometimes fixed it. Re-aligning always fixed it.
+
+### Root Cause
+
+`twMethod.currentChanged` was connected to `fn_method_select()` **before** `twMethod.addTab()` was called (`project.py:1292-1294`). Adding the first tab to an empty `QTabWidget` changes the current index from -1 to 0, emitting `currentChanged`. This triggered `fn_method_select()` which replaced the current section's `method_opts` with defaults:
+
+```python
+mo = self.dm['level_data'][s]['defaults']['method_opts']
+self.dm['stack'][l]['levels'][s]['swim_settings']['method_opts'] = copy.deepcopy(mo)
+```
+
+The defaults have `tra == ref` (default grid positions), erasing the result-based `tra` coordinates from the alignment. This changed the `ssHash()`, so signal files stored under the old hash directory couldn't be found.
+
+The corruption happened during every `AlignmentTab.__init__()`, but was only visible when:
+- z > 0 (z=0 typically has no alignment results / is identity)
+- Finer scale (coarsest scale has default coords anyway; finer scales have result-based coords from `pullSettings`)
+
+On subsequent runs, `_migrate_data_dirs()` renamed the signal directory to match the new (corrupted) hash, masking the symptom but not the cause.
+
+### Fix
+
+Moved the `twMethod.currentChanged.connect(fn_method_select)` call to **after** both `addTab()` calls (`project.py:1294`), so the initial tab population doesn't trigger the handler.
+
+### Rule
+
+**Always connect signals AFTER populating widgets.** `QTabWidget.addTab()`, `QComboBox.addItems()`, `QListWidget.addItem()`, etc. emit `currentChanged`/`currentIndexChanged` when the first item is added. If the signal is connected before population, the handler fires with uninitialized state. Either connect after population, or wrap the population in `blockSignals(True/False)`.
+
 ## Scale Propagation Fix (2026-03-12)
 
 ### Problem

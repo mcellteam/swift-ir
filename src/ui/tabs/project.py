@@ -1289,9 +1289,9 @@ class AlignmentTab(QWidget):
         self.twMethod.setTabsClosable(False)
         self.twMethod.setFocusPolicy(Qt.NoFocus)
         # self.twMethod.setStyleSheet("QTabBar::tab { height: 16px; width: 100px;}")
-        self.twMethod.currentChanged.connect(fn_method_select)
         self.twMethod.addTab(self.saGrid, 'Grid Align')
         self.twMethod.addTab(self.saManual, 'Manual Align')
+        self.twMethod.currentChanged.connect(fn_method_select)
 
 
         self.swMethod = QStackedWidget()
