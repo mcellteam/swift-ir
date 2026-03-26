@@ -22,7 +22,7 @@
 # alignEM-SWiFT
 alignEM is a graphical extension of SWiFT for aligning serial section electron micrographs.
 Soon we will publish to PyPi for convenient 'pip' installation. This branch may not be stable.
-Please report any feedback, suggestions, or bugs to joel@salk.edu.
+Please report any feedback, suggestions, or bugs to bartol@salk.edu and bkaynak@salk.edu.
 
 Supported Python Versions:
 Version 3.9+ (recommended),

@@ -42,3 +42,13 @@ include-package-data = true
 [tool.setuptools.package-data]
 "src.lib" = ["bin_darwin/*", "bin_tacc/*"]
 "src.resources" = ["*"]
+
+[tool.credits]
+previous_authors = [
+    { name = "Art Wetzel", years = "2019" },
+    { name = "Joel Yancey", years = "2022-2024" },
+    { name = "Tianhao Chen", years = "2024" },
+    { name = "Hongbin Miao", years = "2024" },
+    { name = "Bob Kuczewski", years = "2018-2020" },
+    { name = "Daniel Wagenaar", years = "2019" }
+]
