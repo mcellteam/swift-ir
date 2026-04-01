@@ -1756,6 +1756,46 @@ class MainWindow(QMainWindow):
                 return
         self.globTabs.addTab(self.pm, 'Alignment Manager')
 
+    def open_project_file(self):
+        '''Browse to an alignem_data directory and add it as a content root.
+        Its emstacks and alignments become available in the Alignment Manager combos.'''
+        logger.info('')
+        start_dir = cfg.preferences.get('content_roots', [os.path.expanduser('~')])[0]
+        start_dir = os.path.dirname(start_dir) if os.path.isdir(start_dir) else os.path.expanduser('~')
+        dlg = QFileDialog(self, "Add Content Directory", start_dir)
+        dlg.setFileMode(QFileDialog.Directory)
+        dlg.setOption(QFileDialog.ShowDirsOnly, True)
+        dlg.setLabelText(QFileDialog.Accept, "Add")
+        if not dlg.exec():
+            return
+        chosen = dlg.selectedFiles()[0]
+        if not chosen:
+            return
+
+        # Auto-append alignem_data if the user selected a parent directory
+        if not os.path.basename(chosen) == 'alignem_data':
+            candidate = os.path.join(chosen, 'alignem_data')
+            if os.path.isdir(candidate):
+                chosen = candidate
+
+        # Verify it looks like a valid content root (has images/ or alignments/ subdirs)
+        has_images = os.path.isdir(os.path.join(chosen, 'images'))
+        has_alignments = os.path.isdir(os.path.join(chosen, 'alignments'))
+        if not has_images and not has_alignments:
+            QMessageBox.warning(self, "Invalid Directory",
+                f"The selected directory does not contain 'images' or 'alignments' subdirectories:\n\n{chosen}\n\n"
+                "Please select an alignem_data directory.")
+            return
+
+        # Ensure the ManagerTab exists, add the content root, and switch to it
+        self.open_project_new()
+        for i in range(self.globTabs.count()):
+            widget = self.globTabs.widget(i)
+            if widget.__class__.__name__ == 'ManagerTab':
+                widget._addContentRoot(chosen)
+                self.tell(f"Added content root: {chosen}")
+                return
+
     def detachNeuroglancer(self):
         logger.info('')
         if self._isProjectTab() or self._isZarrTab():
@@ -3174,17 +3214,16 @@ class MainWindow(QMainWindow):
         # self.addAction(self.refreshAction)
         fileMenu.addAction(self.refreshAction)
 
-        self.openAction = QAction('&Open Alignment Manager...', self)
-        # self.openAction.triggered.connect(self.open_project)
+        self.addContentDirAction = QAction('&Add Content Directory...', self)
+        self.addContentDirAction.triggered.connect(self.open_project_file)
+        self.addContentDirAction.setShortcut('Ctrl+O')
+        self.addAction(self.addContentDirAction)
+        fileMenu.addAction(self.addContentDirAction)
+
+        self.openAction = QAction('Open Alignment &Manager...', self)
         self.openAction.triggered.connect(self.open_project_new)
-        # self.openAction.setShortcut('Ctrl+O')
         self.addAction(self.openAction)
         fileMenu.addAction(self.openAction)
-
-        # self.openArbitraryZarrAction = QAction('Open &Zarr...', self)
-        # self.openArbitraryZarrAction.triggered.connect(self.open_zarr_selected)
-        # self.openArbitraryZarrAction.setShortcut('Ctrl+Z')
-        # fileMenu.addAction(self.openArbitraryZarrAction)
 
         exportMenu = fileMenu.addMenu('Export')
 
