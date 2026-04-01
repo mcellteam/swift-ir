@@ -779,3 +779,39 @@ When all `content_roots` in `~/.swiftrc` pointed to inaccessible filesystems (e.
 ### Rule
 
 **Never let filesystem I/O prevent runtime keys from being set.** Wrap `os.makedirs()` for user-configured paths in try/except and always set the runtime-derived keys, even if the directories don't exist on disk. The app should start and let the user navigate to an accessible location.
+
+## Add Content Directory Feature (2026-03-30)
+
+Added **File > Add Content Directory... (Ctrl+O)** to let users browse to an existing `alignem_data` directory and register it as a content root. Its emstacks and alignments then appear in the Alignment Manager's combo dropdowns.
+
+### Design Decision
+
+The feature adds a content root (directory), not opening a specific `.align` file, because:
+- An `alignem_data` directory can contain multiple emstacks and alignments
+- The existing workflow (select emstack from combo → select alignment from combo) is preserved
+- The DirectoryWatcher mechanism already handles discovery and combo population
+
+### Files Changed
+
+| File | Changes |
+|---|---|
+| `src/ui/main_window.py` | New `addContentDirAction` menu action (Ctrl+O) → `open_project_file()` method; uses `QFileDialog` with custom "Add" button label and directory-only mode |
+| `src/ui/tabs/manager.py` | `_addContentRoot()` now calls `updateCombos()` after adding a root — `QFileSystemWatcher` only emits on changes after watching starts, not for existing contents |
+
+### How It Works
+
+1. **File > Add Content Directory...** opens a directory browser (dialog title: "Add Content Directory", accept button: "Add")
+2. Dialog starts at the parent of the first known content root
+3. If the user selects a directory containing an `alignem_data` subdirectory, auto-resolves into it
+4. Validates the directory has `images/` or `alignments/` subdirs — shows a warning if not
+5. Calls `_addContentRoot()` which adds to `content_roots`, creates subdirs if needed, updates DirectoryWatchers, and saves `.swiftrc`
+6. Calls `updateCombos()` to immediately populate the emstack/alignment combos with discovered items
+7. Switches to the Alignment Manager tab
+
+### Bug Fix: Combos Not Populated After Adding Content Root
+
+`_addContentRoot()` called `_syncContentRoots()` → `_updateWatchPaths()` which registered new directories with `QFileSystemWatcher`. However, `QFileSystemWatcher.directoryChanged` only fires when directory contents change *after* watching starts — it does not emit for existing contents. Added explicit `updateCombos()` call at the end of `_addContentRoot()` to force an immediate scan.
+
+### Rule
+
+**Always call `updateCombos()` after programmatically adding watch paths.** `QFileSystemWatcher` does not emit signals for pre-existing directory contents — only for changes that occur after the watch is established.

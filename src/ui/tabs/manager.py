@@ -895,6 +895,8 @@ class ManagerTab(QWidget):
             os.makedirs(os.path.join(root, 'alignments'), exist_ok=True)
             self._syncContentRoots()
             self._populateContentRootCombo()
+        # Always refresh combos — QFileSystemWatcher doesn't emit for existing contents
+        self.updateCombos()
 
     def _syncContentRoots(self):
         '''Derive search paths from content_roots, update watchers.'''
